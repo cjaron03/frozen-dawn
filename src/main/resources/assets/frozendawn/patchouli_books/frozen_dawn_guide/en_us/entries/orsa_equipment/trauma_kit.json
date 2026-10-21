@@ -1,0 +1,20 @@
+{
+  "name": "Trauma Kit",
+  "category": "frozendawn:orsa_equipment",
+  "icon": "frozendawn:orsa_trauma_kit",
+  "sortnum": 14,
+  "pages": [
+    {
+      "type": "patchouli:spotlight",
+      "item": "frozendawn:orsa_trauma_kit",
+      "title": "Trauma Kit",
+      "text": "Hold use for under 2 seconds to restore $(bold)5 hearts$(). Not usable at full health.$(br2)Stacks to 4. No recipe; found in Hearths.",
+      "link_recipe": true
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Field Note",
+      "text": "$(flavor)Contents: gauze, splints, a sealed autoinjector and a laminated card that says DON'T PANIC. ORSA could only source three of the four.$()"
+    }
+  ]
+}

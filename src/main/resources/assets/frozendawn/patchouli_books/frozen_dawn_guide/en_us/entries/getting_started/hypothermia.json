@@ -1,48 +1,35 @@
 {
-  "name": "A Fun Guide to Hypothermia!",
+  "name": "Hypothermia",
   "category": "frozendawn:getting_started",
   "icon": "minecraft:powder_snow_bucket",
-  "sortnum": 1,
+  "sortnum": 4,
   "pages": [
     {
       "type": "patchouli:text",
-      "title": "Welcome, Survivor!",
-      "text": "$(bold)Congratulations!$() You're reading this, which means you're not dead yet! Let's keep it that way.$(br2)This handy pamphlet — brought to you by the ORSA Wellness Division — will teach you everything you need to know about $(italic)freezing to death!$()$(br2)$(bold)Remember:$() Hypothermia is NOT a personality trait. It's a medical emergency. A very slow one."
+      "text": "Cold hurts in stages. Heat and depth stop it.$(br2)$(flavor)Hypothermia is not a personality trait. It is a medical emergency. A slow one.$()"
     },
     {
       "type": "patchouli:text",
-      "title": "The Comfort Zone",
-      "text": "At $(bold)0°C and above$(), you're doing great! No effects, no problems. The sun may be disappearing but at least you're warm.$(br2)Between $(bold)0°C and -10°C$(), things get chilly. Nothing dangerous yet, but maybe put on a jacket.$(br2)$(italic)ORSA Tip: Denial is the first stage of freezing! If you think \"it's not that bad,\" it's already that bad.$()"
+      "title": "Stages",
+      "text": "$(bold)0°C and up$(): fine$(br)$(bold)0 to -10°C$(): chilly, harmless$(br2)$(bold)-10°C$(): Slowness I, warning only$(br)$(bold)-25°C$(): Slowness II, $(danger)1 heart/2 s$()$(br)$(bold)-45°C$(): Slowness III, $(danger)2 hearts/2 s$()$(br)$(bold)-70°C$(): Slowness IV, $(danger)3 hearts/2 s$()"
     },
     {
       "type": "patchouli:text",
-      "title": "Stage 1: \"It's Fine\"",
-      "text": "At $(bold)-10°C$(), your body disagrees with your optimism.$(br2)$(li)$(bold)Slowness I$() — Noticeably slower$(li)No damage yet$(li)Action bar warning$(br2)This is your body's way of saying $(italic)\"Please go inside.\"$() Most people ignore this. Most people die.$(br2)$(bold)Heat sources and going underground help!$()"
+      "text": "$(flavor)Stage names, per ORSA Wellness: \"It's Fine\", \"Oh No\", \"Critical\" and \"Goodbye\". There is no Stage 5. Stage 5 is a respawn screen.$()"
     },
     {
       "type": "patchouli:text",
-      "title": "Stage 2: \"Oh No\"",
-      "text": "At $(bold)-25°C$(), the cold has upgraded from inconvenience to threat.$(br2)$(li)$(bold)Slowness II$(li)$(bold)1 heart of damage$() every 2 seconds$(br2)Fun fact: At this temperature, exposed skin gets frostbite in under 10 minutes! Your character doesn't have skin stats, but trust us, it hurts.$(br2)$(italic)Seriously, go underground.$()"
+      "title": "Wind Chill",
+      "text": "From Phase 5, wind drains hunger above Y=50 under open sky: most while sprinting, least standing still.$(br2)Underground is safe."
     },
     {
       "type": "patchouli:text",
-      "title": "Stage 3: \"Critical\"",
-      "text": "At $(bold)-45°C$(), you are in immediate mortal danger.$(br2)$(li)$(bold)Slowness III$() — Barely moving$(li)$(bold)2 hearts of damage$() every 2 seconds$(br2)At this point, your inventory screen should be a will and testament. If you're still on the surface, we admire your commitment to poor decisions."
+      "title": "Suffocation",
+      "text": "In late Phase 6 the surface is vacuum. $(danger)Without air you suffocate$(): darkness, nausea, slowness, fading vision, death."
     },
     {
       "type": "patchouli:text",
-      "title": "Stage 4: \"Goodbye\"",
-      "text": "At $(bold)-70°C and below$(), medical science has a technical term for your condition: $(bold)dead.$()$(br2)$(li)$(bold)Slowness IV$() — Frozen molasses$(li)$(bold)3 hearts of damage$() every 2 seconds$(br2)There is no Stage 5. Stage 5 is a respawn screen."
-    },
-    {
-      "type": "patchouli:text",
-      "title": "Wind Chill (Phase 5+)",
-      "text": "Starting in $(bold)Phase 5$(), surface winds drain your hunger even without cold damage.$(br2)$(li)$(bold)Sprinting$() outdoors — Heavy exhaustion$(li)$(bold)Walking$() — Moderate exhaustion$(li)$(bold)Standing still$() — Light exhaustion$(br2)Only affects you $(bold)above Y=50 with sky exposure$(). Underground is safe.$(br2)$(italic)ORSA Tip: You'll starve before you freeze. Efficiency!$()"
-    },
-    {
-      "type": "patchouli:text",
-      "title": "Suffocation (Phase 6 Late)",
-      "text": "In $(bold)late Phase 6$(), the atmosphere itself freezes. The surface becomes $(bold)vacuum$().$(br2)$(li)Darkness and lightheadedness$(li)Nausea and severe slowness$(li)Vision fading$(li)Death by suffocation$(br2)$(bold)Sealed, breathable shelter saves you$() — you need a closed room containing trapped air, or a sealed room supplied by a Geothermal Core or Blast Pit. One overhead block does not trap air.$(br2)$(italic)Space is nature's way of saying \"build a real shelter.\" — Kevin$()"
+      "text": "You need a sealed room with trapped air, or one fed by a Core or Blast Pit.$(br2)A roof alone traps nothing."
     }
   ]
 }

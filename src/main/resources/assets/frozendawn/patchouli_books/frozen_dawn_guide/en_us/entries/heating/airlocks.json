@@ -1,41 +1,109 @@
 {
-  "name": "Player-Built Airlocks",
+  "name": "Airlocks",
   "icon": "frozendawn:airlock_controller",
-  "category": "frozendawn:heating",
-  "sortnum": 19,
+  "category": "frozendawn:life_support",
+  "sortnum": 5,
   "pages": [
     {
+      "type": "patchouli:spotlight",
+      "item": "frozendawn:airlock_controller",
+      "text": "Lets you leave a sealed base without venting it."
+    },
+    {
       "type": "patchouli:text",
-      "title": "Keep Air Inside",
-      "text": "Build a sealed entry chamber between your base and vacuum. It needs two complete Airlock Doors and at most $(bold)32 passable interior blocks$(). A 3x3x3 interior is 27; walls do not count. Full glass works. Place a controller in a wall facing the chamber.$(br2)Close both doors before cycling. With unequal pressure, a door hisses and reports $(bold)Pressure differential$(). Breaking a wall or door still breaches the room."
+      "title": "Build",
+      "text": "$(li)Two complete $(bold)Airlock Doors$()$(li)At most $(bold)32$() open interior blocks; 3x3x3 is 27$(li)One controller in a wall, facing the chamber$(br2)Full glass works."
+    },
+    {
+      "type": "patchouli:multiblock",
+      "name": "Minimal Airlock",
+      "enable_visualize": false,
+      "multiblock": {
+        "pattern": [
+          [
+            "WWWW",
+            "U  U",
+            "WWWW"
+          ],
+          [
+            "WCWW",
+            "L  L",
+            "WWWW"
+          ],
+          [
+            "FFFF",
+            "F0FF",
+            "FFFF"
+          ]
+        ],
+        "mapping": {
+          "W": "minecraft:stone_bricks",
+          "F": "minecraft:polished_andesite",
+          "0": "minecraft:polished_andesite",
+          "U": "frozendawn:airlock_door[facing=east,half=upper]",
+          "L": "frozendawn:airlock_door[facing=east,half=lower]",
+          "C": "frozendawn:airlock_controller[facing=south]"
+        }
+      },
+      "text": "Roof left off to show inside. One controller, facing the chamber."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Cycling",
+      "text": "Close both doors, then right-click the controller.$(br2)A door opens only when pressure matches on both sides, including vacuum on both. A refused door says why."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Lamp",
+      "text": "$(li)Red: empty$(li)Amber: cycling$(li)Green: air present$(br2)Crouch-click for reserve and chamber O2. One status line shows in your suit HUD or above the hotbar."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Inner Door",
+      "text": "With air on both sides, clicking the inner door equalizes and opens it in one go. Shift-click uses its valve without opening.$(br2)$(danger)If either side is vacuum, use the controller.$()"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Power",
+      "text": "Link the controller with the $(l:power/binder)Binder$(/l). Cycling draws $(bold)2 kW$() for 4 s (8 kJ); idle draws nothing. A bank or Cell Dock can run it."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Outages",
+      "text": "Without power both doors stay locked and the cycle pauses until power returns.$(br2)The inner-door valve can still cancel the cycle and share its gas with the base, if both sides have air.$(br2)$(danger)Breaking a wall or door still breaches the room.$()"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Extra Panels",
+      "text": "Optional; they share gas and cycling. One controller inside the chamber is enough.$(br2)$(flavor)One atmosphere at a time.$()"
     },
     {
       "type": "patchouli:crafting",
       "recipe": "frozendawn:airlock_door",
       "title": "Airlock Doors",
-      "text": "Closed doors compare the actual pressure on both sides. Matching pressure allows opening, including equal overpressure or vacuum on both sides. A refused door explains vacuum, pressure mismatch or an active cycle.$(br2)$(bold)Shift-right-click the inner door from either side$() to use its manual equalization valve. Close both doors first. Both sides must already contain air; if either side is vacuum, use the controller instead. It shares existing air between the base and chamber, using no electricity or reserve O2. The door stays closed; open it normally after the short valve hiss."
+      "text": "Makes two.$(br2)$(flavor)Close the door behind you.$()"
     },
     {
       "type": "patchouli:crafting",
       "recipe": "frozendawn:airlock_controller",
       "title": "Cycle Controller",
-      "text": "Right-click to cycle; crouch-click for reserve and chamber O2. The single lamp is red when empty, amber during a cycle and green with air present.$(br2)One short status line appears in your suit HUD, or above the hotbar without a helmet. Optional panels share gas and cycling. One controller inside the chamber is enough: the inner door valve remains accessible from either side."
-    },
-    {
-      "type": "patchouli:text",
-      "title": "Oxygen Is Measured",
-      "text": "Each interior block holds 100 O2 units. The controller reserve holds 6,400. A connected, breathable base with a Geothermal Core replenishes up to 40 units per second from spare production, shared fairly with reservoirs, Core canisters and intact EVA refill. Breathing and active combustion are served first. Ten item units equal one player-second. Units match canister inventory; they are not physical liters.$(br2)Use an O2 canister on a panel to transfer only what fits. Leftovers remain in the canister. Stored O2 works without the Core.$(br2)Pressurization spends the chamber requirement. Depressurization recovers 90%; the remaining 10% is vented. If the reserve is full, overflow is also lost."
+      "text": "One per airlock is enough."
     },
     {
       "type": "patchouli:crafting",
       "recipe": "frozendawn:manual_vent_valve",
       "title": "Emergency Vent",
-      "text": "Mount facing the chamber. Right-click to dump its air instantly, with no recovery or pump requirement. Ordinary flames go out; torches stay mounted as Spent Torches. Soul lights remain.$(br2)$(bold)If the inner door is open, the connected base vents too.$() Use EVA oxygen before venting."
+      "text": "Mount facing the chamber. Right-click to dump its air at once: no recovery, no pump."
     },
     {
       "type": "patchouli:text",
-      "title": "Recovery and Repairs",
-      "text": "The Core cannot bypass an evacuated airlock: cycle the controller to refill it. Reserve and partial transfers survive reloads. Unloaded chambers pause rather than loading chunks.$(br2)Breaking the final panel discards stored reserve. Rebuilding or resizing a chamber does not generate free air and may discard its reserve. Relight spent torches only after pressure returns.$(br2)Link a controller to power with the Conduit Binder. Cycling draws 2 kW for four powered seconds (8 kJ); idle draws zero. A bank or isolated Cell Dock can power it. During an outage, both doors stay interlocked and partial progress pauses, then resumes when power returns. A missing Core stops reserve replenishment; a charged O2 canister supplies backup gas.$(br2)$(italic)ORSA recommends opening one atmosphere at a time.$()$(br2)The inner door valve can cancel an unfinished pump cycle and share its remaining gas with the sealed base during an outage. Both doors must be closed and both sides must already contain gas. If either side is vacuum, use the controller instead. The valve conserves existing gas. The separate red-wheel Emergency Vent still dumps air outside."
+      "title": "Emergency Vent",
+      "text": "Flames go out; torches stay as Spent Torches; soul lights remain.$(br2)$(danger)With the inner door open, the base vents too.$() Get on EVA oxygen first."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Oxygen",
+      "text": "Cycling spends real oxygen. See $(l:heating/airlock_oxygen)Airlock Oxygen$(/l)."
     }
   ]
 }

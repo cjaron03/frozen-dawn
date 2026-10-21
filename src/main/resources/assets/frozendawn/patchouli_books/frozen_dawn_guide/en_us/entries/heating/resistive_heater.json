@@ -1,28 +1,43 @@
 {
-  "name": "ORSA RH-5 Electric Heat",
+  "name": "ORSA RH-5",
   "icon": "frozendawn:resistive_heater",
   "category": "frozendawn:heating",
-  "sortnum": 7,
+  "sortnum": 4,
   "pages": [
     {
-      "type": "patchouli:crafting",
-      "recipe": "frozendawn:resistive_heater",
-      "text": "Link the RH-5 to a power network with the Conduit Binder. No fuel, oxygen or Thermal Core is needed."
+      "type": "patchouli:spotlight",
+      "item": "frozendawn:resistive_heater",
+      "title": "ORSA RH-5",
+      "text": "Electric room heat. No fuel, oxygen or Thermal Core."
     },
     {
       "type": "patchouli:text",
-      "title": "Heat on Demand",
-      "text": "Each RH-5 starts with a 5 kW power limit. Its slider adjusts that limit from 0 (off) to 50 kW. Higher limits warm cold rooms faster, but need proportionally more power. It still draws only the heat needed for 20°C or the room thermostat target. The screen distinguishes air and structure temperature."
+      "title": "Power Limit",
+      "text": "Starts at $(bold)5 kW$(); the slider sets 0 (off) to $(bold)50 kW$(). Higher limits warm faster and need more power.$(br2)It only draws what the target needs: 20°C, or the thermostat's."
     },
     {
       "type": "patchouli:text",
-      "title": "Backup and Brownouts",
-      "text": "Electrical heat runs before fuel heaters in the same modeled room; fuel covers any shortfall. PIXIE oxygen has priority over the heater. Lights and furnaces wait before heat does. A battery bank or isolated Cell Dock can keep it running until its cells drain. In vacuum, only 25% of paid heat couples into the structure. Insulation reduces steady demand."
+      "title": "With Fuel Heaters",
+      "text": "Electric heat runs first; fuel heaters cover any shortfall.$(br2)PIXIE oxygen outranks it. Lights and furnaces are cut before it is."
     },
     {
       "type": "patchouli:text",
       "title": "Rapid Heating",
-      "text": "At Default settings, a Diamond Thermal Heater with its capacitor produces about 12 kW of heat. A fully supplied RH-5 at 50 kW delivers about 4.2 times that output.$(br2)A full 500 kJ cell lasts only 10 seconds at continuous 50 kW; four full cells last 40 seconds. The slider setting survives saving. Power limited means the grid cannot supply the requested heat."
+      "text": "A Diamond Heater with a capacitor makes about $(bold)12 kW$(). An RH-5 at 50 kW gives about $(bold)4.2x$() that."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "$(danger)It drains cells fast:$() one full cell lasts 10 s at 50 kW; four last 40 s.$(br2)Power limited means the grid can't supply what you asked for."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Vacuum",
+      "text": "In vacuum only 25% of the heat you pay for reaches the walls. Insulation lowers steady demand.$(br2)The screen shows air and structure temperature separately."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:resistive_heater",
+      "text": "Iron, copper, glass and a redstone block. Link it with the Binder."
     }
   ]
 }

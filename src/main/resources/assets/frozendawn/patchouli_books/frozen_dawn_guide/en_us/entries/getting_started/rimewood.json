@@ -1,28 +1,68 @@
 {
   "name": "Rimewood",
-  "category": "frozendawn:getting_started",
+  "category": "frozendawn:food",
   "icon": "frozendawn:rimewood_sapling",
-  "sortnum": 8,
+  "sortnum": 4,
   "pages": [
     {
-      "type": "patchouli:text",
-      "title": "Rimewood",
-      "text": "$(italic)Pruinodendron glaciale.$() A squat, wind-shaped conifer with charcoal bark, icy-blue seams and dark teal needles. It keeps growing long after every other tree has died.$(br2)From $(bold)Phase 3$(), small $(bold)groves of two to four$() take root wherever the ground is cold enough, in any land. They are rare and far apart. There are no Rimewood forests.$(br2)$(italic)Rimewood remains metabolically active at temperatures previously classified as incompatible with forestry. ORSA has revised that classification to 'inconvenient.'$()"
+      "type": "patchouli:spotlight",
+      "item": "frozendawn:rimewood_sapling",
+      "text": "$(italic)Pruinodendron glaciale.$() A squat, wind-shaped conifer that keeps growing after every other tree has died.",
+      "link_recipe": true
     },
     {
       "type": "patchouli:text",
-      "title": "Cultivation",
-      "text": "Plant a sapling on $(bold)dirt, dead grass or frozen dirt$() with open sky above. It needs no sunlight, but it only grows at $(bold)-20°C or colder$(), so harvesting means working in the cold.$(br2)$(li)About $(bold)25 minutes$() to maturity, or 4-6 bone meal$(li)Warmth pauses growth without harming the sapling; heaters do not help$(li)A tree gives about $(bold)8-12 logs$() and roughly two saplings$(li)Fortune finds more saplings"
+      "title": "Groves",
+      "text": "From $(bold)Phase 3$(), groves of $(bold)2-4 trees$() take root on cold, open ground in any land. They're rare and far apart; there are no Rimewood forests.$(br2)Groves appear only where it's -20°C or colder."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Planting",
+      "text": "Dirt, dead grass or frozen dirt, with open sky above.$(br2)No sunlight needed, but it grows only at $(bold)-20°C or colder$(). Farming means working in the cold."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Growth",
+      "text": "$(li)About $(bold)25 minutes$() to mature$(li)Or 4-6 bone meal, in the cold only$(li)Warmth pauses it without harm; heaters don't help$(br2)A tree gives about $(bold)8-12 logs$() and 2 saplings. Fortune finds more."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Field Note",
+      "text": "$(italic)Rimewood remains metabolically active at temperatures previously classified as incompatible with forestry. ORSA has revised that classification to 'inconvenient.'$()"
+    },
+    {
+      "type": "patchouli:spotlight",
+      "item": "frozendawn:rimewood_resin",
+      "title": "Rimewood Resin",
+      "text": "Strip a log or wood with an axe: $(bold)one resin$() per log.$(br2)Resin and sulfur make a $(l:advanced/nether_substitutes)Thermal Binder$(/l).",
+      "link_recipe": true
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Frostcap Host",
+      "text": "Most grove trees carry $(bold)Frostcap$() shelves on their sides. Caps grow twice as fast on Rimewood as on snow.$(br2)See $(l:getting_started/frostcap)Frostcap$(/l)."
     },
     {
       "type": "patchouli:crafting",
       "recipe": "frozendawn:rimewood_planks",
-      "text": "Each log makes four planks. Rimewood works in every ordinary wood recipe, burns as fuel and smelts to charcoal, and its planks do not freeze."
-    },
-    {
-      "type": "patchouli:text",
-      "title": "Rimewood Resin",
-      "text": "Strip a Rimewood log or wood with an axe and the sealed bark gives up one $(bold)Rimewood Resin$(). Each log yields once.$(br2)Resin and sulfur make a $(l:advanced/nether_substitutes)Thermal Binder$(/l), the field stand-in for magma cream.$(br2)Rimewood logs also host $(l:getting_started/frostcap)Frostcap$(/l) on their sides."
+      "text": "Four planks per log. Works in ordinary wood recipes (no boat), burns as fuel and smelts to charcoal. The planks don't freeze."
     }
-  ]
+  ],
+  "extra_recipe_mappings": {
+    "frozendawn:rimewood_log": 1,
+    "frozendawn:rimewood_wood": 1,
+    "frozendawn:rimewood_leaves": 3,
+    "frozendawn:stripped_rimewood_log": 5,
+    "frozendawn:stripped_rimewood_wood": 5,
+    "frozendawn:rimewood_stairs": 7,
+    "frozendawn:rimewood_slab": 7,
+    "frozendawn:rimewood_fence": 7,
+    "frozendawn:rimewood_fence_gate": 7,
+    "frozendawn:rimewood_door": 7,
+    "frozendawn:rimewood_trapdoor": 7,
+    "frozendawn:rimewood_button": 7,
+    "frozendawn:rimewood_pressure_plate": 7,
+    "frozendawn:rimewood_sign": 7,
+    "frozendawn:rimewood_hanging_sign": 7
+  }
 }

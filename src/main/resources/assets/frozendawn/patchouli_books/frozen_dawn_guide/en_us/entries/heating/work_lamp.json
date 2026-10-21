@@ -1,17 +1,33 @@
 {
-  "name": "ORSA Work Lamp",
+  "name": "Work Lamp",
   "icon": "frozendawn:work_lamp",
-  "category": "frozendawn:heating",
-  "sortnum": 23,
+  "category": "frozendawn:power",
+  "sortnum": 8,
   "pages": [
     {
+      "type": "patchouli:spotlight",
+      "item": "frozendawn:work_lamp",
+      "text": "A small wall or ceiling light. Light $(bold)12$() for $(bold)50 W$()."
+    },
+    {
       "type": "patchouli:text",
-      "text": "A compact, silent work light for walls and ceilings. Emits $(bold)light 12$() while drawing $(bold)50 W$(). Works without oxygen and adds no room heat.$(br2)Link it to your grid or an isolated Cell Dock with the Conduit Binder. Like other ordinary lights, it is shed before life support during a brownout."
+      "title": "Power",
+      "text": "Link it with the $(l:power/binder)Binder$(/l) to your grid or a lone $(l:power/storage)Cell Dock$(/l).$(br2)Lights are shed before life support in a brownout."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Use",
+      "text": "Empty-hand right-click switches it on or off. Off draws nothing.$(br2)Works without air and adds no room heat."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Mounting",
+      "text": "Walls and ceilings only, on a solid face. Removing the support drops the lamp.$(br2)It doesn't seal a hole."
     },
     {
       "type": "patchouli:crafting",
       "recipe": "frozendawn:work_lamp",
-      "text": "Empty-hand right-click switches it on or off. Switched-off lamps draw nothing. Binder use selects or clears links instead of toggling.$(br2)Requires a solid mounting face. Removing the support drops the lamp; it does not seal a hole in a room."
+      "text": "Iron, glass, redstone and copper. Makes two."
     }
   ]
 }

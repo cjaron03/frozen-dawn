@@ -5,25 +5,44 @@
   "sortnum": 1,
   "pages": [
     {
-      "type": "patchouli:text",
-      "title": "Orbital Scan #0074",
-      "text": "$(bold)Subject: Acheronite Refinement$()$(br2)Acheronite shards are raw and unstable. You can't make armor out of frozen screaming crystal. Well, you $(italic)can$(), but the results are unpleasant.$(br2)The $(bold)Acheron Forge$() solves this. Geothermal heat can refine raw shards into $(bold)Refined Acheronite$() — a stable, workable material.$(br2)$(italic)This is theoretical. You're the field test. ORSA thanks you. From orbit.$()"
+      "type": "patchouli:spotlight",
+      "item": "frozendawn:acheron_forge",
+      "text": "Refines raw Acheronite Shards into $(bold)Refined Acheronite$()."
     },
     {
       "type": "patchouli:text",
-      "title": "Requirements",
-      "text": "Heat mode needs $(bold)Y<0$() and a lit Thermal Heater or Geothermal Core within $(bold)8 blocks$(). It takes $(bold)10 seconds$() per operation.$(br2)Link any existing forge with the $(bold)Conduit Binder$() to run electrically at any height, without nearby heat. It needs the full $(bold)25 kW$() and takes about $(bold)6.67 seconds$(). No idle draw."
+      "title": "Inputs",
+      "text": "$(li)2 Shards: 1 Refined Acheronite$(li)4 Spent Lattice: 1 Sealed Lattice$(br2)Progress survives outages and mode changes."
     },
     {
       "type": "patchouli:text",
-      "title": "Power and Heat",
-      "text": "Choose $(bold)Auto / Electric / Heat$() in the forge. Auto prefers grid power and falls back to valid nearby heat. Electric pauses when power is insufficient; Heat conserves electricity. Progress survives outages and mode changes.$(br2)Each operation uses $(bold)2 Shards$() or $(bold)4 Spent Lattice$(), producing one Refined Acheronite or Sealed Lattice.$(br2)Electric operation releases $(bold)6.25 kW of room heat$(). Plan cooling. Machinery noise still carries to the Blind Architect and resonance system while processing."
+      "title": "Modes",
+      "text": "Click the mode to cycle:$(li)$(bold)Auto$(): power first, then heat$(li)$(bold)Electric$(): power only$(li)$(bold)Heat$(): saves power"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Heat Mode",
+      "text": "$(bold)Orbital Scan #0074$()$(li)Below $(bold)Y=0$()$(li)Lit Thermal Heater or $(l:advanced/geothermal_core)Geothermal Core$(/l) within $(bold)8 blocks$()$(br2)10 s per item."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Electric Mode",
+      "text": "Link it with the $(l:power/binder)Binder$(/l). It works at any height and needs the full $(bold)25 kW$(): about 6.7 s per item.$(br2)One Core's 20 kW isn't enough alone. No idle draw."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Waste Heat",
+      "text": "$(danger)Electric refining dumps 6.25 kW into the room.$() Plan $(l:heating/heat_vent)vents$(/l).$(br2)Refining is loud in either mode. Architects hear it."
     },
     {
       "type": "patchouli:crafting",
       "recipe": "frozendawn:acheron_forge",
       "title": "Acheron Forge",
-      "text": "Obsidian frame, raw Acheronite Shards for the reaction matrix, Thermal Core for heating. Fire and frozen screaming crystal in one box."
+      "text": "Obsidian frame, raw shards, a Thermal Core.$(br2)$(flavor)Theoretical. You are the field test. Do not lick the forge.$()"
     }
-  ]
+  ],
+  "extra_recipe_mappings": {
+    "frozendawn:spent_lattice": 1,
+    "frozendawn:sealed_lattice": 1
+  }
 }

@@ -1,0 +1,33 @@
+{
+  "name": "Induction Furnace",
+  "category": "frozendawn:power",
+  "icon": "frozendawn:induction_furnace",
+  "sortnum": 6,
+  "pages": [
+    {
+      "type": "patchouli:spotlight",
+      "item": "frozendawn:induction_furnace",
+      "text": "An electric furnace. Smelts in $(bold)half the time$(), with no fuel or air."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Use",
+      "text": "Link it with the Binder. One input, one output.$(br2)It draws $(bold)2 kW$() while working and nothing while idle. Losing power pauses the job."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Uranium",
+      "text": "Only this furnace refines Raw Uranium into Uranium Concentrate: $(bold)8 kW$() for 30 s each, at 1,200°C.$(br2)See $(l:reactor/fuel)Fuel Rods$(/l)."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Specs",
+      "text": "$(li)Waste heat: 0.5 kW into the room$(li)Changing the input resets progress$(li)Status: Idle, Waiting for power, Smelting, No recipe, Output blocked"
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:induction_furnace",
+      "text": "Two furnaces, iron, copper and redstone."
+    }
+  ]
+}

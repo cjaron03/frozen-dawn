@@ -5,29 +5,50 @@
   "sortnum": 1,
   "pages": [
     {
-      "type": "patchouli:text",
+      "type": "patchouli:spotlight",
+      "item": "frozendawn:thermal_heater",
       "title": "Thermal Heater",
-      "text": "A fuel-burning heater. Right-click with coal, charcoal, blaze powder, coal blocks or cryo fuel to refuel. Inside a sealed room it heats the air, then the walls and floor. Open camps retain nearby warmth.$(br2)$(l:heating/heater_upgrades)Upgrades$(/l) add power. Larger rooms warm more slowly. $(l:heating/room_climate)Room Heating & Insulation$(/l) explains building and fuel use."
-    },
-    {
-      "type": "patchouli:crafting",
-      "recipe": "frozendawn:thermal_heater",
-      "text": "Surround a Thermal Core with 8 iron ingots. It's essentially an iron box with a hot thing inside. ORSA charged the UN four billion credits for this design."
+      "text": "Burns fuel to heat a sealed room or an open camp."
     },
     {
       "type": "patchouli:text",
-      "title": "Automatic Control",
-      "text": "Heaters share a 20°C room target and throttle as the room warms. Connected Core and fire heat contributes to that same temperature. Extra heaters speed warm-up; they do not raise the target.$(br2)Redstone stops heating and holds ordinary fuel use. Stored heat cools naturally.$(br2)An $(l:heating/thermostat)ORSA Thermostat$(/l) sets 10-30°C for every linked heater."
+      "title": "Fueling",
+      "text": "Right-click with coal, charcoal, blaze powder, coal blocks or $(l:heating/cryo_fuel)Cryo Fuel$(/l).$(br2)Redstone stops it and pauses fuel use."
     },
     {
       "type": "patchouli:text",
-      "title": "Fuel and Companionship",
-      "text": "The status panel shows Heating or Holding, burn percentage and estimated fuel time. Better insulation reduces holding demand. Frostmites and machinery can add separate fuel costs.$(br2)$(italic)ORSA FAQ: “Can I name the heater?” We cannot stop you. Please seek companionship elsewhere.$()"
+      "title": "Sealed Rooms",
+      "text": "It heats the air first, then the walls and floor.$(br2)Bigger rooms take longer. See $(l:heating/room_climate)Room Heating$(/l)."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Shared Target",
+      "text": "Every heater in a room aims for $(bold)20°C$() and throttles as it warms. Core and fire heat count toward it.$(br2)More heaters warm faster, not hotter. A $(l:heating/thermostat)Thermostat$(/l) changes the target."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Status Panel",
+      "text": "Shows $(bold)Heating$() or $(bold)Holding$(), burn percentage and fuel time left.$(br2)Good insulation lowers Holding."
     },
     {
       "type": "patchouli:text",
       "title": "Airless Rooms",
-      "text": "With no air, heaters and passive sources deliver reduced heat to the walls. Heater wall heating stops at its room target; passive sources cannot heat a reservoir above their supply temperature. Refilling cannot create heat.$(br2)Vacuum can still feel cold while walls are warm. A heater does not replace EVA. Unknown or unloaded room geometry suspends heating without restoring local source bonuses.$(br2)Already-hot walls cool naturally or through a heat vent; resealing does not reset them."
+      "text": "Without air, heat reaches the walls slowly and vacuum still feels cold.$(br2)$(danger)A heater does not replace EVA.$()"
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:thermal_heater",
+      "text": "Eight iron around a Thermal Core.$(br2)$(flavor)An iron box with a hot thing inside. ORSA billed the UN four billion credits for it.$()"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Specs",
+      "text": "$(li)Target: 20°C, or 10-30°C with a Thermostat$(li)Open camps: warms by proximity$(li)Extra fuel: frostmites, machinery$(li)Unloaded rooms pause$(li)Hot walls cool slowly; a $(l:heating/heat_vent)Heat Vent$(/l) helps"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Without air, a heater stops at its target and passive sources can't push walls past their own temperature. Refilling air adds no heat. Resealing doesn't reset hot walls.$(br2)$(flavor)Can you name the heater? We cannot stop you.$()"
     }
-  ]
+  ],
+  "priority": true
 }

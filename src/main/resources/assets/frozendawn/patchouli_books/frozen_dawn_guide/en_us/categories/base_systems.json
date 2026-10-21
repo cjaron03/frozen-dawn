@@ -1,0 +1,6 @@
+{
+  "name": "Base Systems",
+  "description": "Heat, air and power for a sealed base.",
+  "icon": "frozendawn:thermal_heater",
+  "sortnum": 1
+}

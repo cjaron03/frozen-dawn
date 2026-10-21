@@ -1,0 +1,54 @@
+{
+  "name": "Quick Reference",
+  "category": "frozendawn:getting_started",
+  "icon": "minecraft:clock",
+  "sortnum": 1,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "Quick Reference",
+      "text": "Key numbers on one page each. Every page links to its full entry.$(br2)$(flavor)ORSA recommends memorizing these. ORSA also recommends not needing them.$()"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Phase Cold",
+      "text": "$(li)1: slight drop$(li)2: $(bold)-10°C$()$(li)3: $(bold)-25°C$()$(li)4: $(bold)-45°C$()$(li)5: $(bold)-70 to -120°C$()$(li)6: down to $(bold)-273°C$(), then vacuum$(br2)More: $(l:getting_started/phase_timeline)Phase Timeline$(/l)"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Hypothermia",
+      "text": "$(li)$(bold)-10°C$(): Slowness I$(li)$(bold)-25°C$(): $(danger)1 heart/2 s$()$(li)$(bold)-45°C$(): $(danger)2 hearts/2 s$()$(li)$(bold)-70°C$(): $(danger)3 hearts/2 s$()$(br2)More: $(l:getting_started/hypothermia)Hypothermia$(/l)"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Gear Ratings",
+      "text": "Full-set cold resistance:$(li)Insulated: $(bold)+25°C$(), to -25°C$(li)Heavy: $(bold)+45°C$(), to -45°C$(li)EVA: $(bold)+120°C$(), all phases$(br2)$(l:orsa_equipment/insulated_clothing)Insulated$(/l), $(l:orsa_equipment/heavy_insulation)Heavy$(/l), $(l:orsa_equipment/eva_suit)EVA$(/l)"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Heat",
+      "text": "$(li)Heaters aim for $(bold)20°C$()$(li)Thermostat: 10-30°C$(li)More heaters warm faster, not hotter$(br2)Overheating: $(bold)60°C$() Weakness, $(bold)90°C$() and $(bold)120°C$() $(danger)damage$()$(br2)More: $(l:heating/thermal_heater)Thermal Heater$(/l)"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Food",
+      "text": "$(li)From Phase 4, food frosts below $(bold)-30°C$()$(li)At -90°C: Frozen in ~48 s, $(danger)ruined in ~2 min$()$(li)Thaws above $(bold)10°C$()$(br2)More: $(l:getting_started/food_spoilage)Food Spoilage$(/l)"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Oxygen",
+      "text": "Full EVA draws $(bold)10 units/s$():$(li)Mk.I: 120 s$(li)Mk.II: 240 s$(li)Mk.III: 360 s$(br2)Refill at a Core's O2 slot.$(br2)More: $(l:orsa_equipment/o2_canisters)O2 Canisters$(/l)"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Power",
+      "text": "$(li)Core share: up to $(bold)20 kW$()$(li)500 kJ cell: 5 kW for 100 s$(li)Order: oxygen, heat, then everything else$(br2)More: $(l:power/basics)Power Basics$(/l)"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Radiation",
+      "text": "$(li)$(bold)100 RU$(): hunger, nausea$(li)$(bold)300$(): weakness, half healing$(li)$(danger)600$(): 4 hearts lost$(li)$(danger)1,000$(): lethal$(br2)Recover about 1 RU per 10 s.$(br2)More: $(l:radiation/basics)Radiation$(/l)"
+    }
+  ],
+  "priority": true
+}

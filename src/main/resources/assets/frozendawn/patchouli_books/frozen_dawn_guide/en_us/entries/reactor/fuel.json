@@ -1,0 +1,42 @@
+{
+  "name": "Fuel Rods",
+  "category": "frozendawn:reactor",
+  "icon": "frozendawn:fuel_rod",
+  "sortnum": 2,
+  "pages": [
+    {
+      "type": "patchouli:spotlight",
+      "item": "frozendawn:fuel_rod",
+      "text": "Each rod runs the reactor at full output for about $(bold)4 in-game days$()."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "The Chain",
+      "text": "$(li)Deepslate Uranium Ore, Y -64 to -1: 1-2 Raw Uranium$(li)$(l:power/induction_furnace)Induction Furnace$(/l): Concentrate, 8 kW, 30 s$(li)4 Concentrate: 1 Pellet$(li)4 Pellets, 4 iron, 1 copper: 1 Rod"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Only the Induction Furnace refines uranium.$(br2)$(danger)Uranium ore is mildly radioactive.$() Fortune and Silk Touch work on it."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Rod Life",
+      "text": "Rod life shows as durability, counted in full-output seconds. Spent rods drop into the controller's output slot.$(br2)See $(l:reactor/spent_fuel)Spent Fuel$(/l)."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:uranium_pellet",
+      "title": "Uranium Pellet",
+      "text": "Four Uranium Concentrate."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:fuel_rod",
+      "title": "Fuel Rod",
+      "text": "Four pellets, four iron and a copper ingot."
+    }
+  ],
+  "extra_recipe_mappings": {
+    "frozendawn:deepslate_uranium_ore": 1
+  }
+}

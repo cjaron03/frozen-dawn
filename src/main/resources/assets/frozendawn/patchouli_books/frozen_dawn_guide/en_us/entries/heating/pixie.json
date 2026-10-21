@@ -1,28 +1,53 @@
 {
   "name": "ORSA PIXIE-2",
-  "category": "frozendawn:heating",
+  "category": "frozendawn:life_support",
   "icon": "frozendawn:pixie",
-  "sortnum": 7,
+  "sortnum": 3,
   "pages": [
     {
+      "type": "patchouli:spotlight",
+      "item": "frozendawn:pixie",
+      "title": "ORSA PIXIE-2",
+      "text": "Turns ice into breathable oxygen, using power."
+    },
+    {
       "type": "patchouli:text",
-      "title": "Ice Into Breath",
-      "text": "ORSA PIXIE-2. Turns ice into breath. Do not name it.$(br2)Place in a heated sealed room and link power with the Conduit Binder. One ice slot, no upgrades or production settings. Produces only the oxygen that current room use and storage filling need: up to four breathing units at four kW. Life support receives power before electric furnaces and lights."
+      "title": "Setup",
+      "text": "Place it in a heated, sealed room and link power with the Binder. Load ice in its one slot.$(br2)$(flavor)Do not name it.$()"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Output",
+      "text": "It makes only what the room needs, up to $(bold)4 breathing units$() at $(bold)4 kW$().$(br2)Oxygen gets power before heaters, lights and furnaces."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Ice",
+      "text": "$(li)Ice: one person, one in-game day$(li)Snow: a quarter of that$(li)Packed ice: 9 days$(li)Blue ice: 81 days$(br2)Holds 81 ice-equivalents of water, kept when you harvest it."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Keep It Warm",
+      "text": "$(danger)Below 1°C its water freezes and it stops.$() Warm the room to restart.$(br2)A quarter of its draw becomes heat in the room. Its quiet hum still counts as a vibration."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "No Power, No Air",
+      "text": "No power or no water means no oxygen. Bank cells and Cell Docks give finite backup.$(br2)The screen shows output, draw, water and state."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Open Rooms",
+      "text": "Unsealed, it only fills O2 Reservoirs linked directly to it. It never makes open air breathable; full or unlinked tanks leave it idle."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Resealed rooms recover at the normal delay. Airlocks keep their own reserves."
     },
     {
       "type": "patchouli:crafting",
       "recipe": "frozendawn:pixie",
-      "text": "Four iron, two copper, one bucket, one glass and one redstone block. Crafted empty. No Nether ingredient."
-    },
-    {
-      "type": "patchouli:text",
-      "title": "Water and Warmth",
-      "text": "One ordinary ice block supplies one person for one in-game day. Snow supplies one quarter, packed ice nine days and blue ice81. The internal reservoir holds81 ordinary-ice equivalents plus a small refill buffer. Water remains saved and moves with a harvested machine; queued ice drops separately.$(br2)Below1C the reservoir freezes and production stops. Warm the room to resume. One quarter of actual power draw enters the thermal model as waste heat. A quiet running hum is still a vibration."
-    },
-    {
-      "type": "patchouli:text",
-      "title": "Power Loss and Open Air",
-      "text": "The simple screen shows actual output, power draw, water and a clear state. No power or no water means no production. Bank cells and Cell Docks provide finite backup.$(br2)An unsealed warm PIXIE fills only oxygen reservoirs explicitly linked directly to it with the Binder; it never makes open air breathable. Full or unlinked tanks cause it to idle. Resealed rooms use the normal pressure-recovery delay, with paid production; airlocks keep their own cycle reserves."
+      "text": "Iron, copper, glass, a bucket and a redstone block. Crafted empty."
     }
   ]
 }

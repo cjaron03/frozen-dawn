@@ -1,43 +1,65 @@
 {
-  "name": "Room Heating & Insulation",
+  "name": "Insulation",
   "category": "frozendawn:heating",
   "icon": "minecraft:white_wool",
-  "sortnum": 20,
+  "sortnum": 6,
   "pages": [
     {
       "type": "patchouli:text",
-      "title": "Build for Warmth",
-      "text": "Seal the room, then insulate its floor, walls and roof. Airtightness and insulation are separate: a full glass wall can seal air while losing heat readily.$(br2)Wool, snow blocks and moss insulate well. Wood loses less heat than stone. Ordinary glass, metal and ice are poor insulators. $(l:heating/insulated_glass)Insulated Glass$(/l) is an insulating window."
+      "text": "Seal the room, then insulate the floor, walls and roof.$(br2)Sealing holds air. Insulation holds heat. A glass wall does the first, not the second."
     },
     {
       "type": "patchouli:text",
-      "title": "Layers and Size",
-      "text": "Up to three layers outward from each room boundary combine their insulation. Layer the floor and roof as well as walls. Thin windows can dominate losses in an otherwise warm base.$(br2)Small rooms heat quickly; large rooms and heavy structures take longer. Better insulation saves fuel at the same target. It does not produce heat.$(br2)$(italic)ORSA recommends fewer windows than an aquarium.$()"
+      "title": "Materials",
+      "text": "$(bold)Good$(): wool, snow blocks, moss$(br)$(bold)Fair$(): wood, better than stone$(br)$(bold)Poor$(): glass, metal, ice$(br2)For windows, use $(l:heating/insulated_glass)Insulated Glass$(/l)."
+    },
+    {
+      "type": "patchouli:multiblock",
+      "name": "Layered Wall",
+      "enable_visualize": false,
+      "multiblock": {
+        "pattern": [
+          [
+            "SSS",
+            "WWW",
+            "PPP",
+            "   "
+          ],
+          [
+            "SSS",
+            "WWW",
+            "PPP",
+            "F0F"
+          ]
+        ],
+        "mapping": {
+          "S": "minecraft:snow_block",
+          "W": "minecraft:white_wool",
+          "P": "minecraft:spruce_planks",
+          "F": "minecraft:spruce_planks",
+          "0": "minecraft:spruce_planks"
+        }
+      },
+      "text": "Room floor in front. Three layers outward, all counted."
     },
     {
       "type": "patchouli:text",
-      "title": "Air and Structure",
-      "text": "Room air and the physical walls store heat separately. Heaters warm air; air warms the structure. Walls then lose heat to their surroundings.$(br2)After burnout or redstone shutdown, stored heat cools gradually. Warm-up can need much more power than Holding. More heaters or stronger tiers speed warm-up while sharing the same room target."
+      "title": "Layers",
+      "text": "Up to $(bold)three layers$() outward from each boundary add together. Layer the floor and roof too.$(br2)Thin windows can dominate your losses."
     },
     {
       "type": "patchouli:text",
-      "title": "Ground and Depth",
-      "text": "The surface chills before deep ground. Below the fixed Y 64 reference, the cold front takes time to penetrate; greater depth delays cooling. Above it, the surface and altitude rules apply.$(br2)Deep ground is an intended thermal refuge. Its warmth depends on progression and preset. It does not replace oxygen: late Phase 6 still needs EVA or a sealed room with an oxygen supply."
+      "title": "Size",
+      "text": "Small rooms heat fast; large or heavy ones slowly.$(br2)Insulation saves fuel. It makes no heat.$(br2)$(flavor)Fewer windows than an aquarium, please.$()"
     },
     {
       "type": "patchouli:text",
-      "title": "Reading Fuel Estimates",
-      "text": "Holding 8% means roughly 8% of that heater’s full ordinary burn rate is currently needed. The display averages a few seconds. Remaining time is an estimate at that rate, not a promise.$(br2)Warm-up, target changes, insulation, weather and breaches change demand. Machinery and frostmites can add costs. Judge survival fuel use with the fuel actually inserted; there is no fixed wool/glass runtime ratio."
+      "title": "Depth",
+      "text": "The surface chills first. Below the fixed $(bold)Y 64$() reference the cold arrives late, later the deeper you go.$(br2)Above it, surface and altitude rules apply."
     },
     {
       "type": "patchouli:text",
-      "title": "One Room Temperature",
-      "text": "Heaters, connected Cores and connected fires warm the same stored room air and structure. The thermostat and HUD start from one room temperature, without additional heat bonuses when you walk toward a Core or campfire.$(br2)The heater default is 20°C; a $(l:heating/thermostat)thermostat$(/l) selects 10-30°C. Passive sources can exceed that target, so reduce independent heat or open a heat vent. Personal equipment and status effects can still change your HUD reading."
-    },
-    {
-      "type": "patchouli:text",
-      "title": "Breach and Recovery",
-      "text": "A $(l:heating/atmospheric_breach)vacuum breach$(/l) removes room air, while surviving walls keep their heat. Seal every opening and restore oxygen; incoming cold air warms from those walls.$(br2)Without air, sealed burners heat the structure less efficiently. Radiant warmth is only partial protection. Atmosphere restored confirms air, not a warm room. A thermostat controls heaters and same-room heat vents together. Vents need uncovered outdoor faces to reject excess heat."
+      "text": "Deep ground is a real refuge; its warmth depends on progression and preset.$(br2)$(danger)It holds no air.$() Late Phase 6 needs EVA or a sealed room with oxygen."
     }
   ]
 }

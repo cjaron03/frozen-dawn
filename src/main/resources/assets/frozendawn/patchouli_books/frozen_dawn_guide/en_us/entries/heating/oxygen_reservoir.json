@@ -1,28 +1,51 @@
 {
   "name": "ORSA O2 Reservoir",
-  "category": "frozendawn:heating",
+  "category": "frozendawn:life_support",
   "icon": "frozendawn:oxygen_reservoir",
-  "sortnum": 6,
+  "sortnum": 4,
   "pages": [
+    {
+      "type": "patchouli:spotlight",
+      "item": "frozendawn:oxygen_reservoir",
+      "text": "Stores spare oxygen for a sealed room. It makes none."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Capacity",
+      "text": "$(bold)1,200 player-seconds$(): one player for 20 minutes.$(br2)Ten canister units make one player-second."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Rates",
+      "text": "Fills from up to $(bold)4$() spare units and delivers up to $(bold)8$() per second. Empty to full: five minutes at 4 spare.$(br2)Values are configurable."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Shared Budget",
+      "text": "Breathing and flames come first. Reservoirs cover a shortfall, up to their output and contents."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Only spare production refills reservoirs, Core canisters, EVA reserves and airlock reserves, shared fairly.$(br2)Reservoir output can't recharge storage."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "More reservoirs add capacity and output to their own pool. They can't join separate rooms or pressurize one."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Shutoff",
+      "text": "A breach shuts the valve; contents stay inside. Unknown or unloaded rooms pause it.$(br2)After resealing it reconnects once normal room gas returns."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Moving It",
+      "text": "Mine it with a pickaxe to keep its exact contents. $(danger)An explosion destroys both.$()$(br2)Front bars show contents; amber means shutoff or discharging."
+    },
     {
       "type": "patchouli:crafting",
       "recipe": "frozendawn:oxygen_reservoir",
-      "text": "Six iron ingots, two copper ingots and one glass. Crafted empty. Place inside a sealed room. ORSA advises against opening the vessel to check whether it is full."
-    },
-    {
-      "type": "patchouli:text",
-      "title": "Stored Oxygen",
-      "text": "Default capacity: 1,200 player-seconds. One second supports one player for one second; ten existing canister units equal one player-second.$(br2)Stores up to 4 spare supply units and delivers up to 8 units per second. A full tank fills in five minutes with four units spare. These first-pass values are configurable. It does not create oxygen or pressurize a room."
-    },
-    {
-      "type": "patchouli:text",
-      "title": "One Shared Budget",
-      "text": "Production serves breathing and active ordinary combustion first. Connected tanks cover a deficit up to their output and contents. Only spare production refills reservoirs, Core canisters, intact EVA reserves and airlock reserves; eligible devices share it fairly.$(br2)Tank output cannot recharge storage. Multiple tanks add capacity and output once within their existing pool. A tank cannot connect unrelated rooms."
-    },
-    {
-      "type": "patchouli:text",
-      "title": "Automatic Shutoff",
-      "text": "A breach shuts the valve: input and output stop, contents stay inside. Unknown or unloaded rooms also suspend transfers. After resealing, the tank reconnects when normal room gas returns. It cannot make an open room breathable.$(br2)Harvest with a pickaxe to move the exact stored reserve. Explosion destruction loses the vessel and its contents. The front bars show contents; amber means shutoff or discharge. The room gauge shows ON RESERVE while storage supports the deficit."
+      "text": "Six iron, two copper, one glass. Crafted empty.$(br2)$(flavor)Do not open the vessel to check whether it is full.$()"
     }
   ]
 }

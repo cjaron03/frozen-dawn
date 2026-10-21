@@ -1,0 +1,44 @@
+{
+  "name": "Start Here",
+  "category": "frozendawn:getting_started",
+  "icon": "minecraft:compass",
+  "sortnum": 0,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "Start Here",
+      "text": "A reading order for the whole manual. Skip what you know.$(br2)Timing varies; the $(l:getting_started/phase_timeline)Phase Timeline$(/l) shows what's coming. Key numbers: $(l:getting_started/quick_reference)Quick Reference$(/l).$(br2)$(flavor)ORSA recommends reading before freezing.$()"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "First Days",
+      "text": "$(li)$(l:getting_started/overview)What's Happening?$(/l)$(li)$(l:getting_started/hypothermia)Hypothermia$(/l)$(li)$(l:heating/thermal_core)Thermal Core$(/l)$(li)$(l:heating/thermal_heater)Thermal Heater$(/l)$(li)$(l:heating/room_climate)Insulation$(/l)$(li)$(l:orsa_equipment/insulated_clothing)Insulated Gear$(/l)"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Before Phase 3",
+      "text": "$(li)$(l:getting_started/food_spoilage)Food Spoilage$(/l)$(li)$(l:heating/room_temperature)Room Temperature$(/l)$(li)$(l:heating/thermostat)Thermostat$(/l)$(li)$(l:heating/phase_barometer)Phase Barometer$(/l)$(li)$(l:threats/frostbitten)Threat Assessment$(/l)"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Phases 3-4",
+      "text": "$(li)$(l:orsa_equipment/heavy_insulation)Heavy Gear$(/l)$(li)$(l:getting_started/rimewood)Rimewood$(/l) and $(l:getting_started/frostcap)Frostcap$(/l)$(li)$(l:power/basics)Power Basics$(/l)$(li)$(l:advanced/frozen_heart)Frozen Heart$(/l)$(li)$(l:advanced/geothermal_core)Geothermal Core$(/l)$(br2)$(danger)Surface coal freezes in Phase 4.$()"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Phase 5",
+      "text": "$(li)$(l:advanced/nether_substitutes)Without the Nether$(/l)$(li)$(l:orsa_rd/acheronite_crystals)Acheronite$(/l)$(li)$(l:heating/geothermal_vents)Geothermal Vents$(/l)$(li)$(l:getting_started/bomb_cyclones)Bomb Cyclones$(/l)$(br2)$(danger)Only deep underground is survivable.$()"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Phase 6",
+      "text": "$(li)$(l:heating/atmospheric_breach)Room Breaches$(/l)$(li)$(l:heating/airlocks)Airlocks$(/l)$(li)$(l:orsa_equipment/eva_suit)EVA Suit$(/l)$(li)$(l:orsa_equipment/o2_canisters)O2 Canisters$(/l)$(br2)$(danger)Seal a room before the air goes.$()"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "The Way Out",
+      "text": "$(li)$(l:reactor/overview)Hearthstone Reactor$(/l)$(li)$(l:radiation/basics)Radiation$(/l)$(li)$(l:signals/uplink)ORSA Uplink$(/l)$(li)$(l:advanced/transponder)ORSA Transponder$(/l)"
+    }
+  ],
+  "priority": true
+}

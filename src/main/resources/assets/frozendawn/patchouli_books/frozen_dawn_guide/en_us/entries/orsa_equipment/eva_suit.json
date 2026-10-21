@@ -1,65 +1,65 @@
 {
-  "name": "EVA Suit (Tier 3)",
+  "name": "EVA Suit",
   "category": "frozendawn:orsa_equipment",
   "icon": "frozendawn:eva_chestplate",
   "sortnum": 2,
   "pages": [
     {
-      "type": "patchouli:text",
-      "title": "ORSA EVA Survival Suit",
-      "text": "$(bold)ORSA Mk.III Extra-Vehicular Activity Suit$()$(br2)The pinnacle of ORSA engineering. Sealed air loop, cryogenic insulation, and a Frozen Heart power core. Provides $(bold)cold resistance through Phase 5-6$() and keeps you functional in late Phase 6 only when you also have breathable air or O2 support.$(br2)$(italic)This suit costs more than your house. Your old house. The one that's now a glacier.$()"
+      "type": "patchouli:spotlight",
+      "item": "frozendawn:eva_chestplate",
+      "title": "EVA Suit",
+      "text": "ORSA Mk.III: sealed air loop, cryogenic insulation, Frozen Heart power core."
     },
     {
       "type": "patchouli:text",
-      "title": "Specifications",
-      "text": "$(bold)Protection:$() Each piece adds +30°C. Full set provides $(bold)+120°C total$().$(br2)$(bold)Rated for:$() Phase 1-6 surface cold$(br)$(bold)Bonus:$() Negates wind chill.$(br)$(bold)Limitation:$() In late Phase 6, a full EVA suit still needs breathable air: stay inside a sealed, breathable room, or carry $(l:orsa_equipment/o2_canisters)O2 Canisters$(/l) to survive outside.$(br2)$(italic)ORSA Legal: This suit is on loan. Returning it in pieces counts as \"damaged.\"$()"
+      "title": "Specs",
+      "text": "$(li)$(bold)+30°C$() per piece, $(bold)+120°C$() full set$(li)Rated for all Phase 1-6 surface cold$(li)Negates wind chill$(li)Traps only +8% heat$(br2)$(flavor)ORSA Legal: the suit is on loan. Returning it in pieces counts as damaged.$()"
     },
     {
       "type": "patchouli:text",
-      "title": "Crafting Notes",
-      "text": "Requires Tier 2 heavy insulation as a base, ice shards, blue ice, and — for the chestplate — a $(bold)Frozen Heart$() power core.$(br2)Yes, you need to brave the frozen surface to gather materials. Yes, we see the problem.$(br2)$(italic)ORSA Engineering: \"It builds character.\"$()"
+      "title": "Vacuum",
+      "text": "$(danger)The suit alone gives you no air.$() In late Phase 6, stay in breathable shelter or carry $(l:orsa_equipment/o2_canisters)O2 Canisters$(/l).$(br2)Impacts can puncture it. See $(l:orsa_equipment/suit_breaches)Suit Breaches$(/l)."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Crafting",
+      "text": "Built on Tier 2 $(l:orsa_equipment/heavy_insulation)Heavy Gear$(/l) with ice shards, blue ice and, for the chestplate, a $(l:advanced/frozen_heart)Frozen Heart$(/l).$(br2)$(flavor)Yes, you must brave the surface to gather it. \"It builds character.\"$()"
     },
     {
       "type": "patchouli:text",
       "title": "Caldera Retrofit",
-      "text": "RUPTURE calderas run hot enough to cook a standard EVA shell from the inside.$(br2)If you already have an $(l:orsa_rd/lined_eva)Acheronite-Lined EVA Suit$(/l), combine it with $(bold)Sulfur Crust$() and $(bold)Volcanic Tuff$() to add a caloric barrier.$(br2)The retrofit suppresses caldera overheat, but it does $(bold)not$() protect against direct lava contact.$(br2)$(italic)ORSA Materials: If the suit starts smelling like minerals and bad decisions, the seal probably took.$()"
+      "text": "RUPTURE calderas can cook a standard EVA shell.$(br2)Add $(bold)Sulfur Crust$() and $(bold)Volcanic Tuff$() to an $(l:orsa_rd/lined_eva)Acheronite-Lined EVA Suit$(/l) for a caloric barrier."
     },
     {
       "type": "patchouli:text",
-      "title": "Hull Integrity",
-      "text": "In vacuum, physical impacts can $(bold)puncture a sealed EVA suit$(). A breach vents carried O2; two breaches drain twice as fast. Cold, hunger, and suffocation cannot create punctures.$(br2)Hold $(item)Tattered Clothing Scrap$() to improvise a slow seal. It may fail later. An $(item)ORSA Suit Patch Kit$() seals one breach quickly and permanently. External damage interrupts either repair.$(br2)Breaches stop venting in breathable shelter, but remain until patched."
+      "text": "The barrier stops caldera overheat, $(danger)not lava contact$().$(br2)$(flavor)If it smells like minerals and bad decisions, it took.$()"
     },
     {
       "type": "patchouli:crafting",
       "recipe": "frozendawn:eva_chestplate",
-      "text": "The chestplate requires a Frozen Heart core. Don't worry, it's not YOUR heart."
+      "text": "Needs a Frozen Heart core.$(br2)$(flavor)Don't worry, it's not YOUR heart.$()"
     },
     {
       "type": "patchouli:crafting",
       "recipe": "frozendawn:eva_helmet",
-      "text": "Blue ice, ice shards, and a reinforced helmet. Breathing easier starts at the top."
+      "text": "Blue ice, ice shards and a reinforced helmet.$(br2)$(flavor)Breathing easier starts at the top.$()"
     },
     {
       "type": "patchouli:crafting",
       "recipe": "frozendawn:eva_leggings",
-      "text": "Mobility matters when the surface is trying to kill you. These keep up."
+      "text": "$(flavor)Mobility matters when the surface is trying to kill you.$()"
     },
     {
       "type": "patchouli:crafting",
       "recipe": "frozendawn:eva_boots",
-      "text": "Seal the suit from the ground up. Vacuum is a terrible thing to step into."
-    },
-    {
-      "type": "patchouli:crafting",
-      "recipe": "frozendawn:orsa_suit_patch_kit",
-      "title": "ORSA Suit Patch Kit",
-      "text": "A permanent pressure seal. Intact Major Hearths may also contain salvaged kits, assuming the collective permits recovery."
+      "text": "$(flavor)Seal the suit from the ground up. Vacuum is a terrible thing to step into.$()"
     },
     {
       "type": "patchouli:crafting",
       "recipe": "frozendawn:caloric_lined_eva_retrofit_display",
       "title": "Caldera Retrofit",
-      "text": "Retrofit an Acheronite-Lined EVA Suit with Sulfur Crust and Volcanic Tuff. If the upgraded shell reads $(italic)Caldera retrofit installed.$(), the barrier took."
+      "text": "A Lined EVA Suit plus Sulfur Crust and Volcanic Tuff. The shell reads $(italic)Caldera retrofit installed.$() when it took.",
+      "link_recipe": false
     }
   ]
 }

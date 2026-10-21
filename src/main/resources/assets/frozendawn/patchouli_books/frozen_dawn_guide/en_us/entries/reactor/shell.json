@@ -1,0 +1,79 @@
+{
+  "name": "Building the Shell",
+  "category": "frozendawn:reactor",
+  "icon": "frozendawn:reactor_casing",
+  "sortnum": 1,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "text": "A 3x3x3 block: 22 casings and five special parts.$(br2)If the shell is wrong, the controller names the first wrong block."
+    },
+    {
+      "type": "patchouli:multiblock",
+      "name": "CFU-7 Shell",
+      "enable_visualize": false,
+      "multiblock": {
+        "pattern": [
+          [
+            "CCC",
+            "CDC",
+            "CCC"
+          ],
+          [
+            "CKC",
+            "P0P",
+            "CCC"
+          ],
+          [
+            "CCC",
+            "CCC",
+            "CCC"
+          ]
+        ],
+        "mapping": {
+          "C": "frozendawn:reactor_casing",
+          "D": "frozendawn:control_rod_drive",
+          "0": "frozendawn:reactor_core",
+          "K": "frozendawn:reactor_controller[facing=north]",
+          "P": "frozendawn:coolant_port"
+        }
+      },
+      "text": "Rod drive on top, core in the middle, controller and ports on the sides."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Layers",
+      "text": "$(bold)Top:$() 8 casings around the Control Rod Drive$(br2)$(bold)Middle:$() the Core in the center. On the faces: the Controller facing out, 2 Coolant Ports and 1 casing. Corners are casing.$(br2)$(bold)Bottom:$() 9 casings"
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:reactor_casing",
+      "title": "Reactor Casing",
+      "text": "Iron, copper and obsidian. Makes four."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:reactor_core",
+      "title": "Reactor Core",
+      "text": "Obsidian, Refined Acheronite and a Thermal Core."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:control_rod_drive",
+      "title": "Control Rod Drive",
+      "text": "Iron, redstone, pistons and an iron block."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:coolant_port",
+      "title": "Coolant Port",
+      "text": "Copper around a bucket."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:reactor_controller",
+      "title": "Controller",
+      "text": "Iron, gold, redstone and a glass pane."
+    }
+  ]
+}

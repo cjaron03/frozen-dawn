@@ -2,37 +2,78 @@
   "name": "ORSA Heat Vent",
   "icon": "frozendawn:heat_vent",
   "category": "frozendawn:heating",
-  "sortnum": 22,
+  "sortnum": 9,
   "pages": [
     {
+      "type": "patchouli:spotlight",
+      "item": "frozendawn:heat_vent",
+      "text": "An airtight radiator. Dumps excess heat without losing oxygen or using fuel."
+    },
+    {
       "type": "patchouli:text",
-      "title": "Heat Out, Air In",
-      "text": "The ORSA Heat Vent is an airtight radiator. It removes heat without losing oxygen or using fuel. A thermostat in the same sealed room opens the shutters above target and closes them at target. More vents add cooling capacity without cooling past the target."
+      "title": "Automatic",
+      "text": "A $(l:heating/thermostat)Thermostat$(/l) in the same room opens it above target and closes it at target.$(br2)More vents cool faster, but never past the target."
+    },
+    {
+      "type": "patchouli:multiblock",
+      "name": "Heat Vent in a Wall",
+      "enable_visualize": false,
+      "multiblock": {
+        "pattern": [
+          [
+            "WWW",
+            "   ",
+            "   "
+          ],
+          [
+            "WHW",
+            "   ",
+            "   "
+          ],
+          [
+            "FFF",
+            "F0F",
+            "FFF"
+          ]
+        ],
+        "mapping": {
+          "W": "minecraft:stone_bricks",
+          "F": "minecraft:polished_andesite",
+          "0": "minecraft:polished_andesite",
+          "H": "frozendawn:heat_vent[facing=north,open=true]"
+        }
+      },
+      "text": "Room on the floor side. Fins face out; keep the block in front of them clear."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Placement",
+      "text": "Place it facing outdoors: fins away from you, back touching the room.$(br2)Keep $(bold)one block$() in front of the fins clear. Cave roofs and overhead glass are fine; a block or water there stops it."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Manual Use",
+      "text": "Without a thermostat, right-click toggles the shutter and redstone holds it open.$(br2)$(danger)An open vent wastes heater fuel.$()"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Lights",
+      "text": "Grille: $(bold)dim$() closed, $(bold)green$() venting, $(bold)amber$() waiting or blocked.$(br2)The fins glow orange while heat is actually leaving. Updates each second."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Limits",
+      "text": "Heat only flows to a colder outside, and a warm exterior cuts its output.$(br2)It cools the air first while the walls keep warming it."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Specs",
+      "text": "$(li)Conductance 18 per vent, before the vacuum factor$(li)No fuel, no O2; the casing keeps air in$(li)A $(l:heating/airlocks)Manual Vent Valve$(/l) dumps air; this doesn't"
     },
     {
       "type": "patchouli:crafting",
       "recipe": "frozendawn:heat_vent",
-      "text": "Six iron ingots, two copper ingots and one lever. Installs as a full wall or roof block."
-    },
-    {
-      "type": "patchouli:text",
-      "title": "Placement & Controls",
-      "text": "Place it while looking toward the outdoors: the fins point away from you. The opposite face must touch the room. Leave one clear block directly in front of the outward fins. Cave roofs and overhead glass are fine; a block or water against the outlet prevents cooling. Without a thermostat, right-click toggles the shutter and redstone holds it open. A thermostat takes control of both."
-    },
-    {
-      "type": "patchouli:text",
-      "title": "ORSA Service Grille",
-      "text": "The indoor service grille has a shutter lever and a status light. Dim means closed. Green means heat can leave to colder outdoors. Amber means open but waiting or obstructed. The outdoor fins glow orange while heat is actually leaving, and return to metal when idle or blocked. Indicators update once per second. The opaque casing behind the slats keeps oxygen in."
-    },
-    {
-      "type": "patchouli:text",
-      "title": "Cooling Has Limits",
-      "text": "Heat flows only toward a colder exterior. The vent cannot cool below that exterior temperature. It cools room air first; stored wall heat continues warming the air. A depleted room loses wall heat instead. Larger rooms cool more slowly; several vents add cooling capacity."
-    },
-    {
-      "type": "patchouli:text",
-      "title": "Avoid Wasting Fuel",
-      "text": "Install a $(l:heating/thermostat)thermostat$(/l) to control heating and cooling together. Heaters save fuel when machines supply enough warmth. One vent has conductance18 before the vacuum factor; two give36. Cooling depends on the temperature difference, so hot exterior conditions reduce its output. A manual open vent can waste heater fuel; thermostat control closes it when cool."
+      "text": "Six iron, two copper and a lever. A full wall or roof block."
     }
   ]
 }
