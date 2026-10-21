@@ -10,7 +10,7 @@
     "C": { "item": "minecraft:copper_ingot" },
     "G": { "item": "minecraft:glass_pane" },
     "R": { "item": "minecraft:redstone" },
-    "I": { "item": "frozendawn:ice_shard" }
+    "I": { "item": "minecraft:iron_ingot" }
   },
   "result": {
     "id": "frozendawn:phase_barometer",
