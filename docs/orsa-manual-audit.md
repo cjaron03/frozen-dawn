@@ -536,3 +536,16 @@ sites, Field Radio tower read-out, Alarm Beacon and Street Light active through 
 Still unmentioned: surface hazards (Icicle, Volcanic Ash, Scorched Ground), ruin fixtures
 (Town PA Speaker, Tower Antenna Console, Monitoring Station Terminal, ORSA Flag), and the
 Bloom/Inert items pending a check for Maeve or Architect ownership.
+
+## Surface hazards and station terminal
+
+New `getting_started/surface_hazards` (Icicle, Volcanic Ash, Scorched Ground) and
+`getting_started/station_terminal`, locked behind `found_station_upload_log` (a main-room
+document) and explaining the password puzzle without its archive easter egg. ORSA Sites
+gains a Monitoring Stations hint page, the ORSA Flag (points downwind in Phase 5 storms) and
+the Town PA Speaker. The ORSA Intelligence description was shortened so it no longer
+overlaps the UN Emergency Notice sub-category button.
+
+Deliberately left out: the Tower Antenna Console (towers host an Architect encounter) and
+the Bloom and Inert items (Undone, Archivist and Aggregate systems). Remaining unlinked
+items are Maeve, Architect and Scribe items, spawn eggs and frozen or dead world blocks.
