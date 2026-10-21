@@ -29,6 +29,20 @@
       "text": "Canisters, reservoirs, intact EVA suits and airlock reserves share the spare.$(br2)An intact suit also tops up carried canisters while you stand in supported breathable air."
     },
     {
+      "type": "patchouli:spotlight",
+      "item": "frozendawn:emergency_o2_cartridge",
+      "title": "Rebreather Cartridge",
+      "text": "Restores up to $(bold)35%$() of your O2 at once. Single use.$(br2)Needs a sealed EVA suit and a canister. $(danger)It doesn't seal breaches.$()",
+      "link_recipe": true
+    },
+    {
+      "type": "patchouli:spotlight",
+      "item": "frozendawn:o2_efficiency_module",
+      "title": "O2 Efficiency Module",
+      "text": "Carry it anywhere in your inventory: suit O2 use drops by $(bold)25%$().$(br2)A second one adds nothing. Rare; found in Hearths.",
+      "link_recipe": true
+    },
+    {
       "type": "patchouli:crafting",
       "recipe": "frozendawn:o2_tank",
       "title": "O2 Canister Mk.I",

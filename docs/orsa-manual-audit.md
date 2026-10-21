@@ -525,3 +525,14 @@ is a first draft for the owner to edit, written from current `cyclone/*` code: s
 (`CycloneSeverity`), wind, shelter, hunger, heater reach, barometer and Uplink warnings,
 goggles, drifts and thundersnow. The Phase Barometer gains a Storm Watch page; Phase
 Timeline and Start Here link the entry.
+
+## Found gear and ORSA sites
+
+Draft pages from current code, for owner review. O2 Canisters gains the Rebreather
+Cartridge (35% O2, sealed suit and canister required, no breach repair) and the O2
+Efficiency Module (25% less suit O2 while carried; Hearth loot). New `orsa_equipment/
+trauma_kit` (5 hearts, Hearth loot) and `getting_started/orsa_sites` (Supply Crate loot
+sites, Field Radio tower read-out, Alarm Beacon and Street Light active through Phase 4).
+Still unmentioned: surface hazards (Icicle, Volcanic Ash, Scorched Ground), ruin fixtures
+(Town PA Speaker, Tower Antenna Console, Monitoring Station Terminal, ORSA Flag), and the
+Bloom/Inert items pending a check for Maeve or Architect ownership.
