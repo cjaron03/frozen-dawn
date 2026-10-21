@@ -516,3 +516,12 @@ The Phase Barometer's Phase 1 Early Warning page is templated and moved ahead of
 Returned gains a Mimic photo pair before Variant B (`mimic_capture_1/2.png`, from owner
 screenshots, ten seconds apart). The barometer recipe still needs an Ice Shard, which
 makes the Phase 1 warning hard to use; that recipe change is deferred.
+
+## Bomb Cyclones
+
+No cyclone guide text existed in any worktree or branch, so `getting_started/bomb_cyclones`
+is a first draft for the owner to edit, written from current `cyclone/*` code: schedule
+(`CyclonePlanner`), stage durations (`CycloneStorm.roll`), peak cold and sight
+(`CycloneSeverity`), wind, shelter, hunger, heater reach, barometer and Uplink warnings,
+goggles, drifts and thundersnow. The Phase Barometer gains a Storm Watch page; Phase
+Timeline and Start Here link the entry.

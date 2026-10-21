@@ -31,7 +31,7 @@
     {
       "type": "patchouli:text",
       "title": "Phase 5",
-      "text": "$(bold)Eternal Winter, -70°C to -120°C.$()$(br2)Permanent midnight and whiteout. $(danger)Only deep underground is survivable.$()"
+      "text": "$(bold)Eternal Winter, -70°C to -120°C.$()$(br2)Permanent midnight and whiteout. $(l:getting_started/bomb_cyclones)Bomb Cyclones$(/l) sweep the surface. $(danger)Only deep underground is survivable.$()"
     },
     {
       "type": "patchouli:text",

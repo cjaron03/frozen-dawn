@@ -27,7 +27,7 @@
     {
       "type": "patchouli:text",
       "title": "Phase 5",
-      "text": "$(li)$(l:advanced/nether_substitutes)Without the Nether$(/l)$(li)$(l:orsa_rd/acheronite_crystals)Acheronite$(/l)$(li)$(l:heating/geothermal_vents)Geothermal Vents$(/l)$(br2)$(danger)Only deep underground is survivable.$()"
+      "text": "$(li)$(l:advanced/nether_substitutes)Without the Nether$(/l)$(li)$(l:orsa_rd/acheronite_crystals)Acheronite$(/l)$(li)$(l:heating/geothermal_vents)Geothermal Vents$(/l)$(li)$(l:getting_started/bomb_cyclones)Bomb Cyclones$(/l)$(br2)$(danger)Only deep underground is survivable.$()"
     },
     {
       "type": "patchouli:text",

@@ -21,6 +21,11 @@
     },
     {
       "type": "patchouli:text",
+      "title": "Storm Watch",
+      "text": "In $(bold)Phase 5$() its lower panel tracks $(l:getting_started/bomb_cyclones)Bomb Cyclones$(/l): pressure, trend and minutes to arrival.$(br2)It buzzes as a front nears. $(danger)A rapid alarm means Catastrophic.$()"
+    },
+    {
+      "type": "patchouli:text",
       "title": "Phase 6",
       "text": "It tracks each sub-stage and warns of whiteout, thinning air and $(danger)vacuum onset$().$(br2)Place it in a shelter or workroom."
     },
