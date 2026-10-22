@@ -33,11 +33,13 @@ public final class ColdFloraEvents {
             if (player.isCreative() || player.isSpectator()) continue;
             if (WorldTickHandler.getLastTemperature(player.getUUID()) > ColdFloraPolicy.FROSTCAP_DIES_ABOVE) warmInventory(player);
         }
-        boolean groves = t % ColdFloraSpawner.GROVE_INTERVAL_TICKS == 0, caps = t % ColdFloraSpawner.CAP_INTERVAL_TICKS == 0;
-        if ((groves || caps) && ApocalypseState.get(server).getPhase() >= 3) {
+        boolean groves = t % ColdFloraSpawner.GROVE_INTERVAL_TICKS == 0, caps = t % ColdFloraSpawner.CAP_INTERVAL_TICKS == 0,
+                sightings = t % RimewoodSighting.INTERVAL_TICKS == 0;
+        if ((groves || caps || sightings) && ApocalypseState.get(server).getPhase() >= 3) {
             var level = server.getLevel(Level.OVERWORLD);
             if (level != null) for (var player : level.players()) {
                 if (player.isSpectator()) continue;
+                if (sightings) RimewoodSighting.check(level, player);
                 if (groves && level.random.nextInt(ColdFloraSpawner.GROVE_ONE_IN) == 0) ColdFloraSpawner.tryGrove(level, player.blockPosition());
                 if (caps && level.random.nextInt(ColdFloraSpawner.CAP_ONE_IN) == 0) ColdFloraSpawner.tryFrostcap(level, player.blockPosition());
             }

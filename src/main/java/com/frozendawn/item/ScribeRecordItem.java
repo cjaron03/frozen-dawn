@@ -1,5 +1,6 @@
 package com.frozendawn.item;
 
+import com.frozendawn.event.WorldTickHandler;
 import com.frozendawn.init.ModDataComponents;
 import com.frozendawn.lore.ThaevenLoreManager;
 import com.frozendawn.network.OpenScribeRecordPayload;
@@ -32,6 +33,7 @@ public final class ScribeRecordItem extends Item {
             boolean translated = ThaevenLoreManager.hasTranslator(serverPlayer);
             if (!translated) ThaevenLoreManager.discoverTranslatorRecipe(serverPlayer);
             PacketDistributor.sendToPlayer(serverPlayer, new OpenScribeRecordPayload(contents, translated));
+            WorldTickHandler.grantAdvancement(serverPlayer, "personnel_file");
         }
         return InteractionResultHolder.sidedSuccess(stack, level.isClientSide());
     }

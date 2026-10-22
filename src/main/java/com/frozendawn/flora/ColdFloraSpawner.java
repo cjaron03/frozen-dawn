@@ -67,6 +67,8 @@ public final class ColdFloraSpawner {
         if (celsius > ColdFloraPolicy.GROW_AT_OR_BELOW) return Attempt.failed("too warm (" + Math.round(celsius) + "C)");
         if (rimewoodNear(level, ground, GROVE_SPACING)) return Attempt.failed("Rimewood within " + GROVE_SPACING + " blocks");
         var trunks = plantGrove(level, ground, level.random, true);
+        // A natural grove can stand where a felled sapling-grown tree once did.
+        for (var trunk : trunks) com.frozendawn.data.SaplingRimewoodState.get(level).forget(trunk);
         return trunks.isEmpty() ? Attempt.failed("no room for a tree") : new Attempt(ground, null, trunks.size());
     }
 
