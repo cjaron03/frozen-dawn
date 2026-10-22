@@ -15,6 +15,7 @@ final class MaeveSavedData extends SavedData {
     private BeliefStore store;
     private ConvergenceMemory convergence;
     private ScribeMemory scribe;
+    private PyroMemory pyro;
 
     static MaeveSavedData get(MinecraftServer server) {
         return server.overworld().getDataStorage().computeIfAbsent(
@@ -37,13 +38,14 @@ final class MaeveSavedData extends SavedData {
         if (activated && store == null) store = new BeliefStore();
         if (activated && convergence == null) convergence = new ConvergenceMemory();
         if (activated && scribe == null) scribe = new ScribeMemory();
+        if (activated && pyro == null) pyro = new PyroMemory();
     }
 
     void erase() {
         if (store != null) store.clear();
         if (convergence != null) convergence.clear();
         if (!erased || store != null) setDirty();
-        store = null; convergence = null; scribe = null;
+        store = null; convergence = null; scribe = null; pyro = null;
         erased = true;
     }
 
@@ -52,15 +54,17 @@ final class MaeveSavedData extends SavedData {
     BeliefStore store() { return store; }
     ConvergenceMemory convergence() { return convergence; }
     ScribeMemory scribe() { return scribe; }
+    PyroMemory pyro() { return pyro; }
 
     @Override
     public CompoundTag save(CompoundTag tag, HolderLookup.Provider registries) {
         tag.putInt("dataVersion", VERSION);
         tag.putBoolean("activated", activated);
         tag.putBoolean("erased", erased);
-        tag.remove("beliefs"); tag.remove("convergence"); tag.remove("scribe");
+        tag.remove("beliefs"); tag.remove("convergence"); tag.remove("scribe"); tag.remove("pyro");
         if (!erased && convergence != null) tag.put("convergence", convergence.save());
         if (!erased && scribe != null) tag.put("scribe", scribe.save());
+        if (!erased && pyro != null) tag.put("pyro", pyro.save());
         if (!erased && store != null) tag.put("beliefs", store.save());
         return tag;
     }
@@ -70,7 +74,8 @@ final class MaeveSavedData extends SavedData {
         MaeveSavedData data = new MaeveSavedData();
         data.activated = tag.getBoolean("activated");
         data.erased = tag.getBoolean("erased");
-        if (data.activated && !data.erased) { data.store = BeliefStore.load(tag.getCompound("beliefs")); data.convergence = ConvergenceMemory.load(tag.getCompound("convergence")); data.scribe = ScribeMemory.load(tag.getCompound("scribe")); }
+        if (data.activated && !data.erased) { data.store = BeliefStore.load(tag.getCompound("beliefs")); data.convergence = ConvergenceMemory.load(tag.getCompound("convergence")); data.scribe = ScribeMemory.load(tag.getCompound("scribe"));
+            data.pyro = PyroMemory.load(tag.getCompound("pyro")); }
         return data;
     }
 }

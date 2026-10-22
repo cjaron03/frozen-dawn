@@ -78,7 +78,7 @@ public final class MaeveScribeGameTest {
         assertPlaytestFunctionsParse(helper, "macs_scribe_base", 40);
     }
 
-    private static void assertPlaytestFunctionsParse(GameTestHelper helper, String namespace, int count) {
+    static void assertPlaytestFunctionsParse(GameTestHelper helper, String namespace, int count) {
         var server = helper.getLevel().getServer();
         var functions = server.getResourceManager().listResources("function", id ->
                 id.getNamespace().equals(namespace) && id.getPath().endsWith(".mcfunction"));

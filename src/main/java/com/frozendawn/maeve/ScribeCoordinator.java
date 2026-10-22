@@ -28,7 +28,7 @@ final class ScribeCoordinator {
     }
 
     boolean designate(ArchitectEntity actor, ServerPlayer subject) {
-        if (!enabled() || !ConvergenceCoordinator.ordinary(actor) || actor.isNoAi() || scribe(actor) || ConvergenceCoordinator.assigned(actor)
+        if (!enabled() || !ConvergenceCoordinator.ordinary(actor) || actor.isNoAi() || scribe(actor) || PyroCoordinator.pyro(actor) || ConvergenceCoordinator.assigned(actor)
                 || subject.isCreative() || subject.isSpectator() || subject.level() != actor.level()) return false;
         var memory = data.scribe(); long now = now();
         if (memory.expire(now)) data.setDirty();

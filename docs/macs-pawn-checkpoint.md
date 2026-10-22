@@ -1,6 +1,23 @@
 # Pawn Convergence checkpoint — 2026-09-27
 
-## Current: fresh-contact snowball38 (2026-10-07)
+## Current: MACS Pyro Architect (2026-10-22)
+
+§9.4a Pyro implemented on `feat/pyro-architect` in worktree `/Volumes/SSD/Work/frozen-dawn-pyro`, branched from `feat/maeve-director` at `bd894d50`. Design, owner decisions and follow-ups: [macs-pyro.md](macs-pyro.md). Owner pass: [macs-pyro-playtest.md](macs-pyro-playtest.md).
+
+- Gate: a natural spawn that is not a Scribe is designated when Maeve is ACTIVE, suspects a home and knows no heat within 32 blocks of it, no Pyro is out and 5 in-game days have passed. One server-wide claim, lifetime one day, stored under `pyro` in `MaeveSavedData` (version unchanged; old saves load empty).
+- Executor: 40-block cold post, watch with hand-to-chin stare, first look at 200 ticks, then every 100 until 1200, depart. §9.13a defense only. Orange eyes.
+- Thermal sight 64 blocks: DIRECT, LEAKED through open cells, WALL_GLOW on one thin non-insulating layer. Glass, wool, snow and double walls block. Each sighting uploads HEAT_SOURCE at once (Lagged); killing it afterwards undoes nothing.
+- Covered in Mud: hidden advancement when a full watch saw no heat.
+- ERASED wipes the claim and the Pyro departs without uploading; none after E11.
+
+Java 21 `architectVerify` passed: 930 unit tests, 711 native GameTests, all 691 required cases (10 Pyro, including the lab-function parse). `architectMonkey` passed: 1211 GameTests, all 500 required stress cases. `java tools/ManualLint.java`: 0 errors. Late phase 6 is vacuum, which snuffs open flame on placement, so tests and the lab use the thermal heater and magma.
+
+Lab world `run-lab/saves/MACS Pyro Check` in the Pyro worktree, built from the closed `Ice Fishing Check` level.dat schema (template unchanged). Launch with `./gradlew runClientLab --console=plain -PfdLabWorld='MACS Pyro Check'` from that worktree.
+
+Status: automated gates only; no human visual pass. No raid planner reads HEAT_SOURCE yet. A departing Pyro may vanish in view at about 40 blocks. No PR opened; nothing merged.
+
+
+## Previous: fresh-contact snowball38 (2026-10-07)
 
 Human38 first account: “yup, it looked up”. Original gameplay summary remains COMPLETE:480 gameplay/server frames,481 independent real client callbacks, zero gameplay flags/drops. One real echo emitted at gameTime84937, returned/locked at84940 and closes the shutter at frame5. The real Snowball launched at timer26, yaw89.85/pitch-22.249994, and landed overhead at timer32, canonical(10.5,-39.5,5.5), physical air(10.651,-40.003,5.508), remoteLanding=true. One air query RECEIVED, with anonymous HEARING frames33–273. Fresh player ECHO remains selected for43 coexistence frames33–75; one identified lock and71 total PURSUE frames. The remembered region(16,-44,4), uncertainty2, observed84937, never refreshes after cover. All ten subsequent body queries return NO_DIRECT_RETURN, no vibration or vanilla target competes. Echo remains selected through242, both memories expire, and states total71 PURSUE/47 INVESTIGATE/120 SEARCH/242 WANDER. No later anonymous selection is recorded. Focused priority and memory expiry are supported this run.
 

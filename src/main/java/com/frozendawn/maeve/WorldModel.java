@@ -38,17 +38,20 @@ final class WorldModel {
         presence.put(observer, new Presence(dimension, pos.immutable(), covered, now));
         trimOldestInsertion(presence, BeliefStore.MAX_CONTACTS);
         seen(dimension, pos, now);
-        if (covered) {
-            var locations = shelters.computeIfAbsent(dimension, k -> new LinkedHashMap<>());
-            if (!locations.isEmpty() && center(dimension).distSqr(pos) > 32 * 32) locations.clear();
-            if (locations.isEmpty() || areas.get(dimension).anchor().distSqr(pos) > 32 * 32)
-                areas.put(dimension, newArea(dimension, pos, now));
-            locations.remove(pos); locations.put(pos.immutable(), now);
-            trimOldestInsertion(locations, MAX_COVERED);
-            trimOldestInsertion(shelters, MAX_SHELTERS);
-            areas.keySet().retainAll(shelters.keySet());
-        }
+        if (covered) shelter(dimension, pos, now);
         return previous;
+    }
+
+    /** A covered position known to be lived in, without a presence sample (no crossing can be joined to it). */
+    void shelter(String dimension, BlockPos pos, long now) {
+        var locations = shelters.computeIfAbsent(dimension, k -> new LinkedHashMap<>());
+        if (!locations.isEmpty() && center(dimension).distSqr(pos) > 32 * 32) locations.clear();
+        if (locations.isEmpty() || areas.get(dimension).anchor().distSqr(pos) > 32 * 32)
+            areas.put(dimension, newArea(dimension, pos, now));
+        locations.remove(pos); locations.put(pos.immutable(), now);
+        trimOldestInsertion(locations, MAX_COVERED);
+        trimOldestInsertion(shelters, MAX_SHELTERS);
+        areas.keySet().retainAll(shelters.keySet());
     }
 
     void forget(UUID observer) { presence.remove(observer); }
@@ -89,10 +92,12 @@ final class WorldModel {
         point.observe("OPEN", evidence, .2);
     }
 
-    void event(String label, String dimension, BlockPos pos, ObservedEvidence evidence) {
+    void event(String label, String dimension, BlockPos pos, ObservedEvidence evidence) { event(label, dimension, pos, evidence, .2); }
+
+    void event(String label, String dimension, BlockPos pos, ObservedEvidence evidence, double weight) {
         if (!List.of("DANGER_ZONE", "HEAT_SOURCE", "ACOUSTIC_CONTACT").contains(label)) throw new IllegalArgumentException(label);
         seen(dimension, pos, evidence.time());
-        point(label, dimension, pos).observe("OBSERVED", evidence, .2);
+        point(label, dimension, pos).observe("OBSERVED", evidence, weight);
     }
 
     boolean obstructed(String dimension, BlockPos outside, ObservedEvidence evidence) {

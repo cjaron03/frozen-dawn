@@ -77,7 +77,7 @@ public final class MaeveDirector {
         var runtime = current(server);
         if (runtime.data.store() == null) return beliefs;
         return java.util.stream.Stream.of(LearningDiagnostics.append(server, player, beliefs, runtime.data.store(), runtime.learning.diagnostics(player)),
-                runtime.convergence.diagnostics(), runtime.scribe.diagnostics()).flatMap(List::stream).toList();
+                runtime.convergence.diagnostics(), runtime.scribe.diagnostics(), runtime.pyro.diagnostics()).flatMap(List::stream).toList();
     }
 
     public static void observeWithdrawal(ArchitectEntity actor, ServerPlayer player) {
@@ -210,6 +210,13 @@ public final class MaeveDirector {
     public record ScribeNotes(UUID subject, String dimension, BlockPos center, List<ScribeNote> notes, List<ScribeMark> marks) {
         public ScribeNotes { center = center.immutable(); notes = List.copyOf(notes); marks = List.copyOf(marks); }
     }
+    /** §9.4a: same gate shape for the Pyro. Its looks upload at once; ending it never takes them back. */
+    public static boolean designatePyro(ArchitectEntity actor, ServerPlayer subject) { return current(subject.getServer()).pyro.designate(actor, subject); }
+    public static PyroOrder pyroOrder(ArchitectEntity actor) { return actor.getServer() == null ? null : current(actor.getServer()).pyro.order(actor); }
+    public static PyroScan pyroObserve(ArchitectEntity actor, boolean last) { return actor.getServer() == null ? null : current(actor.getServer()).pyro.observe(actor, last); }
+    public static void pyroEnded(ArchitectEntity actor, String reason) { if (actor.getServer() != null) current(actor.getServer()).pyro.ended(actor, reason); }
+    public record PyroOrder(UUID subject, String dimension, BlockPos home, long expiresAt) { public PyroOrder { home = home.immutable(); } }
+    public record PyroScan(int sources, int sightings, boolean complete, boolean cold) { }
     public record PawnOrder(UUID dispatch, BlockPos destination, long notBefore, long expiresAt) {
         public PawnOrder { destination = destination.immutable(); }
     }
