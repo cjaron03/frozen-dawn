@@ -567,6 +567,11 @@ public class ModItems {
             () -> new ComfortItem(new Item.Properties().stacksTo(1), "tooltip.frozendawn.stuffed_hyrax"));
     public static final DeferredItem<ComfortItem> WILSON = ITEMS.register("wilson",
             () -> new ComfortItem(new Item.Properties().stacksTo(1), "tooltip.frozendawn.wilson"));
+    public static final DeferredItem<com.frozendawn.item.MielHoneyItem> MIEL_HONEY = ITEMS.register("miel_honey",
+            () -> new com.frozendawn.item.MielHoneyItem(new Item.Properties().stacksTo(1)
+                    .component(ModDataComponents.MIEL_SPOONFULS, com.frozendawn.item.MielHoneyItem.SPOONFULS)));
+    public static final DeferredItem<ComfortItem> EMPTY_MIEL_JAR = ITEMS.register("empty_miel_jar",
+            () -> new ComfortItem(new Item.Properties().stacksTo(1), "tooltip.frozendawn.empty_miel_jar"));
 
     // --- Acheronite Materials ---
     public static final DeferredItem<AcheroniteShardItem> ACHERONITE_SHARD = ITEMS.register("acheronite_shard",
@@ -820,6 +825,8 @@ public class ModItems {
                         output.accept(STUFFED_CAPYBARA.get());
                         output.accept(STUFFED_HYRAX.get());
                         output.accept(WILSON.get());
+                        output.accept(MIEL_HONEY.get());
+                        output.accept(EMPTY_MIEL_JAR.get());
                         // Win Condition
                         output.accept(ACHERONITE_COMPASS.get());
                         output.accept(TRANSPONDER_SCHEMATIC.get());
