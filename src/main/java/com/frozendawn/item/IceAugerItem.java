@@ -77,6 +77,10 @@ public class IceAugerItem extends Item {
         if (hit.getType() != HitResult.Type.BLOCK) return InteractionResultHolder.pass(stack);
         BlockPos pos = hit.getBlockPos();
         if (!level.getBlockState(pos).is(ModBlocks.FISHING_HOLE.get())) return InteractionResultHolder.pass(stack);
+        // Same guards as a bucket: spawn protection and adventure mode.
+        if (!level.mayInteract(player, pos) || !player.mayUseItemAt(pos, hit.getDirection(), stack)) {
+            return InteractionResultHolder.fail(stack);
+        }
 
         if (!level.isClientSide) {
             FishingHoleBlock.plug(level, pos);
