@@ -218,6 +218,11 @@ public class ModItems {
     public static final DeferredItem<BlockItem> BLOOM_MASS = ITEMS.registerSimpleBlockItem("bloom_mass", ModBlocks.BLOOM_MASS);
     public static final DeferredItem<BlockItem> BLOOM_CRUST = ITEMS.registerSimpleBlockItem("bloom_crust", ModBlocks.BLOOM_CRUST);
     public static final DeferredItem<BlockItem> BLOOM_TIP = ITEMS.registerSimpleBlockItem("bloom_tip", ModBlocks.BLOOM_TIP);
+    public static final DeferredItem<BlockItem> BLOOM_CORE = ITEMS.registerSimpleBlockItem("bloom_core", ModBlocks.BLOOM_CORE);
+    public static final DeferredItem<BlockItem> ACHERONITE_CRYSTAL = ITEMS.registerSimpleBlockItem("acheronite_crystal", ModBlocks.ACHERONITE_CRYSTAL);
+    public static final DeferredItem<BlockItem> FROZEN_ATMOSPHERE = ITEMS.registerSimpleBlockItem("frozen_atmosphere", ModBlocks.FROZEN_ATMOSPHERE);
+    public static final DeferredItem<BlockItem> AGGREGATE_MASS = ITEMS.registerSimpleBlockItem("aggregate_mass", ModBlocks.AGGREGATE_MASS);
+    public static final DeferredItem<BlockItem> AGGREGATE_RIB = ITEMS.registerSimpleBlockItem("aggregate_rib", ModBlocks.AGGREGATE_RIB);
     public static final DeferredItem<BlockItem> INERT_ACHERONITE = ITEMS.registerSimpleBlockItem("inert_acheronite", ModBlocks.INERT_ACHERONITE);
     public static final DeferredItem<BlockItem> SEALED_LATTICE = ITEMS.registerSimpleBlockItem("sealed_lattice", ModBlocks.SEALED_LATTICE);
     public static final DeferredItem<InertConvergenceCoreItem> INERT_CONVERGENCE_CORE =
@@ -493,6 +498,34 @@ public class ModItems {
             () -> new DeferredSpawnEggItem(ModEntities.ARCHITECT, 0x4A5568, 0x5B7A9E,
                     new Item.Properties()));
 
+    public static final DeferredItem<DeferredSpawnEggItem> RIMEBOUND_SPAWN_EGG = ITEMS.register("rimebound_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.RIMEBOUND, 0xA8C6D5, 0x354D60,
+                    new Item.Properties()));
+    public static final DeferredItem<DeferredSpawnEggItem> RESONANT_SPAWN_EGG = ITEMS.register("resonant_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.RESONANT, 0x394650, 0x82C9CD,
+                    new Item.Properties()));
+    public static final DeferredItem<DeferredSpawnEggItem> REMNANT_SPAWN_EGG = ITEMS.register("remnant_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.REMNANT, 0xC3BDAF, 0x3E344A,
+                    new Item.Properties()));
+    public static final DeferredItem<DeferredSpawnEggItem> FROSTWRITHE_SPAWN_EGG = ITEMS.register("frostwrithe_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.FROSTWRITHE, 0x35485B, 0x90DCE8,
+                    new Item.Properties()));
+    public static final DeferredItem<DeferredSpawnEggItem> UNDONE_SPAWN_EGG = ITEMS.register("undone_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.UNDONE, 0xB5A895, 0x534A45,
+                    new Item.Properties()));
+    public static final DeferredItem<DeferredSpawnEggItem> BLOOMBOUND_UNDONE_SPAWN_EGG = ITEMS.register("bloombound_undone_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.BLOOMBOUND_UNDONE, 0x6D7959, 0xD2BF98,
+                    new Item.Properties()));
+    public static final DeferredItem<DeferredSpawnEggItem> UNDONE_ARCHITECT_SPAWN_EGG = ITEMS.register("undone_architect_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.UNDONE_ARCHITECT, 0x6C7380, 0xC9BDA7,
+                    new Item.Properties()));
+    public static final DeferredItem<DeferredSpawnEggItem> BLOOM_SPORE_SPAWN_EGG = ITEMS.register("bloom_spore_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.BLOOM_SPORE, 0x747767, 0xBB7B6F,
+                    new Item.Properties()));
+    public static final DeferredItem<DeferredSpawnEggItem> ARCHIVIST_SPAWN_EGG = ITEMS.register("archivist_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.ARCHIVIST, 0x363A3E, 0xC7B998,
+                    new Item.Properties()));
+
     // --- Comfort Items ---
     public static final DeferredItem<ComfortItem> STUFFED_PENGUIN = ITEMS.register("stuffed_penguin",
             () -> new ComfortItem(new Item.Properties().stacksTo(1), "tooltip.frozendawn.stuffed_penguin"));
@@ -599,6 +632,15 @@ public class ModItems {
                         output.accept(VOLCANIC_ASH.get());
                         output.accept(INERT_ACHERONITE.get());
                         output.accept(SEALED_LATTICE.get());
+                        output.accept(BLOOM_MASS.get());
+                        output.accept(BLOOM_CRUST.get());
+                        output.accept(BLOOM_TIP.get());
+                        output.accept(BLOOM_CORE.get());
+                        output.accept(ACHERONITE_CRYSTAL.get());
+                        output.accept(FROZEN_ATMOSPHERE.get());
+                        output.accept(AGGREGATE_MASS.get());
+                        output.accept(AGGREGATE_RIB.get());
+                        output.accept(INERT_CONVERGENCE_CORE.get());
                         // Player agency
                         output.accept(AIRLOCK_DOOR.get());
                         output.accept(AIRLOCK_CONTROLLER.get());
@@ -672,6 +714,8 @@ public class ModItems {
                         output.accept(ALARM_BEACON.get());
                         output.accept(EMERGENCY_LIGHT.get());
                         output.accept(WALL_EMERGENCY_LIGHT.get());
+                        output.accept(STREET_LIGHT.get());
+                        output.accept(TOWN_PA_SPEAKER.get());
                         output.accept(TOWER_ANTENNA_CONSOLE.get());
                         output.accept(MONITORING_STATION_TERMINAL.get());
                         output.accept(PHASE_BAROMETER.get());
@@ -782,6 +826,15 @@ public class ModItems {
                         output.accept(RETURNED_SPAWN_EGG.get());
                         output.accept(MIMIC_SPAWN_EGG.get());
                         output.accept(ARCHITECT_SPAWN_EGG.get());
+                        output.accept(RIMEBOUND_SPAWN_EGG.get());
+                        output.accept(RESONANT_SPAWN_EGG.get());
+                        output.accept(REMNANT_SPAWN_EGG.get());
+                        output.accept(FROSTWRITHE_SPAWN_EGG.get());
+                        output.accept(UNDONE_SPAWN_EGG.get());
+                        output.accept(BLOOMBOUND_UNDONE_SPAWN_EGG.get());
+                        output.accept(UNDONE_ARCHITECT_SPAWN_EGG.get());
+                        output.accept(BLOOM_SPORE_SPAWN_EGG.get());
+                        output.accept(ARCHIVIST_SPAWN_EGG.get());
                     }).build());
 
     public static void addToVanillaCreativeTabs(BuildCreativeModeTabContentsEvent event) {

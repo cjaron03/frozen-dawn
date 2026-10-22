@@ -1,3 +1,22 @@
 {
-  "parent": "frozendawn:block/thermostat"
+  "parent": "frozendawn:block/thermostat",
+  "display": {
+    "gui": {
+      "rotation": [
+        20,
+        210,
+        0
+      ],
+      "translation": [
+        3.09,
+        -1.83,
+        0
+      ],
+      "scale": [
+        0.95,
+        0.95,
+        0.95
+      ]
+    }
+  }
 }
