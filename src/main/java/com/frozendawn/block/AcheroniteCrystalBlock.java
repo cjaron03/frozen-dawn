@@ -31,7 +31,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
  * Acheronite Crystal with 4 growth stages (AGE 0-3).
  * Forms on frozen substrates in phase 5+ at temperatures below -80C.
  * Only stage 3 (full cluster) drops shards when mined.
- * Not player-placeable (no BlockItem registered).
+ * Creative block item places the initial growth stage; no survival recipe.
  */
 public class AcheroniteCrystalBlock extends Block {
 
