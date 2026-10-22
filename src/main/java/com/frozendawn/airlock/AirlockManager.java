@@ -323,6 +323,8 @@ public final class AirlockManager {
     public static void refuse(ServerLevel level,BlockPos pos,Player player,Status reason) {
         notify(player,reason,null,0);
         level.playSound(null,pos,ModSounds.AIRLOCK_REFUSE.get(),SoundSource.BLOCKS,.65f,1f);
+        if(reason==Status.CYCLE_LOCKED&&player instanceof net.minecraft.server.level.ServerPlayer serverPlayer)
+            com.frozendawn.event.WorldTickHandler.grantAdvancement(serverPlayer,"im_sorry_im_afraid_i_cant_do_that");
     }
     private static boolean closed(ServerLevel level,Chamber c) {
         for(var door:c.doors)if(!completeDoor(level,door)||level.getBlockState(door).getValue(DoorBlock.OPEN)

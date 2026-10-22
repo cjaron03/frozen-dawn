@@ -1,6 +1,6 @@
 # Frozen Dawn agent handoff
 
-Use Conventional Commit messages (`feat:`, `fix:`, `docs:`). Do not create branches or PRs with a `codex/` prefix.
+Use Conventional Commit messages (`feat:`, `fix:`, `docs:`). Do not create branches or PRs with a `codex/` or `claude/` prefix.
 
 Before working, identify the owning checkout, branch, HEAD and current changes. Preserve unrelated work, saved worlds and replay evidence. Run the applicable existing verification gates; distinguish headless checks from a human visual pass.
 

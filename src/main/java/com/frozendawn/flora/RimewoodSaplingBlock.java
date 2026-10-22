@@ -1,5 +1,6 @@
 package com.frozendawn.flora;
 
+import com.frozendawn.data.SaplingRimewoodState;
 import com.frozendawn.init.ModFeatures;
 import java.util.Optional;
 import net.minecraft.core.BlockPos;
@@ -33,6 +34,13 @@ public final class RimewoodSaplingBlock extends SaplingBlock {
     @Override
     protected void randomTick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
         if (random.nextInt(ColdFloraPolicy.SAPLING_ADVANCE_ONE_IN) == 0 && canGrow(level, pos)) advanceTree(level, pos, state, random);
+    }
+
+    /** Records the grown trunk so Life Finds a Way credits only natural Rimewood. */
+    @Override
+    public void advanceTree(ServerLevel level, BlockPos pos, BlockState state, RandomSource random) {
+        super.advanceTree(level, pos, state, random);
+        if (level.getBlockState(pos).is(ColdFlora.RIMEWOOD_LOGS)) SaplingRimewoodState.get(level).mark(pos);
     }
 
     @Override
