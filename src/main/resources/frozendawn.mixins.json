@@ -9,6 +9,7 @@
     "ChunkMapAccessor",
     "DisplayAccessor",
     "IceBlockMixin",
+    "FishingHookMixin",
     "LivingEntityMixin",
     "ServerPlayerContinuityMixin",
     "ItemEntityContinuityMixin",

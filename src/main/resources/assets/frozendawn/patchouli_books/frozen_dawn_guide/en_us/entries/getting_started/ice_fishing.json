@@ -1,0 +1,49 @@
+{
+  "name": "Ice Fishing",
+  "category": "frozendawn:food",
+  "icon": "frozendawn:ice_auger",
+  "sortnum": 6,
+  "pages": [
+    {
+      "type": "patchouli:spotlight",
+      "item": "frozendawn:ice_auger",
+      "title": "Ice Fishing",
+      "text": "The lakes froze. The fish under them did not all die.$(br2)Drill through thick ice and cast a normal rod into the hole."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "The Hole",
+      "text": "Drill where the ice runs at least $(bold)4 blocks deep$(); thinner ice has no water left under it.$(br2)An unused hole skins over and refreezes. The colder it is, the faster it closes. A bobber in the water keeps it open.$(br2)Use the auger on an open hole to plug it."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:ice_auger",
+      "text": "$(flavor)Hand-cranked. Field staff report this is the warmest they get all day.$()"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "What Bites",
+      "text": "Through Phase 3, the usual catch.$(br2)From Phase 4, bites slow down as the water cools.$(br2)In Phase 6 the old fish die off. Expect bones.$(br2)Once the air is gone, something new starts biting."
+    },
+    {
+      "type": "patchouli:spotlight",
+      "item": "frozendawn:glassblood",
+      "text": "Clear blood, no red cells, antifreeze in its veins. The everyday catch.$(br2)Late fish are slow to freeze raw. Cooked, they freeze like anything else."
+    },
+    {
+      "type": "patchouli:spotlight",
+      "item": "frozendawn:rime_hagfish",
+      "text": "Eyeless scavenger that eats the dead. Plentiful. Sometimes comes up with slime. Cook it."
+    },
+    {
+      "type": "patchouli:spotlight",
+      "item": "frozendawn:longsleeper",
+      "text": "Rare. Old. $(bold)Toxic raw$(), and cooking does not fix it.$(br2)$(flavor)ORSA Nutritional Services asks that you stop trying.$()"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Curing",
+      "text": "Seal raw Longsleeper in a $(bold)barrel$() with at least $(bold)8 gravel$(). Close it and leave it for $(bold)3 days$().$(br2)Then the fish is cured: the best food left on the surface, and slow to freeze.$(br2)Adding more raw fish restarts the batch. Hoppers do not count."
+    }
+  ]
+}
