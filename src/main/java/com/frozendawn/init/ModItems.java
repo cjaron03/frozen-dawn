@@ -384,6 +384,38 @@ public class ModItems {
             "frozen_atmosphere_shard",
             () -> new FrozenAtmosphereShardItem(new Item.Properties().stacksTo(64)));
 
+    // --- Ice Fishing ---
+    public static final DeferredItem<com.frozendawn.item.IceAugerItem> ICE_AUGER = ITEMS.register("ice_auger",
+            () -> new com.frozendawn.item.IceAugerItem(new Item.Properties().durability(200)));
+    /** Late phase 6 fish: cold-adapted survivors of the plankton die-off. */
+    public static final DeferredItem<Item> GLASSBLOOD = ITEMS.register("glassblood",
+            () -> new Item(new Item.Properties().food(new FoodProperties.Builder()
+                    .nutrition(2).saturationModifier(0.1f).build())));
+    public static final DeferredItem<Item> COOKED_GLASSBLOOD = ITEMS.register("cooked_glassblood",
+            () -> new Item(new Item.Properties().food(new FoodProperties.Builder()
+                    .nutrition(5).saturationModifier(0.6f).build())));
+    public static final DeferredItem<Item> RIME_HAGFISH = ITEMS.register("rime_hagfish",
+            () -> new Item(new Item.Properties().food(new FoodProperties.Builder()
+                    .nutrition(2).saturationModifier(0.1f).build())));
+    public static final DeferredItem<Item> COOKED_RIME_HAGFISH = ITEMS.register("cooked_rime_hagfish",
+            () -> new Item(new Item.Properties().food(new FoodProperties.Builder()
+                    .nutrition(4).saturationModifier(0.4f).build())));
+    /** Toxic until cured in a gravel barrel; cooking does not help. */
+    public static final DeferredItem<Item> LONGSLEEPER = ITEMS.register("longsleeper",
+            () -> new Item(new Item.Properties().food(new FoodProperties.Builder()
+                    .nutrition(4).saturationModifier(0.2f)
+                    .effect(() -> new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.CONFUSION, 300), 1f)
+                    .effect(() -> new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.POISON, 200), 1f)
+                    .build())) {
+                @Override
+                public void appendHoverText(ItemStack stack, TooltipContext context, java.util.List<net.minecraft.network.chat.Component> tooltip, net.minecraft.world.item.TooltipFlag flag) {
+                    tooltip.add(net.minecraft.network.chat.Component.translatable("tooltip.frozendawn.longsleeper").withStyle(net.minecraft.ChatFormatting.GRAY));
+                }
+            });
+    public static final DeferredItem<Item> CURED_LONGSLEEPER = ITEMS.register("cured_longsleeper",
+            () -> new Item(new Item.Properties().food(new FoodProperties.Builder()
+                    .nutrition(10).saturationModifier(0.8f).build())));
+
     // --- Frostbitten Mob Drops ---
     public static final DeferredItem<FrozenMeatItem> FROZEN_MEAT = ITEMS.register("frozen_meat",
             () -> new FrozenMeatItem(new Item.Properties()
@@ -792,6 +824,14 @@ public class ModItems {
                         output.accept(ACHERONITE_COMPASS.get());
                         output.accept(TRANSPONDER_SCHEMATIC.get());
                         output.accept(TRANSPONDER.get());
+                        // Ice Fishing
+                        output.accept(ICE_AUGER.get());
+                        output.accept(GLASSBLOOD.get());
+                        output.accept(COOKED_GLASSBLOOD.get());
+                        output.accept(RIME_HAGFISH.get());
+                        output.accept(COOKED_RIME_HAGFISH.get());
+                        output.accept(LONGSLEEPER.get());
+                        output.accept(CURED_LONGSLEEPER.get());
                         // Mob Drops
                         output.accept(FROZEN_MEAT.get());
                         output.accept(HOT_WINGS.get());

@@ -8,6 +8,7 @@ import com.frozendawn.block.BloomMassBlock;
 import com.frozendawn.block.BloomCoreBlock;
 import com.frozendawn.block.BloomTipBlock;
 import com.frozendawn.block.EmergencyLightBlock;
+import com.frozendawn.block.FishingHoleBlock;
 import com.frozendawn.block.FuelProcessingSiloControllerBlock;
 import com.frozendawn.block.FrozenAtmosphereBlock;
 import com.frozendawn.block.GeothermalCoreBlock;
@@ -328,6 +329,16 @@ public class ModBlocks {
                     .pushReaction(PushReaction.DESTROY)
                     .isViewBlocking((state, level, pos) -> state.getValue(SnowLayerBlock.LAYERS) >= 8)
                     .isSuffocating((state, level, pos) -> state.getValue(SnowLayerBlock.LAYERS) >= 8)));
+
+    // Drilled by the Ice Auger; reports still water so a rod can fish through the ice.
+    public static final DeferredBlock<FishingHoleBlock> FISHING_HOLE = BLOCKS.register("fishing_hole",
+            () -> new FishingHoleBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.WATER)
+                    .strength(-1.0F, 100.0F)
+                    .sound(SoundType.GLASS)
+                    .noOcclusion()
+                    .noLootTable()
+                    .pushReaction(PushReaction.BLOCK)));
 
     public static final DeferredBlock<ThermalVentPoolBlock> THERMAL_VENT_POOL = BLOCKS.register("thermal_vent_pool",
             () -> new ThermalVentPoolBlock(BlockBehaviour.Properties.of()

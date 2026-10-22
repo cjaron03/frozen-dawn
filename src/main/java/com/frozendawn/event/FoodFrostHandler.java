@@ -42,6 +42,10 @@ public class FoodFrostHandler {
 
     private static final TagKey<Item> FROST_RESISTANT =
             TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "frost_resistant"));
+    /** Late fish carry antifreeze; they still freeze, just far slower than ordinary food. */
+    private static final TagKey<Item> COLD_ADAPTED =
+            TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "cold_adapted"));
+    private static final float COLD_ADAPTED_RATE = 0.1f;
 
     /** Pre-eat food levels for halving nutrition on frozen food. */
     private static final Map<UUID, Integer> preFoodLevels = new HashMap<>();
@@ -82,7 +86,7 @@ public class FoodFrostHandler {
         int frost = stack.getOrDefault(ModDataComponents.FROST_TICKS, 0);
         if (temp < -30f && now >= warmUntil) {
             int rate = (int) Math.min(60, 15 + (-30f - temp) * (35f / 60f));
-            rate = (int) (rate * multiplier);
+            rate = (int) (rate * multiplier * (stack.is(COLD_ADAPTED) ? COLD_ADAPTED_RATE : 1f));
             frost = (int) Math.min(Integer.MAX_VALUE, (long) frost + rate);
         } else if (temp > 10f && frost > 0) {
             frost = Math.max(isFrostRuined(stack) ? 2400 : 0, frost - (temp > 30f ? 80 : 40));
