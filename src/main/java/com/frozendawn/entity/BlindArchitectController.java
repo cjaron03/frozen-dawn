@@ -12,6 +12,7 @@ import com.frozendawn.entity.blind.BlindSignalMemory.Sense;
 import com.frozendawn.entity.blind.BlindSensingBudget;
 import com.frozendawn.entity.blind.BlindVibrationPropagation;
 import com.frozendawn.entity.blind.BlindVibrationPropagation.Kind;
+import com.frozendawn.event.WorldTickHandler;
 import com.frozendawn.homo.PostMaeveWorldState;
 import com.frozendawn.init.ModSounds;
 import com.frozendawn.maeve.MaeveDirector;
@@ -63,6 +64,8 @@ public final class BlindArchitectController {
     private Signal digSignal;
     private Vec3 fleeOrigin;
     private UUID locked;
+    /** Who rang the latest queued bell, credited only if its noise stuns this actor while locked on them. */
+    private UUID bellRinger;
     private Signal selected;
     private String state = "WANDER";
     private int unknownReturns;
@@ -231,6 +234,7 @@ public final class BlindArchitectController {
         if (bell || explosion) {
             if (now() < noiseUntil || pending.size() >= BlindArchitectPolicy.MAX_RETURNS) return;
             var result = query(actor.getEyePosition(), position.add(0, bell ? .5 : 0, 0), bell ? 8 : 12);
+            if (bell && result.reached()) bellRinger = source instanceof ServerPlayer p ? p.getUUID() : null;
             if (result.reached()) pending.addLast(new Return(new Signal(Sense.HEARING, block, 1, .9, result.cost(), now(), null), result, now() + 1, true, explosion));
             return;
         }
@@ -435,6 +439,10 @@ public final class BlindArchitectController {
     private void noise(Vec3 position, boolean explosion) {
         if (now() < noiseUntil || erased()) return;
         noiseUntil = now() + BlindArchitectPolicy.NOISE_COOLDOWN;
+        if (!explosion && bellRinger != null && bellRinger.equals(locked)
+                && level().getPlayerByUUID(bellRinger) instanceof ServerPlayer ringer)
+            WorldTickHandler.grantAdvancement(ringer, "for_whom_the_bell_tolls");
+        bellRinger = null;
         if (!explosion || physicalExplosion == Long.MIN_VALUE || now() - physicalExplosion > 2) actor.hurt(actor.damageSources().magic(), 2);
         stunUntil = now() + BlindArchitectPolicy.STUN_TICKS;
         fleeUntil = stunUntil + BlindArchitectPolicy.FLEE_TICKS;
