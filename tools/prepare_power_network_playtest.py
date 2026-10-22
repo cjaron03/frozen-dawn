@@ -83,6 +83,7 @@ def pack_only(destination, hooks=False, title=TITLE, namespace=NS, build_scripts
         target.write_text(body+'\n')
     if hooks:
         (destination/'pack.mcmeta').write_text(json.dumps(nbt.pack_metadata(title))+'\n')
+        nbt.write_sync_advancement(destination)
         for name in ('load','tick'):
             target=destination/f'data/minecraft/tags/function/{name}.json'
             target.parent.mkdir(parents=True, exist_ok=True)

@@ -1,0 +1,42 @@
+{
+  "render_type": "minecraft:translucent",
+  "ambientocclusion": false,
+  "textures": {
+    "skin": "minecraft:block/frosted_ice_3",
+    "particle": "minecraft:block/ice"
+  },
+  "elements": [
+    {
+      "from": [
+        0,
+        14.4,
+        0
+      ],
+      "to": [
+        16,
+        14.6,
+        16
+      ],
+      "faces": {
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#skin"
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#skin"
+        }
+      }
+    }
+  ]
+}

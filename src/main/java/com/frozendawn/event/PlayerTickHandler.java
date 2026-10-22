@@ -276,6 +276,9 @@ public final class PlayerTickHandler {
             temp += (temp - 20f) * armorHeatMult;
         }
 
+        // A recent spoonful of Miel
+        temp += com.frozendawn.item.MielHoneyItem.warmth(player);
+
         // Remnant Ember offhand warmth bonus
         ItemStack offhand = player.getOffhandItem();
         if (offhand.getItem() instanceof RemnantEmberItem) {

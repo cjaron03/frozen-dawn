@@ -88,6 +88,20 @@ def pack_metadata(title):
             'filter': {'block': [{'path': 'advancement/.*'}]}}
 
 
+def write_sync_advancement(pack):
+    # Patchouli loads books on the first advancement packet, and vanilla sends
+    # none when nothing is visible, which leaves the Field Manual empty. The
+    # filter only blocks lower packs, so this silent self-granted one survives.
+    target = pack/'data/fd_test_sync/advancement/synced.json'
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(json.dumps({
+        'display': {'icon': {'id': 'minecraft:book'}, 'title': 'Test world sync',
+                    'description': 'Lets the Field Manual load in this test world.',
+                    'background': 'minecraft:textures/gui/advancements/backgrounds/stone.png',
+                    'show_toast': False, 'announce_to_chat': False},
+        'criteria': {'tick': {'trigger': 'minecraft:tick'}}}, indent=2)+'\n')
+
+
 def lab_state(data_version):
     # Establish a fresh fixed default before the first player joins, so the
     # normal one-time difficulty picker has no outstanding choice to request.
@@ -1202,6 +1216,7 @@ def write_pack(destination, fixture=False, case='first'):
         (qa/'layout.json').write_text(json.dumps(vibration_layout(case),indent=2)+'\n')
     if not fixture:
         (destination/'pack.mcmeta').write_text(json.dumps(pack_metadata(title))+'\n')
+        write_sync_advancement(destination)
         tags = destination/'data/minecraft/tags/function'
         tags.mkdir(parents=True, exist_ok=True)
         for name in ('load','tick'):

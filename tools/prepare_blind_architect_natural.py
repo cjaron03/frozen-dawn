@@ -9,7 +9,7 @@ import io
 import json
 from pathlib import Path
 import time
-from prepare_blind_architect_playtest import read, string, utf, write, lab_state, pack_metadata
+from prepare_blind_architect_playtest import read, string, utf, write, lab_state, pack_metadata, write_sync_advancement
 
 ROOT = Path(__file__).resolve().parents[1]
 TITLE = 'Blind Architect 10 Natural Cave'
@@ -61,6 +61,7 @@ def pack(destination, fixture=False):
     destination.mkdir(parents=True, exist_ok=False)
     if not fixture:
         (destination/'pack.mcmeta').write_text(json.dumps(pack_metadata('Natural cave observation; advancements hidden'))+'\n')
+        write_sync_advancement(destination)
     functions = destination/'data/blind_natural/function'
     functions.mkdir(parents=True)
     for name, commands in SCRIPTS.items():

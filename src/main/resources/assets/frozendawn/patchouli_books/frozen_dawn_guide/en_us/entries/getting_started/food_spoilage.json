@@ -21,7 +21,7 @@
     {
       "type": "patchouli:text",
       "title": "Prevention",
-      "text": "$(li)$(l:heating/thermal_container)Thermal Container$(/l): blocks frost$(li)$(l:getting_started/ration_warmer)Ration Warmer$(/l): thaws a stack in 10 s$(li)Never frost: golden and enchanted golden apples, dried kelp, $(l:getting_started/hot_wings)Hot Wings$(/l)"
+      "text": "$(li)$(l:heating/thermal_container)Thermal Container$(/l): blocks frost$(li)$(l:getting_started/ration_warmer)Ration Warmer$(/l): thaws a stack in 10 s$(li)Never frost: golden and enchanted golden apples, dried kelp, $(l:getting_started/hot_wings)Hot Wings$(/l)$(li)10x slower: raw $(l:getting_started/ice_fishing)late fish$(/l) and Cured Longsleeper"
     }
   ],
   "priority": true
