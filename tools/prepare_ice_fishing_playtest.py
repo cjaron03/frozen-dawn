@@ -13,7 +13,7 @@ import io
 import json
 from pathlib import Path
 import time
-from prepare_blind_architect_playtest import read, string, utf, write, lab_state, pack_metadata
+from prepare_blind_architect_playtest import read, string, utf, write, lab_state, pack_metadata, write_sync_advancement
 
 ROOT = Path(__file__).resolve().parents[1]
 TITLE = 'Ice Fishing Check'
@@ -105,6 +105,7 @@ SCRIPTS = {
 def pack(destination):
     destination.mkdir(parents=True, exist_ok=False)
     (destination/'pack.mcmeta').write_text(json.dumps(pack_metadata('Ice fishing playtest; advancements hidden'))+'\n')
+    write_sync_advancement(destination)
     functions = destination/('data/'+NS+'/function')
     functions.mkdir(parents=True)
     for name, commands in SCRIPTS.items():

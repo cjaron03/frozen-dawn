@@ -7,7 +7,7 @@ import hashlib
 import io
 import json
 from pathlib import Path
-from prepare_blind_architect_playtest import encode_metadata, lab_state, pack_metadata, read, string, utf, write
+from prepare_blind_architect_playtest import encode_metadata, lab_state, pack_metadata, read, write_sync_advancement, string, utf, write
 
 ROOT = Path(__file__).resolve().parents[1]
 TITLE = 'Blind Architect 11 ERASED'
@@ -48,6 +48,7 @@ def pack(destination, fixture=False):
     root = destination / 'data'
     if not fixture:
         (destination / 'pack.mcmeta').write_text(json.dumps(pack_metadata('Blind ERASED operator view'), indent=2)+'\n')
+        write_sync_advancement(destination)
     folder = root / 'blind_erased/function'
     folder.mkdir(parents=True)
     for name, text in SCRIPTS.items():
