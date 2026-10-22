@@ -340,6 +340,15 @@ public class ModBlocks {
                     .noLootTable()
                     .pushReaction(PushReaction.BLOCK)));
 
+    // Four servings; breaking a started pot loses the rest, like cake.
+    public static final DeferredBlock<com.frozendawn.block.SeafoodBoilBlock> SEAFOOD_BOIL = BLOCKS.register("seafood_boil",
+            () -> new com.frozendawn.block.SeafoodBoilBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.METAL)
+                    .strength(1.0F)
+                    .sound(SoundType.LANTERN)
+                    .noOcclusion()
+                    .pushReaction(PushReaction.DESTROY)));
+
     public static final DeferredBlock<ThermalVentPoolBlock> THERMAL_VENT_POOL = BLOCKS.register("thermal_vent_pool",
             () -> new ThermalVentPoolBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.WATER)

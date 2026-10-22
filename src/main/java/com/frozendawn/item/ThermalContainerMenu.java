@@ -88,15 +88,17 @@ public class ThermalContainerMenu extends AbstractContainerMenu {
         if (!player.level().isClientSide()) {
             ItemStack containerStack = getContainerStack(player);
             if (containerStack != null && containerStack.getItem() instanceof ThermalContainerItem) {
-                saveToStack(containerStack);
+                saveToStack(containerStack, player.level().getGameTime());
             }
         }
     }
 
-    private void saveToStack(ItemStack stack) {
+    private void saveToStack(ItemStack stack, long now) {
         List<ItemStack> items = new ArrayList<>();
         for (int i = 0; i < container.getContainerSize(); i++) {
-            items.add(container.getItem(i));
+            ItemStack item = container.getItem(i);
+            SeafoodBoilHeat.hold(item, now);
+            items.add(item);
         }
         stack.set(DataComponents.CONTAINER, ItemContainerContents.fromItems(items));
     }

@@ -285,6 +285,10 @@ public final class PlayerTickHandler {
             }
         }
 
+        if (player.hasEffect(ModEffects.WARM_MEAL)) {
+            temp += com.frozendawn.item.SeafoodBoilHeat.WARM_MEAL_BONUS;
+        }
+
         temp -= FrostbiteHandler.getTemperatureDrain(player);
         temp -= getFrostmiteTemperatureDrain(player);
         // Hollow grab: massive temperature plunge
