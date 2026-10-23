@@ -124,4 +124,12 @@ class WorldModelTest {
         var loaded = BeliefStore.load(store.save()); loaded.contact(PLAYER, 4000);
         assertTrue(loaded.commitment(PLAYER).blocked().contains(EAST));
     }
+
+    @Test void aShelterOnlyHomeSurvivesReload() {
+        var store = new BeliefStore();
+        store.observeContact(PLAYER, OBSERVER, DIM, 10).shelter(DIM, new BlockPos(5, 64, 5), 10);
+        var world = BeliefStore.load(store.save()).world(PLAYER);
+        assertNotNull(world);
+        assertEquals(new BlockPos(5, 64, 5), world.center(DIM));
+    }
 }

@@ -639,6 +639,17 @@ tasks.register('generateMacsScribeBaseQa', Exec) {
 }
 sourceSets.gameTest.resources.srcDir(macsScribeBaseQaResources)
 tasks.named('processGameTestResources') { dependsOn tasks.named('generateMacsScribeBaseQa') }
+
+// The MACS Pyro Check world is parsed by the same native gate.
+def macsPyroQaResources = layout.buildDirectory.dir('generated/macsPyroQa')
+tasks.register('generateMacsPyroQa', Exec) {
+    inputs.file('tools/prepare_macs_pyro_playtest.py')
+    inputs.file('tools/prepare_blind_architect_playtest.py')
+    outputs.dir(macsPyroQaResources)
+    commandLine 'python3', '-B', 'tools/prepare_macs_pyro_playtest.py', '--pack-only', macsPyroQaResources.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(macsPyroQaResources)
+tasks.named('processGameTestResources') { dependsOn tasks.named('generateMacsPyroQa') }
 // Ration Warmer's disposable-world commands use the same native parser as GameTest.
 def rationWarmerQaResources = layout.buildDirectory.dir('generated/ration-warmer-qa')
 tasks.register('generateRationWarmerQa', Exec) {
