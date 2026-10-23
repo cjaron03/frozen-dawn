@@ -100,4 +100,112 @@ class FusionPhysicsTest {
         f = new FusionPhysics(); f.addTritium(0.5);
         assertFalse(f.extractTritium()); assertEquals(0.5, f.tritium(), 1e-9);
     }
+
+    private static FusionPhysics.Inputs burn(int radiators, boolean powered, boolean hatchClosed, boolean shellIntact, double pressure,
+            int deuterium, boolean pumping, double wear, boolean redstone, double targetKw) {
+        return new FusionPhysics.Inputs(sinks(radiators), powered, pressure, hatchClosed, shellIntact, false, deuterium, pumping, wear, redstone, targetKw);
+    }
+    private static FusionPhysics burning() {
+        var f = new FusionPhysics(); f.setReadyForTest(); f.addTritium(4); f.start();
+        run(f, ok(14), 10);
+        assertEquals(FusionPhysics.State.BURNING, f.state());
+        return f;
+    }
+    private static FusionPhysics steady() { var f = burning(); run(f, ok(14), 3000); return f; }
+    private static void assertDisrupts(FusionPhysics.Readout r, FusionPhysics.Status status) {
+        assertEquals(FusionPhysics.State.OFF, r.state()); assertEquals(status, r.status()); assertTrue(r.disrupted());
+    }
+
+    @Test void fourteenRadiatorsCarryAFullBurn() {
+        var f = burning();
+        var r = run(f, ok(14), 3000);
+        assertEquals(FusionPhysics.State.BURNING, r.state());
+        assertTrue(r.loopC() > 820 && r.loopC() < 880, "About 848C: " + r.loopC());
+        assertTrue(r.netKw() > 315 && r.netKw() < 340, "About 329 kW net: " + r.netKw());
+        assertEquals(0, r.requestKw(), 1e-9);
+    }
+
+    @Test void tenRadiatorsOverheatPast1100AndDisrupt() {
+        var f = burning(); int disruptions = 0; FusionPhysics.Readout r = null;
+        for (int i = 0; i < 3000; i++) { r = f.step(ok(10)); if (r.disrupted()) disruptions++; }
+        assertEquals(FusionPhysics.State.OFF, r.state()); assertEquals(FusionPhysics.Status.DISRUPTION, r.status());
+        assertEquals(1, disruptions);
+    }
+
+    @Test void everyHardTriggerDisruptsAndWears() {
+        assertDisrupts(steady().step(burn(14, true, true, true, 0, 64, true, 0, true, Double.NaN)), FusionPhysics.Status.DISRUPTION);
+        assertDisrupts(steady().step(burn(14, true, false, true, 0, 64, true, 0, false, Double.NaN)), FusionPhysics.Status.DISRUPTION);
+        assertDisrupts(steady().step(burn(14, true, true, false, 0, 64, true, 0, false, Double.NaN)), FusionPhysics.Status.DISRUPTION);
+        assertDisrupts(steady().step(burn(14, true, true, true, 0.06, 64, true, 0, false, Double.NaN)), FusionPhysics.Status.DISRUPTION);
+        var stopped = steady(); stopped.stop();
+        assertDisrupts(stopped.step(ok(14)), FusionPhysics.Status.DISRUPTION);
+        var starved = steady(); FusionPhysics.Readout r = null;
+        for (int i = 0; i < 601 && (r == null || r.state() == FusionPhysics.State.BURNING); i++)
+            r = starved.step(burn(14, true, true, true, 0, 0, true, 0, false, Double.NaN));
+        assertDisrupts(r, FusionPhysics.Status.DISRUPTION);
+    }
+
+    @Test void unpaidHouseLoadShortfallQuenches() {
+        var f = burning(); f.setLoopC(ReactorPhysics.DEEP_VACUUM_C);
+        var r = f.step(ok(14));
+        assertTrue(r.netKw() < 0, "A cold loop cannot carry the house load: " + r.netKw());
+        assertEquals(-r.netKw(), r.requestKw(), 1e-9);
+        assertDisrupts(f.step(burn(14, false, true, true, 0, 64, true, 0, false, Double.NaN)), FusionPhysics.Status.MAGNET_QUENCH);
+    }
+
+    @Test void paidShortfallKeepsBurning() {
+        var f = burning(); f.setLoopC(ReactorPhysics.DEEP_VACUUM_C);
+        var r = run(f, ok(14), 30);
+        assertEquals(FusionPhysics.State.BURNING, r.state());
+    }
+
+    @Test void stoppedAshPumpFadesToAshPoisonedWithoutWear() {
+        var f = steady(); double full = f.step(ok(14)).heatKw();
+        var unpumped = burn(14, true, true, true, 0, 64, false, 0, false, Double.NaN);
+        var half = run(f, unpumped, 30);
+        assertEquals(full / 2, half.heatKw(), full * 0.1);
+        var r = run(f, unpumped, 29);
+        assertEquals(FusionPhysics.State.BURNING, r.state());
+        r = f.step(unpumped);
+        assertEquals(FusionPhysics.State.OFF, r.state()); assertEquals(FusionPhysics.Status.ASH_POISONED, r.status());
+        assertFalse(r.disrupted());
+    }
+
+    @Test void breedingKeepsTheTankAndCapsAtEight() {
+        var f = steady(); double before = f.tritium();
+        run(f, ok(14), 1200);
+        assertTrue(f.tritium() >= before, "Breeding at 1.05 sustains the tank: " + before + " -> " + f.tritium());
+        run(f, ok(14), 200000);
+        assertEquals(8, f.tritium(), 1e-9);
+    }
+
+    @Test void deuteriumBurnsOneCanisterPerTenMinutesAtFullOutput() {
+        var f = steady(); int used = 0;
+        for (int i = 0; i < 1200; i++) used += f.step(ok(14)).deuteriumUsed();
+        assertEquals(2, used);
+    }
+
+    @Test void wearDeratesGrossOutput() {
+        var f = steady(); var tag = new CompoundTag(); f.save(tag);
+        var g = new FusionPhysics(); g.load(tag);
+        double clean = f.step(ok(14)).grossKw();
+        double worn = g.step(burn(14, true, true, true, 0, 64, true, 0.5, false, Double.NaN)).grossKw();
+        assertTrue(clean > 300, "Full output first: " + clean);
+        assertEquals(clean / 2, worn, clean * 0.01);
+    }
+
+    @Test void loadFollowAtZeroDemandStaysLit() {
+        var f = burning(); f.setLoadFollow(true);
+        var zero = burn(14, true, true, true, 0, 64, true, 0, false, 0);
+        FusionPhysics.Readout r = null;
+        for (int i = 0; i < 3000; i++) { r = f.step(zero); assertFalse(r.disrupted(), "second " + i); }
+        assertEquals(FusionPhysics.State.BURNING, r.state());
+        assertTrue(r.netKw() >= -1, "Idles near zero net: " + r.netKw());
+    }
+
+    @Test void loadFollowTracksAModestTarget() {
+        var f = burning(); f.setLoadFollow(true);
+        var r = run(f, burn(14, true, true, true, 0, 64, true, 0, false, 150), 4000);
+        assertEquals(150, r.netKw(), 15);
+    }
 }

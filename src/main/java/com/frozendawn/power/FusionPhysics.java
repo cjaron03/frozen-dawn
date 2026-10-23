@@ -34,7 +34,7 @@ public final class FusionPhysics {
 
     private State state = State.OFF;
     private Status status = Status.IDLE;
-    private double loopC = 20, tritium, deuteriumProgress, burn = MIN_BURN;
+    private double loopC = 20, tritium, deuteriumProgress, burn = MIN_BURN, requestKw;
     private int progress, ashSeconds;
     private boolean loadFollow, startPending, stopPending;
 
@@ -71,9 +71,8 @@ public final class FusionPhysics {
 
     public Readout step(Inputs in) {
         double sinkC = in.radiatorSinks().stream().mapToDouble(Double::doubleValue).average().orElse(ReactorPhysics.DEEP_VACUUM_C);
-        double removed = removedKw(in.radiatorSinks());
+        if (state == State.BURNING) return burn(in, sinkC);
         switch (state) {
-            case OFF -> {}
             case COOLDOWN -> {
                 if (!in.powered()) off(Status.IDLE);
                 else {
@@ -98,18 +97,66 @@ public final class FusionPhysics {
                     tritium -= IGNITION_TRITIUM; burn = MIN_BURN; ashSeconds = 0; deuteriumProgress = 0;
                 }
             }
-            case BURNING -> {}
+            default -> {}
         }
+        double removed = removedKw(in.radiatorSinks());
         loopC -= removed / LOOP_HEAT_CAPACITY_KJ_PER_C;
-        double gross = removed * ReactorPhysics.efficiency(loopC, sinkC) * (1 - in.wear());
-        double request = switch (state) {
-            case OFF, BURNING -> 0;
+        requestKw = switch (state) {
             case COOLDOWN, READY -> COOLDOWN_KW;
             case IGNITION -> IGNITION_KW;
+            default -> 0;
         };
         double shown = state == State.COOLDOWN ? (double) progress / COOLDOWN_SECONDS
                 : state == State.IGNITION ? (double) progress / IGNITION_SECONDS : 0;
-        return new Readout(state, status, loopC, 0, removed, gross, -request, request, 0, tritium, shown, false);
+        return new Readout(state, status, loopC, 0, removed, 0, -requestKw, requestKw, 0, tritium, shown, false);
+    }
+
+    private Readout burn(Inputs in, double sinkC) {
+        boolean shortfall = requestKw > 0 && !in.powered();
+        if (shortfall) return disrupt(Status.MAGNET_QUENCH, in);
+        if (in.redstone() || stopPending || !in.hatchClosed() || !in.shellIntact() || in.channelPressure() > VACUUM_LIMIT)
+            return disrupt(Status.DISRUPTION, in);
+        double pumpKw = in.pumping() ? ASH_PUMP_KW : 0;
+        double goal = 1;
+        if (loadFollow && Double.isFinite(in.targetKw())) {
+            double eff = Math.max(0.05, ReactorPhysics.efficiency(NOMINAL_C, sinkC) * (1 - in.wear()));
+            double capacity = in.radiatorSinks().stream().mapToDouble(t -> HT_RADIATOR_KW_PER_C * Math.max(0, NOMINAL_C - t)).sum();
+            goal = Math.min((Math.max(0, in.targetKw()) + HOUSE_KW + pumpKw) / eff, capacity) / RATED_KW;
+        }
+        goal = Math.clamp(goal, MIN_BURN, 1);
+        burn += Math.clamp(goal - burn, -LOAD_FOLLOW_SLEW, LOAD_FOLLOW_SLEW);
+        ashSeconds = in.pumping() ? 0 : ashSeconds + 1;
+        if (ashSeconds >= ASH_FADE_SECONDS) {
+            off(Status.ASH_POISONED);
+            return idle(in, false);
+        }
+        double heat = RATED_KW * burn * (1 - (double) ashSeconds / ASH_FADE_SECONDS);
+        double removed = removedKw(in.radiatorSinks());
+        loopC += (heat - removed) / LOOP_HEAT_CAPACITY_KJ_PER_C;
+        if (loopC > DISRUPT_C) return disrupt(Status.DISRUPTION, in);
+        double gross = removed * ReactorPhysics.efficiency(loopC, sinkC) * (1 - Math.clamp(in.wear(), 0, 1));
+        double net = gross - HOUSE_KW - pumpKw;
+        int used = 0;
+        deuteriumProgress += burn / DEUTERIUM_SECONDS;
+        if (deuteriumProgress >= 1) {
+            if (in.deuterium() <= 0) return disrupt(Status.DISRUPTION, in);
+            deuteriumProgress -= 1; used = 1;
+        }
+        tritium = Math.min(TRITIUM_TANK, Math.max(0, tritium + burn / TRITIUM_SECONDS * (BREEDING_RATIO - 1)));
+        requestKw = Math.max(0, -net);
+        return new Readout(state, status, loopC, heat, removed, gross, net, requestKw, used, tritium, 0, false);
+    }
+
+    /** Plasma ends at once; the loop keeps its heat and cools through the radiators. */
+    private Readout disrupt(Status why, Inputs in) {
+        off(why);
+        return idle(in, true);
+    }
+    private Readout idle(Inputs in, boolean disrupted) {
+        double removed = removedKw(in.radiatorSinks());
+        loopC -= removed / LOOP_HEAT_CAPACITY_KJ_PER_C;
+        requestKw = 0;
+        return new Readout(state, status, loopC, 0, removed, 0, 0, 0, 0, tritium, 0, disrupted);
     }
 
     private Status ignitionBlock(Inputs in) {
@@ -128,7 +175,7 @@ public final class FusionPhysics {
 
     public void save(CompoundTag tag) {
         tag.putString("State", state.name()); tag.putString("Status", status.name()); tag.putDouble("LoopC", loopC);
-        tag.putDouble("Tritium", tritium); tag.putDouble("DeuteriumProgress", deuteriumProgress); tag.putDouble("Burn", burn);
+        tag.putDouble("Tritium", tritium); tag.putDouble("DeuteriumProgress", deuteriumProgress); tag.putDouble("Burn", burn); tag.putDouble("RequestKw", requestKw);
         tag.putInt("Progress", progress); tag.putInt("AshSeconds", ashSeconds); tag.putBoolean("LoadFollow", loadFollow);
         tag.putBoolean("StartPending", startPending); tag.putBoolean("StopPending", stopPending);
     }
@@ -139,6 +186,7 @@ public final class FusionPhysics {
         tritium = Math.clamp(finite(tag.getDouble("Tritium"), 0), 0, TRITIUM_TANK);
         deuteriumProgress = Math.clamp(finite(tag.getDouble("DeuteriumProgress"), 0), 0, 1);
         burn = Math.clamp(tag.contains("Burn") ? finite(tag.getDouble("Burn"), MIN_BURN) : MIN_BURN, MIN_BURN, 1);
+        requestKw = Math.max(0, finite(tag.getDouble("RequestKw"), 0));
         progress = Math.max(0, tag.getInt("Progress")); ashSeconds = Math.max(0, tag.getInt("AshSeconds"));
         loadFollow = tag.getBoolean("LoadFollow"); startPending = tag.getBoolean("StartPending"); stopPending = tag.getBoolean("StopPending");
     }
