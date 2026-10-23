@@ -305,12 +305,13 @@ public final class MaeveObservationGameTest {
             }
             level.getChunk(chunk.x, chunk.z);
         }
+        Runnable resume = acquired.isEmpty() ? () -> { } : com.frozendawn.gametest.GameTestPacing.holdNormalPace(level.getServer());
         helper.testInfo.addListener(new net.minecraft.gametest.framework.GameTestListener() {
             public void testStructureLoaded(net.minecraft.gametest.framework.GameTestInfo info) { }
             public void testAddedForRerun(net.minecraft.gametest.framework.GameTestInfo old,
                                          net.minecraft.gametest.framework.GameTestInfo next,
                                          net.minecraft.gametest.framework.GameTestRunner runner) { }
-            private void release() { acquired.forEach(c -> level.setChunkForced(c.x, c.z, false)); }
+            private void release() { resume.run(); acquired.forEach(c -> level.setChunkForced(c.x, c.z, false)); }
             public void testPassed(net.minecraft.gametest.framework.GameTestInfo info,
                                    net.minecraft.gametest.framework.GameTestRunner runner) { release(); }
             public void testFailed(net.minecraft.gametest.framework.GameTestInfo info,
@@ -324,6 +325,7 @@ public final class MaeveObservationGameTest {
                                 && level.areEntitiesLoaded(chunk.toLong()),
                         "Waiting for fixture entity sections: " + chunk);
             }
+            resume.run();
         }).thenExecute(() -> {
             try (Scene scene = new Scene(helper, origin)) { exercise.accept(scene); }
         }).thenSucceed();
