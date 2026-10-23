@@ -52,6 +52,7 @@ import com.frozendawn.init.ModDataComponents;
 import com.frozendawn.init.ModEntities;
 import com.frozendawn.init.ModFluids;
 import com.frozendawn.init.ModItems;
+import com.frozendawn.item.MielHoneyItem;
 import com.frozendawn.init.ModMenuTypes;
 import com.frozendawn.init.ModParticles;
 import com.frozendawn.init.ModSkullTypes;
@@ -261,6 +262,8 @@ public class ClientEvents {
             );
             ItemProperties.register(ModItems.GEIGER_COUNTER.get(), ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "reading"),
                     (stack, level, entity, seed) -> entity == net.minecraft.client.Minecraft.getInstance().player ? RadiationClient.needle() : 0);
+            ItemProperties.register(ModItems.MIEL_HONEY.get(), ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "fill"),
+                    (stack, level, entity, seed) -> stack.getOrDefault(ModDataComponents.MIEL_SPOONFULS, MielHoneyItem.SPOONFULS) / (float) MielHoneyItem.SPOONFULS);
             CuriosClientCompat.registerRenderers();
         });
     }

@@ -1,6 +1,11 @@
 {
   "schema": 1,
   "functions": {
+    "advancement_check:setup": {"world":"Advancement Check","scores":[{"objective":"advcheck","holder":"#built","equals":1}]},
+    "advancement_check:grove": {"world":"Advancement Check","scores":[{"objective":"advcheck","holder":"#built","equals":1}]},
+    "advancement_check:architect": {"world":"Advancement Check","scores":[{"objective":"advcheck","holder":"#built","equals":1}]},
+    "advancement_check:phase6": {"world":"Advancement Check","scores":[{"objective":"advcheck","holder":"#built","equals":1}]},
+    "advancement_check:read": {"world":"Advancement Check","scores":[{"objective":"advcheck","holder":"#built","equals":1}]},
     "cyclone_thunder:controls": {"world":"Cyclone Thunder Check","scores":[{"objective":"cythunder","holder":"#built","equals":1}]},
     "cyclone_drift:controls": {"world":"Cyclone Drift Check","scores":[{"objective":"cydrift","holder":"#built","equals":1}]},
     "cyclone_drift:read": {"world":"Cyclone Drift Check","scores":[{"objective":"cydrift","holder":"#built","equals":1}]},

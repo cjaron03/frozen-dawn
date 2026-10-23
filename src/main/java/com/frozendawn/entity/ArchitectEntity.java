@@ -160,6 +160,11 @@ public class ArchitectEntity extends Monster {
     private static final EntityDataAccessor<Boolean> DATA_SCRIBE_WRITING =
             SynchedEntityData.defineId(ArchitectEntity.class, EntityDataSerializers.BOOLEAN);
     static final String SCRIBE_TAG = "macsScribe";
+    private static final EntityDataAccessor<Boolean> DATA_PYRO =
+            SynchedEntityData.defineId(ArchitectEntity.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Boolean> DATA_PYRO_STARE =
+            SynchedEntityData.defineId(ArchitectEntity.class, EntityDataSerializers.BOOLEAN);
+    static final String PYRO_TAG = "macsPyro";
     private final ArchitectThinkingController thinkingController = new ArchitectThinkingController(this);
     private float thinkingTilt, thinkingTiltOld, thinkingHand, thinkingHandOld;
     private float scribeWriting, scribeWritingOld;
@@ -256,6 +261,7 @@ public class ArchitectEntity extends Monster {
     private final ArchitectAttentionController maeveAttention = new ArchitectAttentionController(this);
     private final ArchitectReconnaissanceController maeveReconnaissance = new ArchitectReconnaissanceController(this);
     private final ArchitectScribeController maeveScribe = new ArchitectScribeController(this);
+    private final ArchitectPyroController maevePyro = new ArchitectPyroController(this);
     private long localCombatUntil;
     private UUID lastCombatSubject;
     private int thinkingInterruptedUntil;
@@ -405,6 +411,8 @@ public class ArchitectEntity extends Monster {
         builder.define(DATA_RECON_CLOUD_START, -1L);
         builder.define(DATA_SCRIBE, false);
         builder.define(DATA_SCRIBE_WRITING, false);
+        builder.define(DATA_PYRO, false);
+        builder.define(DATA_PYRO_STARE, false);
     }
 
     @Override
@@ -536,6 +544,22 @@ public class ArchitectEntity extends Monster {
         // Slate in the right hand, stylus hand on the jointed left arm.
         setLeftHanded(false);
         entityData.set(DATA_SCRIBE, isScribe()); updateHeldItem();
+    }
+
+    /** §9.4a: orange eyes, ordinary stats. The server reads the persistent designation; clients the synced flag. */
+    public boolean isPyro() {
+        return !isMasterArchitectVisual() && (level().isClientSide() ? entityData.get(DATA_PYRO) : getPersistentData().getBoolean(PYRO_TAG));
+    }
+
+    /** Called once, before a designated natural spawn enters the world. */
+    public void becomePyro() { entityData.set(DATA_PYRO, isPyro()); }
+
+    /** Lab only: the Pyro leaves at once, through its ordinary vanish. */
+    public boolean vanishPyroNow() { return maevePyro.vanishNow(); }
+
+    /** Presentation only: the Pyro's hand-to-chin stare at its post. */
+    public boolean isPyroStaring() {
+        return entityData.get(DATA_PYRO_STARE) && isPyro() && isAlive() && !isNoAi() && getDeathTicks() == 0;
     }
 
     /** Presentation of an actual noncombat scout task, independent of its fallback utility action. */
@@ -673,6 +697,8 @@ public class ArchitectEntity extends Monster {
         if (!level().isClientSide()) {
             entityData.set(DATA_SCRIBE, isScribe());
             entityData.set(DATA_SCRIBE_WRITING, maeveScribe.writing());
+            entityData.set(DATA_PYRO, isPyro());
+            entityData.set(DATA_PYRO_STARE, maevePyro.staring());
         }
         if (level().isClientSide()) {
             com.frozendawn.entity.architect.ArchitectReconnaissanceFx.tick(this);
@@ -687,7 +713,7 @@ public class ArchitectEntity extends Monster {
             }
             thinkingTiltOld = thinkingTilt;
             thinkingHandOld = thinkingHand;
-            boolean thinking = isHoldingMaevePosition() && !isHoldingRangedCover() || isShowingReconnaissancePose();
+            boolean thinking = isHoldingMaevePosition() && !isHoldingRangedCover() || isShowingReconnaissancePose() || isPyroStaring();
             int pose = entityData.get(DATA_PURSUIT_POSE);
             boolean allowed = getCurrentAction() == ACTION_APPROACH && !isMiningBlock()
                     && !hasQueuedScaffoldStep() && !isMasterArchitectVisual()
@@ -819,7 +845,7 @@ public class ArchitectEntity extends Monster {
             return;
         }
 
-        if (maeveScribe.tick()) {
+        if (maeveScribe.tick() || maevePyro.tick()) {
             entityData.set(DATA_PURSUIT_POSE, 0); updateHeldItem(); syncRenderState(); return;
         }
         if (maevePawn.tick()) {
@@ -872,7 +898,7 @@ public class ArchitectEntity extends Monster {
                             + " targetHealth=" + (target == null ? "-" : target.getHealth())
                             + " maeveHold=" + isHoldingMaevePosition()
                             + " reconEyes=" + hasReconnaissanceEyes() + " scoutPose=" + isShowingReconnaissancePose()
-                            + " scribe=" + isScribe()
+                            + " scribe=" + isScribe() + " pyro=" + isPyro()
                             + " mining=" + blockBreaker.isMining()
                             + " collision=" + horizontalCollision
                             + " locked=" + (debugForcedTargetId != null));
@@ -1183,7 +1209,7 @@ public class ArchitectEntity extends Monster {
                 || isMasterArchitectVisual() || isHearthAssessor() || isHearthPopulationResident()
                 || AggregateReinforcementManager.isChild(this)) return;
         localCombatUntil = level().getGameTime() + 600;
-        maeveScribe.damaged(source);
+        maeveScribe.damaged(source); maevePyro.damaged(source);
         if (source.getEntity() instanceof ServerPlayer player) MaeveDirector.beginLocalCombat(this, player);
         boolean interrupted = isHoldingMaevePosition() || hasReconnaissanceEyes()
                 || getBrainAction() == ACTION_OBSERVE || entityData.get(DATA_PURSUIT_POSE) != 0;
@@ -3135,6 +3161,7 @@ public class ArchitectEntity extends Monster {
             MaeveDirector.finishMission(this, "OWNER_REMOVED", false);
             maeveCommitment.clear();
             if (isScribe() && reason.shouldDestroy()) MaeveDirector.scribeEnded(this, reason.name());
+            if (isPyro() && reason.shouldDestroy()) MaeveDirector.pyroEnded(this, reason.name());
         }
         if (masterBossEvent != null) {
             masterBossEvent.removeAllPlayers();

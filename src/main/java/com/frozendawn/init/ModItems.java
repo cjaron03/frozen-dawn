@@ -418,6 +418,16 @@ public class ModItems {
             () -> new Item(new Item.Properties().food(new FoodProperties.Builder()
                     .nutrition(10).saturationModifier(0.8f).build())));
 
+    // --- Seafood Boil ---
+    public static final DeferredItem<Item> RAW_SEAFOOD_BOIL = ITEMS.register("raw_seafood_boil",
+            () -> new Item(new Item.Properties().stacksTo(1)));
+    public static final DeferredItem<com.frozendawn.item.SeafoodBoilItem> SEAFOOD_BOIL = ITEMS.register("seafood_boil",
+            () -> new com.frozendawn.item.SeafoodBoilItem(ModBlocks.SEAFOOD_BOIL.get(), new Item.Properties().stacksTo(1)));
+    public static final DeferredItem<com.frozendawn.item.SeafoodBoilBowlItem> SEAFOOD_BOIL_BOWL = ITEMS.register("seafood_boil_bowl",
+            () -> new com.frozendawn.item.SeafoodBoilBowlItem(new Item.Properties().stacksTo(1)
+                    .food(new FoodProperties.Builder().nutrition(20).saturationModifier(0.6f)
+                            .usingConvertsTo(Items.BOWL).build())));
+
     // --- Frostbitten Mob Drops ---
     public static final DeferredItem<FrozenMeatItem> FROZEN_MEAT = ITEMS.register("frozen_meat",
             () -> new FrozenMeatItem(new Item.Properties()
@@ -573,6 +583,11 @@ public class ModItems {
             () -> new ComfortItem(new Item.Properties().stacksTo(1), "tooltip.frozendawn.stuffed_hyrax"));
     public static final DeferredItem<ComfortItem> WILSON = ITEMS.register("wilson",
             () -> new ComfortItem(new Item.Properties().stacksTo(1), "tooltip.frozendawn.wilson"));
+    public static final DeferredItem<com.frozendawn.item.MielHoneyItem> MIEL_HONEY = ITEMS.register("miel_honey",
+            () -> new com.frozendawn.item.MielHoneyItem(new Item.Properties().stacksTo(1)
+                    .component(ModDataComponents.MIEL_SPOONFULS, com.frozendawn.item.MielHoneyItem.SPOONFULS)));
+    public static final DeferredItem<ComfortItem> EMPTY_MIEL_JAR = ITEMS.register("empty_miel_jar",
+            () -> new ComfortItem(new Item.Properties().stacksTo(1), "tooltip.frozendawn.empty_miel_jar"));
 
     // --- Acheronite Materials ---
     public static final DeferredItem<AcheroniteShardItem> ACHERONITE_SHARD = ITEMS.register("acheronite_shard",
@@ -826,6 +841,8 @@ public class ModItems {
                         output.accept(STUFFED_CAPYBARA.get());
                         output.accept(STUFFED_HYRAX.get());
                         output.accept(WILSON.get());
+                        output.accept(MIEL_HONEY.get());
+                        output.accept(EMPTY_MIEL_JAR.get());
                         // Win Condition
                         output.accept(ACHERONITE_COMPASS.get());
                         output.accept(TRANSPONDER_SCHEMATIC.get());
@@ -838,6 +855,10 @@ public class ModItems {
                         output.accept(COOKED_RIME_HAGFISH.get());
                         output.accept(LONGSLEEPER.get());
                         output.accept(CURED_LONGSLEEPER.get());
+                        output.accept(RAW_SEAFOOD_BOIL.get());
+                        ItemStack freshBoil = new ItemStack(SEAFOOD_BOIL.get());
+                        freshBoil.set(ModDataComponents.STEAM_HELD.get(), com.frozendawn.item.SeafoodBoilHeat.STEAM_TICKS);
+                        output.accept(freshBoil);
                         // Mob Drops
                         output.accept(FROZEN_MEAT.get());
                         output.accept(HOT_WINGS.get());

@@ -174,7 +174,7 @@ public class ArchitectModel extends HumanoidModel<ArchitectEntity> {
                 this.rightArm.yRot = -0.12f;
                 this.leftArm.yRot = 0.12f;
             }
-        } else if (entity.isHoldingMaevePosition() || entity.isShowingReconnaissancePose()) {
+        } else if (entity.isHoldingMaevePosition() || entity.isShowingReconnaissancePose() || entity.isPyroStaring()) {
             // Preserve vanilla's attack swing when defending the held point.
             if (entity.getAttackAnim(ageInTicks - entity.tickCount) <= 0.001F) {
                 applyObservePose(ageInTicks, sway, limbSwingAmount);

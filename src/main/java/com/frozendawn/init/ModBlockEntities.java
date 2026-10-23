@@ -169,6 +169,12 @@ public class ModBlockEntities {
                             ModBlocks.TOWN_PA_SPEAKER.get()
                     ).build(null));
 
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.frozendawn.block.SeafoodBoilBlockEntity>> SEAFOOD_BOIL =
+            BLOCK_ENTITIES.register("seafood_boil",
+                    () -> BlockEntityType.Builder.of(com.frozendawn.block.SeafoodBoilBlockEntity::new,
+                            ModBlocks.SEAFOOD_BOIL.get()
+                    ).build(null));
+
     @SubscribeEvent
     public static void onBlockEntityValidBlocks(BlockEntityTypeAddBlocksEvent event) {
         event.modify(BlockEntityType.SKULL, ModBlocks.ARCHITECT_MASK.get(), ModBlocks.ARCHITECT_WALL_MASK.get());

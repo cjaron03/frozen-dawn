@@ -29,7 +29,8 @@ def button(label, function, color='aqua'):
 MENU = json.dumps(['', {'text': 'Ice fishing: ', 'color': 'gray'},
                    button('Phase 3', 'phase3'), button('Phase 5', 'phase5'),
                    button('Phase 6 early', 'phase6_early'), button('Phase 6 late', 'phase6_late'),
-                   button('Kit', 'kit', 'green'), button('Survival', 'survival', 'yellow'),
+                   button('Kit', 'kit', 'green'), button('Boil kit', 'boil', 'green'),
+                   button('Survival', 'survival', 'yellow'),
                    button('Creative', 'creative', 'yellow')])
 
 
@@ -90,6 +91,19 @@ SCRIPTS = {
         'item replace entity @s inventory.6 with minecraft:iron_pickaxe',
         'item replace entity @s inventory.7 with minecraft:stick 2',
         'item replace entity @s inventory.8 with minecraft:iron_ingot 3',
+        f'function {NS}:menu',
+    ]),
+    # Seafood Boil: ingredients for the recipe, a cooker, and one pot fresh from cooking.
+    'boil': '\n'.join([
+        'give @s minecraft:crafting_table',
+        'give @s minecraft:campfire',
+        'give @s minecraft:cod 6',
+        'give @s minecraft:potato 8',
+        'give @s minecraft:dried_kelp 4',
+        'give @s minecraft:water_bucket 2',
+        'give @s minecraft:bowl 8',
+        'give @s frozendawn:thermal_container',
+        'give @s frozendawn:seafood_boil[frozendawn:steam_held=6000]',
         f'function {NS}:menu',
     ]),
     'phase3': 'frozendawn debug world set phase 3\n' + f'function {NS}:menu',

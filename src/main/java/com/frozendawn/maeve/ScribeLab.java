@@ -26,7 +26,7 @@ public final class ScribeLab {
 
     /** Encounter-separated witnessed evidence through the real store, ending now. Refuses a Maeve that already holds beliefs. */
     public static String seed(ServerPlayer player) {
-        var data = MaeveSavedData.get(player.server);
+        var data = DirectorRuntime.current(player.server).data;
         if (data.store() == null || data.scribe() == null) return "Maeve is not awake.";
         if (!MaeveDirector.snapshot(player.server, player.getUUID()).beliefs().isEmpty())
             return "Maeve already holds beliefs about you. Start from an empty Maeve.";
@@ -47,7 +47,7 @@ public final class ScribeLab {
 
     /** Clears the cooldown only; the miss count and any active Scribe are left as they are. */
     public static String clearCooldown(MinecraftServer server) {
-        var data = MaeveSavedData.get(server);
+        var data = DirectorRuntime.current(server).data;
         if (data.scribe() == null) return "Maeve is not awake.";
         if (data.scribe().active != null) return "A Scribe is still out.";
         data.scribe().lastEnded = -1;
