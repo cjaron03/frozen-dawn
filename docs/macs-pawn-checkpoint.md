@@ -1199,9 +1199,16 @@ Owner pass in that save, accounts given before diagnostics:
 - Sealed: passed. It saw nothing in 11 looks and ended `COLD` (visit 0/11). Mud? reported Covered in Mud earned, and no HEAT_SOURCE was uploaded.
 - Decoy: seen as `LEAKED` just above the magma, not `DIRECT`. The owner's screenshot showed snow drifts hiding the block from the low ray. No code change; the playtest table now accepts either.
 - Kill early: passed. It defended after the strike, ended `KILLED visit=0/0`, and uploaded nothing.
-- Kill late: not yet achieved. The strike landed at 4 seconds, before the first look. Redo it: wait 10 to 15 seconds after it stops.
+- Kill late: not yet achieved. The strike landed at 4 seconds, before the first look. Redone below.
 - Thin wall and the soul vanish have no recorded verdict in this pass.
+
+Owner redo (2026-10-23), account given before diagnostics: "ok i did all 3, and soul vanish was visible".
+
+- Kill late: passed. Pyro `91a6cef1` looked twice, at 12 and 17 seconds after stopping (`WALL_GLOW@-35,66,30`, then `LEAKED@-40,66,32`), and was struck 3 seconds later. It ended `KILLED`. The bridge `maeve-dump` afterwards still lists both HEAT_SOURCE beliefs with that observer. It ran on the cabin left from the earlier pass, without Fresh Maeve.
+- Thin wall: passed. Pyro `03ec4f4f` logged `WALL_GLOW@-35,66,30` on 11 of 11 looks, all `inView=true`, and ended `WATCH_COMPLETE visit=11/11`.
+- Soul vanish: passed; the owner saw it from the cabin. The log shows `VANISH` at the post, then `GONE`.
+- Not a failure, but noted: the first Pyro's looks logged `inView=false` from a post 41 blocks out, yet saw heat. Only a cold verdict reads `inView`.
 
 During the pass a natural spawn became a Pyro 58 blocks west, stalled behind terrain with no view of the cabin, and its looks completed with nothing seen. Before this fix that watch could award Covered in Mud from a false cold read. Now a look counts toward a cold verdict only with the home in view (`ThermalSight.Scan.inView`, 12 blocks), and `pyroThatCannotSeeTheHomeNeverCallsItCold` covers it. This is verified by GameTest; no owner pass has exercised it yet.
 
-Remaining acceptance: the Kill late redo. Merge needs the owner's explicit approval.
+Remaining acceptance: none for the Pyro owner pass. No PR is open yet; merge needs the owner's explicit approval.
