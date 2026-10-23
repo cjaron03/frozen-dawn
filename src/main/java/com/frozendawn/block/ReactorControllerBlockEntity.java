@@ -87,6 +87,8 @@ public final class ReactorControllerBlockEntity extends BlockEntity implements M
         shell = ReactorMultiblock.validate(l, worldPosition, facing);
         var linked = new TreeSet<BlockPos>();
         if (shell.valid()) for (var port : shell.ports()) linked.addAll(PowerNetworks.coolantRadiators(l, port));
+        // High-Temperature Radiators belong to the SFR-1: a CFU-7 neither sinks through nor heats them.
+        linked.removeIf(pos -> l.getBlockState(pos).getBlock() instanceof HighTemperatureRadiatorBlock);
         var working = new ArrayList<BlockPos>(); var sinks = new ArrayList<Double>();
         for (var pos : linked) ReactorRadiatorBlock.sink(l, pos).ifPresent(c -> { working.add(pos); sinks.add(c); });
         radiators = working.size();

@@ -76,6 +76,7 @@ public class ModItems {
     public static final DeferredItem<BlockItem> FIRST_WALL = ITEMS.registerSimpleBlockItem("first_wall", ModBlocks.FIRST_WALL);
     public static final DeferredItem<BlockItem> LITHIUM_BLANKET = ITEMS.registerSimpleBlockItem("lithium_blanket", ModBlocks.LITHIUM_BLANKET);
     public static final DeferredItem<BlockItem> CONFINEMENT_CORE = ITEMS.registerSimpleBlockItem("confinement_core", ModBlocks.CONFINEMENT_CORE);
+    public static final DeferredItem<BlockItem> HIGH_TEMPERATURE_RADIATOR = ITEMS.registerSimpleBlockItem("high_temperature_radiator", ModBlocks.HIGH_TEMPERATURE_RADIATOR);
     public static final DeferredItem<Item> DEUTERIUM_CANISTER = ITEMS.registerSimpleItem("deuterium_canister");
     public static final DeferredItem<Item> TRITIUM_CANISTER = ITEMS.registerSimpleItem("tritium_canister");
     public static final DeferredItem<BlockItem> GALENA_ORE = ITEMS.registerSimpleBlockItem("galena_ore", ModBlocks.GALENA_ORE);
@@ -738,6 +739,7 @@ public class ModItems {
                         output.accept(SFR_POWER_PORT.get());
                         output.accept(SFR_VACUUM_PORT.get());
                         output.accept(SFR_MAINTENANCE_HATCH.get());
+                        output.accept(HIGH_TEMPERATURE_RADIATOR.get());
                         output.accept(DEUTERIUM_CANISTER.get());
                         output.accept(TRITIUM_CANISTER.get());
                         output.accept(DEEPSLATE_URANIUM_ORE.get());

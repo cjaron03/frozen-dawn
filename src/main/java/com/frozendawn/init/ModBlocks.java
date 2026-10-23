@@ -108,6 +108,9 @@ public class ModBlocks {
             () -> new Block(sfrShell()));
     public static final DeferredBlock<Block> CONFINEMENT_CORE = BLOCKS.register("confinement_core",
             () -> new Block(sfrShell().strength(8f, 20f).sound(SoundType.NETHERITE_BLOCK)));
+    public static final DeferredBlock<com.frozendawn.block.HighTemperatureRadiatorBlock> HIGH_TEMPERATURE_RADIATOR = BLOCKS.register("high_temperature_radiator",
+            () -> new com.frozendawn.block.HighTemperatureRadiatorBlock(BlockBehaviour.Properties.of().strength(4f, 8f).requiresCorrectToolForDrops().sound(SoundType.COPPER).pushReaction(PushReaction.BLOCK)
+                    .lightLevel(state -> state.getValue(com.frozendawn.block.ReactorRadiatorBlock.HOT) ? 12 : 0).emissiveRendering((state, level, pos) -> state.getValue(com.frozendawn.block.ReactorRadiatorBlock.HOT))));
     private static BlockBehaviour.Properties sfrShell() {
         return BlockBehaviour.Properties.of().strength(6f, 12f).requiresCorrectToolForDrops().sound(SoundType.METAL).pushReaction(PushReaction.BLOCK);
     }

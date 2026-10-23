@@ -17,6 +17,7 @@
     "frozendawn:magnet_coil",
     "frozendawn:first_wall",
     "frozendawn:lithium_blanket",
-    "frozendawn:confinement_core"
+    "frozendawn:confinement_core",
+    "frozendawn:high_temperature_radiator"
   ]
 }

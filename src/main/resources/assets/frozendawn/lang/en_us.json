@@ -1335,6 +1335,7 @@
   "block.frozendawn.sfr_power_port": "SFR-1 Power Port",
   "block.frozendawn.sfr_vacuum_port": "SFR-1 Vacuum Port",
   "block.frozendawn.sfr_maintenance_hatch": "SFR-1 Maintenance Hatch",
+  "block.frozendawn.high_temperature_radiator": "High-Temperature Radiator",
   "item.frozendawn.deuterium_canister": "Deuterium Canister",
   "item.frozendawn.tritium_canister": "Tritium Canister",
   "sfr.frozendawn.status.idle": "IDLE",

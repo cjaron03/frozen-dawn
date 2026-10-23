@@ -20,7 +20,7 @@ import net.minecraft.world.level.levelgen.Heightmap;
 
 /** Rejects reactor heat to the outside. Needs one uncovered outdoor face, the same rule as the heat vent.
  * Hot radiators glow, burn what touches them and boil off snow, ice and frozen atmosphere; idle ones get buried. */
-public final class ReactorRadiatorBlock extends Block {
+public class ReactorRadiatorBlock extends Block {
     public static final BooleanProperty HOT = BooleanProperty.create("hot");
     public static final int LINK_RANGE = 16;
     private static final Direction[] FACES = {Direction.UP, Direction.NORTH, Direction.SOUTH, Direction.EAST, Direction.WEST};
