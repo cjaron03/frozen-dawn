@@ -210,6 +210,7 @@ It also has a start control and tritium extraction. Ambient hum and alarm audio 
 - **Hatch and re-entry:** the hatch keeps the airlock door's rule that it won't open across a pressure difference. The Vacuum Port has two modes, pump and vent. Vent equalizes the channel with the room outside the port, like `ManualVentValveBlock`, so a player can repressurize, open the hatch and replace First Wall.
 - **Output basis:** electric output uses the heat the radiators actually remove, as the CFU-7 does. After ignition the loop warms from cold, and the network covers the 40 kW house load until gross output passes it. A MAGNET QUENCH happens only when the network cannot cover the shortfall. An oversized radiator field lowers the equilibrium loop temperature and therefore efficiency. Fusion has no coolant freeze or thaw state.
 - **Holding the magnets cold:** after cooldown the reactor is READY and keeps drawing 20 kW. Losing that power drops it back to OFF, and cooldown is needed again. An aborted ignition is not a disruption, so it returns to READY with the magnets still cold. Every disruption, ASH POISONED included, needs a full restart.
+- **Sounds:** the SFR-1 gets its own running and alert sounds rather than reusing the CFU-7, airlock or vanilla ones. The Maintenance Hatch keeps the airlock door's sounds.
 - **First Wall above 80%:** wear comes only from disruptions, so this is an ignition refusal, not a trigger during a burn. Wear over burn time is not in this slice.
 
 ## Builder's calls already made in this document

@@ -29,6 +29,7 @@
   - The existing `coolant_port` is reused.
 - Display names: "ORSA SFR-1 Solstice Reactor" (controller), "Confinement Core", "Magnet Coil", "First Wall", "Lithium Blanket", "High-Temperature Radiator", "Deuterium Canister", "Tritium Canister", "SFR-1 Fuel Port", "SFR-1 Power Port", "SFR-1 Vacuum Port", "SFR-1 Maintenance Hatch".
 - Status strings, exact: `IGNITION`, `BURNING`, `DISRUPTION`, `MAGNET QUENCH`, `TORUS OPEN`, `ASH POISONED`.
+- Every SFR-1 sound is new and its own: no CFU-7, airlock or vanilla sound is reused. The one exception is the Maintenance Hatch, which keeps the airlock door's sounds because it is an airlock door.
 - Textures are placeholders recolored from the existing reactor textures. Final art waits for the owner's visual pass.
 - Unit tests: `./gradlew test --tests 'com.frozendawn.power.FusionPhysicsTest'`. GameTests are all named `sfr...`, so `./gradlew gameTestQuick -PfdTests=sfr` runs them. The gate before handing back is `./gradlew architectVerify`.
 
@@ -350,7 +351,7 @@
 **Behavior:**
 - **On `disrupted`:** every First Wall in the shell gets `WEAR+1`, capped at 20.
 - **On MAGNET_QUENCH:**
-  - Play `ModSounds.AIRLOCK_EVACUATED` at pitch 0.6, then a looping-style re-trigger every 20 ticks for 5 s.
+  - The quench sound is Task 9's.
   - Spawn `ParticleTypes.SNOWFLAKE` on random coil faces for 100 ticks.
   - Room O2 is not changed.
 - **A broken shell while burning** reaches the physics as `shellIntact=false`, so it disrupts in the same second.
@@ -364,28 +365,86 @@
 - [ ] **Step 4:** Run `./gradlew gameTestQuick -PfdTests=sfr`. Expected: PASS.
 - [ ] **Step 5:** Commit with `feat(sfr): disruption wear and magnet quench effects`.
 
-### Task 8: Ghost outline, audio and controller polish
+### Task 8: Ghost outline, comparator and controller screen
 
 **Files:**
 - Modify: `block/SfrControllerBlock.java`, `block/SfrControllerBlockEntity.java`, `client/SfrControllerScreen.java`
-- Create: `client/SfrHumSound.java` (modeled on `client/ReactorHumSound.java`, reusing its sound event)
 
 **Behavior:**
 - **Using the controller with an invalid shell:**
   - It spawns `ParticleTypes.END_ROD` for 100 ticks at up to 32 wrong cells, chosen by comparing against `SfrMultiblock.expected`.
   - It shows the first wrong cell's coordinates and the expected block name in the action bar.
 - **The screen shows** every field listed in the design's "Controller screen" section, and the status in the exact strings.
-- **Hum:** volume follows `heatKw / RATED_KW`, and only while BURNING.
-- **Disruption alarm:** play `ModSounds.REACTOR_SCRAM` once on each disruption other than MAGNET_QUENCH, like the CFU-7 scram cue at `ReactorControllerBlockEntity:216`.
 - **Comparator:** output is `round(loopC / DISRUPT_C * 15)`, clamped to 0-15.
 
 - [ ] **Step 1: Write the failing GameTest** `sfrComparatorTracksLoopTemperature`. With `setLoopC(550)`, `comparator()==8`. With `setLoopC(0)`, it is 0.
 - [ ] **Step 2:** Run `./gradlew gameTestQuick -PfdTests=sfrComparator`. Expected: FAIL.
-- [ ] **Step 3:** Implement the behavior. The visuals and audio have no headless test; Task 9's playtest covers them.
+- [ ] **Step 3:** Implement the behavior. The visuals have no headless test; Task 10's playtest covers them.
 - [ ] **Step 4:** Run `./gradlew gameTestQuick -PfdTests=sfr`. Expected: PASS.
-- [ ] **Step 5:** Commit with `feat(sfr): ghost outline, hum and controller screen polish`.
+- [ ] **Step 5:** Commit with `feat(sfr): ghost outline, comparator and controller screen`.
 
-### Task 9: Verification and playtest handoff
+### Task 9: SFR-1 running and alert sounds
+
+**Files:**
+- Create: `tools/generate_sfr_sounds.sh` (ffmpeg `lavfi` synthesis only, like `tools/generate_interface_sounds.sh`; fixed noise seeds so a rerun reproduces the same files)
+- Create: `src/main/resources/assets/frozendawn/sounds/blocks/sfr/*.ogg` (output of the script, committed)
+- Create: `power/SfrAudioCues.java`, `client/SfrLoopSound.java` (one tickable loop per controller and kind, following the one-instance-per-reactor and heartbeat pattern in `client/ReactorAlarmSound.java`)
+- Modify: `init/ModSounds.java`, `assets/frozendawn/sounds.json`, `lang/en_us.json` (a subtitle for each), `block/SfrControllerBlockEntity.java` (sync the fields the client loops read, the same way the CFU-7 controller syncs `alarm()`), `block/SfrVacuumPortBlock.java` or its controller hook (pump loop position), `tools/build_audio_inventory.py` if it needs the new paths classified as generated, then regenerate `docs/audio/SHIPPED_AUDIO_INVENTORY.tsv`
+- Test: `src/test/java/com/frozendawn/power/SfrAudioCuesTest.java`, `src/test/java/com/frozendawn/power/SfrSoundAssetsTest.java`
+
+**Sounds** (event ids under `frozendawn:blocks.`, files under `sounds/blocks/sfr/`; the recipes are starting points, tuned by ear):
+
+| Event | File | Kind | Plays | Character |
+| --- | --- | --- | --- | --- |
+| `sfr_cryo` | `cryo_loop` | loop | COOLDOWN and READY, at the controller | cryocooler: a 1 Hz soft chuff on brown noise with a faint high helium tick |
+| `sfr_ignition` | `ignition` | client one-shot, cut off if ignition aborts | IGNITION | 10 s capacitor charge: a sweep from about 80 to 900 Hz with a rising whine, ending in a heavy thump |
+| `sfr_burn` | `burn_loop` | loop | BURNING; volume `0.3 + 0.7 * heatKw / RATED_KW`, pitch `0.85 + 0.3 * heatKw / RATED_KW` | deep 30 Hz sub, 60 and 120 Hz magnet hum, band-passed pink-noise plasma roar, slow 0.25 Hz swell |
+| `sfr_pump` | `pump_loop` | loop | at the Vacuum Port while its pump draws; pitch `0.8 + 0.4 * (1 - channelPressure)` | rotary vacuum pump: a 25 Hz pulsed grind that thins as the channel empties |
+| `sfr_alarm` | `alarm_loop` | loop | while `SfrAudioCues.alarm` is true | descending two-tone warning, about 1046 then 784 Hz, cycling every 1.2 s |
+| `sfr_ready` | `ready` | one-shot | COOLDOWN to READY | short rising three-note chime |
+| `sfr_refuse` | `refuse` | one-shot | a refused Start, or an aborted ignition | low 0.6 s double buzz |
+| `sfr_disruption` | `disruption` | one-shot | every disruption except MAGNET_QUENCH, and ASH_POISONED | a sharp electric crack into a falling 600 to 40 Hz plasma collapse, about 2.5 s |
+| `sfr_quench` | `quench` | one-shot | MAGNET_QUENCH | a 5 s roaring cryogen vent: loud high-passed noise, fast attack, slow decay over a low rumble |
+
+**Asset rules:**
+- Every positional sound is mono (`-ac 1`); Minecraft only attenuates mono sounds by distance.
+- Encode with `-c:a vorbis -strict experimental -q:a 5` at 44.1 kHz, as the existing generators do.
+- Loops are seamless: tone frequencies are whole multiples of `1 / duration`, and noise beds crossfade their last 0.5 s over their first.
+- Loudness: one-shot alerts are louder than loops, and the quench is the loudest SFR-1 sound.
+
+**Interfaces:**
+- **Consumes:** `FusionPhysics.Readout` (Tasks 1-2), the controller's synced state (Task 5), `channelPressure()` (Task 6).
+- **Produces:**
+  - `enum SfrAudioCues.Cue { READY, REFUSE, DISRUPTION, QUENCH }`
+  - `static EnumSet<Cue> SfrAudioCues.cues(FusionPhysics.Readout before, FusionPhysics.Readout after)`, where `before` is null on the first second
+  - `static boolean SfrAudioCues.alarm(FusionPhysics.Readout r, boolean pumping)`: true while BURNING and any of `loopC >= 1000`, `!pumping` (ash building), or `netKw < 0`
+  - The controller plays each cue once with `level.playSound` at the controller. The client loops read the synced state.
+
+- [ ] **Step 1: Write the failing tests**
+
+```java
+// SfrAudioCuesTest, readouts built with a small helper r(state, status, loopC, netKw, disrupted)
+@Test void cooldownToReadyChimes()          { /* COOLDOWN -> READY: cues == {READY} */ }
+@Test void refusedStartAndAbortBuzz()       { /* READY -> READY with TORUS_OPEN, and IGNITION -> READY with ABORTED: {REFUSE} */ }
+@Test void disruptionCracksButQuenchVents() { /* disrupted DISRUPTION: {DISRUPTION}; disrupted MAGNET_QUENCH: {QUENCH} only */ }
+@Test void ashPoisonedCracksWithoutWear()   { /* BURNING -> OFF with ASH_POISONED, disrupted false: {DISRUPTION} */ }
+@Test void steadyBurnIsSilent()             { /* BURNING -> BURNING at 848C, net 329: cues empty, alarm false */ }
+@Test void alarmAboveAThousandOrShortfall() { /* BURNING at 1000C: alarm; BURNING net -10: alarm; BURNING with pumping false: alarm; OFF at 1050C: no alarm */ }
+
+// SfrSoundAssetsTest
+@Test void everySfrSoundExistsAndIsMono() {
+    // Parse src/main/resources/assets/frozendawn/sounds.json. For each key starting "blocks.sfr_":
+    // every "name" resolves to an existing .ogg, and its Vorbis identification header
+    // ("\u0001vorbis", then 4 version bytes) has channel count 1. The nine events above are all present.
+}
+```
+
+- [ ] **Step 2:** Run `./gradlew test --tests 'com.frozendawn.power.SfrAudio*' --tests 'com.frozendawn.power.SfrSoundAssets*'`. Expected: FAIL.
+- [ ] **Step 3:** Write `tools/generate_sfr_sounds.sh` and run it. Register the events, subtitles, `SfrAudioCues`, the cue playback and `SfrLoopSound`. Refresh the audio inventory.
+- [ ] **Step 4:** Run the same tests, then `./gradlew gameTestQuick -PfdTests=sfr`. Expected: PASS. How they sound is the owner's call in Task 10.
+- [ ] **Step 5:** Commit with `feat(sfr): add SFR-1 running and alert sounds`.
+
+### Task 10: Verification and playtest handoff
 
 **Files:**
 - Create: `docs/solstice-reactor-playtest.md` (structure like `docs/airlock-playtest.md`)
@@ -398,8 +457,8 @@
   - list the things to judge by eye:
     - placeholder textures
     - ghost outline
-    - quench audio and frost
-    - hum
+    - quench frost
+    - every SFR-1 sound by ear: cryo, ignition, burn, pump, alarm, ready, refuse, disruption, quench
     - TORUS OPEN
     - hatch refusal
   - state the known breathing limitation outside the vacuum stage
