@@ -72,6 +72,18 @@ public class ModDataComponents {
                     DataComponentType.<Long>builder().persistent(Codec.LONG)
                             .networkSynchronized(ByteBufCodecs.VAR_LONG).build());
 
+    /** Overworld game time a Seafood Boil stops Steaming. */
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<Long>> STEAMING_UNTIL =
+            DATA_COMPONENTS.register("steaming_until", () ->
+                    DataComponentType.<Long>builder().persistent(Codec.LONG)
+                            .networkSynchronized(ByteBufCodecs.VAR_LONG).build());
+
+    /** Steaming ticks left on a paused Seafood Boil: fresh from cooking or in a Thermal Container. */
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<Integer>> STEAM_HELD =
+            DATA_COMPONENTS.register("steam_held", () ->
+                    DataComponentType.<Integer>builder().persistent(Codec.intRange(0, Integer.MAX_VALUE))
+                            .networkSynchronized(ByteBufCodecs.VAR_INT).build());
+
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<Integer>> SUBLIMATION_TICKS =
             DATA_COMPONENTS.register("sublimation_ticks", () ->
                     DataComponentType.<Integer>builder()

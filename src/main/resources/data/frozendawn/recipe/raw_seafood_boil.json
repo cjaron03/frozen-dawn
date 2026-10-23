@@ -1,0 +1,31 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    {
+      "tag": "frozendawn:boil_fish"
+    },
+    {
+      "tag": "frozendawn:boil_fish"
+    },
+    {
+      "tag": "frozendawn:boil_fish"
+    },
+    {
+      "item": "minecraft:potato"
+    },
+    {
+      "item": "minecraft:potato"
+    },
+    {
+      "item": "minecraft:dried_kelp"
+    },
+    {
+      "item": "minecraft:water_bucket"
+    }
+  ],
+  "result": {
+    "id": "frozendawn:raw_seafood_boil",
+    "count": 1
+  }
+}
