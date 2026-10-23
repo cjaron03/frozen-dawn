@@ -196,6 +196,8 @@ public final class MaeveDirector {
     public static boolean allowNaturalPawn(net.minecraft.server.level.ServerLevel level, BlockPos position) { return current(level.getServer()).convergence.allowNaturalSpawn(level, position); }
     /** §9.4b: the gate, cooldown and single claim decide whether this natural spawn carries Maeve's notes. */
     public static boolean designateScribe(ArchitectEntity actor, ServerPlayer subject) { return current(subject.getServer()).scribe.designate(actor, subject); }
+    /** Scribe spawn egg only: Maeve's Scribe slot for this player, without her gates. */
+    public static boolean designateTestScribe(ArchitectEntity actor, ServerPlayer subject) { return current(subject.getServer()).scribe.designateForTest(actor, subject); }
     public static ScribeOrder scribeOrder(ArchitectEntity actor) { return actor.getServer() == null ? null : current(actor.getServer()).scribe.order(actor); }
     /** Read once at death. The result is a frozen copy; nothing it holds is consulted again. */
     public static ScribeNotes scribeNotes(ArchitectEntity actor) { return actor.getServer() == null ? null : current(actor.getServer()).scribe.notes(actor); }

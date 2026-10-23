@@ -2,11 +2,14 @@ package com.frozendawn.entity.architect;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.BlockParticleOption;
+import net.minecraft.core.particles.ItemParticleOption;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 
@@ -50,6 +53,13 @@ public final class ArchitectDeathFx {
             serverLevel.sendParticles(groundDust, px, y + 0.1, pz, 10, 0.3, 0.05, 0.3, 0.08);
             serverLevel.sendParticles(ParticleTypes.LARGE_SMOKE, px, y + 0.25, pz, 2, 0.2, 0.05, 0.2, 0.02);
         }
+    }
+
+    /** The Scribe lands on its slate and its notes burst out from under it. */
+    public static void emitScribePages(ServerLevel serverLevel, double x, double y, double z) {
+        serverLevel.sendParticles(new ItemParticleOption(ParticleTypes.ITEM, new ItemStack(Items.PAPER)),
+                x, y + 0.35, z, 22, 0.35, 0.1, 0.35, 0.16);
+        serverLevel.sendParticles(ParticleTypes.WHITE_ASH, x, y + 0.5, z, 30, 0.6, 0.4, 0.6, 0.02);
     }
 
     public static void emitDeathSoulRise(ServerLevel serverLevel, int ticks, double x, double y, double z) {

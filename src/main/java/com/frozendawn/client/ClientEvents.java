@@ -416,6 +416,9 @@ public class ClientEvents {
      */
     @SubscribeEvent
     public static void onRegisterItemColors(RegisterColorHandlersEvent.Item event) {
+        event.register((stack, tintIndex) -> 0xFF000000 | (tintIndex == 0
+                ? com.frozendawn.item.ScribeSpawnEggItem.BASE_COLOR
+                : com.frozendawn.item.ScribeSpawnEggItem.SPOT_COLOR), ModItems.SCRIBE_SPAWN_EGG.get());
         event.register((stack,tintIndex) -> emergencyLensTint(false,tintIndex),ModBlocks.ORSA_EMERGENCY_LIGHT.get().asItem());
         ItemColor frostTint = (stack, tintIndex) -> {
             if (tintIndex != 0) return -1;

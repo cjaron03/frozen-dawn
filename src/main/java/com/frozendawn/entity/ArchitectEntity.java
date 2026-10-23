@@ -2345,11 +2345,17 @@ public class ArchitectEntity extends Monster {
         return getDeathTicks() > 0 && !isMasterArchitectVisual() && !isBlindArchitect();
     }
 
+    /** The Scribe clutches its slate and goes over backward, still facing whoever felled it. */
+    public boolean fallsBackward() {
+        return isScribe();
+    }
+
     private void tickFelledDeath(int ticks) {
         setDeltaMovement(Vec3.ZERO);
         float yaw = yBodyRot * Mth.DEG_TO_RAD;
-        double dirX = -Mth.sin(yaw);
-        double dirZ = Mth.cos(yaw);
+        double fallSign = fallsBackward() ? -1.0 : 1.0;
+        double dirX = -Mth.sin(yaw) * fallSign;
+        double dirZ = Mth.cos(yaw) * fallSign;
         if (level() instanceof ServerLevel serverLevel) {
             if (ticks < ArchitectFelledDeath.TOPPLE_START && ticks % 4 == 0) {
                 serverLevel.sendParticles(ParticleTypes.SMOKE,
@@ -2371,6 +2377,9 @@ public class ArchitectEntity extends Monster {
             if (ticks == ArchitectFelledDeath.IMPACT_TICK) {
                 cleanupAllIce();
                 ArchitectDeathFx.emitFelledImpact(serverLevel, getX(), getY(), getZ(), dirX, dirZ);
+                if (isScribe()) {
+                    ArchitectDeathFx.emitScribePages(serverLevel, getX() + dirX * 0.8, getY(), getZ() + dirZ * 0.8);
+                }
             }
         }
         if (ticks >= ArchitectFelledDeath.TICKS) {
@@ -2849,6 +2858,22 @@ public class ArchitectEntity extends Monster {
     @Override
     protected float getSoundVolume() {
         return isMasterArchitectVisual() ? 1.35F : super.getSoundVolume();
+    }
+
+    @Override
+    public void playAmbientSound() {
+        super.playAmbientSound();
+        if (isScribe() && getAmbientSound() != null) {
+            playSound(ModSounds.SCRIBE_STROKES.get(), getSoundVolume(), 0.95F + random.nextFloat() * 0.1F);
+        }
+    }
+
+    @Override
+    protected void playHurtSound(DamageSource source) {
+        super.playHurtSound(source);
+        if (isScribe() && getHurtSound(source) != null) {
+            playSound(ModSounds.SCRIBE_SLATE_CRACK.get(), getSoundVolume(), 0.92F + random.nextFloat() * 0.16F);
+        }
     }
 
     @Nullable

@@ -221,7 +221,7 @@ public class ArchitectRenderer extends HumanoidMobRenderer<ArchitectEntity, Arch
         poseStack.mulPose(Axis.YP.rotationDegrees(180.0f - entityYaw));
         // Pivot at the feet; lift by half the body depth as it lies down so it lands on the ground, not in it.
         poseStack.translate(0.0f, 0.18f * Mth.sin(fall * Mth.DEG_TO_RAD) - sink, 0.0f);
-        poseStack.mulPose(Axis.XP.rotationDegrees(-fall));
+        poseStack.mulPose(Axis.XP.rotationDegrees(entity.fallsBackward() ? fall : -fall));
         poseStack.mulPose(Axis.ZP.rotationDegrees(7.0f * topple + tremor));
         poseStack.scale(-1.0f, -1.0f, 1.0f);
         poseStack.translate(0.0f, -1.501f, 0.0f);

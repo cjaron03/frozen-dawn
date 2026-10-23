@@ -94,7 +94,7 @@ public class ArchitectModel extends HumanoidModel<ArchitectEntity> {
         this.hat.visible = false;
 
         if (entity.isFelledDying()) {
-            applyFelledDeathPose(entity.getDeathTicks() + (ageInTicks - Mth.floor(ageInTicks)));
+            applyFelledDeathPose(entity.getDeathTicks() + (ageInTicks - Mth.floor(ageInTicks)), entity.fallsBackward());
             return;
         }
         if (shield && !entity.isMasterArchitectVisual()) return;
@@ -547,7 +547,7 @@ public class ArchitectModel extends HumanoidModel<ArchitectEntity> {
         return (Mth.floor(ageInTicks * 2.0F) + salt) % 4 != 0;
     }
 
-    private void applyFelledDeathPose(float elapsed) {
+    private void applyFelledDeathPose(float elapsed, boolean clutchesSlate) {
         float jolt = ArchitectFelledDeath.jolt(elapsed);
         float locked = ArchitectFelledDeath.armsLocked(elapsed);
         float buckle = ArchitectFelledDeath.buckle(elapsed);
@@ -575,6 +575,25 @@ public class ArchitectModel extends HumanoidModel<ArchitectEntity> {
         // One knee gives before the other; the legs straighten as it goes down like a beam.
         this.rightLeg.xRot = -0.4F * knees;
         this.leftLeg.xRot = 0.15F * knees;
+        if (clutchesSlate) {
+            applySlateClutch(jolt, locked, knees, topple);
+        }
+    }
+
+    /**
+     * Scribe variant: after the crack it pulls the slate (right hand) to its chest and covers it
+     * with the stylus arm, hunching over it, then goes over backward with its chin tucked.
+     */
+    private void applySlateClutch(float jolt, float clutch, float knees, float topple) {
+        this.head.xRot = -0.5F * jolt + 0.3F * knees + 0.25F * clutch + 0.35F * topple;
+        this.body.xRot = -0.1F * jolt + 0.25F * clutch * (1.0F - topple) + 0.15F * knees;
+        float flung = 0.45F * jolt * (1.0F - clutch);
+        this.rightArm.xRot = -1.1F * clutch;
+        this.rightArm.yRot = -0.55F * clutch;
+        this.rightArm.zRot = flung;
+        this.leftArm.xRot = -0.95F * clutch;
+        this.leftArm.yRot = 0.75F * clutch;
+        this.leftArm.zRot = -flung;
     }
 
     private void applyMasterDeathPose(int deathTicks, float ageInTicks) {

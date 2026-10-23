@@ -919,6 +919,23 @@
       "frozendawn:entity/bloombound_undone/death"
     ]
   },
+  "entity.architect.scribe_strokes": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.architect.scribe_strokes",
+    "sounds": [
+      { "name": "frozendawn:entity/architect/scribe/strokes1", "volume": 0.55 },
+      { "name": "frozendawn:entity/architect/scribe/strokes2", "volume": 0.55 },
+      { "name": "frozendawn:entity/architect/scribe/strokes3", "volume": 0.55 }
+    ]
+  },
+  "entity.architect.scribe_slate_crack": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.architect.scribe_slate_crack",
+    "sounds": [
+      { "name": "frozendawn:entity/architect/scribe/slate_crack1", "volume": 0.7 },
+      { "name": "frozendawn:entity/architect/scribe/slate_crack2", "volume": 0.7 }
+    ]
+  },
   "entity.architect.scribe_write": {
     "category": "hostile",
     "subtitle": "subtitle.frozendawn.entity.architect.scribe_write",

@@ -860,4 +860,8 @@ public class ModSounds {
     public static final DeferredHolder<SoundEvent, SoundEvent> RADIO_VOICE_NO_LOCK = register("radio.voice.no_lock");
     /** The Scribe scratching on its slate; reuses the vanilla cartography scribble. */
     public static final DeferredHolder<SoundEvent, SoundEvent> SCRIBE_WRITE = register("entity.architect.scribe_write");
+    /** Scribe idle layer over the normal Architect ambient: runs of stylus strokes. */
+    public static final DeferredHolder<SoundEvent, SoundEvent> SCRIBE_STROKES = register("entity.architect.scribe_strokes");
+    /** Scribe hurt layer over the normal Architect cry: its slate cracking. */
+    public static final DeferredHolder<SoundEvent, SoundEvent> SCRIBE_SLATE_CRACK = register("entity.architect.scribe_slate_crack");
 }

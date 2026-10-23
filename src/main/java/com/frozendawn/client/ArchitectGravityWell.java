@@ -124,10 +124,11 @@ public final class ArchitectGravityWell {
         float fall = ArchitectFelledDeath.fallDegrees(elapsed) * Mth.DEG_TO_RAD;
         float yaw = architect.yBodyRot * Mth.DEG_TO_RAD;
         double half = architect.getBbHeight() * 0.5;
+        double reach = half * Mth.sin(fall) * (architect.fallsBackward() ? -1.0 : 1.0);
         center = architect.position().add(
-                -Mth.sin(yaw) * half * Mth.sin(fall),
+                -Mth.sin(yaw) * reach,
                 half * Mth.cos(fall) + 0.15,
-                Mth.cos(yaw) * half * Mth.sin(fall));
+                Mth.cos(yaw) * reach);
     }
 
     /** Space drawn in harder as the fall accelerates, released the instant it lands. */
