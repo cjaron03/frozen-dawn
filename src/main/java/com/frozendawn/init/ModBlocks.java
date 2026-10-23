@@ -89,6 +89,29 @@ public class ModBlocks {
     public static final DeferredBlock<com.frozendawn.block.MoltenCoriumBlock> MOLTEN_CORIUM = BLOCKS.register("molten_corium",
             () -> new com.frozendawn.block.MoltenCoriumBlock(BlockBehaviour.Properties.of().strength(-1f, 3600000f).noLootTable().sound(SoundType.ANCIENT_DEBRIS)
                     .lightLevel(state -> 15).emissiveRendering((state, level, pos) -> true).pushReaction(PushReaction.BLOCK)));
+    // ORSA SFR-1 Solstice Reactor
+    public static final DeferredBlock<com.frozendawn.block.SfrControllerBlock> SFR_CONTROLLER = BLOCKS.register("sfr_controller",
+            () -> new com.frozendawn.block.SfrControllerBlock(sfrShell().strength(5f, 12f)));
+    public static final DeferredBlock<com.frozendawn.block.SfrFuelPortBlock> SFR_FUEL_PORT = BLOCKS.register("sfr_fuel_port",
+            () -> new com.frozendawn.block.SfrFuelPortBlock(sfrShell()));
+    public static final DeferredBlock<com.frozendawn.block.SfrPowerPortBlock> SFR_POWER_PORT = BLOCKS.register("sfr_power_port",
+            () -> new com.frozendawn.block.SfrPowerPortBlock(sfrShell().sound(SoundType.COPPER)));
+    public static final DeferredBlock<com.frozendawn.block.SfrVacuumPortBlock> SFR_VACUUM_PORT = BLOCKS.register("sfr_vacuum_port",
+            () -> new com.frozendawn.block.SfrVacuumPortBlock(sfrShell()));
+    public static final DeferredBlock<com.frozendawn.block.SfrHatchBlock> SFR_MAINTENANCE_HATCH = BLOCKS.register("sfr_maintenance_hatch",
+            () -> new com.frozendawn.block.SfrHatchBlock(BlockBehaviour.Properties.ofFullCopy(net.minecraft.world.level.block.Blocks.IRON_DOOR).pushReaction(PushReaction.BLOCK)));
+    public static final DeferredBlock<com.frozendawn.block.MagnetCoilBlock> MAGNET_COIL = BLOCKS.register("magnet_coil",
+            () -> new com.frozendawn.block.MagnetCoilBlock(sfrShell()));
+    public static final DeferredBlock<com.frozendawn.block.FirstWallBlock> FIRST_WALL = BLOCKS.register("first_wall",
+            () -> new com.frozendawn.block.FirstWallBlock(sfrShell().strength(8f, 20f).sound(SoundType.NETHERITE_BLOCK)));
+    public static final DeferredBlock<Block> LITHIUM_BLANKET = BLOCKS.register("lithium_blanket",
+            () -> new Block(sfrShell()));
+    public static final DeferredBlock<Block> CONFINEMENT_CORE = BLOCKS.register("confinement_core",
+            () -> new Block(sfrShell().strength(8f, 20f).sound(SoundType.NETHERITE_BLOCK)));
+    private static BlockBehaviour.Properties sfrShell() {
+        return BlockBehaviour.Properties.of().strength(6f, 12f).requiresCorrectToolForDrops().sound(SoundType.METAL).pushReaction(PushReaction.BLOCK);
+    }
+
     public static final DeferredBlock<net.minecraft.world.level.block.DropExperienceBlock> GALENA_ORE = BLOCKS.register("galena_ore",
             () -> new net.minecraft.world.level.block.DropExperienceBlock(net.minecraft.util.valueproviders.ConstantInt.of(0),
                     BlockBehaviour.Properties.of().strength(3f, 3f).requiresCorrectToolForDrops().sound(SoundType.STONE).mapColor(net.minecraft.world.level.material.MapColor.STONE)));

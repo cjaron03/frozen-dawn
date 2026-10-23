@@ -57,6 +57,15 @@
     "frozendawn:uplink_console",
     "frozendawn:uplink_dish",
     "frozendawn:plumb_line",
-    "frozendawn:work_lamp"
+    "frozendawn:work_lamp",
+    "frozendawn:sfr_controller",
+    "frozendawn:sfr_fuel_port",
+    "frozendawn:sfr_power_port",
+    "frozendawn:sfr_vacuum_port",
+    "frozendawn:sfr_maintenance_hatch",
+    "frozendawn:magnet_coil",
+    "frozendawn:first_wall",
+    "frozendawn:lithium_blanket",
+    "frozendawn:confinement_core"
   ]
 }

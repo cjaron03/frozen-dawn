@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/orientable",
+  "textures": {
+    "front": "frozendawn:block/sfr_controller",
+    "side": "frozendawn:block/sfr_shell",
+    "top": "frozendawn:block/sfr_shell"
+  }
+}
