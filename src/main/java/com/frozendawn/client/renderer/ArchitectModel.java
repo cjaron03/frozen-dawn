@@ -5,6 +5,7 @@ import com.frozendawn.entity.ArchitectEntity;
 import com.frozendawn.entity.ScribeWriting;
 import com.frozendawn.entity.architect.ArchitectFelledDeath;
 import com.frozendawn.entity.architect.ArchitectWoundDownDeath;
+import com.frozendawn.entity.architect.ArchitectSoulBurnDeath;
 import net.minecraft.client.model.geom.ModelLayerLocation;
 import net.minecraft.client.model.geom.PartPose;
 import net.minecraft.client.model.geom.builders.CubeDeformation;
@@ -100,6 +101,10 @@ public class ArchitectModel extends HumanoidModel<ArchitectEntity> {
         }
         if (entity.isWoundDownDying()) {
             applyWoundDownPose(entity.getDeathTicks() + (ageInTicks - Mth.floor(ageInTicks)));
+            return;
+        }
+        if (entity.isSoulBurnDying()) {
+            applySoulBurnPose(entity.getDeathTicks() + (ageInTicks - Mth.floor(ageInTicks)));
             return;
         }
         if (shield && !entity.isMasterArchitectVisual()) return;
@@ -618,6 +623,36 @@ public class ArchitectModel extends HumanoidModel<ArchitectEntity> {
         this.leftLeg.yRot = -0.3F * crumple;
         this.rightLeg.zRot = 0.0F;
         this.leftLeg.zRot = 0.0F;
+    }
+
+    /**
+     * Pyro death: both hands go to its burning eyes and it writhes, bowed, while the soul fire
+     * climbs it; then it lets go, throws its head back and its arms up and wide, and hangs
+     * from the rising flames with its legs slack.
+     */
+    private void applySoulBurnPose(float elapsed) {
+        float clutch = ArchitectSoulBurnDeath.clutch(elapsed);
+        float release = ArchitectSoulBurnDeath.release(elapsed);
+        float shake = ArchitectSoulBurnDeath.writhe(elapsed) * Mth.sin(elapsed * 2.3F) * 0.08F;
+        float held = clutch * (1.0F - release);
+
+        this.head.xRot = 0.3F * held - 0.7F * release + 0.5F * shake;
+        this.head.yRot = shake;
+        this.body.xRot = 0.12F * held - 0.18F * release;
+        this.body.yRot = 0.0F;
+        this.rightArm.xRot = -2.1F * held - 2.6F * release + shake;
+        this.leftArm.xRot = -2.1F * held - 2.6F * release - shake;
+        this.rightArm.yRot = -0.5F * held;
+        this.leftArm.yRot = 0.5F * held;
+        this.rightArm.zRot = 0.9F * release;
+        this.leftArm.zRot = -0.9F * release;
+        float buckle = ArchitectSoulBurnDeath.writhe(elapsed);
+        this.rightLeg.xRot = -0.15F * buckle + 0.15F * release;
+        this.leftLeg.xRot = 0.1F * buckle - 0.05F * release;
+        this.rightLeg.yRot = 0.0F;
+        this.leftLeg.yRot = 0.0F;
+        this.rightLeg.zRot = 0.05F * release;
+        this.leftLeg.zRot = -0.05F * release;
     }
 
     /**

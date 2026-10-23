@@ -47,6 +47,32 @@ final class PyroCoordinator {
         return true;
     }
 
+    /**
+     * Test egg: skips the gate and cooldown, replaces any active claim (that Pyro departs) and, when Maeve
+     * suspects no home yet, seeds one where the subject stands so the Pyro has somewhere to watch.
+     */
+    boolean designateForTest(ArchitectEntity actor, ServerPlayer subject) {
+        if (!enabled() || pyro(actor) || ScribeCoordinator.scribe(actor) || subject.level() != actor.level()) return false;
+        var memory = data.pyro(); long now = now();
+        String dimension = actor.level().dimension().location().toString();
+        var world = data.store().world(subject.getUUID());
+        if (world == null || world.center(dimension) == null) {
+            PyroLab.seedHome(subject, subject.blockPosition());
+            world = data.store().world(subject.getUUID());
+        }
+        var home = world == null ? null : world.center(dimension);
+        if (home == null) return false;
+        if (memory.active != null) {
+            FrozenDawn.LOGGER.info("[MACS Pyro] ENDED pyro={} reason=TEST_EGG_REPLACED", memory.active.pyro());
+            memory.end(now);
+        }
+        memory.begin(new PyroMemory.Claim(actor.getUUID(), subject.getUUID(), dimension, home, now));
+        actor.getPersistentData().putBoolean(TAG, true);
+        decision = "DESIGNATED pyro=" + actor.getUUID() + " player=" + subject.getUUID() + " home=" + home + " route=TEST_EGG";
+        FrozenDawn.LOGGER.info("[MACS Pyro] {}", decision); data.setDirty();
+        return true;
+    }
+
     /** Why this actor or subject cannot take part at all, before the §9.4a gate is asked; null when both can. */
     private String refusal(ArchitectEntity actor, ServerPlayer subject) {
         if (!enabled()) return "NOT_ACTIVE lifecycle=" + data.lifecycle();

@@ -214,6 +214,7 @@ public final class MaeveDirector {
     }
     /** §9.4a: same gate shape for the Pyro. Its looks upload at once; ending it never takes them back. */
     public static boolean designatePyro(ArchitectEntity actor, ServerPlayer subject) { return current(subject.getServer()).pyro.designate(actor, subject); }
+    public static boolean designateTestPyro(ArchitectEntity actor, ServerPlayer subject) { return current(subject.getServer()).pyro.designateForTest(actor, subject); }
     public static PyroOrder pyroOrder(ArchitectEntity actor) { return actor.getServer() == null ? null : current(actor.getServer()).pyro.order(actor); }
     public static PyroScan pyroObserve(ArchitectEntity actor, boolean last) { return actor.getServer() == null ? null : current(actor.getServer()).pyro.observe(actor, last); }
     public static void pyroEnded(ArchitectEntity actor, String reason) { if (actor.getServer() != null) current(actor.getServer()).pyro.ended(actor, reason); }

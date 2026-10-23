@@ -79,6 +79,42 @@ public final class ArchitectDeathFx {
         }
     }
 
+    /** Soul fire catches at the Pyro's feet with a whump. */
+    public static void emitSoulIgnite(ServerLevel serverLevel, double x, double y, double z) {
+        serverLevel.sendParticles(ParticleTypes.SOUL_FIRE_FLAME, x, y + 0.1, z, 24, 0.45, 0.05, 0.45, 0.04);
+        serverLevel.sendParticles(ParticleTypes.SOUL, x, y + 0.2, z, 6, 0.35, 0.1, 0.35, 0.02);
+        serverLevel.sendParticles(ParticleTypes.LARGE_SMOKE, x, y + 0.2, z, 6, 0.35, 0.05, 0.35, 0.02);
+    }
+
+    /**
+     * Soul flames licking up the Pyro's body to the fire front, then streaming up off it in a
+     * column once it is lifted. {@code front} and {@code lift} are in blocks above its feet.
+     */
+    public static void emitSoulBurn(ServerLevel serverLevel, RandomSource random, double x, double y, double z,
+                                    float front, float lift, float strength) {
+        if (strength <= 0.0F) return;
+        int flames = 2 + Math.round(4 * strength);
+        for (int i = 0; i < flames; i++) {
+            double angle = random.nextDouble() * Math.PI * 2.0;
+            double radius = 0.18 + random.nextDouble() * 0.17;
+            double height = lift + random.nextDouble() * Math.max(front, 0.2F);
+            serverLevel.sendParticles(ParticleTypes.SOUL_FIRE_FLAME,
+                    x + Math.cos(angle) * radius, y + height, z + Math.sin(angle) * radius,
+                    0, 0.0, 0.05 + 0.1 * random.nextDouble() + (lift > 0.0F ? 0.08 : 0.0), 0.0, 1.0);
+        }
+        if (random.nextFloat() < 0.35F * strength) {
+            serverLevel.sendParticles(ParticleTypes.SOUL, x, y + lift + front * 0.6, z,
+                    0, (random.nextDouble() - 0.5) * 0.04, 0.09, (random.nextDouble() - 0.5) * 0.04, 1.0);
+        }
+        if (lift > 0.0F) {
+            // The column it rises in: flames and smoke pouring up from the ground beneath it.
+            serverLevel.sendParticles(ParticleTypes.SOUL_FIRE_FLAME,
+                    x + (random.nextDouble() - 0.5) * 0.3, y + 0.05, z + (random.nextDouble() - 0.5) * 0.3,
+                    0, 0.0, 0.22 + 0.1 * random.nextDouble(), 0.0, 1.0);
+            serverLevel.sendParticles(ParticleTypes.SMOKE, x, y + lift + 1.9, z, 1, 0.12, 0.05, 0.12, 0.03);
+        }
+    }
+
     public static void emitDeathSoulRise(ServerLevel serverLevel, int ticks, double x, double y, double z) {
         float progress = Mth.clamp((ticks - 21) / 9.0f, 0.0f, 1.0f);
         double baseY = y + 0.95 + progress * 1.55;

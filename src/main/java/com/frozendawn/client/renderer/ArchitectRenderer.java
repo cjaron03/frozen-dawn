@@ -5,6 +5,7 @@ import com.frozendawn.entity.ArchitectEntity;
 import com.frozendawn.entity.MasterArchitectCombatAction;
 import com.frozendawn.entity.architect.ArchitectFelledDeath;
 import com.frozendawn.entity.architect.ArchitectWoundDownDeath;
+import com.frozendawn.entity.architect.ArchitectSoulBurnDeath;
 import com.frozendawn.homo.MasterArchitectCombatPolicy;
 import com.frozendawn.homo.MasterArchitectFloodPolicy;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -13,6 +14,7 @@ import com.mojang.math.Axis;
 import net.minecraft.client.model.HumanoidArmorModel;
 import net.minecraft.util.Mth;
 import net.minecraft.client.model.geom.ModelLayers;
+import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.LightTexture;
@@ -92,6 +94,10 @@ public class ArchitectRenderer extends HumanoidMobRenderer<ArchitectEntity, Arch
         int deathTicks = entity.getDeathTicks();
         if (entity.isWoundDownDying()) {
             renderWoundDownDeath(entity, entityYaw, partialTick, poseStack, bufferSource, packedLight, deathTicks);
+            return;
+        }
+        if (entity.isSoulBurnDying()) {
+            renderSoulBurnDeath(entity, entityYaw, partialTick, poseStack, bufferSource, packedLight, deathTicks);
             return;
         }
         if (entity.getReconnaissanceDissolve() != 0) {
@@ -295,6 +301,57 @@ public class ArchitectRenderer extends HumanoidMobRenderer<ArchitectEntity, Arch
         }
         blindHelmet.renderSlipping(poseStack, bufferSource, packedLight, entity,
                 ArchitectWoundDownDeath.hoodSlip(elapsed), hoodAlpha);
+        poseStack.popPose();
+    }
+
+    private static final int SOUL_CHAR = 0x18262E;
+    private static final int SOUL_GLOW = 0x3FD0E0;
+
+    /**
+     * Pyro chars from the feet up as the soul fire climbs it, each part glowing hardest while the
+     * front passes, then the whole body is lifted and fades into the column of flames.
+     */
+    private void renderSoulBurnDeath(ArchitectEntity entity, float entityYaw, float partialTick,
+                                     PoseStack poseStack, MultiBufferSource bufferSource, int packedLight,
+                                     int deathTicks) {
+        float elapsed = deathTicks + partialTick;
+        float alpha = ArchitectSoulBurnDeath.alpha(elapsed);
+        if (alpha <= 0.0f) return;
+
+        poseStack.pushPose();
+        poseStack.mulPose(Axis.YP.rotationDegrees(180.0f - entityYaw));
+        poseStack.translate(0.0f, ArchitectSoulBurnDeath.lift(elapsed), 0.0f);
+        poseStack.mulPose(Axis.ZP.rotationDegrees(2.5f * ArchitectSoulBurnDeath.writhe(elapsed) * Mth.sin(elapsed * 1.7f)));
+        poseStack.scale(-1.0f, -1.0f, 1.0f);
+        poseStack.translate(0.0f, -1.501f, 0.0f);
+
+        this.model.attackTime = 0.0f;
+        this.model.riding = false;
+        this.model.young = entity.isBaby();
+        this.model.prepareMobModel(entity, 0.0f, 0.0f, partialTick);
+        this.model.setupAnim(entity, 0.0f, 0.0f, entity.tickCount + partialTick, 0.0f, 0.0f);
+
+        // Each part with the height it spans standing, in blocks; the arms are up at its face.
+        ModelPart[] parts = {model.rightLeg, model.leftLeg, model.body, model.rightArm, model.leftArm, model.head};
+        float[][] spans = {{0.0f, 0.75f}, {0.0f, 0.75f}, {0.75f, 1.5f}, {0.9f, 1.9f}, {0.9f, 1.9f}, {1.5f, 2.0f}};
+        VertexConsumer body = bufferSource.getBuffer(RenderType.entityTranslucent(getTextureLocation(entity)));
+        int overlay = LivingEntityRenderer.getOverlayCoords(entity, 0.0f);
+        float[] charred = new float[parts.length];
+        for (int i = 0; i < parts.length; i++) {
+            charred[i] = ArchitectSoulBurnDeath.charred(elapsed, spans[i][0], spans[i][1]);
+            int shade = FastColor.ARGB32.lerp(charred[i], 0xFFFFFF, SOUL_CHAR);
+            parts[i].render(poseStack, body, packedLight, overlay, (int) (alpha * 255) << 24 | shade & 0xFFFFFF);
+        }
+        VertexConsumer glow = bufferSource.getBuffer(RenderType.eyes(WHITE_TEXTURE));
+        for (int i = 0; i < parts.length; i++) {
+            if (charred[i] <= 0.0f) continue;
+            float edge = 4.0f * charred[i] * (1.0f - charred[i]);
+            float flicker = 0.5f + 0.5f * Mth.sin(elapsed * 1.9f + i * 1.3f);
+            float strength = (0.25f + 0.45f * edge + 0.1f * flicker) * alpha;
+            parts[i].render(poseStack, glow, LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY,
+                    0xFF000000 | FastColor.ARGB32.lerp(strength, 0x000000, SOUL_GLOW) & 0xFFFFFF);
+        }
+        reconnaissanceEyes.renderSoulFlare(poseStack, bufferSource, entity, ArchitectSoulBurnDeath.flare(elapsed), alpha);
         poseStack.popPose();
     }
 

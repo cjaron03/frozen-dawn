@@ -865,4 +865,10 @@ public class ModSounds {
     public static final DeferredHolder<SoundEvent, SoundEvent> SCRIBE_STROKES = register("entity.architect.scribe_strokes");
     /** Scribe hurt layer over the normal Architect cry: its slate cracking. */
     public static final DeferredHolder<SoundEvent, SoundEvent> SCRIBE_SLATE_CRACK = register("entity.architect.scribe_slate_crack");
+    /** Pyro idle layer over the normal Architect ambient: banked embers crackling. */
+    public static final DeferredHolder<SoundEvent, SoundEvent> PYRO_EMBERS = register("entity.architect.pyro_embers");
+    /** Pyro hurt layer over the normal Architect cry: water hissing on coals. */
+    public static final DeferredHolder<SoundEvent, SoundEvent> PYRO_HISS = register("entity.architect.pyro_hiss");
+    /** Pyro death: soul fire catches, climbs and carries it up. */
+    public static final DeferredHolder<SoundEvent, SoundEvent> PYRO_ARCHITECT_DEATH = register("entity.architect.pyro_death");
 }
