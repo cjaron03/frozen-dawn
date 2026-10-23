@@ -1,0 +1,33 @@
+{
+  "name": "Work Lamp",
+  "icon": "frozendawn:work_lamp",
+  "category": "frozendawn:power",
+  "sortnum": 8,
+  "pages": [
+    {
+      "type": "patchouli:spotlight",
+      "item": "frozendawn:work_lamp",
+      "text": "A small wall or ceiling light. Light $(bold)12$() for $(bold)50 W$()."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Power",
+      "text": "Link it with the $(l:power/binder)Binder$(/l) to your grid or a lone $(l:power/storage)Cell Dock$(/l).$(br2)Lights are shed before life support in a brownout."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Use",
+      "text": "Empty-hand right-click switches it on or off. Off draws nothing.$(br2)Works without air and adds no room heat."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Mounting",
+      "text": "Walls and ceilings only, on a solid face. Removing the support drops the lamp.$(br2)It doesn't seal a hole."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:work_lamp",
+      "text": "Iron, glass, redstone and copper. Makes two."
+    }
+  ]
+}

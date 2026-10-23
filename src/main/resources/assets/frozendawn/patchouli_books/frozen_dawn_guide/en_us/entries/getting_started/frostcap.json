@@ -1,0 +1,53 @@
+{
+  "name": "Frostcap",
+  "category": "frozendawn:food",
+  "icon": "frozendawn:frozen_frostcap",
+  "sortnum": 5,
+  "pages": [
+    {
+      "type": "patchouli:spotlight",
+      "item": "frozendawn:frozen_frostcap",
+      "text": "$(italic)Gelimyces nivalis.$() A pale fungus with a faint blue-white glow (light 3).$(br2)No heat: a cold-room farm is invisible to anything that hunts by warmth.",
+      "link_recipe": true
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Where It Grows",
+      "text": "From $(bold)Phase 3$(), in shelves on $(bold)Rimewood$() trunks, which it strongly prefers. Rarely on bare snow or ice.$(br2)Plant a cap on snow, ice, a full snow layer or a Rimewood log side. No light needed."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Temperatures",
+      "text": "$(li)$(bold)-20°C or colder$(): ripens and spreads$(li)$(bold)-80°C$(): twice as fast$(li)-20°C to 0°C: stalls$(li)Above 0°C: dies$(br2)On Rimewood, twice as fast again."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Spreading",
+      "text": "Ripe caps spread up to 2 blocks, trying Rimewood log sides first. They stop at $(bold)five$() close together.$(br2)A ripe cluster gives 2-3 caps."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Keep It Frozen",
+      "text": "$(li)$(bold)Frozen$(): 2 hunger$(li)$(bold)Thawed$(): 1 hunger, after 5 min above 0°C$(li)$(bold)Mush$(): 0 hunger and Nausea, 5 min later$(br2)Thawed caps never refreeze. Caps in a chest keep; store the harvest cold."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:frostcap_stew",
+      "text": "Three caps and a bowl: $(bold)6 hunger$(). Stew doesn't spoil."
+    },
+    {
+      "type": "patchouli:smelting",
+      "recipe": "frozendawn:dried_frostcap_from_smelting",
+      "text": "Smoker, furnace or campfire: $(bold)3 hunger$(), stackable and frost-resistant. Good for long trips."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "ORSA Note",
+      "text": "$(italic)Specimen GN-7 is related to the genus Cryomyces, Antarctic rock fungi that survived eighteen months outside the International Space Station. ORSA notes it is not fussy about where it lives. ORSA notes it is not fussy about much at all.$()"
+    }
+  ],
+  "extra_recipe_mappings": {
+    "frozendawn:thawed_frostcap": 4,
+    "frozendawn:frostcap_mush": 4
+  }
+}

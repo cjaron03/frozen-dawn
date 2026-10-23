@@ -1,0 +1,23 @@
+{
+  "name": "Geiger Counter",
+  "category": "frozendawn:radiation",
+  "icon": "frozendawn:geiger_counter",
+  "sortnum": 2,
+  "pages": [
+    {
+      "type": "patchouli:spotlight",
+      "item": "frozendawn:geiger_counter",
+      "text": "Clicks while carried. Hold it to read counts, rate and dose."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Reading",
+      "text": "Held, it shows CPM, RU/s and your dose on a log dial. Above $(bold)200 RU/s$() it reads OFF SCALE.$(br2)Above about 15 RU/s the clicks blur into a roar.$(br2)$(flavor)If it screams, leave.$()"
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:geiger_counter",
+      "text": "A glass pane, copper, redstone and iron."
+    }
+  ]
+}

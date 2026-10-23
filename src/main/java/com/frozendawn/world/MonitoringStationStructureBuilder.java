@@ -127,7 +127,7 @@ public final class MonitoringStationStructureBuilder {
 
             List<ItemStack> loot = crateInfo.pos().getZ() < center.getZ()
                     ? createBackRoomLoot(center)
-                    : createMainRoomLoot();
+                    : createMainRoomLoot(level.getSeed() ^ crateInfo.pos().asLong());
             for (int i = 0; i < barrel.getContainerSize(); i++) {
                 barrel.setItem(i, ItemStack.EMPTY);
             }
@@ -228,7 +228,7 @@ public final class MonitoringStationStructureBuilder {
         return state.getPhase();
     }
 
-    private static List<ItemStack> createMainRoomLoot() {
+    static List<ItemStack> createMainRoomLoot(long salvageSeed) {
         List<ItemStack> loot = new ArrayList<>();
         loot.add(createOrsaDocument("Weather Upload Log", "station_upload_log"));
         loot.add(createOrsaDocument("Requisition Form - Replacement Thermocouple", "station_requisition"));
@@ -242,6 +242,7 @@ public final class MonitoringStationStructureBuilder {
                 "Solar dimming now obvious at noon"));
         loot.add(new ItemStack(Items.COAL, 6));
         loot.add(new ItemStack(Items.BREAD, 3));
+        loot.add(com.frozendawn.loot.SalvagedPowerCells.create(salvageSeed));
         return loot;
     }
 
@@ -257,6 +258,9 @@ public final class MonitoringStationStructureBuilder {
         loot.add(createOrsaDocument("Relay Diagnostics Printout", "station_relay_diagnostics"));
         loot.add(createEmployeeRelayNote());
         loot.add(createJournal(center));
+        // ORSA Uplink salvage: the station's relay hardware, behind the terminal lock.
+        loot.add(new ItemStack(ModItems.SIGNAL_PROCESSOR.get()));
+        loot.add(new ItemStack(ModItems.FEED_HORN.get()));
         return loot;
     }
 

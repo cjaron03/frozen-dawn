@@ -31,8 +31,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * A player-craftable heater block. Right-click with fuel to add burn time.
- * Base: radius 7, +35C. Higher tiers produce more heat but consume fuel faster.
- * No GUI, no hopper interaction.
+ * Sealed rooms share a20C target; open camps retain scaled proximity warmth.
+ * Higher tiers supply more power and use higher fuel costs. Right-click without fuel opens status.
  * Fuel does NOT burn while chunk is unloaded (vanilla BlockEntity default).
  */
 public class ThermalHeaterBlock extends Block implements EntityBlock {

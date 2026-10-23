@@ -1,0 +1,16 @@
+{
+  "variants": {
+    "occupied=false,running=false": {
+      "model": "frozendawn:block/decon_shower"
+    },
+    "occupied=false,running=true": {
+      "model": "frozendawn:block/decon_shower"
+    },
+    "occupied=true,running=false": {
+      "model": "frozendawn:block/decon_shower"
+    },
+    "occupied=true,running=true": {
+      "model": "frozendawn:block/decon_shower"
+    }
+  }
+}

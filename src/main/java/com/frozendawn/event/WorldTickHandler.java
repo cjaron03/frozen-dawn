@@ -139,6 +139,7 @@ public class WorldTickHandler {
 
     @SubscribeEvent
     public static void onServerStopped(net.neoforged.neoforge.event.server.ServerStoppedEvent event) {
+        com.frozendawn.maeve.MaeveDirector.onServerStopped(event.getServer());
         lastLoggedPhase = -1;
         lastLoggedDay = -1;
         pendingArchitectBreakUpdates.clear();
@@ -161,6 +162,7 @@ public class WorldTickHandler {
         TowerPlacement.reset();
         CampPlacement.reset();
         ChunkCatchUpManager.reset();
+        com.frozendawn.gpr.PlumbLineMemory.clear();
         HearthReconciliationManager.reset();
         HearthArchitectManager.reset();
         HearthPopulationManager.reset();
@@ -184,6 +186,7 @@ public class WorldTickHandler {
         FrozenEvacVehiclePlacement.reset();
         CargoDropPlacement.reset();
         MonitoringStationPlacement.reset();
+        com.frozendawn.world.ReactorSitePlacement.reset();
         FrozenTownRuntime.reset();
     }
 
@@ -224,7 +227,7 @@ public class WorldTickHandler {
         }
 
         // Sync apocalypse data to all clients every 20 ticks (~1 second)
-        if (state.getApocalypseTicks() % 20 == 0) {
+        if (server.overworld().getGameTime() % 20 == 0) {
             PacketDistributor.sendToAllPlayers(createPayload(state, winState));
         }
 
@@ -243,6 +246,7 @@ public class WorldTickHandler {
         // Drive world systems in the overworld
         long tick = overworld.getGameTime();
         PostMaeveWorldState.tick(overworld);
+        com.frozendawn.maeve.MaeveDirector.tick(server);
         ThaevenLoreWorldManager.tick(overworld);
         com.frozendawn.aggregate.StillpointFieldManager.tick(server);
         AggregateGrowthManager.tick(overworld);
@@ -261,6 +265,7 @@ public class WorldTickHandler {
         FrozenEvacVehiclePlacement.tickPlacement(overworld);
         CargoDropPlacement.tickPlacement(overworld);
         MonitoringStationPlacement.tickPlacement(overworld);
+        com.frozendawn.world.ReactorSitePlacement.tickPlacement(overworld);
         FrozenTownRuntime.tickProcessing(overworld);
         ChunkCatchUpManager.tick(overworld, state);
         BloomGrowthManager.tick(overworld, state);
@@ -283,6 +288,7 @@ public class WorldTickHandler {
         SatellitePlacement.tickPlacement(overworld);
         RocketLaunchManager.tick(overworld);
         WeatherHandler.tick(overworld, currentPhase, progress);
+        com.frozendawn.cyclone.CycloneController.tick(overworld, state);
         NetherSeveranceHandler.tick(overworld, currentPhase);
         // Stagger heavy systems on alternating ticks to halve peak load
         if (tick % 2 == 0) {
@@ -509,6 +515,7 @@ public class WorldTickHandler {
             PlayerTickHandler.onPlayerLogin(player);
             PacketDistributor.sendToPlayer(player, createPayload(state, winState));
             PlayerTickHandler.syncBreathableState(player);
+            com.frozendawn.cyclone.CycloneController.syncTo(player);
             RocketLaunchManager.syncLaunchState(player);
             PostMaeveWorldState.sync(player);
             ThaevenLoreManager.sync(player);

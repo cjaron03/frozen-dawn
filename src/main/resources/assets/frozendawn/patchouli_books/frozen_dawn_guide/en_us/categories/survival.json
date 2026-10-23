@@ -1,0 +1,6 @@
+{
+  "name": "Survival",
+  "description": "The cold, your body, food and what hunts you.$(br2)New here? Open Getting Started, then $(l:getting_started/start_here)Start Here$(/l).",
+  "icon": "minecraft:campfire",
+  "sortnum": 0
+}

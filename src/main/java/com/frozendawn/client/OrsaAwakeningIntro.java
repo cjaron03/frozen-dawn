@@ -64,11 +64,21 @@ public final class OrsaAwakeningIntro {
         blurManaged = false;
     }
 
+    /** Straight on from the First Boot Epigraph: its black runs into the intro's own lead-in, and its howl keeps
+     * playing (everything else is already silent) and fades out under the logo by itself. */
+    public static void startImmediately() {
+        start();
+        blackoutApplied = true;
+    }
+
     public static boolean shouldSuppressSurvivalHud() {
-        return active && ticks < TEMPERATURE_RETURN_START;
+        return FirstBootEpigraph.active() || active && ticks < TEMPERATURE_RETURN_START;
     }
 
     public static boolean shouldSuppressNonIntroSound(ResourceLocation soundLocation) {
+        if (FirstBootEpigraph.active()) {
+            return FirstBootEpigraph.suppresses(soundLocation);
+        }
         if (!active) {
             return false;
         }

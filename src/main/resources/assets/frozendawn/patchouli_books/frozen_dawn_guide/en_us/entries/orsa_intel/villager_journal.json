@@ -8,7 +8,11 @@
     {
       "type": "patchouli:text",
       "title": "Day 1",
-      "text": "The snow hasn't stopped in three days. That's not normal for this time of year.$(br2)The animals are restless. The chickens won't leave the coop and the cows just stand there, staring at nothing.$(br2)Old Marta says she's seen weather like this before. I don't believe her."
+      "text": "The snow hasn't stopped in three days. That's not normal for this time of year.$(br2)The animals are restless. The chickens won't leave the coop and the cows just stand there, staring at nothing."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Old Marta says she's seen weather like this before. I don't believe her."
     },
     {
       "type": "patchouli:text",
@@ -23,7 +27,11 @@
     {
       "type": "patchouli:text",
       "title": "Day 19",
-      "text": "The other half left yesterday. Packed what they could carry and followed the ORSA people east.$(br2)Martha took her cat. Jakob left his dog. We're staying. Twelve of us now.$(br2)Father says the cold will pass.$(br2)The sun looks smaller today. I mentioned it at dinner. Nobody answered."
+      "text": "The other half left yesterday. Packed what they could carry and followed the ORSA people east.$(br2)Martha took her cat. Jakob left his dog. We're staying. Twelve of us now.$(br2)Father says the cold will pass."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "The sun looks smaller today. I mentioned it at dinner. Nobody answered."
     },
     {
       "type": "patchouli:text",

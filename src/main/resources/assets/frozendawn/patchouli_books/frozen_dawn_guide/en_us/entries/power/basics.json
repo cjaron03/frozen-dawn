@@ -1,0 +1,38 @@
+{
+  "name": "Power Basics",
+  "category": "frozendawn:power",
+  "icon": "frozendawn:conduit_binder",
+  "sortnum": 0,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "text": "Machines draw power in $(bold)kW$(). Stored energy is $(bold)kJ$(): a full 500 kJ cell runs 5 kW for 100 seconds."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Sources",
+      "text": "$(li)$(l:advanced/core_upgrades)Geothermal Core$(/l) power share: up to $(bold)20 kW$()$(li)$(l:reactor/overview)Hearthstone Reactor$(/l)$(li)Charged $(l:power/storage)Power Cells$(/l)"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Links",
+      "text": "The $(l:power/binder)Conduit Binder$(/l) draws cyan links between the Core, relays, feedthroughs and machines.$(br2)Everything joined by links is one network."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Who Gets Power",
+      "text": "Supply is shared out every second, in order:$(li)$(bold)Oxygen$(): PIXIE-2$(li)$(bold)Heat$(): RH-5$(li)$(bold)Everything else$(): lights, furnaces, the forge, the Uplink$(br2)Spare power charges batteries."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Brownouts",
+      "text": "When supply falls short, machines switch off whole, lowest priority first.$(br2)Batteries cover the gap until they drain. A $(l:power/monitor)Power Monitor$(/l) lists what's waiting."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Sealed Walls",
+      "text": "A link can't cross a sealed room's wall except through a $(l:power/relays)Bulkhead Feedthrough$(/l).$(br2)Other blocks don't block links."
+    }
+  ],
+  "priority": true
+}

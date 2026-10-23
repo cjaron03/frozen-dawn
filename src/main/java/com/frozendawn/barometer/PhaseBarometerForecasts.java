@@ -110,6 +110,10 @@ public final class PhaseBarometerForecasts {
     }
 
     private static BarometerWarning warningFor(int phase, ForecastBand band) {
+        if (phase == 1) {
+            return band == ForecastBand.TRANSITION_LIKELY_SOON || band == ForecastBand.IMMINENT
+                    ? BarometerWarning.PERSISTENT_PRECIPITATION : BarometerWarning.COOLING_TREND;
+        }
         if (phase == 4 && (band == ForecastBand.TRANSITION_LIKELY_SOON || band == ForecastBand.IMMINENT)) {
             return BarometerWarning.NETHER_SEVERANCE_RISK;
         }

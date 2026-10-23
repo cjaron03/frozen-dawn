@@ -1,13 +1,14 @@
 package com.frozendawn.event;
 
 import com.frozendawn.phase.PhaseManager;
+import com.frozendawn.data.PhaseOneWeatherState;
 import com.frozendawn.homo.PostMaeveWorldState;
 import net.minecraft.server.level.ServerLevel;
 
 /**
  * Locks weather state based on apocalypse phase.
  *
- * Phase 1: Normal + more frequent rain/snow (reduced clear periods)
+ * Phase 1: Variable clear/rain windows, gradually wetter; rare thunder
  * Phase 2: Locked rain (snow in cold biomes)
  * Phase 3: Permanent thunderstorm (snowstorm)
  * Phase 4-5: Permanent thunderstorm (blizzard/whiteout)
@@ -24,48 +25,27 @@ public final class WeatherHandler {
 
     private WeatherHandler() {}
 
-    /** Maximum ticks of clear weather allowed in phase 1 (~2.5 minutes). */
-    private static final int PHASE1_MAX_CLEAR_TICKS = 3000;
-    /** Duration of forced rain in phase 1 (~4 minutes). */
-    private static final int PHASE1_RAIN_DURATION = 5000;
-    /** Duration used for locked weather in phase 2+ (~14 hours, effectively permanent). */
     private static final int LOCKED_DURATION = 1_000_000;
 
-    private static int clearTickCounter = 0;
-
-    public static void reset() {
-        clearTickCounter = 0;
-    }
+    /** Phase 1 scheduling now belongs to each world's saved data. */
+    public static void reset() { }
 
     public static void tick(ServerLevel overworld, int phase, float progress) {
+        if (phase != 1 || PostMaeveWorldState.isErased(overworld)) {
+            var previous = overworld.getDataStorage().get(PhaseOneWeatherState.FACTORY, PhaseOneWeatherState.NAME);
+            if (previous != null) previous.leave();
+        }
         if (PostMaeveWorldState.isErased(overworld)) {
-            if (overworld.isRaining() || overworld.isThundering()) {
+            if (overworld.getLevelData().isRaining() || overworld.getLevelData().isThundering()) {
                 overworld.setWeatherParameters(LOCKED_DURATION, 0, false, false);
             }
-            clearTickCounter = 0;
             return;
         }
         if (phase <= 0) return;
 
         switch (phase) {
-            case 1 -> handlePhase1(overworld);
+            case 1 -> PhaseOneWeatherState.get(overworld).tick(overworld, progress);
             default -> handleLockedWeather(overworld, phase, progress);
-        }
-    }
-
-    /**
-     * Phase 1: Allow natural weather cycling but reduce clear periods.
-     * If clear weather persists too long, force rain.
-     */
-    private static void handlePhase1(ServerLevel overworld) {
-        if (!overworld.isRaining()) {
-            clearTickCounter++;
-            if (clearTickCounter > PHASE1_MAX_CLEAR_TICKS) {
-                overworld.setWeatherParameters(0, PHASE1_RAIN_DURATION, true, false);
-                clearTickCounter = 0;
-            }
-        } else {
-            clearTickCounter = 0;
         }
     }
 
@@ -76,12 +56,12 @@ public final class WeatherHandler {
     private static void handleLockedWeather(ServerLevel overworld, int phase, float progress) {
         // Phase 6 mid+: atmosphere thinning, clear weather
         if (PhaseManager.isPhase6MidOrLater(phase, progress)) {
-            if (overworld.isRaining()) {
+            if (overworld.getLevelData().isRaining()) {
                 overworld.setWeatherParameters(LOCKED_DURATION, 0, false, false);
             }
         } else {
             boolean wantThunder = phase >= 3;
-            boolean needsUpdate = !overworld.isRaining() || (wantThunder && !overworld.isThundering());
+            boolean needsUpdate = !overworld.getLevelData().isRaining() || overworld.getLevelData().isThundering() != wantThunder;
 
             if (needsUpdate) {
                 overworld.setWeatherParameters(0, LOCKED_DURATION, true, wantThunder);

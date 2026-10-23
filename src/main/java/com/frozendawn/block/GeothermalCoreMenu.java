@@ -19,6 +19,8 @@ import net.minecraft.world.item.Items;
 import org.jetbrains.annotations.Nullable;
 
 public class GeothermalCoreMenu extends AbstractContainerMenu {
+    public static final int UI_WIDTH = 320;
+    public static final int UI_HEIGHT = 236;
 
     private final Container container;
     private final ContainerData data;
@@ -27,7 +29,7 @@ public class GeothermalCoreMenu extends AbstractContainerMenu {
 
     /** Client constructor (from network). */
     public GeothermalCoreMenu(int containerId, Inventory playerInv, FriendlyByteBuf buf) {
-        this(containerId, playerInv, new SimpleContainer(4), new SimpleContainerData(3),
+        this(containerId, playerInv, new SimpleContainer(4), new SimpleContainerData(9),
                 buf != null ? buf.readBlockPos() : null);
     }
 
@@ -44,22 +46,23 @@ public class GeothermalCoreMenu extends AbstractContainerMenu {
         this.corePos = corePos;
 
         // 3 upgrade slots + 1 O2 tank refill slot
-        addSlot(new UpgradeSlot(container, 0, 26, 22));   // Range
-        addSlot(new UpgradeSlot(container, 1, 26, 46));   // Temp
-        addSlot(new UpgradeSlot(container, 2, 26, 70));   // O2
-        addSlot(new O2TankSlot(container, 3, 80, 94));    // O2 Tank Refill
+        addSlot(new UpgradeSlot(container, 0, 238, 26));   // Range
+        addSlot(new UpgradeSlot(container, 1, 238, 50));   // Temp
+        addSlot(new UpgradeSlot(container, 2, 238, 74));   // O2
+        addSlot(new O2TankSlot(container, 3, 9, 128));    // O2 Tank Refill
 
         // Player inventory (3 rows) — shifted down for refill row
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 9; col++) {
-                addSlot(new Slot(playerInv, col + row * 9 + 9, 8 + col * 18, 130 + row * 18));
+                addSlot(new Slot(playerInv, col + row * 9 + 9, 80 + col * 18, 158 + row * 18));
             }
         }
         // Hotbar
         for (int col = 0; col < 9; col++) {
-            addSlot(new Slot(playerInv, col, 8 + col * 18, 188));
+            addSlot(new Slot(playerInv, col, 80 + col * 18, 216));
         }
 
+        if (!(container instanceof CoreContainer)) { data.set(3, GeothermalCoreBlockEntity.DEFAULT_HEAT_SHARE); data.set(8, 6000); }
         addDataSlots(data);
     }
 
@@ -70,6 +73,24 @@ public class GeothermalCoreMenu extends AbstractContainerMenu {
     @Nullable
     public BlockPos getCorePos() {
         return corePos;
+    }
+
+    @Override
+    public boolean clickMenuButton(Player player,int id) {
+        if (player.isSpectator() || !stillValid(player)
+                || !(container instanceof CoreContainer core)
+                || player.level().getBlockEntity(corePos) != core.entity) return false;
+        if (id >= 0 && id <= 100) {
+            if (id > 100 - core.entity.getPowerShare()) return false;
+            core.entity.setHeatShare(id);
+        } else if (id >= 200 && id <= 300) {
+            core.entity.setPowerShare(id - 200);
+            if(id==300&&player instanceof net.minecraft.server.level.ServerPlayer server)
+                com.frozendawn.world.PowerAirAdvancements.grant(server,com.frozendawn.world.PowerAirAdvancements.UNLIMITED);
+        }
+        else if (id == 400) core.entity.resetAllocation();
+        else return false;
+        return true;
     }
 
     @Override
@@ -173,7 +194,9 @@ public class GeothermalCoreMenu extends AbstractContainerMenu {
 
         @Override
         public boolean stillValid(Player player) {
-            return entity.getLevel() != null &&
+            return entity.getLevel() != null && !entity.isRemoved() &&
+                    player.level()==entity.getLevel() && entity.getLevel().isLoaded(entity.getBlockPos()) &&
+                    entity.getLevel().getBlockEntity(entity.getBlockPos())==entity &&
                     player.distanceToSqr(entity.getBlockPos().getX() + 0.5,
                             entity.getBlockPos().getY() + 0.5,
                             entity.getBlockPos().getZ() + 0.5) <= 64.0;

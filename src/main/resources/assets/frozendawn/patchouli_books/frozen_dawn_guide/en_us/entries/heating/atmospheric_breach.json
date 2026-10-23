@@ -1,0 +1,60 @@
+{
+  "name": "Room Breaches",
+  "icon": "minecraft:glass",
+  "category": "frozendawn:life_support",
+  "sortnum": 0,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "text": "In late Phase 6 a sealed room holds the only air. Breaking a wall or opening a door or trapdoor to vacuum $(danger)vents it in a burst$()."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "What Seals",
+      "text": "Solid walls and full glass blocks seal, sunlight or not.$(br2)Fences, stairs, single slabs and leaves don't."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Alarm",
+      "text": "A whoosh, a loud three-pulse alarm, and the ORSA voice: $(danger)WARNING: ATMOSPHERIC BREACH DETECTED$().$(br2)Particles point at the opening."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Brace",
+      "text": "The pull lasts about $(bold)2 s$() and fades. Crouch on the ground to brace.$(br2)It can't pin you or pull you through walls."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Flames",
+      "text": "Ordinary flames in the room go out together. Torches, wall ones too, become $(bold)Spent Torches$(); lanterns go dark; soul lights stay.$(br2)A vented room doesn't burst again per broken block."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Without a Suit",
+      "text": "$(danger)Suffocation builds$() unless you wear full EVA with usable oxygen:$(li)1.5 s: lightheaded$(li)4 s: nausea, slowness$(li)7 s: severe slowness$(li)10 s on: $(danger)2 hearts/s$()"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Tank O2 or an active Emergency EVA reserve keeps you breathing; empty or partial suits don't.$(br2)Cold hurts separately. A breach doesn't puncture the suit."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Recovery",
+      "text": "Repair the opening, then wait about $(bold)5 loaded seconds$() with a connected Core or Blast Pit.$(br2)Its heat runs through a breach; its oxygen doesn't."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Replacing one block or reloading doesn't refill the room. Breaking the seal again restarts recovery.$(br2)Relight torches and lanterns with flint and steel once air returns. Campfires and candles relight normally."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Notices",
+      "text": "$(bold)BREACH SEALED — RESTORING AIR$(): oxygen returning$(br)$(bold)OXYGEN SUPPLY REQUIRED$(): no source$(br)$(bold)ATMOSPHERE RESTORED$(): breathable, soft tone$(br2)$(danger)Stay on EVA until restored.$()"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Restored means air, not warmth or patched suits.$(br2)Notices show in an EVA helmet HUD, or above the hotbar, never in chat. Loss is red.$(br2)$(flavor)Keep the atmosphere on the inside.$()"
+    }
+  ],
+  "priority": true
+}

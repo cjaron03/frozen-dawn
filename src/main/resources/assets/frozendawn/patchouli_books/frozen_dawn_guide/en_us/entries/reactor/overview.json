@@ -1,0 +1,30 @@
+{
+  "name": "CFU-7 Hearthstone",
+  "category": "frozendawn:reactor",
+  "icon": "frozendawn:reactor_controller",
+  "sortnum": 0,
+  "pages": [
+    {
+      "type": "patchouli:spotlight",
+      "item": "frozendawn:reactor_controller",
+      "title": "CFU-7 Hearthstone",
+      "text": "ORSA's fission reactor. Fuel rods make heat; radiators turn it into power."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "History",
+      "text": "ORSA ran CFU-7s at its outposts. When everyone evacuated, no one stayed to watch them. $(danger)Every one melted down.$()$(br2)$(flavor)ORSA would like you to do better.$()"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "How It Works",
+      "text": "$(li)Fuel rods heat the core$(li)Coolant carries the heat to radiators outdoors$(li)The heat they shed becomes power$(li)The controller joins your grid as a 16-block node"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Before You Build",
+      "text": "$(li)Uranium, mined deep$(li)A powered $(l:power/induction_furnace)Induction Furnace$(/l)$(li)Radiators with an outdoor face$(li)Distance or lead against $(l:radiation/basics)radiation$(/l)"
+    }
+  ],
+  "priority": true
+}

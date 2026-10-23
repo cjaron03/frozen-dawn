@@ -44,10 +44,18 @@ import net.minecraft.sounds.SoundSource;
  * through lambdas in {@link ModNetworking} that execute client-side.
  */
 public final class ClientHandlers {
+    public static void handleAurora(AuroraStatePayload payload) { com.frozendawn.client.AuroraRenderer.receive(payload); }
+    public static void handlePowerBinder(PowerBinderPayload payload) { com.frozendawn.client.PowerBinderHud.receive(payload); }
+    public static void handlePowerBinderNotice(PowerBinderNoticePayload payload) { com.frozendawn.client.PowerBinderHud.receive(payload); }
+    public static void handlePowerLinks(PowerLinksPayload payload) { com.frozendawn.client.PowerLinkRenderer.receive(payload); }
+    public static void handleRadiation(RadiationPayload payload) { com.frozendawn.client.RadiationClient.receive(payload); }
+    public static void handleReactorFlash(ReactorFlashPayload payload) { com.frozendawn.client.RadiationClient.flash(payload); }
+
     public static void handleArchitectDebug(ArchitectDebugPayload payload) {
         com.frozendawn.client.ArchitectDebugRenderer.receive(payload.view());
     }
 
+    public static void handleCyclone(CycloneSyncPayload payload) { com.frozendawn.client.CycloneClientState.update(payload); }
     private ClientHandlers() {}
 
     public static void handleApocalypseData(ApocalypseDataPayload payload) {
@@ -58,8 +66,53 @@ public final class ClientHandlers {
         TemperatureHud.setTemperature(payload.temperature());
     }
 
+    public static void handleRoomOxygenWarning(RoomOxygenWarningPayload payload) {
+        com.frozendawn.client.AtmosphericBreachClient.receiveOxygenWarning(payload.shortage());
+    }
+
+    public static void handleRoomPressureState(RoomPressureStatePayload payload) {
+        ApocalypseClientData.setPressurized(payload.pressurized());
+    }
+
     public static void handleBreathableState(BreathableStatePayload payload) {
         ApocalypseClientData.setBreathable(payload.breathable());
+    }
+
+    public static void handleEmergencyEva(EmergencyEvaPayload payload) {
+        var player = Minecraft.getInstance().player;
+        if (player != null) {
+            player.setData(com.frozendawn.init.ModAttachments.EMERGENCY_EVA,
+                    new com.frozendawn.data.EmergencyEvaState(payload.issue(), payload.remainingTicks(),
+                            payload.oxygenTicks(), payload.exertionLoad(), payload.wornTicks(), payload.thermalLoad(),
+                            payload.ambient(), payload.retirement()));
+            if (payload.notice() != EmergencyEvaPayload.NO_NOTICE)
+                com.frozendawn.client.EmergencyEvaClient.onNotice(payload.issue(), payload.notice());
+        }
+    }
+
+    public static void handleContinuityRecovery(ContinuityRecoveryPayload payload) {
+        var player = Minecraft.getInstance().player;
+        if (player != null) {
+            var record = new com.frozendawn.data.ContinuityRecoveryState();
+            record.deserializeNBT(player.registryAccess(), payload.record());
+            player.setData(com.frozendawn.init.ModAttachments.CONTINUITY_RECOVERY, record);
+        }
+    }
+
+    public static void handleSuffocationState(SuffocationStatePayload payload) {
+        com.frozendawn.client.AtmosphericBreachClient.receiveSuffocation(payload.stage());
+    }
+
+    public static void handleAirlockStatus(AirlockStatusPayload payload) {
+        com.frozendawn.client.AtmosphericBreachClient.receiveAirlock(payload);
+    }
+
+    public static void handleRoomRecovery(RoomRecoveryPayload payload) {
+        com.frozendawn.client.AtmosphericBreachClient.receiveRecovery(payload.stage());
+    }
+
+    public static void handleAtmosphericBreach(AtmosphericBreachPayload payload) {
+        com.frozendawn.client.AtmosphericBreachClient.receive();
     }
 
     public static void handleSuitIntegrity(SuitIntegrityPayload payload) {
@@ -75,7 +128,9 @@ public final class ClientHandlers {
     }
 
     public static void handleOpenOrsaAwakening() {
-        OrsaAwakeningIntro.start();
+        // The First Boot Epigraph precedes the very first ORSA intro on this client, then hard-cuts into it.
+        if (com.frozendawn.client.FirstBootEpigraph.seen()) OrsaAwakeningIntro.start();
+        else com.frozendawn.client.FirstBootEpigraph.play(true, OrsaAwakeningIntro::startImmediately);
     }
 
     public static void handleOpenTowerTerminal(OpenTowerTerminalPayload payload) {
@@ -232,6 +287,11 @@ public final class ClientHandlers {
             OpenThaevenArchivePayload payload) {
         Minecraft.getInstance().setScreen(new ThaevenLoreScreen(
                 payload.focusRecord(), payload.rawOnly()));
+    }
+
+    public static void handleOpenScribeRecord(OpenScribeRecordPayload payload) {
+        Minecraft.getInstance().setScreen(new com.frozendawn.client.ScribeRecordScreen(
+                payload.contents(), payload.translated()));
     }
 
     public static void handleStillpointField(StillpointFieldPayload payload) {

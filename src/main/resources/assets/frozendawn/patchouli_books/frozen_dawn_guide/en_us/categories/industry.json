@@ -1,0 +1,6 @@
+{
+  "name": "Industry",
+  "description": "The reactor, the radiation it makes, and the signals it powers.",
+  "icon": "frozendawn:reactor_controller",
+  "sortnum": 3
+}

@@ -1,0 +1,22 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "pattern": [
+    "X X",
+    "###",
+    "###"
+  ],
+  "key": {
+    "#": {
+      "item": "frozendawn:stripped_rimewood_log"
+    },
+    "X": {
+      "item": "minecraft:chain"
+    }
+  },
+  "result": {
+    "id": "frozendawn:rimewood_hanging_sign",
+    "count": 6
+  },
+  "group": "hanging_sign"
+}

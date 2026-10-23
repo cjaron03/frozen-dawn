@@ -1,0 +1,32 @@
+{
+  "name": "Spent Fuel",
+  "category": "frozendawn:reactor",
+  "icon": "frozendawn:shielded_cask",
+  "sortnum": 6,
+  "pages": [
+    {
+      "type": "patchouli:spotlight",
+      "item": "frozendawn:shielded_cask",
+      "text": "Holds 4 spent rods and blocks $(bold)99%$() of their radiation."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Use",
+      "text": "Put it in the controller's output slot to catch spent rods. Loaded, it gives Slowness I while carried.$(br2)$(danger)Spent rods are strong sources.$() Never carry them loose."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Debris",
+      "text": "A cask with room can also pick up Reactor Debris. Mining debris by hand puts the source in your inventory."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:shielded_cask",
+      "text": "Iron and obsidian."
+    }
+  ],
+  "extra_recipe_mappings": {
+    "frozendawn:reactor_debris": 2,
+    "frozendawn:spent_fuel_rod": 0
+  }
+}

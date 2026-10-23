@@ -38,6 +38,7 @@ import com.frozendawn.item.SurveyorLensItem;
 import com.frozendawn.item.SurveyorLensScanner;
 import com.frozendawn.item.SuitPatchItem;
 import com.frozendawn.item.ThermalContainerItem;
+import com.frozendawn.item.RationWarmerItem;
 import com.frozendawn.item.ThaevenCarrierItem;
 import com.frozendawn.item.ThaevenTranslatorItem;
 import com.frozendawn.lore.ThaevenRecordId;
@@ -46,6 +47,9 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.*;
 import net.minecraft.world.item.Rarity;
+import com.frozendawn.item.BlindSpawnEggItem;
+import com.frozendawn.item.PyroSpawnEggItem;
+import com.frozendawn.item.ScribeSpawnEggItem;
 import net.neoforged.neoforge.common.DeferredSpawnEggItem;
 import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
 import net.neoforged.neoforge.registries.DeferredHolder;
@@ -54,6 +58,111 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 
 public class ModItems {
     public static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(FrozenDawn.MOD_ID);
+
+    // ORSA CFU-7 Hearthstone Reactor
+    public static final DeferredItem<BlockItem> REACTOR_CASING = ITEMS.registerSimpleBlockItem("reactor_casing", ModBlocks.REACTOR_CASING);
+    public static final DeferredItem<BlockItem> REACTOR_CORE = ITEMS.registerSimpleBlockItem("reactor_core", ModBlocks.REACTOR_CORE);
+    public static final DeferredItem<BlockItem> CONTROL_ROD_DRIVE = ITEMS.registerSimpleBlockItem("control_rod_drive", ModBlocks.CONTROL_ROD_DRIVE);
+    public static final DeferredItem<BlockItem> COOLANT_PORT = ITEMS.registerSimpleBlockItem("coolant_port", ModBlocks.COOLANT_PORT);
+    public static final DeferredItem<BlockItem> REACTOR_CONTROLLER = ITEMS.registerSimpleBlockItem("reactor_controller", ModBlocks.REACTOR_CONTROLLER);
+    public static final DeferredItem<BlockItem> REACTOR_RADIATOR = ITEMS.registerSimpleBlockItem("reactor_radiator", ModBlocks.REACTOR_RADIATOR);
+    public static final DeferredItem<BlockItem> CORIUM = ITEMS.registerSimpleBlockItem("corium", ModBlocks.CORIUM);
+    public static final DeferredItem<BlockItem> REACTOR_DEBRIS = ITEMS.registerSimpleBlockItem("reactor_debris", ModBlocks.REACTOR_DEBRIS);
+    public static final DeferredItem<BlockItem> GALENA_ORE = ITEMS.registerSimpleBlockItem("galena_ore", ModBlocks.GALENA_ORE);
+    public static final DeferredItem<BlockItem> DEEPSLATE_GALENA_ORE = ITEMS.registerSimpleBlockItem("deepslate_galena_ore", ModBlocks.DEEPSLATE_GALENA_ORE);
+    public static final DeferredItem<BlockItem> LEAD_BLOCK = ITEMS.registerSimpleBlockItem("lead_block", ModBlocks.LEAD_BLOCK);
+    public static final DeferredItem<BlockItem> DECON_SHOWER = ITEMS.registerSimpleBlockItem("decon_shower", ModBlocks.DECON_SHOWER);
+    public static final DeferredItem<Item> RAW_GALENA = ITEMS.registerSimpleItem("raw_galena");
+    public static final DeferredItem<Item> LEAD_INGOT = ITEMS.registerSimpleItem("lead_ingot");
+    public static final DeferredItem<com.frozendawn.item.LeadLiningModuleItem> LEAD_LINING_MODULE = ITEMS.register("lead_lining_module",
+            () -> new com.frozendawn.item.LeadLiningModuleItem(new Item.Properties().stacksTo(1).rarity(Rarity.UNCOMMON)));
+    public static final DeferredItem<BlockItem> DEEPSLATE_URANIUM_ORE = ITEMS.registerSimpleBlockItem("deepslate_uranium_ore", ModBlocks.DEEPSLATE_URANIUM_ORE);
+    public static final DeferredItem<Item> RAW_URANIUM = ITEMS.registerSimpleItem("raw_uranium");
+    public static final DeferredItem<Item> URANIUM_CONCENTRATE = ITEMS.registerSimpleItem("uranium_concentrate");
+    public static final DeferredItem<Item> URANIUM_PELLET = ITEMS.registerSimpleItem("uranium_pellet");
+    public static final DeferredItem<com.frozendawn.item.FuelRodItem> FUEL_ROD = ITEMS.register("fuel_rod",
+            () -> new com.frozendawn.item.FuelRodItem(new Item.Properties().durability(com.frozendawn.power.ReactorPhysics.ROD_LIFE_SECONDS)));
+    public static final DeferredItem<Item> SPENT_FUEL_ROD = ITEMS.register("spent_fuel_rod", () -> new Item(new Item.Properties().stacksTo(4)));
+    public static final DeferredItem<com.frozendawn.item.ShieldedCaskItem> SHIELDED_CASK = ITEMS.register("shielded_cask",
+            () -> new com.frozendawn.item.ShieldedCaskItem(new Item.Properties().stacksTo(1)));
+    public static final DeferredItem<Item> RADIOACTIVE_ASH = ITEMS.registerSimpleItem("radioactive_ash");
+    public static final DeferredItem<com.frozendawn.item.RadAidItem> RAD_AID = ITEMS.register("rad_aid",
+            () -> new com.frozendawn.item.RadAidItem(new Item.Properties().stacksTo(4)));
+    public static final DeferredItem<com.frozendawn.item.GeigerCounterItem> GEIGER_COUNTER = ITEMS.register("geiger_counter",
+            () -> new com.frozendawn.item.GeigerCounterItem(new Item.Properties().stacksTo(1)));
+
+    public static final DeferredItem<BlockItem> RESISTIVE_HEATER = ITEMS.registerSimpleBlockItem("resistive_heater", ModBlocks.RESISTIVE_HEATER);
+
+    public static final DeferredItem<com.frozendawn.item.PixieItem> PIXIE = ITEMS.register("pixie",com.frozendawn.item.PixieItem::new);
+
+    public static final DeferredItem<BlockItem> POWER_MONITOR = ITEMS.registerSimpleBlockItem("power_monitor",ModBlocks.POWER_MONITOR);
+
+    public static final DeferredItem<BlockItem> PLUMB_LINE = ITEMS.registerSimpleBlockItem("plumb_line", ModBlocks.PLUMB_LINE);
+    // Cold Flora: Rimewood wood family (no boats), Frostcap foods, and the Nether cutoff substitutes.
+    public static final DeferredItem<BlockItem> RIMEWOOD_LOG = ITEMS.registerSimpleBlockItem("rimewood_log", ModBlocks.RIMEWOOD_LOG);
+    public static final DeferredItem<BlockItem> RIMEWOOD_WOOD = ITEMS.registerSimpleBlockItem("rimewood_wood", ModBlocks.RIMEWOOD_WOOD);
+    public static final DeferredItem<BlockItem> STRIPPED_RIMEWOOD_LOG = ITEMS.registerSimpleBlockItem("stripped_rimewood_log", ModBlocks.STRIPPED_RIMEWOOD_LOG);
+    public static final DeferredItem<BlockItem> STRIPPED_RIMEWOOD_WOOD = ITEMS.registerSimpleBlockItem("stripped_rimewood_wood", ModBlocks.STRIPPED_RIMEWOOD_WOOD);
+    public static final DeferredItem<BlockItem> RIMEWOOD_PLANKS = ITEMS.registerSimpleBlockItem("rimewood_planks", ModBlocks.RIMEWOOD_PLANKS);
+    public static final DeferredItem<BlockItem> RIMEWOOD_STAIRS = ITEMS.registerSimpleBlockItem("rimewood_stairs", ModBlocks.RIMEWOOD_STAIRS);
+    public static final DeferredItem<BlockItem> RIMEWOOD_SLAB = ITEMS.registerSimpleBlockItem("rimewood_slab", ModBlocks.RIMEWOOD_SLAB);
+    public static final DeferredItem<BlockItem> RIMEWOOD_FENCE = ITEMS.registerSimpleBlockItem("rimewood_fence", ModBlocks.RIMEWOOD_FENCE);
+    public static final DeferredItem<BlockItem> RIMEWOOD_FENCE_GATE = ITEMS.registerSimpleBlockItem("rimewood_fence_gate", ModBlocks.RIMEWOOD_FENCE_GATE);
+    public static final DeferredItem<net.minecraft.world.item.DoubleHighBlockItem> RIMEWOOD_DOOR = ITEMS.register("rimewood_door",
+            () -> new net.minecraft.world.item.DoubleHighBlockItem(ModBlocks.RIMEWOOD_DOOR.get(), new Item.Properties()));
+    public static final DeferredItem<BlockItem> RIMEWOOD_TRAPDOOR = ITEMS.registerSimpleBlockItem("rimewood_trapdoor", ModBlocks.RIMEWOOD_TRAPDOOR);
+    public static final DeferredItem<BlockItem> RIMEWOOD_BUTTON = ITEMS.registerSimpleBlockItem("rimewood_button", ModBlocks.RIMEWOOD_BUTTON);
+    public static final DeferredItem<BlockItem> RIMEWOOD_PRESSURE_PLATE = ITEMS.registerSimpleBlockItem("rimewood_pressure_plate", ModBlocks.RIMEWOOD_PRESSURE_PLATE);
+    public static final DeferredItem<net.minecraft.world.item.SignItem> RIMEWOOD_SIGN = ITEMS.register("rimewood_sign",
+            () -> new net.minecraft.world.item.SignItem(new Item.Properties().stacksTo(16), ModBlocks.RIMEWOOD_SIGN.get(), ModBlocks.RIMEWOOD_WALL_SIGN.get()));
+    public static final DeferredItem<net.minecraft.world.item.HangingSignItem> RIMEWOOD_HANGING_SIGN = ITEMS.register("rimewood_hanging_sign",
+            () -> new net.minecraft.world.item.HangingSignItem(ModBlocks.RIMEWOOD_HANGING_SIGN.get(), ModBlocks.RIMEWOOD_WALL_HANGING_SIGN.get(), new Item.Properties().stacksTo(16)));
+    public static final DeferredItem<BlockItem> RIMEWOOD_LEAVES = ITEMS.registerSimpleBlockItem("rimewood_leaves", ModBlocks.RIMEWOOD_LEAVES);
+    public static final DeferredItem<BlockItem> RIMEWOOD_SAPLING = ITEMS.registerSimpleBlockItem("rimewood_sapling", ModBlocks.RIMEWOOD_SAPLING);
+    /** Stripping a Rimewood log or wood with an axe gives one. */
+    public static final DeferredItem<Item> RIMEWOOD_RESIN = ITEMS.registerSimpleItem("rimewood_resin");
+    public static final DeferredItem<com.frozendawn.flora.FrostcapItem> FROZEN_FROSTCAP = ITEMS.register("frozen_frostcap",
+            () -> new com.frozendawn.flora.FrostcapItem(ModBlocks.FROSTCAP.get(), new Item.Properties()
+                    .food(new net.minecraft.world.food.FoodProperties.Builder().nutrition(2).saturationModifier(0.2f).build())));
+    public static final DeferredItem<com.frozendawn.flora.FrostcapItem.Thawed> THAWED_FROSTCAP = ITEMS.register("thawed_frostcap",
+            () -> new com.frozendawn.flora.FrostcapItem.Thawed(new Item.Properties()
+                    .food(new net.minecraft.world.food.FoodProperties.Builder().nutrition(1).saturationModifier(0.1f).build())));
+    public static final DeferredItem<Item> FROSTCAP_MUSH = ITEMS.register("frostcap_mush",
+            () -> new Item(new Item.Properties().food(new net.minecraft.world.food.FoodProperties.Builder().nutrition(0).saturationModifier(0f).alwaysEdible()
+                    .effect(() -> new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.CONFUSION, 300), 1f).build())));
+    public static final DeferredItem<Item> FROSTCAP_STEW = ITEMS.register("frostcap_stew",
+            () -> new Item(new Item.Properties().stacksTo(1).food(new net.minecraft.world.food.FoodProperties.Builder().nutrition(6).saturationModifier(0.6f)
+                    .usingConvertsTo(net.minecraft.world.item.Items.BOWL).build())));
+    public static final DeferredItem<Item> DRIED_FROSTCAP = ITEMS.register("dried_frostcap",
+            () -> new Item(new Item.Properties().food(new net.minecraft.world.food.FoodProperties.Builder().nutrition(3).saturationModifier(0.4f).build())));
+    /** Nether cutoff substitutes: stand in for blaze powder and magma cream in Frozen Dawn recipes. */
+    public static final DeferredItem<Item> SULFUR_IGNITER = ITEMS.registerSimpleItem("sulfur_igniter");
+    public static final DeferredItem<Item> THERMAL_BINDER = ITEMS.registerSimpleItem("thermal_binder");
+
+    /** Printed from a Plumb Line's last pulse; its data and tooltip live in PLUMB_LINE_SURVEY and the client overlay. */
+    public static final DeferredItem<Item> PLUMB_LINE_SURVEY = ITEMS.registerSimpleItem("plumb_line_survey", new Item.Properties().stacksTo(1));
+    public static final DeferredItem<BlockItem> UPLINK_CONSOLE = ITEMS.registerSimpleBlockItem("uplink_console", ModBlocks.UPLINK_CONSOLE);
+    public static final DeferredItem<BlockItem> UPLINK_DISH = ITEMS.registerSimpleBlockItem("uplink_dish", ModBlocks.UPLINK_DISH);
+    /** ORSA Uplink salvage parts: found at monitoring stations and ORSA sites, never crafted. */
+    public static final DeferredItem<Item> SIGNAL_PROCESSOR = ITEMS.registerSimpleItem("signal_processor", new Item.Properties().stacksTo(16));
+    public static final DeferredItem<Item> FEED_HORN = ITEMS.registerSimpleItem("feed_horn", new Item.Properties().stacksTo(16));
+
+    public static final DeferredItem<BlockItem> INDUCTION_FURNACE = ITEMS.registerSimpleBlockItem("induction_furnace", ModBlocks.INDUCTION_FURNACE);
+
+    public static final DeferredItem<com.frozendawn.item.PowerCellItem> POWER_CELL = ITEMS.register("power_cell", () -> new com.frozendawn.item.PowerCellItem(new Item.Properties()));
+    public static final DeferredItem<BlockItem> BATTERY_BANK = ITEMS.registerSimpleBlockItem("battery_bank", ModBlocks.BATTERY_BANK);
+    public static final DeferredItem<BlockItem> CELL_DOCK = ITEMS.registerSimpleBlockItem("cell_dock", ModBlocks.CELL_DOCK);
+
+    public static final DeferredItem<com.frozendawn.item.ConduitBinderItem> CONDUIT_BINDER = ITEMS.register("conduit_binder",
+            () -> new com.frozendawn.item.ConduitBinderItem(new Item.Properties().stacksTo(1)));
+    public static final DeferredItem<BlockItem> POWER_RELAY = ITEMS.registerSimpleBlockItem("power_relay", ModBlocks.POWER_RELAY);
+    public static final DeferredItem<BlockItem> LARGE_POWER_RELAY = ITEMS.registerSimpleBlockItem("large_power_relay", ModBlocks.LARGE_POWER_RELAY);
+    public static final DeferredItem<BlockItem> ORSA_EMERGENCY_LIGHT = ITEMS.registerSimpleBlockItem("orsa_emergency_light", ModBlocks.ORSA_EMERGENCY_LIGHT);
+    public static final DeferredItem<com.frozendawn.item.SuitHeadlampItem> SUIT_HEADLAMP = ITEMS.register("suit_headlamp",com.frozendawn.item.SuitHeadlampItem::new);
+    public static final DeferredItem<com.frozendawn.item.BatteryLanternItem> BATTERY_LANTERN = ITEMS.register("battery_lantern",com.frozendawn.item.BatteryLanternItem::new);
+    public static final DeferredItem<BlockItem> WORK_LAMP = ITEMS.registerSimpleBlockItem("work_lamp", ModBlocks.WORK_LAMP);
+    public static final DeferredItem<BlockItem> PANEL_LIGHT = ITEMS.registerSimpleBlockItem("panel_light", ModBlocks.PANEL_LIGHT);
+    public static final DeferredItem<BlockItem> BULKHEAD_FEEDTHROUGH = ITEMS.registerSimpleBlockItem("bulkhead_feedthrough", ModBlocks.BULKHEAD_FEEDTHROUGH);
 
     // --- Block Items ---
     public static final DeferredItem<BlockItem> DEAD_GRASS_BLOCK = ITEMS.registerSimpleBlockItem("dead_grass_block", ModBlocks.DEAD_GRASS_BLOCK);
@@ -68,6 +177,15 @@ public class ModItems {
     public static final DeferredItem<BlockItem> FROZEN_LEAVES = ITEMS.registerSimpleBlockItem("frozen_leaves", ModBlocks.FROZEN_LEAVES);
     public static final DeferredItem<BlockItem> ICICLE = ITEMS.registerSimpleBlockItem("icicle", ModBlocks.ICICLE);
     public static final DeferredItem<BlockItem> FROZEN_OBSIDIAN = ITEMS.registerSimpleBlockItem("frozen_obsidian", ModBlocks.FROZEN_OBSIDIAN);
+    public static final DeferredItem<net.minecraft.world.item.DoubleHighBlockItem> AIRLOCK_DOOR = ITEMS.register("airlock_door",
+            () -> new net.minecraft.world.item.DoubleHighBlockItem(ModBlocks.AIRLOCK_DOOR.get(),new Item.Properties()));
+    public static final DeferredItem<BlockItem> AIRLOCK_CONTROLLER = ITEMS.registerSimpleBlockItem("airlock_controller",ModBlocks.AIRLOCK_CONTROLLER);
+    public static final DeferredItem<BlockItem> MANUAL_VENT_VALVE = ITEMS.registerSimpleBlockItem("manual_vent_valve",ModBlocks.MANUAL_VENT_VALVE);
+
+    public static final DeferredItem<com.frozendawn.item.OxygenReservoirItem> OXYGEN_RESERVOIR=ITEMS.register("oxygen_reservoir",com.frozendawn.item.OxygenReservoirItem::new);
+    public static final DeferredItem<BlockItem> OXYGEN_GAUGE=ITEMS.registerSimpleBlockItem("oxygen_gauge",ModBlocks.OXYGEN_GAUGE);
+    public static final DeferredItem<BlockItem> HEAT_VENT=ITEMS.registerSimpleBlockItem("heat_vent",ModBlocks.HEAT_VENT);
+    public static final DeferredItem<BlockItem> THERMOSTAT=ITEMS.registerSimpleBlockItem("thermostat",ModBlocks.THERMOSTAT);
     public static final DeferredItem<BlockItem> THERMAL_HEATER = ITEMS.registerSimpleBlockItem("thermal_heater", ModBlocks.THERMAL_HEATER);
     public static final DeferredItem<BlockItem> IRON_THERMAL_HEATER = ITEMS.registerSimpleBlockItem("iron_thermal_heater", ModBlocks.IRON_THERMAL_HEATER);
     public static final DeferredItem<BlockItem> GOLD_THERMAL_HEATER = ITEMS.registerSimpleBlockItem("gold_thermal_heater", ModBlocks.GOLD_THERMAL_HEATER);
@@ -103,6 +221,11 @@ public class ModItems {
     public static final DeferredItem<BlockItem> BLOOM_MASS = ITEMS.registerSimpleBlockItem("bloom_mass", ModBlocks.BLOOM_MASS);
     public static final DeferredItem<BlockItem> BLOOM_CRUST = ITEMS.registerSimpleBlockItem("bloom_crust", ModBlocks.BLOOM_CRUST);
     public static final DeferredItem<BlockItem> BLOOM_TIP = ITEMS.registerSimpleBlockItem("bloom_tip", ModBlocks.BLOOM_TIP);
+    public static final DeferredItem<BlockItem> BLOOM_CORE = ITEMS.registerSimpleBlockItem("bloom_core", ModBlocks.BLOOM_CORE);
+    public static final DeferredItem<BlockItem> ACHERONITE_CRYSTAL = ITEMS.registerSimpleBlockItem("acheronite_crystal", ModBlocks.ACHERONITE_CRYSTAL);
+    public static final DeferredItem<BlockItem> FROZEN_ATMOSPHERE = ITEMS.registerSimpleBlockItem("frozen_atmosphere", ModBlocks.FROZEN_ATMOSPHERE);
+    public static final DeferredItem<BlockItem> AGGREGATE_MASS = ITEMS.registerSimpleBlockItem("aggregate_mass", ModBlocks.AGGREGATE_MASS);
+    public static final DeferredItem<BlockItem> AGGREGATE_RIB = ITEMS.registerSimpleBlockItem("aggregate_rib", ModBlocks.AGGREGATE_RIB);
     public static final DeferredItem<BlockItem> INERT_ACHERONITE = ITEMS.registerSimpleBlockItem("inert_acheronite", ModBlocks.INERT_ACHERONITE);
     public static final DeferredItem<BlockItem> SEALED_LATTICE = ITEMS.registerSimpleBlockItem("sealed_lattice", ModBlocks.SEALED_LATTICE);
     public static final DeferredItem<InertConvergenceCoreItem> INERT_CONVERGENCE_CORE =
@@ -132,12 +255,19 @@ public class ModItems {
             () -> new OrsaDocumentItem(new Item.Properties().stacksTo(1)));
     public static final DeferredItem<MeteorologistJournalItem> METEOROLOGIST_JOURNAL = ITEMS.register("meteorologist_journal",
             () -> new MeteorologistJournalItem(new Item.Properties().stacksTo(1).rarity(Rarity.UNCOMMON)));
+    public static final DeferredItem<RationWarmerItem> RATION_WARMER = ITEMS.register("ration_warmer",
+            () -> new RationWarmerItem(new Item.Properties().stacksTo(1)
+                    .component(ModDataComponents.RATION_WARMER_CHARGES.get(), 0)));
+
     public static final DeferredItem<ThermalContainerItem> THERMAL_CONTAINER = ITEMS.register("thermal_container",
             () -> new ThermalContainerItem(new Item.Properties().stacksTo(1)));
     public static final DeferredItem<OrsaMultiToolItem> ORSA_MULTITOOL = ITEMS.register("orsa_multitool",
             () -> new OrsaMultiToolItem(new Item.Properties().stacksTo(1)));
     public static final DeferredItem<ThaevenTranslatorItem> THAEVEN_TRANSLATOR = ITEMS.register(
             "thaeven_translator", () -> new ThaevenTranslatorItem(
+                    new Item.Properties().stacksTo(1).rarity(Rarity.RARE)));
+    public static final DeferredItem<com.frozendawn.item.ScribeRecordItem> SCRIBE_RECORD = ITEMS.register(
+            "scribe_record", () -> new com.frozendawn.item.ScribeRecordItem(
                     new Item.Properties().stacksTo(1).rarity(Rarity.RARE)));
     public static final DeferredItem<ThaevenCarrierItem> HUMAN_CARRIER = ITEMS.register(
             "human_carrier", () -> new ThaevenCarrierItem(
@@ -234,6 +364,16 @@ public class ModItems {
             () -> new ArmorItem(ModArmorMaterials.EVA, ArmorItem.Type.BOOTS,
                     new Item.Properties().durability(ArmorItem.Type.BOOTS.getDurability(25))));
 
+    // Emergency equipment is issued by the death-respawn handler; no recipes or creative entries.
+    public static final DeferredItem<com.frozendawn.item.EmergencyEvaArmorItem> EMERGENCY_EVA_HELMET =
+            ITEMS.register("emergency_eva_helmet", () -> new com.frozendawn.item.EmergencyEvaArmorItem(ArmorItem.Type.HELMET));
+    public static final DeferredItem<com.frozendawn.item.EmergencyEvaArmorItem> EMERGENCY_EVA_CHESTPLATE =
+            ITEMS.register("emergency_eva_chestplate", () -> new com.frozendawn.item.EmergencyEvaArmorItem(ArmorItem.Type.CHESTPLATE));
+    public static final DeferredItem<com.frozendawn.item.EmergencyEvaArmorItem> EMERGENCY_EVA_LEGGINGS =
+            ITEMS.register("emergency_eva_leggings", () -> new com.frozendawn.item.EmergencyEvaArmorItem(ArmorItem.Type.LEGGINGS));
+    public static final DeferredItem<com.frozendawn.item.EmergencyEvaArmorItem> EMERGENCY_EVA_BOOTS =
+            ITEMS.register("emergency_eva_boots", () -> new com.frozendawn.item.EmergencyEvaArmorItem(ArmorItem.Type.BOOTS));
+
     // --- Win Condition ---
     public static final DeferredItem<AcheroniteCompassItem> ACHERONITE_COMPASS = ITEMS.register("acheronite_compass",
             () -> new AcheroniteCompassItem(new Item.Properties().stacksTo(1)));
@@ -246,6 +386,48 @@ public class ModItems {
     public static final DeferredItem<FrozenAtmosphereShardItem> FROZEN_ATMOSPHERE_SHARD = ITEMS.register(
             "frozen_atmosphere_shard",
             () -> new FrozenAtmosphereShardItem(new Item.Properties().stacksTo(64)));
+
+    // --- Ice Fishing ---
+    public static final DeferredItem<com.frozendawn.item.IceAugerItem> ICE_AUGER = ITEMS.register("ice_auger",
+            () -> new com.frozendawn.item.IceAugerItem(new Item.Properties().durability(200)));
+    /** Late phase 6 fish: cold-adapted survivors of the plankton die-off. */
+    public static final DeferredItem<Item> GLASSBLOOD = ITEMS.register("glassblood",
+            () -> new Item(new Item.Properties().food(new FoodProperties.Builder()
+                    .nutrition(2).saturationModifier(0.1f).build())));
+    public static final DeferredItem<Item> COOKED_GLASSBLOOD = ITEMS.register("cooked_glassblood",
+            () -> new Item(new Item.Properties().food(new FoodProperties.Builder()
+                    .nutrition(5).saturationModifier(0.6f).build())));
+    public static final DeferredItem<Item> RIME_HAGFISH = ITEMS.register("rime_hagfish",
+            () -> new Item(new Item.Properties().food(new FoodProperties.Builder()
+                    .nutrition(2).saturationModifier(0.1f).build())));
+    public static final DeferredItem<Item> COOKED_RIME_HAGFISH = ITEMS.register("cooked_rime_hagfish",
+            () -> new Item(new Item.Properties().food(new FoodProperties.Builder()
+                    .nutrition(4).saturationModifier(0.4f).build())));
+    /** Toxic until cured in a gravel barrel; cooking does not help. */
+    public static final DeferredItem<Item> LONGSLEEPER = ITEMS.register("longsleeper",
+            () -> new Item(new Item.Properties().food(new FoodProperties.Builder()
+                    .nutrition(4).saturationModifier(0.2f)
+                    .effect(() -> new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.CONFUSION, 300), 1f)
+                    .effect(() -> new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.POISON, 200), 1f)
+                    .build())) {
+                @Override
+                public void appendHoverText(ItemStack stack, TooltipContext context, java.util.List<net.minecraft.network.chat.Component> tooltip, net.minecraft.world.item.TooltipFlag flag) {
+                    tooltip.add(net.minecraft.network.chat.Component.translatable("tooltip.frozendawn.longsleeper").withStyle(net.minecraft.ChatFormatting.GRAY));
+                }
+            });
+    public static final DeferredItem<Item> CURED_LONGSLEEPER = ITEMS.register("cured_longsleeper",
+            () -> new Item(new Item.Properties().food(new FoodProperties.Builder()
+                    .nutrition(10).saturationModifier(0.8f).build())));
+
+    // --- Seafood Boil ---
+    public static final DeferredItem<Item> RAW_SEAFOOD_BOIL = ITEMS.register("raw_seafood_boil",
+            () -> new Item(new Item.Properties().stacksTo(1)));
+    public static final DeferredItem<com.frozendawn.item.SeafoodBoilItem> SEAFOOD_BOIL = ITEMS.register("seafood_boil",
+            () -> new com.frozendawn.item.SeafoodBoilItem(ModBlocks.SEAFOOD_BOIL.get(), new Item.Properties().stacksTo(1)));
+    public static final DeferredItem<com.frozendawn.item.SeafoodBoilBowlItem> SEAFOOD_BOIL_BOWL = ITEMS.register("seafood_boil_bowl",
+            () -> new com.frozendawn.item.SeafoodBoilBowlItem(new Item.Properties().stacksTo(1)
+                    .food(new FoodProperties.Builder().nutrition(20).saturationModifier(0.6f)
+                            .usingConvertsTo(Items.BOWL).build())));
 
     // --- Frostbitten Mob Drops ---
     public static final DeferredItem<FrozenMeatItem> FROZEN_MEAT = ITEMS.register("frozen_meat",
@@ -360,6 +542,40 @@ public class ModItems {
     public static final DeferredItem<DeferredSpawnEggItem> ARCHITECT_SPAWN_EGG = ITEMS.register("architect_spawn_egg",
             () -> new DeferredSpawnEggItem(ModEntities.ARCHITECT, 0x4A5568, 0x5B7A9E,
                     new Item.Properties()));
+    public static final DeferredItem<ScribeSpawnEggItem> SCRIBE_SPAWN_EGG = ITEMS.register("scribe_spawn_egg",
+            () -> new ScribeSpawnEggItem(new Item.Properties()));
+    public static final DeferredItem<BlindSpawnEggItem> BLIND_SPAWN_EGG = ITEMS.register("blind_spawn_egg",
+            () -> new BlindSpawnEggItem(new Item.Properties()));
+    public static final DeferredItem<PyroSpawnEggItem> PYRO_SPAWN_EGG = ITEMS.register("pyro_spawn_egg",
+            () -> new PyroSpawnEggItem(new Item.Properties()));
+
+    public static final DeferredItem<DeferredSpawnEggItem> RIMEBOUND_SPAWN_EGG = ITEMS.register("rimebound_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.RIMEBOUND, 0xA8C6D5, 0x354D60,
+                    new Item.Properties()));
+    public static final DeferredItem<DeferredSpawnEggItem> RESONANT_SPAWN_EGG = ITEMS.register("resonant_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.RESONANT, 0x394650, 0x82C9CD,
+                    new Item.Properties()));
+    public static final DeferredItem<DeferredSpawnEggItem> REMNANT_SPAWN_EGG = ITEMS.register("remnant_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.REMNANT, 0xC3BDAF, 0x3E344A,
+                    new Item.Properties()));
+    public static final DeferredItem<DeferredSpawnEggItem> FROSTWRITHE_SPAWN_EGG = ITEMS.register("frostwrithe_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.FROSTWRITHE, 0x35485B, 0x90DCE8,
+                    new Item.Properties()));
+    public static final DeferredItem<DeferredSpawnEggItem> UNDONE_SPAWN_EGG = ITEMS.register("undone_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.UNDONE, 0xB5A895, 0x534A45,
+                    new Item.Properties()));
+    public static final DeferredItem<DeferredSpawnEggItem> BLOOMBOUND_UNDONE_SPAWN_EGG = ITEMS.register("bloombound_undone_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.BLOOMBOUND_UNDONE, 0x6D7959, 0xD2BF98,
+                    new Item.Properties()));
+    public static final DeferredItem<DeferredSpawnEggItem> UNDONE_ARCHITECT_SPAWN_EGG = ITEMS.register("undone_architect_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.UNDONE_ARCHITECT, 0x6C7380, 0xC9BDA7,
+                    new Item.Properties()));
+    public static final DeferredItem<DeferredSpawnEggItem> BLOOM_SPORE_SPAWN_EGG = ITEMS.register("bloom_spore_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.BLOOM_SPORE, 0x747767, 0xBB7B6F,
+                    new Item.Properties()));
+    public static final DeferredItem<DeferredSpawnEggItem> ARCHIVIST_SPAWN_EGG = ITEMS.register("archivist_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.ARCHIVIST, 0x363A3E, 0xC7B998,
+                    new Item.Properties()));
 
     // --- Comfort Items ---
     public static final DeferredItem<ComfortItem> STUFFED_PENGUIN = ITEMS.register("stuffed_penguin",
@@ -370,6 +586,11 @@ public class ModItems {
             () -> new ComfortItem(new Item.Properties().stacksTo(1), "tooltip.frozendawn.stuffed_hyrax"));
     public static final DeferredItem<ComfortItem> WILSON = ITEMS.register("wilson",
             () -> new ComfortItem(new Item.Properties().stacksTo(1), "tooltip.frozendawn.wilson"));
+    public static final DeferredItem<com.frozendawn.item.MielHoneyItem> MIEL_HONEY = ITEMS.register("miel_honey",
+            () -> new com.frozendawn.item.MielHoneyItem(new Item.Properties().stacksTo(1)
+                    .component(ModDataComponents.MIEL_SPOONFULS, com.frozendawn.item.MielHoneyItem.SPOONFULS)));
+    public static final DeferredItem<ComfortItem> EMPTY_MIEL_JAR = ITEMS.register("empty_miel_jar",
+            () -> new ComfortItem(new Item.Properties().stacksTo(1), "tooltip.frozendawn.empty_miel_jar"));
 
     // --- Acheronite Materials ---
     public static final DeferredItem<AcheroniteShardItem> ACHERONITE_SHARD = ITEMS.register("acheronite_shard",
@@ -436,6 +657,23 @@ public class ModItems {
                         output.accept(FROZEN_COBBLESTONE.get());
                         output.accept(FROZEN_STONE_BRICKS.get());
                         output.accept(FROZEN_PLANKS.get());
+                        output.accept(RIMEWOOD_LOG.get());
+                        output.accept(RIMEWOOD_WOOD.get());
+                        output.accept(STRIPPED_RIMEWOOD_LOG.get());
+                        output.accept(STRIPPED_RIMEWOOD_WOOD.get());
+                        output.accept(RIMEWOOD_PLANKS.get());
+                        output.accept(RIMEWOOD_STAIRS.get());
+                        output.accept(RIMEWOOD_SLAB.get());
+                        output.accept(RIMEWOOD_FENCE.get());
+                        output.accept(RIMEWOOD_FENCE_GATE.get());
+                        output.accept(RIMEWOOD_DOOR.get());
+                        output.accept(RIMEWOOD_TRAPDOOR.get());
+                        output.accept(RIMEWOOD_BUTTON.get());
+                        output.accept(RIMEWOOD_PRESSURE_PLATE.get());
+                        output.accept(RIMEWOOD_SIGN.get());
+                        output.accept(RIMEWOOD_HANGING_SIGN.get());
+                        output.accept(RIMEWOOD_LEAVES.get());
+                        output.accept(RIMEWOOD_SAPLING.get());
                         output.accept(DEAD_LOG.get());
                         output.accept(FROZEN_LOG.get());
                         output.accept(DEAD_LEAVES.get());
@@ -450,7 +688,69 @@ public class ModItems {
                         output.accept(VOLCANIC_ASH.get());
                         output.accept(INERT_ACHERONITE.get());
                         output.accept(SEALED_LATTICE.get());
+                        output.accept(BLOOM_MASS.get());
+                        output.accept(BLOOM_CRUST.get());
+                        output.accept(BLOOM_TIP.get());
+                        output.accept(BLOOM_CORE.get());
+                        output.accept(ACHERONITE_CRYSTAL.get());
+                        output.accept(FROZEN_ATMOSPHERE.get());
+                        output.accept(AGGREGATE_MASS.get());
+                        output.accept(AGGREGATE_RIB.get());
+                        output.accept(INERT_CONVERGENCE_CORE.get());
                         // Player agency
+                        output.accept(AIRLOCK_DOOR.get());
+                        output.accept(AIRLOCK_CONTROLLER.get());
+                        output.accept(MANUAL_VENT_VALVE.get());
+                        output.accept(THERMOSTAT.get());
+                        output.accept(HEAT_VENT.get());
+                        output.accept(RESISTIVE_HEATER.get());
+                        output.accept(PIXIE.get());
+                        output.accept(POWER_MONITOR.get());
+                        output.accept(PLUMB_LINE.get());
+                        output.accept(UPLINK_CONSOLE.get());
+                        output.accept(UPLINK_DISH.get());
+                        output.accept(SIGNAL_PROCESSOR.get());
+                        output.accept(FEED_HORN.get());
+                        output.accept(INDUCTION_FURNACE.get());
+                        output.accept(POWER_CELL.get());
+                        output.accept(BATTERY_BANK.get());
+                        output.accept(CELL_DOCK.get());
+                        output.accept(CONDUIT_BINDER.get());
+                        output.accept(POWER_RELAY.get());
+                        output.accept(LARGE_POWER_RELAY.get());
+                        output.accept(BULKHEAD_FEEDTHROUGH.get());
+                        output.accept(REACTOR_CONTROLLER.get());
+                        output.accept(REACTOR_CASING.get());
+                        output.accept(REACTOR_CORE.get());
+                        output.accept(CONTROL_ROD_DRIVE.get());
+                        output.accept(COOLANT_PORT.get());
+                        output.accept(REACTOR_RADIATOR.get());
+                        output.accept(DEEPSLATE_URANIUM_ORE.get());
+                        output.accept(RAW_URANIUM.get());
+                        output.accept(URANIUM_CONCENTRATE.get());
+                        output.accept(URANIUM_PELLET.get());
+                        output.accept(FUEL_ROD.get());
+                        output.accept(SPENT_FUEL_ROD.get());
+                        output.accept(SHIELDED_CASK.get());
+                        output.accept(RADIOACTIVE_ASH.get());
+                        output.accept(RAD_AID.get());
+                        output.accept(GEIGER_COUNTER.get());
+                        output.accept(CORIUM.get());
+                        output.accept(REACTOR_DEBRIS.get());
+                        output.accept(GALENA_ORE.get());
+                        output.accept(DEEPSLATE_GALENA_ORE.get());
+                        output.accept(RAW_GALENA.get());
+                        output.accept(LEAD_INGOT.get());
+                        output.accept(LEAD_BLOCK.get());
+                        output.accept(LEAD_LINING_MODULE.get());
+                        output.accept(DECON_SHOWER.get());
+                        output.accept(PANEL_LIGHT.get());
+                        output.accept(WORK_LAMP.get());
+                        output.accept(BATTERY_LANTERN.get());
+                        output.accept(SUIT_HEADLAMP.get());
+                        output.accept(ORSA_EMERGENCY_LIGHT.get());
+                        output.accept(OXYGEN_GAUGE.get());
+                        output.accept(OXYGEN_RESERVOIR.get());
                         output.accept(THERMAL_HEATER.get());
                         output.accept(IRON_THERMAL_HEATER.get());
                         output.accept(GOLD_THERMAL_HEATER.get());
@@ -470,6 +770,8 @@ public class ModItems {
                         output.accept(ALARM_BEACON.get());
                         output.accept(EMERGENCY_LIGHT.get());
                         output.accept(WALL_EMERGENCY_LIGHT.get());
+                        output.accept(STREET_LIGHT.get());
+                        output.accept(TOWN_PA_SPEAKER.get());
                         output.accept(TOWER_ANTENNA_CONSOLE.get());
                         output.accept(MONITORING_STATION_TERMINAL.get());
                         output.accept(PHASE_BAROMETER.get());
@@ -477,6 +779,9 @@ public class ModItems {
                         output.accept(ICE_SHARD.get());
                         output.accept(IMPURE_SULFUR.get());
                         output.accept(SULFUR.get());
+                        output.accept(SULFUR_IGNITER.get());
+                        output.accept(RIMEWOOD_RESIN.get());
+                        output.accept(THERMAL_BINDER.get());
                         output.accept(SOLID_PROPELLANT.get());
                         output.accept(LIQUID_OXIDIZER.get());
                         output.accept(ROCKET_FUEL_CELL.get());
@@ -487,6 +792,7 @@ public class ModItems {
                         output.accept(MARTIAN_COMMAND_PACKET.get());
                         output.accept(METEOROLOGIST_JOURNAL.get());
                         output.accept(THERMAL_CONTAINER.get());
+                        output.accept(RATION_WARMER.get());
                         output.accept(ORSA_MULTITOOL.get());
                         output.accept(THAEVEN_TRANSLATOR.get());
                         ItemStack guideBook = StarterBooks.createGuideBook();
@@ -538,13 +844,32 @@ public class ModItems {
                         output.accept(STUFFED_CAPYBARA.get());
                         output.accept(STUFFED_HYRAX.get());
                         output.accept(WILSON.get());
+                        output.accept(MIEL_HONEY.get());
+                        output.accept(EMPTY_MIEL_JAR.get());
                         // Win Condition
                         output.accept(ACHERONITE_COMPASS.get());
                         output.accept(TRANSPONDER_SCHEMATIC.get());
                         output.accept(TRANSPONDER.get());
+                        // Ice Fishing
+                        output.accept(ICE_AUGER.get());
+                        output.accept(GLASSBLOOD.get());
+                        output.accept(COOKED_GLASSBLOOD.get());
+                        output.accept(RIME_HAGFISH.get());
+                        output.accept(COOKED_RIME_HAGFISH.get());
+                        output.accept(LONGSLEEPER.get());
+                        output.accept(CURED_LONGSLEEPER.get());
+                        output.accept(RAW_SEAFOOD_BOIL.get());
+                        ItemStack freshBoil = new ItemStack(SEAFOOD_BOIL.get());
+                        freshBoil.set(ModDataComponents.STEAM_HELD.get(), com.frozendawn.item.SeafoodBoilHeat.STEAM_TICKS);
+                        output.accept(freshBoil);
                         // Mob Drops
                         output.accept(FROZEN_MEAT.get());
                         output.accept(HOT_WINGS.get());
+                        output.accept(FROZEN_FROSTCAP.get());
+                        output.accept(THAWED_FROSTCAP.get());
+                        output.accept(FROSTCAP_MUSH.get());
+                        output.accept(FROSTCAP_STEW.get());
+                        output.accept(DRIED_FROSTCAP.get());
                         output.accept(FROSTBITTEN_CORE.get());
                         output.accept(FROZEN_BREATH.get());
                         output.accept(REMNANT_EMBER.get());
@@ -571,6 +896,18 @@ public class ModItems {
                         output.accept(RETURNED_SPAWN_EGG.get());
                         output.accept(MIMIC_SPAWN_EGG.get());
                         output.accept(ARCHITECT_SPAWN_EGG.get());
+                        output.accept(SCRIBE_SPAWN_EGG.get());
+                        output.accept(BLIND_SPAWN_EGG.get());
+                        output.accept(PYRO_SPAWN_EGG.get());
+                        output.accept(RIMEBOUND_SPAWN_EGG.get());
+                        output.accept(RESONANT_SPAWN_EGG.get());
+                        output.accept(REMNANT_SPAWN_EGG.get());
+                        output.accept(FROSTWRITHE_SPAWN_EGG.get());
+                        output.accept(UNDONE_SPAWN_EGG.get());
+                        output.accept(BLOOMBOUND_UNDONE_SPAWN_EGG.get());
+                        output.accept(UNDONE_ARCHITECT_SPAWN_EGG.get());
+                        output.accept(BLOOM_SPORE_SPAWN_EGG.get());
+                        output.accept(ARCHIVIST_SPAWN_EGG.get());
                     }).build());
 
     public static void addToVanillaCreativeTabs(BuildCreativeModeTabContentsEvent event) {

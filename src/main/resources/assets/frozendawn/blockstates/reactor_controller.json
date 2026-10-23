@@ -1,0 +1,68 @@
+{
+  "variants": {
+    "alarm=0,facing=north": {
+      "model": "frozendawn:block/reactor_controller_0",
+      "y": 0
+    },
+    "alarm=0,facing=east": {
+      "model": "frozendawn:block/reactor_controller_0",
+      "y": 90
+    },
+    "alarm=0,facing=south": {
+      "model": "frozendawn:block/reactor_controller_0",
+      "y": 180
+    },
+    "alarm=0,facing=west": {
+      "model": "frozendawn:block/reactor_controller_0",
+      "y": 270
+    },
+    "alarm=1,facing=north": {
+      "model": "frozendawn:block/reactor_controller_1",
+      "y": 0
+    },
+    "alarm=1,facing=east": {
+      "model": "frozendawn:block/reactor_controller_1",
+      "y": 90
+    },
+    "alarm=1,facing=south": {
+      "model": "frozendawn:block/reactor_controller_1",
+      "y": 180
+    },
+    "alarm=1,facing=west": {
+      "model": "frozendawn:block/reactor_controller_1",
+      "y": 270
+    },
+    "alarm=2,facing=north": {
+      "model": "frozendawn:block/reactor_controller_2",
+      "y": 0
+    },
+    "alarm=2,facing=east": {
+      "model": "frozendawn:block/reactor_controller_2",
+      "y": 90
+    },
+    "alarm=2,facing=south": {
+      "model": "frozendawn:block/reactor_controller_2",
+      "y": 180
+    },
+    "alarm=2,facing=west": {
+      "model": "frozendawn:block/reactor_controller_2",
+      "y": 270
+    },
+    "alarm=3,facing=north": {
+      "model": "frozendawn:block/reactor_controller_3",
+      "y": 0
+    },
+    "alarm=3,facing=east": {
+      "model": "frozendawn:block/reactor_controller_3",
+      "y": 90
+    },
+    "alarm=3,facing=south": {
+      "model": "frozendawn:block/reactor_controller_3",
+      "y": 180
+    },
+    "alarm=3,facing=west": {
+      "model": "frozendawn:block/reactor_controller_3",
+      "y": 270
+    }
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:block/carpet",
+  "textures": {
+    "wool": "frozendawn:block/fallout_severe",
+    "particle": "frozendawn:block/fallout_severe"
+  }
+}

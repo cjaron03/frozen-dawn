@@ -5,380 +5,289 @@ import com.frozendawn.block.GeothermalCoreMenu;
 import com.frozendawn.init.ModDataComponents;
 import com.frozendawn.item.O2TankItem;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.AbstractSliderButton;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.renderer.Rect2i;
-import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
+import org.lwjgl.glfw.GLFW;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 
-/**
- * Geothermal Core GUI — dark tech style with a side tab for upgrade guide.
- * Click the tab on the right edge to toggle the info panel.
- */
+/** Original ORSA machine panel: output, allocation, upgrades and refill share one frame. */
 public class GeothermalCoreScreen extends AbstractContainerScreen<GeothermalCoreMenu> {
+    private static final int HEAT = 0xFFE5A064;
+    private static final int OXYGEN = 0xFF64C9CC;
+    private static final int POWER = 0xFF9CD5A5;
+    private static final int TEXT = 0xFFE0E6E8;
+    private static final int MUTED = 0xFF9BAAB1;
+    private AllocationSlider allocation;
+    private AllocationSlider powerAllocation;
 
-    private static final int GUI_W = 196;
-    private static final int GUI_H = 212;
-
-    private static final int BAR_LEFT = 48;
-    private static final int BAR_W = 86;
-    private static final int BAR_H = 10;
-
-    private static final int TAB_W = 20;
-    private static final int TAB_H = 60;
-    private static final int GUIDE_W = 130;
-
-    private boolean guideOpen = false;
-
-    public GeothermalCoreScreen(GeothermalCoreMenu menu, Inventory playerInv, Component title) {
-        super(menu, playerInv, title);
-        imageWidth = GUI_W;
-        imageHeight = GUI_H;
-        inventoryLabelY = imageHeight - 94;
+    public GeothermalCoreScreen(GeothermalCoreMenu menu, Inventory inventory, Component title) {
+        super(menu, inventory, title);
+        imageWidth = GeothermalCoreMenu.UI_WIDTH;
+        imageHeight = GeothermalCoreMenu.UI_HEIGHT;
+        inventoryLabelX = 80;
+        inventoryLabelY = 147;
     }
 
     @Override
     protected void init() {
         super.init();
-        leftPos = (width - imageWidth) / 2;
-        topPos = (height - imageHeight) / 2;
+        powerAllocation = addRenderableWidget(new AllocationSlider(leftPos + 168, topPos + 108, true));
+        allocation = addRenderableWidget(new AllocationSlider(leftPos + 8, topPos + 108, false));
+        Button reset = addRenderableWidget(Button.builder(Component.literal("Default"), button -> {
+            powerAllocation.preview(0); allocation.preview(0.6);
+            if (minecraft != null && minecraft.gameMode != null)
+                minecraft.gameMode.handleInventoryButtonClick(menu.containerId, 400);
+        }).bounds(leftPos + 264, topPos + 129, 48, 20).build());
+        reset.setTooltip(Tooltip.create(Component.literal("60% heat / 40% O2 / 0% power")));
     }
 
+    /** All widgets now fit within JEI's ordinary container rectangle. */
     public List<Rect2i> getJeiExtraAreas() {
-        List<Rect2i> extraAreas = new ArrayList<>();
-        extraAreas.add(new Rect2i(leftPos + GUI_W - 1, topPos + 18, TAB_W, TAB_H));
-        if (guideOpen) {
-            extraAreas.add(new Rect2i(leftPos + GUI_W + TAB_W - 1, topPos, GUIDE_W, GUI_H));
-        }
-        return Collections.unmodifiableList(extraAreas);
-    }
-
-    @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        int tabX = leftPos + GUI_W - 1;
-        int tabY = topPos + 18;
-        if (mouseX >= tabX && mouseX < tabX + TAB_W && mouseY >= tabY && mouseY < tabY + TAB_H) {
-            guideOpen = !guideOpen;
-            return true;
-        }
-        return super.mouseClicked(mouseX, mouseY, button);
+        return List.of();
     }
 
     @Override
     protected void renderLabels(GuiGraphics graphics, int mouseX, int mouseY) {
-        // All rendering done in renderBg/render with absolute coords
+        // Absolute coordinates keep the custom panel and vanilla slots aligned.
     }
 
     @Override
     protected void renderBg(GuiGraphics graphics, float partialTick, int mouseX, int mouseY) {
         int x = leftPos;
         int y = topPos;
-
-        // --- Main panel background ---
-        drawPanel(graphics, x, y, GUI_W, GUI_H);
-
-        // Title
-        graphics.drawString(font, title, x + (GUI_W - font.width(title)) / 2, y + 5, 0xFFDD8833, false);
-
+        frame(graphics, x, y, imageWidth, imageHeight);
+        graphics.drawString(font, title, x + (imageWidth - font.width(title)) / 2, y + 6, HEAT, false);
         var data = menu.getData();
-        int rangeLevel = data.get(0);
-        int tempLevel = data.get(1);
-        int o2Level = data.get(2);
-        BlockPos corePos = menu.getCorePos();
-        boolean hasSurfacePenalty = corePos != null && GeothermalCoreBlockEntity.hasSurfaceWarmthPenalty(corePos);
 
-        float effectiveRange = GeothermalCoreBlockEntity.BASE_RANGE + rangeLevel;
-        float effectiveTemp = GeothermalCoreBlockEntity.BASE_TEMP + tempLevel * 5.0f;
-        if (corePos != null) {
-            effectiveRange = GeothermalCoreBlockEntity.applySurfaceWarmthPenalty(effectiveRange, corePos);
-            effectiveTemp = GeothermalCoreBlockEntity.applySurfaceWarmthPenalty(effectiveTemp, corePos);
+        // Recessed display reports server-authoritative production, not stored gas or room temperature.
+        well(graphics, x + 8, y + 20, 216, 68);
+        graphics.drawString(font, "CORE OUTPUT", x + 14, y + 25, MUTED, false);
+        graphics.drawString(font, "Heat", x + 14, y + 39, HEAT, false);
+        right(graphics, data.get(4) + " units/s", x + 218, y + 39, TEXT);
+        graphics.drawString(font, "O2", x + 14, y + 51, OXYGEN, false);
+        right(graphics, String.format(Locale.ROOT, "%.1f supply", data.get(5) / 100.0), x + 218, y + 51, TEXT);
+        graphics.drawString(font, "Power", x + 14, y + 63, POWER, false);
+        right(graphics, String.format(Locale.ROOT, "%.2f kW", data.get(7) / 100.0), x + 218, y + 63, TEXT);
+        boolean surface = menu.getCorePos() != null
+                && GeothermalCoreBlockEntity.hasSurfaceWarmthPenalty(menu.getCorePos());
+        graphics.drawString(font, surface ? "Surface heat: 50%" : "Underground: full heat", x + 14, y + 76, MUTED, false);
+
+        float range = GeothermalCoreBlockEntity.BASE_RANGE + data.get(0);
+        float supply = GeothermalCoreBlockEntity.BASE_TEMP + data.get(1) * 5.0f;
+        if (menu.getCorePos() != null) {
+            range = GeothermalCoreBlockEntity.applySurfaceWarmthPenalty(range, menu.getCorePos());
+            supply = GeothermalCoreBlockEntity.applySurfaceWarmthPenalty(supply, menu.getCorePos());
         }
-        int effectiveO2 = switch (o2Level) {
-            case 1 -> 20; case 2 -> 26; case 3 -> GeothermalCoreBlockEntity.MAX_O2_RANGE;
+        int reach = switch (data.get(2)) {
+            case 1 -> 20;
+            case 2 -> 26;
+            case 3 -> GeothermalCoreBlockEntity.MAX_O2_RANGE;
             default -> GeothermalCoreBlockEntity.BASE_O2_RANGE;
         };
+        upgrade(graphics, menu.slots.get(0), "Range", number(range) + " blk", data.get(0),
+                GeothermalCoreBlockEntity.MAX_RANGE_LEVEL, 0xFF79A9CF);
+        upgrade(graphics, menu.slots.get(1), "Temp cap", number(supply) + " C", data.get(1),
+                GeothermalCoreBlockEntity.MAX_TEMP_LEVEL, HEAT);
+        upgrade(graphics, menu.slots.get(2), "O2 reach", reach + " blk", data.get(2),
+                GeothermalCoreBlockEntity.MAX_O2_LEVEL, OXYGEN);
 
-        boolean rangeMax = rangeLevel >= GeothermalCoreBlockEntity.MAX_RANGE_LEVEL;
-        boolean tempMax = tempLevel >= GeothermalCoreBlockEntity.MAX_TEMP_LEVEL;
-        boolean o2Max = o2Level >= GeothermalCoreBlockEntity.MAX_O2_LEVEL;
-
-        // --- Slot backgrounds ---
-        for (Slot slot : menu.slots) {
-            drawSlotBg(graphics, x + slot.x - 1, y + slot.y - 1);
-        }
-
-        // --- Stat rows ---
-        int statX = x + 48;
-        int statW = GUI_W - 60;
-        int rowH = 16;
-        int warmthNoticeY = y + 20;
-        int warmthNoticeH = 8;
-        int row1Y = hasSurfacePenalty ? y + 31 : y + 22;
-        int row2Y = row1Y + 18;
-        int row3Y = row2Y + 18;
-
-        int rangeFillW = GeothermalCoreBlockEntity.MAX_RANGE_LEVEL > 0
-                ? (int) ((statW - 2) * (float) rangeLevel / GeothermalCoreBlockEntity.MAX_RANGE_LEVEL)
-                : 0;
-        if (hasSurfacePenalty) {
-            String penaltyText = "Surface warmth -50%";
-            float penaltyScale = 0.75f;
-            int scaledPenaltyWidth = Math.round(font.width(penaltyText) * penaltyScale);
-            graphics.fill(statX, warmthNoticeY, statX + statW, warmthNoticeY + warmthNoticeH, 0xFF241C14);
-            graphics.fill(statX, warmthNoticeY + warmthNoticeH - 1, statX + statW, warmthNoticeY + warmthNoticeH, 0xFF604830);
-            graphics.pose().pushPose();
-            graphics.pose().scale(penaltyScale, penaltyScale, 1.0f);
-            graphics.drawString(font, penaltyText,
-                    Math.round((statX + (statW - scaledPenaltyWidth) / 2.0f) / penaltyScale),
-                    Math.round((warmthNoticeY + 1) / penaltyScale),
-                    0xFFCCAA66,
-                    false);
-            graphics.pose().popPose();
-        }
-
-        graphics.fill(statX, row1Y, statX + statW, row1Y + rowH, 0xFF10181D);
-        graphics.fill(statX, row1Y + rowH - 1, statX + statW, row1Y + rowH, 0xFF182028);
-        graphics.fill(statX + 1, row1Y + rowH - 3, statX + 1 + rangeFillW, row1Y + rowH - 1, 0xFF3388DD);
-        String rangeText = formatDisplayValue(effectiveRange) + " blk" + (rangeMax ? " \u00A76MAX" : "");
-        graphics.drawString(font, "Range", statX + 6, row1Y + 4, 0xFF66B5E8, false);
-        graphics.drawString(font, rangeText, statX + statW - 6 - font.width(rangeText), row1Y + 4, 0xFFE0E0E0, false);
-
-        int tempFillW = GeothermalCoreBlockEntity.MAX_TEMP_LEVEL > 0
-                ? (int) ((statW - 2) * (float) tempLevel / GeothermalCoreBlockEntity.MAX_TEMP_LEVEL)
-                : 0;
-        graphics.fill(statX, row2Y, statX + statW, row2Y + rowH, 0xFF10181D);
-        graphics.fill(statX, row2Y + rowH - 1, statX + statW, row2Y + rowH, 0xFF182028);
-        graphics.fill(statX + 1, row2Y + rowH - 3, statX + 1 + tempFillW, row2Y + rowH - 1, 0xFFDD6622);
-        String tempText = "+" + formatDisplayValue(effectiveTemp) + "\u00B0C" + (tempMax ? " \u00A76MAX" : "");
-        graphics.drawString(font, "Heat", statX + 6, row2Y + 4, 0xFFFFA366, false);
-        graphics.drawString(font, tempText, statX + statW - 6 - font.width(tempText), row2Y + 4, 0xFFE0E0E0, false);
-
-        int o2FillW = GeothermalCoreBlockEntity.MAX_O2_LEVEL > 0
-                ? (int) ((statW - 2) * (float) o2Level / GeothermalCoreBlockEntity.MAX_O2_LEVEL)
-                : 0;
-        graphics.fill(statX, row3Y, statX + statW, row3Y + rowH, 0xFF10181D);
-        graphics.fill(statX, row3Y + rowH - 1, statX + statW, row3Y + rowH, 0xFF182028);
-        graphics.fill(statX + 1, row3Y + rowH - 3, statX + 1 + o2FillW, row3Y + rowH - 1, 0xFF22BB44);
-        String o2Text = effectiveO2 + " blk" + (o2Max ? " \u00A76MAX" : "");
-        graphics.drawString(font, "O2", statX + 6, row3Y + 4, 0xFF6BE87A, false);
-        graphics.drawString(font, o2Text, statX + statW - 6 - font.width(o2Text), row3Y + 4, 0xFFE0E0E0, false);
-
-        // --- O2 Tank Refill Row ---
-        graphics.fill(x + 4, y + 93, x + GUI_W - 4, y + 94, 0xFF604830);
-        graphics.drawString(font, "O2 Refill", x + 8, y + 101, 0xFF00CCCC, false);
-        // Show fill % when tank is in the slot
-        Slot tankSlot = menu.slots.get(3);
-        ItemStack tankStack = tankSlot.getItem();
-        if (!tankStack.isEmpty() && tankStack.getItem() instanceof O2TankItem tankItem) {
-            int tankO2 = tankStack.getOrDefault(ModDataComponents.O2_LEVEL.get(), 0);
-            int percent = Math.round(100f * tankO2 / tankItem.getMaxO2());
-            int pColor = percent >= 100 ? 0xFF00FF88 : 0xFF00CCCC;
-            graphics.drawString(font, percent + "%", x + 102, y + 101, pColor, false);
-        }
-
-        // Divider above inventory
-        graphics.fill(x + 4, y + 117, x + GUI_W - 4, y + 118, 0xFF604830);
-        graphics.drawString(font, playerInventoryTitle, x + 8, y + inventoryLabelY, 0xFF607080, false);
-
-        // --- Side tab button ---
-        drawSideTab(graphics, x + GUI_W - 1, y + 18, mouseX, mouseY);
-
-        // --- Guide panel ---
-        if (guideOpen) {
-            drawGuidePanel(graphics, x + GUI_W + TAB_W - 1, y, hasSurfacePenalty);
+        int power = powerAllocation == null ? data.get(6) : powerAllocation.percent();
+        int heat = allocation == null ? data.get(3) : allocation.heatAt(power);
+        graphics.drawString(font, "Power " + power + "%", x + 168, y + 95, POWER, false);
+        right(graphics, String.format(Locale.ROOT, "%.2f kW", power * 0.2), x + 312, y + 95, POWER);
+        graphics.drawString(font, "Heat " + heat + "%", x + 8, y + 95, HEAT, false);
+        right(graphics, "O2 " + (100 - power - heat) + "%", x + 152, y + 95, OXYGEN);
+        drawRefill(graphics);
+        graphics.drawString(font, playerInventoryTitle, x + inventoryLabelX, y + inventoryLabelY, MUTED, false);
+        for (int i = 4; i < menu.slots.size(); i++) {
+            Slot slot = menu.slots.get(i);
+            well(graphics, x + slot.x - 1, y + slot.y - 1, 18, 18);
         }
     }
 
-    private void drawPanel(GuiGraphics graphics, int x, int y, int w, int h) {
-        graphics.fill(x, y, x + w, y + h, 0xFF141A1F);
-        // Outer border
-        graphics.fill(x, y, x + w, y + 1, 0xFF604830);
-        graphics.fill(x, y, x + 1, y + h, 0xFF604830);
-        graphics.fill(x, y + h - 1, x + w, y + h, 0xFF302418);
-        graphics.fill(x + w - 1, y, x + w, y + h, 0xFF302418);
-        // Inner border
-        graphics.fill(x + 1, y + 1, x + w - 1, y + 2, 0xFF504028);
-        graphics.fill(x + 1, y + 1, x + 2, y + h - 1, 0xFF504028);
-        graphics.fill(x + 2, y + h - 2, x + w - 1, y + h - 1, 0xFF201810);
-        graphics.fill(x + w - 2, y + 2, x + w - 1, y + h - 1, 0xFF201810);
-        // Inner panel
-        graphics.fill(x + 3, y + 3, x + w - 3, y + h - 3, 0xFF101518);
-        // Title bar
-        graphics.fill(x + 3, y + 3, x + w - 3, y + 14, 0xFF1A2228);
-        graphics.fill(x + 3, y + 14, x + w - 3, y + 15, 0xFF604830);
+    private void upgrade(GuiGraphics graphics, Slot slot, String label, String value, int level, int maximum, int color) {
+        int x = leftPos + slot.x;
+        int y = topPos + slot.y;
+        well(graphics, x - 1, y - 1, 18, 18);
+        graphics.drawString(font, label, x + 24, y - 2, MUTED, false);
+        graphics.drawString(font, value, x + 24, y + 9, color, false);
+        graphics.fill(x + 24, y + 19, x + 69, y + 21, 0xFF29353C);
+        int fill = Math.clamp(Math.round(45f * level / maximum), 0, 45);
+        if (fill > 0) graphics.fill(x + 24, y + 19, x + 24 + fill, y + 21, color);
     }
 
-    private void drawSlotBg(GuiGraphics graphics, int x, int y) {
-        graphics.fill(x, y, x + 18, y + 1, 0xFF303840);
-        graphics.fill(x, y + 1, x + 1, y + 17, 0xFF303840);
-        graphics.fill(x + 17, y + 1, x + 18, y + 18, 0xFF1A2028);
-        graphics.fill(x + 1, y + 17, x + 17, y + 18, 0xFF1A2028);
-        graphics.fill(x + 1, y + 1, x + 17, y + 17, 0xFF202830);
+    private void drawRefill(GuiGraphics graphics) {
+        Slot slot = menu.slots.get(3);
+        int x = leftPos + slot.x;
+        int y = topPos + slot.y;
+        well(graphics, x - 1, y - 1, 18, 18);
+        graphics.drawString(font, "Canister refill", leftPos + 36, topPos + 127, OXYGEN, false);
+        ItemStack stack = slot.getItem();
+        boolean canister = !stack.isEmpty() && stack.getItem() instanceof O2TankItem;
+        int percent = canister ? Math.clamp(Math.round(100f * stack.getOrDefault(ModDataComponents.O2_LEVEL.get(), 0)
+                / ((O2TankItem) stack.getItem()).getMaxO2()), 0, 100) : 0;
+        graphics.fill(leftPos + 36, topPos + 138, leftPos + 220, topPos + 143, 0xFF29353C);
+        if (percent > 0) graphics.fill(leftPos + 36, topPos + 138, leftPos + 36 + 184 * percent / 100,
+                topPos + 143, OXYGEN);
+        right(graphics, canister ? percent + "%" : "Empty slot", leftPos + 256, topPos + 131, MUTED);
     }
 
-    private void drawUpgradeBar(GuiGraphics graphics, int x, int y, int w, int h,
-                                  int level, int maxLevel, int fillColor) {
-        graphics.fill(x, y, x + w, y + h, 0xFF0A0C0F);
-        if (level > 0 && maxLevel > 0) {
-            int fillW = (int) (w * (float) level / maxLevel);
-            graphics.fill(x, y, x + fillW, y + h, fillColor);
-        }
-        graphics.fill(x, y, x + w, y + 1, 0xFF303840);
-        graphics.fill(x, y + h - 1, x + w, y + h, 0xFF1A2028);
+    private void right(GuiGraphics graphics, String value, int x, int y, int color) {
+        graphics.drawString(font, value, x - font.width(value), y, color, false);
     }
 
-    private void drawSideTab(GuiGraphics graphics, int tabX, int tabY, int mouseX, int mouseY) {
-        boolean hovered = mouseX >= tabX && mouseX < tabX + TAB_W
-                && mouseY >= tabY && mouseY < tabY + TAB_H;
-
-        int bg = hovered ? 0xFF1E2830 : 0xFF161C22;
-        int border = guideOpen ? 0xFFDD8833 : 0xFF604830;
-
-        graphics.fill(tabX, tabY, tabX + TAB_W, tabY + TAB_H, bg);
-        graphics.fill(tabX, tabY, tabX + TAB_W, tabY + 1, border);
-        graphics.fill(tabX + TAB_W - 1, tabY, tabX + TAB_W, tabY + TAB_H, border);
-        graphics.fill(tabX, tabY + TAB_H - 1, tabX + TAB_W, tabY + TAB_H, border);
-
-        String icon = guideOpen ? "x" : "?";
-        int iconColor = guideOpen ? 0xFFDD8833 : 0xFF99AABB;
-        graphics.drawString(font, icon, tabX + (TAB_W - font.width(icon)) / 2,
-                tabY + (TAB_H - 8) / 2, iconColor, false);
+    private static void well(GuiGraphics graphics, int x, int y, int width, int height) {
+        graphics.fill(x, y, x + width, y + height, 0xFF10181D);
+        graphics.fill(x, y, x + width, y + 1, 0xFF070C10);
+        graphics.fill(x, y, x + 1, y + height, 0xFF070C10);
+        graphics.fill(x + 1, y + height - 1, x + width, y + height, 0xFF53636D);
+        graphics.fill(x + width - 1, y + 1, x + width, y + height, 0xFF53636D);
     }
 
-    private void drawGuidePanel(GuiGraphics graphics, int px, int py, boolean hasSurfacePenalty) {
-        int h = GUI_H;
+    private static void frame(GuiGraphics graphics, int x, int y, int width, int height) {
+        graphics.fill(x, y, x + width, y + height, 0xFF53636D);
+        graphics.fill(x + 2, y + 2, x + width - 2, y + height - 2, 0xFF29353C);
+        graphics.fill(x + 3, y + 3, x + width - 3, y + 17, 0xFF1A252C);
+        graphics.fill(x, y, x + width, y + 1, 0xFF87939A);
+        graphics.fill(x, y, x + 1, y + height, 0xFF87939A);
+        graphics.fill(x + 1, y + height - 1, x + width, y + height, 0xFF10181D);
+        graphics.fill(x + width - 1, y + 1, x + width, y + height, 0xFF10181D);
+    }
 
-        graphics.fill(px, py, px + GUIDE_W, py + h, 0xFF141A1F);
-        graphics.fill(px, py, px + GUIDE_W, py + 1, 0xFF604830);
-        graphics.fill(px + GUIDE_W - 1, py, px + GUIDE_W, py + h, 0xFF302418);
-        graphics.fill(px, py + h - 1, px + GUIDE_W, py + h, 0xFF302418);
-        graphics.fill(px, py, px + 1, py + h, 0xFF504028);
-        graphics.fill(px + 2, py + 2, px + GUIDE_W - 2, py + h - 2, 0xFF101518);
-
-        int tx = px + 6;
-        int ty = py + 6;
-        int lineH = 10;
-
-        graphics.drawString(font, "UPGRADE GUIDE", tx, ty, 0xFFDD8833, false);
-        ty += lineH + 2;
-        graphics.fill(tx, ty, px + GUIDE_W - 6, ty + 1, 0xFF604830);
-        ty += 5;
-        if (hasSurfacePenalty) {
-            graphics.drawString(font, "Surface warmth: 50%", tx, ty, 0xFFCCAA66, false);
-            ty += lineH + 4;
-        }
-
-        // Range
-        graphics.drawString(font, "\u00A7bRange", tx, ty, 0xFF3388DD, false);
-        ty += lineH;
-        graphics.drawString(font, "Below 0: 12 \u2192 32", tx + 2, ty, 0xFF778888, false);
-        ty += lineH;
-        graphics.drawString(font, "\u2022 Obsidian: +1 block", tx + 2, ty, 0xFF99AABB, false);
-        ty += lineH;
-        graphics.drawString(font, "\u2022 Diamond Block: +4", tx + 2, ty, 0xFF99AABB, false);
-        ty += lineH + 6;
-
-        // Temperature
-        graphics.drawString(font, "\u00A76Temperature", tx, ty, 0xFFDD6622, false);
-        ty += lineH;
-        graphics.drawString(font, "Below 0: +50 \u2192 +100\u00B0C", tx + 2, ty, 0xFF778888, false);
-        ty += lineH;
-        graphics.drawString(font, "\u2022 Blaze Powder: +5\u00B0C", tx + 2, ty, 0xFF99AABB, false);
-        ty += lineH;
-        graphics.drawString(font, "\u2022 Thermal Core: +10\u00B0C", tx + 2, ty, 0xFF99AABB, false);
-        ty += lineH + 6;
-
-        // O2
-        graphics.drawString(font, "\u00A7aO2 Zone", tx, ty, 0xFF22BB44, false);
-        ty += lineH;
-        graphics.drawString(font, "3 levels (Nether Star)", tx + 2, ty, 0xFF778888, false);
-        ty += lineH;
-        graphics.drawString(font, "16 \u2192 20 \u2192 26 \u2192 32 blk", tx + 2, ty, 0xFF99AABB, false);
-        ty += lineH + 6;
-
-        // O2 Tank Refill
-        graphics.drawString(font, "\u00A73O2 Tank Refill", tx, ty, 0xFF00CCCC, false);
-        ty += lineH;
-        graphics.drawString(font, "Place tank in slot", tx + 2, ty, 0xFF778888, false);
-        ty += lineH;
-        graphics.drawString(font, "\u2022 Auto-refills over time", tx + 2, ty, 0xFF99AABB, false);
+    private boolean inside(int mouseX, int mouseY, int x, int y, int width, int height) {
+        return mouseX >= leftPos + x && mouseX < leftPos + x + width
+                && mouseY >= topPos + y && mouseY < topPos + y + height;
     }
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        powerAllocation.synchronize();
+        allocation.synchronize();
         super.render(graphics, mouseX, mouseY, partialTick);
-
-        // Slot hover tooltips (upgrade hints)
-        var data = menu.getData();
-        boolean rangeMax = data.get(0) >= GeothermalCoreBlockEntity.MAX_RANGE_LEVEL;
-        boolean tempMax = data.get(1) >= GeothermalCoreBlockEntity.MAX_TEMP_LEVEL;
-        boolean o2Max = data.get(2) >= GeothermalCoreBlockEntity.MAX_O2_LEVEL;
-
-        int[][] slotPositions = {{26, 22}, {26, 46}, {26, 70}};
-        for (int i = 0; i < 3; i++) {
-            int sx = leftPos + slotPositions[i][0];
-            int sy = topPos + slotPositions[i][1];
-            if (mouseX >= sx && mouseX < sx + 18 && mouseY >= sy && mouseY < sy + 18) {
-                List<Component> tooltip = new ArrayList<>();
-                switch (i) {
-                    case 0 -> {
-                        tooltip.add(Component.literal("\u00A7bRange Upgrade"));
-                        if (rangeMax) tooltip.add(Component.literal("\u00A76Fully upgraded!"));
-                        else {
-                            tooltip.add(Component.literal("\u00A77Obsidian \u00A7f\u2192 +1 block"));
-                            tooltip.add(Component.literal("\u00A77Diamond Block \u00A7f\u2192 +4 blocks"));
-                        }
-                    }
-                    case 1 -> {
-                        tooltip.add(Component.literal("\u00A76Temperature Upgrade"));
-                        if (tempMax) tooltip.add(Component.literal("\u00A76Fully upgraded!"));
-                        else {
-                            tooltip.add(Component.literal("\u00A77Blaze Powder \u00A7f\u2192 +5\u00B0C"));
-                            tooltip.add(Component.literal("\u00A77Thermal Core \u00A7f\u2192 +10\u00B0C"));
-                        }
-                    }
-                    case 2 -> {
-                        tooltip.add(Component.literal("\u00A7aO2 Production Upgrade"));
-                        if (o2Max) tooltip.add(Component.literal("\u00A76Fully upgraded!"));
-                        else tooltip.add(Component.literal("\u00A77Nether Star \u00A7f\u2192 +1 level"));
-                    }
-                }
-                graphics.renderTooltip(font, tooltip, java.util.Optional.empty(), mouseX, mouseY);
-                break;
-            }
-        }
-
-        // O2 tank refill slot tooltip
-        int tankSx = leftPos + 80;
-        int tankSy = topPos + 94;
-        if (mouseX >= tankSx && mouseX < tankSx + 18 && mouseY >= tankSy && mouseY < tankSy + 18) {
-            ItemStack tankStack = menu.slots.get(3).getItem();
-            if (tankStack.isEmpty()) {
-                List<Component> tooltip = new ArrayList<>();
-                tooltip.add(Component.literal("\u00A73O2 Tank Refill"));
-                tooltip.add(Component.literal("\u00A77Place an O2 Tank here to refill"));
-                graphics.renderTooltip(font, tooltip, java.util.Optional.empty(), mouseX, mouseY);
-            }
-        }
-
         renderTooltip(graphics, mouseX, mouseY);
-    }
-
-    private static String formatDisplayValue(float value) {
-        if (Math.abs(value - Math.round(value)) < 0.001f) {
-            return Integer.toString(Math.round(value));
+        for (int i = 0; i < 3; i++) {
+            Slot slot = menu.slots.get(i);
+            if (!inside(mouseX, mouseY, slot.x - 1, slot.y - 3, 74, 25)) continue;
+            if (inside(mouseX, mouseY, slot.x - 1, slot.y - 1, 18, 18) && slot.hasItem()) return;
+            List<Component> lines = switch (i) {
+                case 0 -> List.of(Component.literal("Heat range upgrade"), Component.literal("Obsidian: +1 block; diamond block: +4"),
+                        Component.literal("Outdoor warmth range. Surface range is halved."));
+                case 1 -> List.of(Component.literal("Supply temperature upgrade"), Component.literal("Blaze powder: +5 C; Thermal Core: +10 C"),
+                        Component.literal("Raises the source temperature cap and heat transfer."),
+                        Component.literal("Room temperature still comes from stored air and wall heat."));
+                default -> List.of(Component.literal("O2 reach upgrade"), Component.literal("Nether Star: +1 level (16 / 20 / 26 / 32 blocks)"),
+                        Component.literal("Reach changes; production follows the allocation."));
+            };
+            graphics.renderTooltip(font, lines, Optional.empty(), mouseX, mouseY);
+            return;
         }
-        return String.format(Locale.ROOT, "%.1f", value);
+        Slot refill = menu.slots.get(3);
+        if (inside(mouseX, mouseY, 8, 126, 248, 20)
+                && (!inside(mouseX, mouseY, refill.x - 1, refill.y - 1, 18, 18) || !refill.hasItem())) {
+            graphics.renderTooltip(font, List.of(Component.literal("O2 canister refill"),
+                    Component.literal("Place a canister in the slot. Only spare room production charges it."),
+                    Component.literal("Refill shares O2 with reservoirs, suits and airlocks.")), Optional.empty(), mouseX, mouseY);
+        } else if (inside(mouseX, mouseY, 168, 92, 144, 32)) {
+            graphics.renderTooltip(font, List.of(Component.literal("Reserve part of the fixed Core budget for electricity."),
+                    Component.literal("100% power = 20 kW. Heat and O2 share what remains."),
+                    Component.literal("Network load never changes these settings.")), Optional.empty(), mouseX, mouseY);
+        } else if (inside(mouseX, mouseY, 8, 92, 144, 32)) {
+            graphics.renderTooltip(font, List.of(Component.literal("Balance the remaining budget between heat and O2.")),
+                    Optional.empty(), mouseX, mouseY);
+        } else if (inside(mouseX, mouseY, 8, 20, 216, 68)) {
+            graphics.renderTooltip(font, List.of(Component.literal("Core production at the current allocation"),
+                    Component.literal("One O2 supply unit sustains one player's breathing rate."),
+                    Component.literal("Heat is calibrated game energy; stored warmth changes gradually.")), Optional.empty(), mouseX, mouseY);
+        }
     }
 
-    private static int getSurfacePenaltyPercent() {
-        return Math.round((1.0f - GeothermalCoreBlockEntity.SURFACE_WARMTH_MULTIPLIER) * 100.0f);
+    @Override
+    public boolean mouseDragged(double mouseX, double mouseY, int button, double deltaX, double deltaY) {
+        if (button == 0) for (var slider : List.of(powerAllocation, allocation))
+            if (slider.dragging) return slider.mouseDragged(mouseX, mouseY, button, deltaX, deltaY);
+        return super.mouseDragged(mouseX, mouseY, button, deltaX, deltaY);
+    }
+
+    @Override
+    public boolean mouseReleased(double mouseX, double mouseY, int button) {
+        if (button == 0) for (var slider : List.of(powerAllocation, allocation)) if (slider.dragging) {
+            slider.mouseReleased(mouseX, mouseY, button); setDragging(false); return true;
+        }
+        return super.mouseReleased(mouseX, mouseY, button);
+    }
+
+    private double heatBalance() {
+        return menu.getData().get(8) / 10000.0;
+    }
+
+    private final class AllocationSlider extends AbstractSliderButton {
+        private final boolean power;
+        private boolean dragging;
+        private int submitted = -1;
+        private long submittedAt;
+        AllocationSlider(int x, int y, boolean power) {
+            super(x, y, 144, 14, Component.empty(), power ? menu.getData().get(6) / 100.0 : heatBalance());
+            this.power = power; updateMessage();
+        }
+        int percent() { return (int)Math.round(value * 100); }
+        int heatAt(int powerShare) { return (int)Math.round(value * (100 - powerShare)); }
+        void preview(double value) {
+            this.value = value; submitted = power ? percent() : heatAt(0);
+            submittedAt = net.minecraft.Util.getMillis(); updateMessage();
+        }
+        @Override protected void updateMessage() {
+            setMessage(Component.literal(power ? "Power " + percent() + "%"
+                    : "Heat " + heatAt(menu.getData().get(6)) + "% / O2 "
+                    + (100 - menu.getData().get(6) - heatAt(menu.getData().get(6))) + "%"));
+        }
+        @Override protected void applyValue() {
+            value = Math.round(value * 100) / 100.0;
+            int share = power ? percent() : heatAt(menu.getData().get(6));
+            updateMessage();
+            if (share != submitted && minecraft != null && minecraft.gameMode != null) {
+                submitted = share; submittedAt = net.minecraft.Util.getMillis();
+                minecraft.gameMode.handleInventoryButtonClick(menu.containerId, power ? 200 + share : share);
+            }
+        }
+        @Override public void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+            int x = getX(), y = getY(); well(graphics, x, y, width, height);
+            int split = Math.round((width - 4) * (float)value);
+            graphics.fill(x + 2, y + 4, x + 2 + split, y + 10, power ? POWER : HEAT);
+            graphics.fill(x + 2 + split, y + 4, x + width - 2, y + 10, power ? 0xFF29353C : OXYGEN);
+            int thumb = x + 1 + Math.round((width - 6) * (float)value);
+            graphics.fill(thumb, y + 1, thumb + 4, y + height - 1, isHoveredOrFocused() ? TEXT : MUTED);
+        }
+        @Override public void onClick(double x, double y) { dragging = true; super.onClick(x, y); }
+        @Override public boolean mouseReleased(double x, double y, int button) {
+            boolean result = super.mouseReleased(x, y, button); dragging = false; return result;
+        }
+        @Override public boolean keyPressed(int key, int scanCode, int modifiers) {
+            if (key == GLFW.GLFW_KEY_LEFT || key == GLFW.GLFW_KEY_RIGHT) {
+                value = Math.clamp(value + (key == GLFW.GLFW_KEY_LEFT ? -0.01 : 0.01), 0, 1);
+                applyValue(); return true;
+            }
+            return super.keyPressed(key, scanCode, modifiers);
+        }
+        void synchronize() {
+            if (dragging) return;
+            int share = menu.getData().get(power ? 6 : 3);
+            if (submitted >= 0 && share != submitted && net.minecraft.Util.getMillis() - submittedAt < 1000) return;
+            value = power ? share / 100.0 : heatBalance(); submitted = -1; updateMessage();
+        }
+    }
+
+    private static String number(float value) {
+        return Math.abs(value - Math.round(value)) < 0.001f ? Integer.toString(Math.round(value))
+                : String.format(Locale.ROOT, "%.1f", value);
     }
 }

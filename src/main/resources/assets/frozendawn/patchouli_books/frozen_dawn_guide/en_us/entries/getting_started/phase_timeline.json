@@ -2,27 +2,45 @@
   "name": "Phase Timeline",
   "category": "frozendawn:getting_started",
   "icon": "minecraft:paper",
-  "sortnum": 1,
+  "sortnum": 3,
   "pages": [
     {
       "type": "patchouli:text",
+      "text": "Timing varies by preset. Use this as an escalation guide, not a day count.$(br2)A $(l:heating/phase_barometer)Phase Barometer$(/l) forecasts in-world."
+    },
+    {
+      "type": "patchouli:text",
       "title": "Phase 0-1",
-      "text": "$(italic)Phase timing varies by preset; use this as an escalation guide, not a day counter.$()$(br2)$(bold)Phase 0: Normal$()$(br)Opening stretch of a fresh world. No effects. Use this time to prepare.$(br2)$(bold)Phase 1: Twilight$()$(br)Early decline. Sun visibly shrinks. Rain becomes frequent. Slight temperature drop. Last chance to see the sun clearly.$(br2)Once you can craft a $(l:heating/phase_barometer)Phase Barometer$(/l), use it as your in-world forecast tool instead of counting days by hand."
+      "text": "$(bold)Normal:$() no effects. Prepare.$(br2)$(bold)Twilight:$() the sun shrinks and it cools slightly. Clear spells shorten, rain lasts longer, thunder is rare. Your last clear look at the sun."
     },
     {
       "type": "patchouli:text",
-      "title": "Phase 2-3",
-      "text": "$(bold)Phase 2: Cooling$()$(br)The cold becomes real. Temp: -10°C. Permanent rain/snow. Water freezes. Vegetation dies.$(br2)$(bold)Phase 3: The Long Night$()$(br)The first true survival wall. Temp: -25°C. Permanent storms. Lava begins to cool. Fog rolls in. Surface becomes dangerous."
+      "title": "Phase 2",
+      "text": "$(bold)Cooling, -10°C.$()$(br2)Constant rain or snow. Water freezes; plants die."
     },
     {
       "type": "patchouli:text",
-      "title": "Phase 4-5",
-      "text": "$(bold)Phase 4: Deep Freeze$()$(br)Surface survival becomes lethal. Temp: -45°C. Obsidian freezes. Coal ore crystallizes. Dense fog, near darkness.$(br2)$(bold)Phase 5: Eternal Winter$()$(br)Endgame cold. Temp: -70°C to -120°C. Permanent midnight. Blizzard whiteout. Only deep underground is survivable."
+      "title": "Phase 3",
+      "text": "$(bold)The Long Night, -25°C.$()$(br2)Constant storms and fog. Lava starts to cool. $(danger)The surface turns dangerous.$()"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Phase 4",
+      "text": "$(bold)Deep Freeze, -45°C.$()$(br2)$(danger)The surface is lethal.$() Obsidian freezes, coal ore crystallizes. Dense fog, near darkness."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Phase 5",
+      "text": "$(bold)Eternal Winter, -70°C to -120°C.$()$(br2)Permanent midnight and whiteout. $(l:getting_started/bomb_cyclones)Bomb Cyclones$(/l) sweep the surface. $(danger)Only deep underground is survivable.$()"
     },
     {
       "type": "patchouli:text",
       "title": "Phase 6",
-      "text": "$(bold)Phase 6: Atmospheric Collapse$()$(br)Final stage. Temp: -120°C to -273°C$(br2)$(italic)Early:$() Extreme blizzard.$(br)$(italic)Mid:$() Atmosphere thins, wind dies, fog lifts.$(br)$(italic)Late:$() Vacuum. Stars visible. No sound on surface. Ice sublimates. Breathing fails outside sealed rooms or habitable oxygen zones."
+      "text": "$(bold)Atmospheric Collapse, -120°C to -273°C.$()$(li)Early: extreme blizzard$(li)Mid: air thins, wind dies, fog lifts$(li)Late: $(danger)vacuum$(). Stars, silence, sublimating ice"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "In late Phase 6 you can only breathe in a sealed, breathable room.$(br2)Core and Blast Pit oxygen needs a closed room."
     }
   ]
 }
