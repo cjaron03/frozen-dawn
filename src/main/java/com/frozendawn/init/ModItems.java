@@ -47,6 +47,9 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.*;
 import net.minecraft.world.item.Rarity;
+import com.frozendawn.item.BlindSpawnEggItem;
+import com.frozendawn.item.PyroSpawnEggItem;
+import com.frozendawn.item.ScribeSpawnEggItem;
 import net.neoforged.neoforge.common.DeferredSpawnEggItem;
 import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
 import net.neoforged.neoforge.registries.DeferredHolder;
@@ -539,6 +542,12 @@ public class ModItems {
     public static final DeferredItem<DeferredSpawnEggItem> ARCHITECT_SPAWN_EGG = ITEMS.register("architect_spawn_egg",
             () -> new DeferredSpawnEggItem(ModEntities.ARCHITECT, 0x4A5568, 0x5B7A9E,
                     new Item.Properties()));
+    public static final DeferredItem<ScribeSpawnEggItem> SCRIBE_SPAWN_EGG = ITEMS.register("scribe_spawn_egg",
+            () -> new ScribeSpawnEggItem(new Item.Properties()));
+    public static final DeferredItem<BlindSpawnEggItem> BLIND_SPAWN_EGG = ITEMS.register("blind_spawn_egg",
+            () -> new BlindSpawnEggItem(new Item.Properties()));
+    public static final DeferredItem<PyroSpawnEggItem> PYRO_SPAWN_EGG = ITEMS.register("pyro_spawn_egg",
+            () -> new PyroSpawnEggItem(new Item.Properties()));
 
     public static final DeferredItem<DeferredSpawnEggItem> RIMEBOUND_SPAWN_EGG = ITEMS.register("rimebound_spawn_egg",
             () -> new DeferredSpawnEggItem(ModEntities.RIMEBOUND, 0xA8C6D5, 0x354D60,
@@ -887,6 +896,9 @@ public class ModItems {
                         output.accept(RETURNED_SPAWN_EGG.get());
                         output.accept(MIMIC_SPAWN_EGG.get());
                         output.accept(ARCHITECT_SPAWN_EGG.get());
+                        output.accept(SCRIBE_SPAWN_EGG.get());
+                        output.accept(BLIND_SPAWN_EGG.get());
+                        output.accept(PYRO_SPAWN_EGG.get());
                         output.accept(RIMEBOUND_SPAWN_EGG.get());
                         output.accept(RESONANT_SPAWN_EGG.get());
                         output.accept(REMNANT_SPAWN_EGG.get());

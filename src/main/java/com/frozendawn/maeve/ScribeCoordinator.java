@@ -46,6 +46,24 @@ final class ScribeCoordinator {
         }
         if (!gate.equals("ELIGIBLE")) { decision = gate + " player=" + subject.getUUID(); return false; }
         memory.misses = 0;
+        claim(actor, subject, route, now);
+        return true;
+    }
+
+    /** Test spawn egg: skips the gates and cooldown, and replaces any active claim, whose Scribe then departs. */
+    boolean designateForTest(ArchitectEntity actor, ServerPlayer subject) {
+        if (!enabled() || scribe(actor) || subject.level() != actor.level()) return false;
+        var memory = data.scribe(); long now = now();
+        if (memory.active != null) {
+            FrozenDawn.LOGGER.info("[MACS Scribe] ENDED scribe={} reason=TEST_EGG_REPLACED", memory.active.scribe());
+            memory.end(now);
+        }
+        claim(actor, subject, "TEST_EGG", now);
+        return true;
+    }
+
+    private void claim(ArchitectEntity actor, ServerPlayer subject, String route, long now) {
+        var memory = data.scribe();
         String dimension = actor.level().dimension().location().toString();
         var world = data.store().world(subject.getUUID());
         BlockPos shelter = world == null ? null : world.center(dimension);
@@ -59,7 +77,6 @@ final class ScribeCoordinator {
         actor.getPersistentData().putBoolean(TAG, true);
         decision = "DESIGNATED scribe=" + actor.getUUID() + " player=" + subject.getUUID() + " by=" + route + " watch=" + label + "@" + watch;
         FrozenDawn.LOGGER.info("[MACS Scribe] {}", decision); data.setDirty();
-        return true;
     }
 
     MaeveDirector.ScribeOrder order(ArchitectEntity actor) {

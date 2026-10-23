@@ -17,6 +17,9 @@ import com.frozendawn.entity.architect.ArchitectRenderFlags;
 import com.frozendawn.entity.architect.ArchitectActionTransitionSupport;
 import com.frozendawn.entity.architect.ArchitectBlockEnvironment;
 import com.frozendawn.entity.architect.ArchitectDeathFx;
+import com.frozendawn.entity.architect.ArchitectFelledDeath;
+import com.frozendawn.entity.architect.ArchitectWoundDownDeath;
+import com.frozendawn.entity.architect.ArchitectSoulBurnDeath;
 import com.frozendawn.entity.architect.ArchitectIcePlacement;
 import com.frozendawn.entity.architect.ArchitectMeleeEngagement;
 import com.frozendawn.entity.architect.ArchitectObservationSupport;
@@ -193,6 +196,8 @@ public class ArchitectEntity extends Monster {
     private final List<BlockPos> scaffoldIce = new ArrayList<>();
     private final List<BlockPos> tacticalIce = new ArrayList<>();
     private final List<BlockPos> mantletIce = new ArrayList<>();
+    @Nullable
+    private List<BlockPos> deathIceCollapse;
     private static final int MAX_SCAFFOLD_ICE = 64;
     private static final int MAX_TACTICAL_ICE = 12;
     private static final int MASTER_MAX_TACTICAL_ICE = 6;
@@ -2342,6 +2347,18 @@ public class ArchitectEntity extends Monster {
             tickMasterArchitectDeath(ticks);
             return;
         }
+        if (isFelledDying()) {
+            tickFelledDeath(ticks);
+            return;
+        }
+        if (isWoundDownDying()) {
+            tickWoundDownDeath(ticks);
+            return;
+        }
+        if (isSoulBurnDying()) {
+            tickSoulBurnDeath(ticks);
+            return;
+        }
         if (level() instanceof ServerLevel serverLevel) {
             double smokeY = getY() + 0.4 + (ticks / 30.0) * 1.8;
             serverLevel.sendParticles(ParticleTypes.SMOKE,
@@ -2355,16 +2372,105 @@ public class ArchitectEntity extends Monster {
             }
         }
         if (ticks >= 30) {
-            cleanupAllIce();
-            blockBreaker.onDeath();
-            if (towerEncounter && level() instanceof ServerLevel serverLevel) {
-                TowerEncounterController.markResolved(serverLevel, towerEncounterId);
+            removeAfterDeath(getX(), getY(), getZ());
+        }
+    }
+
+    /** Normal and Scribe Architects fall like a felled beam; Blind, Pyro and Master have their own deaths. */
+    public boolean isFelledDying() {
+        return getDeathTicks() > 0 && !isMasterArchitectVisual() && !isBlindArchitect() && !isPyro();
+    }
+
+    /** The Pyro burns where it stands and is lifted away in soul fire. */
+    public boolean isSoulBurnDying() {
+        return getDeathTicks() > 0 && isPyro() && !isBlindArchitect();
+    }
+
+    private void tickSoulBurnDeath(int ticks) {
+        setDeltaMovement(Vec3.ZERO);
+        if (level() instanceof ServerLevel serverLevel && ticks >= ArchitectSoulBurnDeath.IGNITE_TICK) {
+            if (ticks == ArchitectSoulBurnDeath.IGNITE_TICK) {
+                ArchitectDeathFx.emitSoulIgnite(serverLevel, getX(), getY(), getZ());
             }
-            remove(RemovalReason.KILLED);
-            if (level() instanceof ServerLevel serverLevel) {
-                ArchitectDeathFx.emitDeathSmokeBurst(serverLevel, random, getX(), getY(), getZ());
-                ArchitectDeathFx.emitDeathSoulRelease(serverLevel, random, getX(), getY(), getZ());
+            ArchitectDeathFx.emitSoulBurn(serverLevel, random, getX(), getY(), getZ(),
+                    ArchitectSoulBurnDeath.frontHeight(ticks), ArchitectSoulBurnDeath.lift(ticks),
+                    ArchitectSoulBurnDeath.alpha(ticks));
+        }
+        if (ticks >= ArchitectSoulBurnDeath.TICKS) {
+            removeAfterDeath(getX(), getY() + ArchitectSoulBurnDeath.lift(ticks), getZ());
+        }
+    }
+
+    /** The Blind winds down like a clock and crumples where it stands. */
+    public boolean isWoundDownDying() {
+        return getDeathTicks() > 0 && isBlindArchitect() && !isMasterArchitectVisual();
+    }
+
+    private void tickWoundDownDeath(int ticks) {
+        if (level() instanceof ServerLevel serverLevel
+                && ticks >= ArchitectWoundDownDeath.SHED_START && ticks <= ArchitectWoundDownDeath.FADE_END) {
+            ArchitectDeathFx.emitWoundDownShed(serverLevel, getX(), getY(), getZ(),
+                    (ticks - ArchitectWoundDownDeath.SHED_START)
+                            / (float) (ArchitectWoundDownDeath.FADE_END - ArchitectWoundDownDeath.SHED_START));
+        }
+        if (ticks >= ArchitectWoundDownDeath.TICKS) {
+            removeAfterDeath(getX(), getY(), getZ());
+        }
+    }
+
+    /** The Scribe clutches its slate and goes over backward, still facing whoever felled it. */
+    public boolean fallsBackward() {
+        return isScribe();
+    }
+
+    private void tickFelledDeath(int ticks) {
+        setDeltaMovement(Vec3.ZERO);
+        float yaw = yBodyRot * Mth.DEG_TO_RAD;
+        double fallSign = fallsBackward() ? -1.0 : 1.0;
+        double dirX = -Mth.sin(yaw) * fallSign;
+        double dirZ = Mth.cos(yaw) * fallSign;
+        if (level() instanceof ServerLevel serverLevel) {
+            if (ticks < ArchitectFelledDeath.TOPPLE_START && ticks % 4 == 0) {
+                serverLevel.sendParticles(ParticleTypes.SMOKE,
+                        getX(), getY() + 1.3, getZ(), 2, 0.12, 0.2, 0.12, 0.01);
             }
+            if (ticks == ArchitectFelledDeath.ARMS_LOCK || ticks == ArchitectFelledDeath.KNEES_BUCKLE) {
+                ArchitectDeathFx.emitFelledCrumbs(serverLevel, getX(), getY(), getZ());
+            }
+            if (ticks == ArchitectFelledDeath.ICE_COLLAPSE_START) {
+                deathIceCollapse = ArchitectIcePlacement.collapseOrder(
+                        blockPosition(), scaffoldIce, tacticalIce, mantletIce);
+            }
+            if (deathIceCollapse != null && ticks >= ArchitectFelledDeath.ICE_COLLAPSE_START
+                    && ticks < ArchitectFelledDeath.IMPACT_TICK) {
+                int ticksLeft = ArchitectFelledDeath.IMPACT_TICK - ticks;
+                ArchitectIcePlacement.collapseNext(serverLevel, deathIceCollapse,
+                        Mth.ceil(deathIceCollapse.size() / (float) ticksLeft));
+            }
+            if (ticks == ArchitectFelledDeath.IMPACT_TICK) {
+                cleanupAllIce();
+                ArchitectDeathFx.emitFelledImpact(serverLevel, getX(), getY(), getZ(), dirX, dirZ);
+                if (isScribe()) {
+                    ArchitectDeathFx.emitScribePages(serverLevel, getX() + dirX * 0.8, getY(), getZ() + dirZ * 0.8);
+                }
+            }
+        }
+        if (ticks >= ArchitectFelledDeath.TICKS) {
+            // The soul leaves from the rubble where the body landed, not from where it stood.
+            removeAfterDeath(getX() + dirX, getY() - 0.7, getZ() + dirZ);
+        }
+    }
+
+    private void removeAfterDeath(double soulX, double soulY, double soulZ) {
+        cleanupAllIce();
+        blockBreaker.onDeath();
+        if (towerEncounter && level() instanceof ServerLevel serverLevel) {
+            TowerEncounterController.markResolved(serverLevel, towerEncounterId);
+        }
+        remove(RemovalReason.KILLED);
+        if (level() instanceof ServerLevel serverLevel) {
+            ArchitectDeathFx.emitDeathSmokeBurst(serverLevel, random, soulX, soulY, soulZ);
+            ArchitectDeathFx.emitDeathSoulRelease(serverLevel, random, soulX, soulY, soulZ);
         }
     }
 
@@ -2827,6 +2933,28 @@ public class ArchitectEntity extends Monster {
         return isMasterArchitectVisual() ? 1.35F : super.getSoundVolume();
     }
 
+    @Override
+    public void playAmbientSound() {
+        super.playAmbientSound();
+        if (isScribe() && getAmbientSound() != null) {
+            playSound(ModSounds.SCRIBE_STROKES.get(), getSoundVolume(), 0.95F + random.nextFloat() * 0.1F);
+        }
+        if (isPyro() && getAmbientSound() != null) {
+            playSound(ModSounds.PYRO_EMBERS.get(), getSoundVolume(), 0.95F + random.nextFloat() * 0.1F);
+        }
+    }
+
+    @Override
+    protected void playHurtSound(DamageSource source) {
+        super.playHurtSound(source);
+        if (isScribe() && getHurtSound(source) != null) {
+            playSound(ModSounds.SCRIBE_SLATE_CRACK.get(), getSoundVolume(), 0.92F + random.nextFloat() * 0.16F);
+        }
+        if (isPyro() && getHurtSound(source) != null) {
+            playSound(ModSounds.PYRO_HISS.get(), getSoundVolume(), 0.92F + random.nextFloat() * 0.16F);
+        }
+    }
+
     @Nullable
     @Override
     protected SoundEvent getAmbientSound() {
@@ -2872,6 +3000,8 @@ public class ArchitectEntity extends Monster {
         if (foldedDeathPresentationAlreadyPlayed || mindReturnDeathSoundOnly) {
             return null;
         }
+        if (isBlindArchitect()) return ModSounds.BLIND_ARCHITECT_DEATH.get();
+        if (isPyro()) return ModSounds.PYRO_ARCHITECT_DEATH.get();
         return isMasterArchitectVisual()
                 ? ModSounds.MASTER_ARCHITECT_DEATH.get()
                 : ModSounds.ARCHITECT_DEATH.get();

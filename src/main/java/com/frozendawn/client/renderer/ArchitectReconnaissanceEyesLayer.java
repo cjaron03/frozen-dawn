@@ -4,11 +4,13 @@ import com.frozendawn.entity.ArchitectEntity;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.entity.LivingEntityRenderer;
 import net.minecraft.client.renderer.entity.RenderLayerParent;
 import net.minecraft.client.renderer.entity.layers.RenderLayer;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.FastColor;
 
 /** Recolors only the existing two 2x3-pixel eyes: purple for a scout, white for the §9.4b Scribe. Skin and blink textures stay untouched. */
 final class ArchitectReconnaissanceEyesLayer extends RenderLayer<ArchitectEntity, ArchitectModel> {
@@ -22,13 +24,29 @@ final class ArchitectReconnaissanceEyesLayer extends RenderLayer<ArchitectEntity
         if (!scribe && !pyro && !actor.hasReconnaissanceEyes() || actor.isInvisible() || !getParentModel().head.visible) return;
         // Reuse the same texture decision, including the 97-tick phase and three blink frames.
         boolean blink = !ArchitectRenderer.textureForBlinkCycle(actor.tickCount, actor.getId()).equals(ArchitectRenderer.baseTexture());
-        pose.pushPose(); getParentModel().head.translateAndRotate(pose);
         int opacity = 255 - Math.abs(actor.getReconnaissanceDissolve()) * 255 / 20;
-        var vertices = buffers.getBuffer(opacity < 255 ? RenderType.entityTranslucent(WHITE) : RenderType.entityCutoutNoCull(WHITE));
-        int overlay = LivingEntityRenderer.getOverlayCoords(actor, 0);
         // Blink, top, middle and bottom rows: white for the Scribe, orange for the Pyro, purple for recon.
         int[] palette = scribe ? new int[]{0xB4BDC2, 0xD8DEE2, 0xFFFFFF, 0x8E989E}
-                : pyro ? new int[]{0xB4561E, 0xE07428, 0xFF9A3C, 0x7A3612} : new int[]{0x692696, 0x7E2DB4, 0xB340FF, 0x461964};
+                : pyro ? PYRO : new int[]{0x692696, 0x7E2DB4, 0xB340FF, 0x461964};
+        draw(pose, buffers, actor, palette, opacity, blink, light);
+    }
+
+    /** The Pyro's dying eyes: orange flaring to soul blue, lit by their own fire, fading with the body. */
+    void renderSoulFlare(PoseStack pose, MultiBufferSource buffers, ArchitectEntity actor, float flare, float alpha) {
+        int[] palette = new int[PYRO.length];
+        for (int i = 0; i < palette.length; i++) palette[i] = FastColor.ARGB32.lerp(flare, PYRO[i], SOUL[i]) & 0xFFFFFF;
+        draw(pose, buffers, actor, palette, Math.round(alpha * 255), false, LightTexture.FULL_BRIGHT);
+    }
+
+    private static final int[] PYRO = {0xB4561E, 0xE07428, 0xFF9A3C, 0x7A3612};
+    private static final int[] SOUL = {0x2A8C9A, 0x48C8D8, 0x9AF6FF, 0x1E6E7C};
+
+    private void draw(PoseStack pose, MultiBufferSource buffers, ArchitectEntity actor, int[] palette, int opacity,
+                      boolean blink, int light) {
+        if (opacity <= 0) return;
+        pose.pushPose(); getParentModel().head.translateAndRotate(pose);
+        var vertices = buffers.getBuffer(opacity < 255 ? RenderType.entityTranslucent(WHITE) : RenderType.entityCutoutNoCull(WHITE));
+        int overlay = LivingEntityRenderer.getOverlayCoords(actor, 0);
         for (int x : new int[]{10, 13}) {
             if (blink) row(pose, vertices, x, 11, opacity << 24 | palette[0], light, overlay);
             else {

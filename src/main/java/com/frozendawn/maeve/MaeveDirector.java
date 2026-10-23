@@ -196,6 +196,8 @@ public final class MaeveDirector {
     public static boolean allowNaturalPawn(net.minecraft.server.level.ServerLevel level, BlockPos position) { return current(level.getServer()).convergence.allowNaturalSpawn(level, position); }
     /** §9.4b: the gate, cooldown and single claim decide whether this natural spawn carries Maeve's notes. */
     public static boolean designateScribe(ArchitectEntity actor, ServerPlayer subject) { return current(subject.getServer()).scribe.designate(actor, subject); }
+    /** Scribe spawn egg only: Maeve's Scribe slot for this player, without her gates. */
+    public static boolean designateTestScribe(ArchitectEntity actor, ServerPlayer subject) { return current(subject.getServer()).scribe.designateForTest(actor, subject); }
     public static ScribeOrder scribeOrder(ArchitectEntity actor) { return actor.getServer() == null ? null : current(actor.getServer()).scribe.order(actor); }
     /** Read once at death. The result is a frozen copy; nothing it holds is consulted again. */
     public static ScribeNotes scribeNotes(ArchitectEntity actor) { return actor.getServer() == null ? null : current(actor.getServer()).scribe.notes(actor); }
@@ -212,6 +214,7 @@ public final class MaeveDirector {
     }
     /** §9.4a: same gate shape for the Pyro. Its looks upload at once; ending it never takes them back. */
     public static boolean designatePyro(ArchitectEntity actor, ServerPlayer subject) { return current(subject.getServer()).pyro.designate(actor, subject); }
+    public static boolean designateTestPyro(ArchitectEntity actor, ServerPlayer subject) { return current(subject.getServer()).pyro.designateForTest(actor, subject); }
     public static PyroOrder pyroOrder(ArchitectEntity actor) { return actor.getServer() == null ? null : current(actor.getServer()).pyro.order(actor); }
     public static PyroScan pyroObserve(ArchitectEntity actor, boolean last) { return actor.getServer() == null ? null : current(actor.getServer()).pyro.observe(actor, last); }
     public static void pyroEnded(ArchitectEntity actor, String reason) { if (actor.getServer() != null) current(actor.getServer()).pyro.ended(actor, reason); }

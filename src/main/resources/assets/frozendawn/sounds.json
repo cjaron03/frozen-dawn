@@ -919,6 +919,47 @@
       "frozendawn:entity/bloombound_undone/death"
     ]
   },
+  "entity.architect.scribe_strokes": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.architect.scribe_strokes",
+    "sounds": [
+      { "name": "frozendawn:entity/architect/scribe/strokes1", "volume": 0.55 },
+      { "name": "frozendawn:entity/architect/scribe/strokes2", "volume": 0.55 },
+      { "name": "frozendawn:entity/architect/scribe/strokes3", "volume": 0.55 }
+    ]
+  },
+  "entity.architect.scribe_slate_crack": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.architect.scribe_slate_crack",
+    "sounds": [
+      { "name": "frozendawn:entity/architect/scribe/slate_crack1", "volume": 0.7 },
+      { "name": "frozendawn:entity/architect/scribe/slate_crack2", "volume": 0.7 }
+    ]
+  },
+  "entity.architect.pyro_embers": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.architect.pyro_embers",
+    "sounds": [
+      { "name": "frozendawn:entity/architect/pyro/embers1", "volume": 0.55 },
+      { "name": "frozendawn:entity/architect/pyro/embers2", "volume": 0.55 },
+      { "name": "frozendawn:entity/architect/pyro/embers3", "volume": 0.55 }
+    ]
+  },
+  "entity.architect.pyro_hiss": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.architect.pyro_hiss",
+    "sounds": [
+      { "name": "frozendawn:entity/architect/pyro/hiss1", "volume": 0.7 },
+      { "name": "frozendawn:entity/architect/pyro/hiss2", "volume": 0.7 }
+    ]
+  },
+  "entity.architect.pyro_death": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.architect.pyro_death",
+    "sounds": [
+      { "name": "frozendawn:entity/architect/pyro/death" }
+    ]
+  },
   "entity.architect.scribe_write": {
     "category": "hostile",
     "subtitle": "subtitle.frozendawn.entity.architect.scribe_write",
@@ -1168,16 +1209,8 @@
     "subtitle": "subtitle.frozendawn.entity.architect.death",
     "sounds": [
       {
-        "name": "minecraft:entity.horse.death",
-        "type": "event",
-        "volume": 0.8,
-        "pitch": 0.55
-      },
-      {
-        "name": "minecraft:block.packed_ice.break",
-        "type": "event",
-        "volume": 0.25,
-        "pitch": 0.55
+        "name": "frozendawn:entity/architect/death",
+        "attenuation_distance": 32
       }
     ]
   },
@@ -4212,28 +4245,19 @@
     ]
   },
   "entity.blind_architect.hurt": {
+    "category": "hostile",
     "subtitle": "subtitles.frozendawn.blind_architect.hurt",
     "sounds": [
-      {
-        "name": "minecraft:mob/warden/hurt_1",
-        "volume": 0.6,
-        "stream": true
-      },
-      {
-        "name": "minecraft:mob/warden/hurt_2",
-        "volume": 0.6,
-        "stream": true
-      },
-      {
-        "name": "minecraft:mob/phantom/hurt1",
-        "volume": 0.375,
-        "stream": true
-      },
-      {
-        "name": "minecraft:mob/phantom/hurt2",
-        "volume": 0.375,
-        "stream": true
-      }
+      { "name": "frozendawn:entity/blind_architect/hurt_1", "volume": 0.8 },
+      { "name": "frozendawn:entity/blind_architect/hurt_2", "volume": 0.8 },
+      { "name": "frozendawn:entity/blind_architect/hurt_3", "volume": 0.8 }
+    ]
+  },
+  "entity.blind_architect.death": {
+    "category": "hostile",
+    "subtitle": "subtitles.frozendawn.blind_architect.death",
+    "sounds": [
+      { "name": "frozendawn:entity/blind_architect/death" }
     ]
   },
   "ui.suit.atmospheric_breach": {
