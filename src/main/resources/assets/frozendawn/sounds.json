@@ -4221,28 +4221,19 @@
     ]
   },
   "entity.blind_architect.hurt": {
+    "category": "hostile",
     "subtitle": "subtitles.frozendawn.blind_architect.hurt",
     "sounds": [
-      {
-        "name": "minecraft:mob/warden/hurt_1",
-        "volume": 0.6,
-        "stream": true
-      },
-      {
-        "name": "minecraft:mob/warden/hurt_2",
-        "volume": 0.6,
-        "stream": true
-      },
-      {
-        "name": "minecraft:mob/phantom/hurt1",
-        "volume": 0.375,
-        "stream": true
-      },
-      {
-        "name": "minecraft:mob/phantom/hurt2",
-        "volume": 0.375,
-        "stream": true
-      }
+      { "name": "frozendawn:entity/blind_architect/hurt_1", "volume": 0.8 },
+      { "name": "frozendawn:entity/blind_architect/hurt_2", "volume": 0.8 },
+      { "name": "frozendawn:entity/blind_architect/hurt_3", "volume": 0.8 }
+    ]
+  },
+  "entity.blind_architect.death": {
+    "category": "hostile",
+    "subtitle": "subtitles.frozendawn.blind_architect.death",
+    "sounds": [
+      { "name": "frozendawn:entity/blind_architect/death" }
     ]
   },
   "ui.suit.atmospheric_breach": {

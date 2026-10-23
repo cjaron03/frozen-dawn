@@ -18,6 +18,7 @@ import com.frozendawn.entity.architect.ArchitectActionTransitionSupport;
 import com.frozendawn.entity.architect.ArchitectBlockEnvironment;
 import com.frozendawn.entity.architect.ArchitectDeathFx;
 import com.frozendawn.entity.architect.ArchitectFelledDeath;
+import com.frozendawn.entity.architect.ArchitectWoundDownDeath;
 import com.frozendawn.entity.architect.ArchitectIcePlacement;
 import com.frozendawn.entity.architect.ArchitectMeleeEngagement;
 import com.frozendawn.entity.architect.ArchitectObservationSupport;
@@ -2323,6 +2324,10 @@ public class ArchitectEntity extends Monster {
             tickFelledDeath(ticks);
             return;
         }
+        if (isWoundDownDying()) {
+            tickWoundDownDeath(ticks);
+            return;
+        }
         if (level() instanceof ServerLevel serverLevel) {
             double smokeY = getY() + 0.4 + (ticks / 30.0) * 1.8;
             serverLevel.sendParticles(ParticleTypes.SMOKE,
@@ -2343,6 +2348,23 @@ public class ArchitectEntity extends Monster {
     /** Normal, Scribe and Pyro Architects fall like a felled beam; Blind and Master keep their own deaths. */
     public boolean isFelledDying() {
         return getDeathTicks() > 0 && !isMasterArchitectVisual() && !isBlindArchitect();
+    }
+
+    /** The Blind winds down like a clock and crumples where it stands. */
+    public boolean isWoundDownDying() {
+        return getDeathTicks() > 0 && isBlindArchitect() && !isMasterArchitectVisual();
+    }
+
+    private void tickWoundDownDeath(int ticks) {
+        if (level() instanceof ServerLevel serverLevel
+                && ticks >= ArchitectWoundDownDeath.SHED_START && ticks <= ArchitectWoundDownDeath.FADE_END) {
+            ArchitectDeathFx.emitWoundDownShed(serverLevel, getX(), getY(), getZ(),
+                    (ticks - ArchitectWoundDownDeath.SHED_START)
+                            / (float) (ArchitectWoundDownDeath.FADE_END - ArchitectWoundDownDeath.SHED_START));
+        }
+        if (ticks >= ArchitectWoundDownDeath.TICKS) {
+            removeAfterDeath(getX(), getY(), getZ());
+        }
     }
 
     /** The Scribe clutches its slate and goes over backward, still facing whoever felled it. */
@@ -2921,6 +2943,7 @@ public class ArchitectEntity extends Monster {
         if (foldedDeathPresentationAlreadyPlayed || mindReturnDeathSoundOnly) {
             return null;
         }
+        if (isBlindArchitect()) return ModSounds.BLIND_ARCHITECT_DEATH.get();
         return isMasterArchitectVisual()
                 ? ModSounds.MASTER_ARCHITECT_DEATH.get()
                 : ModSounds.ARCHITECT_DEATH.get();

@@ -4,6 +4,7 @@ import com.frozendawn.FrozenDawn;
 import com.frozendawn.entity.ArchitectEntity;
 import com.frozendawn.entity.ScribeWriting;
 import com.frozendawn.entity.architect.ArchitectFelledDeath;
+import com.frozendawn.entity.architect.ArchitectWoundDownDeath;
 import net.minecraft.client.model.geom.ModelLayerLocation;
 import net.minecraft.client.model.geom.PartPose;
 import net.minecraft.client.model.geom.builders.CubeDeformation;
@@ -95,6 +96,10 @@ public class ArchitectModel extends HumanoidModel<ArchitectEntity> {
 
         if (entity.isFelledDying()) {
             applyFelledDeathPose(entity.getDeathTicks() + (ageInTicks - Mth.floor(ageInTicks)), entity.fallsBackward());
+            return;
+        }
+        if (entity.isWoundDownDying()) {
+            applyWoundDownPose(entity.getDeathTicks() + (ageInTicks - Mth.floor(ageInTicks)));
             return;
         }
         if (shield && !entity.isMasterArchitectVisual()) return;
@@ -578,6 +583,41 @@ public class ArchitectModel extends HumanoidModel<ArchitectEntity> {
         if (clutchesSlate) {
             applySlateClutch(jolt, locked, knees, topple);
         }
+    }
+
+    /**
+     * Blind death: its head still jerks toward each slowing click, then it drops into a sit on the
+     * exhale and its head and arms hang. The renderer leans the whole body about the hips, so the
+     * legs here are raised by that lean to stay flat on the ground.
+     */
+    private void applyWoundDownPose(float elapsed) {
+        float twitch = ArchitectWoundDownDeath.twitch(elapsed);
+        float crumple = ArchitectWoundDownDeath.crumple(elapsed);
+        float slump = ArchitectWoundDownDeath.slump(elapsed);
+        float sag = ArchitectWoundDownDeath.wind(elapsed) * (1.0F - crumple);
+        float lean = ArchitectWoundDownDeath.lean(elapsed);
+
+        this.head.xRot = 0.3F * sag - 0.15F * Math.abs(twitch) + 0.45F * crumple + 0.4F * slump;
+        this.head.yRot = 0.4F * twitch * (1.0F - crumple);
+        this.head.zRot = 0.12F * slump;
+        this.body.xRot = 0.0F;
+        this.body.yRot = 0.0F;
+        // Arms go limp, then hang down in front of it as it folds forward.
+        float hang = 0.3F * crumple + 0.35F * slump;
+        this.rightArm.xRot = 0.04F * sag - hang;
+        this.leftArm.xRot = 0.04F * sag - hang * 0.85F;
+        this.rightArm.yRot = 0.0F;
+        this.leftArm.yRot = 0.0F;
+        this.rightArm.zRot = 0.05F + 0.12F * crumple;
+        this.leftArm.zRot = -0.05F - 0.12F * crumple;
+        // Knees soften with the clicks, then the legs fold out in front as it drops.
+        float sit = 1.45F * crumple;
+        this.rightLeg.xRot = -0.3F * sag - sit - lean * crumple;
+        this.leftLeg.xRot = -0.18F * sag - sit - lean * crumple;
+        this.rightLeg.yRot = 0.3F * crumple;
+        this.leftLeg.yRot = -0.3F * crumple;
+        this.rightLeg.zRot = 0.0F;
+        this.leftLeg.zRot = 0.0F;
     }
 
     /**

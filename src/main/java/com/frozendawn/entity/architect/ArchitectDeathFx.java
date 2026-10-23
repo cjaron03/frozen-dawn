@@ -2,6 +2,7 @@ package com.frozendawn.entity.architect;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.BlockParticleOption;
+import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.core.particles.ItemParticleOption;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
@@ -12,6 +13,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
+import org.joml.Vector3f;
 
 /**
  * Death particle routines for Architect visual effects.
@@ -60,6 +62,21 @@ public final class ArchitectDeathFx {
         serverLevel.sendParticles(new ItemParticleOption(ParticleTypes.ITEM, new ItemStack(Items.PAPER)),
                 x, y + 0.35, z, 22, 0.35, 0.1, 0.35, 0.16);
         serverLevel.sendParticles(ParticleTypes.WHITE_ASH, x, y + 0.5, z, 30, 0.6, 0.4, 0.6, 0.02);
+    }
+
+    private static final DustParticleOptions ASH = new DustParticleOptions(new Vector3f(0.04F, 0.04F, 0.05F), 1.3F);
+    private static final BlockParticleOption ASH_FALL =
+            new BlockParticleOption(ParticleTypes.FALLING_DUST, Blocks.BLACK_CONCRETE_POWDER.defaultBlockState());
+
+    /** The slumped Blind sheds away as black dust, heaviest in the middle of the fade. */
+    public static void emitWoundDownShed(ServerLevel serverLevel, double x, double y, double z, float progress) {
+        int count = 2 + Math.round(6 * Mth.sin(Mth.clamp(progress, 0.0F, 1.0F) * Mth.PI));
+        double top = y + 0.35 + 0.55 * (1.0 - progress);
+        serverLevel.sendParticles(ASH, x, (y + top) * 0.5, z, count, 0.28, (top - y) * 0.35, 0.28, 0.0);
+        serverLevel.sendParticles(ASH_FALL, x, top, z, count / 2 + 1, 0.3, 0.1, 0.3, 0.0);
+        if (progress > 0.3F) {
+            serverLevel.sendParticles(ParticleTypes.SMOKE, x, y + 0.3, z, 1, 0.25, 0.1, 0.25, 0.005);
+        }
     }
 
     public static void emitDeathSoulRise(ServerLevel serverLevel, int ticks, double x, double y, double z) {

@@ -4,6 +4,7 @@ import com.frozendawn.FrozenDawn;
 import com.frozendawn.entity.ArchitectEntity;
 import com.frozendawn.entity.MasterArchitectCombatAction;
 import com.frozendawn.entity.architect.ArchitectFelledDeath;
+import com.frozendawn.entity.architect.ArchitectWoundDownDeath;
 import com.frozendawn.homo.MasterArchitectCombatPolicy;
 import com.frozendawn.homo.MasterArchitectFloodPolicy;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -39,6 +40,8 @@ public class ArchitectRenderer extends HumanoidMobRenderer<ArchitectEntity, Arch
             ResourceLocation.withDefaultNamespace("textures/misc/white.png");
     private final MasterArchitectAdornmentLayer masterAdornmentLayer;
     private final ArchitectReconnaissanceEyesLayer reconnaissanceEyes;
+    private final ArchitectBlindFaceLayer blindFace;
+    private final ArchitectBlindHelmetLayer blindHelmet;
 
     public ArchitectRenderer(EntityRendererProvider.Context context) {
         super(context, new ArchitectModel(context.bakeLayer(ArchitectModel.LAYER_LOCATION)), 0.5f);
@@ -55,9 +58,11 @@ public class ArchitectRenderer extends HumanoidMobRenderer<ArchitectEntity, Arch
         this.addLayer(this.masterAdornmentLayer);
         this.reconnaissanceEyes = new ArchitectReconnaissanceEyesLayer(this);
         this.addLayer(reconnaissanceEyes);
-        this.addLayer(new ArchitectBlindFaceLayer(this));
-        this.addLayer(new ArchitectBlindHelmetLayer(this,
-                new HumanoidArmorModel<>(context.bakeLayer(ModelLayers.PLAYER_OUTER_ARMOR))));
+        this.blindFace = new ArchitectBlindFaceLayer(this);
+        this.addLayer(blindFace);
+        this.blindHelmet = new ArchitectBlindHelmetLayer(this,
+                new HumanoidArmorModel<>(context.bakeLayer(ModelLayers.PLAYER_OUTER_ARMOR)));
+        this.addLayer(blindHelmet);
         this.layers.replaceAll(layer -> layer.getClass() == net.minecraft.client.renderer.entity.layers.ItemInHandLayer.class
                 ? new ScribeSlateItemLayer(this, context.getItemInHandRenderer()) : layer);
     }
@@ -85,8 +90,10 @@ public class ArchitectRenderer extends HumanoidMobRenderer<ArchitectEntity, Arch
     public void render(ArchitectEntity entity, float entityYaw, float partialTick,
                        PoseStack poseStack, MultiBufferSource bufferSource, int packedLight) {
         int deathTicks = entity.getDeathTicks();
-        // Keep the opaque eye mask on the Blind corpse as well as its living rig.
-        if (entity.isBlindArchitect() && deathTicks > 0) { super.render(entity, entityYaw, partialTick, poseStack, bufferSource, packedLight); return; }
+        if (entity.isWoundDownDying()) {
+            renderWoundDownDeath(entity, entityYaw, partialTick, poseStack, bufferSource, packedLight, deathTicks);
+            return;
+        }
         if (entity.getReconnaissanceDissolve() != 0) {
             renderScoutDissolve(entity, entityYaw, partialTick, poseStack, bufferSource, packedLight);
             return;
@@ -241,6 +248,52 @@ public class ArchitectRenderer extends HumanoidMobRenderer<ArchitectEntity, Arch
                 LivingEntityRenderer.getOverlayCoords(entity, this.getWhiteOverlayProgress(entity, partialTick)),
                 color
         );
+        poseStack.popPose();
+    }
+
+    /** Blind crumples into a sit, its hood slips off, and the body darkens and sheds away. */
+    private void renderWoundDownDeath(ArchitectEntity entity, float entityYaw, float partialTick,
+                                      PoseStack poseStack, MultiBufferSource bufferSource, int packedLight,
+                                      int deathTicks) {
+        float elapsed = deathTicks + partialTick;
+        float crumple = ArchitectWoundDownDeath.crumple(elapsed);
+        float sag = ArchitectWoundDownDeath.wind(elapsed) * (1.0f - crumple);
+        float alpha = ArchitectWoundDownDeath.alpha(elapsed);
+        float hoodAlpha = ArchitectWoundDownDeath.hoodAlpha(elapsed);
+        if (hoodAlpha <= 0.0f) return;
+
+        poseStack.pushPose();
+        poseStack.mulPose(Axis.YP.rotationDegrees(180.0f - entityYaw));
+        // Hips drop from leg height to the ground; the body leans forward about them.
+        float hip = 0.75f - 0.05f * sag - 0.62f * crumple;
+        poseStack.translate(0.0f, hip, 0.0f);
+        poseStack.mulPose(Axis.XP.rotation(-ArchitectWoundDownDeath.lean(elapsed)));
+        poseStack.mulPose(Axis.ZP.rotationDegrees(1.5f * ArchitectWoundDownDeath.twitch(elapsed)));
+        poseStack.translate(0.0f, -0.75f, 0.0f);
+        poseStack.scale(-1.0f, -1.0f, 1.0f);
+        poseStack.translate(0.0f, -1.501f, 0.0f);
+
+        this.model.attackTime = 0.0f;
+        this.model.riding = false;
+        this.model.young = entity.isBaby();
+        this.model.prepareMobModel(entity, 0.0f, 0.0f, partialTick);
+        this.model.setupAnim(entity, 0.0f, 0.0f, entity.tickCount + partialTick, 0.0f, 0.0f);
+
+        if (alpha > 0.0f) {
+            int shade = (int) (255 * (1.0f - 0.85f * ArchitectWoundDownDeath.ash(elapsed)));
+            this.model.renderToBuffer(
+                    poseStack,
+                    bufferSource.getBuffer(RenderType.entityTranslucent(getTextureLocation(entity))),
+                    packedLight,
+                    LivingEntityRenderer.getOverlayCoords(entity, 0.0f),
+                    FastColor.ARGB32.color((int) (alpha * 255), shade, shade, shade));
+            // The eye mask goes with the body once it is mostly dust.
+            if (alpha > 0.45f) {
+                blindFace.render(poseStack, bufferSource, packedLight, entity, 0, 0, partialTick, entity.tickCount + partialTick, 0, 0);
+            }
+        }
+        blindHelmet.renderSlipping(poseStack, bufferSource, packedLight, entity,
+                ArchitectWoundDownDeath.hoodSlip(elapsed), hoodAlpha);
         poseStack.popPose();
     }
 
