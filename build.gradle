@@ -40,6 +40,8 @@ java.toolchain.languageVersion = JavaLanguageVersion.of(21)
 
 def gameTestReport = layout.buildDirectory.file('gametest/report.xml')
 def gameTestRunDirectory = layout.buildDirectory.dir('gametest/run')
+def quickReport = layout.buildDirectory.file('gametest-quick/report.xml')
+def quickRunDirectory = layout.buildDirectory.dir('gametest-quick/run')
 def monkeyReport = layout.buildDirectory.file('architect-monkey/report.xml')
 def monkeyRunDirectory = layout.buildDirectory.dir('architect-monkey/run')
 def monkeyReports = layout.buildDirectory.dir('architect-monkey-reports/' + java.util.UUID.randomUUID().toString())
@@ -169,6 +171,20 @@ neoForge {
             // saved data from one gate run leak into the next, which makes any test that touches
             // world state depend on what happened last time.
             gameDirectory = gameTestRunDirectory
+        }
+
+        // A fast loop while iterating: only the tests named by -PfdTests. Never a gate.
+        gameTestQuick {
+            type = 'gameTestServer'
+            sourceSet = sourceSets.gameTest
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+            systemProperty 'frozendawn.gametest.report', quickReport.get().asFile.absolutePath
+            systemProperty 'frozendawn.labCommands', 'true'
+            systemProperty 'frozendawn.architect.reports', layout.buildDirectory.dir('gametest-quick/reports').get().asFile.absolutePath
+            // Tests wait in ticks, so the server ticks back to back rather than at 20 per second (GameTestPacing).
+            systemProperty 'frozendawn.gametest.sprint', 'true'
+            systemProperty 'frozendawn.gametest.only', providers.gradleProperty('fdTests').getOrElse('')
+            gameDirectory = quickRunDirectory
         }
 
         architectMonkeyServer {
@@ -324,6 +340,35 @@ tasks.named('runGameTestServer') {
         file.delete()
         // Every gate run starts from an empty world, so results do not depend on run order.
         delete(runDirectory)
+    }
+}
+
+tasks.named('runGameTestQuick') {
+    def report = quickReport
+    def runDirectory = quickRunDirectory
+    def only = providers.gradleProperty('fdTests')
+    doFirst {
+        if (!only.isPresent() || only.get().isBlank())
+            throw new GradleException('Name the tests: -PfdTests=scribe (comma-separated name fragments)')
+        report.get().asFile.with { parentFile.mkdirs(); delete() }
+        delete(runDirectory)
+    }
+}
+
+// Unlike the gate, this checks only that the selected tests ran and none failed.
+tasks.register('gameTestQuick') {
+    group = 'verification'
+    description = 'Runs only the GameTests named by -PfdTests, ticking as fast as the server can. Not a gate.'
+    dependsOn tasks.named('runGameTestQuick')
+    def report = quickReport
+    doLast {
+        def file = report.get().asFile
+        if (!file.exists()) throw new GradleException("No GameTest report at ${file}: the server never finished a test")
+        def cases = new groovy.xml.XmlSlurper().parse(file).'**'.findAll { it.name() == 'testcase' }
+        def failed = cases.findAll { !it.failure.isEmpty() || !it.error.isEmpty() }
+        if (cases.isEmpty()) throw new GradleException('The report holds no test cases')
+        if (!failed.isEmpty()) throw new GradleException("${failed.size()} of ${cases.size()} GameTests failed: " + failed.collect { it.@name.text() }.join(', '))
+        logger.lifecycle("All ${cases.size()} selected GameTests passed.")
     }
 }
 

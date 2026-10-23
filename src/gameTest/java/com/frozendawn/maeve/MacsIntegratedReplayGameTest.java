@@ -25,12 +25,13 @@ public final class MacsIntegratedReplayGameTest {
             }
             level.getChunk(x, z);
         }
+        Runnable resume = acquired.isEmpty() ? () -> { } : com.frozendawn.gametest.GameTestPacing.holdNormalPace(level.getServer());
         helper.testInfo.addListener(new net.minecraft.gametest.framework.GameTestListener() {
             public void testStructureLoaded(net.minecraft.gametest.framework.GameTestInfo info) { }
             public void testAddedForRerun(net.minecraft.gametest.framework.GameTestInfo old,
                                          net.minecraft.gametest.framework.GameTestInfo next,
                                          net.minecraft.gametest.framework.GameTestRunner runner) { }
-            private void release() { acquired.forEach(c -> level.setChunkForced(c.x, c.z, false)); }
+            private void release() { resume.run(); acquired.forEach(c -> level.setChunkForced(c.x, c.z, false)); }
             public void testPassed(net.minecraft.gametest.framework.GameTestInfo info,
                                    net.minecraft.gametest.framework.GameTestRunner runner) { release(); }
             public void testFailed(net.minecraft.gametest.framework.GameTestInfo info,
@@ -42,6 +43,7 @@ public final class MacsIntegratedReplayGameTest {
             for (var chunk : acquired) helper.assertTrue(
                     level.isPositionEntityTicking(chunk.getMiddleBlockPosition(100))
                             && level.areEntitiesLoaded(chunk.toLong()), "Waiting for camp chunk " + chunk);
+            resume.run();
         }).thenExecute(() -> MaeveObservationGameTest.withScene(helper, 131, scene -> {
             var player = scene.player("frozen_camp", 8, 4);
             var observer = scene.architect(2, 4);
