@@ -27,6 +27,8 @@ public final class ModEffects {
             EFFECTS.register("radiation_sickness", com.frozendawn.effect.RadiationSicknessEffect::new);
     public static final DeferredHolder<MobEffect, com.frozendawn.effect.ContaminatedEffect> CONTAMINATED =
             EFFECTS.register("contaminated", com.frozendawn.effect.ContaminatedEffect::new);
+    public static final DeferredHolder<MobEffect, com.frozendawn.effect.WarmMealEffect> WARM_MEAL =
+            EFFECTS.register("warm_meal", com.frozendawn.effect.WarmMealEffect::new);
 
     private ModEffects() {
     }

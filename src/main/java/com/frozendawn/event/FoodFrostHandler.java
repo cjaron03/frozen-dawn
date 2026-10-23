@@ -3,6 +3,7 @@ package com.frozendawn.event;
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.data.ApocalypseState;
 import com.frozendawn.init.ModDataComponents;
+import com.frozendawn.item.SeafoodBoilHeat;
 import com.frozendawn.item.ThermalContainerItem;
 import com.frozendawn.hearthrot.HearthrotManager;
 import net.minecraft.ChatFormatting;
@@ -84,7 +85,7 @@ public class FoodFrostHandler {
         long warmUntil = stack.getOrDefault(ModDataComponents.FOOD_WARM_UNTIL, 0L);
         if (warmUntil != 0 && now >= warmUntil) stack.remove(ModDataComponents.FOOD_WARM_UNTIL);
         int frost = stack.getOrDefault(ModDataComponents.FROST_TICKS, 0);
-        if (temp < -30f && now >= warmUntil) {
+        if (temp < -30f && now >= warmUntil && !SeafoodBoilHeat.isSteaming(stack, now)) {
             int rate = (int) Math.min(60, 15 + (-30f - temp) * (35f / 60f));
             rate = (int) (rate * multiplier * (stack.is(COLD_ADAPTED) ? COLD_ADAPTED_RATE : 1f));
             frost = (int) Math.min(Integer.MAX_VALUE, (long) frost + rate);

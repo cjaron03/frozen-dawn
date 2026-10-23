@@ -28,7 +28,7 @@
     {
       "type": "patchouli:spotlight",
       "item": "frozendawn:glassblood",
-      "text": "Clear blood, no red cells, antifreeze in its veins. The everyday catch.$(br2)Late fish are slow to freeze raw. Cooked, they freeze like anything else."
+      "text": "Clear blood, no red cells, antifreeze in its veins. The everyday catch.$(br2)Late fish are slow to freeze raw. Cooked, they freeze like anything else.$(br2)Three go into a $(l:getting_started/seafood_boil)Seafood Boil$(/l)."
     },
     {
       "type": "patchouli:spotlight",
