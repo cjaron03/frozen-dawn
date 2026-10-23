@@ -68,7 +68,7 @@ final class WorldModel {
 
     boolean known(String dimension, BlockPos pos) { return cells.containsKey(cell(dimension, pos)); }
     private static String cell(String dimension, BlockPos pos) { return dimension + "/" + (pos.getX() >> 4) + "/" + (pos.getZ() >> 4); }
-    boolean empty() { return points.isEmpty() && cells.isEmpty(); }
+    boolean empty() { return points.isEmpty() && cells.isEmpty() && shelters.isEmpty(); }
 
     BlockPos center(String dimension) {
         var locations = shelters.get(dimension);

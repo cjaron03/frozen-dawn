@@ -42,8 +42,11 @@ final class ThermalSight {
         String action() { return "PYRO_" + kind + "_HEAT"; }
         double weight() { return kind.equals("WALL_GLOW") ? PyroPolicy.GLOW : PyroPolicy.SEEN; }
     }
-    /** {@code complete} only when every chunk between the eyes and the home area was loaded; nothing is read otherwise. */
-    record Scan(List<Sighting> sightings, int sources, boolean complete) {
+    /**
+     * {@code complete} only when every chunk between the eyes and the home area was loaded; nothing is read otherwise.
+     * {@code inView} when the home itself is in sight, so a look that found nothing is evidence of a cold home.
+     */
+    record Scan(List<Sighting> sightings, int sources, boolean complete, boolean inView) {
         Scan { sightings = List.copyOf(sightings); }
     }
     static final int SOURCES = 32, AIR_RADIUS = 5, AIR_CELLS = 160, GLOW_REACH = 2, RAYS_PER_SOURCE = 48;
@@ -58,14 +61,14 @@ final class ThermalSight {
         int minZ = Math.min(BlockPos.containing(eye).getZ(), home.getZ() - r - AIR_RADIUS - 1) >> 4;
         int maxZ = Math.max(BlockPos.containing(eye).getZ(), home.getZ() + r + AIR_RADIUS + 1) >> 4;
         // A look must never turn into chunk loading.
-        for (int x = minX; x <= maxX; x++) for (int z = minZ; z <= maxZ; z++) if (!level.hasChunk(x, z)) return new Scan(List.of(), 0, false);
+        for (int x = minX; x <= maxX; x++) for (int z = minZ; z <= maxZ; z++) if (!level.hasChunk(x, z)) return new Scan(List.of(), 0, false, false);
         var sources = sources(level, home);
         var sightings = new ArrayList<Sighting>();
         for (BlockPos source : sources) {
             var sighting = sight(level, viewer, eye, source);
             if (sighting != null) sightings.add(sighting);
         }
-        return new Scan(sightings, sources.size(), true);
+        return new Scan(sightings, sources.size(), true, inView(level, viewer, eye, home));
     }
 
     /** Nearest first, bounded. */
@@ -167,6 +170,14 @@ final class ThermalSight {
             if (!warm.contains(next) && level.hasChunkAt(next) && permeable(level, next, level.getBlockState(next))) return true;
         }
         return false;
+    }
+
+    /** Within range, and the line toward the home first meets something of the home itself (or nothing), not a hill on the way. */
+    private static boolean inView(ServerLevel level, Entity viewer, Vec3 eye, BlockPos home) {
+        Vec3 center = Vec3.atCenterOf(home);
+        if (eye.distanceToSqr(center) > PyroPolicy.SIGHT * PyroPolicy.SIGHT) return false;
+        var hit = level.clip(new ClipContext(eye, center, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, viewer));
+        return hit.getType() == HitResult.Type.MISS || hit.getBlockPos().distSqr(home) <= PyroPolicy.HOME_VIEW * PyroPolicy.HOME_VIEW;
     }
 
     /** Within range, and the first collider on the way is the target block itself, or none at all. */

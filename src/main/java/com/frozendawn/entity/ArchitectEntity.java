@@ -550,6 +550,9 @@ public class ArchitectEntity extends Monster {
     /** Called once, before a designated natural spawn enters the world. */
     public void becomePyro() { entityData.set(DATA_PYRO, isPyro()); }
 
+    /** Lab only: the Pyro leaves at once, through its ordinary vanish. */
+    public boolean vanishPyroNow() { return maevePyro.vanishNow(); }
+
     /** Presentation only: the Pyro's hand-to-chin stare at its post. */
     public boolean isPyroStaring() {
         return entityData.get(DATA_PYRO_STARE) && isPyro() && isAlive() && !isNoAi() && getDeathTicks() == 0;

@@ -1188,3 +1188,20 @@ Each view lasts 24 seconds. Stay still for the first four seconds. At WALK, use 
 The recorder measures actual horizontal travel in ticks81–240 and requires at least two blocks plus a recorded FOOTSTEP query. It checks actual pose after tick80, rejects sprinting, large jumps in position, leaving the platform, passive-source contamination and other sensing channels. It allows one second to react to STOP. Outside-window movement after that invalidates the comparison. These thresholds establish a performed view, not equal natural step counts or perfectly identical human paths. Compare individual path/received-strength records and cadence before making attenuation claims. A received vibration remains anonymous and cannot supply a source destination.
 
 Transitions `blind_vibration_lab:steps_walk` from completed21 and `blind_vibration_lab:steps_crouched` from completed22 validate predecessor identity, full trace and decision hashes. Prepare and Start once while menu-paused. A fresh grounded receiver starts with empty memory; EVA and oxygen are supplied. End holds the actor and restores Creative. The same source isolation used in previous channel views archives unrelated objects before removal. No run is restarted automatically.
+
+## 2026-10-23 — Pyro Architect (§9.4a) owner pass and handoff
+
+Owning worktree `/Volumes/SSD/Work/frozen-dawn-pyro`, branch `feat/pyro-architect`, based on `feat/maeve-director`. Design: [macs-pyro.md](macs-pyro.md); visual pass: [macs-pyro-playtest.md](macs-pyro-playtest.md), save `MACS Pyro Check`.
+
+Owner pass in that save, accounts given before diagnostics:
+
+- Open door: passed. It logged `LEAKED` on 11 of 11 looks, and the HEAT_SOURCE belief stayed in the dump.
+- Sealed: passed. It saw nothing in 11 looks and ended `COLD` (visit 0/11). Mud? reported Covered in Mud earned, and no HEAT_SOURCE was uploaded.
+- Decoy: seen as `LEAKED` just above the magma, not `DIRECT`. The owner's screenshot showed snow drifts hiding the block from the low ray. No code change; the playtest table now accepts either.
+- Kill early: passed. It defended after the strike, ended `KILLED visit=0/0`, and uploaded nothing.
+- Kill late: not yet achieved. The strike landed at 4 seconds, before the first look. Redo it: wait 10 to 15 seconds after it stops.
+- Thin wall and the soul vanish have no recorded verdict in this pass.
+
+During the pass a natural spawn became a Pyro 58 blocks west, stalled behind terrain with no view of the cabin, and its looks completed with nothing seen. Before this fix that watch could award Covered in Mud from a false cold read. Now a look counts toward a cold verdict only with the home in view (`ThermalSight.Scan.inView`, 12 blocks), and `pyroThatCannotSeeTheHomeNeverCallsItCold` covers it. This is verified by GameTest; no owner pass has exercised it yet.
+
+Remaining acceptance: the Kill late redo. Merge needs the owner's explicit approval.

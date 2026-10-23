@@ -43,7 +43,7 @@ MENU = json.dumps(['', {'text': 'Cabin: ', 'color': 'gray'},
                    button('Thin wall', 'thin'), button('Open door', 'open'), button('Sealed', 'sealed'),
                    button('Decoy', 'decoy', 'yellow'), button('No decoy', 'no_decoy', 'yellow'),
                    {'text': '\nPyro: ', 'color': 'gray'},
-                   button('CALL', 'call', 'green'), button('Dump', 'dump'), button('Mud?', 'mud'),
+                   button('CALL', 'call', 'green'), button('Vanish', 'vanish', 'green'), button('Dump', 'dump'), button('Mud?', 'mud'),
                    button('Fresh Maeve', 'fresh', 'red')])
 
 
@@ -145,10 +145,14 @@ gamemode survival @s
                      + f'\nfunction {NS}:menu'),
     'no_decoy': guarded(f'execute at {BASE} run setblock ~ ~ ~-14 minecraft:air\nfunction {NS}:menu'),
     # Clearing the cooldown first lets a pass be repeated; it refuses while a Pyro is still out.
+    # It arrives just inside the field: past its edge the terrain is natural and may be open water.
     'call': guarded(f'''fd maeve pyro clear-cooldown
-execute at {BASE} positioned ~60 ~ ~ positioned over motion_blocking_no_leaves run fd maeve pyro roll
+execute at {BASE} positioned ~{FIELD-2} ~ ~ positioned over motion_blocking_no_leaves run fd maeve pyro roll
 ''' + tell('If it rolled a Pyro, it comes from the east (orange eyes), stops about 40 blocks out, stands and stares. '
-           'It looks after 10 seconds, then every 5, and leaves after a minute. Stay put or watch from the cabin.', None, 'aqua')),
+           'It looks after 10 seconds, then every 5, and after a minute souls rush into it and it vanishes. '
+           'Vanish skips the wait. Stay put or watch from the cabin.', None, 'aqua')),
+    # Lab only: the Pyro out now skips the rest of its watch and vanishes where it stands.
+    'vanish': guarded('fd maeve pyro vanish'),
     'dump': guarded('fd maeve dump'),
     'mud': guarded(f'''execute if entity @s[advancements={{frozendawn:covered_in_mud=true}}] run ''' + tell('Covered in Mud: earned.', None, 'green') + f'''
 execute unless entity @s[advancements={{frozendawn:covered_in_mud=true}}] run ''' + tell('Covered in Mud: not earned.', None, 'red')),

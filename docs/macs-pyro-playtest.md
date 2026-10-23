@@ -27,16 +27,16 @@ Phase 6 is vacuum: open flames go out the moment they are placed. The heater and
 
 ## Steps
 
-Before diagnostics, describe what you saw. Each CALL clears the cooldown and rolls one Architect 60 blocks east. It comes from the east with orange eyes, stops about 40 blocks out, and stares with a hand to its chin. It looks after 10 seconds, then every 5, and leaves after one minute. Click Dump after it leaves.
+Before diagnostics, describe what you saw. Each CALL clears the cooldown and rolls one Architect 60 blocks east. It comes from the east with orange eyes, stops about 40 blocks out, and stares with a hand to its chin. It looks after 10 seconds, then every 5. After a minute it walks off, and souls rush into it and it vanishes once you are far enough away. Vanish skips the wait. Click Dump after it is gone.
 
 | Step | Owner does | Expect |
 | --- | --- | --- |
 | Thin wall | Click CALL. Watch from inside or beside the cabin. | It never comes closer than its post. The dump shows a HEAT_SOURCE belief by the east wall; the log shows `WALL_GLOW`. |
 | Open door | Click Fresh Maeve, then Open door, then CALL. | `LEAKED` at the doorway. |
 | Sealed | Click Fresh Maeve, then Sealed (wool walls and roof, glass window), then CALL. | Nothing seen (`COLD` in the log). After it leaves, Mud? reports Covered in Mud earned. No toast appears in this world. |
-| Decoy | Keep Sealed, click Fresh Maeve, then Decoy (magma 14 blocks north), then CALL. | `DIRECT` at the magma; Mud? stays not earned. No decoy removes it. |
+| Decoy | Keep Sealed, click Fresh Maeve, then Decoy (magma 14 blocks north), then CALL. | `DIRECT` at the magma, or `LEAKED` just above it when snow drifts hide the block; Mud? stays not earned. No decoy removes it. |
 | Kill early | Fresh Maeve, Thin wall, CALL, then kill it within 10 seconds of it stopping. | It fights back only after being struck. Killed before its first look, nothing is uploaded. |
-| Kill late | Fresh Maeve, Thin wall, CALL, then kill it after its first look. | The HEAT_SOURCE belief stays in the dump. |
+| Kill late | Fresh Maeve, Thin wall, CALL, then wait 10 to 15 seconds after it stops (past its first look) before killing it. | The HEAT_SOURCE belief stays in the dump. |
 
 Fresh Maeve erases this save's Maeve and wakes her empty again, so the heat she learned no longer blocks the next Pyro. If a roll says it was not designated, the `PYRO:` line gives the reason.
 
@@ -44,4 +44,5 @@ Fresh Maeve erases this save's Maeve and wakes her empty again, so the heat she 
 
 - Whether it ever walks toward the cabin or the heater.
 - Whether the orange eyes and stare read clearly through the spyglass.
-- When departing it is removed once no player is within 32 blocks. Watching from the cabin, about 40 blocks away, it may vanish in the open. Say whether that looks wrong.
+- Whether the soul vanish reads clearly from the cabin.
+- A Pyro that stalls with no view of the cabin logs `inView=false` on its looks and never earns Covered in Mud.

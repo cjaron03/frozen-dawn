@@ -35,6 +35,7 @@ final class MaeveDebugCommand {
         if (ScribeLab.ENABLED) root.then(Commands.literal("pyro")
                 .then(Commands.literal("seed-home").executes(c -> lab(c.getSource(), PyroLab.seedHome(c.getSource().getPlayerOrException(), BlockPos.containing(c.getSource().getPosition())))))
                 .then(Commands.literal("clear-cooldown").executes(c -> lab(c.getSource(), PyroLab.clearCooldown(c.getSource().getServer()))))
+                .then(Commands.literal("vanish").executes(c -> lab(c.getSource(), PyroLab.vanish(c.getSource().getServer()))))
                 .then(Commands.literal("roll").executes(c -> rollPyro(c.getSource().getPlayerOrException(), BlockPos.containing(c.getSource().getPosition())))));
         return root
                 .then(Commands.literal("status").executes(c -> display(c.getSource(), null, null)))

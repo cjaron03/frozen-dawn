@@ -216,7 +216,7 @@ public final class MaeveDirector {
     public static PyroScan pyroObserve(ArchitectEntity actor, boolean last) { return actor.getServer() == null ? null : current(actor.getServer()).pyro.observe(actor, last); }
     public static void pyroEnded(ArchitectEntity actor, String reason) { if (actor.getServer() != null) current(actor.getServer()).pyro.ended(actor, reason); }
     public record PyroOrder(UUID subject, String dimension, BlockPos home, long expiresAt) { public PyroOrder { home = home.immutable(); } }
-    public record PyroScan(int sources, int sightings, boolean complete, boolean cold) { }
+    public record PyroScan(int sources, int sightings, boolean complete, boolean inView, boolean cold) { }
     public record PawnOrder(UUID dispatch, BlockPos destination, long notBefore, long expiresAt) {
         public PawnOrder { destination = destination.immutable(); }
     }

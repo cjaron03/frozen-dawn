@@ -7,8 +7,12 @@ import com.frozendawn.world.HeaterRegistry;
 import com.frozendawn.world.TemperatureManager;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.particles.ParticleOptions;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.util.LandRandomPos;
@@ -24,8 +28,10 @@ import net.minecraft.world.phys.Vec3;
  * Reload restarts the local watch; the claim's lifetime still bounds the whole appearance.
  */
 final class ArchitectPyroController {
-    private enum Phase { TRAVEL, WATCH, DEPART }
+    private enum Phase { TRAVEL, WATCH, DEPART, VANISH }
     private static final double POST_RADIUS = 40, WALK_SPEED = .9, GONE_RADIUS = 32;
+    /** Souls rush in for this long, then it is gone in a puff of them. Players this near see it from any distance. */
+    private static final int VANISH = 30, VANISH_VIEW = 128;
     /** A post this close to anything warm is rejected: it stays out in the cold. */
     private static final int COLD_CLEARANCE = 12, BLOCK_CLEARANCE = 4;
     private static final long FIRST_LOOK = 200, LOOK = 100, WATCH = 1200, DEFEND = 200, DEPART_LIMIT = 600, STALL = 100, REPLAN = 40;
@@ -33,7 +39,7 @@ final class ArchitectPyroController {
     private Phase phase = Phase.TRAVEL;
     private BlockPos post, navTarget;
     private Vec3 progress;
-    private long progressAt, replanAt, watchedFrom = -1, nextLook, departedAt = -1, defendUntil;
+    private long progressAt, replanAt, watchedFrom = -1, nextLook, departedAt = -1, defendUntil, vanishedFrom = -1;
     private UUID attacker;
     private String departure, postReport = "none";
 
@@ -43,6 +49,7 @@ final class ArchitectPyroController {
     boolean tick() {
         if (!actor.isPyro()) return false;
         long now = now();
+        if (phase == Phase.VANISH) return vanishing(now);
         if (now < defendUntil) return false;
         if (attacker != null) {
             attacker = null; actor.setTarget(null);
@@ -69,15 +76,14 @@ final class ArchitectPyroController {
                     boolean last = now - watchedFrom >= WATCH;
                     var scan = MaeveDirector.pyroObserve(actor, last);
                     note("LOOK", scan == null ? "no order" : "sources=" + scan.sources() + " seen=" + scan.sightings()
-                            + " complete=" + scan.complete() + " last=" + last + (scan.cold() ? " cold" : ""));
+                            + " complete=" + scan.complete() + " inView=" + scan.inView() + " last=" + last + (scan.cold() ? " cold" : ""));
                     nextLook = now + LOOK;
                     if (last) depart("WATCH_COMPLETE", now);
                 }
             }
             case DEPART -> {
                 if (nearestPlayer(GONE_RADIUS) == null || now - departedAt >= DEPART_LIMIT && nearestPlayer(16) == null) {
-                    note("GONE", "reason=" + departure);
-                    MaeveDirector.pyroEnded(actor, departure); actor.discard(); return true;
+                    vanish(now); return true;
                 }
                 Vec3 from = order != null ? Vec3.atCenterOf(order.home()) : post != null ? Vec3.atCenterOf(post) : actor.position().add(1, 0, 0);
                 walk(actor.position().subtract(from), now);
@@ -93,7 +99,7 @@ final class ArchitectPyroController {
 
     /** Effective damage from anything living: ordinary combat against that attacker until it stops, then it leaves. */
     void damaged(DamageSource source) {
-        if (!actor.isPyro() || !(source.getEntity() instanceof LivingEntity hitter) || !hitter.isAlive()) return;
+        if (!actor.isPyro() || phase == Phase.VANISH || !(source.getEntity() instanceof LivingEntity hitter) || !hitter.isAlive()) return;
         if (attacker == null) note("DEFEND", "attacker=" + hitter.getUUID() + " dist=" + Math.round(actor.distanceTo(hitter) * 10) / 10.0);
         attacker = hitter.getUUID(); defendUntil = now() + DEFEND; resetPath();
         actor.setTarget(hitter); actor.resumeAfterReconnaissance();
@@ -104,6 +110,61 @@ final class ArchitectPyroController {
     private void depart(String reason, long now) {
         departure = reason; departedAt = now; phase = Phase.DEPART; resetPath(); progress = actor.position(); progressAt = now;
         note("DEPART", "reason=" + reason);
+    }
+
+    /** Lab only: leave now, from wherever it is, so the vanish can be watched without waiting out the watch. */
+    boolean vanishNow() {
+        if (!actor.isPyro() || !actor.isAlive() || phase == Phase.VANISH) return false;
+        if (departure == null) departure = "LAB_VANISH";
+        attacker = null; defendUntil = 0; actor.setTarget(null);
+        vanish(now());
+        return true;
+    }
+
+    private void vanish(long now) {
+        phase = Phase.VANISH; vanishedFrom = now; resetPath();
+        note("VANISH", "reason=" + departure + " at=" + actor.blockPosition());
+        sound(.6F);
+    }
+
+    /** Souls stream in from a shrinking shell, then it is gone in a small cloud of them. It holds still and never fights. */
+    private boolean vanishing(long now) {
+        actor.setTarget(null); actor.setSprinting(false);
+        if (!actor.getNavigation().isDone()) actor.getNavigation().stop();
+        actor.setDeltaMovement(0, actor.getDeltaMovement().y, 0);
+        long elapsed = now - vanishedFrom;
+        double x = actor.getX(), y = actor.getY() + actor.getBbHeight() * .55, z = actor.getZ();
+        var random = actor.getRandom();
+        if (elapsed < VANISH) {
+            double progress = elapsed / (double) VANISH, shell = 3.2 - 1.4 * progress;
+            for (int i = 0, count = 2 + (int) (progress * 5); i < count; i++) {
+                double yaw = random.nextDouble() * Math.PI * 2, pitch = (random.nextDouble() - .5) * Math.PI * .8;
+                double dx = Math.cos(yaw) * Math.cos(pitch), dy = Math.sin(pitch), dz = Math.sin(yaw) * Math.cos(pitch);
+                // SOUL particles keep 96% of their speed each tick, so this carries them most of the way to the body.
+                double speed = shell / 18;
+                particles(i % 3 == 0 ? ParticleTypes.SOUL_FIRE_FLAME : ParticleTypes.SOUL,
+                        x + dx * shell, y + dy * shell, z + dz * shell, 0, -dx, -dy, -dz, speed);
+            }
+            if (elapsed == VANISH / 2) sound(.8F);
+            return true;
+        }
+        particles(ParticleTypes.SOUL, x, y, z, 26, .3, .55, .3, .03);
+        particles(ParticleTypes.SOUL_FIRE_FLAME, x, y, z, 8, .25, .45, .25, .02);
+        sound(1.1F);
+        note("GONE", "reason=" + departure);
+        MaeveDirector.pyroEnded(actor, departure); actor.discard();
+        return true;
+    }
+
+    private void particles(ParticleOptions type, double x, double y, double z, int count, double dx, double dy, double dz, double speed) {
+        for (ServerPlayer player : ((ServerLevel) actor.level()).players()) {
+            if (actor.distanceToSqr(player) <= VANISH_VIEW * VANISH_VIEW)
+                ((ServerLevel) actor.level()).sendParticles(player, type, true, x, y, z, count, dx, dy, dz, speed);
+        }
+    }
+
+    private void sound(float pitch) {
+        actor.level().playSound(null, actor.getX(), actor.getY() + 1, actor.getZ(), SoundEvents.SOUL_ESCAPE.value(), SoundSource.HOSTILE, 2.5F, pitch);
     }
 
     /** Journal and server log alike, so a lab pass shows what the Pyro did without a decision recording. */
@@ -201,6 +262,6 @@ final class ArchitectPyroController {
     void clear() {
         resetPath();
         phase = Phase.TRAVEL; post = null; progress = null; attacker = null;
-        watchedFrom = -1; nextLook = 0; departedAt = -1; defendUntil = 0; departure = null;
+        watchedFrom = -1; nextLook = 0; departedAt = -1; defendUntil = 0; vanishedFrom = -1; departure = null;
     }
 }

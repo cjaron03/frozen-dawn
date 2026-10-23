@@ -132,8 +132,10 @@ public final class MaevePyroGameTest {
             helper.assertFalse(MaeveDirector.designatePyro(scribe, player), "A Scribe is never also a Pyro");
             var master = scene.architect(8, 9); master.bindToHearthMasterArchitect(UUID.randomUUID(), scene.origin, 0);
             helper.assertFalse(MaeveDirector.designatePyro(master, player), "Masters never participate");
+            helper.assertTrue(MaeveDirector.diagnostics(scene.server, id).stream().anyMatch(line -> line.contains("ACTOR_NOT_ORDINARY")), "Refusal names the actor");
             player.setGameMode(GameType.CREATIVE);
             helper.assertFalse(MaeveDirector.designatePyro(second, player), "Creative players are never a subject");
+            helper.assertTrue(MaeveDirector.diagnostics(scene.server, id).stream().anyMatch(line -> line.contains("SUBJECT_NOT_SURVIVAL")), "Refusal names the game mode");
             player.setGameMode(GameType.SURVIVAL);
             var world = MaeveSavedData.get(scene.server).store().world(id);
             String dim = scene.level.dimension().location().toString();
@@ -145,6 +147,15 @@ public final class MaevePyroGameTest {
             helper.assertFalse(MaeveDirector.designatePyro(second, player), "Pyros stop appearing after ERASED");
             PostMaeveWorldState.setForDebug(scene.server, false);
             helper.assertFalse(MaeveDirector.designatePyro(second, player), "Debug reversal starts empty: no home, no Pyro");
+            // Lab helpers run straight after a reversal, before anything else wakes Maeve: Fresh Maeve does this.
+            PostMaeveWorldState.setForDebug(scene.server, true); MaeveDirector.designatePyro(second, player);
+            PostMaeveWorldState.setForDebug(scene.server, false);
+            String seeded = PyroLab.seedHome(player, home);
+            helper.assertTrue(seeded.startsWith("Suspected home"), "Seeding wakes Maeve first: " + seeded);
+            PostMaeveWorldState.setForDebug(scene.server, true); MaeveDirector.designatePyro(second, player);
+            PostMaeveWorldState.setForDebug(scene.server, false);
+            String cleared = ScribeLab.clearCooldown(scene.server);
+            helper.assertTrue(cleared.equals("Scribe cooldown cleared."), "The Scribe lab wakes Maeve first: " + cleared);
         });
     }
 
@@ -278,6 +289,29 @@ public final class MaevePyroGameTest {
         });
     }
 
+    /** Owner pass, 2026-10-23: a Pyro stalled behind a hill saw nothing because it saw nothing at all, not because the home was cold. */
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, timeoutTicks = 250)
+    public static void pyroThatCannotSeeTheHomeNeverCallsItCold(GameTestHelper helper) {
+        MaeveObservationGameTest.withScene(helper, 219, 3, scene -> {
+            var player = awardable(scene, "pyro_blind", 6, 6); UUID id = player.getUUID();
+            room(scene, WOOL, false); scene.block(3, 0, 5, heater());
+            home(scene, id, 3, 3);
+            for (int x = -8; x <= 14; x++) for (int y = 0; y <= 8; y++) scene.block(x, y, 36, STONE);
+            var actor = scene.architect(3, 40);
+            helper.assertTrue(MaeveDirector.designatePyro(actor, player), "Designated");
+            actor.becomePyro(); actor.setNoAi(true);
+            var first = MaeveDirector.pyroObserve(actor, false);
+            helper.assertTrue(first != null && first.complete() && !first.inView() && first.sightings() == 0,
+                    "Loaded, but the hill hides the home: " + first);
+            var last = MaeveDirector.pyroObserve(actor, true);
+            var advancement = scene.server.getAdvancements().get(ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "covered_in_mud"));
+            helper.assertTrue(last != null && !last.cold() && advancement != null
+                    && !player.getAdvancements().getOrStartProgress(advancement).isDone(), "A blind watch proves nothing: " + last);
+            helper.assertTrue(MaeveDirector.diagnostics(scene.server, id).stream().anyMatch(line -> line.contains("seen=0/0")),
+                    "Neither look counts as a read of the home");
+        });
+    }
+
     /** §9.13a: struck, it fights back; once left alone, it leaves rather than resuming its watch. */
     @GameTest(template = GameTestTemplates.EMPTY_LARGE, timeoutTicks = 400)
     public static void pyroDefendsWhenStruckThenLeaves(GameTestHelper helper) {
@@ -301,7 +335,8 @@ public final class MaevePyroGameTest {
             helper.assertTrue(actor.getTarget() == null && !actor.isRemoved() && !actor.isPyroStaring(),
                     "Left alone, defense ends and it walks away while watched");
             player.setPos(scene.position(0, 60));
-            MaeveScribeGameTest.tick(scene, actor, t + 402, 2);
+            // Out of sight it vanishes: souls rush in for 30 ticks, then it is gone.
+            MaeveScribeGameTest.tick(scene, actor, t + 402, 34);
             helper.assertTrue(actor.isRemoved() && idle(scene, id) && heat(scene, id).isEmpty(), "Out of sight, it is gone");
         });
     }
@@ -320,7 +355,7 @@ public final class MaevePyroGameTest {
             MaeveScribeGameTest.tick(scene, actor, t, 20);
             helper.assertTrue(!actor.isRemoved() && actor.isPyro(), "A Pyro remains while its claim holds");
             PostMaeveWorldState.setForDebug(scene.server, true);
-            MaeveScribeGameTest.tick(scene, actor, t + 20, 20);
+            MaeveScribeGameTest.tick(scene, actor, t + 20, 52);
             helper.assertTrue(actor.isRemoved(), "After ERASED the Pyro leaves rather than lingering");
             PostMaeveWorldState.setForDebug(scene.server, false);
             helper.assertTrue(heat(scene, id).isEmpty(), "Nothing it might have seen survives ERASED");
@@ -330,6 +365,6 @@ public final class MaevePyroGameTest {
     /** The MACS Pyro Check world ships exactly these functions; each must parse at the integrated server's level 2. */
     @GameTest(template = GameTestTemplates.EMPTY, timeoutTicks = 40)
     public static void pyroPlaytestFunctionsParseAtPermissionTwo(GameTestHelper helper) {
-        MaeveScribeGameTest.assertPlaytestFunctionsParse(helper, "macs_pyro", 19);
+        MaeveScribeGameTest.assertPlaytestFunctionsParse(helper, "macs_pyro", 20);
     }
 }

@@ -12,6 +12,8 @@ final class PyroPolicy {
     static final int SCAN_RADIUS = 24, SCAN_HEIGHT = 16;
     /** Heat already believed this near the suspected home leaves nothing for a Pyro to find out. */
     static final int HOME_RADIUS = 32;
+    /** A look sees the home when its line toward the home first strikes within this many blocks of it: the home's own walls. */
+    static final int HOME_VIEW = 12;
     static final double KNOWN_HEAT = CommitmentPolicy.THRESHOLD;
     /** Seen directly or leaking through an opening; a thin wall only glows faintly. */
     static final double SEEN = .2, GLOW = .1;

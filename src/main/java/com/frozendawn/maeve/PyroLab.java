@@ -1,5 +1,6 @@
 package com.frozendawn.maeve;
 
+import com.frozendawn.entity.ArchitectEntity;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.MinecraftServer;
@@ -16,7 +17,7 @@ public final class PyroLab {
 
     /** One covered shelter sample where the command runs: Maeve now suspects the player lives here, with no heat known. */
     public static String seedHome(ServerPlayer player, BlockPos at) {
-        var data = MaeveSavedData.get(player.server);
+        var data = DirectorRuntime.current(player.server).data;
         if (data.store() == null || data.pyro() == null) return "Maeve is not awake.";
         String dimension = player.level().dimension().location().toString();
         var world = data.store().observeContact(player.getUUID(), WITNESS, dimension, player.server.overworld().getGameTime());
@@ -25,9 +26,22 @@ public final class PyroLab {
         return "Suspected home: " + world.center(dimension).toShortString() + ".";
     }
 
+    /** The active Pyro, if loaded, vanishes now instead of finishing its watch. Its looks so far stay uploaded. */
+    public static String vanish(MinecraftServer server) {
+        var data = DirectorRuntime.current(server).data;
+        if (data.pyro() == null) return "Maeve is not awake.";
+        var claim = data.pyro().active;
+        if (claim == null) return "No Pyro is out.";
+        for (var level : server.getAllLevels()) {
+            if (level.getEntity(claim.pyro()) instanceof ArchitectEntity pyro)
+                return pyro.vanishPyroNow() ? "The Pyro vanishes." : "The Pyro is already vanishing.";
+        }
+        return "The Pyro is not loaded.";
+    }
+
     /** Clears the cooldown only; an active Pyro is left as it is. */
     public static String clearCooldown(MinecraftServer server) {
-        var data = MaeveSavedData.get(server);
+        var data = DirectorRuntime.current(server).data;
         if (data.pyro() == null) return "Maeve is not awake.";
         if (data.pyro().active != null) return "A Pyro is still out.";
         data.pyro().lastEnded = -1;

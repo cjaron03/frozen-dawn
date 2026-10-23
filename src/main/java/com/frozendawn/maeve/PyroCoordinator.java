@@ -29,8 +29,8 @@ final class PyroCoordinator {
     }
 
     boolean designate(ArchitectEntity actor, ServerPlayer subject) {
-        if (!enabled() || !ConvergenceCoordinator.ordinary(actor) || actor.isNoAi() || pyro(actor) || ScribeCoordinator.scribe(actor)
-                || ConvergenceCoordinator.assigned(actor) || subject.isCreative() || subject.isSpectator() || subject.level() != actor.level()) return false;
+        String refused = refusal(actor, subject);
+        if (refused != null) { decision = refused + " player=" + subject.getUUID(); return false; }
         var memory = data.pyro(); long now = now();
         if (memory.expire(now)) data.setDirty();
         String dimension = actor.level().dimension().location().toString();
@@ -47,6 +47,16 @@ final class PyroCoordinator {
         return true;
     }
 
+    /** Why this actor or subject cannot take part at all, before the §9.4a gate is asked; null when both can. */
+    private String refusal(ArchitectEntity actor, ServerPlayer subject) {
+        if (!enabled()) return "NOT_ACTIVE lifecycle=" + data.lifecycle();
+        if (!ConvergenceCoordinator.ordinary(actor) || actor.isNoAi() || pyro(actor) || ScribeCoordinator.scribe(actor)
+                || ConvergenceCoordinator.assigned(actor)) return "ACTOR_NOT_ORDINARY";
+        if (subject.isCreative() || subject.isSpectator()) return "SUBJECT_NOT_SURVIVAL";
+        if (subject.level() != actor.level()) return "SUBJECT_OTHER_DIMENSION";
+        return null;
+    }
+
     MaeveDirector.PyroOrder order(ArchitectEntity actor) {
         if (!enabled()) return null;
         var memory = data.pyro();
@@ -58,7 +68,8 @@ final class PyroCoordinator {
 
     /**
      * One look from where the Pyro stands, uploaded at once. {@code last} closes the watch: a home read completely
-     * with no heat seen anywhere earns the subject Covered in Mud.
+     * with no heat seen anywhere earns the subject Covered in Mud. Only a look with the home in view is a read of it;
+     * a Pyro stalled behind a hill sees nothing because it sees nothing at all.
      */
     MaeveDirector.PyroScan observe(ArchitectEntity actor, boolean last) {
         var order = order(actor);
@@ -72,16 +83,17 @@ final class PyroCoordinator {
             // Heat under a roof is someone's shelter.
             if (!level.canSeeSky(sighting.inside())) world.shelter(order.dimension(), sighting.inside(), now);
         }
-        if (scan.complete()) { memory.scans++; memory.sightings += scan.sightings().size(); data.setDirty(); }
+        // Heat seen counts against a cold verdict from any look; only a look with the home in view counts toward one.
+        if (scan.complete()) { if (scan.inView()) memory.scans++; memory.sightings += scan.sightings().size(); data.setDirty(); }
         boolean cold = last && memory.scans > 0 && memory.sightings == 0;
         decision = (cold ? "COLD" : "LOOKED") + " pyro=" + actor.getUUID() + " sources=" + scan.sources() + " seen=" + scan.sightings().size()
-                + " complete=" + scan.complete() + " visit=" + memory.sightings + "/" + memory.scans;
+                + " complete=" + scan.complete() + " inView=" + scan.inView() + " visit=" + memory.sightings + "/" + memory.scans;
         FrozenDawn.LOGGER.info("[MACS Pyro] {} {}", decision, scan.sightings().stream()
                 .map(s -> s.kind() + "@" + s.seen().toShortString()).toList());
         if (cold && (level.getPlayerByUUID(order.subject()) instanceof ServerPlayer here ? here
                 : server.getPlayerList().getPlayer(order.subject())) instanceof ServerPlayer subject)
             com.frozendawn.event.WorldTickHandler.grantAdvancement(subject, ADVANCEMENT);
-        return new MaeveDirector.PyroScan(scan.sources(), scan.sightings().size(), scan.complete(), cold);
+        return new MaeveDirector.PyroScan(scan.sources(), scan.sightings().size(), scan.complete(), scan.inView(), cold);
     }
 
     void ended(ArchitectEntity actor, String reason) {
