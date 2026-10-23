@@ -2,6 +2,7 @@ package com.frozendawn.maeve;
 
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.entity.ArchitectEntity;
+import com.frozendawn.entity.architect.ArchitectSoulBurnDeath;
 import com.frozendawn.gametest.GameTestTemplates;
 import com.frozendawn.homo.PostMaeveWorldState;
 import com.frozendawn.init.ModBlocks;
@@ -243,7 +244,8 @@ public final class MaevePyroGameTest {
             MaeveScribeGameTest.tick(scene, actor, t + 340, 100);
             helper.assertTrue(heat(scene, id).getFirst().evidence() == 1, "Repeated looks from one visit never stack");
             actor.kill();
-            MaeveScribeGameTest.tick(scene, actor, t + 440, 30);
+            // The soul-burn death plays out in full before the body is removed.
+            MaeveScribeGameTest.tick(scene, actor, t + 440, ArchitectSoulBurnDeath.TICKS + 1);
             helper.assertTrue(actor.isRemoved() && idle(scene, id), "Death ends the claim");
             helper.assertTrue(heat(scene, id).size() == 1, "Killing it after it has seen undoes nothing");
             helper.assertFalse(MaeveDirector.designatePyro(scene.architect(54, 20), player), "The next Pyro waits for the cooldown");
@@ -263,7 +265,7 @@ public final class MaevePyroGameTest {
             actor.becomePyro(); actor.tickCount = 80; actor.setOnGround(true);
             MaeveScribeGameTest.tick(scene, actor, t, 150);
             actor.kill();
-            MaeveScribeGameTest.tick(scene, actor, t + 150, 30);
+            MaeveScribeGameTest.tick(scene, actor, t + 150, ArchitectSoulBurnDeath.TICKS + 1);
             helper.assertTrue(actor.isRemoved() && idle(scene, id) && heat(scene, id).isEmpty(), "Stopped in time, it reported nothing");
         });
     }
