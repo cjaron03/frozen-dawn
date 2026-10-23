@@ -3,6 +3,7 @@ package com.frozendawn.client.renderer;
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.entity.ArchitectEntity;
 import com.frozendawn.entity.ScribeWriting;
+import com.frozendawn.entity.architect.ArchitectFelledDeath;
 import net.minecraft.client.model.geom.ModelLayerLocation;
 import net.minecraft.client.model.geom.PartPose;
 import net.minecraft.client.model.geom.builders.CubeDeformation;
@@ -92,6 +93,10 @@ public class ArchitectModel extends HumanoidModel<ArchitectEntity> {
         float sway = Mth.sin(ageInTicks * 0.08f) * 0.06f;
         this.hat.visible = false;
 
+        if (entity.isFelledDying()) {
+            applyFelledDeathPose(entity.getDeathTicks() + (ageInTicks - Mth.floor(ageInTicks)));
+            return;
+        }
         if (shield && !entity.isMasterArchitectVisual()) return;
         if (!entity.isMasterArchitectVisual() && entity.getArcherPose() > 0) {
             if (entity.getArcherPose() == 2) {
@@ -540,6 +545,36 @@ public class ArchitectModel extends HumanoidModel<ArchitectEntity> {
             return false;
         }
         return (Mth.floor(ageInTicks * 2.0F) + salt) % 4 != 0;
+    }
+
+    private void applyFelledDeathPose(float elapsed) {
+        float jolt = ArchitectFelledDeath.jolt(elapsed);
+        float locked = ArchitectFelledDeath.armsLocked(elapsed);
+        float buckle = ArchitectFelledDeath.buckle(elapsed);
+        float topple = ArchitectFelledDeath.topple(elapsed);
+        float shiver = ArchitectFelledDeath.tremor(elapsed) * Mth.sin(elapsed * 3.7F) * 0.06F;
+        float knees = buckle * (1.0F - topple);
+
+        // Head jerks back on the crack, droops as the knees go, then whips back on landing.
+        this.head.xRot = -0.5F * jolt + 0.35F * knees - 0.4F * topple;
+        this.head.yRot = 0.0F;
+        this.body.xRot = -0.1F * jolt + 0.2F * knees;
+        this.body.yRot = 0.0F;
+        // Arms fling out on the crack, lock rigid at its sides, then trail behind the fall.
+        float armOut = 0.45F * jolt + 0.08F * locked;
+        this.rightArm.xRot = shiver * (1.0F - locked) + 0.5F * topple;
+        this.leftArm.xRot = -shiver * (1.0F - locked) + 0.5F * topple;
+        this.rightArm.zRot = armOut;
+        this.leftArm.zRot = -armOut;
+        this.rightArm.yRot = 0.0F;
+        this.leftArm.yRot = 0.0F;
+        this.rightLeg.yRot = 0.0F;
+        this.leftLeg.yRot = 0.0F;
+        this.rightLeg.zRot = 0.0F;
+        this.leftLeg.zRot = 0.0F;
+        // One knee gives before the other; the legs straighten as it goes down like a beam.
+        this.rightLeg.xRot = -0.4F * knees;
+        this.leftLeg.xRot = 0.15F * knees;
     }
 
     private void applyMasterDeathPose(int deathTicks, float ageInTicks) {

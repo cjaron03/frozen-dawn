@@ -1,10 +1,14 @@
 package com.frozendawn.entity.architect;
 
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
 
 /**
  * Death particle routines for Architect visual effects.
@@ -22,6 +26,30 @@ public final class ArchitectDeathFx {
             emitDeathSmokeParticle(serverLevel, random, x, y, z, ParticleTypes.SMOKE, 0.24, 0.46, 0.06, 0.22);
         }
         serverLevel.sendParticles(ParticleTypes.LARGE_SMOKE, x, y + 1.0, z, 12, 0.12, 0.18, 0.12, 0.08);
+    }
+
+    /** Frost and ice flaking off the body as its joints lock. */
+    public static void emitFelledCrumbs(ServerLevel serverLevel, double x, double y, double z) {
+        serverLevel.sendParticles(new BlockParticleOption(ParticleTypes.BLOCK, Blocks.PACKED_ICE.defaultBlockState()),
+                x, y + 1.2, z, 14, 0.22, 0.45, 0.22, 0.04);
+        serverLevel.sendParticles(ParticleTypes.SNOWFLAKE, x, y + 1.4, z, 6, 0.2, 0.3, 0.2, 0.01);
+    }
+
+    /** The fallen body breaks against the ground along its length. */
+    public static void emitFelledImpact(ServerLevel serverLevel, double x, double y, double z,
+                                        double dirX, double dirZ) {
+        BlockState ground = serverLevel.getBlockState(BlockPos.containing(x, y - 0.5, z));
+        BlockParticleOption groundDust = new BlockParticleOption(ParticleTypes.BLOCK,
+                ground.isAir() ? Blocks.STONE.defaultBlockState() : ground);
+        BlockParticleOption ice = new BlockParticleOption(ParticleTypes.BLOCK, Blocks.PACKED_ICE.defaultBlockState());
+        for (int i = 0; i < 5; i++) {
+            double along = 0.3 + i * 0.38;
+            double px = x + dirX * along;
+            double pz = z + dirZ * along;
+            serverLevel.sendParticles(ice, px, y + 0.3, pz, 16, 0.25, 0.15, 0.25, 0.12);
+            serverLevel.sendParticles(groundDust, px, y + 0.1, pz, 10, 0.3, 0.05, 0.3, 0.08);
+            serverLevel.sendParticles(ParticleTypes.LARGE_SMOKE, px, y + 0.25, pz, 2, 0.2, 0.05, 0.2, 0.02);
+        }
     }
 
     public static void emitDeathSoulRise(ServerLevel serverLevel, int ticks, double x, double y, double z) {

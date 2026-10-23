@@ -1168,16 +1168,8 @@
     "subtitle": "subtitle.frozendawn.entity.architect.death",
     "sounds": [
       {
-        "name": "minecraft:entity.horse.death",
-        "type": "event",
-        "volume": 0.8,
-        "pitch": 0.55
-      },
-      {
-        "name": "minecraft:block.packed_ice.break",
-        "type": "event",
-        "volume": 0.25,
-        "pitch": 0.55
+        "name": "frozendawn:entity/architect/death",
+        "attenuation_distance": 32
       }
     ]
   },

@@ -17,6 +17,7 @@ import com.frozendawn.entity.architect.ArchitectRenderFlags;
 import com.frozendawn.entity.architect.ArchitectActionTransitionSupport;
 import com.frozendawn.entity.architect.ArchitectBlockEnvironment;
 import com.frozendawn.entity.architect.ArchitectDeathFx;
+import com.frozendawn.entity.architect.ArchitectFelledDeath;
 import com.frozendawn.entity.architect.ArchitectIcePlacement;
 import com.frozendawn.entity.architect.ArchitectMeleeEngagement;
 import com.frozendawn.entity.architect.ArchitectObservationSupport;
@@ -188,6 +189,8 @@ public class ArchitectEntity extends Monster {
     private final List<BlockPos> scaffoldIce = new ArrayList<>();
     private final List<BlockPos> tacticalIce = new ArrayList<>();
     private final List<BlockPos> mantletIce = new ArrayList<>();
+    @Nullable
+    private List<BlockPos> deathIceCollapse;
     private static final int MAX_SCAFFOLD_ICE = 64;
     private static final int MAX_TACTICAL_ICE = 12;
     private static final int MASTER_MAX_TACTICAL_ICE = 6;
@@ -2316,6 +2319,10 @@ public class ArchitectEntity extends Monster {
             tickMasterArchitectDeath(ticks);
             return;
         }
+        if (isFelledDying()) {
+            tickFelledDeath(ticks);
+            return;
+        }
         if (level() instanceof ServerLevel serverLevel) {
             double smokeY = getY() + 0.4 + (ticks / 30.0) * 1.8;
             serverLevel.sendParticles(ParticleTypes.SMOKE,
@@ -2329,16 +2336,59 @@ public class ArchitectEntity extends Monster {
             }
         }
         if (ticks >= 30) {
-            cleanupAllIce();
-            blockBreaker.onDeath();
-            if (towerEncounter && level() instanceof ServerLevel serverLevel) {
-                TowerEncounterController.markResolved(serverLevel, towerEncounterId);
+            removeAfterDeath(getX(), getY(), getZ());
+        }
+    }
+
+    /** Normal, Scribe and Pyro Architects fall like a felled beam; Blind and Master keep their own deaths. */
+    public boolean isFelledDying() {
+        return getDeathTicks() > 0 && !isMasterArchitectVisual() && !isBlindArchitect();
+    }
+
+    private void tickFelledDeath(int ticks) {
+        setDeltaMovement(Vec3.ZERO);
+        float yaw = yBodyRot * Mth.DEG_TO_RAD;
+        double dirX = -Mth.sin(yaw);
+        double dirZ = Mth.cos(yaw);
+        if (level() instanceof ServerLevel serverLevel) {
+            if (ticks < ArchitectFelledDeath.TOPPLE_START && ticks % 4 == 0) {
+                serverLevel.sendParticles(ParticleTypes.SMOKE,
+                        getX(), getY() + 1.3, getZ(), 2, 0.12, 0.2, 0.12, 0.01);
             }
-            remove(RemovalReason.KILLED);
-            if (level() instanceof ServerLevel serverLevel) {
-                ArchitectDeathFx.emitDeathSmokeBurst(serverLevel, random, getX(), getY(), getZ());
-                ArchitectDeathFx.emitDeathSoulRelease(serverLevel, random, getX(), getY(), getZ());
+            if (ticks == ArchitectFelledDeath.ARMS_LOCK || ticks == ArchitectFelledDeath.KNEES_BUCKLE) {
+                ArchitectDeathFx.emitFelledCrumbs(serverLevel, getX(), getY(), getZ());
             }
+            if (ticks == ArchitectFelledDeath.ICE_COLLAPSE_START) {
+                deathIceCollapse = ArchitectIcePlacement.collapseOrder(
+                        blockPosition(), scaffoldIce, tacticalIce, mantletIce);
+            }
+            if (deathIceCollapse != null && ticks >= ArchitectFelledDeath.ICE_COLLAPSE_START
+                    && ticks < ArchitectFelledDeath.IMPACT_TICK) {
+                int ticksLeft = ArchitectFelledDeath.IMPACT_TICK - ticks;
+                ArchitectIcePlacement.collapseNext(serverLevel, deathIceCollapse,
+                        Mth.ceil(deathIceCollapse.size() / (float) ticksLeft));
+            }
+            if (ticks == ArchitectFelledDeath.IMPACT_TICK) {
+                cleanupAllIce();
+                ArchitectDeathFx.emitFelledImpact(serverLevel, getX(), getY(), getZ(), dirX, dirZ);
+            }
+        }
+        if (ticks >= ArchitectFelledDeath.TICKS) {
+            // The soul leaves from the rubble where the body landed, not from where it stood.
+            removeAfterDeath(getX() + dirX, getY() - 0.7, getZ() + dirZ);
+        }
+    }
+
+    private void removeAfterDeath(double soulX, double soulY, double soulZ) {
+        cleanupAllIce();
+        blockBreaker.onDeath();
+        if (towerEncounter && level() instanceof ServerLevel serverLevel) {
+            TowerEncounterController.markResolved(serverLevel, towerEncounterId);
+        }
+        remove(RemovalReason.KILLED);
+        if (level() instanceof ServerLevel serverLevel) {
+            ArchitectDeathFx.emitDeathSmokeBurst(serverLevel, random, soulX, soulY, soulZ);
+            ArchitectDeathFx.emitDeathSoulRelease(serverLevel, random, soulX, soulY, soulZ);
         }
     }
 

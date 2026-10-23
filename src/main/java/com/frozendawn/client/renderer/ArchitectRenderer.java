@@ -3,6 +3,7 @@ package com.frozendawn.client.renderer;
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.entity.ArchitectEntity;
 import com.frozendawn.entity.MasterArchitectCombatAction;
+import com.frozendawn.entity.architect.ArchitectFelledDeath;
 import com.frozendawn.homo.MasterArchitectCombatPolicy;
 import com.frozendawn.homo.MasterArchitectFloodPolicy;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -101,7 +102,7 @@ public class ArchitectRenderer extends HumanoidMobRenderer<ArchitectEntity, Arch
                         packedLight,
                         deathTicks);
             } else {
-                renderDeathDissolve(
+                renderFelledDeath(
                         entity,
                         entityYaw,
                         partialTick,
@@ -204,35 +205,32 @@ public class ArchitectRenderer extends HumanoidMobRenderer<ArchitectEntity, Arch
         poses.popPose();
     }
 
-    private void renderDeathDissolve(ArchitectEntity entity, float entityYaw, float partialTick,
+    /** Rigid, buckling forward fall timed to the beam collapse death sound. */
+    private void renderFelledDeath(ArchitectEntity entity, float entityYaw, float partialTick,
                                      PoseStack poseStack, MultiBufferSource bufferSource, int packedLight,
                                      int deathTicks) {
-        float progress = Math.min(1.0f, (deathTicks + partialTick) / 30.0f);
-        float eased = 1.0f - (float) Math.pow(1.0f - progress, 3.0f);
-        float drift = Mth.sin((entity.tickCount + partialTick) * 0.15f) * 3.0f * eased;
-        float spin = eased * 10.0f;
-        float shrink = 1.0f - eased * 0.55f;
-        float alpha = Math.max(0.0f, 1.0f - eased * 1.15f);
+        float elapsed = deathTicks + partialTick;
+        float topple = ArchitectFelledDeath.topple(elapsed);
+        float fall = ArchitectFelledDeath.fallDegrees(elapsed);
+        float sink = 0.22f * ArchitectFelledDeath.buckle(elapsed) * (1.0f - topple);
+        float tremor = ArchitectFelledDeath.tremor(elapsed) * Mth.sin(elapsed * 2.9f) * 1.2f;
+        float alpha = ArchitectFelledDeath.alpha(elapsed);
+        if (alpha <= 0.0f) return;
 
         poseStack.pushPose();
         poseStack.mulPose(Axis.YP.rotationDegrees(180.0f - entityYaw));
+        // Pivot at the feet; lift by half the body depth as it lies down so it lands on the ground, not in it.
+        poseStack.translate(0.0f, 0.18f * Mth.sin(fall * Mth.DEG_TO_RAD) - sink, 0.0f);
+        poseStack.mulPose(Axis.XP.rotationDegrees(-fall));
+        poseStack.mulPose(Axis.ZP.rotationDegrees(7.0f * topple + tremor));
         poseStack.scale(-1.0f, -1.0f, 1.0f);
         poseStack.translate(0.0f, -1.501f, 0.0f);
-        poseStack.translate(0.0f, eased * 1.35f, 0.0f);
-        poseStack.mulPose(Axis.YP.rotationDegrees(drift));
-        poseStack.mulPose(Axis.ZP.rotationDegrees(spin));
-        poseStack.scale(shrink, 1.0f - eased * 0.22f, shrink);
 
-        float limbSwing = entity.walkAnimation.position(partialTick);
-        float limbSwingAmount = entity.walkAnimation.speed(partialTick);
-        float headYaw = entity.getYHeadRot() - entityYaw;
-        float headPitch = entity.getXRot();
-
-        this.model.attackTime = this.getAttackAnim(entity, partialTick);
+        this.model.attackTime = 0.0f;
         this.model.riding = entity.isPassenger();
         this.model.young = entity.isBaby();
-        this.model.prepareMobModel(entity, limbSwing, limbSwingAmount, partialTick);
-        this.model.setupAnim(entity, limbSwing, limbSwingAmount, entity.tickCount + partialTick, headYaw, headPitch);
+        this.model.prepareMobModel(entity, 0.0f, 0.0f, partialTick);
+        this.model.setupAnim(entity, 0.0f, 0.0f, entity.tickCount + partialTick, 0.0f, 0.0f);
 
         VertexConsumer body = bufferSource.getBuffer(RenderType.entityTranslucent(getTextureLocation(entity)));
         int color = FastColor.ARGB32.color((int) (alpha * 255), 255, 255, 255);
