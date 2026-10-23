@@ -1,0 +1,35 @@
+{
+  "name": "Seafood Boil",
+  "category": "frozendawn:food",
+  "icon": "frozendawn:seafood_boil",
+  "sortnum": 7,
+  "pages": [
+    {
+      "type": "patchouli:spotlight",
+      "item": "frozendawn:seafood_boil",
+      "title": "Seafood Boil",
+      "text": "One pot, four bowls, and the only meal out here that warms you back up.$(br2)Eat it while it steams."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:raw_seafood_boil",
+      "text": "Any three of cod, salmon, $(l:getting_started/ice_fishing)Glassblood or Rime Hagfish$(/l). The bucket comes back."
+    },
+    {
+      "type": "patchouli:smelting",
+      "recipe": "frozendawn:seafood_boil_from_smelting",
+      "title": "Cooking",
+      "text": "Cook it in a furnace, smoker or campfire."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Steam",
+      "text": "A fresh pot holds its heat until you pick it up. Then it $(bold)steams for 5 minutes$().$(br2)Place it and take $(bold)four servings$() with empty bowls. Each bowl keeps the pot's remaining steam.$(br2)A $(l:heating/thermal_container)Thermal Container$(/l) pauses the countdown. Steaming food does not frost."
+    },
+    {
+      "type": "patchouli:spotlight",
+      "item": "frozendawn:seafood_boil_bowl",
+      "text": "Eaten while Steaming: $(bold)Warm Meal$(), +15°C body temperature for 3 minutes.$(br2)Cold, it is still a full meal.$(br2)Breaking a started pot spills the rest."
+    }
+  ]
+}
