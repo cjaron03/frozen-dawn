@@ -2,7 +2,7 @@
 
 Owning checkout: `/Volumes/SSD/Work/frozen-dawn-solstice`, branch `feat/solstice-reactor`, cut from `feat/maeve-director` at `866ca4c4`. Launch with Java 21 and `./gradlew runClient --console=plain`. No lab bridge function is needed.
 
-This slice is the core reactor only: every block and item is creative tab and `/give` only, with no recipes, loot, Fabricator or Helium Canisters. Use a Creative world you are happy to build in; no fixture world is generated.
+The core reactor blocks are creative tab and `/give` only, with no recipes, loot or Fabricator. The fuel chain (below) adds spodumene world generation, Lithium Carbonate smelting, battery salvage, the Lithium Target Rod recipe and Helium Canisters; the Isotope Column is creative only. Use a Creative world you are happy to build in; no fixture world is generated.
 
 ## Give list
 
@@ -70,7 +70,7 @@ Expected against deep vacuum: 150% with 14 radiators settles near 1370C, so it m
 
 ## Judge by eye and ear
 
-1. Block textures: a clean fusion-lab look (pale ceramic and steel, ORSA blue and orange accents), each block distinct from the CFU-7 and from each other. Item canisters are still placeholders.
+1. Block textures: a clean fusion-lab look (pale ceramic and steel, ORSA blue and orange accents), each block distinct from the CFU-7 and from each other. The Deuterium and Tritium Canisters were redrawn on 2026-10-24.
 2. The blueprint: ghost readability against snow and in the dark, the pulse, red boxes, the parts list in chat, toggling, and that it clears itself on completion. Judge whether it is as easy to follow as a Create or Immersive Engineering build guide.
 3. The Controller screen: state, status colors, progress percent, loop, heat, power, request, radiators, fuel and channel lines.
 4. TORUS OPEN with the hatch open; Start refused. Opening the hatch while burning disrupts at once.
@@ -86,6 +86,28 @@ Expected against deep vacuum: 150% with 14 radiators settles near 1370C, so it m
 7. Linked radiators turn HOT while the loop is at or above 150C, buried or not, and cool when it drops.
 8. Breaking the Controller drops its tank as whole Tritium Canisters.
 9. Overdrive: the DMS overlay and hold, its alert when the hold completes, the Drive slider, silence in overdrive below 1000C, and a melt-through (magma wall, lava particles, quench frost, both cues).
+
+## Fuel chain
+
+Design: `docs/solstice-fuel-design.md`. Plan: `docs/solstice-fuel-plan.md`.
+
+```
+/give @s frozendawn:isotope_column 1
+/give @s frozendawn:lithium_target_rod 1
+/give @s frozendawn:raw_spodumene 8
+/give @s frozendawn:lithium_carbonate 8
+/give @s frozendawn:helium_canister 4
+/give @s minecraft:packed_ice 16
+/give @s frozendawn:fuel_rod 3
+```
+
+1. Pods: create a fresh world, dig or spectate below Y -8 in deepslate, and look for pale Pegmatite pods with lilac Spodumene Ore inside. Note roughly how many chunks you searched before the first pod. Mine the ore with an iron pickaxe for Raw Spodumene.
+2. Smelting: Raw Spodumene in a furnace or blast furnace gives Lithium Carbonate.
+3. Salvage: a Power Cell alone in the crafting grid gives 1 Lithium; a Battery Bank gives 4.
+4. Target rod: craft `iron / lithium / iron`, `lithium / copper / lithium`, `iron / lithium / iron`. It should look like a fuel rod with silver-white pellets. In a running CFU-7 with three fuel rods, the screen should rate one rod (35 kW) lower; the rod's tooltip shows breeding progress, and when used up it leaves 4 Tritium Canisters in the output slot.
+5. Isotope Column: place it on a powered network. Packed Ice in the input fills the ice buffer and makes a Deuterium Canister every 120 s; Lithium Carbonate makes Lithium every 60 s. The front glass should brighten with bubbles and a lamp while working, and a quiet bubbling hum should play only then. Cut power: the screen says NO POWER, the job pauses, and the hum fades. Junk is refused by hand and by hopper.
+6. Helium: with the SFR-1 burning and the Vacuum Port pumping, each Deuterium Canister burned puts a Helium Canister in the Controller's He slot (between T in and T out). Stop the reactor with helium loaded: the screen shows "He boost on Start", and starting the cooldown uses one canister and shows "He boost ×2"; the cooldown runs twice as fast.
+7. Textures: Helium Canister (brown cap), Lithium Target Rod, Raw Spodumene, Lithium Carbonate, Lithium, Pegmatite, Deepslate Spodumene Ore and the four Isotope Column faces.
 
 ## Owner reports
 
@@ -105,6 +127,6 @@ Outside the vacuum stage, a player standing in a pumped-down channel still breat
 
 ## Evidence and limits
 
-Headless, verified by tests: multiblock validation, the full blueprint cell list and its per-player toggle, port rules, channel pressure and pump-down into the outer room, startup sequence and aborts, ignition at 150 kW, burn physics and the 14-radiator readings, load-following, fuel burn and 1.05x breeding, disruptions and quench, saved state, cue selection and alarm rule, drive and mitigation limits, overdrive heat, efficiency and wall erosion, the unmitigated melt-through to magma, radiator HOT state, hatch-side pressure and vacuum-stage sealing, tritium drop on break, sound state sync to the client, and that every SFR sound file is mono Vorbis and registered.
+Headless, verified by tests: multiblock validation, the full blueprint cell list and its per-player toggle, port rules, channel pressure and pump-down into the outer room, startup sequence and aborts, ignition at 150 kW, burn physics and the 14-radiator readings, load-following, fuel burn and 1.05x breeding, disruptions and quench, saved state, cue selection and alarm rule, drive and mitigation limits, overdrive heat, efficiency and wall erosion, the unmitigated melt-through to magma, radiator HOT state, hatch-side pressure and vacuum-stage sealing, tritium drop on break, sound state sync to the client, and that every SFR sound file is mono Vorbis and registered. Fuel chain: Column job math, ice units, power-loss pause and saved progress, hopper refusal, salvage recipes, pod placement only in deepslate with ore only inside pegmatite, target rod rating, breeding and output blocking, helium collection and venting when full, and the boosted cooldown rate.
 
-Needs the owner: textures, ghost-block blueprint rendering, frost visuals, screen layout, the DMS overlay and Drive slider, the melt-through's look, every sound's character and mix, hatch feel, Conduit Binder linking in a real world, and the warm-up alarm ruling. Multiplayer is not checked.
+Needs the owner: textures, ghost-block blueprint rendering, frost visuals, screen layout, the DMS overlay and Drive slider, the melt-through's look, every sound's character and mix, hatch feel, Conduit Binder linking in a real world, and the warm-up alarm ruling. Fuel chain: the new textures, the Column hum, the Controller He slot layout, and how rare pods feel in a fresh world. Multiplayer is not checked.
