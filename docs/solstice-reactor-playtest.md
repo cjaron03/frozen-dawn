@@ -31,7 +31,7 @@ Exact shell: 122 coil cells and 48 Blanket cells before ports (26 solenoid, 48 c
 
 The torus is 9x9 and 5 high (Y1 to Y5, middle Y3). Rings are squares measured from the center column.
 
-1. Place the Controller where the middle of one outer face will be, facing outward. The center is 4 blocks behind it. Placing it shows the blueprint: a pulsing translucent ghost of the right block in every empty cell, a red box on any cell holding the wrong block or filling the channel, and the parts still needed on the action bar. Ghosts disappear as you fill them. Use the Controller (not sneaking) to hide or show it again; it hides itself once the torus is complete. Sneak-use opens the screen. Steps 2 to 5 below are what the ghosts show.
+1. Place the Controller where the middle of one outer face will be, facing outward. The center is 4 blocks behind it. Placing it shows the blueprint: a pulsing translucent ghost of the right block in every empty cell, a red box on any cell holding the wrong block or filling the channel, and the parts still needed in chat. Ghosts disappear as you fill them. Use the Controller (not sneaking) to hide or show it again; it hides itself once the torus is complete. Sneak-use opens the screen. Steps 2 to 5 below are what the ghosts show.
 2. Center column and the ring around it (r = 0, 1), Y2 to Y4: Magnet Coils, with the Confinement Core at the very center on Y3.
 3. r = 2, Y2 to Y4: First Wall.
 4. r = 3, Y2 to Y4: leave as air. This is the plasma channel. Cap it with Magnet Coils at Y1 and Y5 over r = 3 only.
@@ -59,8 +59,8 @@ Expected at 14 radiators against deep vacuum (-200C), full output: loop about 84
 
 ## Judge by eye and ear
 
-1. Placeholder textures for every SFR block and item.
-2. The blueprint: ghost readability against snow and in the dark, the pulse, red boxes, the action-bar parts list, toggling, and that it clears itself on completion. Judge whether it is as easy to follow as a Create or Immersive Engineering build guide.
+1. Block textures: a clean fusion-lab look (pale ceramic and steel, ORSA blue and orange accents), each block distinct from the CFU-7 and from each other. Item canisters are still placeholders.
+2. The blueprint: ghost readability against snow and in the dark, the pulse, red boxes, the parts list in chat, toggling, and that it clears itself on completion. Judge whether it is as easy to follow as a Create or Immersive Engineering build guide.
 3. The Controller screen: state, status colors, progress percent, loop, heat, power, request, radiators, fuel and channel lines.
 4. TORUS OPEN with the hatch open; Start refused. Opening the hatch while burning disrupts at once.
 5. Quench frost after a MAGNET QUENCH (cut the network while gross output is under 40 kW).
