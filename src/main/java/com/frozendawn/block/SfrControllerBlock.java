@@ -70,7 +70,8 @@ public final class SfrControllerBlock extends Block implements EntityBlock {
             parts.append(Component.translatable("message.frozendawn.sfr.blueprint_part", e.getValue(), e.getKey().getName()));
         }
         if (clear > 0) { if (!parts.getSiblings().isEmpty()) parts.append(", "); parts.append(Component.translatable("message.frozendawn.sfr.blueprint_clear", clear)); }
-        player.displayClientMessage(Component.translatable("message.frozendawn.sfr.blueprint", parts), true);
+        // The parts list outgrows the action bar, so it goes to chat, where it wraps.
+        player.displayClientMessage(Component.translatable("message.frozendawn.sfr.blueprint", parts), false);
     }
     @Override protected void onRemove(BlockState s, Level l, BlockPos p, BlockState next, boolean moving) {
         if (!s.is(next.getBlock()) && l.getBlockEntity(p) instanceof SfrControllerBlockEntity c) {

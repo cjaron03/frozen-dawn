@@ -33,7 +33,9 @@ import net.neoforged.neoforge.client.model.data.ModelData;
 public final class SfrBlueprintRenderer {
     private static final Map<BlockPos, List<SfrMultiblock.Wrong>> SHOWN = new HashMap<>();
     private static String dimension = "";
-    private static long scannedAt = Long.MIN_VALUE;
+    private static long scannedAt;
+    /** Set when a controller is added, so the next frame reads its cells instead of waiting out RESCAN_TICKS. */
+    private static boolean stale;
     private static final MultiBufferSource.BufferSource BUFFERS = MultiBufferSource.immediate(new ByteBufferBuilder(1 << 16));
     private static final double RANGE = 64, SCALE = 0.875;
     private static final int RESCAN_TICKS = 10;
@@ -44,7 +46,7 @@ public final class SfrBlueprintRenderer {
         if (level == null) return;
         var here = level.dimension().location().toString();
         if (!here.equals(dimension)) { SHOWN.clear(); dimension = here; }
-        if (payload.show()) { SHOWN.put(payload.controller().immutable(), List.of()); scannedAt = Long.MIN_VALUE; }
+        if (payload.show()) { SHOWN.put(payload.controller().immutable(), List.of()); stale = true; }
         else SHOWN.remove(payload.controller());
     }
     @SubscribeEvent public static void logout(ClientPlayerNetworkEvent.LoggingOut event) { SHOWN.clear(); dimension = ""; }
@@ -66,7 +68,7 @@ public final class SfrBlueprintRenderer {
         if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_TRANSLUCENT_BLOCKS || mc.level == null || mc.player == null || SHOWN.isEmpty()) return;
         if (!dimension.equals(mc.level.dimension().location().toString())) { SHOWN.clear(); return; }
         long now = mc.level.getGameTime();
-        if (now - scannedAt >= RESCAN_TICKS || now < scannedAt) { rescan(); scannedAt = now; }
+        if (stale || now - scannedAt >= RESCAN_TICKS || now < scannedAt) { rescan(); scannedAt = now; stale = false; }
         var camera = event.getCamera().getPosition(); var poses = event.getPoseStack();
         var ghosts = new ArrayList<SfrMultiblock.Wrong>(); var boxes = new ArrayList<BlockPos>();
         for (var e : SHOWN.entrySet()) {
