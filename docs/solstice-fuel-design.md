@@ -45,7 +45,7 @@ The core loop runs on creative fuel. This slice gives fusion fuel a real source 
 | Tritium Canister | Bred in a CFU-7 (survival), or extracted from an SFR-1 tank as before |
 | Deuterium Canister | Isotope Column |
 | Helium Canister | Pumped from a burning SFR-1 |
-| Isotope Column | Creative tab and `/give` only, until the Fabricator slice (owner call 2026-10-24) |
+| Isotope Column | Creative tab and `/give` only, until the Fabricator slice (builder call, put to the owner 2026-10-24) |
 
 A survival player can mine, smelt, salvage and breed tritium. Deuterium and Column refining wait for the Fabricator, as the SFR-1 structure already does.
 
@@ -140,8 +140,8 @@ A survival player can mine, smelt, salvage and breed tritium. Deuterium and Colu
 
 ## Builder's calls already made in this document
 
-- **Isotope Column creative-only** until the Fabricator. This follows the no-temporary-recipes anti-goal; the owner did not object.
-- **Battery salvage by shapeless crafting:** 1 per Power Cell and 4 per Battery Bank. The owner did not object.
+- **Isotope Column creative-only** until the Fabricator. This follows the no-temporary-recipes anti-goal. The owner can overrule it.
+- **Battery salvage by shapeless crafting:** 1 per Power Cell and 4 per Battery Bank. The owner can overrule it.
 - **Spodumene placement:** spodumene only inside pegmatite pods placed by a custom feature, with the pod size, share and rarity above.
 - **Ice units, Column times and helium yield:** as above, for the builder to calibrate.
 - **Target rod output:** 4 canisters into the CFU-7 output slot, waiting when that slot is blocked.
