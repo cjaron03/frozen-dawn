@@ -87,6 +87,7 @@ def classify(path: str) -> tuple[str, str, str]:
         (("entity/undone/",), "undone_owner_audio", "tools/audio_sources/undone/SOURCES.md", "Frozen Dawn original"),
         (("ambient/wind_post_maeve_",), "post_maeve_wind_procedural", "tools/audio_sources/post_maeve_wind/SOURCES.md", "Frozen Dawn original"),
         (("blocks/reactor/geiger_",), "hearthstone_geiger_cc0", "tools/audio_sources/hearthstone/SOURCES.md", "CC0-derived"),
+(("blocks/sfr/",), "sfr_reactor_procedural", "tools/generate_sfr_sounds.sh", "Frozen Dawn original"),
         (("blocks/reactor/",), "hearthstone_reactor_procedural", "tools/audio_sources/hearthstone/SOURCES.md", "Frozen Dawn original"),
     )
     for prefixes, group, evidence, license_name in prefix_groups:

@@ -29,6 +29,12 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.DoorBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.network.Connection;
+import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
+import net.minecraft.sounds.SoundSource;
+import com.frozendawn.init.ModSounds;
+import com.frozendawn.power.SfrAudioCues;
+import org.jetbrains.annotations.Nullable;
 
 /** SFR-1 Controller: validates the torus, steps FusionPhysics once per second, feeds tritium and deuterium,
  * and publishes the reactor's draw and output to the Power Port. Readings are transient. */
@@ -60,6 +66,12 @@ public final class SfrControllerBlockEntity extends BlockEntity implements MenuP
     /** The ghost outline: wrong cells marked with End Rod particles for GHOST_TICKS after a use on a broken shell. */
     private List<BlockPos> ghost = List.of();
     private int ghostTicks, comparator;
+    /** What the client loops play; synced whenever it changes. Heat is whole kW and pressure hundredths, to bound packets. */
+    public record Sound(FusionPhysics.State state, double heatKw, double pressure, boolean pumping, @Nullable BlockPos pump, boolean alarm) {}
+    private static final Sound SILENT = new Sound(FusionPhysics.State.OFF, 0, 1, false, null, false);
+    private Sound sound = SILENT;
+    /** False until the first second after a load, which plays no one-shot cue. */
+    private boolean stepped;
 
     public SfrControllerBlockEntity(BlockPos p, BlockState s) { super(ModBlockEntities.SFR_CONTROLLER.get(), p, s); }
     public NonNullList<ItemStack> items() { return items; }
@@ -71,6 +83,7 @@ public final class SfrControllerBlockEntity extends BlockEntity implements MenuP
     /** Mean First Wall wear, 0 to 1, as of the last second. */
     public double wear() { return wear; }
     public int radiatorCount() { return radiators; }
+    public Sound sound() { return sound; }
 
     public static Optional<SfrControllerBlockEntity> forHatch(ServerLevel l, BlockPos hatchLower) {
         var at = HATCHES.getOrDefault(l, Map.of()).get(hatchLower);
@@ -111,6 +124,8 @@ public final class SfrControllerBlockEntity extends BlockEntity implements MenuP
         double target = physics.loadFollow() && port != null
                 ? PowerNetworks.loadFollowTargetWatts(l, shell.powerPort(), port.supplyWatts()) / 1000.0 : Double.NaN;
         loadTritium();
+        var before = stepped ? readout : null;
+        stepped = true;
         readout = physics.step(new FusionPhysics.Inputs(sinks, powered, channelPressure, hatchClosed, valid, roomVacuum(l),
                 fuel == null ? 0 : fuel.deuterium(), pumping, wear, l.hasNeighborSignal(worldPosition), target));
         if (fuel != null) fuel.use(readout.deuteriumUsed());
@@ -124,6 +139,11 @@ public final class SfrControllerBlockEntity extends BlockEntity implements MenuP
             port.publish((int) Math.round(requestKw * 1000), burning ? (int) Math.round(Math.max(0, readout.netKw()) * 1000) : 0);
             port.ready(physics.state() == FusionPhysics.State.READY);
         }
+        playCues(l, before);
+        boolean burning = physics.state() == FusionPhysics.State.BURNING;
+        var next = new Sound(physics.state(), Math.round(readout.heatKw()), Math.round(channelPressure * 100) / 100.0,
+                pumping && powered && (burning || channelPressure > 0), valid ? shell.vacuumPort() : null, SfrAudioCues.alarm(readout, pumping));
+        if (!next.equals(sound)) { sound = next; l.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_CLIENTS); }
         int signal = comparator();
         if (signal != comparator) { comparator = signal; l.updateNeighbourForOutputSignal(worldPosition, getBlockState().getBlock()); }
         setChanged();
@@ -139,6 +159,16 @@ public final class SfrControllerBlockEntity extends BlockEntity implements MenuP
     }
 
     private static final int QUENCH_TICKS = 100, GHOST_TICKS = 100, GHOST_CELLS = 32;
+    private void playCues(ServerLevel l, @Nullable FusionPhysics.Readout before) {
+        for (var cue : SfrAudioCues.cues(before, readout)) {
+            var event = switch (cue) {
+                case READY -> ModSounds.SFR_READY; case REFUSE -> ModSounds.SFR_REFUSE;
+                case DISRUPTION -> ModSounds.SFR_DISRUPTION; case QUENCH -> ModSounds.SFR_QUENCH;
+            };
+            float volume = switch (cue) { case READY, REFUSE -> 1f; case DISRUPTION -> 2f; case QUENCH -> 2.5f; };
+            l.playSound(null, worldPosition, event.get(), SoundSource.BLOCKS, volume, 1f);
+        }
+    }
     /** Each disruption adds one WEAR to every First Wall still standing. */
     private void wearFirstWall(ServerLevel l) {
         for (var pos : lastFirstWall) {
@@ -275,6 +305,20 @@ public final class SfrControllerBlockEntity extends BlockEntity implements MenuP
         vacuumStage = tag.getBoolean("VacuumStage"); sealed = tag.getBoolean("Sealed");
         readout = IDLE;
     }
+    @Override public CompoundTag getUpdateTag(HolderLookup.Provider r) {
+        var tag = new CompoundTag();
+        tag.putInt("State", sound.state().ordinal()); tag.putDouble("Heat", sound.heatKw()); tag.putDouble("Pressure", sound.pressure());
+        tag.putBoolean("Pumping", sound.pumping()); tag.putBoolean("Alarm", sound.alarm());
+        if (sound.pump() != null) tag.putLong("Pump", sound.pump().asLong());
+        return tag;
+    }
+    @Override public ClientboundBlockEntityDataPacket getUpdatePacket() { return ClientboundBlockEntityDataPacket.create(this); }
+    @Override public void handleUpdateTag(CompoundTag tag, HolderLookup.Provider r) {
+        var states = FusionPhysics.State.values();
+        sound = new Sound(states[Math.clamp(tag.getInt("State"), 0, states.length - 1)], tag.getDouble("Heat"), tag.getDouble("Pressure"),
+                tag.getBoolean("Pumping"), tag.contains("Pump") ? BlockPos.of(tag.getLong("Pump")) : null, tag.getBoolean("Alarm"));
+    }
+    @Override public void onDataPacket(Connection c, ClientboundBlockEntityDataPacket p, HolderLookup.Provider r) { handleUpdateTag(p.getTag(), r); }
     public boolean stillValid(Player p) { return !p.isSpectator() && level != null && level.getBlockEntity(worldPosition) == this && p.distanceToSqr(worldPosition.getCenter()) <= 64; }
     @Override public Component getDisplayName() { return Component.translatable("block.frozendawn.sfr_controller"); }
     @Override public AbstractContainerMenu createMenu(int id, Inventory inv, Player p) { return new SfrControllerMenu(id, inv, this); }

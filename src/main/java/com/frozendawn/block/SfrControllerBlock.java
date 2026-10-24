@@ -55,6 +55,8 @@ public final class SfrControllerBlock extends Block implements EntityBlock {
     @Override protected int getAnalogOutputSignal(BlockState s, Level l, BlockPos p) { return l.getBlockEntity(p) instanceof SfrControllerBlockEntity c ? c.comparator() : 0; }
     @Override public BlockEntity newBlockEntity(BlockPos p, BlockState s) { return new SfrControllerBlockEntity(p, s); }
     @Override public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level l, BlockState s, BlockEntityType<T> t) {
-        return !l.isClientSide() && t == ModBlockEntities.SFR_CONTROLLER.get() ? (w, pos, state, be) -> ((SfrControllerBlockEntity) be).serverTick() : null;
+        if (t != ModBlockEntities.SFR_CONTROLLER.get()) return null;
+        return l.isClientSide() ? (w, pos, state, be) -> com.frozendawn.client.SfrLoopSound.tick((SfrControllerBlockEntity) be)
+                : (w, pos, state, be) -> ((SfrControllerBlockEntity) be).serverTick();
     }
 }

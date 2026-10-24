@@ -4390,6 +4390,96 @@
       }
     ]
   },
+  "blocks.sfr_cryo": {
+    "category": "blocks",
+    "subtitle": "subtitle.frozendawn.blocks.sfr_cryo",
+    "sounds": [
+      {
+        "name": "frozendawn:blocks/sfr/cryo_loop",
+        "volume": 1.0
+      }
+    ]
+  },
+  "blocks.sfr_ignition": {
+    "category": "blocks",
+    "subtitle": "subtitle.frozendawn.blocks.sfr_ignition",
+    "sounds": [
+      {
+        "name": "frozendawn:blocks/sfr/ignition",
+        "volume": 1.0
+      }
+    ]
+  },
+  "blocks.sfr_burn": {
+    "category": "blocks",
+    "subtitle": "subtitle.frozendawn.blocks.sfr_burn",
+    "sounds": [
+      {
+        "name": "frozendawn:blocks/sfr/burn_loop",
+        "volume": 1.0
+      }
+    ]
+  },
+  "blocks.sfr_pump": {
+    "category": "blocks",
+    "subtitle": "subtitle.frozendawn.blocks.sfr_pump",
+    "sounds": [
+      {
+        "name": "frozendawn:blocks/sfr/pump_loop",
+        "volume": 1.0
+      }
+    ]
+  },
+  "blocks.sfr_alarm": {
+    "category": "blocks",
+    "subtitle": "subtitle.frozendawn.blocks.sfr_alarm",
+    "sounds": [
+      {
+        "name": "frozendawn:blocks/sfr/alarm_loop",
+        "volume": 1.0
+      }
+    ]
+  },
+  "blocks.sfr_ready": {
+    "category": "blocks",
+    "subtitle": "subtitle.frozendawn.blocks.sfr_ready",
+    "sounds": [
+      {
+        "name": "frozendawn:blocks/sfr/ready",
+        "volume": 1.0
+      }
+    ]
+  },
+  "blocks.sfr_refuse": {
+    "category": "blocks",
+    "subtitle": "subtitle.frozendawn.blocks.sfr_refuse",
+    "sounds": [
+      {
+        "name": "frozendawn:blocks/sfr/refuse",
+        "volume": 1.0
+      }
+    ]
+  },
+  "blocks.sfr_disruption": {
+    "category": "blocks",
+    "subtitle": "subtitle.frozendawn.blocks.sfr_disruption",
+    "sounds": [
+      {
+        "name": "frozendawn:blocks/sfr/disruption",
+        "volume": 1.0
+      }
+    ]
+  },
+  "blocks.sfr_quench": {
+    "category": "blocks",
+    "subtitle": "subtitle.frozendawn.blocks.sfr_quench",
+    "sounds": [
+      {
+        "name": "frozendawn:blocks/sfr/quench",
+        "volume": 1.0
+      }
+    ]
+  },
   "ui.geiger_click": {
     "category": "master",
     "subtitle": "subtitle.frozendawn.ui.geiger_click",

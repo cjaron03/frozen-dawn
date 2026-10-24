@@ -298,6 +298,31 @@ public final class SfrGameTest {
         });
     }
 
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "sfr", timeoutTicks = 300, skyAccess = true)
+    public static void sfrBurnSyncsItsSoundState(GameTestHelper h) {
+        h.runAfterDelay(1, () -> {
+            var be = ready(h, 8_000_000);
+            h.startSequence()
+                    .thenWaitUntil(() -> h.assertValueEqual(be.physics().state(), FusionPhysics.State.BURNING, "state"))
+                    .thenExecute(() -> {
+                        var level = h.getLevel();
+                        be.second(level);
+                        var sound = be.sound();
+                        h.assertValueEqual(sound.state(), FusionPhysics.State.BURNING, "synced state");
+                        h.assertTrue(sound.heatKw() > 0, "synced heat " + sound.heatKw());
+                        h.assertTrue(sound.pumping(), "pump draws while burning");
+                        h.assertValueEqual(sound.pump(), be.shell().vacuumPort(), "pump position");
+                        // Just after ignition the cold loop's net is below zero: the warning sounds until gross passes the house load.
+                        h.assertTrue(be.readout().netKw() < 0, "warm-up net " + be.readout().netKw());
+                        h.assertTrue(sound.alarm(), "warm-up shortfall alarm");
+                        var copy = new SfrControllerBlockEntity(be.getBlockPos(), be.getBlockState());
+                        copy.handleUpdateTag(be.getUpdateTag(level.registryAccess()), level.registryAccess());
+                        h.assertValueEqual(copy.sound(), sound, "client copy");
+                    })
+                    .thenSucceed();
+        });
+    }
+
     @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "sfr_vacuum", timeoutTicks = 400, skyAccess = true)
     public static void sfrQuenchDoesNotTouchRoomGas(GameTestHelper h) {
         h.runAfterDelay(1, () -> {
