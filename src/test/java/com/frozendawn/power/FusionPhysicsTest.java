@@ -55,6 +55,16 @@ class FusionPhysicsTest {
         assertFalse(f.boostCooldown()); assertFalse(f.cooldownBoosted());
     }
 
+    @Test void heliumBoostSurvivesAnUnpaidStart() {
+        var f = new FusionPhysics(); f.start(); assertTrue(f.boostCooldown());
+        assertEquals(FusionPhysics.State.OFF, f.step(with(14, false, 0, true, false, 64, 0)).state());
+        assertTrue(f.cooldownBoosted(), "A cooldown that never counted keeps its canister's boost");
+        assertFalse(f.boostCooldown(), "An already boosted reactor takes no second canister");
+        f.start();
+        assertEquals(FusionPhysics.State.COOLDOWN, run(f, ok(14), 59).state());
+        assertEquals(FusionPhysics.State.READY, f.step(ok(14)).state());
+    }
+
     @Test void boostSurvivesReload() {
         var f = new FusionPhysics(); f.start(); f.boostCooldown(); run(f, ok(14), 10);
         var tag = new CompoundTag(); f.save(tag);

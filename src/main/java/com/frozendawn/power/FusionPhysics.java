@@ -85,9 +85,9 @@ public final class FusionPhysics {
         if (state == State.BURNING) stopPending = true;
         else if (state != State.OFF) { state = State.OFF; status = Status.IDLE; progress = 0; startPending = false; boosted = false; }
     }
-    /** A Helium Canister doubles the cooldown rate, but only for a cooldown that has not started counting yet. */
+    /** A Helium Canister doubles the cooldown rate, but only for a cooldown that has not started counting yet, and only once. */
     public boolean boostCooldown() {
-        if (state != State.OFF && (state != State.COOLDOWN || progress != 0)) return false;
+        if (boosted || state != State.OFF && (state != State.COOLDOWN || progress != 0)) return false;
         boosted = true; return true;
     }
     public boolean cooldownBoosted() { return boosted; }
@@ -100,7 +100,8 @@ public final class FusionPhysics {
         if (state == State.BURNING) return burn(in, sinkC);
         switch (state) {
             case COOLDOWN -> {
-                if (!in.powered()) off(Status.IDLE);
+                // A cooldown that never counted keeps its canister's boost for the next Start.
+                if (!in.powered()) { boolean keep = boosted && progress == 0; off(Status.IDLE); boosted = keep; }
                 else {
                     progress += (in.roomVacuum() ? 2 : 1) * (boosted ? 2 : 1);
                     if (progress >= COOLDOWN_SECONDS) { state = State.READY; status = Status.READY; progress = 0; boosted = false; }
