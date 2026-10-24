@@ -465,3 +465,13 @@
   - state the known breathing limitation outside the vacuum stage
 - [ ] **Step 3:** Commit with `docs(sfr): add SFR-1 core playtest checklist`.
 - [ ] **Step 4:** Hand back to the owner for the visual playtest through `./gradlew runClient --console=plain` in this worktree. Do not open a PR or merge without the owner's approval.
+
+## Addendum: overdrive and disruption mitigation (2026-10-24)
+
+Owner request: overcharge like the CFU-7, but failing the way a fusion reactor would, with the walls melting rather than a fission meltdown.
+
+- `FusionPhysics`: `drive` from 1 to `MAX_DRIVE = 1.5` in `DRIVE_STEP = 0.1`; `mitigation` defaults on and clamps drive to 1, and turning it on drops drive to 1. The burn goal is `drive` (load-follow clamps to it). Burn above 1 adds `(burn - 1) / OVERDRIVE_WEAR_SECONDS` (150) to a wear accumulator; each whole unit sets `Readout.worn` for one second. Above `DISRUPT_C` the status is `DISRUPTION` with mitigation on and the new `WALL_MELT` with it off. Saves without the keys load with mitigation on and drive 1.
+- Controller: `worn` adds one wear step; a `WALL_MELT` disruption turns every First Wall of the last valid shell into magma (no wear step) and quenches the coils. Menu buttons 4 and 5 set mitigation; `DRIVE + steps` sets drive. Data slot `DRIVE` (percent) and flag `F_MITIGATION`.
+- Screen: Drive slider and DMS button beside the tritium slots; disabling DMS takes one overlay with a 3 s hold, not the CFU-7's two.
+- Sound: the alarm also sounds while heat exceeds `RATED_KW`; a melt-through plays the disruption and quench cues together. No new sound files.
+

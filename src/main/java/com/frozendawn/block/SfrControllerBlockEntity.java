@@ -42,10 +42,10 @@ public final class SfrControllerBlockEntity extends BlockEntity implements MenuP
     public static final int SLOTS = 2, TRITIUM_IN = 0, TRITIUM_OUT = 1;
     // Menu data, synced as shorts: temperatures and kW x10, tritium x100, fractions x1000.
     public static final int STATE = 0, STATUS = 1, LOOP = 2, HEAT = 3, REMOVED = 4, GROSS = 5, NET = 6, REQUEST = 7, TRITIUM = 8,
-            PROGRESS = 9, DEUTERIUM = 10, SHELL = 11, PRESSURE = 12, WEAR = 13, RADIATORS = 14, FLAGS = 15, DATA = 16;
-    public static final int F_FOLLOW = 1, F_SHELL = 2;
+            PROGRESS = 9, DEUTERIUM = 10, SHELL = 11, PRESSURE = 12, WEAR = 13, RADIATORS = 14, FLAGS = 15, DRIVE = 16, DATA = 17;
+    public static final int F_FOLLOW = 1, F_SHELL = 2, F_MITIGATION = 4;
     private static final FusionPhysics.Readout IDLE = new FusionPhysics.Readout(FusionPhysics.State.OFF, FusionPhysics.Status.IDLE,
-            20, 0, 0, 0, 0, 0, 0, 0, 0, false);
+            20, 0, 0, 0, 0, 0, 0, 0, 0, false, false);
     /** Hatch lower half to controller, per level; refreshed by every valid validation and checked on lookup. */
     private static final Map<ServerLevel, Map<BlockPos, BlockPos>> HATCHES = new WeakHashMap<>();
     private final NonNullList<ItemStack> items = NonNullList.withSize(SLOTS, ItemStack.EMPTY);
@@ -139,9 +139,11 @@ public final class SfrControllerBlockEntity extends BlockEntity implements MenuP
         for (var p : nowHot) ReactorRadiatorBlock.publish(l, p, true);
         hot.clear(); hot.addAll(nowHot);
         if (readout.disrupted()) {
-            wearFirstWall(l);
-            if (readout.status() == FusionPhysics.Status.MAGNET_QUENCH) quenchTicks = QUENCH_TICKS;
+            boolean melt = readout.status() == FusionPhysics.Status.WALL_MELT;
+            if (melt) meltFirstWall(l); else wearFirstWall(l);
+            if (melt || readout.status() == FusionPhysics.Status.MAGNET_QUENCH) quenchTicks = QUENCH_TICKS;
         }
+        if (readout.worn()) wearFirstWall(l);
         if (port != null) {
             boolean burning = physics.state() == FusionPhysics.State.BURNING;
             double requestKw = readout.requestKw() + (!burning && pumping && channelPressure > 0 ? FusionPhysics.PUMP_KW : 0);
@@ -185,6 +187,16 @@ public final class SfrControllerBlockEntity extends BlockEntity implements MenuP
             var state = l.getBlockState(pos);
             if (state.getBlock() instanceof FirstWallBlock && state.getValue(FirstWallBlock.WEAR) < FirstWallBlock.MAX_WEAR)
                 l.setBlock(pos, state.setValue(FirstWallBlock.WEAR, state.getValue(FirstWallBlock.WEAR) + 1), Block.UPDATE_ALL);
+        }
+    }
+    /** An unmitigated disruption: runaway electrons melt every First Wall still standing into magma, and the torus
+     * will not seal again until the wall is rebuilt. */
+    private void meltFirstWall(ServerLevel l) {
+        for (var pos : lastFirstWall) {
+            if (!(l.getBlockState(pos).getBlock() instanceof FirstWallBlock)) continue;
+            l.setBlock(pos, net.minecraft.world.level.block.Blocks.MAGMA_BLOCK.defaultBlockState(), Block.UPDATE_ALL);
+            var c = pos.getCenter();
+            l.sendParticles(ParticleTypes.LAVA, c.x, c.y, c.z, 4, 0.4, 0.4, 0.4, 0);
         }
     }
     /** Snowflakes off one face of a random coil: the magnets warming through their superconducting limit. */
@@ -265,6 +277,9 @@ public final class SfrControllerBlockEntity extends BlockEntity implements MenuP
     public void start() { physics.start(); setChanged(); }
     public void stop() { physics.stop(); setChanged(); }
     public void toggleLoadFollow() { physics.setLoadFollow(!physics.loadFollow()); setChanged(); }
+    /** Drive in DRIVE_STEP steps above 100%. */
+    public void setDriveSteps(int steps) { physics.setDrive(1 + steps * FusionPhysics.DRIVE_STEP); setChanged(); }
+    public void setMitigation(boolean on) { physics.setMitigation(on); setChanged(); }
 
     private void release(ServerLevel l) {
         if (l.isLoaded(publishedPort) && l.getBlockEntity(publishedPort) instanceof SfrPowerPortBlockEntity old) { old.publish(0, 0); old.ready(false); }
@@ -298,7 +313,8 @@ public final class SfrControllerBlockEntity extends BlockEntity implements MenuP
                     case PRESSURE -> (int) Math.round(channelPressure * 1000);
                     case WEAR -> (int) Math.round(wear * 1000);
                     case RADIATORS -> radiators;
-                    case FLAGS -> (physics.loadFollow() ? F_FOLLOW : 0) | (shell.valid() ? F_SHELL : 0);
+                    case FLAGS -> (physics.loadFollow() ? F_FOLLOW : 0) | (shell.valid() ? F_SHELL : 0) | (physics.mitigation() ? F_MITIGATION : 0);
+                    case DRIVE -> (int) Math.round(physics.drive() * 100);
                     default -> 0;
                 };
             }

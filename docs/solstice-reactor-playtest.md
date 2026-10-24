@@ -57,6 +57,17 @@ The torus is 9x9 and 5 high (Y1 to Y5, middle Y3). Rings are squares measured fr
 
 Expected at 14 radiators against deep vacuum (-200C), full output: loop about 848C, net about 329 kW. Warmer sinks read lower. During warm-up net output is negative; that is the spec's behavior.
 
+## Overdrive
+
+The DMS button (Disruption Mitigation System) starts On, which holds drive at 100% and ends an over-temperature plasma as an ordinary disruption. Turning it off takes a 3 s hold on a warning overlay. With it off:
+
+- The Drive slider reaches 150% in 10% steps. Heat scales with drive; the loop runs hotter, so Carnot efficiency and net output rise.
+- Every second above 100% erodes the First Wall: at 150%, one wear step every 5 minutes.
+- Nothing catches an over-temperature plasma. Past 1100C the status reads WALL MELT-THROUGH, every First Wall turns to magma, the coils quench, and the torus will not seal until the wall is rebuilt. This replaces one wear step; it can happen at 100% drive too while DMS is off.
+- Turning DMS back on drops drive to 100% at once; the burn slews down.
+
+Expected against deep vacuum: 150% with 14 radiators settles near 1370C, so it melts. About 19 radiators hold 150% under 1000C; 20 settle near 900C for about 518 kW net.
+
 ## Judge by eye and ear
 
 1. Block textures: a clean fusion-lab look (pale ceramic and steel, ORSA blue and orange accents), each block distinct from the CFU-7 and from each other. Item canisters are still placeholders.
@@ -70,10 +81,11 @@ Expected at 14 radiators against deep vacuum (-200C), full output: loop about 84
    - ignition success swell and arpeggio as IGNITION turns to BURNING
    - burn loop (sub throb, magnet hum, field choir, plasma roar, ion shimmer, crackles), louder and higher with output
    - pump loop at the Vacuum Port, rising in pitch as the channel empties
-   - warning alarm while burning: loop at or above 1000C or pump off. Warm-up on network power is silent.
-   - READY chime; refusal buzz when you press Start and it is refused, or when ignition aborts (a standing refusal nobody pressed is silent); disruption crack; quench vent
+   - warning alarm while burning: loop at or above 1000C, drive above 100%, or pump off. Warm-up on network power is silent.
+   - READY chime; refusal buzz when you press Start and it is refused, or when ignition aborts (a standing refusal nobody pressed is silent); disruption crack; quench vent; a melt-through plays the crack and the vent together
 7. Linked radiators turn HOT while the loop is at or above 150C, buried or not, and cool when it drops.
 8. Breaking the Controller drops its tank as whole Tritium Canisters.
+9. Overdrive: the DMS overlay and hold, the Drive slider, the alarm above 100%, and a melt-through (magma wall, lava particles, quench frost, both cues).
 
 ## Owner reports
 
@@ -81,6 +93,7 @@ Expected at 14 radiators against deep vacuum (-200C), full output: loop about 84
 - Pump-down (2026-10-24): "i can hear it slowly \"spinning\" up". Matches the pump loop, whose pitch rises from 0.8 to 1.2 as the channel empties.
 - Cooldown (2026-10-24): "i heard the chim". The READY chime, played when cooldown finishes.
 - First ignition (2026-10-24), 8 MJ banked: "huh why do i hear a warning sound?" Screenshot 2026-10-24_01.07.36: BURNING, loop 238C, heat 400 kW, removed 75.6 kW, gross 29.7 kW, net -15.3 kW, 14 HT radiators, channel 0%. The alarm is the net < 0 trigger during loop warm-up, which every normal start passes through. Owner decision: drop that trigger, play a success sound at ignition, and make the burn loop sound like fusion.
+- Overcharge request (2026-10-24): "can you make it so you can overcharge the reactor like how you can on the fission reactor? also look a the ss, the Ui looks a little funky". After the proposal: "but of course dont copy it 1 to 1, this is a fusion reactor, so instead have it \"meldown\" how an actual fusion reactor woukd (i guess the walls just fucking melt or something)". Built as the DMS toggle, Drive to 150% and the First Wall melt-through above.
 
 ## Known limitation
 
@@ -88,6 +101,6 @@ Outside the vacuum stage, a player standing in a pumped-down channel still breat
 
 ## Evidence and limits
 
-Headless, verified by tests: multiblock validation, the full blueprint cell list and its per-player toggle, port rules, channel pressure and pump-down into the outer room, startup sequence and aborts, ignition at 150 kW, burn physics and the 14-radiator readings, load-following, fuel burn and 1.05x breeding, disruptions and quench, saved state, cue selection and alarm rule, radiator HOT state, hatch-side pressure and vacuum-stage sealing, tritium drop on break, sound state sync to the client, and that all nine sound files are mono Vorbis and registered.
+Headless, verified by tests: multiblock validation, the full blueprint cell list and its per-player toggle, port rules, channel pressure and pump-down into the outer room, startup sequence and aborts, ignition at 150 kW, burn physics and the 14-radiator readings, load-following, fuel burn and 1.05x breeding, disruptions and quench, saved state, cue selection and alarm rule, drive and mitigation limits, overdrive heat, efficiency and wall erosion, the unmitigated melt-through to magma, radiator HOT state, hatch-side pressure and vacuum-stage sealing, tritium drop on break, sound state sync to the client, and that all nine sound files are mono Vorbis and registered.
 
-Needs the owner: textures, ghost-block blueprint rendering, frost visuals, screen layout, every sound's character and mix, hatch feel, Conduit Binder linking in a real world, and the warm-up alarm ruling. Multiplayer is not checked.
+Needs the owner: textures, ghost-block blueprint rendering, frost visuals, screen layout, the DMS overlay and Drive slider, the melt-through's look, every sound's character and mix, hatch feel, Conduit Binder linking in a real world, and the warm-up alarm ruling. Multiplayer is not checked.

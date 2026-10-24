@@ -18,14 +18,17 @@ public final class SfrAudioCues {
         if (before.state() == State.COOLDOWN && after.state() == State.READY) cues.add(Cue.READY);
         if (before.state() == State.IGNITION && after.state() == State.BURNING) cues.add(Cue.IGNITED);
         if (refusedStart || before.state() == State.IGNITION && after.state() == State.READY) cues.add(Cue.REFUSE);
-        if (after.disrupted()) cues.add(after.status() == Status.MAGNET_QUENCH ? Cue.QUENCH : Cue.DISRUPTION);
+        // A melt-through is both: the plasma strikes the wall and the coils quench.
+        if (after.disrupted() && after.status() == Status.WALL_MELT) { cues.add(Cue.DISRUPTION); cues.add(Cue.QUENCH); }
+        else if (after.disrupted()) cues.add(after.status() == Status.MAGNET_QUENCH ? Cue.QUENCH : Cue.DISRUPTION);
         else if (before.state() == State.BURNING && after.status() == Status.ASH_POISONED) cues.add(Cue.DISRUPTION);
         return cues;
     }
 
-    /** True while burning near the disruption limit or with ash building (pump off). A negative net is not a warning: every
-     * start warms the loop on network power, and a shortfall the network cannot cover quenches the same second. */
+    /** True while burning near the disruption limit, overdriven past rated heat, or with ash building (pump off). A negative
+     * net is not a warning: every start warms the loop on network power, and a shortfall the network cannot cover quenches
+     * the same second. */
     public static boolean alarm(FusionPhysics.Readout r, boolean pumping) {
-        return r.state() == State.BURNING && (r.loopC() >= 1000 || !pumping);
+        return r.state() == State.BURNING && (r.loopC() >= 1000 || r.heatKw() > FusionPhysics.RATED_KW + 0.5 || !pumping);
     }
 }

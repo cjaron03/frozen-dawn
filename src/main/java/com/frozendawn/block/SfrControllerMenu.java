@@ -12,9 +12,11 @@ import net.minecraft.world.inventory.*;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.Nullable;
 
-/** Tritium Canister input and output. Controls are menu buttons: 0 Start, 1 Stop, 2 load-follow toggle, 3 Extract. */
+/** Tritium Canister input and output. Controls are menu buttons: 0 Start, 1 Stop, 2 load-follow toggle, 3 Extract,
+ * 4 and 5 disruption mitigation on and off, and DRIVE plus the drive steps above 100%. */
 public final class SfrControllerMenu extends AbstractContainerMenu {
-    public static final int START = 0, STOP = 1, LOAD_FOLLOW = 2, EXTRACT = 3;
+    public static final int START = 0, STOP = 1, LOAD_FOLLOW = 2, EXTRACT = 3, MITIGATION_ON = 4, MITIGATION_OFF = 5, DRIVE = 10;
+    public static final int DRIVE_STEPS = (int) Math.round((com.frozendawn.power.FusionPhysics.MAX_DRIVE - 1) / com.frozendawn.power.FusionPhysics.DRIVE_STEP);
     public static final int WIDTH = 256, HEIGHT = 250, SLOT_Y = 136, INV_Y = 168, INV_X = 47;
     private final Container container;
     private final ContainerData data;
@@ -47,7 +49,12 @@ public final class SfrControllerMenu extends AbstractContainerMenu {
             case STOP -> entity.stop();
             case LOAD_FOLLOW -> entity.toggleLoadFollow();
             case EXTRACT -> { return entity.extract(); }
-            default -> { return false; }
+            case MITIGATION_ON -> entity.setMitigation(true);
+            case MITIGATION_OFF -> entity.setMitigation(false);
+            default -> {
+                if (id < DRIVE || id > DRIVE + DRIVE_STEPS) return false;
+                entity.setDriveSteps(id - DRIVE);
+            }
         }
         return true;
     }

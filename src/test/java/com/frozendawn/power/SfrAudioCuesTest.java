@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Test;
 
 class SfrAudioCuesTest {
     private static FusionPhysics.Readout r(FusionPhysics.State state, FusionPhysics.Status status, double loopC, double netKw, boolean disrupted) {
-        return new FusionPhysics.Readout(state, status, loopC, 0, 0, 0, netKw, 0, 0, 0, 0, disrupted);
+        return new FusionPhysics.Readout(state, status, loopC, 0, 0, 0, netKw, 0, 0, 0, 0, disrupted, false);
     }
     private static FusionPhysics.Readout r(FusionPhysics.State state, FusionPhysics.Status status) { return r(state, status, 20, 0, false); }
 
@@ -47,5 +47,13 @@ class SfrAudioCuesTest {
         assertFalse(SfrAudioCues.alarm(r(BURNING, FusionPhysics.Status.BURNING, 238, -15.3, false), true));
         assertTrue(SfrAudioCues.alarm(r(BURNING, FusionPhysics.Status.BURNING, 900, 300, false), false));
         assertFalse(SfrAudioCues.alarm(r(OFF, FusionPhysics.Status.DISRUPTION, 1050, 0, false), true));
+    }
+    @Test void wallMeltCracksAndVents() {
+        assertEquals(EnumSet.of(Cue.DISRUPTION, Cue.QUENCH), SfrAudioCues.cues(r(BURNING, FusionPhysics.Status.BURNING),
+                r(OFF, FusionPhysics.Status.WALL_MELT, 1100, 0, true), false));
+    }
+    @Test void overdriveSoundsTheAlarm() {
+        var over = new FusionPhysics.Readout(BURNING, FusionPhysics.Status.BURNING, 900, 600, 600, 560, 515, 0, 0, 0, 0, false, false);
+        assertTrue(SfrAudioCues.alarm(over, true));
     }
 }

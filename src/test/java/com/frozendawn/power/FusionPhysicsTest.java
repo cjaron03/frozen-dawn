@@ -145,6 +145,59 @@ class FusionPhysicsTest {
         assertDisrupts(r, FusionPhysics.Status.DISRUPTION);
     }
 
+    @Test void mitigationHoldsDriveAtFull() {
+        var f = burning(); f.setDrive(FusionPhysics.MAX_DRIVE);
+        assertEquals(1, f.drive(), 1e-9);
+        assertEquals(FusionPhysics.RATED_KW, run(f, ok(14), 3000).heatKw(), 1e-6);
+    }
+
+    @Test void enablingMitigationDropsDriveToFull() {
+        var f = new FusionPhysics(); f.setMitigation(false); f.setDrive(1.5);
+        assertEquals(1.5, f.drive(), 1e-9);
+        f.setMitigation(true);
+        assertEquals(1, f.drive(), 1e-9);
+    }
+
+    @Test void overdriveRunsHotterAndConvertsMore() {
+        var full = run(burning(), ok(20), 3000);
+        var f = burning(); f.setMitigation(false); f.setDrive(1.5);
+        var r = run(f, ok(20), 3000);
+        assertEquals(FusionPhysics.State.BURNING, r.state());
+        assertEquals(1.5 * FusionPhysics.RATED_KW, r.heatKw(), 1e-6);
+        assertTrue(r.loopC() > full.loopC() && r.loopC() < 1000, "About 900C: " + r.loopC());
+        assertTrue(r.grossKw() / r.removedKw() > full.grossKw() / full.removedKw(), "A hotter loop converts more");
+        assertTrue(r.netKw() > 500, "About 518 kW net: " + r.netKw());
+    }
+
+    @Test void overdriveWearsTheWallEveryFiveMinutesAtFullOverdrive() {
+        var f = burning(); f.setMitigation(false); f.setDrive(1.5);
+        run(f, ok(20), 100);
+        int worn = 0;
+        for (int i = 0; i < 1200; i++) if (f.step(ok(20)).worn()) worn++;
+        assertEquals(4, worn);
+        var full = burning(); worn = 0;
+        for (int i = 0; i < 1200; i++) if (full.step(ok(20)).worn()) worn++;
+        assertEquals(0, worn, "Rated drive adds no wear");
+    }
+
+    @Test void unmitigatedOverTemperatureMeltsTheWall() {
+        for (double drive : new double[] {1, 1.5}) {
+            var f = burning(); f.setMitigation(false); f.setDrive(drive); int disruptions = 0; FusionPhysics.Readout r = null;
+            for (int i = 0; i < 3000; i++) { r = f.step(ok(drive > 1 ? 14 : 10)); if (r.disrupted()) disruptions++; }
+            assertEquals(FusionPhysics.State.OFF, r.state()); assertEquals(FusionPhysics.Status.WALL_MELT, r.status());
+            assertEquals(1, disruptions);
+        }
+    }
+
+    @Test void saveLoadKeepsDriveAndMitigation() {
+        var f = new FusionPhysics(); f.setMitigation(false); f.setDrive(1.3);
+        var tag = new CompoundTag(); f.save(tag);
+        var g = new FusionPhysics(); g.load(tag);
+        assertFalse(g.mitigation()); assertEquals(1.3, g.drive(), 1e-9);
+        var old = new FusionPhysics(); old.load(new CompoundTag());
+        assertTrue(old.mitigation(), "A save from before the setting keeps mitigation on"); assertEquals(1, old.drive(), 1e-9);
+    }
+
     @Test void unpaidHouseLoadShortfallQuenches() {
         var f = burning(); f.setLoopC(ReactorPhysics.DEEP_VACUUM_C);
         var r = f.step(ok(14));

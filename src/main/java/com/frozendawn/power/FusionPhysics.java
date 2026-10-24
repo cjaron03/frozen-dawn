@@ -5,7 +5,10 @@ import net.minecraft.nbt.CompoundTag;
 
 /** ORSA SFR-1 Solstice Reactor, stepped once per second. Fusion never melts down: anything wrong ends the plasma
  * (a disruption), costs First Wall wear and needs a full restart. Startup is cooldown, fuel check, then a 10 s
- * ignition pulse paid by the network. Power out = radiator heat removed x Carnot efficiency x (1 - wear) - house load. */
+ * ignition pulse paid by the network. Power out = radiator heat removed x Carnot efficiency x (1 - wear) - house load.
+ * Disruption mitigation (a massive gas injection) ends an over-temperature plasma cleanly and holds drive at 100%. With it
+ * off, drive reaches MAX_DRIVE, every second above 100% erodes the First Wall, and an over-temperature plasma is not caught:
+ * its runaway electrons melt the First Wall through. */
 public final class FusionPhysics {
     public static final double RATED_KW = 400, NOMINAL_C = 900, DISRUPT_C = 1100;
     /** 30 kW per High-Temperature Radiator with a 900C loop against deep vacuum; about 14 carry a full burn. */
@@ -20,23 +23,28 @@ public final class FusionPhysics {
     public static final double LOOP_HEAT_CAPACITY_KJ_PER_C = 100, MIN_BURN = 0.2, LOAD_FOLLOW_SLEW = 0.02;
     /** Load-follow aims this far above the target so a reactor alone on its network never asks it for house power. */
     public static final double LOAD_FOLLOW_RESERVE_KW = 2;
+    /** Drive range and step; above 100%, OVERDRIVE_WEAR_SECONDS of one full unit of overdrive add one First Wall wear step,
+     * so 150% wears a step every five minutes. */
+    public static final double MAX_DRIVE = 1.5, DRIVE_STEP = 0.1, OVERDRIVE_WEAR_SECONDS = 150;
 
     public enum State { OFF, COOLDOWN, READY, IGNITION, BURNING }
     public enum Status { IDLE, COOLDOWN, READY, TORUS_OPEN, NO_VACUUM, NO_FUEL, WALL_WORN, IGNITION, ABORTED, BURNING,
-        DISRUPTION, MAGNET_QUENCH, ASH_POISONED }
+        DISRUPTION, MAGNET_QUENCH, ASH_POISONED, WALL_MELT }
 
     /** One second of inputs. powered: the previous second's request was paid in full. channelPressure is a fraction
      * of nominal. wear is the mean First Wall wear, 0 to 1. targetKw is the load-follow net target, or NaN in manual mode. */
     public record Inputs(List<Double> radiatorSinks, boolean powered, double channelPressure, boolean hatchClosed,
             boolean shellIntact, boolean roomVacuum, int deuterium, boolean pumping, double wear, boolean redstone, double targetKw) {}
     /** requestKw is what the reactor draws from the network next second. disrupted is true only in the second a
-     * wear-adding disruption happens. progress is the cooldown or ignition fraction. */
+     * wear-adding disruption happens; a WALL_MELT status in that second melts the First Wall instead. progress is the
+     * cooldown or ignition fraction. worn is true in a second overdrive adds one wear step. */
     public record Readout(State state, Status status, double loopC, double heatKw, double removedKw, double grossKw,
-            double netKw, double requestKw, int deuteriumUsed, double tritium, double progress, boolean disrupted) {}
+            double netKw, double requestKw, int deuteriumUsed, double tritium, double progress, boolean disrupted, boolean worn) {}
 
     private State state = State.OFF;
     private Status status = Status.IDLE;
-    private double loopC = 20, tritium, deuteriumProgress, burn = MIN_BURN, requestKw;
+    private double loopC = 20, tritium, deuteriumProgress, burn = MIN_BURN, requestKw, drive = 1, overdriveWear;
+    private boolean mitigation = true;
     private int progress, ashSeconds;
     private boolean loadFollow, startPending, stopPending, refusedStart;
 
@@ -49,6 +57,12 @@ public final class FusionPhysics {
     /** True when the last step refused a pressed Start. */
     public boolean refusedStart() { return refusedStart; }
     public void setLoadFollow(boolean value) { loadFollow = value; }
+    public double drive() { return drive; }
+    public boolean mitigation() { return mitigation; }
+    /** Clamped to 100% while mitigation is on, MAX_DRIVE while it is off. */
+    public void setDrive(double value) { if (Double.isFinite(value)) drive = Math.clamp(value, 1, mitigation ? 1 : MAX_DRIVE); }
+    /** Turning mitigation back on drops drive to 100%; the burn slews down from there. */
+    public void setMitigation(boolean value) { mitigation = value; setDrive(drive); }
 
     /** Returns the units accepted; the tank holds TRITIUM_TANK. */
     public double addTritium(double units) {
@@ -115,7 +129,7 @@ public final class FusionPhysics {
         };
         double shown = state == State.COOLDOWN ? (double) progress / COOLDOWN_SECONDS
                 : state == State.IGNITION ? (double) progress / IGNITION_SECONDS : 0;
-        return new Readout(state, status, loopC, 0, removed, 0, -requestKw, requestKw, 0, tritium, shown, false);
+        return new Readout(state, status, loopC, 0, removed, 0, -requestKw, requestKw, 0, tritium, shown, false, false);
     }
 
     private Readout burn(Inputs in, double sinkC) {
@@ -124,14 +138,14 @@ public final class FusionPhysics {
         if (in.redstone() || stopPending || !in.hatchClosed() || !in.shellIntact() || in.channelPressure() > VACUUM_LIMIT)
             return disrupt(Status.DISRUPTION, in);
         double pumpKw = in.pumping() ? ASH_PUMP_KW : 0;
-        double goal = 1;
+        double goal = drive;
         if (loadFollow && Double.isFinite(in.targetKw())) {
             // The loop's own efficiency, not the nominal one: a low burn runs a cold loop that converts less.
             double eff = Math.max(0.05, ReactorPhysics.efficiency(loopC, sinkC) * (1 - in.wear()));
             double capacity = in.radiatorSinks().stream().mapToDouble(t -> HT_RADIATOR_KW_PER_C * Math.max(0, NOMINAL_C - t)).sum();
             goal = Math.min((Math.max(0, in.targetKw()) + LOAD_FOLLOW_RESERVE_KW + HOUSE_KW + pumpKw) / eff, capacity) / RATED_KW;
         }
-        goal = Math.clamp(goal, MIN_BURN, 1);
+        goal = Math.clamp(goal, MIN_BURN, drive);
         burn += Math.clamp(goal - burn, -LOAD_FOLLOW_SLEW, LOAD_FOLLOW_SLEW);
         ashSeconds = in.pumping() ? 0 : ashSeconds + 1;
         if (ashSeconds >= ASH_FADE_SECONDS) {
@@ -141,7 +155,7 @@ public final class FusionPhysics {
         double heat = RATED_KW * burn * (1 - (double) ashSeconds / ASH_FADE_SECONDS);
         double removed = removedKw(in.radiatorSinks());
         loopC += (heat - removed) / LOOP_HEAT_CAPACITY_KJ_PER_C;
-        if (loopC > DISRUPT_C) return disrupt(Status.DISRUPTION, in);
+        if (loopC > DISRUPT_C) return disrupt(mitigation ? Status.DISRUPTION : Status.WALL_MELT, in);
         double gross = removed * ReactorPhysics.efficiency(loopC, sinkC) * (1 - Math.clamp(in.wear(), 0, 1));
         double net = gross - HOUSE_KW - pumpKw;
         int used = 0;
@@ -151,8 +165,11 @@ public final class FusionPhysics {
             deuteriumProgress -= 1; used = 1;
         }
         tritium = Math.min(TRITIUM_TANK, Math.max(0, tritium + burn / TRITIUM_SECONDS * (BREEDING_RATIO - 1)));
+        overdriveWear += Math.max(0, burn - 1) / OVERDRIVE_WEAR_SECONDS;
+        boolean worn = overdriveWear >= 1;
+        if (worn) overdriveWear -= 1;
         requestKw = Math.max(0, -net);
-        return new Readout(state, status, loopC, heat, removed, gross, net, requestKw, used, tritium, 0, false);
+        return new Readout(state, status, loopC, heat, removed, gross, net, requestKw, used, tritium, 0, false, worn);
     }
 
     /** Plasma ends at once; the loop keeps its heat and cools through the radiators. */
@@ -164,7 +181,7 @@ public final class FusionPhysics {
         double removed = removedKw(in.radiatorSinks());
         loopC -= removed / LOOP_HEAT_CAPACITY_KJ_PER_C;
         requestKw = 0;
-        return new Readout(state, status, loopC, 0, removed, 0, 0, 0, 0, tritium, 0, disrupted);
+        return new Readout(state, status, loopC, 0, removed, 0, 0, 0, 0, tritium, 0, disrupted, false);
     }
 
     private Status ignitionBlock(Inputs in) {
@@ -187,6 +204,7 @@ public final class FusionPhysics {
         tag.putDouble("Tritium", tritium); tag.putDouble("DeuteriumProgress", deuteriumProgress); tag.putDouble("Burn", burn); tag.putDouble("RequestKw", requestKw);
         tag.putInt("Progress", progress); tag.putInt("AshSeconds", ashSeconds); tag.putBoolean("LoadFollow", loadFollow);
         tag.putBoolean("StartPending", startPending); tag.putBoolean("StopPending", stopPending);
+        tag.putDouble("Drive", drive); tag.putBoolean("Mitigation", mitigation); tag.putDouble("OverdriveWear", overdriveWear);
     }
     public void load(CompoundTag tag) {
         state = parse(State.class, tag.getString("State"), State.OFF);
@@ -194,10 +212,14 @@ public final class FusionPhysics {
         loopC = tag.contains("LoopC") ? finite(tag.getDouble("LoopC"), 20) : 20;
         tritium = Math.clamp(finite(tag.getDouble("Tritium"), 0), 0, TRITIUM_TANK);
         deuteriumProgress = Math.clamp(finite(tag.getDouble("DeuteriumProgress"), 0), 0, 1);
-        burn = Math.clamp(tag.contains("Burn") ? finite(tag.getDouble("Burn"), MIN_BURN) : MIN_BURN, MIN_BURN, 1);
+        burn = Math.clamp(tag.contains("Burn") ? finite(tag.getDouble("Burn"), MIN_BURN) : MIN_BURN, MIN_BURN, MAX_DRIVE);
         requestKw = Math.max(0, finite(tag.getDouble("RequestKw"), 0));
         progress = Math.max(0, tag.getInt("Progress")); ashSeconds = Math.max(0, tag.getInt("AshSeconds"));
         loadFollow = tag.getBoolean("LoadFollow"); startPending = tag.getBoolean("StartPending"); stopPending = tag.getBoolean("StopPending");
+        // A save from before the setting has mitigation on.
+        mitigation = !tag.contains("Mitigation") || tag.getBoolean("Mitigation");
+        drive = 1; setDrive(tag.contains("Drive") ? tag.getDouble("Drive") : 1);
+        overdriveWear = Math.clamp(finite(tag.getDouble("OverdriveWear"), 0), 0, 1);
     }
     private static <E extends Enum<E>> E parse(Class<E> type, String name, E fallback) {
         try { return Enum.valueOf(type, name); } catch (IllegalArgumentException e) { return fallback; }

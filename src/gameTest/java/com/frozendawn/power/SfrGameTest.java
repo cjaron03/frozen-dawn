@@ -287,6 +287,25 @@ public final class SfrGameTest {
     }
 
     @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "sfr", timeoutTicks = 300, skyAccess = true)
+    public static void sfrUnmitigatedOverheatMeltsTheFirstWall(GameTestHelper h) {
+        h.runAfterDelay(1, () -> {
+            var be = ready(h, 8_000_000);
+            h.startSequence()
+                    .thenWaitUntil(() -> h.assertValueEqual(be.physics().state(), FusionPhysics.State.BURNING, "state"))
+                    .thenExecute(() -> {
+                        var level = h.getLevel(); var walls = be.shell().firstWall();
+                        be.physics().setMitigation(false); be.physics().setLoopC(FusionPhysics.DISRUPT_C + 50);
+                        be.second(level);
+                        h.assertValueEqual(be.physics().status(), FusionPhysics.Status.WALL_MELT, "status");
+                        for (var wall : walls) h.assertTrue(level.getBlockState(wall).is(Blocks.MAGMA_BLOCK), "melted wall at " + wall);
+                        be.second(level);
+                        h.assertValueEqual(be.shell().problem(), SfrMultiblock.Problem.FIRST_WALL, "shell after the melt");
+                    })
+                    .thenSucceed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "sfr", timeoutTicks = 300, skyAccess = true)
     public static void sfrOpeningTheHatchWhileBurningDisrupts(GameTestHelper h) {
         h.runAfterDelay(1, () -> {
             var be = ready(h, 8_000_000);
