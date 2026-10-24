@@ -291,7 +291,7 @@ public final class AirlockManager {
         // Keep ordinary door openings silent; explicit manual-valve use keeps its confirmation.
         if(player.isShiftKeyDown())notify(player,Status.VALVE_EQUALIZED,c,0);
     }
-    static boolean matchingPressure(double a,double b) {
+    public static boolean matchingPressure(double a,double b) {
         if(!Double.isFinite(a)||!Double.isFinite(b)||a<0||b<0)return false;
         if(a==0||b==0)return a==b; // Vacuum only matches vacuum, never a thin positive atmosphere.
         double higher=Math.max(a,b);

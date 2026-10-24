@@ -1,5 +1,7 @@
 package com.frozendawn.block;
 
+import com.frozendawn.airlock.AirlockCycle;
+import com.frozendawn.airlock.AirlockSavedState;
 import com.frozendawn.init.ModBlockEntities;
 import com.frozendawn.init.ModItems;
 import com.frozendawn.power.FusionPhysics;
@@ -8,6 +10,7 @@ import com.frozendawn.world.CombustionAtmosphere;
 import com.frozendawn.world.RoomAtmosphere;
 import java.util.*;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.NonNullList;
 import net.minecraft.nbt.CompoundTag;
@@ -41,8 +44,12 @@ public final class SfrControllerBlockEntity extends BlockEntity implements MenuP
     private FusionPhysics.Readout readout = IDLE;
     private SfrMultiblock.Result shell = SfrMultiblock.Result.failed(SfrMultiblock.Problem.UNLOADED, null, BlockPos.ZERO);
     private BlockPos publishedPort;
+    /** Channel pressure per second: the pump's 1/150 of nominal, the vent's 1/10. */
+    private static final double PUMP_RATE = 1.0 / 150, VENT_RATE = 0.1;
     private double channelPressure = 1, wear;
     private int radiators;
+    /** The vacuum stage and seal as of the last second; a sealed channel entering the stage writes its pressure into room gas. */
+    private boolean vacuumStage, sealed;
 
     public SfrControllerBlockEntity(BlockPos p, BlockState s) { super(ModBlockEntities.SFR_CONTROLLER.get(), p, s); }
     public NonNullList<ItemStack> items() { return items; }
@@ -86,6 +93,7 @@ public final class SfrControllerBlockEntity extends BlockEntity implements MenuP
         boolean powered = port != null && port.paidFullSecond();
         boolean hatchClosed = valid && !l.getBlockState(shell.hatch()).getValue(DoorBlock.OPEN);
         boolean pumping = valid && l.getBlockState(shell.vacuumPort()).getValue(SfrVacuumPortBlock.MODE) == SfrVacuumPortBlock.Mode.PUMP;
+        updateChannel(l, valid && hatchClosed, pumping, port != null && port.demandWatts() > 0 && powered);
         double target = physics.loadFollow() && port != null
                 ? PowerNetworks.loadFollowTargetWatts(l, shell.powerPort(), port.supplyWatts()) / 1000.0 : Double.NaN;
         loadTritium();
@@ -99,6 +107,52 @@ public final class SfrControllerBlockEntity extends BlockEntity implements MenuP
             port.ready(physics.state() == FusionPhysics.State.READY);
         }
         setChanged();
+    }
+
+    /** Outside the vacuum stage the channel exhausts to atmosphere at 1.0. During it, the pump moves gas into the room on
+     * the Vacuum Port's outer face and the vent equalizes the two rooms; an unsealed channel takes the outside pressure. */
+    private void updateChannel(ServerLevel l, boolean nowSealed, boolean pumping, boolean pumpPaid) {
+        boolean vacuum = CombustionAtmosphere.isVacuum(l), wasSealedVacuum = vacuumStage && sealed, wasSealed = sealed;
+        vacuumStage = vacuum; sealed = nowSealed;
+        if (!nowSealed) { channelPressure = outsidePressure(l); return; }
+        var gas = AirlockSavedState.get(l); var channel = shell.channel();
+        int capacity = channel.size() * AirlockCycle.UNITS_PER_CELL;
+        if (vacuum && !wasSealedVacuum) { gas.setRoomGas(l, channel, (int) Math.round(channelPressure * capacity)); return; }
+        if (!vacuum) {
+            if (wasSealedVacuum && wasSealed) return;
+            if (pumping) { if (pumpPaid) channelPressure = Math.max(0, channelPressure - PUMP_RATE); }
+            else channelPressure = toward(channelPressure, 1, VENT_RATE);
+            return;
+        }
+        int held = gas.roomGas(l, channel);
+        var room = outerRoom(l);
+        if (pumping && pumpPaid) {
+            int moved = Math.min(held, (int) Math.round(capacity * PUMP_RATE));
+            held -= moved; gas.setRoomGas(l, channel, held);
+            // receiveRoomAir caps each offer; keep offering until the room refuses. The rest is lost.
+            for (int offered = moved, got; offered > 0 && !room.isEmpty() && (got = gas.receiveRoomAir(l, room, offered)) > 0; ) offered -= got;
+        } else if (!pumping) {
+            int roomHeld = room.isEmpty() ? 0 : gas.roomGas(l, room), roomCapacity = room.size() * AirlockCycle.UNITS_PER_CELL;
+            long target = Math.round((double) (held + roomHeld) * capacity / (capacity + roomCapacity));
+            int limit = (int) Math.round(capacity * VENT_RATE), step = (int) Math.clamp(target - held, -limit, limit);
+            if (step != 0) { held += step; gas.setRoomGas(l, channel, held); if (!room.isEmpty()) gas.setRoomGas(l, room, roomHeld - step); }
+        }
+        channelPressure = held / (double) capacity;
+    }
+    private static double toward(double value, double target, double step) { return Math.abs(target - value) <= step + 1e-9 ? target : value + Math.copySign(step, target - value); }
+    /** 1.0 outside the vacuum stage; during it, the gas fraction of the sealed room on the Vacuum Port's outer face, 0 if there is none. */
+    public double outsidePressure(ServerLevel l) {
+        if (!CombustionAtmosphere.isVacuum(l)) return 1;
+        var room = outerRoom(l);
+        return room.isEmpty() ? 0 : AirlockSavedState.get(l).roomGas(l, room) / (double) (room.size() * AirlockCycle.UNITS_PER_CELL);
+    }
+    /** Air cells of the sealed room beyond the Vacuum Port, away from the torus center; empty when open or unknown. */
+    private Set<BlockPos> outerRoom(ServerLevel l) {
+        if (!shell.valid()) return Set.of();
+        var port = shell.vacuumPort(); var center = shell.center();
+        var out = Direction.getNearest(port.getX() - center.getX(), 0, port.getZ() - center.getZ());
+        var room = RoomAtmosphere.inspect(l, port.relative(out));
+        return room.seal() == RoomAtmosphere.Seal.SEALED && !room.scanning() ? room.cells() : Set.of();
     }
 
     /** The controller's own room, in front of it, holds no air. */
@@ -165,12 +219,14 @@ public final class SfrControllerBlockEntity extends BlockEntity implements MenuP
         super.saveAdditional(tag, r); ContainerHelper.saveAllItems(tag, items, r);
         var fusion = new CompoundTag(); physics.save(fusion); tag.put("Fusion", fusion);
         tag.putDouble("ChannelPressure", channelPressure);
+        tag.putBoolean("VacuumStage", vacuumStage); tag.putBoolean("Sealed", sealed);
     }
     @Override protected void loadAdditional(CompoundTag tag, HolderLookup.Provider r) {
         super.loadAdditional(tag, r); items.clear(); ContainerHelper.loadAllItems(tag, items, r);
         physics.load(tag.getCompound("Fusion"));
         double pressure = tag.contains("ChannelPressure") ? tag.getDouble("ChannelPressure") : 1;
         channelPressure = Double.isFinite(pressure) ? Math.clamp(pressure, 0, 1) : 1;
+        vacuumStage = tag.getBoolean("VacuumStage"); sealed = tag.getBoolean("Sealed");
         readout = IDLE;
     }
     public boolean stillValid(Player p) { return !p.isSpectator() && level != null && level.getBlockEntity(worldPosition) == this && p.distanceToSqr(worldPosition.getCenter()) <= 64; }
