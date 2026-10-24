@@ -208,4 +208,60 @@ class FusionPhysicsTest {
         var r = run(f, burn(14, true, true, true, 0, 64, true, 0, false, 150), 4000);
         assertEquals(150, r.netKw(), 15);
     }
+
+    private static FusionPhysics.Inputs ignitionWith(boolean hatchClosed, double pressure, boolean redstone) {
+        return new FusionPhysics.Inputs(sinks(14), true, pressure, hatchClosed, true, false, 64, true, 0, redstone, Double.NaN);
+    }
+    private static FusionPhysics igniting(double tritium) {
+        var f = new FusionPhysics(); f.setReadyForTest(); f.addTritium(tritium); f.start();
+        assertEquals(FusionPhysics.State.IGNITION, f.step(ok(14)).state());
+        return f;
+    }
+
+    @Test void extractingTheLastTritiumMidPulseAbortsIgnition() {
+        var f = igniting(1);
+        run(f, ok(14), 3);
+        assertTrue(f.extractTritium());
+        var r = run(f, ok(14), 7);
+        assertEquals(FusionPhysics.State.READY, r.state()); assertEquals(FusionPhysics.Status.NO_FUEL, r.status());
+        assertEquals(0, r.tritium(), 1e-9); assertFalse(r.disrupted());
+    }
+
+    @Test void blockersDuringThePulseAbortIgnitionWithoutWear() {
+        for (var in : List.of(ignitionWith(false, 0, false), ignitionWith(true, 0.2, false), ignitionWith(true, 0, true))) {
+            var f = igniting(2);
+            run(f, ok(14), 3);
+            var r = f.step(in);
+            assertEquals(FusionPhysics.State.READY, r.state(), in.toString()); assertFalse(r.disrupted());
+            assertEquals(2, f.tritium(), 1e-9, "No tritium is spent on an aborted pulse");
+        }
+    }
+
+    @Test void heldRedstoneStopRefusesIgnition() {
+        var f = new FusionPhysics(); f.setReadyForTest(); f.addTritium(2); f.start();
+        var r = f.step(ignitionWith(true, 0, true));
+        assertEquals(FusionPhysics.State.READY, r.state()); assertEquals(FusionPhysics.Status.ABORTED, r.status());
+    }
+
+    /** The SFR-1 alone on its network: a second's shortfall goes unpaid once warm-up is over. */
+    private static void assertIdlesAloneAtZeroDemand(List<Double> sinks) {
+        var f = burning(); f.setLoadFollow(true);
+        FusionPhysics.Readout r = null;
+        for (int i = 0; i < 4000; i++) {
+            boolean powered = i < 1000 || r.requestKw() == 0;
+            r = f.step(new FusionPhysics.Inputs(sinks, powered, 0, true, true, false, 64, true, 0, false, 0));
+            assertFalse(r.disrupted(), "second " + i + " net " + r.netKw());
+        }
+        assertEquals(FusionPhysics.State.BURNING, r.state()); assertEquals(0, r.requestKw(), 1e-9);
+    }
+    @Test void loadFollowAtZeroDemandCarriesItsOwnHouseLoadWithAWideField() { assertIdlesAloneAtZeroDemand(sinks(40)); }
+    @Test void loadFollowAtZeroDemandCarriesItsOwnHouseLoadWithWarmSinks() { assertIdlesAloneAtZeroDemand(Collections.nCopies(14, -30.0)); }
+
+    @Test void aRefusedStartIsFlaggedForOneSecond() {
+        var f = new FusionPhysics(); f.setReadyForTest(); f.addTritium(2); f.start();
+        f.step(ignitionWith(false, 0, false));
+        assertTrue(f.refusedStart());
+        f.step(ignitionWith(false, 0, false));
+        assertFalse(f.refusedStart());
+    }
 }

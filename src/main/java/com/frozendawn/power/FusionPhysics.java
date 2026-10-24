@@ -18,6 +18,8 @@ public final class FusionPhysics {
     public static final double BREEDING_RATIO = 1.05;
     /** Tuning starts: loop thermal mass, lowest sustained burn and the load-follow slew per second. */
     public static final double LOOP_HEAT_CAPACITY_KJ_PER_C = 100, MIN_BURN = 0.2, LOAD_FOLLOW_SLEW = 0.02;
+    /** Load-follow aims this far above the target so a reactor alone on its network never asks it for house power. */
+    public static final double LOAD_FOLLOW_RESERVE_KW = 2;
 
     public enum State { OFF, COOLDOWN, READY, IGNITION, BURNING }
     public enum Status { IDLE, COOLDOWN, READY, TORUS_OPEN, NO_VACUUM, NO_FUEL, WALL_WORN, IGNITION, ABORTED, BURNING,
@@ -36,7 +38,7 @@ public final class FusionPhysics {
     private Status status = Status.IDLE;
     private double loopC = 20, tritium, deuteriumProgress, burn = MIN_BURN, requestKw;
     private int progress, ashSeconds;
-    private boolean loadFollow, startPending, stopPending;
+    private boolean loadFollow, startPending, stopPending, refusedStart;
 
     public State state() { return state; }
     public Status status() { return status; }
@@ -44,6 +46,8 @@ public final class FusionPhysics {
     public void setLoopC(double value) { if (Double.isFinite(value)) loopC = value; }
     public double tritium() { return tritium; }
     public boolean loadFollow() { return loadFollow; }
+    /** True when the last step refused a pressed Start. */
+    public boolean refusedStart() { return refusedStart; }
     public void setLoadFollow(boolean value) { loadFollow = value; }
 
     /** Returns the units accepted; the tank holds TRITIUM_TANK. */
@@ -71,6 +75,7 @@ public final class FusionPhysics {
 
     public Readout step(Inputs in) {
         double sinkC = in.radiatorSinks().stream().mapToDouble(Double::doubleValue).average().orElse(ReactorPhysics.DEEP_VACUUM_C);
+        refusedStart = false;
         if (state == State.BURNING) return burn(in, sinkC);
         switch (state) {
             case COOLDOWN -> {
@@ -85,13 +90,15 @@ public final class FusionPhysics {
                 else {
                     Status blocked = ignitionBlock(in);
                     if (startPending && blocked == null) { state = State.IGNITION; status = Status.IGNITION; progress = 1; }
-                    else if (blocked != null) status = blocked;
+                    else if (blocked != null) { status = blocked; refusedStart = startPending; }
                     else if (status != Status.ABORTED) status = Status.READY;
                     startPending = false;
                 }
             }
             case IGNITION -> {
-                if (!in.powered()) { state = State.READY; status = Status.ABORTED; progress = 0; }
+                // Every blocker that refuses a start also ends the pulse, before the tritium is spent.
+                Status blocked = ignitionBlock(in);
+                if (!in.powered() || blocked != null) { state = State.READY; status = blocked == null ? Status.ABORTED : blocked; progress = 0; }
                 else if (++progress >= IGNITION_SECONDS) {
                     state = State.BURNING; status = Status.BURNING; progress = 0;
                     tritium -= IGNITION_TRITIUM; burn = MIN_BURN; ashSeconds = 0; deuteriumProgress = 0;
@@ -119,9 +126,10 @@ public final class FusionPhysics {
         double pumpKw = in.pumping() ? ASH_PUMP_KW : 0;
         double goal = 1;
         if (loadFollow && Double.isFinite(in.targetKw())) {
-            double eff = Math.max(0.05, ReactorPhysics.efficiency(NOMINAL_C, sinkC) * (1 - in.wear()));
+            // The loop's own efficiency, not the nominal one: a low burn runs a cold loop that converts less.
+            double eff = Math.max(0.05, ReactorPhysics.efficiency(loopC, sinkC) * (1 - in.wear()));
             double capacity = in.radiatorSinks().stream().mapToDouble(t -> HT_RADIATOR_KW_PER_C * Math.max(0, NOMINAL_C - t)).sum();
-            goal = Math.min((Math.max(0, in.targetKw()) + HOUSE_KW + pumpKw) / eff, capacity) / RATED_KW;
+            goal = Math.min((Math.max(0, in.targetKw()) + LOAD_FOLLOW_RESERVE_KW + HOUSE_KW + pumpKw) / eff, capacity) / RATED_KW;
         }
         goal = Math.clamp(goal, MIN_BURN, 1);
         burn += Math.clamp(goal - burn, -LOAD_FOLLOW_SLEW, LOAD_FOLLOW_SLEW);
@@ -164,6 +172,7 @@ public final class FusionPhysics {
         if (in.channelPressure() > VACUUM_LIMIT) return Status.NO_VACUUM;
         if (in.deuterium() <= 0 || tritium < IGNITION_TRITIUM) return Status.NO_FUEL;
         if (in.wear() > MAX_IGNITION_WEAR) return Status.WALL_WORN;
+        if (in.redstone()) return Status.ABORTED;
         return null;
     }
 

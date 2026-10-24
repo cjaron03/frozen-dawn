@@ -160,7 +160,7 @@ public final class SfrControllerBlockEntity extends BlockEntity implements MenuP
 
     private static final int QUENCH_TICKS = 100, GHOST_TICKS = 100, GHOST_CELLS = 32;
     private void playCues(ServerLevel l, @Nullable FusionPhysics.Readout before) {
-        for (var cue : SfrAudioCues.cues(before, readout)) {
+        for (var cue : SfrAudioCues.cues(before, readout, physics.refusedStart())) {
             var event = switch (cue) {
                 case READY -> ModSounds.SFR_READY; case REFUSE -> ModSounds.SFR_REFUSE;
                 case DISRUPTION -> ModSounds.SFR_DISRUPTION; case QUENCH -> ModSounds.SFR_QUENCH;
