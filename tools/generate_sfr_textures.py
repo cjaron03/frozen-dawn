@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""SFR-1 Solstice Reactor block textures, 16x16, drawn from code so they can be redrawn.
+"""SFR-1 Solstice Reactor block and fuel item textures, 16x16, drawn from code so they can be redrawn.
 
 Look: a clean fusion lab. Pale ceramic and brushed-steel panels, unlike the CFU-7's dark casing, with the ORSA
 blue and orange the rest of the base uses as accents. Every block has its own motif so the torus reads at a glance:
@@ -13,6 +13,7 @@ from pathlib import Path
 from PIL import Image
 
 OUT = Path(__file__).resolve().parent.parent / "src/main/resources/assets/frozendawn/textures/block"
+ITEM_OUT = OUT.parent / "item"
 
 # Ceramic panel, light to dark.
 CERAMIC = [(226, 230, 233), (205, 210, 215), (184, 190, 197), (156, 164, 172), (118, 126, 136)]
@@ -289,7 +290,53 @@ TEXTURES = {
     "high_temperature_radiator_hot": lambda: radiator(True),
 }
 
+INK = (20, 24, 30)
+DEUTERIUM = [(24, 52, 108), (46, 96, 196), (110, 176, 250), (200, 230, 255)]
+TRITIUM = [(22, 70, 30), (60, 170, 70), (140, 245, 120), (225, 255, 205)]
+HAZARD = [(232, 190, 40), (28, 28, 30)]
+
+
+def cylinder(cap, band, glass):
+    """A tall steel gas cylinder: handwheel valve, domed coloured cap, a band, a glowing sight glass, round shading."""
+    im = new()
+    # Handwheel and valve stem.
+    rect(im, 5, 0, 10, 0, INK); put(im, 4, 1, INK); put(im, 11, 1, INK)
+    rect(im, 5, 1, 10, 1, STEEL[1]); put(im, 6, 1, STEEL[0]); put(im, 9, 1, STEEL[2]); put(im, 10, 1, STEEL[3])
+    rect(im, 5, 2, 10, 2, INK); rect(im, 7, 2, 8, 2, STEEL[2])
+    # Domed cap.
+    rect(im, 6, 3, 9, 3, cap[1]); put(im, 5, 3, INK); put(im, 10, 3, INK); put(im, 6, 3, cap[3]); put(im, 9, 3, cap[0])
+    rect(im, 5, 4, 10, 4, cap[1]); put(im, 4, 4, INK); put(im, 11, 4, INK); put(im, 5, 4, cap[2]); put(im, 6, 4, cap[3]); put(im, 10, 4, cap[0])
+    # Body: outline, highlight, mid, shade.
+    shade = [STEEL[1], STEEL[0], STEEL[1], STEEL[1], STEEL[2], STEEL[3]]
+    for y in range(5, 15):
+        put(im, 4, y, INK); put(im, 11, y, INK)
+        for i, c in enumerate(shade): put(im, 5 + i, y, c)
+    for x in range(5, 11):
+        put(im, x, 6, band(x, 0)); put(im, x, 7, band(x, 1))
+    rect(im, 5, 5, 10, 5, INK)
+    rect(im, 5, 8, 10, 8, STEEL[3])
+    # Sight glass: a dark rim and gas glowing brightest at the top.
+    rect(im, 6, 9, 9, 13, STEEL[3])
+    rect(im, 7, 10, 8, 12, glass[1]); put(im, 7, 10, glass[3]); put(im, 8, 10, glass[2]); put(im, 7, 11, glass[2]); put(im, 8, 12, glass[0])
+    # Foot ring.
+    rect(im, 5, 15, 10, 15, INK); put(im, 5, 14, STEEL[2]); put(im, 10, 14, STEEL[3])
+    return im
+
+
+def deuterium_canister():
+    return cylinder(DEUTERIUM, lambda x, row: DEUTERIUM[2 if x < 6 else 1 if x < 10 else 0] if row == 0 else DEUTERIUM[1 if x < 10 else 0], DEUTERIUM)
+
+
+def tritium_canister():
+    return cylinder(TRITIUM, lambda x, row: HAZARD[(x + row) // 2 % 2], TRITIUM)
+
+
+ITEMS = {"deuterium_canister": deuterium_canister, "tritium_canister": tritium_canister}
+
 if __name__ == "__main__":
     for name, draw in TEXTURES.items():
         draw().save(OUT / f"{name}.png")
+        print(name)
+    for name, draw in ITEMS.items():
+        draw().save(ITEM_OUT / f"{name}.png")
         print(name)
