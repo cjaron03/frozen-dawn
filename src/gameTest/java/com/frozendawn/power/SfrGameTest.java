@@ -3,6 +3,7 @@ package com.frozendawn.power;
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.airlock.AirlockCycle;
 import com.frozendawn.airlock.AirlockSavedState;
+import com.frozendawn.block.SfrControllerBlock;
 import com.frozendawn.block.SfrHatchBlock;
 import com.frozendawn.block.SfrVacuumPortBlock;
 import com.frozendawn.data.ApocalypseState;
@@ -440,6 +441,25 @@ public final class SfrGameTest {
             h.assertTrue(wrong.contains(new SfrMultiblock.Wrong(wall, ModBlocks.FIRST_WALL.get())), "The stone First Wall cell is not marked");
             h.assertTrue(wrong.contains(new SfrMultiblock.Wrong(channel, null)), "The filled channel cell is not marked");
             h.assertValueEqual(SfrMultiblock.wrongCells(level, pos, Direction.NORTH, 1).size(), 1, "limit");
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "sfr", timeoutTicks = 100)
+    public static void sfrLoneControllerBlueprintTogglesPerPlayer(GameTestHelper h) {
+        scene(h, () -> {
+            var level = h.getLevel(); var pos = SfrScenes.cell(h, CENTER, 0, 0, -4);
+            level.setBlock(pos, ModBlocks.SFR_CONTROLLER.get().defaultBlockState().setValue(SfrControllerBlock.FACING, Direction.NORTH), 3);
+            var be = controller(h, pos);
+            var blueprint = be.blueprint(level);
+            // 122 coil and 48 Blanket cells, 48 First Wall and the core, less the outer-ring cell the Controller fills.
+            h.assertValueEqual(blueprint.size(), 218, "blueprint cells around a lone Controller");
+            h.assertTrue(blueprint.stream().allMatch(w -> w.expected() != null), "Every blueprint cell names its block");
+            h.assertValueEqual(blueprint.stream().filter(w -> w.expected() == ModBlocks.FIRST_WALL.get()).count(), 48L, "First Wall cells");
+            var alice = java.util.UUID.randomUUID(); var bob = java.util.UUID.randomUUID();
+            h.assertTrue(be.toggleBlueprint(alice), "First use shows the blueprint");
+            h.assertTrue(be.toggleBlueprint(bob), "Another player's use shows it to them too");
+            h.assertFalse(be.toggleBlueprint(alice), "Second use hides it");
+            h.assertTrue(be.showsBlueprintTo(bob) && !be.showsBlueprintTo(alice), "Hiding is per player");
         });
     }
 

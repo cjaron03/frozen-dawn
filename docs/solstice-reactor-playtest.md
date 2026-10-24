@@ -31,12 +31,12 @@ Exact shell: 122 coil cells and 48 Blanket cells before ports (26 solenoid, 48 c
 
 The torus is 9x9 and 5 high (Y1 to Y5, middle Y3). Rings are squares measured from the center column.
 
-1. Place the Controller where the middle of one outer face will be, facing outward. The center is 4 blocks behind it.
+1. Place the Controller where the middle of one outer face will be, facing outward. The center is 4 blocks behind it. Placing it shows the blueprint: a pulsing translucent ghost of the right block in every empty cell, a red box on any cell holding the wrong block or filling the channel, and the parts still needed on the action bar. Ghosts disappear as you fill them. Use the Controller (not sneaking) to hide or show it again; it hides itself once the torus is complete. Sneak-use opens the screen. Steps 2 to 5 below are what the ghosts show.
 2. Center column and the ring around it (r = 0, 1), Y2 to Y4: Magnet Coils, with the Confinement Core at the very center on Y3.
 3. r = 2, Y2 to Y4: First Wall.
 4. r = 3, Y2 to Y4: leave as air. This is the plasma channel. Cap it with Magnet Coils at Y1 and Y5 over r = 3 only.
-5. r = 4, Y2 to Y4: alternate Magnet Coil and Lithium Blanket in a checkerboard. Corners are always shell. The Controller's ghost outline shows the expected block for any wrong cell.
-6. Ports on any non-corner r = 4 cell at Y2 to Y4: 2 Coolant Ports, Fuel Port, Power Port, Vacuum Port. The Maintenance Hatch also goes on r = 4, lower half at Y2, upper at Y3, opening into the channel.
+5. r = 4, Y2 to Y4: alternate Magnet Coil and Lithium Blanket in a checkerboard. Corners are always shell.
+6. Ports on any non-corner r = 4 cell at Y2 to Y4, over a ghost coil or Blanket: 2 Coolant Ports, Fuel Port, Power Port, Vacuum Port. The Maintenance Hatch also goes on r = 4, lower half at Y2, upper at Y3, opening into the channel.
 7. Seal: the Controller's top line reads the shell valid, or names the first wrong part.
 
 ## Linking
@@ -59,20 +59,21 @@ Expected at 14 radiators against deep vacuum (-200C), full output: loop about 84
 
 ## Judge by eye and ear
 
-1. Placeholder textures for every SFR block and item, and the ghost outline on a wrong cell.
-2. The Controller screen: state, status colors, progress percent, loop, heat, power, request, radiators, fuel and channel lines.
-3. TORUS OPEN with the hatch open; Start refused. Opening the hatch while burning disrupts at once.
-4. Quench frost after a MAGNET QUENCH (cut the network while gross output is under 40 kW).
-5. The nine sounds, each for distinctness, loudness and distance falloff:
+1. Placeholder textures for every SFR block and item.
+2. The blueprint: ghost readability against snow and in the dark, the pulse, red boxes, the action-bar parts list, toggling, and that it clears itself on completion. Judge whether it is as easy to follow as a Create or Immersive Engineering build guide.
+3. The Controller screen: state, status colors, progress percent, loop, heat, power, request, radiators, fuel and channel lines.
+4. TORUS OPEN with the hatch open; Start refused. Opening the hatch while burning disrupts at once.
+5. Quench frost after a MAGNET QUENCH (cut the network while gross output is under 40 kW).
+6. The nine sounds, each for distinctness, loudness and distance falloff:
    - cryocooler loop during cooldown and READY
    - ignition charge and thump (cut off if ignition aborts)
    - burn loop, louder and higher with output
    - pump loop at the Vacuum Port, thinning as the channel empties
    - warning alarm while burning: loop at or above 1000C, pump off, or net negative
    - READY chime; refusal buzz when you press Start and it is refused, or when ignition aborts (a standing refusal nobody pressed is silent); disruption crack; quench vent
-6. Linked radiators turn HOT while the loop is at or above 150C, buried or not, and cool when it drops.
-7. Breaking the Controller drops its tank as whole Tritium Canisters.
-8. Ruling to judge: the alarm sounds through warm-up, because net is negative then. Say if that is too much.
+7. Linked radiators turn HOT while the loop is at or above 150C, buried or not, and cool when it drops.
+8. Breaking the Controller drops its tank as whole Tritium Canisters.
+9. Ruling to judge: the alarm sounds through warm-up, because net is negative then. Say if that is too much.
 
 ## Known limitation
 
@@ -80,6 +81,6 @@ Outside the vacuum stage, a player standing in a pumped-down channel still breat
 
 ## Evidence and limits
 
-Headless, verified by tests: multiblock validation and ghost cells, port rules, channel pressure and pump-down into the outer room, startup sequence and aborts, ignition at 150 kW, burn physics and the 14-radiator readings, load-following, fuel burn and 1.05x breeding, disruptions and quench, saved state, cue selection and alarm rule, radiator HOT state, hatch-side pressure and vacuum-stage sealing, tritium drop on break, sound state sync to the client, and that all nine sound files are mono Vorbis and registered.
+Headless, verified by tests: multiblock validation, the full blueprint cell list and its per-player toggle, port rules, channel pressure and pump-down into the outer room, startup sequence and aborts, ignition at 150 kW, burn physics and the 14-radiator readings, load-following, fuel burn and 1.05x breeding, disruptions and quench, saved state, cue selection and alarm rule, radiator HOT state, hatch-side pressure and vacuum-stage sealing, tritium drop on break, sound state sync to the client, and that all nine sound files are mono Vorbis and registered.
 
-Needs the owner: textures, outline and frost visuals, screen layout, every sound's character and mix, hatch feel, Conduit Binder linking in a real world, and the warm-up alarm ruling. Multiplayer is not checked.
+Needs the owner: textures, ghost-block blueprint rendering, frost visuals, screen layout, every sound's character and mix, hatch feel, Conduit Binder linking in a real world, and the warm-up alarm ruling. Multiplayer is not checked.

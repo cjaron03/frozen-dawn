@@ -65,9 +65,9 @@ public final class SfrControllerBlockEntity extends BlockEntity implements MenuP
     private final Set<BlockPos> hot = new HashSet<>();
     /** Ticks of quench frost left on the coils. */
     private int quenchTicks;
-    /** The ghost outline: wrong cells marked with End Rod particles for GHOST_TICKS after a use on a broken shell. */
-    private List<BlockPos> ghost = List.of();
-    private int ghostTicks, comparator;
+    /** Players shown this Controller's ghost-block blueprint; transient, like the client's own copy. */
+    private final Set<java.util.UUID> blueprintViewers = new HashSet<>();
+    private int comparator;
     /** What the client loops play; synced whenever it changes. Heat is whole kW and pressure hundredths, to bound packets. */
     public record Sound(FusionPhysics.State state, double heatKw, double pressure, boolean pumping, @Nullable BlockPos pump, boolean alarm) {}
     private static final Sound SILENT = new Sound(FusionPhysics.State.OFF, 0, 1, false, null, false);
@@ -99,8 +99,6 @@ public final class SfrControllerBlockEntity extends BlockEntity implements MenuP
         if (!(level instanceof ServerLevel l)) return;
         if (l.getGameTime() % 20 == 0) second(l);
         if (quenchTicks > 0 && !lastCoils.isEmpty()) { quenchTicks--; frost(l); }
-        if (ghostTicks > 0 && ghostTicks-- % 5 == 0)
-            for (var p : ghost) l.sendParticles(ParticleTypes.END_ROD, p.getX() + 0.5, p.getY() + 0.5, p.getZ() + 0.5, 1, 0.15, 0.15, 0.15, 0);
     }
 
     /** One second of reactor time. Also public for GameTests, which drive it directly. */
@@ -115,6 +113,8 @@ public final class SfrControllerBlockEntity extends BlockEntity implements MenuP
         var portAt = port == null ? null : shell.powerPort();
         if (publishedPort != null && !publishedPort.equals(portAt)) release(l);
         publishedPort = portAt;
+        // A sealed torus has nothing left to show; the clients drop their copy on the same rule.
+        if (valid) blueprintViewers.clear();
         if (valid) { HATCHES.computeIfAbsent(l, k -> new HashMap<>()).put(shell.hatch(), worldPosition); lastFirstWall = shell.firstWall(); lastCoils = shell.coils(); }
         var sinks = new ArrayList<Double>();
         if (valid) for (var p : HighTemperatureRadiatorBlock.sinks(l, shell.coolantPorts())) ReactorRadiatorBlock.sink(l, p).ifPresent(sinks::add);
@@ -160,14 +160,15 @@ public final class SfrControllerBlockEntity extends BlockEntity implements MenuP
 
     /** Loop temperature against the disruption limit, 0-15. */
     public int comparator() { return Math.clamp(Math.round(physics.loopC() / FusionPhysics.DISRUPT_C * 15), 0, 15); }
-    /** Marks up to 32 wrong cells for 100 ticks; returns the first, or empty when every cell is right but a port is missing. */
-    public java.util.Optional<SfrMultiblock.Wrong> showGhost(ServerLevel l) {
-        var wrong = SfrMultiblock.wrongCells(l, worldPosition, getBlockState().getValue(SfrControllerBlock.FACING), GHOST_CELLS);
-        ghost = wrong.stream().map(SfrMultiblock.Wrong::pos).toList(); ghostTicks = GHOST_TICKS;
-        return wrong.stream().findFirst();
+    /** Every wrong cell of the torus; empty when every cell is right, though a port may still be missing. */
+    public List<SfrMultiblock.Wrong> blueprint(net.minecraft.world.level.Level l) {
+        return SfrMultiblock.wrongCells(l, worldPosition, getBlockState().getValue(SfrControllerBlock.FACING), Integer.MAX_VALUE);
     }
+    /** Shows or hides the blueprint for one player; returns whether it is now shown. */
+    public boolean toggleBlueprint(java.util.UUID viewer) { return blueprintViewers.remove(viewer) ? false : blueprintViewers.add(viewer); }
+    public boolean showsBlueprintTo(java.util.UUID viewer) { return blueprintViewers.contains(viewer); }
 
-    private static final int QUENCH_TICKS = 100, GHOST_TICKS = 100, GHOST_CELLS = 32;
+    private static final int QUENCH_TICKS = 100;
     private void playCues(ServerLevel l, @Nullable FusionPhysics.Readout before) {
         for (var cue : SfrAudioCues.cues(before, readout, physics.refusedStart())) {
             var event = switch (cue) {

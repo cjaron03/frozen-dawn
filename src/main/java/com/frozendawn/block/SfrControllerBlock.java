@@ -13,6 +13,10 @@ import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.Containers;
+import com.frozendawn.network.SfrBlueprintPayload;
+import net.minecraft.world.entity.LivingEntity;
+import net.neoforged.neoforge.network.PacketDistributor;
+import org.jetbrains.annotations.Nullable;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
@@ -37,16 +41,36 @@ public final class SfrControllerBlock extends Block implements EntityBlock {
         if (player.getMainHandItem().is(ModItems.CONDUIT_BINDER) || player.getOffhandItem().is(ModItems.CONDUIT_BINDER)) return InteractionResult.PASS;
         if (player instanceof ServerPlayer server && l.getBlockEntity(p) instanceof SfrControllerBlockEntity c) {
             var level = server.serverLevel();
-            // A broken torus shows its ghost outline instead of the screen; sneaking opens the screen anyway.
-            if (!player.isShiftKeyDown() && !SfrMultiblock.validate(level, p, s.getValue(FACING)).valid()) {
-                var first = c.showGhost(level);
-                server.displayClientMessage(first.map(w -> w.expected() == null
-                        ? Component.translatable("message.frozendawn.sfr.clear_cell", w.pos().getX(), w.pos().getY(), w.pos().getZ())
-                        : Component.translatable("message.frozendawn.sfr.wrong_cell", w.pos().getX(), w.pos().getY(), w.pos().getZ(), w.expected().getName()))
-                        .orElse(Component.translatable("message.frozendawn.sfr.missing_ports")), true);
-            } else server.openMenu(c, buf -> buf.writeBlockPos(p));
+            // A broken torus toggles its ghost-block blueprint instead of the screen; sneaking opens the screen anyway.
+            if (!player.isShiftKeyDown() && !SfrMultiblock.validate(level, p, s.getValue(FACING)).valid()) blueprint(server, c, c.toggleBlueprint(server.getUUID()));
+            else server.openMenu(c, buf -> buf.writeBlockPos(p));
         }
         return InteractionResult.sidedSuccess(l.isClientSide());
+    }
+    /** A Controller placed where no torus stands yet shows its blueprint at once. */
+    @Override public void setPlacedBy(Level l, BlockPos p, BlockState s, @Nullable LivingEntity placer, ItemStack stack) {
+        super.setPlacedBy(l, p, s, placer, stack);
+        if (placer instanceof ServerPlayer server && l.getBlockEntity(p) instanceof SfrControllerBlockEntity c
+                && !SfrMultiblock.validate(server.serverLevel(), p, s.getValue(FACING)).valid() && !c.showsBlueprintTo(server.getUUID()))
+            blueprint(server, c, c.toggleBlueprint(server.getUUID()));
+    }
+    /** Sends the blueprint state and names what the torus still needs, by block, on the action bar. */
+    private static void blueprint(ServerPlayer player, SfrControllerBlockEntity c, boolean show) {
+        var cells = c.blueprint(player.serverLevel());
+        // Every cell right but a port missing: nothing to draw, so the blueprint stays hidden.
+        if (cells.isEmpty()) { if (show) c.toggleBlueprint(player.getUUID()); show = false; }
+        PacketDistributor.sendToPlayer(player, new SfrBlueprintPayload(c.getBlockPos(), show));
+        if (cells.isEmpty()) { player.displayClientMessage(Component.translatable("message.frozendawn.sfr.missing_ports"), true); return; }
+        if (!show) { player.displayClientMessage(Component.translatable("message.frozendawn.sfr.blueprint_hidden"), true); return; }
+        var counts = new java.util.LinkedHashMap<Block, Integer>(); int clear = 0;
+        for (var w : cells) if (w.expected() == null) clear++; else counts.merge(w.expected(), 1, Integer::sum);
+        var parts = Component.empty();
+        for (var e : counts.entrySet()) {
+            if (!parts.getSiblings().isEmpty()) parts.append(", ");
+            parts.append(Component.translatable("message.frozendawn.sfr.blueprint_part", e.getValue(), e.getKey().getName()));
+        }
+        if (clear > 0) { if (!parts.getSiblings().isEmpty()) parts.append(", "); parts.append(Component.translatable("message.frozendawn.sfr.blueprint_clear", clear)); }
+        player.displayClientMessage(Component.translatable("message.frozendawn.sfr.blueprint", parts), true);
     }
     @Override protected void onRemove(BlockState s, Level l, BlockPos p, BlockState next, boolean moving) {
         if (!s.is(next.getBlock()) && l.getBlockEntity(p) instanceof SfrControllerBlockEntity c) {
