@@ -60,7 +60,7 @@
     - `COOLDOWN_SECONDS=120`, `IGNITION_SECONDS=10`, `ASH_FADE_SECONDS=60`
     - `VACUUM_LIMIT=0.05`, `WEAR_PER_DISRUPTION=0.05`, `MAX_IGNITION_WEAR=0.80`
     - `DEUTERIUM_SECONDS=600`, `TRITIUM_SECONDS=1200`, `TRITIUM_TANK=8`, `IGNITION_TRITIUM=1`, `BREEDING_RATIO=1.05`
-    - `LOOP_HEAT_CAPACITY_KJ_PER_C=100`, `MIN_BURN=0.2`, `LOAD_FOLLOW_SLEW=0.02` (these three are tuning starts)
+    - `LOOP_HEAT_CAPACITY_KJ_PER_C=25`, `MIN_BURN=0.2`, `LOAD_FOLLOW_SLEW=0.05` (tuning; raised from 100 and 0.02 on 2026-10-24 so the loop settles in minutes)
   - `enum State { OFF, COOLDOWN, READY, IGNITION, BURNING }`
   - `enum Status { IDLE, COOLDOWN, READY, TORUS_OPEN, NO_VACUUM, NO_FUEL, WALL_WORN, IGNITION, ABORTED, BURNING, DISRUPTION, MAGNET_QUENCH, ASH_POISONED }`
   - `record Inputs(List<Double> radiatorSinks, boolean powered, double channelPressure, boolean hatchClosed, boolean shellIntact, boolean roomVacuum, int deuterium, boolean pumping, double wear, boolean redstone, double targetKw)`

@@ -55,7 +55,7 @@ The torus is 9x9 and 5 high (Y1 to Y5, middle Y3). Rings are squares measured fr
 3. Press Start again. Ignition draws 150 kW for 10 s and consumes 1 tritium. Any second short aborts back to READY.
 4. BURNING. The 40 kW house load comes from the reactor's own output.
 
-Expected at 14 radiators against deep vacuum (-200C), full output: loop about 848C, net about 329 kW. Warmer sinks read lower. During warm-up net output is negative; that is the spec's behavior.
+Expected at 14 radiators against deep vacuum (-200C), full output: loop about 848C, net about 329 kW. The burn reaches 100% about 16 s after ignition and the loop is within 5% of steady state after about 3.5 minutes (20 radiators at 150%: about 2.5 minutes). Warmer sinks read lower. During warm-up net output is negative; that is the spec's behavior.
 
 ## Overdrive
 
@@ -66,7 +66,7 @@ The DMS button (Disruption Mitigation System) starts On, which holds drive at 10
 - Nothing catches an over-temperature plasma. Past 1100C the status reads WALL MELT-THROUGH, every First Wall turns to magma, the coils quench, and the torus will not seal until the wall is rebuilt. This replaces one wear step; it can happen at 100% drive too while DMS is off.
 - Turning DMS back on drops drive to 100% at once; the burn slews down.
 
-Expected against deep vacuum: 150% with 14 radiators settles near 1370C, so it melts. About 19 radiators hold 150% under 1000C; 20 settle near 900C for about 518 kW net.
+Expected against deep vacuum: 150% with 14 radiators settles near 1370C, so it melts: from a cold start the alarm sounds after about 97 s and the wall melts about 21 s later. About 19 radiators hold 150% under 1000C; 20 settle near 900C for about 518 kW net.
 
 ## Judge by eye and ear
 
@@ -94,6 +94,7 @@ Expected against deep vacuum: 150% with 14 radiators settles near 1370C, so it m
 - Cooldown (2026-10-24): "i heard the chim". The READY chime, played when cooldown finishes.
 - First ignition (2026-10-24), 8 MJ banked: "huh why do i hear a warning sound?" Screenshot 2026-10-24_01.07.36: BURNING, loop 238C, heat 400 kW, removed 75.6 kW, gross 29.7 kW, net -15.3 kW, 14 HT radiators, channel 0%. The alarm is the net < 0 trigger during loop warm-up, which every normal start passes through. Owner decision: drop that trigger, play a success sound at ignition, and make the burn loop sound like fusion.
 - Overcharge request (2026-10-24): "can you make it so you can overcharge the reactor like how you can on the fission reactor? also look a the ss, the Ui looks a little funky". After the proposal: "but of course dont copy it 1 to 1, this is a fusion reactor, so instead have it \"meldown\" how an actual fusion reactor woukd (i guess the walls just fucking melt or something)". Built as the DMS toggle, Drive to 150% and the First Wall melt-through above.
+- Heat-up pace (2026-10-24): "ngl i wouldve thought this thing would heat up a LOT faster lol, since its plasma". Then: "i wnat it so the palyer doenst need ot wait for very long, but also not instant." Loop thermal mass cut from 100 to 25 kJ/C and burn slew raised from 2% to 5% per second; settle time drops from about 13 to about 3.5 minutes.
 
 ## Known limitation
 

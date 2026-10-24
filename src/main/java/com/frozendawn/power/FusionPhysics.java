@@ -20,7 +20,7 @@ public final class FusionPhysics {
     public static final int DEUTERIUM_SECONDS = 600, TRITIUM_SECONDS = 1200, TRITIUM_TANK = 8, IGNITION_TRITIUM = 1;
     public static final double BREEDING_RATIO = 1.05;
     /** Tuning starts: loop thermal mass, lowest sustained burn and the load-follow slew per second. */
-    public static final double LOOP_HEAT_CAPACITY_KJ_PER_C = 100, MIN_BURN = 0.2, LOAD_FOLLOW_SLEW = 0.02;
+    public static final double LOOP_HEAT_CAPACITY_KJ_PER_C = 25, MIN_BURN = 0.2, LOAD_FOLLOW_SLEW = 0.05;
     /** Load-follow aims this far above the target so a reactor alone on its network never asks it for house power. */
     public static final double LOAD_FOLLOW_RESERVE_KW = 2;
     /** Drive range and step; above 100%, OVERDRIVE_WEAR_SECONDS of one full unit of overdrive add one First Wall wear step,
