@@ -45,7 +45,8 @@ The torus is 9x9 and 5 high (Y1 to Y5, middle Y3). Rings are squares measured fr
 - With the Conduit Binder, link each radiator to a Coolant Port (port to radiator; links render blue).
 - Fill each battery bank with 4 charged cells (2 MJ per bank) and link the banks to the Power Port. A start needs about 2.4 MJ for cooldown and 1.5 MJ for ignition, so four banks cover two starts.
 - Put Deuterium Canisters in the Fuel Port (hoppers work) and Tritium Canisters in the Controller slots (1 canister = 1 unit, tank 8).
-- The Vacuum Port pumps the channel; it exhausts into the room on its outer face.
+- The Vacuum Port pumps the channel; it exhausts into the room on its outer face, and its Vent mode equalizes the channel with that room.
+- In the vacuum stage the hatch will not open across a pressure difference with the room on its own outer face. A channel sealed in open vacuum starts as vacuum.
 
 ## Startup
 
@@ -68,8 +69,10 @@ Expected at 14 radiators against deep vacuum (-200C), full output: loop about 84
    - burn loop, louder and higher with output
    - pump loop at the Vacuum Port, thinning as the channel empties
    - warning alarm while burning: loop at or above 1000C, pump off, or net negative
-   - READY chime, refusal buzz, disruption crack, quench vent
-6. Ruling to judge: the alarm sounds through warm-up, because net is negative then. Say if that is too much.
+   - READY chime; refusal buzz when you press Start and it is refused, or when ignition aborts (a standing refusal nobody pressed is silent); disruption crack; quench vent
+6. Linked radiators turn HOT while the loop is at or above 150C, buried or not, and cool when it drops.
+7. Breaking the Controller drops its tank as whole Tritium Canisters.
+8. Ruling to judge: the alarm sounds through warm-up, because net is negative then. Say if that is too much.
 
 ## Known limitation
 
@@ -77,6 +80,6 @@ Outside the vacuum stage, a player standing in a pumped-down channel still breat
 
 ## Evidence and limits
 
-Headless, verified by tests: multiblock validation and ghost cells, port rules, channel pressure and pump-down into the outer room, startup sequence and aborts, ignition at 150 kW, burn physics and the 14-radiator readings, load-following, fuel burn and 1.05x breeding, disruptions and quench, saved state, cue selection and alarm rule, sound state sync to the client, and that all nine sound files are mono Vorbis and registered.
+Headless, verified by tests: multiblock validation and ghost cells, port rules, channel pressure and pump-down into the outer room, startup sequence and aborts, ignition at 150 kW, burn physics and the 14-radiator readings, load-following, fuel burn and 1.05x breeding, disruptions and quench, saved state, cue selection and alarm rule, radiator HOT state, hatch-side pressure and vacuum-stage sealing, tritium drop on break, sound state sync to the client, and that all nine sound files are mono Vorbis and registered.
 
 Needs the owner: textures, outline and frost visuals, screen layout, every sound's character and mix, hatch feel, Conduit Binder linking in a real world, and the warm-up alarm ruling. Multiplayer is not checked.
