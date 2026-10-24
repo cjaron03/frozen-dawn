@@ -97,6 +97,7 @@ Expected against deep vacuum: 150% with 14 radiators settles near 1370C, so it m
 - Heat-up pace (2026-10-24): "ngl i wouldve thought this thing would heat up a LOT faster lol, since its plasma". Then: "i wnat it so the palyer doenst need ot wait for very long, but also not instant." Loop thermal mass cut from 100 to 25 kJ/C and burn slew raised from 2% to 5% per second; settle time drops from about 13 to about 3.5 minutes.
 - Overdrive check (2026-10-24), 14 HT radiators, sink about 37C, DMS on, drive 100%: "at around 1,000C im getting a two tone alarm". This is the warning alarm's loop >= 1000C trigger; at this sink, 14 radiators settle near 1085C with Follow off.
 - Overdrive alarm (2026-10-24), 28 HT radiators at 150%: "i think the overdrive warning should either not be this annoying or something, thoughts?" Then: "id say have a alert sound when you disable DMS, then get rid of the overdrive alarm". Overdrive no longer triggers the alarm; disabling DMS plays a one-shot alert.
+- First melt-through (2026-10-24): "good. i made it meltdown, though only the first wall turned into magma blocks? is that realistic? or". Matches the design: WALL_MELT converts only First Wall blocks.
 
 ## Known limitation
 
