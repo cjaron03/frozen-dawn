@@ -348,6 +348,19 @@ public final class SfrGameTest {
         });
     }
 
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "sfr", timeoutTicks = 100, skyAccess = true)
+    public static void sfrBreakingTheControllerDropsItsWholeTritiumUnits(GameTestHelper h) {
+        scene(h, () -> {
+            var level = h.getLevel(); var at = SfrScenes.build(h, CENTER); var be = controller(h, at);
+            be.physics().addTritium(3.5);
+            level.destroyBlock(at, true);
+            int canisters = 0;
+            for (var item : level.getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class, new net.minecraft.world.phys.AABB(at).inflate(2)))
+                if (item.getItem().is(ModItems.TRITIUM_CANISTER.get())) canisters += item.getItem().getCount();
+            h.assertValueEqual(canisters, 3, "Tritium Canisters dropped from a 3.5-unit tank");
+        });
+    }
+
     @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "sfr_vacuum", timeoutTicks = 100, skyAccess = true)
     public static void sfrChannelSealedInTheVacuumStageStartsAsVacuum(GameTestHelper h) {
         scene(h, () -> {

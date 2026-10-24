@@ -1,6 +1,7 @@
 package com.frozendawn.block;
 
 import com.frozendawn.init.ModBlockEntities;
+import com.frozendawn.init.ModItems;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.EntityBlock;
@@ -8,11 +9,11 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
-import com.frozendawn.init.ModItems;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.Containers;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.BlockHitResult;
@@ -48,7 +49,12 @@ public final class SfrControllerBlock extends Block implements EntityBlock {
         return InteractionResult.sidedSuccess(l.isClientSide());
     }
     @Override protected void onRemove(BlockState s, Level l, BlockPos p, BlockState next, boolean moving) {
-        if (!s.is(next.getBlock()) && l.getBlockEntity(p) instanceof SfrControllerBlockEntity c) Containers.dropContents(l, p, c.items());
+        if (!s.is(next.getBlock()) && l.getBlockEntity(p) instanceof SfrControllerBlockEntity c) {
+            Containers.dropContents(l, p, c.items());
+            // The tank empties into canisters, whole units only; a bred fraction is lost with the vessel.
+            int units = (int) Math.floor(c.physics().tritium());
+            if (units > 0) Containers.dropItemStack(l, p.getX(), p.getY(), p.getZ(), new ItemStack(ModItems.TRITIUM_CANISTER.get(), units));
+        }
         super.onRemove(s, l, p, next, moving);
     }
     @Override protected boolean hasAnalogOutputSignal(BlockState s) { return true; }
