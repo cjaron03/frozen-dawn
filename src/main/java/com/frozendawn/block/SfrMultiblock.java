@@ -103,6 +103,29 @@ public final class SfrMultiblock {
                 List.copyOf(firstWall), List.copyOf(coils));
     }
 
+    /** A cell that does not hold what the torus needs there; expected is null for a channel cell that must be air. */
+    public record Wrong(BlockPos pos, @org.jetbrains.annotations.Nullable Block expected) {}
+    /** Up to limit wrong cells, in validate's scan order, by the same table. Port-eligible cells accept any port or the hatch. */
+    public static List<Wrong> wrongCells(Level level, BlockPos controller, Direction facing, int limit) {
+        var center = center(controller, facing); var wrong = new ArrayList<Wrong>();
+        for (int dx = -RADIUS; dx <= RADIUS && wrong.size() < limit; dx++) for (int dy = -2; dy <= 2 && wrong.size() < limit; dy++)
+            for (int dz = -RADIUS; dz <= RADIUS && wrong.size() < limit; dz++) {
+                var pos = center.offset(dx, dy, dz);
+                if (pos.equals(controller)) continue;
+                var block = level.getBlockState(pos).getBlock();
+                if (channel(dx, dy, dz)) { if (!level.getBlockState(pos).isAir()) wrong.add(new Wrong(pos, null)); continue; }
+                var expected = expected(dx, dy, dz);
+                if (expected == null && shell(dx, dy, dz) != null) {
+                    boolean port = block instanceof CoolantPortBlock || block instanceof SfrFuelPortBlock || block instanceof SfrPowerPortBlock
+                            || block instanceof SfrVacuumPortBlock || block instanceof SfrHatchBlock;
+                    if (port) continue;
+                    expected = shell(dx, dy, dz);
+                }
+                if (expected != null && block != expected) wrong.add(new Wrong(pos, expected));
+            }
+        return wrong;
+    }
+
     private static Problem problem(Block expected) {
         if (expected == ModBlocks.FIRST_WALL.get()) return Problem.FIRST_WALL;
         if (expected == ModBlocks.LITHIUM_BLANKET.get()) return Problem.BLANKET;

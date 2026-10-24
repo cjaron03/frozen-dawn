@@ -54,6 +54,8 @@ public final class SfrControllerScreen extends AbstractContainerScreen<SfrContro
 
     @Override protected void renderLabels(GuiGraphics g, int mx, int my) {
         g.drawString(font, title, 8, 6, TEXT, false);
+        var stateText = Component.translatable("screen.frozendawn.sfr.state", Component.translatable("sfr.frozendawn.state." + state().name().toLowerCase(Locale.ROOT)));
+        g.drawString(font, stateText, imageWidth - 8 - font.width(stateText), 6, MUTED, false);
         g.drawString(font, shellLine(), 8, 16, menu.flag(F_SHELL) ? GREEN : AMBER, false);
         var status = status();
         line(g, 0, Component.translatable("sfr.frozendawn.status." + status.name().toLowerCase(Locale.ROOT)), statusColor(status));
@@ -62,9 +64,10 @@ public final class SfrControllerScreen extends AbstractContainerScreen<SfrContro
         line(g, 1, Component.translatable("screen.frozendawn.sfr.loop", tenths(LOOP)), TEXT);
         line(g, 2, Component.translatable("screen.frozendawn.sfr.heat", tenths(HEAT), tenths(REMOVED)), TEXT);
         line(g, 3, Component.translatable("screen.frozendawn.sfr.power", tenths(GROSS), tenths(NET)), CYAN);
-        line(g, 4, Component.translatable("screen.frozendawn.sfr.request", tenths(REQUEST)), MUTED);
+        line(g, 4, Component.translatable("screen.frozendawn.sfr.request", tenths(REQUEST),
+                String.format(Locale.ROOT, "%.0f", state() == FusionPhysics.State.BURNING ? FusionPhysics.HOUSE_KW : 0)), MUTED);
         line(g, 5, Component.translatable("screen.frozendawn.sfr.radiators", data(RADIATORS)), TEXT);
-        line(g, 6, Component.translatable("screen.frozendawn.sfr.fuel", data(DEUTERIUM), String.format(Locale.ROOT, "%.2f", data(TRITIUM) / 100.0)), TEXT);
+        line(g, 6, Component.translatable("screen.frozendawn.sfr.fuel", data(DEUTERIUM), String.format(Locale.ROOT, "%.2f", data(TRITIUM) / 100.0), FusionPhysics.TRITIUM_TANK), TEXT);
         line(g, 7, Component.translatable("screen.frozendawn.sfr.channel", data(PRESSURE) / 10, data(WEAR) / 10), data(WEAR) > 0 ? AMBER : MUTED);
         g.drawString(font, Component.translatable("screen.frozendawn.sfr.tritium_slots"), 12, SfrControllerMenu.SLOT_Y - 9, MUTED, false);
         g.drawString(font, playerInventoryTitle, inventoryLabelX, inventoryLabelY, MUTED, false);

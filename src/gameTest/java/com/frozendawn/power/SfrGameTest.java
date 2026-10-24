@@ -321,6 +321,32 @@ public final class SfrGameTest {
         });
     }
 
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "sfr", timeoutTicks = 100)
+    public static void sfrComparatorTracksLoopTemperature(GameTestHelper h) {
+        scene(h, () -> {
+            var level = h.getLevel(); var pos = SfrScenes.build(h, CENTER); var be = controller(h, pos);
+            be.physics().setLoopC(550);
+            h.assertValueEqual(be.comparator(), 8, "comparator at 550C");
+            h.assertValueEqual(level.getBlockState(pos).getAnalogOutputSignal(level, pos), 8, "controller analog output at 550C");
+            be.physics().setLoopC(0);
+            h.assertValueEqual(be.comparator(), 0, "comparator at 0C");
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "sfr", timeoutTicks = 100)
+    public static void sfrGhostOutlineListsEveryWrongCell(GameTestHelper h) {
+        scene(h, () -> {
+            var level = h.getLevel(); var pos = SfrScenes.build(h, CENTER);
+            var wall = SfrScenes.cell(h, CENTER, 2, 0, 0); var channel = SfrScenes.cell(h, CENTER, 3, 0, 0);
+            level.setBlock(wall, Blocks.STONE.defaultBlockState(), 3); level.setBlock(channel, Blocks.DIRT.defaultBlockState(), 3);
+            var wrong = SfrMultiblock.wrongCells(level, pos, Direction.NORTH, 32);
+            h.assertValueEqual(wrong.size(), 2, "wrong cells " + wrong);
+            h.assertTrue(wrong.contains(new SfrMultiblock.Wrong(wall, ModBlocks.FIRST_WALL.get())), "The stone First Wall cell is not marked");
+            h.assertTrue(wrong.contains(new SfrMultiblock.Wrong(channel, null)), "The filled channel cell is not marked");
+            h.assertValueEqual(SfrMultiblock.wrongCells(level, pos, Direction.NORTH, 1).size(), 1, "limit");
+        });
+    }
+
     private static SfrControllerBlockEntity controller(GameTestHelper h, BlockPos pos) {
         if (!(h.getLevel().getBlockEntity(pos) instanceof SfrControllerBlockEntity be)) throw new GameTestAssertException("SFR-1 controller block entity missing");
         return be;

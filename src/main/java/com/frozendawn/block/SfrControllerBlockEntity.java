@@ -57,6 +57,9 @@ public final class SfrControllerBlockEntity extends BlockEntity implements MenuP
     private List<BlockPos> lastFirstWall = List.of(), lastCoils = List.of();
     /** Ticks of quench frost left on the coils. */
     private int quenchTicks;
+    /** The ghost outline: wrong cells marked with End Rod particles for GHOST_TICKS after a use on a broken shell. */
+    private List<BlockPos> ghost = List.of();
+    private int ghostTicks, comparator;
 
     public SfrControllerBlockEntity(BlockPos p, BlockState s) { super(ModBlockEntities.SFR_CONTROLLER.get(), p, s); }
     public NonNullList<ItemStack> items() { return items; }
@@ -80,6 +83,8 @@ public final class SfrControllerBlockEntity extends BlockEntity implements MenuP
         if (!(level instanceof ServerLevel l)) return;
         if (l.getGameTime() % 20 == 0) second(l);
         if (quenchTicks > 0 && !lastCoils.isEmpty()) { quenchTicks--; frost(l); }
+        if (ghostTicks > 0 && ghostTicks-- % 5 == 0)
+            for (var p : ghost) l.sendParticles(ParticleTypes.END_ROD, p.getX() + 0.5, p.getY() + 0.5, p.getZ() + 0.5, 1, 0.15, 0.15, 0.15, 0);
     }
 
     /** One second of reactor time. Also public for GameTests, which drive it directly. */
@@ -119,10 +124,21 @@ public final class SfrControllerBlockEntity extends BlockEntity implements MenuP
             port.publish((int) Math.round(requestKw * 1000), burning ? (int) Math.round(Math.max(0, readout.netKw()) * 1000) : 0);
             port.ready(physics.state() == FusionPhysics.State.READY);
         }
+        int signal = comparator();
+        if (signal != comparator) { comparator = signal; l.updateNeighbourForOutputSignal(worldPosition, getBlockState().getBlock()); }
         setChanged();
     }
 
-    private static final int QUENCH_TICKS = 100;
+    /** Loop temperature against the disruption limit, 0-15. */
+    public int comparator() { return Math.clamp(Math.round(physics.loopC() / FusionPhysics.DISRUPT_C * 15), 0, 15); }
+    /** Marks up to 32 wrong cells for 100 ticks; returns the first, or empty when every cell is right but a port is missing. */
+    public java.util.Optional<SfrMultiblock.Wrong> showGhost(ServerLevel l) {
+        var wrong = SfrMultiblock.wrongCells(l, worldPosition, getBlockState().getValue(SfrControllerBlock.FACING), GHOST_CELLS);
+        ghost = wrong.stream().map(SfrMultiblock.Wrong::pos).toList(); ghostTicks = GHOST_TICKS;
+        return wrong.stream().findFirst();
+    }
+
+    private static final int QUENCH_TICKS = 100, GHOST_TICKS = 100, GHOST_CELLS = 32;
     /** Each disruption adds one WEAR to every First Wall still standing. */
     private void wearFirstWall(ServerLevel l) {
         for (var pos : lastFirstWall) {
