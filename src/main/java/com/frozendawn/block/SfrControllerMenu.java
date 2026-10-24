@@ -15,7 +15,7 @@ import org.jetbrains.annotations.Nullable;
 /** Tritium Canister input and output. Controls are menu buttons: 0 Start, 1 Stop, 2 load-follow toggle, 3 Extract. */
 public final class SfrControllerMenu extends AbstractContainerMenu {
     public static final int START = 0, STOP = 1, LOAD_FOLLOW = 2, EXTRACT = 3;
-    public static final int WIDTH = 256, HEIGHT = 236, SLOT_Y = 122, INV_Y = 154, INV_X = 47;
+    public static final int WIDTH = 256, HEIGHT = 250, SLOT_Y = 136, INV_Y = 168, INV_X = 47;
     private final Container container;
     private final ContainerData data;
     private final @Nullable SfrControllerBlockEntity entity;

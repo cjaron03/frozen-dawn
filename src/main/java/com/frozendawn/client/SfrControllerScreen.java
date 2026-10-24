@@ -12,10 +12,12 @@ import net.minecraft.world.entity.player.Inventory;
 
 import static com.frozendawn.block.SfrControllerBlockEntity.*;
 
-/** SFR-1 Controller. Readout text on the left, Start, Stop, Load-follow and Extract on the right. */
+/** SFR-1 Controller. Readout text on the left, Start, Stop, Load-follow and Extract on the right. The title sits alone
+ * above ContainerTheme's header rule (y 20) and its corner frost; shell and state share the row below it. */
 public final class SfrControllerScreen extends AbstractContainerScreen<SfrControllerMenu> {
     private static final int BG = 0xFF28353D, PANEL = 0xFF152128, TEXT = 0xFFE0E6E8, MUTED = 0xFF9BAAB1, GREEN = 0xFF9CD5A5,
             AMBER = 0xFFE5A064, RED = 0xFFE5534B, CYAN = 0xFF64C9CC;
+    private static final int STATUS_Y = 25, PANEL_TOP = 37;
     private Button start, stop, follow, extract;
 
     public SfrControllerScreen(SfrControllerMenu menu, Inventory inv, Component title) {
@@ -27,7 +29,7 @@ public final class SfrControllerScreen extends AbstractContainerScreen<SfrContro
 
     @Override protected void init() {
         super.init();
-        int x = leftPos + imageWidth - 70, y = topPos + 26;
+        int x = leftPos + imageWidth - 70, y = topPos + PANEL_TOP;
         start = addRenderableWidget(Button.builder(Component.translatable("screen.frozendawn.sfr.start"), b -> send(SfrControllerMenu.START)).bounds(x, y, 62, 20).build());
         stop = addRenderableWidget(Button.builder(Component.translatable("screen.frozendawn.sfr.stop"), b -> send(SfrControllerMenu.STOP)).bounds(x, y + 23, 62, 20).build());
         follow = addRenderableWidget(Button.builder(Component.empty(), b -> send(SfrControllerMenu.LOAD_FOLLOW)).bounds(x, y + 46, 62, 20).build());
@@ -48,15 +50,20 @@ public final class SfrControllerScreen extends AbstractContainerScreen<SfrContro
     @Override protected void renderBg(GuiGraphics g, float partial, int mx, int my) {
         int x = leftPos, y = topPos;
         g.fill(x, y, x + imageWidth, y + imageHeight, BG);
-        g.fill(x + 6, y + 27, x + imageWidth - 76, y + 114, PANEL);
+        g.fill(x + 6, y + PANEL_TOP, x + imageWidth - 76, y + PANEL_TOP + 87, PANEL);
         for (var s : menu.slots) g.fill(x + s.x - 1, y + s.y - 1, x + s.x + 17, y + s.y + 17, PANEL);
     }
 
     @Override protected void renderLabels(GuiGraphics g, int mx, int my) {
         g.drawString(font, title, 8, 6, TEXT, false);
         var stateText = Component.translatable("screen.frozendawn.sfr.state", Component.translatable("sfr.frozendawn.state." + state().name().toLowerCase(Locale.ROOT)));
-        g.drawString(font, stateText, imageWidth - 8 - font.width(stateText), 6, MUTED, false);
-        g.drawString(font, shellLine(), 8, 16, menu.flag(F_SHELL) ? GREEN : AMBER, false);
+        int stateX = imageWidth - 8 - font.width(stateText);
+        g.drawString(font, stateText, stateX, STATUS_Y, MUTED, false);
+        // A long invalid-shell reason is cut short of the state; the blueprint names the missing parts in full.
+        String shell = shellLine().getString();
+        int room = stateX - 16;
+        if (font.width(shell) > room) shell = font.plainSubstrByWidth(shell, room - font.width("...")) + "...";
+        g.drawString(font, shell, 8, STATUS_Y, menu.flag(F_SHELL) ? GREEN : AMBER, false);
         var status = status();
         line(g, 0, Component.translatable("sfr.frozendawn.status." + status.name().toLowerCase(Locale.ROOT)), statusColor(status));
         if (state() == FusionPhysics.State.COOLDOWN || state() == FusionPhysics.State.IGNITION)
@@ -82,7 +89,7 @@ public final class SfrControllerScreen extends AbstractContainerScreen<SfrContro
         };
     }
     private void line(GuiGraphics g, int row, Component text, int color) { line(g, row, text, color, 10); }
-    private void line(GuiGraphics g, int row, Component text, int color, int x) { g.drawString(font, text, x, 31 + row * 10, color, false); }
+    private void line(GuiGraphics g, int row, Component text, int color, int x) { g.drawString(font, text, x, PANEL_TOP + 4 + row * 10, color, false); }
     private String tenths(int index) { return String.format(Locale.ROOT, "%.1f", data(index) / 10.0); }
     private Component shellLine() {
         if (menu.flag(F_SHELL)) return Component.translatable("screen.frozendawn.reactor.shell.valid");
