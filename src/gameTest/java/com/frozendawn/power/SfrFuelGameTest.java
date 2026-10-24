@@ -194,6 +194,27 @@ public final class SfrFuelGameTest {
         });
     }
 
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "sfr_fuel", timeoutTicks = 100)
+    public static void sfrColumnRidesAGenerationDipOnItsBattery(GameTestHelper h) {
+        GameTestPacing.whenTicking(h, () -> {
+            var level = h.getLevel(); var pos = poweredColumn(h); var be = column(level, pos);
+            var core = (GeothermalCoreBlockEntity) level.getBlockEntity(h.absolutePos(new BlockPos(2, 2, 4)));
+            h.setBlock(new BlockPos(2, 2, 7), ModBlocks.BATTERY_BANK.get()); var bank = h.absolutePos(new BlockPos(2, 2, 7));
+            var store = (com.frozendawn.block.PowerStorageBlockEntity) level.getBlockEntity(bank); store.setItem(0, com.frozendawn.item.PowerCellItem.charged(100000));
+            var linked = PowerNetworks.link(level, bank, h.absolutePos(new BlockPos(2, 2, 4))); h.assertTrue(linked == PowerLinkRules.Result.OK, "Battery links to the core: " + linked);
+            prime(be, level, "DEUTERIUM", 100, 8); be.setItem(0, new ItemStack(Items.ICE, 8)); core.setPowerShare(50);
+            var data = (net.minecraft.world.level.storage.ServerLevelData) level.getLevelData(); long clock = level.getGameTime();
+            try {
+                // Allocate on a second boundary, exactly covered by the core, then let a reactor-style wobble dip it 10%.
+                data.setGameTime((clock / 20 + 1) * 20); PowerNetworks.update(level); PowerNetworks.account(level);
+                long before = store.storedJoules(); core.setPowerShare(45);
+                h.assertTrue(PowerNetworks.consumeMachineTick(level, pos), "A small dip with a charged battery keeps the Column working");
+                h.assertTrue(before - store.storedJoules() == 50, "The battery pays the 1 kW shortfall for one tick: drew " + (before - store.storedJoules()) + " J");
+            } finally { data.setGameTime(clock); }
+            h.succeed();
+        });
+    }
+
     @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "sfr_fuel", timeoutTicks = 120)
     public static void sfrColumnRefinesLithium(GameTestHelper h) {
         GameTestPacing.whenTicking(h, () -> {
