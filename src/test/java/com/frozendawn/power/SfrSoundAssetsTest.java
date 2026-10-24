@@ -14,7 +14,7 @@ class SfrSoundAssetsTest {
     private static final String ASSETS = "/assets/frozendawn/";
     private static final Set<String> EVENTS = Set.of("blocks.sfr_cryo", "blocks.sfr_ignition", "blocks.sfr_burn", "blocks.sfr_pump",
             "blocks.sfr_alarm", "blocks.sfr_ready", "blocks.sfr_ignited", "blocks.sfr_refuse", "blocks.sfr_disruption", "blocks.sfr_quench",
-            "blocks.sfr_dms_off");
+            "blocks.sfr_dms_off", "blocks.sfr_column");
 
     @Test void everySfrSoundExistsAndIsMono() throws IOException {
         JsonObject sounds = JsonParser.parseString(new String(read("sounds.json"), StandardCharsets.UTF_8)).getAsJsonObject();

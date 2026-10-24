@@ -4490,6 +4490,16 @@
       }
     ]
   },
+  "blocks.sfr_column": {
+    "category": "blocks",
+    "subtitle": "subtitle.frozendawn.blocks.sfr_column",
+    "sounds": [
+      {
+        "name": "frozendawn:blocks/sfr/column_loop",
+        "volume": 1.0
+      }
+    ]
+  },
   "blocks.sfr_quench": {
     "category": "blocks",
     "subtitle": "subtitle.frozendawn.blocks.sfr_quench",

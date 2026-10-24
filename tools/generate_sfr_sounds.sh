@@ -96,3 +96,11 @@ render quench \
 render dms_off \
   -f lavfi -i "aevalsrc='if(lt(mod(t\,0.6)\,0.45)\, (sin(2*PI*(500*mod(t\,0.6)+667*mod(t\,0.6)*mod(t\,0.6))) + 0.3*sin(6*PI*(500*mod(t\,0.6)+667*mod(t\,0.6)*mod(t\,0.6)))) * min(1\, min(mod(t\,0.6)\, 0.45-mod(t\,0.6))/0.02)\, 0) * 0.22':s=44100:d=1.9" \
   -filter_complex "[0:a]afade=t=out:st=1.75:d=0.15,alimiter=limit=0.75:level=0[out]"
+
+# Isotope Column, 4 s: a soft 50/100 Hz pump hum on filtered brown noise, with small rising bubble blips at uneven
+# times inside the loop.
+render column_loop \
+  -f lavfi -i "aevalsrc=0.10*sin(2*PI*50*t)+0.05*sin(2*PI*100*t)+0.02*sin(2*PI*150*t):s=44100:d=5.5" \
+  -f lavfi -i "anoisesrc=color=brown:duration=5.5:sample_rate=44100:seed=51012" \
+  -f lavfi -i "aevalsrc='0.10*(if(gte(mod(t\,4)\,0.30)\, exp(-28*(mod(t\,4)-0.30))*sin(2*PI*(520*(mod(t\,4)-0.30)+1800*(mod(t\,4)-0.30)*(mod(t\,4)-0.30))))+0.8*if(gte(mod(t\,4)\,1.15)\, exp(-32*(mod(t\,4)-1.15))*sin(2*PI*(640*(mod(t\,4)-1.15)+2200*(mod(t\,4)-1.15)*(mod(t\,4)-1.15))))+if(gte(mod(t\,4)\,1.55)\, exp(-26*(mod(t\,4)-1.55))*sin(2*PI*(460*(mod(t\,4)-1.55)+1600*(mod(t\,4)-1.55)*(mod(t\,4)-1.55))))+0.7*if(gte(mod(t\,4)\,2.70)\, exp(-30*(mod(t\,4)-2.70))*sin(2*PI*(580*(mod(t\,4)-2.70)+2000*(mod(t\,4)-2.70)*(mod(t\,4)-2.70))))+0.9*if(gte(mod(t\,4)\,3.35)\, exp(-28*(mod(t\,4)-3.35))*sin(2*PI*(500*(mod(t\,4)-3.35)+1900*(mod(t\,4)-3.35)*(mod(t\,4)-3.35)))))':s=44100:d=5.5" \
+  -filter_complex "[1:a]lowpass=f=400,volume=0.5[bed];[0:a][bed][2:a]amix=inputs=3:normalize=0,alimiter=limit=0.4:level=0[mix];$(seam 4 mix out)"

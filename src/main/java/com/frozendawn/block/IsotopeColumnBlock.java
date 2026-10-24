@@ -33,7 +33,9 @@ public final class IsotopeColumnBlock extends Block implements EntityBlock {
     @Override protected BlockState mirror(BlockState s, Mirror m) { return s.rotate(m.getRotation(s.getValue(FACING))); }
     @Override public BlockEntity newBlockEntity(BlockPos p, BlockState s) { return new IsotopeColumnBlockEntity(p, s); }
     @Override public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level l, BlockState s, BlockEntityType<T> t) {
-        return !l.isClientSide() && t == ModBlockEntities.ISOTOPE_COLUMN.get() ? (world, pos, state, be) -> ((IsotopeColumnBlockEntity) be).serverTick() : null;
+        if (t != ModBlockEntities.ISOTOPE_COLUMN.get()) return null;
+        return l.isClientSide() ? (world, pos, state, be) -> com.frozendawn.client.IsotopeColumnSound.tick((IsotopeColumnBlockEntity) be)
+                : (world, pos, state, be) -> ((IsotopeColumnBlockEntity) be).serverTick();
     }
     @Override protected InteractionResult useWithoutItem(BlockState s, Level l, BlockPos p, Player player, BlockHitResult hit) {
         if (player.getMainHandItem().is(ModItems.CONDUIT_BINDER) || player.getOffhandItem().is(ModItems.CONDUIT_BINDER)) return InteractionResult.PASS;

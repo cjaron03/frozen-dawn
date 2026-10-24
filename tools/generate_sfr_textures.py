@@ -331,7 +331,139 @@ def tritium_canister():
     return cylinder(TRITIUM, lambda x, row: HAZARD[(x + row) // 2 % 2], TRITIUM)
 
 
-ITEMS = {"deuterium_canister": deuterium_canister, "tritium_canister": tritium_canister}
+HELIUM_CAP = [(70, 44, 28), (118, 76, 46), (160, 108, 68), (200, 150, 104)]
+HELIUM_GLOW = [(120, 70, 60), (220, 140, 110), (250, 190, 160), (255, 230, 210)]
+
+
+def helium_canister():
+    return cylinder(HELIUM_CAP, lambda x, row: HELIUM_CAP[2 if x < 6 else 1 if x < 10 else 0] if row == 0 else HELIUM_CAP[1 if x < 10 else 0], HELIUM_GLOW)
+
+
+def recolour(name, mapping, mirror=False):
+    """An existing item texture with its palette swapped, so a sibling item keeps the same silhouette."""
+    src = Image.open(ITEM_OUT / f"{name}.png").convert("RGBA")
+    if mirror: src = src.transpose(Image.Transpose.FLIP_LEFT_RIGHT)
+    im = new()
+    for y in range(16):
+        for x in range(16):
+            c = src.getpixel((x, y))
+            if c[3]: put(im, x, y, mapping.get(c[:3], c[:3]))
+    return im
+
+
+LITHIUM = [(214, 190, 204), (250, 240, 246)]
+SPODUMENE = [(58, 44, 56), (150, 118, 140), (206, 176, 196), (240, 222, 234)]
+
+
+def lithium_target_rod():
+    """The fuel rod with silver-white lithium pellets in place of the green uranium."""
+    return recolour("fuel_rod", {(150, 255, 110): LITHIUM[1], (60, 170, 50): LITHIUM[0]})
+
+
+def raw_spodumene():
+    return recolour("raw_galena", dict(zip([(34, 36, 42), (118, 124, 136), (176, 184, 198), (226, 232, 242)], SPODUMENE)), mirror=True)
+
+
+def lithium_carbonate():
+    return recolour("uranium_concentrate", dict(zip([(156, 122, 22), (224, 185, 46), (245, 218, 92), (255, 243, 168)],
+                                                    [(150, 156, 164), (214, 220, 226), (236, 240, 244), (252, 253, 255)])))
+
+
+def lithium():
+    return recolour("lead_ingot", dict(zip([(42, 46, 54), (62, 67, 77), (82, 88, 100), (104, 111, 124), (134, 142, 156)],
+                                           [(88, 92, 102), (128, 134, 146), (170, 176, 188), (204, 210, 220), (236, 240, 246)])))
+
+
+ITEMS = {"deuterium_canister": deuterium_canister, "tritium_canister": tritium_canister, "helium_canister": helium_canister,
+         "lithium_target_rod": lithium_target_rod, "raw_spodumene": raw_spodumene, "lithium_carbonate": lithium_carbonate,
+         "lithium": lithium}
+
+FELDSPAR = [(232, 226, 218), (214, 206, 198), (226, 196, 186), (204, 176, 168)]
+QUARTZ = [(168, 170, 176), (140, 142, 150)]
+MICA = (38, 34, 36)
+
+
+def pegmatite():
+    """Coarse pale granite: big white and pink feldspar blotches, grey quartz, black mica flecks."""
+    rng = random.Random(51201)
+    im = new()
+    for y in range(16):
+        for x in range(16): put(im, x, y, jitter(FELDSPAR[0], rng, 4))
+    for _ in range(9):
+        cx, cy, r = rng.randrange(16), rng.randrange(16), rng.choice((1, 2, 2, 3))
+        c = rng.choice(FELDSPAR[1:] + QUARTZ)
+        for y in range(cy - r, cy + r + 1):
+            for x in range(cx - r, cx + r + 1):
+                if (x - cx) ** 2 + (y - cy) ** 2 <= r * r + 1: put(im, x % 16, y % 16, jitter(c, rng, 4))
+    for _ in range(10):
+        x, y = rng.randrange(16), rng.randrange(16)
+        put(im, x, y, MICA)
+        if rng.random() < 0.5: put(im, (x + 1) % 16, y, MICA)
+    return im
+
+
+def spodumene_ore():
+    """Pegmatite with long lilac spodumene laths, outlined dark so they read at a distance."""
+    im = pegmatite()
+    rng = random.Random(51202)
+    for x0, y0, length in ((2, 3, 6), (8, 1, 5), (5, 9, 7), (11, 8, 4), (1, 12, 4)):
+        for i in range(length):
+            x, y = x0 + i, y0 + i // 2
+            for dy in (-1, 2): put(im, x % 16, (y + dy) % 16, SPODUMENE[0])
+            put(im, x % 16, y % 16, SPODUMENE[3] if i < 2 else jitter(SPODUMENE[2], rng, 6))
+            put(im, x % 16, (y + 1) % 16, SPODUMENE[1])
+    return im
+
+
+ICE_LIQUID = [(40, 90, 150), (90, 160, 220), (160, 214, 250), (226, 246, 255)]
+
+
+def column_tube(im, liquid, lit):
+    """A tall glass tube of ice-blue liquid in the frame, with rising bubbles."""
+    rect(im, 5, 2, 10, 13, INK)
+    rect(im, 6, 3, 9, 12, liquid[0] if not lit else liquid[1])
+    rect(im, 6, 6 if lit else 7, 9, 12, liquid[1] if not lit else liquid[2])
+    for x, y in ((7, 11), (8, 9), (7, 7), (8, 4)) if lit else ((7, 11), (8, 9)):
+        put(im, x, y, liquid[3])
+    rect(im, 6, 3, 6, 12, liquid[2] if lit else liquid[1])
+    rect(im, 4, 1, 11, 1, STEEL[2]); rect(im, 4, 14, 11, 14, STEEL[2])
+
+
+def isotope_column_front(lit):
+    im, _ = panel(51210, STEEL, 3)
+    column_tube(im, ICE_LIQUID, lit)
+    put(im, 13, 2, (120, 255, 140) if lit else STEEL[3])
+    return im
+
+
+def isotope_column_side():
+    im, _ = panel(51211, STEEL, 3)
+    bevel_box(im, 3, 3, 12, 12, STEEL[1], STEEL[0], STEEL[3])
+    for y in (5, 7, 9, 11): rect(im, 5, y, 10, y, STEEL[3])
+    rivets(im)
+    return im
+
+
+def isotope_column_top():
+    im, _ = panel(51212, STEEL, 3)
+    for y in range(16):
+        for x in range(16):
+            d = (x - 7.5) ** 2 + (y - 7.5) ** 2
+            if d <= 16: put(im, x, y, STEEL[0] if d <= 4 else STEEL[2])
+            elif d <= 22: put(im, x, y, INK)
+    put(im, 7, 7, ICE_LIQUID[2]); put(im, 8, 8, ICE_LIQUID[1])
+    rivets(im)
+    return im
+
+
+TEXTURES.update({
+    "pegmatite": pegmatite,
+    "deepslate_spodumene_ore": spodumene_ore,
+    "isotope_column_front": lambda: isotope_column_front(False),
+    "isotope_column_front_on": lambda: isotope_column_front(True),
+    "isotope_column_side": isotope_column_side,
+    "isotope_column_top": isotope_column_top,
+})
 
 if __name__ == "__main__":
     for name, draw in TEXTURES.items():
