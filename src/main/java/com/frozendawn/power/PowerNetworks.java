@@ -138,6 +138,7 @@ public final class PowerNetworks {
     /** Scheduled load: an armed Uplink announces its transmit draw so load-follow ramps before it starts. Nothing is served. */
     static long scheduledWatts(ServerLevel l,BlockPos p){
         long sum=0;for(var cell:component(l,p))if(l.isLoaded(cell)&&l.getBlockEntity(cell) instanceof com.frozendawn.block.UplinkConsoleBlockEntity c)sum+=c.scheduledWatts();
+            else if(l.isLoaded(cell)&&l.getBlockEntity(cell) instanceof com.frozendawn.block.SfrPowerPortBlockEntity sfr)sum+=sfr.scheduledWatts();
         return sum;
     }
     public static Set<BlockPos> component(ServerLevel l,BlockPos p){return runtime(l).components.getOrDefault(p,Set.of(p));}
@@ -302,6 +303,7 @@ public final class PowerNetworks {
     private static int supplyWatts(ServerLevel level, BlockPos pos) {
         if (!level.isLoaded(pos)) return 0;
         if (level.getBlockEntity(pos) instanceof com.frozendawn.block.ReactorControllerBlockEntity reactor) return reactor.powerWatts();
+        if (level.getBlockEntity(pos) instanceof com.frozendawn.block.SfrPowerPortBlockEntity sfr) return sfr.supplyWatts();
         return level.getBlockEntity(pos) instanceof com.frozendawn.block.GeothermalCoreBlockEntity core
                 ? core.getPowerShare() * 200 : 0;
     }

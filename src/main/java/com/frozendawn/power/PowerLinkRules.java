@@ -30,6 +30,7 @@ public final class PowerLinkRules {
                 || state.getBlock() instanceof com.frozendawn.block.ResistiveHeaterBlock
                 || state.getBlock() instanceof com.frozendawn.block.PixieBlock
                 || state.getBlock() instanceof com.frozendawn.block.ReactorControllerBlock
+                || state.getBlock() instanceof com.frozendawn.block.SfrPowerPortBlock
                 || state.getBlock() instanceof com.frozendawn.block.OxygenReservoirBlock ? 16 : 0;
     }
     /** Coolant plumbing shares the Binder and link store but never joins the electrical graph. */

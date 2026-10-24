@@ -64,6 +64,12 @@ public class ModBlockEntities {
 
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.frozendawn.block.ResistiveHeaterBlockEntity>> RESISTIVE_HEATER = BLOCK_ENTITIES.register("resistive_heater", () -> BlockEntityType.Builder.of(com.frozendawn.block.ResistiveHeaterBlockEntity::new,ModBlocks.RESISTIVE_HEATER.get()).build(null));
 
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.frozendawn.block.SfrControllerBlockEntity>> SFR_CONTROLLER =
+            BLOCK_ENTITIES.register("sfr_controller", () -> BlockEntityType.Builder.of(com.frozendawn.block.SfrControllerBlockEntity::new, ModBlocks.SFR_CONTROLLER.get()).build(null));
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.frozendawn.block.SfrFuelPortBlockEntity>> SFR_FUEL_PORT =
+            BLOCK_ENTITIES.register("sfr_fuel_port", () -> BlockEntityType.Builder.of(com.frozendawn.block.SfrFuelPortBlockEntity::new, ModBlocks.SFR_FUEL_PORT.get()).build(null));
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.frozendawn.block.SfrPowerPortBlockEntity>> SFR_POWER_PORT =
+            BLOCK_ENTITIES.register("sfr_power_port", () -> BlockEntityType.Builder.of(com.frozendawn.block.SfrPowerPortBlockEntity::new, ModBlocks.SFR_POWER_PORT.get()).build(null));
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.frozendawn.block.ReactorControllerBlockEntity>> REACTOR_CONTROLLER =
             BLOCK_ENTITIES.register("reactor_controller", () -> BlockEntityType.Builder.of(com.frozendawn.block.ReactorControllerBlockEntity::new, ModBlocks.REACTOR_CONTROLLER.get()).build(null));
 

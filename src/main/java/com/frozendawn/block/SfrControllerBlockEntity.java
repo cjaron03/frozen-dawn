@@ -1,0 +1,179 @@
+package com.frozendawn.block;
+
+import com.frozendawn.init.ModBlockEntities;
+import com.frozendawn.init.ModItems;
+import com.frozendawn.power.FusionPhysics;
+import com.frozendawn.power.PowerNetworks;
+import com.frozendawn.world.CombustionAtmosphere;
+import com.frozendawn.world.RoomAtmosphere;
+import java.util.*;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.HolderLookup;
+import net.minecraft.core.NonNullList;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.ContainerHelper;
+import net.minecraft.world.MenuProvider;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.ContainerData;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.DoorBlock;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
+
+/** SFR-1 Controller: validates the torus, steps FusionPhysics once per second, feeds tritium and deuterium,
+ * and publishes the reactor's draw and output to the Power Port. Readings are transient. */
+public final class SfrControllerBlockEntity extends BlockEntity implements MenuProvider {
+    public static final int SLOTS = 2, TRITIUM_IN = 0, TRITIUM_OUT = 1;
+    // Menu data, synced as shorts: temperatures and kW x10, tritium x100, fractions x1000.
+    public static final int STATE = 0, STATUS = 1, LOOP = 2, HEAT = 3, REMOVED = 4, GROSS = 5, NET = 6, REQUEST = 7, TRITIUM = 8,
+            PROGRESS = 9, DEUTERIUM = 10, SHELL = 11, PRESSURE = 12, WEAR = 13, RADIATORS = 14, FLAGS = 15, DATA = 16;
+    public static final int F_FOLLOW = 1, F_SHELL = 2;
+    private static final FusionPhysics.Readout IDLE = new FusionPhysics.Readout(FusionPhysics.State.OFF, FusionPhysics.Status.IDLE,
+            20, 0, 0, 0, 0, 0, 0, 0, 0, false);
+    /** Hatch lower half to controller, per level; refreshed by every valid validation and checked on lookup. */
+    private static final Map<ServerLevel, Map<BlockPos, BlockPos>> HATCHES = new WeakHashMap<>();
+    private final NonNullList<ItemStack> items = NonNullList.withSize(SLOTS, ItemStack.EMPTY);
+    private final FusionPhysics physics = new FusionPhysics();
+    private FusionPhysics.Readout readout = IDLE;
+    private SfrMultiblock.Result shell = SfrMultiblock.Result.failed(SfrMultiblock.Problem.UNLOADED, null, BlockPos.ZERO);
+    private BlockPos publishedPort;
+    private double channelPressure = 1, wear;
+    private int radiators;
+
+    public SfrControllerBlockEntity(BlockPos p, BlockState s) { super(ModBlockEntities.SFR_CONTROLLER.get(), p, s); }
+    public NonNullList<ItemStack> items() { return items; }
+    public FusionPhysics physics() { return physics; }
+    public FusionPhysics.Readout readout() { return readout; }
+    public SfrMultiblock.Result shell() { return shell; }
+    public double channelPressure() { return channelPressure; }
+    public void setChannelPressure(double value) { if (Double.isFinite(value)) { channelPressure = Math.clamp(value, 0, 1); setChanged(); } }
+    /** Mean First Wall wear, 0 to 1, as of the last second. */
+    public double wear() { return wear; }
+    public int radiatorCount() { return radiators; }
+
+    public static Optional<SfrControllerBlockEntity> forHatch(ServerLevel l, BlockPos hatchLower) {
+        var at = HATCHES.getOrDefault(l, Map.of()).get(hatchLower);
+        if (at != null && l.isLoaded(at) && l.getBlockEntity(at) instanceof SfrControllerBlockEntity c && c.shell.valid() && hatchLower.equals(c.shell.hatch()))
+            return Optional.of(c);
+        return Optional.empty();
+    }
+
+    public void serverTick() {
+        if (level instanceof ServerLevel l && l.getGameTime() % 20 == 0) second(l);
+    }
+
+    /** One second of reactor time. Also public for GameTests, which drive it directly. */
+    public void second(ServerLevel l) {
+        var facing = getBlockState().getValue(SfrControllerBlock.FACING);
+        var result = SfrMultiblock.validate(l, worldPosition, facing);
+        if (result.problem() == SfrMultiblock.Problem.UNLOADED) return;
+        shell = result;
+        boolean valid = shell.valid();
+        var port = valid && l.getBlockEntity(shell.powerPort()) instanceof SfrPowerPortBlockEntity p ? p : null;
+        var fuel = valid && l.getBlockEntity(shell.fuelPort()) instanceof SfrFuelPortBlockEntity f ? f : null;
+        var portAt = port == null ? null : shell.powerPort();
+        if (publishedPort != null && !publishedPort.equals(portAt)) release(l);
+        publishedPort = portAt;
+        if (valid) HATCHES.computeIfAbsent(l, k -> new HashMap<>()).put(shell.hatch(), worldPosition);
+        var sinks = new ArrayList<Double>();
+        if (valid) for (var p : HighTemperatureRadiatorBlock.sinks(l, shell.coolantPorts())) ReactorRadiatorBlock.sink(l, p).ifPresent(sinks::add);
+        radiators = sinks.size();
+        wear = shell.firstWall().stream().mapToInt(p -> l.getBlockState(p).getOptionalValue(FirstWallBlock.WEAR).orElse(0)).average().orElse(0) / FirstWallBlock.MAX_WEAR;
+        boolean powered = port != null && port.paidFullSecond();
+        boolean hatchClosed = valid && !l.getBlockState(shell.hatch()).getValue(DoorBlock.OPEN);
+        boolean pumping = valid && l.getBlockState(shell.vacuumPort()).getValue(SfrVacuumPortBlock.MODE) == SfrVacuumPortBlock.Mode.PUMP;
+        double target = physics.loadFollow() && port != null
+                ? PowerNetworks.loadFollowTargetWatts(l, shell.powerPort(), port.supplyWatts()) / 1000.0 : Double.NaN;
+        loadTritium();
+        readout = physics.step(new FusionPhysics.Inputs(sinks, powered, channelPressure, hatchClosed, valid, roomVacuum(l),
+                fuel == null ? 0 : fuel.deuterium(), pumping, wear, l.hasNeighborSignal(worldPosition), target));
+        if (fuel != null) fuel.use(readout.deuteriumUsed());
+        if (port != null) {
+            boolean burning = physics.state() == FusionPhysics.State.BURNING;
+            double requestKw = readout.requestKw() + (!burning && pumping && channelPressure > 0 ? FusionPhysics.PUMP_KW : 0);
+            port.publish((int) Math.round(requestKw * 1000), burning ? (int) Math.round(Math.max(0, readout.netKw()) * 1000) : 0);
+            port.ready(physics.state() == FusionPhysics.State.READY);
+        }
+        setChanged();
+    }
+
+    /** The controller's own room, in front of it, holds no air. */
+    private boolean roomVacuum(ServerLevel l) {
+        return CombustionAtmosphere.isVacuum(l) && !RoomAtmosphere.hasAir(l, worldPosition.relative(getBlockState().getValue(SfrControllerBlock.FACING)));
+    }
+    /** Each Tritium Canister in the input slot loads one whole unit while the tank has room for it. */
+    private void loadTritium() {
+        var in = items.get(TRITIUM_IN);
+        while (in.is(ModItems.TRITIUM_CANISTER.get()) && physics.tritium() <= FusionPhysics.TRITIUM_TANK - 1) { physics.addTritium(1); in.shrink(1); }
+    }
+    /** Moves one whole unit into a Tritium Canister in the output slot. */
+    public boolean extract() {
+        var out = items.get(TRITIUM_OUT);
+        boolean room = out.isEmpty() || out.is(ModItems.TRITIUM_CANISTER.get()) && out.getCount() < out.getMaxStackSize();
+        if (!room || !physics.extractTritium()) return false;
+        if (out.isEmpty()) items.set(TRITIUM_OUT, new ItemStack(ModItems.TRITIUM_CANISTER.get())); else out.grow(1);
+        setChanged(); return true;
+    }
+    public void start() { physics.start(); setChanged(); }
+    public void stop() { physics.stop(); setChanged(); }
+    public void toggleLoadFollow() { physics.setLoadFollow(!physics.loadFollow()); setChanged(); }
+
+    private void release(ServerLevel l) {
+        if (l.isLoaded(publishedPort) && l.getBlockEntity(publishedPort) instanceof SfrPowerPortBlockEntity old) { old.publish(0, 0); old.ready(false); }
+        publishedPort = null;
+    }
+    @Override public void setRemoved() {
+        if (level instanceof ServerLevel l && publishedPort != null) release(l);
+        super.setRemoved();
+    }
+
+    public ContainerData data() {
+        return new ContainerData() {
+            @Override public int get(int i) {
+                var r = readout;
+                return switch (i) {
+                    case STATE -> physics.state().ordinal();
+                    case STATUS -> physics.status().ordinal();
+                    case LOOP -> clampShort(physics.loopC() * 10);
+                    case HEAT -> clampShort(r.heatKw() * 10);
+                    case REMOVED -> clampShort(r.removedKw() * 10);
+                    case GROSS -> clampShort(r.grossKw() * 10);
+                    case NET -> clampShort(r.netKw() * 10);
+                    case REQUEST -> clampShort(r.requestKw() * 10);
+                    case TRITIUM -> clampShort(physics.tritium() * 100);
+                    case PROGRESS -> (int) Math.round(r.progress() * 1000);
+                    case DEUTERIUM -> level != null && shell.valid() && level.getBlockEntity(shell.fuelPort()) instanceof SfrFuelPortBlockEntity f ? f.deuterium() : 0;
+                    case SHELL -> shell.problem().ordinal();
+                    case PRESSURE -> (int) Math.round(channelPressure * 1000);
+                    case WEAR -> (int) Math.round(wear * 1000);
+                    case RADIATORS -> radiators;
+                    case FLAGS -> (physics.loadFollow() ? F_FOLLOW : 0) | (shell.valid() ? F_SHELL : 0);
+                    default -> 0;
+                };
+            }
+            @Override public void set(int i, int v) {}
+            @Override public int getCount() { return DATA; }
+        };
+    }
+    private static int clampShort(double v) { return (int) Math.clamp(Math.round(v), Short.MIN_VALUE + 1, Short.MAX_VALUE); }
+
+    @Override protected void saveAdditional(CompoundTag tag, HolderLookup.Provider r) {
+        super.saveAdditional(tag, r); ContainerHelper.saveAllItems(tag, items, r);
+        var fusion = new CompoundTag(); physics.save(fusion); tag.put("Fusion", fusion);
+        tag.putDouble("ChannelPressure", channelPressure);
+    }
+    @Override protected void loadAdditional(CompoundTag tag, HolderLookup.Provider r) {
+        super.loadAdditional(tag, r); items.clear(); ContainerHelper.loadAllItems(tag, items, r);
+        physics.load(tag.getCompound("Fusion"));
+        double pressure = tag.contains("ChannelPressure") ? tag.getDouble("ChannelPressure") : 1;
+        channelPressure = Double.isFinite(pressure) ? Math.clamp(pressure, 0, 1) : 1;
+        readout = IDLE;
+    }
+    public boolean stillValid(Player p) { return !p.isSpectator() && level != null && level.getBlockEntity(worldPosition) == this && p.distanceToSqr(worldPosition.getCenter()) <= 64; }
+    @Override public Component getDisplayName() { return Component.translatable("block.frozendawn.sfr_controller"); }
+    @Override public AbstractContainerMenu createMenu(int id, Inventory inv, Player p) { return new SfrControllerMenu(id, inv, this); }
+}
