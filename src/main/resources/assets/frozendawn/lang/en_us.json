@@ -1426,6 +1426,7 @@
   "subtitle.frozendawn.blocks.sfr_pump": "Vacuum pump grinds",
   "subtitle.frozendawn.blocks.sfr_alarm": "SFR-1 warning tone",
   "subtitle.frozendawn.blocks.sfr_ready": "SFR-1 ready chime",
+  "subtitle.frozendawn.blocks.sfr_ignited": "SFR-1 plasma ignites",
   "subtitle.frozendawn.blocks.sfr_refuse": "SFR-1 refuses",
   "subtitle.frozendawn.blocks.sfr_disruption": "SFR-1 plasma disruption",
   "subtitle.frozendawn.blocks.sfr_quench": "SFR-1 magnet quench vents",

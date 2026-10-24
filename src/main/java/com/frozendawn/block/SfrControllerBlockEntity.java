@@ -172,10 +172,10 @@ public final class SfrControllerBlockEntity extends BlockEntity implements MenuP
     private void playCues(ServerLevel l, @Nullable FusionPhysics.Readout before) {
         for (var cue : SfrAudioCues.cues(before, readout, physics.refusedStart())) {
             var event = switch (cue) {
-                case READY -> ModSounds.SFR_READY; case REFUSE -> ModSounds.SFR_REFUSE;
+                case READY -> ModSounds.SFR_READY; case IGNITED -> ModSounds.SFR_IGNITED; case REFUSE -> ModSounds.SFR_REFUSE;
                 case DISRUPTION -> ModSounds.SFR_DISRUPTION; case QUENCH -> ModSounds.SFR_QUENCH;
             };
-            float volume = switch (cue) { case READY, REFUSE -> 1f; case DISRUPTION -> 2f; case QUENCH -> 2.5f; };
+            float volume = switch (cue) { case READY, REFUSE -> 1f; case IGNITED -> 1.5f; case DISRUPTION -> 2f; case QUENCH -> 2.5f; };
             l.playSound(null, worldPosition, event.get(), SoundSource.BLOCKS, volume, 1f);
         }
     }

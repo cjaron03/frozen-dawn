@@ -4450,6 +4450,16 @@
       }
     ]
   },
+  "blocks.sfr_ignited": {
+    "category": "blocks",
+    "subtitle": "subtitle.frozendawn.blocks.sfr_ignited",
+    "sounds": [
+      {
+        "name": "frozendawn:blocks/sfr/ignited",
+        "volume": 1.0
+      }
+    ]
+  },
   "blocks.sfr_refuse": {
     "category": "blocks",
     "subtitle": "subtitle.frozendawn.blocks.sfr_refuse",

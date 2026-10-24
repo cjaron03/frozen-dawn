@@ -93,6 +93,7 @@ public class ModSounds {
     public static final DeferredHolder<SoundEvent, SoundEvent> SFR_PUMP = register("blocks.sfr_pump");
     public static final DeferredHolder<SoundEvent, SoundEvent> SFR_ALARM = register("blocks.sfr_alarm");
     public static final DeferredHolder<SoundEvent, SoundEvent> SFR_READY = register("blocks.sfr_ready");
+    public static final DeferredHolder<SoundEvent, SoundEvent> SFR_IGNITED = register("blocks.sfr_ignited");
     public static final DeferredHolder<SoundEvent, SoundEvent> SFR_REFUSE = register("blocks.sfr_refuse");
     public static final DeferredHolder<SoundEvent, SoundEvent> SFR_DISRUPTION = register("blocks.sfr_disruption");
     public static final DeferredHolder<SoundEvent, SoundEvent> SFR_QUENCH = register("blocks.sfr_quench");

@@ -38,9 +38,13 @@ class SfrAudioCuesTest {
     @Test void firstSecondAfterLoadIsSilent() {
         assertEquals(EnumSet.noneOf(Cue.class), SfrAudioCues.cues(null, r(READY, FusionPhysics.Status.ABORTED), false));
     }
-    @Test void alarmAboveAThousandOrShortfall() {
+    @Test void ignitionIntoBurnCelebrates() {
+        assertEquals(EnumSet.of(Cue.IGNITED), SfrAudioCues.cues(r(IGNITION, FusionPhysics.Status.IGNITION), r(BURNING, FusionPhysics.Status.BURNING, 20, -45, false), false));
+    }
+    @Test void alarmAboveAThousandOrPumpOff() {
         assertTrue(SfrAudioCues.alarm(r(BURNING, FusionPhysics.Status.BURNING, 1000, 300, false), true));
-        assertTrue(SfrAudioCues.alarm(r(BURNING, FusionPhysics.Status.BURNING, 900, -10, false), true));
+        // Warm-up runs on network power and an uncovered shortfall quenches the same second, so a negative net never warns.
+        assertFalse(SfrAudioCues.alarm(r(BURNING, FusionPhysics.Status.BURNING, 238, -15.3, false), true));
         assertTrue(SfrAudioCues.alarm(r(BURNING, FusionPhysics.Status.BURNING, 900, 300, false), false));
         assertFalse(SfrAudioCues.alarm(r(OFF, FusionPhysics.Status.DISRUPTION, 1050, 0, false), true));
     }

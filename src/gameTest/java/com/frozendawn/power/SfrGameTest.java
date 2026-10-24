@@ -318,9 +318,9 @@ public final class SfrGameTest {
                         h.assertTrue(sound.heatKw() > 0, "synced heat " + sound.heatKw());
                         h.assertTrue(sound.pumping(), "pump draws while burning");
                         h.assertValueEqual(sound.pump(), be.shell().vacuumPort(), "pump position");
-                        // Just after ignition the cold loop's net is below zero: the warning sounds until gross passes the house load.
+                        // Just after ignition the cold loop's net is below zero; the network covers it, so no warning sounds.
                         h.assertTrue(be.readout().netKw() < 0, "warm-up net " + be.readout().netKw());
-                        h.assertTrue(sound.alarm(), "warm-up shortfall alarm");
+                        h.assertFalse(sound.alarm(), "warm-up on network power is silent");
                         var copy = new SfrControllerBlockEntity(be.getBlockPos(), be.getBlockState());
                         copy.handleUpdateTag(be.getUpdateTag(level.registryAccess()), level.registryAccess());
                         h.assertValueEqual(copy.sound(), sound, "client copy");

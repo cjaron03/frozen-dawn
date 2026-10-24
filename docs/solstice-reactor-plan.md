@@ -398,10 +398,11 @@
 | --- | --- | --- | --- | --- |
 | `sfr_cryo` | `cryo_loop` | loop | COOLDOWN and READY, at the controller | cryocooler: a 1 Hz soft chuff on brown noise with a faint high helium tick |
 | `sfr_ignition` | `ignition` | client one-shot, cut off if ignition aborts | IGNITION | 10 s capacitor charge: a sweep from about 80 to 900 Hz with a rising whine, ending in a heavy thump |
-| `sfr_burn` | `burn_loop` | loop | BURNING; volume `0.3 + 0.7 * heatKw / RATED_KW`, pitch `0.85 + 0.3 * heatKw / RATED_KW` | deep 30 Hz sub, 60 and 120 Hz magnet hum, band-passed pink-noise plasma roar, slow 0.25 Hz swell |
+| `sfr_burn` | `burn_loop` | loop | BURNING; volume `0.3 + 0.7 * heatKw / RATED_KW`, pitch `0.85 + 0.3 * heatKw / RATED_KW` | 40 Hz sub beating against 40.25 Hz, 80/120/160 Hz magnet hum, detuned A3/E4/A4 field choir, plasma roar breathing at 0.5 Hz, ion shimmer, sparse crackles, 1.5 Hz pulse (revised after the first playtest) |
 | `sfr_pump` | `pump_loop` | loop | at the Vacuum Port while its pump draws; pitch `0.8 + 0.4 * (1 - channelPressure)` | rotary vacuum pump: a 25 Hz pulsed grind that thins as the channel empties |
 | `sfr_alarm` | `alarm_loop` | loop | while `SfrAudioCues.alarm` is true | descending two-tone warning, about 1046 then 784 Hz, cycling every 1.2 s |
 | `sfr_ready` | `ready` | one-shot | COOLDOWN to READY | short rising three-note chime |
+| `sfr_ignited` | `ignited` | one-shot | IGNITION to BURNING | plasma bloom, rising A major bell arpeggio, held chord fading over 3.2 s (added after the first playtest) |
 | `sfr_refuse` | `refuse` | one-shot | a refused Start, or an aborted ignition | low 0.6 s double buzz |
 | `sfr_disruption` | `disruption` | one-shot | every disruption except MAGNET_QUENCH, and ASH_POISONED | a sharp electric crack into a falling 600 to 40 Hz plasma collapse, about 2.5 s |
 | `sfr_quench` | `quench` | one-shot | MAGNET_QUENCH | a 5 s roaring cryogen vent: loud high-passed noise, fast attack, slow decay over a low rumble |
@@ -417,7 +418,7 @@
 - **Produces:**
   - `enum SfrAudioCues.Cue { READY, REFUSE, DISRUPTION, QUENCH }`
   - `static EnumSet<Cue> SfrAudioCues.cues(FusionPhysics.Readout before, FusionPhysics.Readout after)`, where `before` is null on the first second
-  - `static boolean SfrAudioCues.alarm(FusionPhysics.Readout r, boolean pumping)`: true while BURNING and any of `loopC >= 1000`, `!pumping` (ash building), or `netKw < 0`
+  - `static boolean SfrAudioCues.alarm(FusionPhysics.Readout r, boolean pumping)`: true while BURNING and either `loopC >= 1000` or `!pumping` (ash building). The first playtest dropped `netKw < 0`: every warm-up runs on network power, and an uncovered shortfall quenches the same second
   - The controller plays each cue once with `level.playSound` at the controller. The client loops read the synced state.
 
 - [ ] **Step 1: Write the failing tests**

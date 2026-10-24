@@ -64,20 +64,23 @@ Expected at 14 radiators against deep vacuum (-200C), full output: loop about 84
 3. The Controller screen: state, status colors, progress percent, loop, heat, power, request, radiators, fuel and channel lines.
 4. TORUS OPEN with the hatch open; Start refused. Opening the hatch while burning disrupts at once.
 5. Quench frost after a MAGNET QUENCH (cut the network while gross output is under 40 kW).
-6. The nine sounds, each for distinctness, loudness and distance falloff:
+6. The ten sounds, each for distinctness, loudness and distance falloff:
    - cryocooler loop during cooldown and READY
    - ignition charge and thump (cut off if ignition aborts)
-   - burn loop, louder and higher with output
-   - pump loop at the Vacuum Port, thinning as the channel empties
-   - warning alarm while burning: loop at or above 1000C, pump off, or net negative
+   - ignition success swell and arpeggio as IGNITION turns to BURNING
+   - burn loop (sub throb, magnet hum, field choir, plasma roar, ion shimmer, crackles), louder and higher with output
+   - pump loop at the Vacuum Port, rising in pitch as the channel empties
+   - warning alarm while burning: loop at or above 1000C or pump off. Warm-up on network power is silent.
    - READY chime; refusal buzz when you press Start and it is refused, or when ignition aborts (a standing refusal nobody pressed is silent); disruption crack; quench vent
 7. Linked radiators turn HOT while the loop is at or above 150C, buried or not, and cool when it drops.
 8. Breaking the Controller drops its tank as whole Tritium Canisters.
-9. Ruling to judge: the alarm sounds through warm-up, because net is negative then. Say if that is too much.
 
 ## Owner reports
 
 - First look (2026-10-24), before the port layout ghosts: "its not clear where the port and hatch need to go."
+- Pump-down (2026-10-24): "i can hear it slowly \"spinning\" up". Matches the pump loop, whose pitch rises from 0.8 to 1.2 as the channel empties.
+- Cooldown (2026-10-24): "i heard the chim". The READY chime, played when cooldown finishes.
+- First ignition (2026-10-24), 8 MJ banked: "huh why do i hear a warning sound?" Screenshot 2026-10-24_01.07.36: BURNING, loop 238C, heat 400 kW, removed 75.6 kW, gross 29.7 kW, net -15.3 kW, 14 HT radiators, channel 0%. The alarm is the net < 0 trigger during loop warm-up, which every normal start passes through. Owner decision: drop that trigger, play a success sound at ignition, and make the burn loop sound like fusion.
 
 ## Known limitation
 
