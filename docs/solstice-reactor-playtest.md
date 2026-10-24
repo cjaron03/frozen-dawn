@@ -81,11 +81,11 @@ Expected against deep vacuum: 150% with 14 radiators settles near 1370C, so it m
    - ignition success swell and arpeggio as IGNITION turns to BURNING
    - burn loop (sub throb, magnet hum, field choir, plasma roar, ion shimmer, crackles), louder and higher with output
    - pump loop at the Vacuum Port, rising in pitch as the channel empties
-   - warning alarm while burning: loop at or above 1000C, drive above 100%, or pump off. Warm-up on network power is silent.
-   - READY chime; refusal buzz when you press Start and it is refused, or when ignition aborts (a standing refusal nobody pressed is silent); disruption crack; quench vent; a melt-through plays the crack and the vent together
+   - warning alarm while burning: loop at or above 1000C or pump off. Overdrive alone is quiet. Warm-up on network power is silent.
+   - READY chime; refusal buzz when you press Start and it is refused, or when ignition aborts (a standing refusal nobody pressed is silent); disruption crack; quench vent; a melt-through plays the crack and the vent together; disabling DMS plays a one-shot rising triple whoop
 7. Linked radiators turn HOT while the loop is at or above 150C, buried or not, and cool when it drops.
 8. Breaking the Controller drops its tank as whole Tritium Canisters.
-9. Overdrive: the DMS overlay and hold, the Drive slider, the alarm above 100%, and a melt-through (magma wall, lava particles, quench frost, both cues).
+9. Overdrive: the DMS overlay and hold, its alert when the hold completes, the Drive slider, silence in overdrive below 1000C, and a melt-through (magma wall, lava particles, quench frost, both cues).
 
 ## Owner reports
 
@@ -96,6 +96,7 @@ Expected against deep vacuum: 150% with 14 radiators settles near 1370C, so it m
 - Overcharge request (2026-10-24): "can you make it so you can overcharge the reactor like how you can on the fission reactor? also look a the ss, the Ui looks a little funky". After the proposal: "but of course dont copy it 1 to 1, this is a fusion reactor, so instead have it \"meldown\" how an actual fusion reactor woukd (i guess the walls just fucking melt or something)". Built as the DMS toggle, Drive to 150% and the First Wall melt-through above.
 - Heat-up pace (2026-10-24): "ngl i wouldve thought this thing would heat up a LOT faster lol, since its plasma". Then: "i wnat it so the palyer doenst need ot wait for very long, but also not instant." Loop thermal mass cut from 100 to 25 kJ/C and burn slew raised from 2% to 5% per second; settle time drops from about 13 to about 3.5 minutes.
 - Overdrive check (2026-10-24), 14 HT radiators, sink about 37C, DMS on, drive 100%: "at around 1,000C im getting a two tone alarm". This is the warning alarm's loop >= 1000C trigger; at this sink, 14 radiators settle near 1085C with Follow off.
+- Overdrive alarm (2026-10-24), 28 HT radiators at 150%: "i think the overdrive warning should either not be this annoying or something, thoughts?" Then: "id say have a alert sound when you disable DMS, then get rid of the overdrive alarm". Overdrive no longer triggers the alarm; disabling DMS plays a one-shot alert.
 
 ## Known limitation
 
@@ -103,6 +104,6 @@ Outside the vacuum stage, a player standing in a pumped-down channel still breat
 
 ## Evidence and limits
 
-Headless, verified by tests: multiblock validation, the full blueprint cell list and its per-player toggle, port rules, channel pressure and pump-down into the outer room, startup sequence and aborts, ignition at 150 kW, burn physics and the 14-radiator readings, load-following, fuel burn and 1.05x breeding, disruptions and quench, saved state, cue selection and alarm rule, drive and mitigation limits, overdrive heat, efficiency and wall erosion, the unmitigated melt-through to magma, radiator HOT state, hatch-side pressure and vacuum-stage sealing, tritium drop on break, sound state sync to the client, and that all nine sound files are mono Vorbis and registered.
+Headless, verified by tests: multiblock validation, the full blueprint cell list and its per-player toggle, port rules, channel pressure and pump-down into the outer room, startup sequence and aborts, ignition at 150 kW, burn physics and the 14-radiator readings, load-following, fuel burn and 1.05x breeding, disruptions and quench, saved state, cue selection and alarm rule, drive and mitigation limits, overdrive heat, efficiency and wall erosion, the unmitigated melt-through to magma, radiator HOT state, hatch-side pressure and vacuum-stage sealing, tritium drop on break, sound state sync to the client, and that every SFR sound file is mono Vorbis and registered.
 
 Needs the owner: textures, ghost-block blueprint rendering, frost visuals, screen layout, the DMS overlay and Drive slider, the melt-through's look, every sound's character and mix, hatch feel, Conduit Binder linking in a real world, and the warm-up alarm ruling. Multiplayer is not checked.

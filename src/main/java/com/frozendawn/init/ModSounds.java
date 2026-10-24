@@ -97,6 +97,7 @@ public class ModSounds {
     public static final DeferredHolder<SoundEvent, SoundEvent> SFR_REFUSE = register("blocks.sfr_refuse");
     public static final DeferredHolder<SoundEvent, SoundEvent> SFR_DISRUPTION = register("blocks.sfr_disruption");
     public static final DeferredHolder<SoundEvent, SoundEvent> SFR_QUENCH = register("blocks.sfr_quench");
+    public static final DeferredHolder<SoundEvent, SoundEvent> SFR_DMS_OFF = register("blocks.sfr_dms_off");
 
     public static final DeferredHolder<SoundEvent, SoundEvent> TOWN_PA_CLEAR = SOUNDS.register("blocks.town_pa_clear",
             () -> SoundEvent.createVariableRangeEvent(

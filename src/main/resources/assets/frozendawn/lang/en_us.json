@@ -1443,6 +1443,7 @@
   "subtitle.frozendawn.blocks.sfr_refuse": "SFR-1 refuses",
   "subtitle.frozendawn.blocks.sfr_disruption": "SFR-1 plasma disruption",
   "subtitle.frozendawn.blocks.sfr_quench": "SFR-1 magnet quench vents",
+  "subtitle.frozendawn.blocks.sfr_dms_off": "SFR-1 disruption mitigation disabled",
   "hud.frozendawn.binder.coolant": "Coolant: link a port to a radiator",
   "hud.frozendawn.binder.notice.coolant": "Coolant: link a port to a radiator",
   "message.frozendawn.reactor.meltdown": "Operator modification on record. ORSA thanks you for your service.",

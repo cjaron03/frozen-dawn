@@ -90,3 +90,9 @@ render quench \
   -f lavfi -i "aevalsrc='min(1\, t/0.04)*exp(-0.55*t)':s=44100:d=5" \
   -f lavfi -i "aevalsrc='min(1\, t/0.2)*exp(-0.35*t)':s=44100:d=5" \
   -filter_complex "[0:a]highpass=f=1400,lowpass=f=11000,volume=1.6[hiss];[hiss][2:a]amultiply[vent];[1:a]lowpass=f=120,volume=2.2[r];[r][3:a]amultiply[rumble];[vent][rumble]amix=inputs=2:normalize=0,afade=t=out:st=4.5:d=0.5,alimiter=limit=0.74:level=0[out]"
+
+# DMS off, 1.9 s: three rising whoops, 500 to 1100 Hz with a square-ish edge, each 0.45 s with a short gap, so
+# disabling mitigation sounds like an interlock dropping out rather than the descending warning tone.
+render dms_off \
+  -f lavfi -i "aevalsrc='if(lt(mod(t\,0.6)\,0.45)\, (sin(2*PI*(500*mod(t\,0.6)+667*mod(t\,0.6)*mod(t\,0.6))) + 0.3*sin(6*PI*(500*mod(t\,0.6)+667*mod(t\,0.6)*mod(t\,0.6)))) * min(1\, min(mod(t\,0.6)\, 0.45-mod(t\,0.6))/0.02)\, 0) * 0.22':s=44100:d=1.9" \
+  -filter_complex "[0:a]afade=t=out:st=1.75:d=0.15,alimiter=limit=0.75:level=0[out]"

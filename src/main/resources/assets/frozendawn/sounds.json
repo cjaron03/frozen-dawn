@@ -4480,6 +4480,16 @@
       }
     ]
   },
+  "blocks.sfr_dms_off": {
+    "category": "blocks",
+    "subtitle": "subtitle.frozendawn.blocks.sfr_dms_off",
+    "sounds": [
+      {
+        "name": "frozendawn:blocks/sfr/dms_off",
+        "volume": 1.0
+      }
+    ]
+  },
   "blocks.sfr_quench": {
     "category": "blocks",
     "subtitle": "subtitle.frozendawn.blocks.sfr_quench",

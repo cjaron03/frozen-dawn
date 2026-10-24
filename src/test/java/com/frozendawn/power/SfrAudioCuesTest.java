@@ -52,8 +52,8 @@ class SfrAudioCuesTest {
         assertEquals(EnumSet.of(Cue.DISRUPTION, Cue.QUENCH), SfrAudioCues.cues(r(BURNING, FusionPhysics.Status.BURNING),
                 r(OFF, FusionPhysics.Status.WALL_MELT, 1100, 0, true), false));
     }
-    @Test void overdriveSoundsTheAlarm() {
+    @Test void overdriveAloneIsQuiet() {
         var over = new FusionPhysics.Readout(BURNING, FusionPhysics.Status.BURNING, 900, 600, 600, 560, 515, 0, 0, 0, 0, false, false);
-        assertTrue(SfrAudioCues.alarm(over, true));
+        assertFalse(SfrAudioCues.alarm(over, true));
     }
 }

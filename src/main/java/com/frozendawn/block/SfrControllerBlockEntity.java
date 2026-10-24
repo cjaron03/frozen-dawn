@@ -279,7 +279,12 @@ public final class SfrControllerBlockEntity extends BlockEntity implements MenuP
     public void toggleLoadFollow() { physics.setLoadFollow(!physics.loadFollow()); setChanged(); }
     /** Drive in DRIVE_STEP steps above 100%. */
     public void setDriveSteps(int steps) { physics.setDrive(1 + steps * FusionPhysics.DRIVE_STEP); setChanged(); }
-    public void setMitigation(boolean on) { physics.setMitigation(on); setChanged(); }
+    /** Turning mitigation off sounds a one-shot alert; overdrive itself is quiet. */
+    public void setMitigation(boolean on) {
+        if (!on && physics.mitigation() && level instanceof ServerLevel l)
+            l.playSound(null, worldPosition, ModSounds.SFR_DMS_OFF.get(), SoundSource.BLOCKS, 1.5f, 1f);
+        physics.setMitigation(on); setChanged();
+    }
 
     private void release(ServerLevel l) {
         if (l.isLoaded(publishedPort) && l.getBlockEntity(publishedPort) instanceof SfrPowerPortBlockEntity old) { old.publish(0, 0); old.ready(false); }

@@ -25,10 +25,10 @@ public final class SfrAudioCues {
         return cues;
     }
 
-    /** True while burning near the disruption limit, overdriven past rated heat, or with ash building (pump off). A negative
-     * net is not a warning: every start warms the loop on network power, and a shortfall the network cannot cover quenches
-     * the same second. */
+    /** True while burning near the disruption limit or with ash building (pump off). Overdrive alone is not a warning:
+     * disabling mitigation already sounded its alert. Nor is a negative net: every start warms the loop on network power,
+     * and a shortfall the network cannot cover quenches the same second. */
     public static boolean alarm(FusionPhysics.Readout r, boolean pumping) {
-        return r.state() == State.BURNING && (r.loopC() >= 1000 || r.heatKw() > FusionPhysics.RATED_KW + 0.5 || !pumping);
+        return r.state() == State.BURNING && (r.loopC() >= 1000 || !pumping);
     }
 }
