@@ -138,8 +138,12 @@ public final class ReactorControllerScreen extends AbstractContainerScreen<React
         line(g, 5, Component.translatable("screen.frozendawn.reactor.climb",
                 Component.translatable("screen.frozendawn.reactor.coolant." + coolant.name().toLowerCase(Locale.ROOT)),
                 String.format(Locale.ROOT, "%+.2f", climb)), coolantFault ? RED : climb > 0.05 ? AMBER : MUTED);
-        line(g, 6, Component.translatable("screen.frozendawn.reactor.rods", (int) menu.slots.subList(0, ReactorPhysics.ROD_SLOTS).stream()
-                .filter(s -> ReactorControllerBlockEntity.fuel(s.getItem())).count(), kw(RATED), data(DAMAGE) / 10), data(DAMAGE) > 0 ? RED : MUTED);
+        var rodSlots = menu.slots.subList(0, ReactorPhysics.ROD_SLOTS);
+        int fuelRods = (int) rodSlots.stream().filter(s -> ReactorControllerBlockEntity.fuel(s.getItem())).count();
+        int targetRods = (int) rodSlots.stream().filter(s -> s.getItem().is(com.frozendawn.init.ModItems.LITHIUM_TARGET_ROD.get())).count();
+        line(g, 6, targetRods > 0
+                ? Component.translatable("screen.frozendawn.reactor.rods_targets", fuelRods, targetRods, kw(RATED), data(DAMAGE) / 10)
+                : Component.translatable("screen.frozendawn.reactor.rods", fuelRods, kw(RATED), data(DAMAGE) / 10), data(DAMAGE) > 0 ? RED : MUTED);
         if (flag(F_SCRAM) && state != ReactorPhysics.State.MELTDOWN)
             line(g, 7, Component.translatable(flag(F_RESETTABLE) ? "screen.frozendawn.reactor.scram_reset" : "screen.frozendawn.reactor.scram_wait"), AMBER);
         else line(g, 7, data(TARGET) >= 0 ? (data(ReactorControllerBlockEntity.RESERVE) > 0

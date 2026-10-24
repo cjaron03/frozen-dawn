@@ -67,6 +67,10 @@ public final class ReactorControllerBlockEntity extends BlockEntity implements M
     public int alarm() { return alarm; }
     public int comparator() { return (int) Math.clamp(Math.round(core.coreC() / ReactorPhysics.MELTDOWN_C * 15), 0, 15); }
     public static boolean fuel(ItemStack s) { return s.is(ModItems.FUEL_ROD.get()) && s.getDamageValue() < s.getMaxDamage(); }
+    /** An unspent Lithium Target Rod: it makes no heat and ages with the fuel rods. */
+    public static boolean target(ItemStack s) { return s.is(ModItems.LITHIUM_TARGET_ROD.get()) && s.getDamageValue() < s.getMaxDamage(); }
+    /** Tritium Canisters a bred-out target rod leaves in the output. */
+    public static final int TARGET_YIELD = 4;
     public int loadedRods() { int n = 0; for (int i = 0; i < ReactorPhysics.ROD_SLOTS; i++) if (fuel(items.get(i))) n++; return n; }
 
     @Override public void setRemoved() {
@@ -140,14 +144,20 @@ public final class ReactorControllerBlockEntity extends BlockEntity implements M
         burnDebt -= whole;
         for (int i = 0; i < ReactorPhysics.ROD_SLOTS; i++) {
             var rod = items.get(i);
-            if (fuel(rod)) rod.setDamageValue(Math.min(rod.getMaxDamage(), rod.getDamageValue() + whole));
+            if (fuel(rod) || target(rod)) rod.setDamageValue(Math.min(rod.getMaxDamage(), rod.getDamageValue() + whole));
         }
     }
     private void ejectSpent() {
         for (int i = 0; i < ReactorPhysics.ROD_SLOTS; i++) {
             var rod = items.get(i);
-            if (!rod.is(ModItems.FUEL_ROD.get()) || fuel(rod)) continue;
             var out = items.get(OUTPUT);
+            if (rod.is(ModItems.LITHIUM_TARGET_ROD.get()) && !target(rod)) {
+                if (out.isEmpty()) items.set(OUTPUT, new ItemStack(ModItems.TRITIUM_CANISTER.get(), TARGET_YIELD));
+                else if (out.is(ModItems.TRITIUM_CANISTER.get()) && out.getCount() + TARGET_YIELD <= out.getMaxStackSize()) out.grow(TARGET_YIELD);
+                else continue;
+                items.set(i, ItemStack.EMPTY); continue;
+            }
+            if (!rod.is(ModItems.FUEL_ROD.get()) || fuel(rod)) continue;
             if (out.is(ModItems.SHIELDED_CASK.get())) { if (!com.frozendawn.item.ShieldedCaskItem.add(out)) continue; }
             else if (out.isEmpty()) items.set(OUTPUT, new ItemStack(ModItems.SPENT_FUEL_ROD.get()));
             else if (out.is(ModItems.SPENT_FUEL_ROD.get()) && out.getCount() < out.getMaxStackSize()) out.grow(1);

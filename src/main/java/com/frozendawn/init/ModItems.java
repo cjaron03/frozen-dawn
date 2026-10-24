@@ -98,6 +98,8 @@ public class ModItems {
     public static final DeferredItem<Item> URANIUM_PELLET = ITEMS.registerSimpleItem("uranium_pellet");
     public static final DeferredItem<com.frozendawn.item.FuelRodItem> FUEL_ROD = ITEMS.register("fuel_rod",
             () -> new com.frozendawn.item.FuelRodItem(new Item.Properties().durability(com.frozendawn.power.ReactorPhysics.ROD_LIFE_SECONDS)));
+    public static final DeferredItem<com.frozendawn.item.LithiumTargetRodItem> LITHIUM_TARGET_ROD = ITEMS.register("lithium_target_rod",
+            () -> new com.frozendawn.item.LithiumTargetRodItem(new Item.Properties().durability(com.frozendawn.power.ReactorPhysics.ROD_LIFE_SECONDS)));
     public static final DeferredItem<Item> SPENT_FUEL_ROD = ITEMS.register("spent_fuel_rod", () -> new Item(new Item.Properties().stacksTo(4)));
     public static final DeferredItem<com.frozendawn.item.ShieldedCaskItem> SHIELDED_CASK = ITEMS.register("shielded_cask",
             () -> new com.frozendawn.item.ShieldedCaskItem(new Item.Properties().stacksTo(1)));
@@ -752,6 +754,7 @@ public class ModItems {
                         output.accept(URANIUM_CONCENTRATE.get());
                         output.accept(URANIUM_PELLET.get());
                         output.accept(FUEL_ROD.get());
+                        output.accept(LITHIUM_TARGET_ROD.get());
                         output.accept(SPENT_FUEL_ROD.get());
                         output.accept(SHIELDED_CASK.get());
                         output.accept(RADIOACTIVE_ASH.get());
