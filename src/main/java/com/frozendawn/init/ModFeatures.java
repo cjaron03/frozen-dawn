@@ -3,6 +3,7 @@ package com.frozendawn.init;
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.flora.RimewoodGroveFeature;
 import com.frozendawn.flora.RimewoodTreeFeature;
+import com.frozendawn.world.PegmatitePodFeature;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
@@ -22,6 +23,8 @@ public final class ModFeatures {
             FEATURES.register("rimewood_tree", () -> new RimewoodTreeFeature(NoneFeatureConfiguration.CODEC));
     public static final DeferredHolder<Feature<?>, RimewoodGroveFeature> RIMEWOOD_GROVE_FEATURE =
             FEATURES.register("rimewood_grove", () -> new RimewoodGroveFeature(NoneFeatureConfiguration.CODEC));
+    public static final DeferredHolder<Feature<?>, PegmatitePodFeature> PEGMATITE_POD =
+            FEATURES.register("pegmatite_pod", () -> new PegmatitePodFeature(NoneFeatureConfiguration.CODEC));
 
     /** The configured tree a sapling grows. */
     public static final ResourceKey<ConfiguredFeature<?, ?>> RIMEWOOD_TREE =

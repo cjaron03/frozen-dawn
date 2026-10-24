@@ -67,6 +67,8 @@
     "frozendawn:first_wall",
     "frozendawn:lithium_blanket",
     "frozendawn:confinement_core",
-    "frozendawn:high_temperature_radiator"
+    "frozendawn:high_temperature_radiator",
+    "frozendawn:pegmatite",
+    "frozendawn:deepslate_spodumene_ore"
   ]
 }

@@ -121,6 +121,12 @@ public class ModBlocks {
     public static final DeferredBlock<net.minecraft.world.level.block.DropExperienceBlock> DEEPSLATE_GALENA_ORE = BLOCKS.register("deepslate_galena_ore",
             () -> new net.minecraft.world.level.block.DropExperienceBlock(net.minecraft.util.valueproviders.ConstantInt.of(0),
                     BlockBehaviour.Properties.of().strength(4.5f, 3f).requiresCorrectToolForDrops().sound(SoundType.DEEPSLATE).mapColor(net.minecraft.world.level.material.MapColor.DEEPSLATE)));
+    /** Coarse pale granite found only as pods deep in deepslate; it hosts the spodumene. */
+    public static final DeferredBlock<Block> PEGMATITE = BLOCKS.register("pegmatite",
+            () -> new Block(BlockBehaviour.Properties.of().strength(3f, 6f).requiresCorrectToolForDrops().sound(SoundType.DEEPSLATE).mapColor(net.minecraft.world.level.material.MapColor.QUARTZ)));
+    public static final DeferredBlock<net.minecraft.world.level.block.DropExperienceBlock> DEEPSLATE_SPODUMENE_ORE = BLOCKS.register("deepslate_spodumene_ore",
+            () -> new net.minecraft.world.level.block.DropExperienceBlock(net.minecraft.util.valueproviders.ConstantInt.of(0),
+                    BlockBehaviour.Properties.of().strength(4.5f, 3f).requiresCorrectToolForDrops().sound(SoundType.DEEPSLATE).mapColor(net.minecraft.world.level.material.MapColor.QUARTZ)));
     public static final DeferredBlock<com.frozendawn.block.DeconShowerBlock> DECON_SHOWER = BLOCKS.register("decon_shower",
             () -> new com.frozendawn.block.DeconShowerBlock(BlockBehaviour.Properties.of().strength(2f, 6f).requiresCorrectToolForDrops().sound(SoundType.COPPER).noOcclusion()));
     /** Dense radiation shielding: x0.1 per block (RadiationField.factor). */

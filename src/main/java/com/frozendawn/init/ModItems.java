@@ -84,6 +84,11 @@ public class ModItems {
     public static final DeferredItem<BlockItem> LEAD_BLOCK = ITEMS.registerSimpleBlockItem("lead_block", ModBlocks.LEAD_BLOCK);
     public static final DeferredItem<BlockItem> DECON_SHOWER = ITEMS.registerSimpleBlockItem("decon_shower", ModBlocks.DECON_SHOWER);
     public static final DeferredItem<Item> RAW_GALENA = ITEMS.registerSimpleItem("raw_galena");
+    public static final DeferredItem<BlockItem> PEGMATITE = ITEMS.registerSimpleBlockItem("pegmatite", ModBlocks.PEGMATITE);
+    public static final DeferredItem<BlockItem> DEEPSLATE_SPODUMENE_ORE = ITEMS.registerSimpleBlockItem("deepslate_spodumene_ore", ModBlocks.DEEPSLATE_SPODUMENE_ORE);
+    public static final DeferredItem<Item> RAW_SPODUMENE = ITEMS.registerSimpleItem("raw_spodumene");
+    public static final DeferredItem<Item> LITHIUM_CARBONATE = ITEMS.registerSimpleItem("lithium_carbonate");
+    public static final DeferredItem<Item> LITHIUM = ITEMS.registerSimpleItem("lithium");
     public static final DeferredItem<Item> LEAD_INGOT = ITEMS.registerSimpleItem("lead_ingot");
     public static final DeferredItem<com.frozendawn.item.LeadLiningModuleItem> LEAD_LINING_MODULE = ITEMS.register("lead_lining_module",
             () -> new com.frozendawn.item.LeadLiningModuleItem(new Item.Properties().stacksTo(1).rarity(Rarity.UNCOMMON)));
@@ -757,6 +762,11 @@ public class ModItems {
                         output.accept(GALENA_ORE.get());
                         output.accept(DEEPSLATE_GALENA_ORE.get());
                         output.accept(RAW_GALENA.get());
+                        output.accept(PEGMATITE.get());
+                        output.accept(DEEPSLATE_SPODUMENE_ORE.get());
+                        output.accept(RAW_SPODUMENE.get());
+                        output.accept(LITHIUM_CARBONATE.get());
+                        output.accept(LITHIUM.get());
                         output.accept(LEAD_INGOT.get());
                         output.accept(LEAD_BLOCK.get());
                         output.accept(LEAD_LINING_MODULE.get());
