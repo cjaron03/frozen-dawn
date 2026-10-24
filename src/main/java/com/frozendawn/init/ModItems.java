@@ -166,6 +166,7 @@ public class ModItems {
     public static final DeferredItem<Item> FEED_HORN = ITEMS.registerSimpleItem("feed_horn", new Item.Properties().stacksTo(16));
 
     public static final DeferredItem<BlockItem> INDUCTION_FURNACE = ITEMS.registerSimpleBlockItem("induction_furnace", ModBlocks.INDUCTION_FURNACE);
+    public static final DeferredItem<BlockItem> ISOTOPE_COLUMN = ITEMS.registerSimpleBlockItem("isotope_column", ModBlocks.ISOTOPE_COLUMN);
 
     public static final DeferredItem<com.frozendawn.item.PowerCellItem> POWER_CELL = ITEMS.register("power_cell", () -> new com.frozendawn.item.PowerCellItem(new Item.Properties()));
     public static final DeferredItem<BlockItem> BATTERY_BANK = ITEMS.registerSimpleBlockItem("battery_bank", ModBlocks.BATTERY_BANK);
@@ -747,6 +748,7 @@ public class ModItems {
                         output.accept(SFR_VACUUM_PORT.get());
                         output.accept(SFR_MAINTENANCE_HATCH.get());
                         output.accept(HIGH_TEMPERATURE_RADIATOR.get());
+                        output.accept(ISOTOPE_COLUMN.get());
                         output.accept(DEUTERIUM_CANISTER.get());
                         output.accept(TRITIUM_CANISTER.get());
                         output.accept(DEEPSLATE_URANIUM_ORE.get());

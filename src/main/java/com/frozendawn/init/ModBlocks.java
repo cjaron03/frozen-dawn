@@ -164,6 +164,9 @@ public class ModBlocks {
     public static final DeferredBlock<com.frozendawn.block.InductionFurnaceBlock> INDUCTION_FURNACE = BLOCKS.register("induction_furnace",
             () -> new com.frozendawn.block.InductionFurnaceBlock(BlockBehaviour.Properties.of().strength(4f).requiresCorrectToolForDrops().sound(SoundType.METAL).pushReaction(PushReaction.BLOCK)
                     .lightLevel(state -> state.getValue(com.frozendawn.block.InductionFurnaceBlock.LIT) ? 4 : 0)));
+    public static final DeferredBlock<com.frozendawn.block.IsotopeColumnBlock> ISOTOPE_COLUMN = BLOCKS.register("isotope_column",
+            () -> new com.frozendawn.block.IsotopeColumnBlock(BlockBehaviour.Properties.of().strength(4f).requiresCorrectToolForDrops().sound(SoundType.METAL).pushReaction(PushReaction.BLOCK)
+                    .lightLevel(state -> state.getValue(com.frozendawn.block.IsotopeColumnBlock.LIT) ? 6 : 0)));
 
     public static final DeferredBlock<com.frozendawn.block.PowerStorageBlock> BATTERY_BANK = BLOCKS.register("battery_bank",
             () -> new com.frozendawn.block.PowerStorageBlock(BlockBehaviour.Properties.of().strength(4f).requiresCorrectToolForDrops().sound(SoundType.METAL).pushReaction(PushReaction.BLOCK), true));

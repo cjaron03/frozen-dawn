@@ -387,6 +387,7 @@ public class ClientEvents {
         event.register(ModMenuTypes.UPLINK_CONSOLE.get(), UplinkConsoleScreen::new);
         event.register(ModMenuTypes.PLUMB_LINE.get(), PlumbLineScreen::new);
         event.register(ModMenuTypes.INDUCTION_FURNACE.get(), InductionFurnaceScreen::new);
+        event.register(ModMenuTypes.ISOTOPE_COLUMN.get(), IsotopeColumnScreen::new);
         event.register(ModMenuTypes.POWER_STORAGE.get(), PowerStorageScreen::new);
         event.register(ModMenuTypes.GEOTHERMAL_CORE.get(), GeothermalCoreScreen::new);
         event.register(ModMenuTypes.FUEL_PROCESSING_SILO.get(), FuelProcessingSiloScreen::new);

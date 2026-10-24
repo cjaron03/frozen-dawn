@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "north": "frozendawn:block/isotope_column_front_on",
+    "south": "frozendawn:block/isotope_column_side",
+    "east": "frozendawn:block/isotope_column_side",
+    "west": "frozendawn:block/isotope_column_side",
+    "up": "frozendawn:block/isotope_column_top",
+    "down": "frozendawn:block/isotope_column_top",
+    "particle": "frozendawn:block/isotope_column_side"
+  }
+}

@@ -1,11 +1,15 @@
 package com.frozendawn.power;
 
 import com.frozendawn.FrozenDawn;
+import com.frozendawn.block.GeothermalCoreBlockEntity;
+import com.frozendawn.block.IsotopeColumnBlockEntity;
+import com.frozendawn.block.IsotopeColumnMenu;
 import com.frozendawn.block.ReactorControllerBlockEntity;
 import com.frozendawn.block.ReactorControllerMenu;
 import com.mojang.authlib.GameProfile;
 import java.util.UUID;
 import net.neoforged.neoforge.common.util.FakePlayer;
+import com.frozendawn.gametest.GameTestPacing;
 import com.frozendawn.gametest.GameTestReporting;
 import com.frozendawn.gametest.GameTestTemplates;
 import com.frozendawn.init.ModBlocks;
@@ -20,6 +24,7 @@ import net.minecraft.gametest.framework.*;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.CraftingInput;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.item.crafting.SingleRecipeInput;
@@ -159,5 +164,100 @@ public final class SfrFuelGameTest {
         });
     }
 
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "sfr_fuel", timeoutTicks = 120)
+    public static void sfrColumnMakesDeuteriumFromIce(GameTestHelper h) {
+        GameTestPacing.whenTicking(h, () -> {
+            var level = h.getLevel(); var pos = poweredColumn(h); var be = column(level, pos);
+            // Prime a job twenty ticks from done; the full 120 s run is the constant, not the test.
+            prime(be, level, "DEUTERIUM", IsotopeColumnLogic.DEUTERIUM_TICKS - 20, 0);
+            be.setItem(0, new ItemStack(Items.ICE, 8));
+            h.runAfterDelay(60, () -> {
+                h.assertTrue(be.getItem(1).is(ModItems.DEUTERIUM_CANISTER.get()) && be.getItem(1).getCount() == 1, "8 Ice make one Deuterium Canister: " + be.getItem(1));
+                h.assertTrue(be.getItem(0).isEmpty() && be.buffer() == 0, "All 8 ice units went into the canister, buffer " + be.buffer());
+                h.assertTrue(!be.wantsPower(), "With no ice left the Column stops drawing");
+                h.succeed();
+            });
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "sfr_fuel", timeoutTicks = 100)
+    public static void sfrColumnPausesWithoutPower(GameTestHelper h) {
+        GameTestPacing.whenTicking(h, () -> {
+            var level = h.getLevel(); var pos = h.absolutePos(new BlockPos(6, 2, 4)); h.setBlock(new BlockPos(6, 2, 4), ModBlocks.ISOTOPE_COLUMN.get());
+            var be = column(level, pos); prime(be, level, "DEUTERIUM", 100, 8); be.setItem(0, new ItemStack(Items.ICE, 8));
+            h.runAfterDelay(40, () -> {
+                h.assertTrue(be.progress() == 100 && be.buffer() == 8 && be.getItem(0).getCount() == 8 && be.getItem(1).isEmpty(),
+                        "Without power the job pauses: progress " + be.progress() + ", buffer " + be.buffer());
+                h.assertTrue(be.wantsPower() && be.status() == IsotopeColumnBlockEntity.NO_POWER, "It still asks for power");
+                h.succeed();
+            });
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "sfr_fuel", timeoutTicks = 120)
+    public static void sfrColumnRefinesLithium(GameTestHelper h) {
+        GameTestPacing.whenTicking(h, () -> {
+            var level = h.getLevel(); var pos = poweredColumn(h); var be = column(level, pos);
+            prime(be, level, "LITHIUM", IsotopeColumnLogic.LITHIUM_TICKS - 20, 0);
+            be.setItem(0, new ItemStack(ModItems.LITHIUM_CARBONATE.get(), 2));
+            h.runAfterDelay(60, () -> {
+                h.assertTrue(be.getItem(1).is(ModItems.LITHIUM.get()) && be.getItem(1).getCount() == 1, "1 Lithium Carbonate refines to 1 Lithium: " + be.getItem(1));
+                h.assertTrue(be.getItem(0).getCount() == 1 && be.progress() > 0 && be.status() == IsotopeColumnBlockEntity.WORKING, "The second carbonate is under way");
+                h.succeed();
+            });
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "sfr_fuel", timeoutTicks = 100)
+    public static void sfrColumnRefusesJunk(GameTestHelper h) {
+        GameTestPacing.whenTicking(h, () -> {
+            var level = h.getLevel();
+            h.setBlock(new BlockPos(4, 2, 4), ModBlocks.ISOTOPE_COLUMN.get()); h.setBlock(new BlockPos(4, 3, 4), Blocks.HOPPER);
+            h.setBlock(new BlockPos(8, 2, 4), ModBlocks.ISOTOPE_COLUMN.get()); h.setBlock(new BlockPos(8, 3, 4), Blocks.HOPPER);
+            var junk = (net.minecraft.world.level.block.entity.HopperBlockEntity) level.getBlockEntity(h.absolutePos(new BlockPos(4, 3, 4)));
+            var ice = (net.minecraft.world.level.block.entity.HopperBlockEntity) level.getBlockEntity(h.absolutePos(new BlockPos(8, 3, 4)));
+            junk.setItem(0, new ItemStack(Blocks.COBBLESTONE, 4)); ice.setItem(0, new ItemStack(Items.ICE, 4));
+            var be = column(level, h.absolutePos(new BlockPos(4, 2, 4)));
+            var player = new FakePlayer(level, new GameProfile(UUID.randomUUID(), "column")); player.setPos(be.getBlockPos().north(2).getCenter());
+            var menu = new IsotopeColumnMenu(1, player.getInventory(), be);
+            h.assertTrue(!menu.slots.get(0).mayPlace(new ItemStack(Blocks.COBBLESTONE)) && menu.slots.get(0).mayPlace(new ItemStack(Items.PACKED_ICE))
+                    && menu.slots.get(0).mayPlace(new ItemStack(ModItems.LITHIUM_CARBONATE.get())) && !menu.slots.get(1).mayPlace(new ItemStack(Items.ICE)),
+                    "The menu input takes only ice, snow or Lithium Carbonate, and the output takes nothing");
+            h.runAfterDelay(40, () -> {
+                h.assertTrue(junk.getItem(0).getCount() == 4 && be.getItem(0).isEmpty(), "Cobblestone stays in the hopper");
+                var fed = column(level, h.absolutePos(new BlockPos(8, 2, 4)));
+                h.assertTrue(ice.isEmpty() && fed.buffer() == 4, "The same hopper feeds ice into the buffer: " + fed.buffer());
+                h.succeed();
+            });
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "sfr_fuel", timeoutTicks = 100)
+    public static void sfrColumnSurvivesReload(GameTestHelper h) {
+        GameTestPacing.whenTicking(h, () -> {
+            var level = h.getLevel(); var pos = poweredColumn(h); var be = column(level, pos);
+            be.setItem(0, new ItemStack(Items.ICE, 10));
+            h.runAfterDelay(30, () -> {
+                h.assertTrue(be.progress() > 0 && be.buffer() == 8 && be.getItem(0).getCount() == 2, "A job is under way: progress " + be.progress() + ", buffer " + be.buffer() + ", input " + be.getItem(0));
+                var copy = new IsotopeColumnBlockEntity(pos, be.getBlockState()); copy.loadWithComponents(be.saveWithFullMetadata(level.registryAccess()), level.registryAccess());
+                h.assertTrue(copy.progress() == be.progress() && copy.buffer() == 8 && copy.job() == IsotopeColumnLogic.Job.DEUTERIUM && copy.getItem(0).getCount() == 2,
+                        "Reload keeps the job, its progress and the ice buffer");
+                h.succeed();
+            });
+        });
+    }
+
+    private static BlockPos poweredColumn(GameTestHelper h) {
+        h.setBlock(new BlockPos(2, 2, 4), ModBlocks.GEOTHERMAL_CORE.get()); h.setBlock(new BlockPos(6, 2, 4), ModBlocks.ISOTOPE_COLUMN.get());
+        var core = h.absolutePos(new BlockPos(2, 2, 4)); var pos = h.absolutePos(new BlockPos(6, 2, 4));
+        ((GeothermalCoreBlockEntity) h.getLevel().getBlockEntity(core)).setPowerShare(100);
+        var result = PowerNetworks.link(h.getLevel(), core, pos); h.assertTrue(result == PowerLinkRules.Result.OK, "Column links to the core: " + result);
+        return pos;
+    }
+    private static IsotopeColumnBlockEntity column(ServerLevel level, BlockPos pos) { return (IsotopeColumnBlockEntity) level.getBlockEntity(pos); }
+    private static void prime(IsotopeColumnBlockEntity be, ServerLevel level, String job, int progress, int buffer) {
+        var tag = be.saveWithFullMetadata(level.registryAccess()); tag.putString("Job", job); tag.putInt("Progress", progress); tag.putInt("Buffer", buffer);
+        be.loadWithComponents(tag, level.registryAccess());
+    }
     private static void scene(GameTestHelper h, Runnable body) { h.runAfterDelay(1, () -> { body.run(); h.succeed(); }); }
 }
