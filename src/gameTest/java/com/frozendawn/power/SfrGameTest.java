@@ -261,22 +261,88 @@ public final class SfrGameTest {
         });
     }
 
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "sfr", timeoutTicks = 300, skyAccess = true)
+    public static void sfrMiningAFirstWallWhileBurningDisruptsAndWears(GameTestHelper h) {
+        h.runAfterDelay(1, () -> {
+            var be = ready(h, 8_000_000);
+            h.startSequence()
+                    .thenWaitUntil(() -> h.assertValueEqual(be.physics().state(), FusionPhysics.State.BURNING, "state"))
+                    .thenExecute(() -> {
+                        var level = h.getLevel(); var walls = be.shell().firstWall(); var mined = SfrScenes.cell(h, CENTER, 2, 0, 0);
+                        level.setBlock(mined, Blocks.AIR.defaultBlockState(), 3);
+                        be.second(level);
+                        level.setBlock(mined, ModBlocks.FIRST_WALL.get().defaultBlockState(), 3);
+                        h.assertValueEqual(be.physics().state(), FusionPhysics.State.OFF, "state");
+                        for (var wall : walls) if (!wall.equals(mined))
+                            h.assertValueEqual(level.getBlockState(wall).getValue(FirstWallBlock.WEAR), 1, "wear at " + wall);
+                    })
+                    .thenSucceed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "sfr", timeoutTicks = 300, skyAccess = true)
+    public static void sfrOpeningTheHatchWhileBurningDisrupts(GameTestHelper h) {
+        h.runAfterDelay(1, () -> {
+            var be = ready(h, 8_000_000);
+            h.startSequence()
+                    .thenWaitUntil(() -> h.assertValueEqual(be.physics().state(), FusionPhysics.State.BURNING, "state"))
+                    .thenExecute(() -> {
+                        var level = h.getLevel(); var walls = be.shell().firstWall(); var hatch = be.shell().hatch();
+                        level.setBlock(hatch, level.getBlockState(hatch).setValue(DoorBlock.OPEN, true), 3);
+                        be.second(level);
+                        h.assertValueEqual(be.physics().state(), FusionPhysics.State.OFF, "state");
+                        h.assertValueEqual(be.physics().status(), FusionPhysics.Status.DISRUPTION, "status");
+                        for (var wall : walls) h.assertValueEqual(level.getBlockState(wall).getValue(FirstWallBlock.WEAR), 1, "wear at " + wall);
+                    })
+                    .thenSucceed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "sfr_vacuum", timeoutTicks = 400, skyAccess = true)
+    public static void sfrQuenchDoesNotTouchRoomGas(GameTestHelper h) {
+        h.runAfterDelay(1, () -> {
+            reactorRoom(h);
+            var be = ready(h, 6_000_000, ROOM_BANKS);
+            var gas = AirlockSavedState.get(h.getLevel()); var cells = new HashSet<BlockPos>(); int[] before = { -1 };
+            h.startSequence()
+                    .thenWaitUntil(() -> h.assertValueEqual(be.physics().state(), FusionPhysics.State.BURNING, "state"))
+                    .thenExecute(() -> {
+                        var level = h.getLevel(); var room = RoomAtmosphere.inspect(level, SfrScenes.cell(h, CENTER, 0, 0, -6));
+                        h.assertTrue(room.seal() == RoomAtmosphere.Seal.SEALED && !room.scanning(), "The reactor room is not sealed: " + room.seal());
+                        cells.addAll(room.cells());
+                        gas.setRoomGas(level, cells, cells.size() * AirlockCycle.UNITS_PER_CELL / 2);
+                        before[0] = gas.roomGas(level, cells);
+                        // Empty the banks rather than break them: a broken bank would grow the room and move its gas.
+                        for (int i = 0; level.getBlockEntity(h.absolutePos(bankAt(ROOM_BANKS, i))) instanceof PowerStorageBlockEntity store; i++) store.clearContent();
+                    })
+                    .thenWaitUntil(() -> h.assertValueEqual(be.physics().status(), FusionPhysics.Status.MAGNET_QUENCH, "status"))
+                    .thenExecute(() -> h.assertValueEqual(gas.roomGas(h.getLevel(), cells), before[0], "room gas after a quench"))
+                    .thenSucceed();
+        });
+    }
+
     private static SfrControllerBlockEntity controller(GameTestHelper h, BlockPos pos) {
         if (!(h.getLevel().getBlockEntity(pos) instanceof SfrControllerBlockEntity be)) throw new GameTestAssertException("SFR-1 controller block entity missing");
         return be;
     }
-    /** Banks holding joules beside the template's west edge, each linked to target. */
-    private static void bank(GameTestHelper h, int joules, BlockPos target) {
+    /** Bank rows: beside the template's west edge, or straight out from the Power Port inside reactorRoom (a diagonal
+     * link would clip the torus shell and need a feedthrough). */
+    private static final BlockPos BANKS = new BlockPos(4, 1, 1), ROOM_BANKS = CENTER.offset(2, 0, -5);
+    private static BlockPos bankAt(BlockPos first, int i) { return first == ROOM_BANKS ? first.north(i) : first.east(i * 2); }
+    /** Banks holding joules along a row from first (relative), each linked to target. */
+    private static void bank(GameTestHelper h, int joules, BlockPos target) { bank(h, joules, target, BANKS); }
+    private static void bank(GameTestHelper h, int joules, BlockPos target, BlockPos first) {
         var level = h.getLevel(); int left = joules;
         for (int i = 0; left > 0; i++) {
-            var bank = h.absolutePos(new BlockPos(4 + i * 2, 1, 1));
+            var bank = h.absolutePos(bankAt(first, i));
             level.setBlock(bank, ModBlocks.BATTERY_BANK.get().defaultBlockState(), 3);
             if (!(level.getBlockEntity(bank) instanceof PowerStorageBlockEntity store)) throw new GameTestAssertException("Bank block entity missing");
             for (int cell = 0; cell < store.getContainerSize() && left > 0; cell++) {
                 int amount = Math.min(left, PowerCellItem.CAPACITY_JOULES);
                 store.setItem(cell, PowerCellItem.charged(amount)); left -= amount;
             }
-            h.assertTrue(PowerNetworks.link(level, bank, target) == PowerLinkRules.Result.OK, "Expected a power link from " + bank);
+            var linked = PowerNetworks.link(level, bank, target);
+            h.assertTrue(linked == PowerLinkRules.Result.OK, "Expected a power link from " + bank + ", got " + linked);
         }
     }
     /** A sealed 3x3x3 room on the Vacuum Port's outer face; returns its air cells. */
@@ -291,9 +357,19 @@ public final class SfrGameTest {
         return cells;
     }
 
+    /** A stone shell enclosing a 15x9x15 air room around the torus and its radiator roof. */
+    private static void reactorRoom(GameTestHelper h) {
+        var level = h.getLevel();
+        for (int dx = -8; dx <= 8; dx++) for (int dy = -4; dy <= 6; dy++) for (int dz = -8; dz <= 8; dz++) {
+            boolean wall = Math.abs(dx) == 8 || dy == -4 || dy == 6 || Math.abs(dz) == 8;
+            level.setBlock(SfrScenes.cell(h, CENTER, dx, dy, dz), wall ? Blocks.STONE.defaultBlockState() : Blocks.AIR.defaultBlockState(), 3);
+        }
+    }
+
     /** Torus, 14 High-Temperature Radiators on its roof, banks holding bankJoules on the Power Port and
      * 4 Deuterium Canisters; READY with ignition requested and 4 tritium. */
-    private static SfrControllerBlockEntity ready(GameTestHelper h, int bankJoules) {
+    private static SfrControllerBlockEntity ready(GameTestHelper h, int bankJoules) { return ready(h, bankJoules, BANKS); }
+    private static SfrControllerBlockEntity ready(GameTestHelper h, int bankJoules, BlockPos banks) {
         var level = h.getLevel(); var controller = SfrScenes.build(h, CENTER);
         var ports = new BlockPos[] { SfrScenes.cell(h, CENTER, -4, 0, 0), SfrScenes.cell(h, CENTER, 4, 0, 0) };
         int n = 0;
@@ -303,7 +379,7 @@ public final class SfrGameTest {
             level.setBlock(radiator, ModBlocks.HIGH_TEMPERATURE_RADIATOR.get().defaultBlockState(), 3);
             h.assertTrue(PowerNetworks.link(level, ports[n++ % 2], radiator) == PowerLinkRules.Result.OK, "Expected a coolant link to " + radiator);
         }
-        bank(h, bankJoules, SfrScenes.cell(h, CENTER, 2, 0, -4));
+        bank(h, bankJoules, SfrScenes.cell(h, CENTER, 2, 0, -4), banks);
         if (!(level.getBlockEntity(SfrScenes.cell(h, CENTER, -2, 0, -4)) instanceof SfrFuelPortBlockEntity fuel)) throw new GameTestAssertException("Fuel Port block entity missing");
         fuel.setItem(0, new ItemStack(ModItems.DEUTERIUM_CANISTER.get(), 4));
         if (!(level.getBlockEntity(controller) instanceof SfrControllerBlockEntity be)) throw new GameTestAssertException("SFR-1 controller block entity missing");

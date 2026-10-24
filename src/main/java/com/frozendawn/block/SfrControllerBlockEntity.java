@@ -1,5 +1,8 @@
 package com.frozendawn.block;
 
+import java.util.List;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.core.particles.ParticleTypes;
 import com.frozendawn.airlock.AirlockCycle;
 import com.frozendawn.airlock.AirlockSavedState;
 import com.frozendawn.init.ModBlockEntities;
@@ -50,6 +53,10 @@ public final class SfrControllerBlockEntity extends BlockEntity implements MenuP
     private int radiators;
     /** The vacuum stage and seal as of the last second; a sealed channel entering the stage writes its pressure into room gas. */
     private boolean vacuumStage, sealed;
+    /** The First Wall and coils of the last valid shell: a disruption caused by breaking the shell still wears what is left. */
+    private List<BlockPos> lastFirstWall = List.of(), lastCoils = List.of();
+    /** Ticks of quench frost left on the coils. */
+    private int quenchTicks;
 
     public SfrControllerBlockEntity(BlockPos p, BlockState s) { super(ModBlockEntities.SFR_CONTROLLER.get(), p, s); }
     public NonNullList<ItemStack> items() { return items; }
@@ -70,7 +77,9 @@ public final class SfrControllerBlockEntity extends BlockEntity implements MenuP
     }
 
     public void serverTick() {
-        if (level instanceof ServerLevel l && l.getGameTime() % 20 == 0) second(l);
+        if (!(level instanceof ServerLevel l)) return;
+        if (l.getGameTime() % 20 == 0) second(l);
+        if (quenchTicks > 0 && !lastCoils.isEmpty()) { quenchTicks--; frost(l); }
     }
 
     /** One second of reactor time. Also public for GameTests, which drive it directly. */
@@ -85,7 +94,7 @@ public final class SfrControllerBlockEntity extends BlockEntity implements MenuP
         var portAt = port == null ? null : shell.powerPort();
         if (publishedPort != null && !publishedPort.equals(portAt)) release(l);
         publishedPort = portAt;
-        if (valid) HATCHES.computeIfAbsent(l, k -> new HashMap<>()).put(shell.hatch(), worldPosition);
+        if (valid) { HATCHES.computeIfAbsent(l, k -> new HashMap<>()).put(shell.hatch(), worldPosition); lastFirstWall = shell.firstWall(); lastCoils = shell.coils(); }
         var sinks = new ArrayList<Double>();
         if (valid) for (var p : HighTemperatureRadiatorBlock.sinks(l, shell.coolantPorts())) ReactorRadiatorBlock.sink(l, p).ifPresent(sinks::add);
         radiators = sinks.size();
@@ -100,6 +109,10 @@ public final class SfrControllerBlockEntity extends BlockEntity implements MenuP
         readout = physics.step(new FusionPhysics.Inputs(sinks, powered, channelPressure, hatchClosed, valid, roomVacuum(l),
                 fuel == null ? 0 : fuel.deuterium(), pumping, wear, l.hasNeighborSignal(worldPosition), target));
         if (fuel != null) fuel.use(readout.deuteriumUsed());
+        if (readout.disrupted()) {
+            wearFirstWall(l);
+            if (readout.status() == FusionPhysics.Status.MAGNET_QUENCH) quenchTicks = QUENCH_TICKS;
+        }
         if (port != null) {
             boolean burning = physics.state() == FusionPhysics.State.BURNING;
             double requestKw = readout.requestKw() + (!burning && pumping && channelPressure > 0 ? FusionPhysics.PUMP_KW : 0);
@@ -107,6 +120,23 @@ public final class SfrControllerBlockEntity extends BlockEntity implements MenuP
             port.ready(physics.state() == FusionPhysics.State.READY);
         }
         setChanged();
+    }
+
+    private static final int QUENCH_TICKS = 100;
+    /** Each disruption adds one WEAR to every First Wall still standing. */
+    private void wearFirstWall(ServerLevel l) {
+        for (var pos : lastFirstWall) {
+            var state = l.getBlockState(pos);
+            if (state.getBlock() instanceof FirstWallBlock && state.getValue(FirstWallBlock.WEAR) < FirstWallBlock.MAX_WEAR)
+                l.setBlock(pos, state.setValue(FirstWallBlock.WEAR, state.getValue(FirstWallBlock.WEAR) + 1), Block.UPDATE_ALL);
+        }
+    }
+    /** Snowflakes off one face of a random coil: the magnets warming through their superconducting limit. */
+    private void frost(ServerLevel l) {
+        var random = l.getRandom(); var coil = lastCoils.get(random.nextInt(lastCoils.size()));
+        var face = Direction.getRandom(random); var c = coil.getCenter();
+        l.sendParticles(ParticleTypes.SNOWFLAKE, c.x + face.getStepX() * 0.55, c.y + face.getStepY() * 0.55, c.z + face.getStepZ() * 0.55,
+                2, face.getStepX() == 0 ? 0.3 : 0, face.getStepY() == 0 ? 0.3 : 0, face.getStepZ() == 0 ? 0.3 : 0, 0.02);
     }
 
     /** Outside the vacuum stage the channel exhausts to atmosphere at 1.0. During it, the pump moves gas into the room on
