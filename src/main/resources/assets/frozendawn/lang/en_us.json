@@ -1259,7 +1259,7 @@
   "screen.frozendawn.isotope_column.working": "Working · %s kW",
   "screen.frozendawn.isotope_column.output_full": "Output blocked",
   "screen.frozendawn.isotope_column.buffer": "Ice buffer: %s / %s units",
-  "screen.frozendawn.isotope_column.job.deuterium": "Deuterium",
+  "screen.frozendawn.isotope_column.job.deuterium": "Deuterium · ice %s / %s",
   "screen.frozendawn.isotope_column.job.lithium": "Lithium refining",
   "block.frozendawn.power_monitor": "ORSA Power Monitor",
   "screen.frozendawn.power_monitor.normal": "Normal",

@@ -34,8 +34,14 @@ public final class IsotopeColumnScreen extends AbstractContainerScreen<IsotopeCo
         };
         int colour = status == IsotopeColumnBlockEntity.WORKING ? 0xFF9CD5A5 : status == IsotopeColumnBlockEntity.NO_POWER ? 0xFFE5A064 : 0xFF9BAAB1;
         g.drawString(font, text, x + 100 - font.width(text) / 2, y + 58, colour, false);
-        var buffer = Component.translatable("screen.frozendawn.isotope_column.buffer", units, need);
-        g.drawString(font, buffer, x + 100 - font.width(buffer) / 2, y + 22, 0xFF9BAAB1, false);
+        // One top line: the running job, with the ice buffer when that job uses it.
+        int job = data.get(4);
+        var top = switch (job) {
+            case 1 -> Component.translatable("screen.frozendawn.isotope_column.job.deuterium", units, need);
+            case 2 -> Component.translatable("screen.frozendawn.isotope_column.job.lithium");
+            default -> Component.translatable("screen.frozendawn.isotope_column.buffer", units, need);
+        };
+        g.drawString(font, top, x + 100 - font.width(top) / 2, y + 22, job > 0 ? FILL : 0xFF9BAAB1, false);
     }
     private static void arrow(GuiGraphics g, int x, int y, int len, int colour) {
         g.fill(x, y + 3, x + len - 5, y + 9, colour);
@@ -43,11 +49,6 @@ public final class IsotopeColumnScreen extends AbstractContainerScreen<IsotopeCo
     }
     @Override protected void renderLabels(GuiGraphics g, int mx, int my) {
         g.drawString(font, title, 8, 6, 0xFFE0E6E8, false); g.drawString(font, playerInventoryTitle, 8, 73, 0xFF9BAAB1, false);
-        int job = menu.data().get(4);
-        if (job > 0) {
-            var label = Component.translatable("screen.frozendawn.isotope_column.job." + (job == 1 ? "deuterium" : "lithium"));
-            g.drawString(font, label, 100 - font.width(label) / 2, 32 - 1 - 9 + 1, 0xFF7FD3E8, false);
-        }
     }
     @Override public void render(GuiGraphics g, int mx, int my, float partial) { super.render(g, mx, my, partial); renderTooltip(g, mx, my); }
 }
