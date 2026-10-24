@@ -36,6 +36,33 @@ class FusionPhysicsTest {
         assertEquals(FusionPhysics.State.READY, f.step(vacuum).state());
     }
 
+    @Test void heliumHalvesCooldown() {
+        var f = new FusionPhysics(); f.start(); assertTrue(f.boostCooldown()); assertTrue(f.cooldownBoosted());
+        assertEquals(FusionPhysics.State.COOLDOWN, run(f, ok(14), 59).state());
+        assertEquals(FusionPhysics.State.READY, f.step(ok(14)).state());
+        assertFalse(f.cooldownBoosted(), "The boost is spent on reaching READY");
+    }
+
+    @Test void heliumAndVacuumQuarterCooldown() {
+        var f = new FusionPhysics(); f.start(); f.boostCooldown();
+        var vacuum = with(14, true, 0, true, true, 64, 0);
+        assertEquals(FusionPhysics.State.COOLDOWN, run(f, vacuum, 29).state());
+        assertEquals(FusionPhysics.State.READY, f.step(vacuum).state());
+    }
+
+    @Test void heliumCannotBoostACooldownAlreadyUnderway() {
+        var f = new FusionPhysics(); f.start(); f.step(ok(14));
+        assertFalse(f.boostCooldown()); assertFalse(f.cooldownBoosted());
+    }
+
+    @Test void boostSurvivesReload() {
+        var f = new FusionPhysics(); f.start(); f.boostCooldown(); run(f, ok(14), 10);
+        var tag = new CompoundTag(); f.save(tag);
+        var g = new FusionPhysics(); g.load(tag);
+        assertTrue(g.cooldownBoosted());
+        assertEquals(FusionPhysics.State.READY, run(g, ok(14), 50).state());
+    }
+
     @Test void unpaidCooldownOrReadyFallsBackToOff() {
         var f = new FusionPhysics(); f.start();
         run(f, ok(14), 30);

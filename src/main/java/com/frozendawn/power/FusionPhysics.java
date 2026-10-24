@@ -46,7 +46,7 @@ public final class FusionPhysics {
     private double loopC = 20, tritium, deuteriumProgress, burn = MIN_BURN, requestKw, drive = 1, overdriveWear;
     private boolean mitigation = true;
     private int progress, ashSeconds;
-    private boolean loadFollow, startPending, stopPending, refusedStart;
+    private boolean loadFollow, startPending, stopPending, refusedStart, boosted;
 
     public State state() { return state; }
     public Status status() { return status; }
@@ -83,8 +83,14 @@ public final class FusionPhysics {
     /** Before burning this simply powers down. While burning it is a disruption, like a redstone stop. */
     public void stop() {
         if (state == State.BURNING) stopPending = true;
-        else if (state != State.OFF) { state = State.OFF; status = Status.IDLE; progress = 0; startPending = false; }
+        else if (state != State.OFF) { state = State.OFF; status = Status.IDLE; progress = 0; startPending = false; boosted = false; }
     }
+    /** A Helium Canister doubles the cooldown rate, but only for a cooldown that has not started counting yet. */
+    public boolean boostCooldown() {
+        if (state != State.OFF && (state != State.COOLDOWN || progress != 0)) return false;
+        boosted = true; return true;
+    }
+    public boolean cooldownBoosted() { return boosted; }
     public void setReadyForTest() { state = State.READY; status = Status.READY; progress = 0; }
 
     public Readout step(Inputs in) {
@@ -95,8 +101,8 @@ public final class FusionPhysics {
             case COOLDOWN -> {
                 if (!in.powered()) off(Status.IDLE);
                 else {
-                    progress += in.roomVacuum() ? 2 : 1;
-                    if (progress >= COOLDOWN_SECONDS) { state = State.READY; status = Status.READY; progress = 0; }
+                    progress += (in.roomVacuum() ? 2 : 1) * (boosted ? 2 : 1);
+                    if (progress >= COOLDOWN_SECONDS) { state = State.READY; status = Status.READY; progress = 0; boosted = false; }
                 }
             }
             case READY -> {
@@ -193,7 +199,7 @@ public final class FusionPhysics {
         return null;
     }
 
-    private void off(Status why) { state = State.OFF; status = why; progress = 0; startPending = false; stopPending = false; }
+    private void off(Status why) { state = State.OFF; status = why; progress = 0; startPending = false; stopPending = false; boosted = false; }
 
     private double removedKw(List<Double> sinks) {
         return sinks.stream().mapToDouble(t -> HT_RADIATOR_KW_PER_C * Math.max(0, loopC - t)).sum();
@@ -203,7 +209,7 @@ public final class FusionPhysics {
         tag.putString("State", state.name()); tag.putString("Status", status.name()); tag.putDouble("LoopC", loopC);
         tag.putDouble("Tritium", tritium); tag.putDouble("DeuteriumProgress", deuteriumProgress); tag.putDouble("Burn", burn); tag.putDouble("RequestKw", requestKw);
         tag.putInt("Progress", progress); tag.putInt("AshSeconds", ashSeconds); tag.putBoolean("LoadFollow", loadFollow);
-        tag.putBoolean("StartPending", startPending); tag.putBoolean("StopPending", stopPending);
+        tag.putBoolean("StartPending", startPending); tag.putBoolean("StopPending", stopPending); tag.putBoolean("Boosted", boosted);
         tag.putDouble("Drive", drive); tag.putBoolean("Mitigation", mitigation); tag.putDouble("OverdriveWear", overdriveWear);
     }
     public void load(CompoundTag tag) {
@@ -216,6 +222,7 @@ public final class FusionPhysics {
         requestKw = Math.max(0, finite(tag.getDouble("RequestKw"), 0));
         progress = Math.max(0, tag.getInt("Progress")); ashSeconds = Math.max(0, tag.getInt("AshSeconds"));
         loadFollow = tag.getBoolean("LoadFollow"); startPending = tag.getBoolean("StartPending"); stopPending = tag.getBoolean("StopPending");
+        boosted = tag.getBoolean("Boosted");
         // A save from before the setting has mitigation on.
         mitigation = !tag.contains("Mitigation") || tag.getBoolean("Mitigation");
         drive = 1; setDrive(tag.contains("Drive") ? tag.getDouble("Drive") : 1);
