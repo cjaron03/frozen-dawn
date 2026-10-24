@@ -7,6 +7,8 @@ import com.frozendawn.block.SfrVacuumPortBlock;
 import com.frozendawn.data.ApocalypseState;
 import com.frozendawn.world.CombustionAtmosphere;
 import com.frozendawn.world.RoomAtmosphere;
+import com.frozendawn.block.ReactorRadiatorBlock;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 import net.minecraft.world.level.block.DoorBlock;
@@ -318,6 +320,26 @@ public final class SfrGameTest {
                         var copy = new SfrControllerBlockEntity(be.getBlockPos(), be.getBlockState());
                         copy.handleUpdateTag(be.getUpdateTag(level.registryAccess()), level.registryAccess());
                         h.assertValueEqual(copy.sound(), sound, "client copy");
+                    })
+                    .thenSucceed();
+        });
+    }
+
+    /** A loop above the CFU-7's 150C threshold heats every linked High-Temperature Radiator, so frost cannot bury them. */
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "sfr", timeoutTicks = 400, skyAccess = true)
+    public static void sfrHotLoopHeatsItsRadiators(GameTestHelper h) {
+        h.runAfterDelay(1, () -> {
+            var be = ready(h, 8_000_000);
+            h.startSequence()
+                    .thenWaitUntil(() -> h.assertValueEqual(be.physics().state(), FusionPhysics.State.BURNING, "state"))
+                    .thenExecute(() -> {
+                        var level = h.getLevel(); var radiators = new ArrayList<BlockPos>();
+                        for (int dx = -4; dx <= 4; dx += 2) for (int dz = -4; dz <= 4; dz += 4)
+                            if (radiators.size() < 14) radiators.add(SfrScenes.cell(h, CENTER, dx, 4, dz));
+                        be.physics().setLoopC(600); be.second(level);
+                        for (var p : radiators) h.assertTrue(level.getBlockState(p).getValue(ReactorRadiatorBlock.HOT), "Hot loop heats " + p);
+                        be.physics().setLoopC(20); be.second(level);
+                        for (var p : radiators) h.assertFalse(level.getBlockState(p).getValue(ReactorRadiatorBlock.HOT), "Cold loop leaves " + p + " cold");
                     })
                     .thenSucceed();
         });

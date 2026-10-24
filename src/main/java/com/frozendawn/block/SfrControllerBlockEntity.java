@@ -61,6 +61,8 @@ public final class SfrControllerBlockEntity extends BlockEntity implements MenuP
     private boolean vacuumStage, sealed;
     /** The First Wall and coils of the last valid shell: a disruption caused by breaking the shell still wears what is left. */
     private List<BlockPos> lastFirstWall = List.of(), lastCoils = List.of();
+    /** Linked radiators this controller last marked HOT. */
+    private final Set<BlockPos> hot = new HashSet<>();
     /** Ticks of quench frost left on the coils. */
     private int quenchTicks;
     /** The ghost outline: wrong cells marked with End Rod particles for GHOST_TICKS after a use on a broken shell. */
@@ -129,6 +131,12 @@ public final class SfrControllerBlockEntity extends BlockEntity implements MenuP
         readout = physics.step(new FusionPhysics.Inputs(sinks, powered, channelPressure, hatchClosed, valid, roomVacuum(l),
                 fuel == null ? 0 : fuel.deuterium(), pumping, wear, l.hasNeighborSignal(worldPosition), target));
         if (fuel != null) fuel.use(readout.deuteriumUsed());
+        // Coolant circulates through every linked radiator, buried or not, as on the CFU-7: a hot loop boils off their frost.
+        var nowHot = valid && physics.loopC() >= com.frozendawn.power.ReactorPhysics.RADIATOR_HOT_C
+                ? new HashSet<>(HighTemperatureRadiatorBlock.linked(l, shell.coolantPorts())) : new HashSet<BlockPos>();
+        for (var p : hot) if (!nowHot.contains(p) && l.isLoaded(p)) ReactorRadiatorBlock.publish(l, p, false);
+        for (var p : nowHot) ReactorRadiatorBlock.publish(l, p, true);
+        hot.clear(); hot.addAll(nowHot);
         if (readout.disrupted()) {
             wearFirstWall(l);
             if (readout.status() == FusionPhysics.Status.MAGNET_QUENCH) quenchTicks = QUENCH_TICKS;
@@ -257,7 +265,10 @@ public final class SfrControllerBlockEntity extends BlockEntity implements MenuP
         publishedPort = null;
     }
     @Override public void setRemoved() {
-        if (level instanceof ServerLevel l && publishedPort != null) release(l);
+        if (level instanceof ServerLevel l) {
+            if (publishedPort != null) release(l);
+            for (var p : hot) if (l.isLoaded(p)) ReactorRadiatorBlock.publish(l, p, false);
+        }
         super.setRemoved();
     }
 

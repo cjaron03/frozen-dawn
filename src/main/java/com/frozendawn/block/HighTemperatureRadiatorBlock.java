@@ -10,11 +10,14 @@ import net.minecraft.server.level.ServerLevel;
 public final class HighTemperatureRadiatorBlock extends ReactorRadiatorBlock {
     public HighTemperatureRadiatorBlock(Properties p) { super(p); }
 
-    /** Linked High-Temperature Radiators with an open outdoor face, sorted and without duplicates. */
-    public static List<BlockPos> sinks(ServerLevel l, List<BlockPos> coolantPorts) {
+    /** Every linked High-Temperature Radiator, buried or not, sorted and without duplicates. */
+    public static List<BlockPos> linked(ServerLevel l, List<BlockPos> coolantPorts) {
         var linked = new TreeSet<BlockPos>();
         for (var port : coolantPorts) linked.addAll(PowerNetworks.coolantRadiators(l, port));
-        return linked.stream().filter(p -> l.getBlockState(p).getBlock() instanceof HighTemperatureRadiatorBlock)
-                .filter(p -> sink(l, p).isPresent()).toList();
+        return linked.stream().filter(p -> l.getBlockState(p).getBlock() instanceof HighTemperatureRadiatorBlock).toList();
+    }
+    /** Linked High-Temperature Radiators with an open outdoor face. */
+    public static List<BlockPos> sinks(ServerLevel l, List<BlockPos> coolantPorts) {
+        return linked(l, coolantPorts).stream().filter(p -> sink(l, p).isPresent()).toList();
     }
 }
