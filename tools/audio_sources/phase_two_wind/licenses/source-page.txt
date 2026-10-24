@@ -1,0 +1,8 @@
+Source: https://freesound.org/people/klangfabrik/sounds/117504/
+Creator: klangfabrik
+Title: winter wind 01a.aiff
+Verified individual asset license: Creative Commons 0
+Exact license href: https://creativecommons.org/publicdomain/zero/1.0/
+Retrieved UTC: 2026-10-20T23:21:57.485509+00:00
+Page SHA-256: 8e103a5a8342a80bc6bcc1c27ed850c70644993610198a91361f086fac6a490f
+Sanitized identity and license evidence only; no forms, scripts or tokens retained.

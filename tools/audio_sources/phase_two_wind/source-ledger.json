@@ -1,0 +1,29 @@
+{
+  "originalSourceURL": "https://freesound.org/people/klangfabrik/sounds/117504/",
+  "creator": "klangfabrik",
+  "sourceTitle": "winter wind 01a.aiff",
+  "originalListedFormat": "44.1 kHz, 16-bit stereo AIFF",
+  "originalListedSeconds": 439.312,
+  "downloadURL": "https://cdn.freesound.org/previews/117/117504_181941-hq.mp3",
+  "retrievedFilename": "117504_181941-hq.mp3",
+  "sourceFormat": "Official public HQ MP3 preview, not the account-gated AIFF original",
+  "license": "CC0 1.0 Universal",
+  "licenseURL": "https://creativecommons.org/publicdomain/zero/1.0/",
+  "retrievedUTC": "2026-10-20T23:21:57.485509+00:00",
+  "originalLocalPath": "recordings/117504_181941-hq.mp3",
+  "sha256": "21d58a65a60a3da3246ebd27575adedda6285c1f20ce483d3417dda2235c76e4",
+  "bytes": 9647561,
+  "licenseEvidence": "licenses/source-page.txt",
+  "licenseText": "licenses/cc0.txt",
+  "assetRole": "Distinct subtle phase-2 cold wind with smooth shelter attenuation",
+  "requiredAttribution": "None under CC0; voluntary creator credit in SOURCES.md and AUDIO_NOTICE.md",
+  "modifications": "Two 54-second excerpts beginning at 30 and 210 seconds; mono downmix, light high/low-pass filtering, two-pass normalization toward -18 LUFS/-2 dBTP, mono 24kHz Vorbis quality 5. Runtime equal-power edge envelopes; no baked fades, pitch shift, time stretch or synthesis.",
+  "reviewStatus": "Owner accepted audible mix, improved shelter fade, continuous no-gap follow-up, smooth phase-3 cutoff and same-build save/reload; earlier brief perceived silence remains unexplained and preserved",
+  "localRuntimeOutputPaths": [
+    "src/main/resources/assets/frozendawn/sounds/ambient/wind_phase_two_1.ogg",
+    "src/main/resources/assets/frozendawn/sounds/ambient/wind_phase_two_2.ogg"
+  ],
+  "licenseTextURL": "https://creativecommons.org/publicdomain/zero/1.0/legalcode.txt",
+  "licenseTextType": "Full official legal code",
+  "licenseRecheckedOn": "2026-10-21"
+}

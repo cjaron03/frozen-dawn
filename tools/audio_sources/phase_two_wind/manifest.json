@@ -1,0 +1,96 @@
+{
+  "sourceSHA256": "21d58a65a60a3da3246ebd27575adedda6285c1f20ce483d3417dda2235c76e4",
+  "ffmpeg": "ffmpeg version 8.0.1 Copyright (c) 2000-2025 the FFmpeg developers",
+  "oggenc": "oggenc from vorbis-tools 1.4.3",
+  "edgeFades": "Runtime equal-power 100-tick overlap, no baked fades",
+  "outputs": [
+    {
+      "path": "src/main/resources/assets/frozendawn/sounds/ambient/wind_phase_two_1.ogg",
+      "sha256": "c37c33f3645a5135304bb6a50f0c4773b58f111a1409388af3a023ff7eb8cd0c",
+      "sourceStartSeconds": 30,
+      "durationSeconds": 54,
+      "filter": "atrim=start=30:duration=54,asetpts=PTS-STARTPTS,aformat=channel_layouts=mono,highpass=f=80,lowpass=f=6000,loudnorm=I=-18:TP=-2:LRA=9:measured_I=-27.92:measured_TP=-11.34:measured_LRA=8.80:measured_thresh=-37.92:offset=-1.06:linear=true",
+      "measuredSource": {
+        "input_i": "-27.92",
+        "input_tp": "-11.34",
+        "input_lra": "8.80",
+        "input_thresh": "-37.92",
+        "output_i": "-16.94",
+        "output_tp": "-2.00",
+        "output_lra": "7.80",
+        "output_thresh": "-26.94",
+        "normalization_type": "dynamic",
+        "target_offset": "-1.06"
+      },
+      "measuredOutput": {
+        "input_i": "-17.66",
+        "input_tp": "-2.00",
+        "input_lra": "8.00",
+        "input_thresh": "-27.66",
+        "output_i": "-17.16",
+        "output_tp": "-2.00",
+        "output_lra": "7.10",
+        "output_thresh": "-27.16",
+        "normalization_type": "dynamic",
+        "target_offset": "-0.84"
+      },
+      "media": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "sample_rate": "24000",
+            "channels": 1
+          }
+        ],
+        "format": {
+          "duration": "54.000000"
+        }
+      }
+    },
+    {
+      "path": "src/main/resources/assets/frozendawn/sounds/ambient/wind_phase_two_2.ogg",
+      "sha256": "97f8795d16a6d657fad6f502391ac45ac8dbdaf6a71bb35e1112c88ca561c6da",
+      "sourceStartSeconds": 210,
+      "durationSeconds": 54,
+      "filter": "atrim=start=210:duration=54,asetpts=PTS-STARTPTS,aformat=channel_layouts=mono,highpass=f=80,lowpass=f=6000,loudnorm=I=-18:TP=-2:LRA=9:measured_I=-30.88:measured_TP=-15.69:measured_LRA=2.60:measured_thresh=-40.88:offset=0.10:linear=true",
+      "measuredSource": {
+        "input_i": "-30.88",
+        "input_tp": "-15.69",
+        "input_lra": "2.60",
+        "input_thresh": "-40.88",
+        "output_i": "-18.10",
+        "output_tp": "-2.85",
+        "output_lra": "2.70",
+        "output_thresh": "-28.10",
+        "normalization_type": "dynamic",
+        "target_offset": "0.10"
+      },
+      "measuredOutput": {
+        "input_i": "-17.90",
+        "input_tp": "-2.82",
+        "input_lra": "2.70",
+        "input_thresh": "-27.90",
+        "output_i": "-18.10",
+        "output_tp": "-3.13",
+        "output_lra": "2.70",
+        "output_thresh": "-28.10",
+        "normalization_type": "dynamic",
+        "target_offset": "0.10"
+      },
+      "media": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "sample_rate": "24000",
+            "channels": 1
+          }
+        ],
+        "format": {
+          "duration": "54.000000"
+        }
+      }
+    }
+  ]
+}

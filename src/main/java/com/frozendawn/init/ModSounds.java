@@ -32,6 +32,7 @@ public class ModSounds {
     public static final DeferredHolder<SoundEvent, SoundEvent> AIRLOCK_INTERRUPTED = register("block.airlock.interrupted");
     public static final DeferredHolder<SoundEvent, SoundEvent> AIRLOCK_VALVE = register("block.airlock.valve");
 
+    public static final DeferredHolder<SoundEvent, SoundEvent> WIND_PHASE_TWO = register("ambient.wind_phase_two");
     public static final DeferredHolder<SoundEvent, SoundEvent> WIND_PHASE_ONE = register("ambient.wind_phase_one");
     public static final DeferredHolder<SoundEvent, SoundEvent> WIND_EARLY_FOREST = register("ambient.wind_early_forest");
 

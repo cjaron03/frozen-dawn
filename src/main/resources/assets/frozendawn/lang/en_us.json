@@ -1704,5 +1704,6 @@
   "subtitle.frozendawn.barometer.cyclone_catastrophic": "Barometer sounds catastrophic cyclone alarm",
   "subtitle.frozendawn.cyclone.thunder_close": "Thundersnow cracks overhead",
   "subtitle.frozendawn.cyclone.thunder_mid": "Thundersnow rolls through the storm",
-  "subtitle.frozendawn.cyclone.thunder_distant": "Distant thunder rumbles"
+  "subtitle.frozendawn.cyclone.thunder_distant": "Distant thunder rumbles",
+  "subtitle.frozendawn.ambient.wind_phase_two": "Cold wind blows"
 }
