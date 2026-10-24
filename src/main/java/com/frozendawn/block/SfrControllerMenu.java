@@ -12,7 +12,7 @@ import net.minecraft.world.inventory.*;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.Nullable;
 
-/** Tritium Canister input and output. Controls are menu buttons: 0 Start, 1 Stop, 2 load-follow toggle, 3 Extract,
+/** Tritium Canister input and output, and the Helium Canister slot. Controls are menu buttons: 0 Start, 1 Stop, 2 load-follow toggle, 3 Extract,
  * 4 and 5 disruption mitigation on and off, and DRIVE plus the drive steps above 100%. */
 public final class SfrControllerMenu extends AbstractContainerMenu {
     public static final int START = 0, STOP = 1, LOAD_FOLLOW = 2, EXTRACT = 3, MITIGATION_ON = 4, MITIGATION_OFF = 5, DRIVE = 10;
@@ -34,6 +34,7 @@ public final class SfrControllerMenu extends AbstractContainerMenu {
         this.container = container; this.data = data; this.entity = entity; this.pos = pos;
         addSlot(new TritiumSlot(container, SfrControllerBlockEntity.TRITIUM_IN, 12, SLOT_Y));
         addSlot(new TritiumSlot(container, SfrControllerBlockEntity.TRITIUM_OUT, 56, SLOT_Y));
+        addSlot(new HeliumSlot(container, SfrControllerBlockEntity.HELIUM, 34, SLOT_Y));
         for (int row = 0; row < 3; row++) for (int col = 0; col < 9; col++) addSlot(new Slot(inv, col + row * 9 + 9, INV_X + col * 18, INV_Y + row * 18));
         for (int col = 0; col < 9; col++) addSlot(new Slot(inv, col, INV_X + col * 18, INV_Y + 58));
         addDataSlots(data);
@@ -64,7 +65,10 @@ public final class SfrControllerMenu extends AbstractContainerMenu {
         var stack = slot.getItem(); var result = stack.copy();
         int own = SfrControllerBlockEntity.SLOTS;
         if (index < own) { if (!moveItemStackTo(stack, own, slots.size(), true)) return ItemStack.EMPTY; }
-        else if (!moveItemStackTo(stack, SfrControllerBlockEntity.TRITIUM_IN, SfrControllerBlockEntity.TRITIUM_IN + 1, false)) return ItemStack.EMPTY;
+        else {
+            int target = stack.is(ModItems.HELIUM_CANISTER.get()) ? SfrControllerBlockEntity.HELIUM : SfrControllerBlockEntity.TRITIUM_IN;
+            if (!moveItemStackTo(stack, target, target + 1, false)) return ItemStack.EMPTY;
+        }
         if (stack.isEmpty()) slot.set(ItemStack.EMPTY); else slot.setChanged();
         return result;
     }
@@ -73,6 +77,10 @@ public final class SfrControllerMenu extends AbstractContainerMenu {
     private static final class TritiumSlot extends Slot {
         TritiumSlot(Container c, int i, int x, int y) { super(c, i, x, y); }
         @Override public boolean mayPlace(ItemStack s) { return s.is(ModItems.TRITIUM_CANISTER.get()); }
+    }
+    private static final class HeliumSlot extends Slot {
+        HeliumSlot(Container c, int i, int x, int y) { super(c, i, x, y); }
+        @Override public boolean mayPlace(ItemStack s) { return s.is(ModItems.HELIUM_CANISTER.get()); }
     }
     private record Wrapper(SfrControllerBlockEntity entity) implements Container {
         @Override public int getContainerSize() { return SfrControllerBlockEntity.SLOTS; }

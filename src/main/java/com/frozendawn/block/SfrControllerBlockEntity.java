@@ -39,11 +39,11 @@ import org.jetbrains.annotations.Nullable;
 /** SFR-1 Controller: validates the torus, steps FusionPhysics once per second, feeds tritium and deuterium,
  * and publishes the reactor's draw and output to the Power Port. Readings are transient. */
 public final class SfrControllerBlockEntity extends BlockEntity implements MenuProvider {
-    public static final int SLOTS = 2, TRITIUM_IN = 0, TRITIUM_OUT = 1;
+    public static final int SLOTS = 3, TRITIUM_IN = 0, TRITIUM_OUT = 1, HELIUM = 2;
     // Menu data, synced as shorts: temperatures and kW x10, tritium x100, fractions x1000.
     public static final int STATE = 0, STATUS = 1, LOOP = 2, HEAT = 3, REMOVED = 4, GROSS = 5, NET = 6, REQUEST = 7, TRITIUM = 8,
             PROGRESS = 9, DEUTERIUM = 10, SHELL = 11, PRESSURE = 12, WEAR = 13, RADIATORS = 14, FLAGS = 15, DRIVE = 16, DATA = 17;
-    public static final int F_FOLLOW = 1, F_SHELL = 2, F_MITIGATION = 4;
+    public static final int F_FOLLOW = 1, F_SHELL = 2, F_MITIGATION = 4, F_BOOSTED = 8;
     private static final FusionPhysics.Readout IDLE = new FusionPhysics.Readout(FusionPhysics.State.OFF, FusionPhysics.Status.IDLE,
             20, 0, 0, 0, 0, 0, 0, 0, 0, false, false);
     /** Hatch lower half to controller, per level; refreshed by every valid validation and checked on lookup. */
@@ -132,6 +132,7 @@ public final class SfrControllerBlockEntity extends BlockEntity implements MenuP
         readout = physics.step(new FusionPhysics.Inputs(sinks, powered, channelPressure, hatchClosed, valid, roomVacuum(l),
                 fuel == null ? 0 : fuel.deuterium(), pumping, wear, l.hasNeighborSignal(worldPosition), target));
         if (fuel != null) fuel.use(readout.deuteriumUsed());
+        if (pumping && readout.deuteriumUsed() > 0) collectHelium(readout.deuteriumUsed());
         // Coolant circulates through every linked radiator, buried or not, as on the CFU-7: a hot loop boils off their frost.
         var nowHot = valid && physics.loopC() >= com.frozendawn.power.ReactorPhysics.RADIATOR_HOT_C
                 ? new HashSet<>(HighTemperatureRadiatorBlock.linked(l, shell.coolantPorts())) : new HashSet<BlockPos>();
@@ -274,7 +275,19 @@ public final class SfrControllerBlockEntity extends BlockEntity implements MenuP
         if (out.isEmpty()) items.set(TRITIUM_OUT, new ItemStack(ModItems.TRITIUM_CANISTER.get())); else out.grow(1);
         setChanged(); return true;
     }
-    public void start() { physics.start(); setChanged(); }
+    /** Each Deuterium Canister burned leaves one helium nucleus per fusion; the pump bottles it while the slot has room
+     * and vents the rest. */
+    private void collectHelium(int canisters) {
+        var slot = items.get(HELIUM);
+        if (slot.isEmpty()) items.set(HELIUM, new ItemStack(ModItems.HELIUM_CANISTER.get(), canisters));
+        else if (slot.is(ModItems.HELIUM_CANISTER.get())) slot.setCount(Math.min(slot.getMaxStackSize(), slot.getCount() + canisters));
+    }
+    /** A Start from OFF spends one Helium Canister, if loaded, on a cooldown at twice the rate. */
+    public void start() {
+        var helium = items.get(HELIUM);
+        if (physics.state() == FusionPhysics.State.OFF && helium.is(ModItems.HELIUM_CANISTER.get()) && physics.boostCooldown()) helium.shrink(1);
+        physics.start(); setChanged();
+    }
     public void stop() { physics.stop(); setChanged(); }
     public void toggleLoadFollow() { physics.setLoadFollow(!physics.loadFollow()); setChanged(); }
     /** Drive in DRIVE_STEP steps above 100%. */
@@ -318,7 +331,7 @@ public final class SfrControllerBlockEntity extends BlockEntity implements MenuP
                     case PRESSURE -> (int) Math.round(channelPressure * 1000);
                     case WEAR -> (int) Math.round(wear * 1000);
                     case RADIATORS -> radiators;
-                    case FLAGS -> (physics.loadFollow() ? F_FOLLOW : 0) | (shell.valid() ? F_SHELL : 0) | (physics.mitigation() ? F_MITIGATION : 0);
+                    case FLAGS -> (physics.loadFollow() ? F_FOLLOW : 0) | (shell.valid() ? F_SHELL : 0) | (physics.mitigation() ? F_MITIGATION : 0) | (physics.cooldownBoosted() ? F_BOOSTED : 0);
                     case DRIVE -> (int) Math.round(physics.drive() * 100);
                     default -> 0;
                 };

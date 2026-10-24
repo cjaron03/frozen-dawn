@@ -21,7 +21,7 @@ import static com.frozendawn.block.SfrControllerBlockEntity.*;
 
 /** SFR-1 Controller. Readout text on the left, Start, Stop, Load-follow and Extract on the right. The title sits alone
  * above ContainerTheme's header rule (y 20) and its corner frost; shell and state share the row below it. Drive and the
- * disruption mitigation toggle sit beside the tritium slots; disabling mitigation takes a 3 s hold on an overlay. */
+ * disruption mitigation toggle sit beside the tritium and helium slots; disabling mitigation takes a 3 s hold on an overlay. */
 public final class SfrControllerScreen extends AbstractContainerScreen<SfrControllerMenu> {
     private static final int BG = 0xFF28353D, PANEL = 0xFF152128, TEXT = 0xFFE0E6E8, MUTED = 0xFF9BAAB1, GREEN = 0xFF9CD5A5,
             AMBER = 0xFFE5A064, RED = 0xFFE5534B, CYAN = 0xFF64C9CC, HOLD_TICKS = 60;
@@ -121,6 +121,10 @@ public final class SfrControllerScreen extends AbstractContainerScreen<SfrContro
         line(g, 0, Component.translatable("sfr.frozendawn.status." + status.name().toLowerCase(Locale.ROOT)), statusColor(status));
         if (state() == FusionPhysics.State.COOLDOWN || state() == FusionPhysics.State.IGNITION)
             line(g, 0, Component.literal(String.format(Locale.ROOT, "%d%%", data(PROGRESS) / 10)), MUTED, 100);
+        // A loaded canister boosts the next Start from OFF; once spent, the flag shows the cooldown it is boosting.
+        boolean heliumReady = state() == FusionPhysics.State.OFF && !menu.slots.get(HELIUM).getItem().isEmpty();
+        if (menu.flag(F_BOOSTED) || heliumReady)
+            line(g, 0, Component.translatable(heliumReady ? "screen.frozendawn.sfr.helium_ready" : "screen.frozendawn.sfr.boosted"), CYAN, 130);
         line(g, 1, Component.translatable("screen.frozendawn.sfr.loop", tenths(LOOP)), TEXT);
         line(g, 2, Component.translatable("screen.frozendawn.sfr.heat", tenths(HEAT), tenths(REMOVED)), TEXT);
         line(g, 3, Component.translatable("screen.frozendawn.sfr.power", tenths(GROSS), tenths(NET)), CYAN);
@@ -129,7 +133,9 @@ public final class SfrControllerScreen extends AbstractContainerScreen<SfrContro
         line(g, 5, Component.translatable("screen.frozendawn.sfr.radiators", data(RADIATORS)), TEXT);
         line(g, 6, Component.translatable("screen.frozendawn.sfr.fuel", data(DEUTERIUM), String.format(Locale.ROOT, "%.2f", data(TRITIUM) / 100.0), FusionPhysics.TRITIUM_TANK), TEXT);
         line(g, 7, Component.translatable("screen.frozendawn.sfr.channel", data(PRESSURE) / 10, data(WEAR) / 10), data(WEAR) > 0 ? AMBER : MUTED);
-        g.drawString(font, Component.translatable("screen.frozendawn.sfr.tritium_slots"), 12, SfrControllerMenu.SLOT_Y - 9, MUTED, false);
+        g.drawString(font, Component.translatable("screen.frozendawn.sfr.slot.tritium_in"), 12, SfrControllerMenu.SLOT_Y - 9, MUTED, false);
+        g.drawString(font, Component.translatable("screen.frozendawn.sfr.slot.helium"), 36, SfrControllerMenu.SLOT_Y - 9, MUTED, false);
+        g.drawString(font, Component.translatable("screen.frozendawn.sfr.slot.tritium_out"), 56, SfrControllerMenu.SLOT_Y - 9, MUTED, false);
         g.drawString(font, playerInventoryTitle, inventoryLabelX, inventoryLabelY, MUTED, false);
     }
     private static int statusColor(FusionPhysics.Status s) {

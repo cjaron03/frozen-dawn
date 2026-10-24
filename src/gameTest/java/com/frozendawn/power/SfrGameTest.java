@@ -22,6 +22,7 @@ import com.frozendawn.block.SfrFuelPortBlockEntity;
 import com.frozendawn.block.SfrMultiblock;
 import com.frozendawn.block.PowerStorageBlockEntity;
 import com.frozendawn.item.PowerCellItem;
+import com.frozendawn.gametest.GameTestPacing;
 import com.frozendawn.gametest.GameTestReporting;
 import com.frozendawn.gametest.GameTestTemplates;
 import com.frozendawn.init.ModBlocks;
@@ -507,6 +508,57 @@ public final class SfrGameTest {
         });
     }
 
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "sfr", timeoutTicks = 300, skyAccess = true)
+    public static void sfrBurnPumpsHeliumCanisters(GameTestHelper h) {
+        GameTestPacing.whenTicking(h, () -> {
+            var be = ready(h, 8_000_000);
+            h.startSequence()
+                    .thenWaitUntil(() -> h.assertValueEqual(be.physics().state(), FusionPhysics.State.BURNING, "state"))
+                    .thenExecute(() -> {
+                        be.physics().setDeuteriumProgressForTest(1); be.second(h.getLevel());
+                        h.assertValueEqual(be.readout().deuteriumUsed(), 1, "Deuterium Canisters burned");
+                        var helium = be.items().get(SfrControllerBlockEntity.HELIUM);
+                        h.assertTrue(helium.is(ModItems.HELIUM_CANISTER.get()) && helium.getCount() == 1, "One canister burned while pumping fills one Helium Canister: " + helium);
+                    })
+                    .thenSucceed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "sfr", timeoutTicks = 300, skyAccess = true)
+    public static void sfrFullHeliumSlotVents(GameTestHelper h) {
+        GameTestPacing.whenTicking(h, () -> {
+            var be = ready(h, 8_000_000);
+            be.items().set(SfrControllerBlockEntity.HELIUM, new ItemStack(ModItems.HELIUM_CANISTER.get(), 64));
+            h.startSequence()
+                    .thenWaitUntil(() -> h.assertValueEqual(be.physics().state(), FusionPhysics.State.BURNING, "state"))
+                    .thenExecute(() -> {
+                        be.physics().setDeuteriumProgressForTest(1); be.second(h.getLevel());
+                        h.assertValueEqual(be.readout().deuteriumUsed(), 1, "Deuterium Canisters burned");
+                        h.assertValueEqual(be.items().get(SfrControllerBlockEntity.HELIUM).getCount(), 64, "A full Helium stack stays full");
+                        h.assertValueEqual(be.physics().state(), FusionPhysics.State.BURNING, "The ash vents and the burn carries on");
+                    })
+                    .thenSucceed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "sfr", timeoutTicks = 200, skyAccess = true)
+    public static void sfrHeliumBoostsCooldown(GameTestHelper h) {
+        GameTestPacing.whenTicking(h, () -> {
+            var level = h.getLevel(); var be = cold(h, 8_000_000, BANKS);
+            be.items().set(SfrControllerBlockEntity.HELIUM, new ItemStack(ModItems.HELIUM_CANISTER.get(), 2));
+            be.start(); be.start();
+            h.assertTrue(be.physics().state() == FusionPhysics.State.COOLDOWN && be.physics().cooldownBoosted(), "Start begins a boosted cooldown");
+            h.assertValueEqual(be.items().get(SfrControllerBlockEntity.HELIUM).getCount(), 1, "Only the Start from OFF spends a Helium Canister");
+            var front = be.getBlockPos().relative(be.getBlockState().getValue(SfrControllerBlock.FACING));
+            int perSecond = (CombustionAtmosphere.isVacuum(level) && !RoomAtmosphere.hasAir(level, front) ? 2 : 1) * 2;
+            h.startSequence()
+                    .thenWaitUntil(() -> h.assertTrue(be.readout().progress() > 0, "The cooldown is counting"))
+                    .thenExecute(() -> h.assertValueEqual((int) Math.round(be.readout().progress() * FusionPhysics.COOLDOWN_SECONDS), perSecond,
+                            "Seconds of cooldown in its first boosted second"))
+                    .thenSucceed();
+        });
+    }
+
     private static SfrControllerBlockEntity controller(GameTestHelper h, BlockPos pos) {
         if (!(h.getLevel().getBlockEntity(pos) instanceof SfrControllerBlockEntity be)) throw new GameTestAssertException("SFR-1 controller block entity missing");
         return be;
@@ -556,6 +608,11 @@ public final class SfrGameTest {
      * 4 Deuterium Canisters; READY with ignition requested and 4 tritium. */
     private static SfrControllerBlockEntity ready(GameTestHelper h, int bankJoules) { return ready(h, bankJoules, BANKS); }
     private static SfrControllerBlockEntity ready(GameTestHelper h, int bankJoules, BlockPos banks) {
+        var be = cold(h, bankJoules, banks); be.physics().setReadyForTest(); be.physics().start();
+        return be;
+    }
+    /** As ready, but OFF: Start begins the cooldown. */
+    private static SfrControllerBlockEntity cold(GameTestHelper h, int bankJoules, BlockPos banks) {
         var level = h.getLevel(); var controller = SfrScenes.build(h, CENTER);
         var ports = new BlockPos[] { SfrScenes.cell(h, CENTER, -4, 0, 0), SfrScenes.cell(h, CENTER, 4, 0, 0) };
         int n = 0;
@@ -569,7 +626,7 @@ public final class SfrGameTest {
         if (!(level.getBlockEntity(SfrScenes.cell(h, CENTER, -2, 0, -4)) instanceof SfrFuelPortBlockEntity fuel)) throw new GameTestAssertException("Fuel Port block entity missing");
         fuel.setItem(0, new ItemStack(ModItems.DEUTERIUM_CANISTER.get(), 4));
         if (!(level.getBlockEntity(controller) instanceof SfrControllerBlockEntity be)) throw new GameTestAssertException("SFR-1 controller block entity missing");
-        be.physics().addTritium(4); be.setChannelPressure(0); be.physics().setReadyForTest(); be.physics().start();
+        be.physics().addTritium(4); be.setChannelPressure(0);
         return be;
     }
 

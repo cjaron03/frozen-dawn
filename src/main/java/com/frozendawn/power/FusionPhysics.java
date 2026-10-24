@@ -91,6 +91,7 @@ public final class FusionPhysics {
         boosted = true; return true;
     }
     public boolean cooldownBoosted() { return boosted; }
+    public void setDeuteriumProgressForTest(double value) { deuteriumProgress = value; }
     public void setReadyForTest() { state = State.READY; status = Status.READY; progress = 0; }
 
     public Readout step(Inputs in) {
