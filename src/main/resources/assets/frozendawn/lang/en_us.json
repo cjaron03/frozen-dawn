@@ -1376,7 +1376,7 @@
   "sfr.frozendawn.state.ready": "READY",
   "sfr.frozendawn.state.ignition": "IGNITION",
   "sfr.frozendawn.state.burning": "BURNING",
-  "message.frozendawn.sfr.blueprint": "SFR-1 blueprint: %s. Use again to hide",
+  "message.frozendawn.sfr.blueprint": "SFR-1 blueprint: %s. Ports and the hatch show one layout; any non-corner cell of the outer ring works. Use again to hide",
   "message.frozendawn.sfr.blueprint_part": "%s %s",
   "message.frozendawn.sfr.blueprint_clear": "%s to clear",
   "message.frozendawn.sfr.blueprint_hidden": "SFR-1 blueprint hidden",

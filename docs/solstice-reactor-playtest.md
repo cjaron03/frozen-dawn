@@ -36,7 +36,7 @@ The torus is 9x9 and 5 high (Y1 to Y5, middle Y3). Rings are squares measured fr
 3. r = 2, Y2 to Y4: First Wall.
 4. r = 3, Y2 to Y4: leave as air. This is the plasma channel. Cap it with Magnet Coils at Y1 and Y5 over r = 3 only.
 5. r = 4, Y2 to Y4: alternate Magnet Coil and Lithium Blanket in a checkerboard. Corners are always shell.
-6. Ports on any non-corner r = 4 cell at Y2 to Y4, over a ghost coil or Blanket: 2 Coolant Ports, Fuel Port, Power Port, Vacuum Port. The Maintenance Hatch also goes on r = 4, lower half at Y2, upper at Y3, opening into the channel.
+6. Ports and hatch: the blueprint ghosts one layout on the Controller's face (hatch two cells to one side, a Coolant Port at each end, Fuel Port over Power Port on the other side, Vacuum Port above the Controller). Any non-corner r = 4 cell at Y2 to Y4 works; a suggestion disappears once that part is anywhere on the ring. A suggested cell already holding shell keeps a red box wrapped in the part's ghost. The hatch's lower half is at Y2, upper at Y3, opening into the channel.
 7. Seal: the Controller's top line reads the shell valid, or names the first wrong part.
 
 ## Linking
@@ -74,6 +74,10 @@ Expected at 14 radiators against deep vacuum (-200C), full output: loop about 84
 7. Linked radiators turn HOT while the loop is at or above 150C, buried or not, and cool when it drops.
 8. Breaking the Controller drops its tank as whole Tritium Canisters.
 9. Ruling to judge: the alarm sounds through warm-up, because net is negative then. Say if that is too much.
+
+## Owner reports
+
+- First look (2026-10-24), before the port layout ghosts: "its not clear where the port and hatch need to go."
 
 ## Known limitation
 

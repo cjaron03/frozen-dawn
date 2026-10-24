@@ -438,7 +438,7 @@ public final class SfrGameTest {
             level.setBlock(wall, Blocks.STONE.defaultBlockState(), 3); level.setBlock(channel, Blocks.DIRT.defaultBlockState(), 3);
             var wrong = SfrMultiblock.wrongCells(level, pos, Direction.NORTH, 32);
             h.assertValueEqual(wrong.size(), 2, "wrong cells " + wrong);
-            h.assertTrue(wrong.contains(new SfrMultiblock.Wrong(wall, ModBlocks.FIRST_WALL.get())), "The stone First Wall cell is not marked");
+            h.assertTrue(wrong.contains(new SfrMultiblock.Wrong(wall, ModBlocks.FIRST_WALL.get().defaultBlockState())), "The stone First Wall cell is not marked");
             h.assertTrue(wrong.contains(new SfrMultiblock.Wrong(channel, null)), "The filled channel cell is not marked");
             h.assertValueEqual(SfrMultiblock.wrongCells(level, pos, Direction.NORTH, 1).size(), 1, "limit");
         });
@@ -451,7 +451,8 @@ public final class SfrGameTest {
             level.setBlock(pos, ModBlocks.SFR_CONTROLLER.get().defaultBlockState().setValue(SfrControllerBlock.FACING, Direction.NORTH), 3);
             var be = controller(h, pos);
             var blueprint = be.blueprint(level);
-            // 122 coil and 48 Blanket cells, 48 First Wall and the core, less the outer-ring cell the Controller fills.
+            // 122 coil and 48 Blanket cells, 48 First Wall and the core, less the outer-ring cell the Controller fills;
+            // seven outer-ring cells show port and hatch ghosts instead of shell.
             h.assertValueEqual(blueprint.size(), 218, "blueprint cells around a lone Controller");
             h.assertTrue(blueprint.stream().allMatch(w -> w.expected() != null), "Every blueprint cell names its block");
             h.assertValueEqual(blueprint.stream().filter(w -> w.expected() == ModBlocks.FIRST_WALL.get()).count(), 48L, "First Wall cells");
@@ -460,6 +461,30 @@ public final class SfrGameTest {
             h.assertTrue(be.toggleBlueprint(bob), "Another player's use shows it to them too");
             h.assertFalse(be.toggleBlueprint(alice), "Second use hides it");
             h.assertTrue(be.showsBlueprintTo(bob) && !be.showsBlueprintTo(alice), "Hiding is per player");
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "sfr", timeoutTicks = 100)
+    public static void sfrBlueprintSuggestsPortSpotsUntilPlaced(GameTestHelper h) {
+        scene(h, () -> {
+            var level = h.getLevel(); var pos = SfrScenes.cell(h, CENTER, 0, 0, -4);
+            level.setBlock(pos, ModBlocks.SFR_CONTROLLER.get().defaultBlockState().setValue(SfrControllerBlock.FACING, Direction.NORTH), 3);
+            // Facing north, the Controller's face is dz = -4 and "across" runs east.
+            java.util.function.Function<BlockPos, net.minecraft.world.level.block.state.BlockState> ghost = p ->
+                    SfrMultiblock.wrongCells(level, pos, Direction.NORTH, Integer.MAX_VALUE).stream()
+                            .filter(w -> w.pos().equals(p)).findFirst().map(SfrMultiblock.Wrong::ghost).orElse(null);
+            var fuelSpot = SfrScenes.cell(h, CENTER, 2, 0, -4);
+            h.assertValueEqual(ghost.apply(fuelSpot).getBlock(), ModBlocks.SFR_FUEL_PORT.get(), "Fuel Port ghost beside the Controller");
+            h.assertValueEqual(ghost.apply(SfrScenes.cell(h, CENTER, 2, -1, -4)).getBlock(), ModBlocks.SFR_POWER_PORT.get(), "Power Port ghost below it");
+            h.assertValueEqual(ghost.apply(SfrScenes.cell(h, CENTER, 0, 1, -4)).getBlock(), ModBlocks.SFR_VACUUM_PORT.get(), "Vacuum Port ghost above the Controller");
+            h.assertValueEqual(ghost.apply(SfrScenes.cell(h, CENTER, -3, 0, -4)).getBlock(), ModBlocks.COOLANT_PORT.get(), "Coolant Port ghost");
+            h.assertValueEqual(ghost.apply(SfrScenes.cell(h, CENTER, 3, 0, -4)).getBlock(), ModBlocks.COOLANT_PORT.get(), "Second Coolant Port ghost");
+            var upper = ghost.apply(SfrScenes.cell(h, CENTER, -2, 0, -4));
+            h.assertTrue(upper.getBlock() == ModBlocks.SFR_MAINTENANCE_HATCH.get() && upper.getValue(net.minecraft.world.level.block.DoorBlock.HALF)
+                    == net.minecraft.world.level.block.state.properties.DoubleBlockHalf.UPPER, "Hatch upper-half ghost at dy 0, got " + upper);
+            // A Fuel Port anywhere else on the ring satisfies it, and the suggested spot goes back to plain shell.
+            level.setBlock(SfrScenes.cell(h, CENTER, 4, 0, 1), ModBlocks.SFR_FUEL_PORT.get().defaultBlockState(), 3);
+            h.assertValueEqual(ghost.apply(fuelSpot).getBlock(), SfrMultiblock.shell(2, 0, -4), "Suggestion withdrawn once a Fuel Port is placed");
         });
     }
 

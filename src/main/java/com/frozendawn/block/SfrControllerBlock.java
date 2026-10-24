@@ -63,7 +63,12 @@ public final class SfrControllerBlock extends Block implements EntityBlock {
         if (cells.isEmpty()) { player.displayClientMessage(Component.translatable("message.frozendawn.sfr.missing_ports"), true); return; }
         if (!show) { player.displayClientMessage(Component.translatable("message.frozendawn.sfr.blueprint_hidden"), true); return; }
         var counts = new java.util.LinkedHashMap<Block, Integer>(); int clear = 0;
-        for (var w : cells) if (w.expected() == null) clear++; else counts.merge(w.expected(), 1, Integer::sum);
+        for (var w : cells) {
+            if (w.expected() == null) clear++;
+            // The hatch shows a ghost per half but is one item.
+            else if (!(w.expected() instanceof SfrHatchBlock && w.ghost().getValue(net.minecraft.world.level.block.DoorBlock.HALF)
+                    == net.minecraft.world.level.block.state.properties.DoubleBlockHalf.UPPER)) counts.merge(w.expected(), 1, Integer::sum);
+        }
         var parts = Component.empty();
         for (var e : counts.entrySet()) {
             if (!parts.getSiblings().isEmpty()) parts.append(", ");

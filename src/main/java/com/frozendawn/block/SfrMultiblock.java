@@ -10,6 +10,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.DoorBlock;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
 
 /** SFR-1 torus, 9x5x9 around the Confinement Core; r = max(|dx|, |dz|), dy from -2 to +2.
@@ -103,11 +104,15 @@ public final class SfrMultiblock {
                 List.copyOf(firstWall), List.copyOf(coils));
     }
 
-    /** A cell that does not hold what the torus needs there; expected is null for a channel cell that must be air. */
-    public record Wrong(BlockPos pos, @org.jetbrains.annotations.Nullable Block expected) {}
-    /** Up to limit wrong cells, in validate's scan order, by the same table. Port-eligible cells accept any port or the hatch. */
+    /** A cell that does not hold what the torus needs there, with the state its ghost shows; null for a channel cell that must be air. */
+    public record Wrong(BlockPos pos, @org.jetbrains.annotations.Nullable BlockState ghost) {
+        public @org.jetbrains.annotations.Nullable Block expected() { return ghost == null ? null : ghost.getBlock(); }
+    }
+    /** Up to limit wrong cells, in validate's scan order, by the same table. Port-eligible cells accept any port or the hatch;
+     * while a part is still missing from the whole ring, its suggested cell asks for it instead of shell. */
     public static List<Wrong> wrongCells(Level level, BlockPos controller, Direction facing, int limit) {
         var center = center(controller, facing); var wrong = new ArrayList<Wrong>();
+        var missing = missingParts(level, center);
         for (int dx = -RADIUS; dx <= RADIUS && wrong.size() < limit; dx++) for (int dy = -2; dy <= 2 && wrong.size() < limit; dy++)
             for (int dz = -RADIUS; dz <= RADIUS && wrong.size() < limit; dz++) {
                 var pos = center.offset(dx, dy, dz);
@@ -115,15 +120,49 @@ public final class SfrMultiblock {
                 var block = level.getBlockState(pos).getBlock();
                 if (channel(dx, dy, dz)) { if (!level.getBlockState(pos).isAir()) wrong.add(new Wrong(pos, null)); continue; }
                 var expected = expected(dx, dy, dz);
+                var ghost = expected == null ? null : expected.defaultBlockState();
                 if (expected == null && shell(dx, dy, dz) != null) {
-                    boolean port = block instanceof CoolantPortBlock || block instanceof SfrFuelPortBlock || block instanceof SfrPowerPortBlock
-                            || block instanceof SfrVacuumPortBlock || block instanceof SfrHatchBlock;
-                    if (port) continue;
-                    expected = shell(dx, dy, dz);
+                    if (port(block)) continue;
+                    var suggested = suggestion(dx, dy, dz, facing);
+                    ghost = suggested != null && missing.contains(suggested.getBlock()) ? suggested : shell(dx, dy, dz).defaultBlockState();
                 }
-                if (expected != null && block != expected) wrong.add(new Wrong(pos, expected));
+                if (ghost != null && block != ghost.getBlock()) wrong.add(new Wrong(pos, ghost));
             }
         return wrong;
+    }
+
+    private static boolean port(Block block) {
+        return block instanceof CoolantPortBlock || block instanceof SfrFuelPortBlock || block instanceof SfrPowerPortBlock
+                || block instanceof SfrVacuumPortBlock || block instanceof SfrHatchBlock;
+    }
+    /** Port and hatch blocks the outer ring is still short of, Coolant Port until it holds two. */
+    private static Set<Block> missingParts(Level level, BlockPos center) {
+        int coolant = 0; var present = new HashSet<Block>();
+        for (int dx = -RADIUS; dx <= RADIUS; dx++) for (int dy = -1; dy <= 1; dy++) for (int dz = -RADIUS; dz <= RADIUS; dz++) {
+            if (shell(dx, dy, dz) == null) continue;
+            var block = level.getBlockState(center.offset(dx, dy, dz)).getBlock();
+            if (block instanceof CoolantPortBlock) coolant++; else if (port(block)) present.add(block);
+        }
+        var missing = new HashSet<Block>();
+        for (var b : List.of(ModBlocks.SFR_FUEL_PORT.get(), ModBlocks.SFR_POWER_PORT.get(), ModBlocks.SFR_VACUUM_PORT.get(), ModBlocks.SFR_MAINTENANCE_HATCH.get()))
+            if (!present.contains(b)) missing.add(b);
+        if (coolant < 2) missing.add(ModBlocks.COOLANT_PORT.get());
+        return missing;
+    }
+    /** The ghost the blueprint suggests for a port-eligible cell, or null. Suggestions sit on the Controller's face around
+     * it: hatch two cells to one side, a Coolant Port at each end, Fuel over Power on the other side, Vacuum Port above.
+     * Any non-corner outer-ring cell works, so these are a layout, not a rule. */
+    static @org.jetbrains.annotations.Nullable BlockState suggestion(int dx, int dy, int dz, Direction facing) {
+        var across = facing.getClockWise();
+        if (dx * facing.getStepX() + dz * facing.getStepZ() != RADIUS) return null;
+        int a = dx * across.getStepX() + dz * across.getStepZ();
+        if (Math.abs(a) == 3 && dy == 0) return ModBlocks.COOLANT_PORT.get().defaultBlockState();
+        if (a == -2 && dy <= 0) return ModBlocks.SFR_MAINTENANCE_HATCH.get().defaultBlockState().setValue(DoorBlock.FACING, facing)
+                .setValue(DoorBlock.HALF, dy == 0 ? DoubleBlockHalf.UPPER : DoubleBlockHalf.LOWER);
+        if (a == 2 && dy == 0) return ModBlocks.SFR_FUEL_PORT.get().defaultBlockState();
+        if (a == 2 && dy == -1) return ModBlocks.SFR_POWER_PORT.get().defaultBlockState();
+        if (a == 0 && dy == 1) return ModBlocks.SFR_VACUUM_PORT.get().defaultBlockState().setValue(SfrVacuumPortBlock.FACING, facing);
+        return null;
     }
 
     private static Problem problem(Block expected) {

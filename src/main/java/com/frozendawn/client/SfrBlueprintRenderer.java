@@ -27,7 +27,7 @@ import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 import net.neoforged.neoforge.client.model.data.ModelData;
 
 /** SFR-1 build guide: a translucent ghost of the expected block in every empty torus cell, and a red box on every cell
- * holding the wrong block or filling the plasma channel. Cells are read from the client's own world, so placing a block
+ * holding the wrong block or filling the plasma channel, wrapped in a ghost of what belongs there. Cells are read from the client's own world, so placing a block
  * updates the guide without a packet; it hides itself once the torus has nothing left to show. */
 @EventBusSubscriber(modid = FrozenDawn.MOD_ID, value = Dist.CLIENT)
 public final class SfrBlueprintRenderer {
@@ -37,7 +37,7 @@ public final class SfrBlueprintRenderer {
     /** Set when a controller is added, so the next frame reads its cells instead of waiting out RESCAN_TICKS. */
     private static boolean stale;
     private static final MultiBufferSource.BufferSource BUFFERS = MultiBufferSource.immediate(new ByteBufferBuilder(1 << 16));
-    private static final double RANGE = 64, SCALE = 0.875;
+    private static final double RANGE = 64, SCALE = 0.875, OVER = 1.02;
     private static final int RESCAN_TICKS = 10;
     private SfrBlueprintRenderer() {}
 
@@ -74,7 +74,8 @@ public final class SfrBlueprintRenderer {
         for (var e : SHOWN.entrySet()) {
             if (e.getKey().distToCenterSqr(mc.player.position()) > RANGE * RANGE) continue;
             for (var w : e.getValue()) {
-                if (w.expected() != null && mc.level.getBlockState(w.pos()).isAir()) ghosts.add(w); else boxes.add(w.pos());
+                if (w.ghost() != null) ghosts.add(w);
+                if (w.ghost() == null || !mc.level.getBlockState(w.pos()).isAir()) boxes.add(w.pos());
             }
         }
         if (ghosts.isEmpty() && boxes.isEmpty()) return;
@@ -85,10 +86,12 @@ public final class SfrBlueprintRenderer {
         var blocks = mc.getBlockRenderer();
         var buffer = new Faded(BUFFERS.getBuffer(RenderType.translucent()), alpha);
         for (var w : ghosts) {
-            var state = w.expected().defaultBlockState();
+            var state = w.ghost();
+            // Inside an empty cell the ghost sits a little small; over a wrong block it wraps it, showing what goes there instead.
+            double scale = mc.level.getBlockState(w.pos()).isAir() ? SCALE : OVER;
             poses.pushPose();
-            poses.translate(w.pos().getX() - camera.x + (1 - SCALE) / 2, w.pos().getY() - camera.y + (1 - SCALE) / 2, w.pos().getZ() - camera.z + (1 - SCALE) / 2);
-            poses.scale((float) SCALE, (float) SCALE, (float) SCALE);
+            poses.translate(w.pos().getX() - camera.x + (1 - scale) / 2, w.pos().getY() - camera.y + (1 - scale) / 2, w.pos().getZ() - camera.z + (1 - scale) / 2);
+            poses.scale((float) scale, (float) scale, (float) scale);
             blocks.getModelRenderer().renderModel(poses.last(), buffer, state, blocks.getBlockModel(state), 1, 1, 1,
                     LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY, ModelData.EMPTY, RenderType.translucent());
             poses.popPose();
