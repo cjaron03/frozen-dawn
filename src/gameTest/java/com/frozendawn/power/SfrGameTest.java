@@ -3,6 +3,7 @@ package com.frozendawn.power;
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.airlock.AirlockCycle;
 import com.frozendawn.airlock.AirlockSavedState;
+import com.frozendawn.block.SfrHatchBlock;
 import com.frozendawn.block.SfrVacuumPortBlock;
 import com.frozendawn.data.ApocalypseState;
 import com.frozendawn.world.CombustionAtmosphere;
@@ -232,8 +233,10 @@ public final class SfrGameTest {
             be.second(level);
             var channel = be.shell().channel();
             h.assertTrue(be.shell().valid(), "Torus is valid: " + be.shell().problem());
+            // Sealed in the open, the channel starts as vacuum; fill it so the pump has gas to move.
+            gas.setRoomGas(level, channel, channel.size() * AirlockCycle.UNITS_PER_CELL);
             int channel0 = gas.roomGas(level, channel), room0 = gas.roomGas(level, room);
-            h.assertTrue(channel0 > 0, "The sealed channel enters the vacuum stage holding gas");
+            h.assertTrue(channel0 > 0, "The channel holds gas");
             h.runAfterDelay(200, () -> {
                 int channel1 = gas.roomGas(level, channel), room1 = gas.roomGas(level, room);
                 h.assertTrue(room1 > room0, "The outer room gains gas: " + room0 + " -> " + room1);
@@ -342,6 +345,39 @@ public final class SfrGameTest {
                         for (var p : radiators) h.assertFalse(level.getBlockState(p).getValue(ReactorRadiatorBlock.HOT), "Cold loop leaves " + p + " cold");
                     })
                     .thenSucceed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "sfr_vacuum", timeoutTicks = 100, skyAccess = true)
+    public static void sfrChannelSealedInTheVacuumStageStartsAsVacuum(GameTestHelper h) {
+        scene(h, () -> {
+            var level = h.getLevel(); var be = controller(h, SfrScenes.build(h, CENTER));
+            be.second(level);
+            h.assertTrue(be.shell().valid(), "Torus is valid: " + be.shell().problem());
+            h.assertValueEqual(AirlockSavedState.get(level).roomGas(level, be.shell().channel()), 0, "channel gas sealed in open vacuum");
+            h.assertTrue(be.channelPressure() < 0.01, "Channel pressure sealed in open vacuum, got " + be.channelPressure());
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "sfr_vacuum", timeoutTicks = 100)
+    public static void sfrHatchComparesAgainstTheRoomItOpensInto(GameTestHelper h) {
+        scene(h, () -> {
+            var level = h.getLevel(); var be = controller(h, SfrScenes.build(h, CENTER));
+            // A sealed room in front of the hatch only; the Vacuum Port's outer face stays open.
+            var cells = new HashSet<BlockPos>();
+            for (int dx = 1; dx <= 4; dx++) for (int dy = -2; dy <= 1; dy++) for (int dz = 5; dz <= 7; dz++) {
+                var pos = SfrScenes.cell(h, CENTER, dx, dy, dz);
+                boolean inside = dx >= 2 && dx <= 3 && dy >= -1 && dy <= 0 && dz <= 6;
+                level.setBlock(pos, inside ? Blocks.AIR.defaultBlockState() : Blocks.STONE.defaultBlockState(), 3);
+                if (inside) cells.add(pos.immutable());
+            }
+            var gas = AirlockSavedState.get(level);
+            be.second(level);
+            gas.setRoomGas(level, cells, cells.size() * AirlockCycle.UNITS_PER_CELL);
+            gas.setRoomGas(level, be.shell().channel(), 0);
+            be.second(level);
+            h.assertTrue(be.channelPressure() < 0.01, "Fixture channel is vacuum, got " + be.channelPressure());
+            h.assertFalse(SfrHatchBlock.canOpen(level, be.shell().hatch()), "Hatch opens from a vacuum channel into a full room");
         });
     }
 

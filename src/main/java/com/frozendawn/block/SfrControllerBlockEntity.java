@@ -81,7 +81,8 @@ public final class SfrControllerBlockEntity extends BlockEntity implements MenuP
     public FusionPhysics.Readout readout() { return readout; }
     public SfrMultiblock.Result shell() { return shell; }
     public double channelPressure() { return channelPressure; }
-    public void setChannelPressure(double value) { if (Double.isFinite(value)) { channelPressure = Math.clamp(value, 0, 1); setChanged(); } }
+    /** Test hook: the channel holds this pressure as if it had been sealed with it, so the next second keeps it. */
+    public void setChannelPressure(double value) { if (Double.isFinite(value)) { channelPressure = Math.clamp(value, 0, 1); sealed = true; vacuumStage = false; setChanged(); } }
     /** Mean First Wall wear, 0 to 1, as of the last second. */
     public double wear() { return wear; }
     public int radiatorCount() { return radiators; }
@@ -194,14 +195,19 @@ public final class SfrControllerBlockEntity extends BlockEntity implements MenuP
     }
 
     /** Outside the vacuum stage the channel exhausts to atmosphere at 1.0. During it, the pump moves gas into the room on
-     * the Vacuum Port's outer face and the vent equalizes the two rooms; an unsealed channel takes the outside pressure. */
+     * the Vacuum Port's outer face and the vent equalizes the two rooms; an unsealed channel takes the pressure beyond its
+     * hatch, and keeps it when it seals. */
     private void updateChannel(ServerLevel l, boolean nowSealed, boolean pumping, boolean pumpPaid) {
         boolean vacuum = CombustionAtmosphere.isVacuum(l), wasSealedVacuum = vacuumStage && sealed, wasSealed = sealed;
         vacuumStage = vacuum; sealed = nowSealed;
         if (!nowSealed) { channelPressure = outsidePressure(l); return; }
         var gas = AirlockSavedState.get(l); var channel = shell.channel();
         int capacity = channel.size() * AirlockCycle.UNITS_PER_CELL;
-        if (vacuum && !wasSealedVacuum) { gas.setRoomGas(l, channel, (int) Math.round(channelPressure * capacity)); return; }
+        if (vacuum && !wasSealedVacuum) {
+            // A channel sealed before the stage carries its pressure across; one sealed during it holds what its hatch opened onto.
+            if (!wasSealed) channelPressure = outsidePressure(l);
+            gas.setRoomGas(l, channel, (int) Math.round(channelPressure * capacity)); return;
+        }
         if (!vacuum) {
             if (wasSealedVacuum && wasSealed) return;
             if (pumping) { if (pumpPaid) channelPressure = Math.max(0, channelPressure - PUMP_RATE); }
@@ -209,7 +215,7 @@ public final class SfrControllerBlockEntity extends BlockEntity implements MenuP
             return;
         }
         int held = gas.roomGas(l, channel);
-        var room = outerRoom(l);
+        var room = shell.valid() ? roomBeyond(l, shell.vacuumPort()) : Set.<BlockPos>of();
         if (pumping && pumpPaid) {
             int moved = Math.min(held, (int) Math.round(capacity * PUMP_RATE));
             held -= moved; gas.setRoomGas(l, channel, held);
@@ -224,18 +230,17 @@ public final class SfrControllerBlockEntity extends BlockEntity implements MenuP
         channelPressure = held / (double) capacity;
     }
     private static double toward(double value, double target, double step) { return Math.abs(target - value) <= step + 1e-9 ? target : value + Math.copySign(step, target - value); }
-    /** 1.0 outside the vacuum stage; during it, the gas fraction of the sealed room on the Vacuum Port's outer face, 0 if there is none. */
+    /** 1.0 outside the vacuum stage; during it, the gas fraction of the sealed room the hatch opens into, 0 if there is none. */
     public double outsidePressure(ServerLevel l) {
         if (!CombustionAtmosphere.isVacuum(l)) return 1;
-        var room = outerRoom(l);
+        var room = shell.valid() ? roomBeyond(l, shell.hatch()) : Set.<BlockPos>of();
         return room.isEmpty() ? 0 : AirlockSavedState.get(l).roomGas(l, room) / (double) (room.size() * AirlockCycle.UNITS_PER_CELL);
     }
-    /** Air cells of the sealed room beyond the Vacuum Port, away from the torus center; empty when open or unknown. */
-    private Set<BlockPos> outerRoom(ServerLevel l) {
-        if (!shell.valid()) return Set.of();
-        var port = shell.vacuumPort(); var center = shell.center();
-        var out = Direction.getNearest(port.getX() - center.getX(), 0, port.getZ() - center.getZ());
-        var room = RoomAtmosphere.inspect(l, port.relative(out));
+    /** Air cells of the sealed room beyond an outer-ring cell, away from the torus center; empty when open or unknown. */
+    private Set<BlockPos> roomBeyond(ServerLevel l, BlockPos cell) {
+        var center = shell.center();
+        var out = Direction.getNearest(cell.getX() - center.getX(), 0, cell.getZ() - center.getZ());
+        var room = RoomAtmosphere.inspect(l, cell.relative(out));
         return room.seal() == RoomAtmosphere.Seal.SEALED && !room.scanning() ? room.cells() : Set.of();
     }
 
