@@ -135,7 +135,7 @@ Design: `docs/solstice-fuel-design.md`. Plan: `docs/solstice-fuel-plan.md`.
   Visual recheck (2026-10-25), owner: "Lights stayed on when I opened the inner door." The airlock blackout is resolved.
 - CFU-7 rods line (2026-10-25), during the target rod step: "check ss. its going off the UI." Screenshot `run/screenshots/2026-10-25_01.32.14.png`: "Rods: 3 + 1 target · 105.0 kW · Damage 0%" ran about 205 px into a 156 px panel and under the buttons. Damage now sits right-aligned under the state (NOMINAL), and the rods line keeps the count and rating.
 - SFR-1 in vacuum (2026-10-25), owner request: "also make it so all SRF-1 sounds ignore vacuum". Every `blocks.sfr_` cue, including the Isotope Column hum, now skips the vacuum-stage cut in `SoundMuffler`.
-  Recheck in a restarted client (2026-10-25), owner: "looks good". Then: "fuel loop is done", covering deuterium, lithium, the target rod and tritium, and helium.
+  Recheck in a restarted client (2026-10-25), owner: "looks good". Then: "fuel loop is done".
 
 ## Known limitation
 
