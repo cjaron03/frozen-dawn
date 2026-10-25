@@ -4534,6 +4534,26 @@
       }
     ]
   },
+  "blocks.sfr_valve": {
+    "category": "blocks",
+    "subtitle": "subtitle.frozendawn.blocks.sfr_valve",
+    "sounds": [
+      {
+        "name": "frozendawn:blocks/sfr/valve",
+        "volume": 1.0
+      }
+    ]
+  },
+  "blocks.sfr_shutdown": {
+    "category": "blocks",
+    "subtitle": "subtitle.frozendawn.blocks.sfr_shutdown",
+    "sounds": [
+      {
+        "name": "frozendawn:blocks/sfr/shutdown",
+        "volume": 1.0
+      }
+    ]
+  },
   "ui.geiger_click": {
     "category": "master",
     "subtitle": "subtitle.frozendawn.ui.geiger_click",

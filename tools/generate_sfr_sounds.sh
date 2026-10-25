@@ -97,6 +97,21 @@ render dms_off \
   -f lavfi -i "aevalsrc='if(lt(mod(t\,0.6)\,0.45)\, (sin(2*PI*(500*mod(t\,0.6)+667*mod(t\,0.6)*mod(t\,0.6))) + 0.3*sin(6*PI*(500*mod(t\,0.6)+667*mod(t\,0.6)*mod(t\,0.6)))) * min(1\, min(mod(t\,0.6)\, 0.45-mod(t\,0.6))/0.02)\, 0) * 0.22':s=44100:d=1.9" \
   -filter_complex "[0:a]afade=t=out:st=1.75:d=0.15,alimiter=limit=0.75:level=0[out]"
 
+# Valve, 0.8 s: Stop shutting the fuel valve. A heavy 62 Hz thud that sags in pitch, a short metallic knock (a
+# band-passed click with an inharmonic 417/1093 Hz ring) and a little low body noise.
+render valve \
+  -f lavfi -i "aevalsrc='0.9*exp(-9*t)*sin(2*PI*(62*t-14*t*t)) + 0.22*exp(-22*t)*(sin(2*PI*417*t)+0.6*sin(2*PI*1093*t))':s=44100:d=0.8" \
+  -f lavfi -i "anoisesrc=color=white:duration=0.8:sample_rate=44100:seed=51013" \
+  -f lavfi -i "anoisesrc=color=pink:duration=0.8:sample_rate=44100:seed=51014" \
+  -f lavfi -i "aevalsrc='exp(-60*t)':s=44100:d=0.8" \
+  -f lavfi -i "aevalsrc='exp(-6*t)':s=44100:d=0.8" \
+  -filter_complex "[1:a]bandpass=f=1800:width_type=q:w=1.5[k];[k][3:a]amultiply,volume=1.2[knock];[2:a]lowpass=f=400[b];[b][4:a]amultiply,volume=0.4[body];[0:a][knock][body]amix=inputs=3:normalize=0,afade=t=in:st=0:d=0.003,afade=t=out:st=0.65:d=0.15,alimiter=limit=0.85:level=0[out]"
+
+# Shutdown, 1.6 s: the ramp's clean end. A soft descending two-tone bell, E5 then A4, each with a quiet octave.
+render shutdown \
+  -f lavfi -i "aevalsrc='0.45*(sin(2*PI*659.26*t)*exp(-3.2*t) + 0.2*sin(2*PI*1318.5*t)*exp(-6*t) + if(gte(t\,0.3)\, sin(2*PI*440*(t-0.3))*exp(-2.4*(t-0.3)) + 0.2*sin(2*PI*880*(t-0.3))*exp(-5*(t-0.3))))':s=44100:d=1.6" \
+  -filter_complex "[0:a]afade=t=in:st=0:d=0.005,afade=t=out:st=1.35:d=0.25,alimiter=limit=0.7:level=0[out]"
+
 # Isotope Column, 4 s: a soft 50/100 Hz pump hum on filtered brown noise, with small rising bubble blips at uneven
 # times inside the loop.
 render column_loop \

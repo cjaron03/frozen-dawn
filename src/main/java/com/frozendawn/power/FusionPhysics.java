@@ -16,6 +16,8 @@ public final class FusionPhysics {
     /** House load (magnets and plasma heating) and the ash pump come out of gross output while burning. */
     public static final double HOUSE_KW = 40, ASH_PUMP_KW = 5, COOLDOWN_KW = 20, IGNITION_KW = 150, PUMP_KW = 10;
     public static final int COOLDOWN_SECONDS = 120, IGNITION_SECONDS = 10, ASH_FADE_SECONDS = 60;
+    /** Stop closes the fuel valve and the burn falls linearly to nothing over this long, from any level. */
+    public static final int RAMP_DOWN_SECONDS = 20;
     public static final double VACUUM_LIMIT = 0.05, WEAR_PER_DISRUPTION = 0.05, MAX_IGNITION_WEAR = 0.80;
     public static final int DEUTERIUM_SECONDS = 600, TRITIUM_SECONDS = 1200, TRITIUM_TANK = 8, IGNITION_TRITIUM = 1;
     public static final double BREEDING_RATIO = 1.05;
@@ -27,9 +29,10 @@ public final class FusionPhysics {
      * so 150% wears a step every five minutes. */
     public static final double MAX_DRIVE = 1.5, DRIVE_STEP = 0.1, OVERDRIVE_WEAR_SECONDS = 150;
 
-    public enum State { OFF, COOLDOWN, READY, IGNITION, BURNING }
+    /** Synced to the client by ordinal: new values go at the end. */
+    public enum State { OFF, COOLDOWN, READY, IGNITION, BURNING, RAMP_DOWN }
     public enum Status { IDLE, COOLDOWN, READY, TORUS_OPEN, NO_VACUUM, NO_FUEL, WALL_WORN, IGNITION, ABORTED, BURNING,
-        DISRUPTION, MAGNET_QUENCH, ASH_POISONED, WALL_MELT }
+        DISRUPTION, MAGNET_QUENCH, ASH_POISONED, WALL_MELT, RAMP_DOWN, SHUT_DOWN }
 
     /** One second of inputs. powered: the previous second's request was paid in full. channelPressure is a fraction
      * of nominal. wear is the mean First Wall wear, 0 to 1. targetKw is the load-follow net target, or NaN in manual mode. */
@@ -37,18 +40,20 @@ public final class FusionPhysics {
             boolean shellIntact, boolean roomVacuum, int deuterium, boolean pumping, double wear, boolean redstone, double targetKw) {}
     /** requestKw is what the reactor draws from the network next second. disrupted is true only in the second a
      * wear-adding disruption happens; a WALL_MELT status in that second melts the First Wall instead. progress is the
-     * cooldown or ignition fraction. worn is true in a second overdrive adds one wear step. */
+     * cooldown, ignition or ramp-down fraction. worn is true in a second overdrive adds one wear step. */
     public record Readout(State state, Status status, double loopC, double heatKw, double removedKw, double grossKw,
             double netKw, double requestKw, int deuteriumUsed, double tritium, double progress, boolean disrupted, boolean worn) {}
 
     private State state = State.OFF;
     private Status status = Status.IDLE;
-    private double loopC = 20, tritium, deuteriumProgress, burn = MIN_BURN, requestKw, drive = 1, overdriveWear;
+    private double loopC = 20, tritium, deuteriumProgress, burn = MIN_BURN, rampFrom, requestKw, drive = 1, overdriveWear;
     private boolean mitigation = true;
     private int progress, ashSeconds;
     private boolean loadFollow, startPending, stopPending, refusedStart, boosted;
 
     public State state() { return state; }
+    /** A plasma is lit: burning, or ramping down after Stop. */
+    public boolean plasma() { return state == State.BURNING || state == State.RAMP_DOWN; }
     public Status status() { return status; }
     public double loopC() { return loopC; }
     public void setLoopC(double value) { if (Double.isFinite(value)) loopC = value; }
@@ -75,16 +80,20 @@ public final class FusionPhysics {
         tritium -= 1; return true;
     }
 
-    /** From OFF begins cooldown; from READY asks for ignition, checked against next second's inputs. */
+    /** From OFF begins cooldown; from READY asks for ignition, checked against next second's inputs. During a ramp-down
+     * it opens the fuel valve again: the plasma is still lit, so no new ignition is needed. */
     public void start() {
         if (state == State.OFF) { state = State.COOLDOWN; status = Status.COOLDOWN; progress = 0; }
         else if (state == State.READY) startPending = true;
+        else if (state == State.RAMP_DOWN) { state = State.BURNING; status = Status.BURNING; progress = 0; burn = Math.max(burn, MIN_BURN); }
     }
-    /** Before burning this simply powers down. While burning it is a disruption, like a redstone stop. */
+    /** Before burning this simply powers down. While burning it closes the fuel valve and ramps the burn down to a clean OFF. */
     public void stop() {
-        if (state == State.BURNING) stopPending = true;
-        else if (state != State.OFF) { state = State.OFF; status = Status.IDLE; progress = 0; startPending = false; boosted = false; }
+        if (state == State.BURNING) { state = State.RAMP_DOWN; status = Status.RAMP_DOWN; progress = 0; rampFrom = burn; }
+        else if (state != State.OFF && state != State.RAMP_DOWN) { state = State.OFF; status = Status.IDLE; progress = 0; startPending = false; boosted = false; }
     }
+    /** Ends a lit plasma at once, as a disruption with wear, like a redstone stop. */
+    public void eStop() { if (plasma()) stopPending = true; }
     /** A Helium Canister doubles the cooldown rate, but only for a cooldown that has not started counting yet, and only once. */
     public boolean boostCooldown() {
         if (boosted || state != State.OFF && (state != State.COOLDOWN || progress != 0)) return false;
@@ -97,7 +106,7 @@ public final class FusionPhysics {
     public Readout step(Inputs in) {
         double sinkC = in.radiatorSinks().stream().mapToDouble(Double::doubleValue).average().orElse(ReactorPhysics.DEEP_VACUUM_C);
         refusedStart = false;
-        if (state == State.BURNING) return burn(in, sinkC);
+        if (plasma()) return burn(in, sinkC);
         switch (state) {
             case COOLDOWN -> {
                 // A cooldown that never counted keeps its canister's boost for the next Start.
@@ -146,15 +155,25 @@ public final class FusionPhysics {
         if (in.redstone() || stopPending || !in.hatchClosed() || !in.shellIntact() || in.channelPressure() > VACUUM_LIMIT)
             return disrupt(Status.DISRUPTION, in);
         double pumpKw = in.pumping() ? ASH_PUMP_KW : 0;
-        double goal = drive;
-        if (loadFollow && Double.isFinite(in.targetKw())) {
-            // The loop's own efficiency, not the nominal one: a low burn runs a cold loop that converts less.
-            double eff = Math.max(0.05, ReactorPhysics.efficiency(loopC, sinkC) * (1 - in.wear()));
-            double capacity = in.radiatorSinks().stream().mapToDouble(t -> HT_RADIATOR_KW_PER_C * Math.max(0, NOMINAL_C - t)).sum();
-            goal = Math.min((Math.max(0, in.targetKw()) + LOAD_FOLLOW_RESERVE_KW + HOUSE_KW + pumpKw) / eff, capacity) / RATED_KW;
+        boolean ramp = state == State.RAMP_DOWN;
+        if (ramp) {
+            // The fuel valve is shut: the burn follows a fixed line down and the plasma ends cleanly.
+            if (++progress >= RAMP_DOWN_SECONDS) {
+                off(Status.SHUT_DOWN); burn = MIN_BURN;
+                return idle(in, false);
+            }
+            burn = rampFrom * (1 - (double) progress / RAMP_DOWN_SECONDS);
+        } else {
+            double goal = drive;
+            if (loadFollow && Double.isFinite(in.targetKw())) {
+                // The loop's own efficiency, not the nominal one: a low burn runs a cold loop that converts less.
+                double eff = Math.max(0.05, ReactorPhysics.efficiency(loopC, sinkC) * (1 - in.wear()));
+                double capacity = in.radiatorSinks().stream().mapToDouble(t -> HT_RADIATOR_KW_PER_C * Math.max(0, NOMINAL_C - t)).sum();
+                goal = Math.min((Math.max(0, in.targetKw()) + LOAD_FOLLOW_RESERVE_KW + HOUSE_KW + pumpKw) / eff, capacity) / RATED_KW;
+            }
+            goal = Math.clamp(goal, MIN_BURN, drive);
+            burn += Math.clamp(goal - burn, -LOAD_FOLLOW_SLEW, LOAD_FOLLOW_SLEW);
         }
-        goal = Math.clamp(goal, MIN_BURN, drive);
-        burn += Math.clamp(goal - burn, -LOAD_FOLLOW_SLEW, LOAD_FOLLOW_SLEW);
         ashSeconds = in.pumping() ? 0 : ashSeconds + 1;
         if (ashSeconds >= ASH_FADE_SECONDS) {
             off(Status.ASH_POISONED);
@@ -167,17 +186,21 @@ public final class FusionPhysics {
         double gross = removed * ReactorPhysics.efficiency(loopC, sinkC) * (1 - Math.clamp(in.wear(), 0, 1));
         double net = gross - HOUSE_KW - pumpKw;
         int used = 0;
-        deuteriumProgress += burn / DEUTERIUM_SECONDS;
-        if (deuteriumProgress >= 1) {
-            if (in.deuterium() <= 0) return disrupt(Status.DISRUPTION, in);
-            deuteriumProgress -= 1; used = 1;
+        boolean worn = false;
+        if (!ramp) {
+            deuteriumProgress += burn / DEUTERIUM_SECONDS;
+            if (deuteriumProgress >= 1) {
+                if (in.deuterium() <= 0) return disrupt(Status.DISRUPTION, in);
+                deuteriumProgress -= 1; used = 1;
+            }
+            tritium = Math.min(TRITIUM_TANK, Math.max(0, tritium + burn / TRITIUM_SECONDS * (BREEDING_RATIO - 1)));
+            overdriveWear += Math.max(0, burn - 1) / OVERDRIVE_WEAR_SECONDS;
+            worn = overdriveWear >= 1;
+            if (worn) overdriveWear -= 1;
         }
-        tritium = Math.min(TRITIUM_TANK, Math.max(0, tritium + burn / TRITIUM_SECONDS * (BREEDING_RATIO - 1)));
-        overdriveWear += Math.max(0, burn - 1) / OVERDRIVE_WEAR_SECONDS;
-        boolean worn = overdriveWear >= 1;
-        if (worn) overdriveWear -= 1;
         requestKw = Math.max(0, -net);
-        return new Readout(state, status, loopC, heat, removed, gross, net, requestKw, used, tritium, 0, false, worn);
+        double shown = ramp ? (double) progress / RAMP_DOWN_SECONDS : 0;
+        return new Readout(state, status, loopC, heat, removed, gross, net, requestKw, used, tritium, shown, false, worn);
     }
 
     /** Plasma ends at once; the loop keeps its heat and cools through the radiators. */
@@ -209,7 +232,7 @@ public final class FusionPhysics {
 
     public void save(CompoundTag tag) {
         tag.putString("State", state.name()); tag.putString("Status", status.name()); tag.putDouble("LoopC", loopC);
-        tag.putDouble("Tritium", tritium); tag.putDouble("DeuteriumProgress", deuteriumProgress); tag.putDouble("Burn", burn); tag.putDouble("RequestKw", requestKw);
+        tag.putDouble("Tritium", tritium); tag.putDouble("DeuteriumProgress", deuteriumProgress); tag.putDouble("Burn", burn); tag.putDouble("RampFrom", rampFrom); tag.putDouble("RequestKw", requestKw);
         tag.putInt("Progress", progress); tag.putInt("AshSeconds", ashSeconds); tag.putBoolean("LoadFollow", loadFollow);
         tag.putBoolean("StartPending", startPending); tag.putBoolean("StopPending", stopPending); tag.putBoolean("Boosted", boosted);
         tag.putDouble("Drive", drive); tag.putBoolean("Mitigation", mitigation); tag.putDouble("OverdriveWear", overdriveWear);
@@ -221,6 +244,7 @@ public final class FusionPhysics {
         tritium = Math.clamp(finite(tag.getDouble("Tritium"), 0), 0, TRITIUM_TANK);
         deuteriumProgress = Math.clamp(finite(tag.getDouble("DeuteriumProgress"), 0), 0, 1);
         burn = Math.clamp(tag.contains("Burn") ? finite(tag.getDouble("Burn"), MIN_BURN) : MIN_BURN, MIN_BURN, MAX_DRIVE);
+        rampFrom = Math.clamp(finite(tag.getDouble("RampFrom"), 0), 0, MAX_DRIVE);
         requestKw = Math.max(0, finite(tag.getDouble("RequestKw"), 0));
         progress = Math.max(0, tag.getInt("Progress")); ashSeconds = Math.max(0, tag.getInt("AshSeconds"));
         loadFollow = tag.getBoolean("LoadFollow"); startPending = tag.getBoolean("StartPending"); stopPending = tag.getBoolean("StopPending");

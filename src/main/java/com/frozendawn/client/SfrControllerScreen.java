@@ -19,18 +19,19 @@ import net.minecraft.world.entity.player.Inventory;
 
 import static com.frozendawn.block.SfrControllerBlockEntity.*;
 
-/** SFR-1 Controller. Readout text on the left, Start, Stop, Load-follow and Extract on the right. The title sits alone
+/** SFR-1 Controller. Readout text on the left, Start, Stop and E-Stop, Load-follow and Extract on the right. Stop ramps
+ * the burn down; E-Stop ends the plasma at once and takes a 1 s hold. The title sits alone
  * above ContainerTheme's header rule (y 20) and its corner frost; shell and state share the row below it. Drive and the
  * disruption mitigation toggle sit beside the tritium and helium slots; disabling mitigation takes a 3 s hold on an overlay. */
 public final class SfrControllerScreen extends AbstractContainerScreen<SfrControllerMenu> {
     private static final int BG = 0xFF28353D, PANEL = 0xFF152128, TEXT = 0xFFE0E6E8, MUTED = 0xFF9BAAB1, GREEN = 0xFF9CD5A5,
-            AMBER = 0xFFE5A064, RED = 0xFFE5534B, CYAN = 0xFF64C9CC, HOLD_TICKS = 60;
+            AMBER = 0xFFE5A064, RED = 0xFFE5534B, CYAN = 0xFF64C9CC, HOLD_TICKS = 60, ESTOP_HOLD_TICKS = 20;
     private static final int STATUS_Y = 25, PANEL_TOP = 37;
-    private Button start, stop, follow, extract, mitigation, keep, hold;
+    private Button start, stop, eStop, follow, extract, mitigation, keep, hold;
     private DriveSlider drive;
     private final List<AbstractWidget> controls = new ArrayList<>();
-    private boolean modal, holding;
-    private int holdTicks;
+    private boolean modal, holding, eHolding;
+    private int holdTicks, eHoldTicks;
 
     public SfrControllerScreen(SfrControllerMenu menu, Inventory inv, Component title) {
         super(menu, inv, title); imageWidth = SfrControllerMenu.WIDTH; imageHeight = SfrControllerMenu.HEIGHT;
@@ -43,7 +44,10 @@ public final class SfrControllerScreen extends AbstractContainerScreen<SfrContro
         super.init(); controls.clear();
         int x = leftPos + imageWidth - 70, y = topPos + PANEL_TOP;
         start = control(Button.builder(Component.translatable("screen.frozendawn.sfr.start"), b -> send(SfrControllerMenu.START)).bounds(x, y, 62, 20).build());
-        stop = control(Button.builder(Component.translatable("screen.frozendawn.sfr.stop"), b -> send(SfrControllerMenu.STOP)).bounds(x, y + 23, 62, 20).build());
+        stop = control(Button.builder(Component.translatable("screen.frozendawn.sfr.stop"), b -> send(SfrControllerMenu.STOP)).bounds(x - 3, y + 23, 26, 20)
+                .tooltip(Tooltip.create(Component.translatable("screen.frozendawn.sfr.stop.tooltip"))).build());
+        eStop = control(Button.builder(Component.translatable("screen.frozendawn.sfr.estop").withStyle(ChatFormatting.RED), b -> {}).bounds(x + 24, y + 23, 38, 20)
+                .tooltip(Tooltip.create(Component.translatable("screen.frozendawn.sfr.estop.tooltip"))).build());
         follow = control(Button.builder(Component.empty(), b -> send(SfrControllerMenu.LOAD_FOLLOW)).bounds(x, y + 46, 62, 20).build());
         extract = control(Button.builder(Component.translatable("screen.frozendawn.sfr.extract"), b -> send(SfrControllerMenu.EXTRACT)).bounds(x, y + 69, 62, 20).build());
         int row = topPos + SfrControllerMenu.SLOT_Y - 2;
@@ -57,7 +61,7 @@ public final class SfrControllerScreen extends AbstractContainerScreen<SfrContro
     }
     private <T extends AbstractWidget> T control(T widget) { controls.add(widget); return addRenderableWidget(widget); }
     private void openModal(boolean value) {
-        modal = value; holding = false; holdTicks = 0;
+        modal = value; holding = false; holdTicks = 0; eHolding = false; eHoldTicks = 0;
         for (var w : controls) w.visible = !modal;
         keep.visible = hold.visible = modal;
         setFocused(modal ? keep : null);
@@ -68,8 +72,12 @@ public final class SfrControllerScreen extends AbstractContainerScreen<SfrContro
     @Override protected void containerTick() {
         super.containerTick();
         var s = state();
-        start.active = s == FusionPhysics.State.OFF || s == FusionPhysics.State.READY;
-        stop.active = s != FusionPhysics.State.OFF;
+        boolean plasma = s == FusionPhysics.State.BURNING || s == FusionPhysics.State.RAMP_DOWN;
+        start.active = s == FusionPhysics.State.OFF || s == FusionPhysics.State.READY || s == FusionPhysics.State.RAMP_DOWN;
+        stop.active = s != FusionPhysics.State.OFF && s != FusionPhysics.State.RAMP_DOWN;
+        eStop.active = plasma;
+        if (!plasma) { eHolding = false; eHoldTicks = 0; }
+        if (eHolding && ++eHoldTicks >= ESTOP_HOLD_TICKS) { send(SfrControllerMenu.ESTOP); eHolding = false; eHoldTicks = 0; }
         extract.active = data(TRITIUM) >= 100;
         follow.setMessage(Component.translatable(menu.flag(F_FOLLOW) ? "screen.frozendawn.reactor.follow_on" : "screen.frozendawn.reactor.follow_off"));
         boolean mitigated = menu.flag(F_MITIGATION);
@@ -82,20 +90,24 @@ public final class SfrControllerScreen extends AbstractContainerScreen<SfrContro
     }
     @Override public boolean mouseClicked(double mx, double my, int button) {
         if (modal && hold.isMouseOver(mx, my) && button == 0) { holding = true; holdTicks = 0; setFocused(hold); return true; }
+        if (!modal && eStop.active && eStop.isMouseOver(mx, my) && button == 0) { eHolding = true; eHoldTicks = 0; setFocused(eStop); return true; }
         return super.mouseClicked(mx, my, button);
     }
     @Override public boolean mouseReleased(double mx, double my, int button) {
         if (holding && button == 0) { holding = false; holdTicks = 0; }
+        if (eHolding && button == 0) { eHolding = false; eHoldTicks = 0; }
         return super.mouseReleased(mx, my, button);
     }
     @Override public boolean keyPressed(int key, int scan, int mods) {
         if (modal && key == org.lwjgl.glfw.GLFW.GLFW_KEY_ESCAPE) { openModal(false); return true; }
         boolean activate = key == org.lwjgl.glfw.GLFW.GLFW_KEY_ENTER || key == org.lwjgl.glfw.GLFW.GLFW_KEY_SPACE || key == org.lwjgl.glfw.GLFW.GLFW_KEY_KP_ENTER;
         if (modal && getFocused() == hold && activate) { if (!holding) { holding = true; holdTicks = 0; } return true; }
+        if (!modal && getFocused() == eStop && eStop.active && activate) { if (!eHolding) { eHolding = true; eHoldTicks = 0; } return true; }
         return super.keyPressed(key, scan, mods);
     }
     @Override public boolean keyReleased(int key, int scan, int mods) {
         if (holding && getFocused() == hold) { holding = false; holdTicks = 0; }
+        if (eHolding && getFocused() == eStop) { eHolding = false; eHoldTicks = 0; }
         return super.keyReleased(key, scan, mods);
     }
 
@@ -118,18 +130,28 @@ public final class SfrControllerScreen extends AbstractContainerScreen<SfrContro
         if (font.width(shell) > room) shell = font.plainSubstrByWidth(shell, room - font.width("...")) + "...";
         g.drawString(font, shell, 8, STATUS_Y, menu.flag(F_SHELL) ? GREEN : AMBER, false);
         var status = status();
-        line(g, 0, Component.translatable("sfr.frozendawn.status." + status.name().toLowerCase(Locale.ROOT)), statusColor(status));
-        if (state() == FusionPhysics.State.COOLDOWN || state() == FusionPhysics.State.IGNITION)
-            line(g, 0, Component.literal(String.format(Locale.ROOT, "%d%%", data(PROGRESS) / 10)), MUTED, 100);
+        var statusText = Component.translatable("sfr.frozendawn.status." + status.name().toLowerCase(Locale.ROOT));
+        line(g, 0, statusText, statusColor(status));
+        int statusEnd = 10 + font.width(statusText);
+        if (state() == FusionPhysics.State.COOLDOWN || state() == FusionPhysics.State.IGNITION || state() == FusionPhysics.State.RAMP_DOWN) {
+            var progress = Component.literal(String.format(Locale.ROOT, "%d%%", data(PROGRESS) / 10));
+            line(g, 0, progress, MUTED, statusEnd + 6);
+            statusEnd += 6 + font.width(progress);
+        }
         // A loaded canister boosts the next Start from OFF; once spent, the flag shows the cooldown it is boosting.
+        // It sits flush with the panel's right edge, and gives way to a status too long to share the row.
         boolean heliumReady = state() == FusionPhysics.State.OFF && !menu.slots.get(HELIUM).getItem().isEmpty();
-        if (menu.flag(F_BOOSTED) || heliumReady)
-            line(g, 0, Component.translatable(heliumReady ? "screen.frozendawn.sfr.helium_ready" : "screen.frozendawn.sfr.boosted"), CYAN, 130);
+        if (menu.flag(F_BOOSTED) || heliumReady) {
+            var helium = Component.translatable(heliumReady ? "screen.frozendawn.sfr.helium_ready" : "screen.frozendawn.sfr.boosted");
+            int heliumX = imageWidth - 80 - font.width(helium);
+            if (heliumX >= statusEnd + 6) line(g, 0, helium, CYAN, heliumX);
+        }
         line(g, 1, Component.translatable("screen.frozendawn.sfr.loop", tenths(LOOP)), TEXT);
         line(g, 2, Component.translatable("screen.frozendawn.sfr.heat", tenths(HEAT), tenths(REMOVED)), TEXT);
         line(g, 3, Component.translatable("screen.frozendawn.sfr.power", tenths(GROSS), tenths(NET)), CYAN);
         line(g, 4, Component.translatable("screen.frozendawn.sfr.request", tenths(REQUEST),
-                String.format(Locale.ROOT, "%.0f", state() == FusionPhysics.State.BURNING ? FusionPhysics.HOUSE_KW : 0)), MUTED);
+                String.format(Locale.ROOT, "%.0f", state() == FusionPhysics.State.BURNING || state() == FusionPhysics.State.RAMP_DOWN
+                        ? FusionPhysics.HOUSE_KW : 0)), MUTED);
         line(g, 5, Component.translatable("screen.frozendawn.sfr.radiators", data(RADIATORS)), TEXT);
         line(g, 6, Component.translatable("screen.frozendawn.sfr.fuel", data(DEUTERIUM), String.format(Locale.ROOT, "%.2f", data(TRITIUM) / 100.0), FusionPhysics.TRITIUM_TANK), TEXT);
         line(g, 7, Component.translatable("screen.frozendawn.sfr.channel", data(PRESSURE) / 10, data(WEAR) / 10), data(WEAR) > 0 ? AMBER : MUTED);
@@ -141,8 +163,8 @@ public final class SfrControllerScreen extends AbstractContainerScreen<SfrContro
     private static int statusColor(FusionPhysics.Status s) {
         return switch (s) {
             case BURNING -> GREEN;
-            case READY, IGNITION, COOLDOWN -> CYAN;
-            case IDLE -> MUTED;
+            case READY, IGNITION, COOLDOWN, RAMP_DOWN -> CYAN;
+            case IDLE, SHUT_DOWN -> MUTED;
             case DISRUPTION, MAGNET_QUENCH, ASH_POISONED, WALL_WORN, WALL_MELT -> RED;
             default -> AMBER;
         };
@@ -160,6 +182,9 @@ public final class SfrControllerScreen extends AbstractContainerScreen<SfrContro
     @Override public void render(GuiGraphics g, int mx, int my, float partial) {
         if (modal) { renderBackground(g, mx, my, partial); renderModal(g, mx, my); return; }
         super.render(g, mx, my, partial);
+        // The E-Stop hold fills the gap under its button.
+        if (eHoldTicks > 0) g.fill(eStop.getX(), eStop.getY() + eStop.getHeight(), eStop.getX() + eStop.getWidth() * eHoldTicks / ESTOP_HOLD_TICKS,
+                eStop.getY() + eStop.getHeight() + 2, RED);
         renderTooltip(g, mx, my);
     }
     private void renderModal(GuiGraphics g, int mouseX, int mouseY) {

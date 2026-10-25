@@ -325,6 +325,44 @@ public final class SfrGameTest {
     }
 
     @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "sfr", timeoutTicks = 300, skyAccess = true)
+    public static void sfrStopRampsDownWithoutWear(GameTestHelper h) {
+        h.runAfterDelay(1, () -> {
+            var be = ready(h, 8_000_000);
+            h.startSequence()
+                    .thenWaitUntil(() -> h.assertValueEqual(be.physics().state(), FusionPhysics.State.BURNING, "state"))
+                    .thenExecute(() -> {
+                        var level = h.getLevel(); var walls = be.shell().firstWall();
+                        be.stop();
+                        be.second(level);
+                        h.assertValueEqual(be.sound().state(), FusionPhysics.State.RAMP_DOWN, "synced state");
+                        h.assertTrue(be.sound().heatKw() > 0, "the plasma is still lit");
+                        for (int i = 1; i < FusionPhysics.RAMP_DOWN_SECONDS; i++) be.second(level);
+                        h.assertValueEqual(be.physics().state(), FusionPhysics.State.OFF, "state");
+                        h.assertValueEqual(be.physics().status(), FusionPhysics.Status.SHUT_DOWN, "status");
+                        for (var wall : walls) h.assertValueEqual(level.getBlockState(wall).getValue(FirstWallBlock.WEAR), 0, "wear at " + wall);
+                    })
+                    .thenSucceed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "sfr", timeoutTicks = 300, skyAccess = true)
+    public static void sfrEStopDisruptsAndWears(GameTestHelper h) {
+        h.runAfterDelay(1, () -> {
+            var be = ready(h, 8_000_000);
+            h.startSequence()
+                    .thenWaitUntil(() -> h.assertValueEqual(be.physics().state(), FusionPhysics.State.BURNING, "state"))
+                    .thenExecute(() -> {
+                        var level = h.getLevel(); var walls = be.shell().firstWall();
+                        be.eStop();
+                        be.second(level);
+                        h.assertValueEqual(be.physics().status(), FusionPhysics.Status.DISRUPTION, "status");
+                        for (var wall : walls) h.assertValueEqual(level.getBlockState(wall).getValue(FirstWallBlock.WEAR), 1, "wear at " + wall);
+                    })
+                    .thenSucceed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "sfr", timeoutTicks = 300, skyAccess = true)
     public static void sfrBurnSyncsItsSoundState(GameTestHelper h) {
         h.runAfterDelay(1, () -> {
             var be = ready(h, 8_000_000);

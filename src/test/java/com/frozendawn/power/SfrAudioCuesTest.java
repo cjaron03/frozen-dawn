@@ -52,6 +52,22 @@ class SfrAudioCuesTest {
         assertEquals(EnumSet.of(Cue.DISRUPTION, Cue.QUENCH), SfrAudioCues.cues(r(BURNING, FusionPhysics.Status.BURNING),
                 r(OFF, FusionPhysics.Status.WALL_MELT, 1100, 0, true), false));
     }
+    @Test void stopThunksAndTheRampEndsOnAChime() {
+        assertEquals(EnumSet.of(Cue.VALVE), SfrAudioCues.cues(r(BURNING, FusionPhysics.Status.BURNING), r(RAMP_DOWN, FusionPhysics.Status.RAMP_DOWN), false));
+        var ramp = r(RAMP_DOWN, FusionPhysics.Status.RAMP_DOWN);
+        assertEquals(EnumSet.noneOf(Cue.class), SfrAudioCues.cues(ramp, ramp, false));
+        assertEquals(EnumSet.of(Cue.SHUTDOWN), SfrAudioCues.cues(ramp, r(OFF, FusionPhysics.Status.SHUT_DOWN), false));
+    }
+    @Test void aDisruptionDuringTheRampCracks() {
+        var ramp = r(RAMP_DOWN, FusionPhysics.Status.RAMP_DOWN);
+        assertEquals(EnumSet.of(Cue.DISRUPTION), SfrAudioCues.cues(ramp, r(OFF, FusionPhysics.Status.DISRUPTION, 800, 0, true), false));
+        assertEquals(EnumSet.of(Cue.DISRUPTION), SfrAudioCues.cues(ramp, r(OFF, FusionPhysics.Status.ASH_POISONED, 600, 0, false), false));
+    }
+    @Test void alarmSoundsDuringTheRamp() {
+        assertTrue(SfrAudioCues.alarm(r(RAMP_DOWN, FusionPhysics.Status.RAMP_DOWN, 900, 300, false), false));
+        assertTrue(SfrAudioCues.alarm(r(RAMP_DOWN, FusionPhysics.Status.RAMP_DOWN, 1000, 300, false), true));
+        assertFalse(SfrAudioCues.alarm(r(RAMP_DOWN, FusionPhysics.Status.RAMP_DOWN, 900, 300, false), true));
+    }
     @Test void overdriveAloneIsQuiet() {
         var over = new FusionPhysics.Readout(BURNING, FusionPhysics.Status.BURNING, 900, 600, 600, 560, 515, 0, 0, 0, 0, false, false);
         assertFalse(SfrAudioCues.alarm(over, true));

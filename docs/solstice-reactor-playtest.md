@@ -68,6 +68,15 @@ The DMS button (Disruption Mitigation System) starts On, which holds drive at 10
 
 Expected against deep vacuum: 150% with 14 radiators settles near 1370C, so it melts: from a cold start the alarm sounds after about 97 s and the wall melts about 21 s later. About 19 radiators hold 150% under 1000C; 20 settle near 900C for about 518 kW net.
 
+## Shutdown
+
+Design: `docs/solstice-reactor-design.md`, section "Shutdown". Plan: `docs/solstice-shutdown-plan.md`.
+
+1. While BURNING, press Stop. The fuel valve thunks shut and the state reads RAMP DOWN (cyan) with a progress percent. The burn falls on a straight line to zero over 20 s; the burn loop fades and drops in pitch with it. No fuel is used and no tritium is bred during the ramp. As gross output falls below the 40 kW house load, the network covers the rest; on a network with no other supply or stored energy the ramp ends in a MAGNET QUENCH instead, as it would while burning.
+2. At 100% the shutdown chime plays and the screen reads OFF, SHUT DOWN (grey). No First Wall wear, no disruption crack.
+3. Press Start during the ramp: it returns to BURNING without a new cooldown or ignition, at the burn it had reached (at least the minimum burn).
+4. E-Stop (red, beside Stop) is live only while the plasma is on. Hold it for one second; a red bar fills under it. Releasing early does nothing. A full hold is a hard stop: DISRUPTION, the crack, and one wear step, as before. Redstone and opening the hatch are still hard stops, also during the ramp.
+
 ## Judge by eye and ear
 
 1. Block textures: a clean fusion-lab look (pale ceramic and steel, ORSA blue and orange accents), each block distinct from the CFU-7 and from each other. The Deuterium and Tritium Canisters were redrawn on 2026-10-24.
@@ -75,7 +84,7 @@ Expected against deep vacuum: 150% with 14 radiators settles near 1370C, so it m
 3. The Controller screen: state, status colors, progress percent, loop, heat, power, request, radiators, fuel and channel lines.
 4. TORUS OPEN with the hatch open; Start refused. Opening the hatch while burning disrupts at once.
 5. Quench frost after a MAGNET QUENCH (cut the network while gross output is under 40 kW).
-6. The ten sounds, each for distinctness, loudness and distance falloff:
+6. The twelve sounds, each for distinctness, loudness and distance falloff:
    - cryocooler loop during cooldown and READY
    - ignition charge and thump (cut off if ignition aborts)
    - ignition success swell and arpeggio as IGNITION turns to BURNING
@@ -83,6 +92,7 @@ Expected against deep vacuum: 150% with 14 radiators settles near 1370C, so it m
    - pump loop at the Vacuum Port, rising in pitch as the channel empties
    - warning alarm while burning: loop at or above 1000C or pump off. Overdrive alone is quiet. Warm-up on network power is silent.
    - READY chime; refusal buzz when you press Start and it is refused, or when ignition aborts (a standing refusal nobody pressed is silent); disruption crack; quench vent; a melt-through plays the crack and the vent together; disabling DMS plays a one-shot rising triple whoop
+   - fuel valve thunk on Stop, and the two-tone shutdown chime when the ramp ends
 7. Linked radiators turn HOT while the loop is at or above 150C, buried or not, and cool when it drops.
 8. Breaking the Controller drops its tank as whole Tritium Canisters.
 9. Overdrive: the DMS overlay and hold, its alert when the hold completes, the Drive slider, silence in overdrive below 1000C, and a melt-through (magma wall, lava particles, quench frost, both cues).
@@ -106,7 +116,7 @@ Design: `docs/solstice-fuel-design.md`. Plan: `docs/solstice-fuel-plan.md`.
 3. Salvage: a Power Cell alone in the crafting grid gives 1 Lithium; a Battery Bank gives 4.
 4. Target rod: craft `iron / lithium / iron`, `lithium / copper / lithium`, `iron / lithium / iron`. It should look like a fuel rod with silver-white pellets. In a running CFU-7 with three fuel rods, the screen should rate one rod (35 kW) lower; the rod's tooltip shows breeding progress, and when used up it leaves 4 Tritium Canisters in the output slot.
 5. Isotope Column: place it on a powered network. Packed Ice in the input fills the ice buffer and makes a Deuterium Canister every 120 s; Lithium Carbonate makes Lithium every 60 s. The front glass should brighten with bubbles and a lamp while working, and a quiet bubbling hum should play only then. Cut power: the screen says NO POWER, the job pauses, and the hum fades. Junk is refused by hand and by hopper.
-6. Helium: with the SFR-1 burning and the Vacuum Port pumping, each Deuterium Canister burned puts a Helium Canister in the Controller's He slot (between T in and T out). Stop the reactor with helium loaded: the screen shows "He boost on Start", and starting the cooldown uses one canister and shows "He boost ×2"; the cooldown runs twice as fast.
+6. Helium: with the SFR-1 burning and the Vacuum Port pumping, each Deuterium Canister burned puts a Helium Canister in the Controller's He slot (between T in and T out). Stop the reactor with helium loaded: the screen shows "He boost on Start", right-aligned in the panel, and starting the cooldown uses one canister and shows "He boost ×2"; the cooldown runs twice as fast.
 7. Textures: Helium Canister (brown cap), Lithium Target Rod, Raw Spodumene, Lithium Carbonate, Lithium, Pegmatite, Deepslate Spodumene Ore and the four Isotope Column faces.
 
 ## Owner reports
@@ -143,6 +153,6 @@ Outside the vacuum stage, a player standing in a pumped-down channel still breat
 
 ## Evidence and limits
 
-Headless, verified by tests: multiblock validation, the full blueprint cell list and its per-player toggle, port rules, channel pressure and pump-down into the outer room, startup sequence and aborts, ignition at 150 kW, burn physics and the 14-radiator readings, load-following, fuel burn and 1.05x breeding, disruptions and quench, saved state, cue selection and alarm rule, drive and mitigation limits, overdrive heat, efficiency and wall erosion, the unmitigated melt-through to magma, radiator HOT state, hatch-side pressure and vacuum-stage sealing, tritium drop on break, sound state sync to the client, and that every SFR sound file is mono Vorbis and registered. Fuel chain: Column job math, ice units, power-loss pause and saved progress, hopper refusal, salvage recipes, pod placement only in deepslate with ore only inside pegmatite, target rod rating, breeding and output blocking, helium collection and venting when full, and the boosted cooldown rate.
+Headless, verified by tests: multiblock validation, the full blueprint cell list and its per-player toggle, port rules, channel pressure and pump-down into the outer room, startup sequence and aborts, ignition at 150 kW, burn physics and the 14-radiator readings, load-following, fuel burn and 1.05x breeding, disruptions and quench, saved state, cue selection and alarm rule, drive and mitigation limits, overdrive heat, efficiency and wall erosion, the unmitigated melt-through to magma, radiator HOT state, hatch-side pressure and vacuum-stage sealing, the Stop ramp-down to SHUT DOWN with no wear, fuel or breeding, Start cancelling a ramp, E-Stop and redstone as hard stops during the ramp, a ramp surviving save and load, tritium drop on break, sound state sync to the client, and that every SFR sound file is mono Vorbis and registered. Fuel chain: Column job math, ice units, power-loss pause and saved progress, hopper refusal, salvage recipes, pod placement only in deepslate with ore only inside pegmatite, target rod rating, breeding and output blocking, helium collection and venting when full, and the boosted cooldown rate.
 
-Needs the owner: textures, ghost-block blueprint rendering, frost visuals, screen layout, the DMS overlay and Drive slider, the melt-through's look, every sound's character and mix, hatch feel, Conduit Binder linking in a real world, and the warm-up alarm ruling. Fuel chain: the owner ran the whole loop in a playtest world on 2026-10-25; how rare pods feel in a fresh world is still open (step 1 asks for a fresh world). Multiplayer is not checked.
+Needs the owner: the ramp-down's sound and feel, the E-Stop hold, textures, ghost-block blueprint rendering, frost visuals, screen layout, the DMS overlay and Drive slider, the melt-through's look, every sound's character and mix, hatch feel, Conduit Binder linking in a real world, and the warm-up alarm ruling. Fuel chain: the owner ran the whole loop in a playtest world on 2026-10-25; how rare pods feel in a fresh world is still open (step 1 asks for a fresh world). Multiplayer is not checked.

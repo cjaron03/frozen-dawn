@@ -174,7 +174,7 @@ class FusionPhysicsTest {
         assertDisrupts(steady().step(burn(14, true, false, true, 0, 64, true, 0, false, Double.NaN)), FusionPhysics.Status.DISRUPTION);
         assertDisrupts(steady().step(burn(14, true, true, false, 0, 64, true, 0, false, Double.NaN)), FusionPhysics.Status.DISRUPTION);
         assertDisrupts(steady().step(burn(14, true, true, true, 0.06, 64, true, 0, false, Double.NaN)), FusionPhysics.Status.DISRUPTION);
-        var stopped = steady(); stopped.stop();
+        var stopped = steady(); stopped.eStop();
         assertDisrupts(stopped.step(ok(14)), FusionPhysics.Status.DISRUPTION);
         var starved = steady(); FusionPhysics.Readout r = null;
         for (int i = 0; i < 601 && (r == null || r.state() == FusionPhysics.State.BURNING); i++)
@@ -346,6 +346,59 @@ class FusionPhysicsTest {
     }
     @Test void loadFollowAtZeroDemandCarriesItsOwnHouseLoadWithAWideField() { assertIdlesAloneAtZeroDemand(sinks(40)); }
     @Test void loadFollowAtZeroDemandCarriesItsOwnHouseLoadWithWarmSinks() { assertIdlesAloneAtZeroDemand(Collections.nCopies(14, -30.0)); }
+
+    @Test void stopRampsDownToShutDownWithoutDisruption() {
+        var f = steady(); double full = f.step(ok(14)).heatKw();
+        f.stop();
+        var r = f.step(ok(14));
+        assertEquals(FusionPhysics.State.RAMP_DOWN, r.state()); assertEquals(FusionPhysics.Status.RAMP_DOWN, r.status());
+        assertFalse(r.disrupted());
+        double last = r.heatKw();
+        assertTrue(last < full, "The ramp starts below full heat: " + last);
+        for (int i = 2; i < FusionPhysics.RAMP_DOWN_SECONDS; i++) {
+            r = f.step(ok(14));
+            assertEquals(FusionPhysics.State.RAMP_DOWN, r.state(), "second " + i); assertFalse(r.disrupted());
+            assertTrue(r.heatKw() < last, "Heat falls every second"); last = r.heatKw();
+        }
+        r = f.step(ok(14));
+        assertEquals(FusionPhysics.State.OFF, r.state()); assertEquals(FusionPhysics.Status.SHUT_DOWN, r.status());
+        assertFalse(r.disrupted());
+    }
+
+    @Test void rampBurnsAndBreedsNoFuel() {
+        var f = steady(); f.setDeuteriumProgressForTest(0.999); double tritium = f.tritium();
+        f.stop();
+        var empty = burn(14, true, true, true, 0, 0, true, 0, false, Double.NaN);
+        for (int i = 0; i < FusionPhysics.RAMP_DOWN_SECONDS; i++) assertEquals(0, f.step(empty).deuteriumUsed());
+        assertEquals(FusionPhysics.Status.SHUT_DOWN, f.status(), "An empty deuterium line does not disrupt the ramp");
+        assertEquals(tritium, f.tritium(), 1e-12);
+    }
+
+    @Test void startCancelsTheRampEvenInItsLastSecond() {
+        var f = steady(); f.stop(); run(f, ok(14), FusionPhysics.RAMP_DOWN_SECONDS - 1);
+        f.start();
+        var r = f.step(ok(14));
+        assertEquals(FusionPhysics.State.BURNING, r.state()); assertEquals(FusionPhysics.Status.BURNING, r.status());
+        assertFalse(r.disrupted());
+        assertTrue(r.heatKw() >= FusionPhysics.RATED_KW * FusionPhysics.MIN_BURN, "Resumes at least at the lowest burn: " + r.heatKw());
+    }
+
+    @Test void eStopAndRedstoneDuringTheRampDisrupt() {
+        var f = steady(); f.stop(); run(f, ok(14), 5); f.eStop();
+        assertDisrupts(f.step(ok(14)), FusionPhysics.Status.DISRUPTION);
+        f = steady(); f.stop(); run(f, ok(14), 5);
+        assertDisrupts(f.step(burn(14, true, true, true, 0, 64, true, 0, true, Double.NaN)), FusionPhysics.Status.DISRUPTION);
+    }
+
+    @Test void aRampSurvivesSaveAndLoad() {
+        var f = steady(); f.stop(); run(f, ok(14), 5);
+        var tag = new CompoundTag(); f.save(tag);
+        var g = new FusionPhysics(); g.load(tag);
+        assertEquals(FusionPhysics.State.RAMP_DOWN, g.state());
+        assertEquals(f.step(ok(14)).heatKw(), g.step(ok(14)).heatKw(), 1e-9, "The loaded ramp follows the same line");
+        assertEquals(FusionPhysics.State.RAMP_DOWN, run(g, ok(14), 13).state());
+        assertEquals(FusionPhysics.Status.SHUT_DOWN, g.step(ok(14)).status());
+    }
 
     @Test void aRefusedStartIsFlaggedForOneSecond() {
         var f = new FusionPhysics(); f.setReadyForTest(); f.addTritium(2); f.start();

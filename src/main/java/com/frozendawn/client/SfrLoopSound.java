@@ -25,6 +25,7 @@ public final class SfrLoopSound extends AbstractTickableSoundInstance {
     private final SfrControllerBlockEntity controller;
     private final Kind kind;
     private long heartbeat = Long.MIN_VALUE / 2;
+    private double rampHeat = -1;
 
     private SfrLoopSound(SfrControllerBlockEntity controller, Kind kind, BlockPos at) {
         super(event(kind), SoundSource.BLOCKS, SoundInstance.createUnseededRandom());
@@ -43,11 +44,13 @@ public final class SfrLoopSound extends AbstractTickableSoundInstance {
         return switch (kind) {
             case CRYO -> s.state() == State.COOLDOWN || s.state() == State.READY;
             case IGNITION -> s.state() == State.IGNITION;
-            case BURN -> s.state() == State.BURNING;
+            case BURN -> plasma(s);
             case PUMP -> s.pumping() && s.pump() != null;
             case ALARM -> s.alarm();
         };
     }
+
+    private static boolean plasma(SfrControllerBlockEntity.Sound s) { return s.state() == State.BURNING || s.state() == State.RAMP_DOWN; }
 
     /** Client block entity ticker. */
     public static void tick(SfrControllerBlockEntity controller) {
@@ -60,7 +63,7 @@ public final class SfrLoopSound extends AbstractTickableSoundInstance {
             var sound = playing.get(kind);
             if (kind == Kind.IGNITION) {
                 // Cut off on abort; let the charge finish its thump when ignition reaches BURNING.
-                if (!wanted(kind, s)) { if (sound != null) { if (s.state() != State.BURNING) { sound.stop(); manager.stop(sound); } playing.remove(kind); } }
+                if (!wanted(kind, s)) { if (sound != null) { if (!plasma(s)) { sound.stop(); manager.stop(sound); } playing.remove(kind); } }
                 else if (sound == null) { sound = new SfrLoopSound(controller, kind, controller.getBlockPos()); playing.put(kind, sound); manager.play(sound); }
                 continue;
             }
@@ -81,8 +84,16 @@ public final class SfrLoopSound extends AbstractTickableSoundInstance {
         if (controller.isRemoved() || !wanted(kind, s)) return 0;
         double heat = Math.clamp(s.heatKw() / FusionPhysics.RATED_KW, 0, 1);
         return switch (kind) {
-            case CRYO -> .6F; case IGNITION -> 1.2F; case BURN -> (float) (.3 + .7 * heat); case PUMP -> .7F; case ALARM -> 1.6F;
+            case CRYO -> .6F; case IGNITION -> 1.2F; case PUMP -> .7F; case ALARM -> 1.6F;
+            case BURN -> (float) (.3 * rampFloor(s, heat) + .7 * heat);
         };
+    }
+    /** 1 while burning. During a ramp-down the steady burn's floor shrinks with the heat it began at, so the roar starts
+     * where it was and winds down to silence. */
+    private double rampFloor(SfrControllerBlockEntity.Sound s, double heat) {
+        if (s.state() != State.RAMP_DOWN) { rampHeat = -1; return 1; }
+        if (rampHeat < 0) rampHeat = heat;
+        return rampHeat > 0 ? Math.min(1, heat / rampHeat) : 0;
     }
     private float pitch() {
         var s = controller.sound();

@@ -120,6 +120,38 @@ These exceed the spec's rough cost of about 60 coils, 80 First Wall and 50 Blank
 
 Status strings: IGNITION, BURNING, DISRUPTION, MAGNET QUENCH, TORUS OPEN, ASH POISONED. Strings for the cooldown and ready states are the builder's call.
 
+## Shutdown (owner, 2026-10-25)
+
+Two stops. The owner described the controlled one: "they push a button, a audibile THUNK starts as the fuel ramps down, then the reactor sound slowly winds down", and "when it ends a shutdown chime". The hard stop keeps its own on-screen button behind a short hold.
+
+**Stop (ramp-down), no wear:**
+1. Pressing Stop while BURNING enters a new state, RAMP DOWN. The fuel valve closes with a heavy one-shot THUNK.
+2. The burn falls linearly from wherever it is to zero over a fixed 20 s, whatever the starting level. Drive and load-follow are ignored during the ramp.
+3. The valve is closed, so the ramp burns no deuterium or tritium and breeds none. Deuterium progress is kept for the next burn.
+4. Heat, gross and net output follow the falling burn under the usual rules: the radiators keep removing loop heat, the house load still applies, and the network covers any shortfall.
+5. At zero the reactor goes to OFF with a new status, SHUT DOWN, and plays a calm shutdown chime. First Wall wear is unchanged. A restart needs the full sequence: cooldown, fuel check, ignition. The owner chose OFF over READY: "a restart pays the cooldown or uses a Helium Canister."
+
+**During the ramp:**
+- Start cancels it: the reactor returns to BURNING at the current burn, but no lower than the minimum burn, and slews toward drive as usual. No ignition or tritium is needed.
+- Stop again does nothing.
+- Every hard trigger still applies: redstone, E-Stop, hatch open, shell broken, channel pressure, loop over 1,100C and magnet power loss. Each causes a disruption with its usual wear.
+- The ash rule still applies: with the pump off, the plasma fades into ASH POISONED as it does while burning.
+
+**E-Stop (hard stop):**
+- A red E-Stop button shares a row with Stop as two half-width buttons. It needs a 1 s hold, with fill shown on the button, and is active only while BURNING or in RAMP DOWN.
+- It does what Stop does today: an immediate DISRUPTION with one wear step.
+- A redstone signal stays a hard stop, the same as E-Stop.
+- Stop from COOLDOWN or READY is unchanged: power down to OFF, no wear.
+
+**Sound:**
+- THUNK at the start of the ramp and the chime at its end are new one-shots. They are synthesized in `tools/generate_sfr_sounds.sh` like the other SFR-1 sounds, and like them they carry through vacuum.
+- The burn loop keeps playing through RAMP DOWN. Its pitch and volume fall with the burn, reaching silence at the end instead of the loop's usual floor.
+- The chime is distinct from the alarm, refuse and disruption cues.
+
+**Screen:** the state reads RAMP DOWN, with ramp progress % beside the status the way cooldown and ignition progress are shown.
+
+**Builder's calls:** the no-pump alarm sounds during RAMP DOWN as it does while burning; no overdrive wear accrues during the ramp, since the plasma is only falling; a ramp saved mid-way resumes where it left off on load.
+
 ## Running physics
 
 - Rated fusion heat: 400 kW thermal. The nominal core loop is 900C.
@@ -151,7 +183,7 @@ Status strings: IGNITION, BURNING, DISRUPTION, MAGNET QUENCH, TORUS OPEN, ASH PO
 - loop temperature above 1,100C
 - fuel starvation
 - First Wall damage above 80%
-- redstone stop
+- redstone stop or E-Stop (Stop is a ramp-down; see Shutdown)
 - breach of the channel while burning
 
 **On disruption:**
@@ -222,3 +254,4 @@ It also has a start control and tritium extraction. Ambient hum and alarm audio 
 - 1 Tritium Canister = 1 unit.
 - House load comes out of gross output; a shortfall falls to the network.
 - Cooldown aborts on power loss.
+- Shutdown: a fixed 20 s ramp from any burn level; no fuel burned or bred during the ramp; Start cancels a ramp without a new ignition; E-Stop hold of 1 s; redstone stays a hard stop.

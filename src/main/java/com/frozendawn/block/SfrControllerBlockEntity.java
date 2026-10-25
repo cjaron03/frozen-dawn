@@ -146,13 +146,13 @@ public final class SfrControllerBlockEntity extends BlockEntity implements MenuP
         }
         if (readout.worn()) wearFirstWall(l);
         if (port != null) {
-            boolean burning = physics.state() == FusionPhysics.State.BURNING;
+            boolean burning = physics.plasma();
             double requestKw = readout.requestKw() + (!burning && pumping && channelPressure > 0 ? FusionPhysics.PUMP_KW : 0);
             port.publish((int) Math.round(requestKw * 1000), burning ? (int) Math.round(Math.max(0, readout.netKw()) * 1000) : 0);
             port.ready(physics.state() == FusionPhysics.State.READY);
         }
         playCues(l, before);
-        boolean burning = physics.state() == FusionPhysics.State.BURNING;
+        boolean burning = physics.plasma();
         var next = new Sound(physics.state(), Math.round(readout.heatKw()), Math.round(channelPressure * 100) / 100.0,
                 pumping && powered && (burning || channelPressure > 0), valid ? shell.vacuumPort() : null, SfrAudioCues.alarm(readout, pumping));
         if (!next.equals(sound)) { sound = next; l.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_CLIENTS); }
@@ -177,8 +177,9 @@ public final class SfrControllerBlockEntity extends BlockEntity implements MenuP
             var event = switch (cue) {
                 case READY -> ModSounds.SFR_READY; case IGNITED -> ModSounds.SFR_IGNITED; case REFUSE -> ModSounds.SFR_REFUSE;
                 case DISRUPTION -> ModSounds.SFR_DISRUPTION; case QUENCH -> ModSounds.SFR_QUENCH;
+                case VALVE -> ModSounds.SFR_VALVE; case SHUTDOWN -> ModSounds.SFR_SHUTDOWN;
             };
-            float volume = switch (cue) { case READY, REFUSE -> 1f; case IGNITED -> 1.5f; case DISRUPTION -> 2f; case QUENCH -> 2.5f; };
+            float volume = switch (cue) { case READY, REFUSE, SHUTDOWN -> 1f; case IGNITED, VALVE -> 1.5f; case DISRUPTION -> 2f; case QUENCH -> 2.5f; };
             l.playSound(null, worldPosition, event.get(), SoundSource.BLOCKS, volume, 1f);
         }
     }
@@ -288,7 +289,10 @@ public final class SfrControllerBlockEntity extends BlockEntity implements MenuP
         if (physics.state() == FusionPhysics.State.OFF && helium.is(ModItems.HELIUM_CANISTER.get()) && physics.boostCooldown()) helium.shrink(1);
         physics.start(); setChanged();
     }
+    /** Ramps a burn down to a clean OFF; before burning it simply powers down. */
     public void stop() { physics.stop(); setChanged(); }
+    /** Ends a lit plasma at once, as a disruption with wear. */
+    public void eStop() { physics.eStop(); setChanged(); }
     public void toggleLoadFollow() { physics.setLoadFollow(!physics.loadFollow()); setChanged(); }
     /** Drive in DRIVE_STEP steps above 100%. */
     public void setDriveSteps(int steps) { physics.setDrive(1 + steps * FusionPhysics.DRIVE_STEP); setChanged(); }
