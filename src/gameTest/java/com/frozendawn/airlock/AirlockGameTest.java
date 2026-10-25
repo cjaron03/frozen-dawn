@@ -1123,6 +1123,20 @@ public final class AirlockGameTest {
                 "The working source stays in the pressurized base after wall repair and chamber evacuation: "+reading);
     });}
     @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="airlock_native",timeoutTicks=100)
+    public static void airlockRefillAirArrivesAtBaseTemperature(GameTestHelper h){connectedRefillCheck(h,s->{
+        var l=h.getLevel();var c=s.chamber;var heat=RoomThermalState.get(l);
+        RoomThermalManager.temperatureAt(l,s.base);RoomThermalManager.temperatureAt(l,s.center);
+        java.util.function.Function<BlockPos,Double> air=pos->{for(var room:heat.rooms.values())if(room.airPresent&&room.cells.contains(pos))
+            return com.frozendawn.thermal.RoomHeatMath.temperature(room.airCapacity(),room.airEnergy);return Double.NaN;};
+        for(var room:heat.rooms.values())if(room.cells.contains(s.base))room.airEnergy=com.frozendawn.thermal.RoomHeatMath.energy(room.airCapacity(),20);
+        AirlockManager.start(l,c);finish(l,c);
+        h.assertTrue(!RoomAtmosphere.hasAir(l,s.center),"The chamber vents before the refill");
+        c.gas.fill(270);AirlockManager.start(l,c);finish(l,c);
+        double base=air.apply(s.base),chamber=air.apply(s.center);
+        h.assertTrue(c.gas.breathable()&&Math.abs(chamber-base)<0.5,
+                "Pumped air arrives at the base room's temperature, not the outside: base="+base+" chamber="+chamber);
+    });}
+    @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="airlock_native",timeoutTicks=100)
     public static void airlockCyclesToActualDilutedBasePressure(GameTestHelper h){connectedRefillCheck(h,s->{
         var l=h.getLevel();var hole=joinEmptyChamber(h,s,false);var c=s.chamber;
         l.setBlock(hole,Blocks.GLASS.defaultBlockState(),3);var base=RoomAtmosphere.view(l,s.base).geometry().cells();RoomAtmosphere.view(l,s.center);

@@ -39,6 +39,7 @@ public final class RoomThermalManager {
         final ArrayDeque<Long> saved=new ArrayDeque<>();
         Map<BlockPos,Integer> owners=Map.of(); boolean reconciling;
         long lastTick=-1,profileBuilds;
+        double refillTemperature=Double.NaN;
         final Map<BlockPos,Double> machineHeat=new HashMap<>();
         Runtime(RoomThermalState state){this.state=state;saved.addAll(state.rooms.keySet());}
     }
@@ -330,11 +331,24 @@ public final class RoomThermalManager {
             if(!airPresent(level,room.cells)||!room.sealed)dropAir(rt.state,room);
             else if(!room.airPresent) {
                 var binding=rt.rooms.get(room.id);if(binding==null||binding.suspended||binding.profile==null)continue;
-                room.airPresent=true;room.airEnergy=RoomHeatMath.energy(room.airCapacity(),outsideAverage(level,binding.profile));
+                double initial=Double.isNaN(rt.refillTemperature)?outsideAverage(level,binding.profile):rt.refillTemperature;
+                room.airPresent=true;room.airEnergy=RoomHeatMath.energy(room.airCapacity(),initial);
                 rt.state.ledger.airIn+=room.airEnergy;
             }
         }
         rt.state.setDirty();
+    }
+    /** Pumped air arrives at the air temperature of the room it is drawn from, not the outside average.
+     * A source without a validated, aired room keeps the outside default. */
+    public static void refillFrom(ServerLevel level,Set<BlockPos> cells,BlockPos source) {
+        var rt=level.dimension()==Level.OVERWORLD?runtime(level):null;
+        if(rt!=null)for(long id:rt.cells.getOrDefault(source,Set.of())) {
+            var binding=rt.rooms.get(id);
+            if(binding!=null&&!binding.suspended&&!binding.geometryDirty&&binding.room.airPresent&&loaded(level,binding))
+                {rt.refillTemperature=RoomHeatMath.temperature(binding.room.airCapacity(),binding.room.airEnergy);break;}
+        }
+        try {RoomAirState.get(level).refill(cells);}
+        finally {if(rt!=null)rt.refillTemperature=Double.NaN;}
     }
     @SubscribeEvent public static void roomChanged(RoomChangeEvent event) {
         var level=event.level();if(level.dimension()!=Level.OVERWORLD)return;var rt=runtime(level);
