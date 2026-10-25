@@ -17,13 +17,14 @@ final class DirectorRuntime {
     final LearningCoordinator learning;
     final ConvergenceCoordinator convergence;
     final ScribeCoordinator scribe;
+    final PyroCoordinator pyro;
     private long lastContactTick = Long.MIN_VALUE;
     private DirectorRuntime(MinecraftServer server) {
         this.server = server; data = MaeveSavedData.get(server);
         learning = new LearningCoordinator(server, data); attention = new AttentionCoordinator(server, data);
         missions = new MissionPlanner(server, data, attention); attention.bind(missions);
         convergence = new ConvergenceCoordinator(server, data, attention, missions);
-        scribe = new ScribeCoordinator(server, data);
+        scribe = new ScribeCoordinator(server, data); pyro = new PyroCoordinator(server, data);
     }
     static DirectorRuntime current(MinecraftServer server) {
         if (!server.isSameThread()) throw new IllegalStateException("Maeve must run on the server thread");
@@ -44,7 +45,7 @@ final class DirectorRuntime {
     private void clear(String reason) {
         if (reason.equals("ERASED")) com.frozendawn.entity.blind.BlindArchitectRegistry.erase(server);
         convergence.clear(reason); CommitmentCoordinator.stopAll(server, data.store());
-        missions.clear(); attention.clear(); learning.clear(); scribe.clear(reason);
+        missions.clear(); attention.clear(); learning.clear(); scribe.clear(reason); pyro.clear(reason);
     }
     static void erase(MinecraftServer server) {
         if (!server.isSameThread()) throw new IllegalStateException("Maeve erasure must run on the server thread");

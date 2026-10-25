@@ -3,6 +3,9 @@ package com.frozendawn.client.renderer;
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.entity.ArchitectEntity;
 import com.frozendawn.entity.ScribeWriting;
+import com.frozendawn.entity.architect.ArchitectFelledDeath;
+import com.frozendawn.entity.architect.ArchitectWoundDownDeath;
+import com.frozendawn.entity.architect.ArchitectSoulBurnDeath;
 import net.minecraft.client.model.geom.ModelLayerLocation;
 import net.minecraft.client.model.geom.PartPose;
 import net.minecraft.client.model.geom.builders.CubeDeformation;
@@ -92,6 +95,18 @@ public class ArchitectModel extends HumanoidModel<ArchitectEntity> {
         float sway = Mth.sin(ageInTicks * 0.08f) * 0.06f;
         this.hat.visible = false;
 
+        if (entity.isFelledDying()) {
+            applyFelledDeathPose(entity.getDeathTicks() + (ageInTicks - Mth.floor(ageInTicks)), entity.fallsBackward());
+            return;
+        }
+        if (entity.isWoundDownDying()) {
+            applyWoundDownPose(entity.getDeathTicks() + (ageInTicks - Mth.floor(ageInTicks)));
+            return;
+        }
+        if (entity.isSoulBurnDying()) {
+            applySoulBurnPose(entity.getDeathTicks() + (ageInTicks - Mth.floor(ageInTicks)));
+            return;
+        }
         if (shield && !entity.isMasterArchitectVisual()) return;
         if (!entity.isMasterArchitectVisual() && entity.getArcherPose() > 0) {
             if (entity.getArcherPose() == 2) {
@@ -164,7 +179,7 @@ public class ArchitectModel extends HumanoidModel<ArchitectEntity> {
                 this.rightArm.yRot = -0.12f;
                 this.leftArm.yRot = 0.12f;
             }
-        } else if (entity.isHoldingMaevePosition() || entity.isShowingReconnaissancePose()) {
+        } else if (entity.isHoldingMaevePosition() || entity.isShowingReconnaissancePose() || entity.isPyroStaring()) {
             // Preserve vanilla's attack swing when defending the held point.
             if (entity.getAttackAnim(ageInTicks - entity.tickCount) <= 0.001F) {
                 applyObservePose(ageInTicks, sway, limbSwingAmount);
@@ -540,6 +555,120 @@ public class ArchitectModel extends HumanoidModel<ArchitectEntity> {
             return false;
         }
         return (Mth.floor(ageInTicks * 2.0F) + salt) % 4 != 0;
+    }
+
+    private void applyFelledDeathPose(float elapsed, boolean clutchesSlate) {
+        float jolt = ArchitectFelledDeath.jolt(elapsed);
+        float locked = ArchitectFelledDeath.armsLocked(elapsed);
+        float buckle = ArchitectFelledDeath.buckle(elapsed);
+        float topple = ArchitectFelledDeath.topple(elapsed);
+        float shiver = ArchitectFelledDeath.tremor(elapsed) * Mth.sin(elapsed * 3.7F) * 0.06F;
+        float knees = buckle * (1.0F - topple);
+
+        // Head jerks back on the crack, droops as the knees go, then whips back on landing.
+        this.head.xRot = -0.5F * jolt + 0.35F * knees - 0.4F * topple;
+        this.head.yRot = 0.0F;
+        this.body.xRot = -0.1F * jolt + 0.2F * knees;
+        this.body.yRot = 0.0F;
+        // Arms fling out on the crack, lock rigid at its sides, then trail behind the fall.
+        float armOut = 0.45F * jolt + 0.08F * locked;
+        this.rightArm.xRot = shiver * (1.0F - locked) + 0.5F * topple;
+        this.leftArm.xRot = -shiver * (1.0F - locked) + 0.5F * topple;
+        this.rightArm.zRot = armOut;
+        this.leftArm.zRot = -armOut;
+        this.rightArm.yRot = 0.0F;
+        this.leftArm.yRot = 0.0F;
+        this.rightLeg.yRot = 0.0F;
+        this.leftLeg.yRot = 0.0F;
+        this.rightLeg.zRot = 0.0F;
+        this.leftLeg.zRot = 0.0F;
+        // One knee gives before the other; the legs straighten as it goes down like a beam.
+        this.rightLeg.xRot = -0.4F * knees;
+        this.leftLeg.xRot = 0.15F * knees;
+        if (clutchesSlate) {
+            applySlateClutch(jolt, locked, knees, topple);
+        }
+    }
+
+    /**
+     * Blind death: its head still jerks toward each slowing click, then it drops into a sit on the
+     * exhale and its head and arms hang. The renderer leans the whole body about the hips, so the
+     * legs here are raised by that lean to stay flat on the ground.
+     */
+    private void applyWoundDownPose(float elapsed) {
+        float twitch = ArchitectWoundDownDeath.twitch(elapsed);
+        float crumple = ArchitectWoundDownDeath.crumple(elapsed);
+        float slump = ArchitectWoundDownDeath.slump(elapsed);
+        float sag = ArchitectWoundDownDeath.wind(elapsed) * (1.0F - crumple);
+        float lean = ArchitectWoundDownDeath.lean(elapsed);
+
+        this.head.xRot = 0.3F * sag - 0.15F * Math.abs(twitch) + 0.45F * crumple + 0.4F * slump;
+        this.head.yRot = 0.4F * twitch * (1.0F - crumple);
+        this.head.zRot = 0.12F * slump;
+        this.body.xRot = 0.0F;
+        this.body.yRot = 0.0F;
+        // Arms go limp, then hang down in front of it as it folds forward.
+        float hang = 0.3F * crumple + 0.35F * slump;
+        this.rightArm.xRot = 0.04F * sag - hang;
+        this.leftArm.xRot = 0.04F * sag - hang * 0.85F;
+        this.rightArm.yRot = 0.0F;
+        this.leftArm.yRot = 0.0F;
+        this.rightArm.zRot = 0.05F + 0.12F * crumple;
+        this.leftArm.zRot = -0.05F - 0.12F * crumple;
+        // Knees soften with the clicks, then the legs fold out in front as it drops.
+        float sit = 1.45F * crumple;
+        this.rightLeg.xRot = -0.3F * sag - sit - lean * crumple;
+        this.leftLeg.xRot = -0.18F * sag - sit - lean * crumple;
+        this.rightLeg.yRot = 0.3F * crumple;
+        this.leftLeg.yRot = -0.3F * crumple;
+        this.rightLeg.zRot = 0.0F;
+        this.leftLeg.zRot = 0.0F;
+    }
+
+    /**
+     * Pyro death: both hands go to its burning eyes and it writhes, bowed, while the soul fire
+     * climbs it; then it lets go, throws its head back and its arms up and wide, and hangs
+     * from the rising flames with its legs slack.
+     */
+    private void applySoulBurnPose(float elapsed) {
+        float clutch = ArchitectSoulBurnDeath.clutch(elapsed);
+        float release = ArchitectSoulBurnDeath.release(elapsed);
+        float shake = ArchitectSoulBurnDeath.writhe(elapsed) * Mth.sin(elapsed * 2.3F) * 0.08F;
+        float held = clutch * (1.0F - release);
+
+        this.head.xRot = 0.3F * held - 0.7F * release + 0.5F * shake;
+        this.head.yRot = shake;
+        this.body.xRot = 0.12F * held - 0.18F * release;
+        this.body.yRot = 0.0F;
+        this.rightArm.xRot = -2.1F * held - 2.6F * release + shake;
+        this.leftArm.xRot = -2.1F * held - 2.6F * release - shake;
+        this.rightArm.yRot = -0.5F * held;
+        this.leftArm.yRot = 0.5F * held;
+        this.rightArm.zRot = 0.9F * release;
+        this.leftArm.zRot = -0.9F * release;
+        float buckle = ArchitectSoulBurnDeath.writhe(elapsed);
+        this.rightLeg.xRot = -0.15F * buckle + 0.15F * release;
+        this.leftLeg.xRot = 0.1F * buckle - 0.05F * release;
+        this.rightLeg.yRot = 0.0F;
+        this.leftLeg.yRot = 0.0F;
+        this.rightLeg.zRot = 0.05F * release;
+        this.leftLeg.zRot = -0.05F * release;
+    }
+
+    /**
+     * Scribe variant: after the crack it pulls the slate (right hand) to its chest and covers it
+     * with the stylus arm, hunching over it, then goes over backward with its chin tucked.
+     */
+    private void applySlateClutch(float jolt, float clutch, float knees, float topple) {
+        this.head.xRot = -0.5F * jolt + 0.3F * knees + 0.25F * clutch + 0.35F * topple;
+        this.body.xRot = -0.1F * jolt + 0.25F * clutch * (1.0F - topple) + 0.15F * knees;
+        float flung = 0.45F * jolt * (1.0F - clutch);
+        this.rightArm.xRot = -1.1F * clutch;
+        this.rightArm.yRot = -0.55F * clutch;
+        this.rightArm.zRot = flung;
+        this.leftArm.xRot = -0.95F * clutch;
+        this.leftArm.yRot = 0.75F * clutch;
+        this.leftArm.zRot = -flung;
     }
 
     private void applyMasterDeathPose(int deathTicks, float ageInTicks) {

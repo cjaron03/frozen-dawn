@@ -2,6 +2,7 @@ package com.frozendawn.maeve;
 
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.entity.ArchitectEntity;
+import com.frozendawn.entity.architect.ArchitectFelledDeath;
 import com.frozendawn.gametest.GameTestTemplates;
 import com.frozendawn.homo.PostMaeveWorldState;
 import java.util.UUID;
@@ -132,7 +133,8 @@ public final class MaeveMantletGameTest {
             var reloaded = scene.architect(2, 10); reloaded.readAdditionalSaveData(saved);
             helper.assertTrue(reloaded.saveWithoutId(new CompoundTag()).getList("MantletIce", Tag.TAG_LONG).size() == 20, "Reload preserves spent allowance and cleanup ownership");
             reloaded.hurt(scene.level.damageSources().genericKill(), Float.MAX_VALUE);
-            for (int t = 0; t < 31; t++) scene.level.tickNonPassenger(reloaded);
+            // Retained ice collapses as the felled body comes down.
+            for (int t = 0; t <= ArchitectFelledDeath.TICKS; t++) scene.level.tickNonPassenger(reloaded);
             for (var value : saved.getList("MantletIce", Tag.TAG_LONG))
                 helper.assertTrue(!scene.level.getBlockState(net.minecraft.core.BlockPos.of(((net.minecraft.nbt.LongTag) value).getAsLong())).is(Blocks.PACKED_ICE), "Death cleans up retained mantlet blocks");
             var legacy = scene.architect(2, 11); var legacyTag = seeded.copy(); legacyTag.remove("MantletIce");

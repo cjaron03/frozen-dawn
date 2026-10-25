@@ -79,12 +79,16 @@ public class ArchitectSpawner {
                 architect.preSeedObservation(level, player);
                 // §9.4b: at most one rare natural spawn carries Maeve's notes on this player.
                 if (com.frozendawn.maeve.MaeveDirector.designateScribe(architect, player)) architect.becomeScribe();
+                // §9.4a: otherwise, when Maeve suspects a home but knows of no heat there, a rare one is a Pyro.
+                else if (com.frozendawn.maeve.MaeveDirector.designatePyro(architect, player)) architect.becomePyro();
                 if (!player.isCreative()) {
                     architect.armSpawnObserveCue(player);
                 }
 
-                if (!level.addFreshEntity(architect) && architect.isScribe())
-                    com.frozendawn.maeve.MaeveDirector.scribeEnded(architect, "SPAWN_REJECTED");
+                if (!level.addFreshEntity(architect)) {
+                    if (architect.isScribe()) com.frozendawn.maeve.MaeveDirector.scribeEnded(architect, "SPAWN_REJECTED");
+                    if (architect.isPyro()) com.frozendawn.maeve.MaeveDirector.pyroEnded(architect, "SPAWN_REJECTED");
+                }
                 com.frozendawn.maeve.MaeveDirector.observePawn(architect);
                 FrozenDawn.LOGGER.info("[Architect] Spawned near {} at phase {} ({}){}",
                         player.getName().getString(), currentPhase,

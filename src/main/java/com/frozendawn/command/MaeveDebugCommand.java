@@ -3,6 +3,7 @@ package com.frozendawn.command;
 import com.frozendawn.entity.ArchitectEntity;
 import com.frozendawn.init.ModEntities;
 import com.frozendawn.maeve.MaeveDirector;
+import com.frozendawn.maeve.PyroLab;
 import com.frozendawn.maeve.ScribeLab;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
@@ -21,7 +22,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.MobSpawnType;
 
-/** An operator can inspect evidence, but cannot inject beliefs or restore erased state. Only the lab client adds {@code scribe}. */
+/** An operator can inspect evidence, but cannot inject beliefs or restore erased state. Only the lab client adds {@code scribe} and {@code pyro}. */
 final class MaeveDebugCommand {
     private MaeveDebugCommand() { }
 
@@ -31,6 +32,11 @@ final class MaeveDebugCommand {
                 .then(Commands.literal("seed").executes(c -> lab(c.getSource(), ScribeLab.seed(c.getSource().getPlayerOrException()))))
                 .then(Commands.literal("clear-cooldown").executes(c -> lab(c.getSource(), ScribeLab.clearCooldown(c.getSource().getServer()))))
                 .then(Commands.literal("roll").executes(c -> roll(c.getSource().getPlayerOrException(), BlockPos.containing(c.getSource().getPosition())))));
+        if (ScribeLab.ENABLED) root.then(Commands.literal("pyro")
+                .then(Commands.literal("seed-home").executes(c -> lab(c.getSource(), PyroLab.seedHome(c.getSource().getPlayerOrException(), BlockPos.containing(c.getSource().getPosition())))))
+                .then(Commands.literal("clear-cooldown").executes(c -> lab(c.getSource(), PyroLab.clearCooldown(c.getSource().getServer()))))
+                .then(Commands.literal("vanish").executes(c -> lab(c.getSource(), PyroLab.vanish(c.getSource().getServer()))))
+                .then(Commands.literal("roll").executes(c -> rollPyro(c.getSource().getPlayerOrException(), BlockPos.containing(c.getSource().getPosition())))));
         return root
                 .then(Commands.literal("status").executes(c -> display(c.getSource(), null, null)))
                 .then(Commands.literal("dump").executes(c -> inspect(c.getSource(), null, null))
@@ -78,6 +84,21 @@ final class MaeveDebugCommand {
         String decision = MaeveDirector.diagnostics(player.server, player.getUUID()).stream()
                 .filter(line -> line.startsWith("SCRIBE: ")).findFirst().orElse("SCRIBE: no decision");
         return lab(player.createCommandSourceStack(), (scribe ? "Roll: Scribe. " : "Roll: ordinary, not spawned. ") + decision);
+    }
+
+    /** The same, for the §9.4a Pyro: spawned where the command runs, it walks to its own post. */
+    private static int rollPyro(ServerPlayer player, BlockPos at) {
+        var level = player.serverLevel();
+        ArchitectEntity architect = ModEntities.ARCHITECT.get().create(level, null, at, MobSpawnType.NATURAL, true, false);
+        if (architect == null) return lab(player.createCommandSourceStack(), "No Architect could be made there.");
+        boolean pyro = MaeveDirector.designatePyro(architect, player);
+        if (pyro) {
+            architect.becomePyro();
+            if (!level.addFreshEntity(architect)) MaeveDirector.pyroEnded(architect, "SPAWN_REJECTED");
+        } else architect.discard();
+        String decision = MaeveDirector.diagnostics(player.server, player.getUUID()).stream()
+                .filter(line -> line.startsWith("PYRO: ")).findFirst().orElse("PYRO: no decision");
+        return lab(player.createCommandSourceStack(), (pyro ? "Roll: Pyro. " : "Roll: ordinary, not spawned. ") + decision);
     }
 
     private static CompletableFuture<Suggestions> subjects(CommandContext<CommandSourceStack> context, SuggestionsBuilder builder) {

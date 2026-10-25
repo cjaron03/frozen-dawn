@@ -661,6 +661,7 @@ public class ModSounds {
             () -> SoundEvent.createVariableRangeEvent(
                     ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "entity.architect.drink")));
     public static final DeferredHolder<SoundEvent, SoundEvent> BLIND_ARCHITECT_HURT = register("entity.blind_architect.hurt");
+    public static final DeferredHolder<SoundEvent, SoundEvent> BLIND_ARCHITECT_DEATH = register("entity.blind_architect.death");
     public static final DeferredHolder<SoundEvent, SoundEvent> ARCHITECT_HURT = SOUNDS.register("entity.architect.hurt",
             () -> SoundEvent.createVariableRangeEvent(
                     ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "entity.architect.hurt")));
@@ -872,4 +873,14 @@ public class ModSounds {
     public static final DeferredHolder<SoundEvent, SoundEvent> RADIO_VOICE_NO_LOCK = register("radio.voice.no_lock");
     /** The Scribe scratching on its slate; reuses the vanilla cartography scribble. */
     public static final DeferredHolder<SoundEvent, SoundEvent> SCRIBE_WRITE = register("entity.architect.scribe_write");
+    /** Scribe idle layer over the normal Architect ambient: runs of stylus strokes. */
+    public static final DeferredHolder<SoundEvent, SoundEvent> SCRIBE_STROKES = register("entity.architect.scribe_strokes");
+    /** Scribe hurt layer over the normal Architect cry: its slate cracking. */
+    public static final DeferredHolder<SoundEvent, SoundEvent> SCRIBE_SLATE_CRACK = register("entity.architect.scribe_slate_crack");
+    /** Pyro idle layer over the normal Architect ambient: banked embers crackling. */
+    public static final DeferredHolder<SoundEvent, SoundEvent> PYRO_EMBERS = register("entity.architect.pyro_embers");
+    /** Pyro hurt layer over the normal Architect cry: water hissing on coals. */
+    public static final DeferredHolder<SoundEvent, SoundEvent> PYRO_HISS = register("entity.architect.pyro_hiss");
+    /** Pyro death: soul fire catches, climbs and carries it up. */
+    public static final DeferredHolder<SoundEvent, SoundEvent> PYRO_ARCHITECT_DEATH = register("entity.architect.pyro_death");
 }

@@ -3,6 +3,9 @@ package com.frozendawn.client.renderer;
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.entity.ArchitectEntity;
 import com.frozendawn.entity.MasterArchitectCombatAction;
+import com.frozendawn.entity.architect.ArchitectFelledDeath;
+import com.frozendawn.entity.architect.ArchitectWoundDownDeath;
+import com.frozendawn.entity.architect.ArchitectSoulBurnDeath;
 import com.frozendawn.homo.MasterArchitectCombatPolicy;
 import com.frozendawn.homo.MasterArchitectFloodPolicy;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -11,6 +14,7 @@ import com.mojang.math.Axis;
 import net.minecraft.client.model.HumanoidArmorModel;
 import net.minecraft.util.Mth;
 import net.minecraft.client.model.geom.ModelLayers;
+import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.LightTexture;
@@ -38,6 +42,8 @@ public class ArchitectRenderer extends HumanoidMobRenderer<ArchitectEntity, Arch
             ResourceLocation.withDefaultNamespace("textures/misc/white.png");
     private final MasterArchitectAdornmentLayer masterAdornmentLayer;
     private final ArchitectReconnaissanceEyesLayer reconnaissanceEyes;
+    private final ArchitectBlindFaceLayer blindFace;
+    private final ArchitectBlindHelmetLayer blindHelmet;
 
     public ArchitectRenderer(EntityRendererProvider.Context context) {
         super(context, new ArchitectModel(context.bakeLayer(ArchitectModel.LAYER_LOCATION)), 0.5f);
@@ -54,9 +60,11 @@ public class ArchitectRenderer extends HumanoidMobRenderer<ArchitectEntity, Arch
         this.addLayer(this.masterAdornmentLayer);
         this.reconnaissanceEyes = new ArchitectReconnaissanceEyesLayer(this);
         this.addLayer(reconnaissanceEyes);
-        this.addLayer(new ArchitectBlindFaceLayer(this));
-        this.addLayer(new ArchitectBlindHelmetLayer(this,
-                new HumanoidArmorModel<>(context.bakeLayer(ModelLayers.PLAYER_OUTER_ARMOR))));
+        this.blindFace = new ArchitectBlindFaceLayer(this);
+        this.addLayer(blindFace);
+        this.blindHelmet = new ArchitectBlindHelmetLayer(this,
+                new HumanoidArmorModel<>(context.bakeLayer(ModelLayers.PLAYER_OUTER_ARMOR)));
+        this.addLayer(blindHelmet);
         this.layers.replaceAll(layer -> layer.getClass() == net.minecraft.client.renderer.entity.layers.ItemInHandLayer.class
                 ? new ScribeSlateItemLayer(this, context.getItemInHandRenderer()) : layer);
     }
@@ -84,8 +92,14 @@ public class ArchitectRenderer extends HumanoidMobRenderer<ArchitectEntity, Arch
     public void render(ArchitectEntity entity, float entityYaw, float partialTick,
                        PoseStack poseStack, MultiBufferSource bufferSource, int packedLight) {
         int deathTicks = entity.getDeathTicks();
-        // Keep the opaque eye mask on the Blind corpse as well as its living rig.
-        if (entity.isBlindArchitect() && deathTicks > 0) { super.render(entity, entityYaw, partialTick, poseStack, bufferSource, packedLight); return; }
+        if (entity.isWoundDownDying()) {
+            renderWoundDownDeath(entity, entityYaw, partialTick, poseStack, bufferSource, packedLight, deathTicks);
+            return;
+        }
+        if (entity.isSoulBurnDying()) {
+            renderSoulBurnDeath(entity, entityYaw, partialTick, poseStack, bufferSource, packedLight, deathTicks);
+            return;
+        }
         if (entity.getReconnaissanceDissolve() != 0) {
             renderScoutDissolve(entity, entityYaw, partialTick, poseStack, bufferSource, packedLight);
             return;
@@ -101,7 +115,7 @@ public class ArchitectRenderer extends HumanoidMobRenderer<ArchitectEntity, Arch
                         packedLight,
                         deathTicks);
             } else {
-                renderDeathDissolve(
+                renderFelledDeath(
                         entity,
                         entityYaw,
                         partialTick,
@@ -171,6 +185,7 @@ public class ArchitectRenderer extends HumanoidMobRenderer<ArchitectEntity, Arch
         } else if (!entity.isMasterArchitectVisual()
                 && !entity.isHoldingMaevePosition()
                 && !entity.isShowingReconnaissancePose()
+                && !entity.isPyroStaring()
                 && (action == ArchitectEntity.ACTION_OBSERVE
                 || action == ArchitectEntity.ACTION_PEEK)) {
             float sway = Mth.sin((entity.tickCount + partialTick) * 0.035f) * 0.9f;
@@ -204,35 +219,32 @@ public class ArchitectRenderer extends HumanoidMobRenderer<ArchitectEntity, Arch
         poses.popPose();
     }
 
-    private void renderDeathDissolve(ArchitectEntity entity, float entityYaw, float partialTick,
+    /** Rigid, buckling forward fall timed to the beam collapse death sound. */
+    private void renderFelledDeath(ArchitectEntity entity, float entityYaw, float partialTick,
                                      PoseStack poseStack, MultiBufferSource bufferSource, int packedLight,
                                      int deathTicks) {
-        float progress = Math.min(1.0f, (deathTicks + partialTick) / 30.0f);
-        float eased = 1.0f - (float) Math.pow(1.0f - progress, 3.0f);
-        float drift = Mth.sin((entity.tickCount + partialTick) * 0.15f) * 3.0f * eased;
-        float spin = eased * 10.0f;
-        float shrink = 1.0f - eased * 0.55f;
-        float alpha = Math.max(0.0f, 1.0f - eased * 1.15f);
+        float elapsed = deathTicks + partialTick;
+        float topple = ArchitectFelledDeath.topple(elapsed);
+        float fall = ArchitectFelledDeath.fallDegrees(elapsed);
+        float sink = 0.22f * ArchitectFelledDeath.buckle(elapsed) * (1.0f - topple);
+        float tremor = ArchitectFelledDeath.tremor(elapsed) * Mth.sin(elapsed * 2.9f) * 1.2f;
+        float alpha = ArchitectFelledDeath.alpha(elapsed);
+        if (alpha <= 0.0f) return;
 
         poseStack.pushPose();
         poseStack.mulPose(Axis.YP.rotationDegrees(180.0f - entityYaw));
+        // Pivot at the feet; lift by half the body depth as it lies down so it lands on the ground, not in it.
+        poseStack.translate(0.0f, 0.18f * Mth.sin(fall * Mth.DEG_TO_RAD) - sink, 0.0f);
+        poseStack.mulPose(Axis.XP.rotationDegrees(entity.fallsBackward() ? fall : -fall));
+        poseStack.mulPose(Axis.ZP.rotationDegrees(7.0f * topple + tremor));
         poseStack.scale(-1.0f, -1.0f, 1.0f);
         poseStack.translate(0.0f, -1.501f, 0.0f);
-        poseStack.translate(0.0f, eased * 1.35f, 0.0f);
-        poseStack.mulPose(Axis.YP.rotationDegrees(drift));
-        poseStack.mulPose(Axis.ZP.rotationDegrees(spin));
-        poseStack.scale(shrink, 1.0f - eased * 0.22f, shrink);
 
-        float limbSwing = entity.walkAnimation.position(partialTick);
-        float limbSwingAmount = entity.walkAnimation.speed(partialTick);
-        float headYaw = entity.getYHeadRot() - entityYaw;
-        float headPitch = entity.getXRot();
-
-        this.model.attackTime = this.getAttackAnim(entity, partialTick);
+        this.model.attackTime = 0.0f;
         this.model.riding = entity.isPassenger();
         this.model.young = entity.isBaby();
-        this.model.prepareMobModel(entity, limbSwing, limbSwingAmount, partialTick);
-        this.model.setupAnim(entity, limbSwing, limbSwingAmount, entity.tickCount + partialTick, headYaw, headPitch);
+        this.model.prepareMobModel(entity, 0.0f, 0.0f, partialTick);
+        this.model.setupAnim(entity, 0.0f, 0.0f, entity.tickCount + partialTick, 0.0f, 0.0f);
 
         VertexConsumer body = bufferSource.getBuffer(RenderType.entityTranslucent(getTextureLocation(entity)));
         int color = FastColor.ARGB32.color((int) (alpha * 255), 255, 255, 255);
@@ -243,6 +255,103 @@ public class ArchitectRenderer extends HumanoidMobRenderer<ArchitectEntity, Arch
                 LivingEntityRenderer.getOverlayCoords(entity, this.getWhiteOverlayProgress(entity, partialTick)),
                 color
         );
+        poseStack.popPose();
+    }
+
+    /** Blind crumples into a sit, its hood slips off, and the body darkens and sheds away. */
+    private void renderWoundDownDeath(ArchitectEntity entity, float entityYaw, float partialTick,
+                                      PoseStack poseStack, MultiBufferSource bufferSource, int packedLight,
+                                      int deathTicks) {
+        float elapsed = deathTicks + partialTick;
+        float crumple = ArchitectWoundDownDeath.crumple(elapsed);
+        float sag = ArchitectWoundDownDeath.wind(elapsed) * (1.0f - crumple);
+        float alpha = ArchitectWoundDownDeath.alpha(elapsed);
+        float hoodAlpha = ArchitectWoundDownDeath.hoodAlpha(elapsed);
+        if (hoodAlpha <= 0.0f) return;
+
+        poseStack.pushPose();
+        poseStack.mulPose(Axis.YP.rotationDegrees(180.0f - entityYaw));
+        // Hips drop from leg height to the ground; the body leans forward about them.
+        float hip = 0.75f - 0.05f * sag - 0.62f * crumple;
+        poseStack.translate(0.0f, hip, 0.0f);
+        poseStack.mulPose(Axis.XP.rotation(-ArchitectWoundDownDeath.lean(elapsed)));
+        poseStack.mulPose(Axis.ZP.rotationDegrees(1.5f * ArchitectWoundDownDeath.twitch(elapsed)));
+        poseStack.translate(0.0f, -0.75f, 0.0f);
+        poseStack.scale(-1.0f, -1.0f, 1.0f);
+        poseStack.translate(0.0f, -1.501f, 0.0f);
+
+        this.model.attackTime = 0.0f;
+        this.model.riding = false;
+        this.model.young = entity.isBaby();
+        this.model.prepareMobModel(entity, 0.0f, 0.0f, partialTick);
+        this.model.setupAnim(entity, 0.0f, 0.0f, entity.tickCount + partialTick, 0.0f, 0.0f);
+
+        if (alpha > 0.0f) {
+            int shade = (int) (255 * (1.0f - 0.85f * ArchitectWoundDownDeath.ash(elapsed)));
+            this.model.renderToBuffer(
+                    poseStack,
+                    bufferSource.getBuffer(RenderType.entityTranslucent(getTextureLocation(entity))),
+                    packedLight,
+                    LivingEntityRenderer.getOverlayCoords(entity, 0.0f),
+                    FastColor.ARGB32.color((int) (alpha * 255), shade, shade, shade));
+            // The eye mask goes with the body once it is mostly dust.
+            if (alpha > 0.45f) {
+                blindFace.render(poseStack, bufferSource, packedLight, entity, 0, 0, partialTick, entity.tickCount + partialTick, 0, 0);
+            }
+        }
+        blindHelmet.renderSlipping(poseStack, bufferSource, packedLight, entity,
+                ArchitectWoundDownDeath.hoodSlip(elapsed), hoodAlpha);
+        poseStack.popPose();
+    }
+
+    private static final int SOUL_CHAR = 0x18262E;
+    private static final int SOUL_GLOW = 0x3FD0E0;
+
+    /**
+     * Pyro chars from the feet up as the soul fire climbs it, each part glowing hardest while the
+     * front passes, then the whole body is lifted and fades into the column of flames.
+     */
+    private void renderSoulBurnDeath(ArchitectEntity entity, float entityYaw, float partialTick,
+                                     PoseStack poseStack, MultiBufferSource bufferSource, int packedLight,
+                                     int deathTicks) {
+        float elapsed = deathTicks + partialTick;
+        float alpha = ArchitectSoulBurnDeath.alpha(elapsed);
+        if (alpha <= 0.0f) return;
+
+        poseStack.pushPose();
+        poseStack.mulPose(Axis.YP.rotationDegrees(180.0f - entityYaw));
+        poseStack.translate(0.0f, ArchitectSoulBurnDeath.lift(elapsed), 0.0f);
+        poseStack.mulPose(Axis.ZP.rotationDegrees(2.5f * ArchitectSoulBurnDeath.writhe(elapsed) * Mth.sin(elapsed * 1.7f)));
+        poseStack.scale(-1.0f, -1.0f, 1.0f);
+        poseStack.translate(0.0f, -1.501f, 0.0f);
+
+        this.model.attackTime = 0.0f;
+        this.model.riding = false;
+        this.model.young = entity.isBaby();
+        this.model.prepareMobModel(entity, 0.0f, 0.0f, partialTick);
+        this.model.setupAnim(entity, 0.0f, 0.0f, entity.tickCount + partialTick, 0.0f, 0.0f);
+
+        // Each part with the height it spans standing, in blocks; the arms are up at its face.
+        ModelPart[] parts = {model.rightLeg, model.leftLeg, model.body, model.rightArm, model.leftArm, model.head};
+        float[][] spans = {{0.0f, 0.75f}, {0.0f, 0.75f}, {0.75f, 1.5f}, {0.9f, 1.9f}, {0.9f, 1.9f}, {1.5f, 2.0f}};
+        VertexConsumer body = bufferSource.getBuffer(RenderType.entityTranslucent(getTextureLocation(entity)));
+        int overlay = LivingEntityRenderer.getOverlayCoords(entity, 0.0f);
+        float[] charred = new float[parts.length];
+        for (int i = 0; i < parts.length; i++) {
+            charred[i] = ArchitectSoulBurnDeath.charred(elapsed, spans[i][0], spans[i][1]);
+            int shade = FastColor.ARGB32.lerp(charred[i], 0xFFFFFF, SOUL_CHAR);
+            parts[i].render(poseStack, body, packedLight, overlay, (int) (alpha * 255) << 24 | shade & 0xFFFFFF);
+        }
+        VertexConsumer glow = bufferSource.getBuffer(RenderType.eyes(WHITE_TEXTURE));
+        for (int i = 0; i < parts.length; i++) {
+            if (charred[i] <= 0.0f) continue;
+            float edge = 4.0f * charred[i] * (1.0f - charred[i]);
+            float flicker = 0.5f + 0.5f * Mth.sin(elapsed * 1.9f + i * 1.3f);
+            float strength = (0.25f + 0.45f * edge + 0.1f * flicker) * alpha;
+            parts[i].render(poseStack, glow, LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY,
+                    0xFF000000 | FastColor.ARGB32.lerp(strength, 0x000000, SOUL_GLOW) & 0xFFFFFF);
+        }
+        reconnaissanceEyes.renderSoulFlare(poseStack, bufferSource, entity, ArchitectSoulBurnDeath.flare(elapsed), alpha);
         poseStack.popPose();
     }
 

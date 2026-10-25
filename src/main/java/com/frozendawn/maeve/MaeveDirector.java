@@ -77,7 +77,7 @@ public final class MaeveDirector {
         var runtime = current(server);
         if (runtime.data.store() == null) return beliefs;
         return java.util.stream.Stream.of(LearningDiagnostics.append(server, player, beliefs, runtime.data.store(), runtime.learning.diagnostics(player)),
-                runtime.convergence.diagnostics(), runtime.scribe.diagnostics()).flatMap(List::stream).toList();
+                runtime.convergence.diagnostics(), runtime.scribe.diagnostics(), runtime.pyro.diagnostics()).flatMap(List::stream).toList();
     }
 
     public static void observeWithdrawal(ArchitectEntity actor, ServerPlayer player) {
@@ -196,6 +196,8 @@ public final class MaeveDirector {
     public static boolean allowNaturalPawn(net.minecraft.server.level.ServerLevel level, BlockPos position) { return current(level.getServer()).convergence.allowNaturalSpawn(level, position); }
     /** §9.4b: the gate, cooldown and single claim decide whether this natural spawn carries Maeve's notes. */
     public static boolean designateScribe(ArchitectEntity actor, ServerPlayer subject) { return current(subject.getServer()).scribe.designate(actor, subject); }
+    /** Scribe spawn egg only: Maeve's Scribe slot for this player, without her gates. */
+    public static boolean designateTestScribe(ArchitectEntity actor, ServerPlayer subject) { return current(subject.getServer()).scribe.designateForTest(actor, subject); }
     public static ScribeOrder scribeOrder(ArchitectEntity actor) { return actor.getServer() == null ? null : current(actor.getServer()).scribe.order(actor); }
     /** Read once at death. The result is a frozen copy; nothing it holds is consulted again. */
     public static ScribeNotes scribeNotes(ArchitectEntity actor) { return actor.getServer() == null ? null : current(actor.getServer()).scribe.notes(actor); }
@@ -210,6 +212,14 @@ public final class MaeveDirector {
     public record ScribeNotes(UUID subject, String dimension, BlockPos center, List<ScribeNote> notes, List<ScribeMark> marks) {
         public ScribeNotes { center = center.immutable(); notes = List.copyOf(notes); marks = List.copyOf(marks); }
     }
+    /** §9.4a: same gate shape for the Pyro. Its looks upload at once; ending it never takes them back. */
+    public static boolean designatePyro(ArchitectEntity actor, ServerPlayer subject) { return current(subject.getServer()).pyro.designate(actor, subject); }
+    public static boolean designateTestPyro(ArchitectEntity actor, ServerPlayer subject) { return current(subject.getServer()).pyro.designateForTest(actor, subject); }
+    public static PyroOrder pyroOrder(ArchitectEntity actor) { return actor.getServer() == null ? null : current(actor.getServer()).pyro.order(actor); }
+    public static PyroScan pyroObserve(ArchitectEntity actor, boolean last) { return actor.getServer() == null ? null : current(actor.getServer()).pyro.observe(actor, last); }
+    public static void pyroEnded(ArchitectEntity actor, String reason) { if (actor.getServer() != null) current(actor.getServer()).pyro.ended(actor, reason); }
+    public record PyroOrder(UUID subject, String dimension, BlockPos home, long expiresAt) { public PyroOrder { home = home.immutable(); } }
+    public record PyroScan(int sources, int sightings, boolean complete, boolean inView, boolean cold) { }
     public record PawnOrder(UUID dispatch, BlockPos destination, long notBefore, long expiresAt) {
         public PawnOrder { destination = destination.immutable(); }
     }
