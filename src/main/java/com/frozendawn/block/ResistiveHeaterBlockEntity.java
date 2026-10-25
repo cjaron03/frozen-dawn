@@ -16,7 +16,9 @@ import net.minecraft.world.level.block.state.BlockState;
 public final class ResistiveHeaterBlockEntity extends BlockEntity implements MenuProvider {
     public static final int MAX_WATTS=50_000, DEFAULT_LIMIT_WATTS=5_000;
     public static final double HEAT_PER_JOULE=RoomThermalManager.BASE_HEATER_POWER/3500.0;
-    private int request,draw,allocated;
+    /** A heater climbs at most this much per second, so a brief cold dip cannot spike past lower-tier loads. Dropping is immediate. */
+    public static final int RAMP_WATTS_PER_SECOND=5_000;
+    private int request,previous,draw,allocated;
     private int powerLimitWatts=DEFAULT_LIMIT_WATTS;
     private double temperature=Double.NaN,target=20,used;
     private boolean air;
@@ -33,9 +35,10 @@ public final class ResistiveHeaterBlockEntity extends BlockEntity implements Men
     public double temperature(){return temperature;}
     public double target(){return target;}
     public boolean airPresent(){return air;}
+    public int rampLimitWatts(){return Math.min(powerLimitWatts,previous+RAMP_WATTS_PER_SECOND);}
     public void prepare(long tick,int watts,double sensed,double target,boolean air){
-        if(second!=tick){second=tick;used=0;draw=allocated=0;}
-        request=Math.clamp(watts,0,powerLimitWatts);temperature=sensed;this.target=target;this.air=air;
+        if(second!=tick){second=tick;previous=request;used=0;draw=allocated=0;}
+        request=Math.clamp(watts,0,rampLimitWatts());temperature=sensed;this.target=target;this.air=air;
     }
     public void reading(double sensed,double target,boolean air){temperature=sensed;this.target=target;this.air=air;}
     public void paid(double joules){used+=joules;draw=(int)Math.ceil(used-1e-9);}
@@ -47,7 +50,7 @@ public final class ResistiveHeaterBlockEntity extends BlockEntity implements Men
         if(draw>0)com.frozendawn.event.BlindArchitectEvents.machine(l,worldPosition);
         if(l.getGameTime()%20==0)RoomAtmosphere.keepAlive(this);
     }}
-    @Override protected void loadAdditional(net.minecraft.nbt.CompoundTag t,net.minecraft.core.HolderLookup.Provider r){super.loadAdditional(t,r);powerLimitWatts=t.contains("PowerLimitWatts")?Math.clamp(t.getInt("PowerLimitWatts"),0,MAX_WATTS)/1000*1000:DEFAULT_LIMIT_WATTS;request=draw=allocated=0;used=0;temperature=Double.NaN;target=20;air=false;second=Long.MIN_VALUE;}
+    @Override protected void loadAdditional(net.minecraft.nbt.CompoundTag t,net.minecraft.core.HolderLookup.Provider r){super.loadAdditional(t,r);powerLimitWatts=t.contains("PowerLimitWatts")?Math.clamp(t.getInt("PowerLimitWatts"),0,MAX_WATTS)/1000*1000:DEFAULT_LIMIT_WATTS;request=previous=draw=allocated=0;used=0;temperature=Double.NaN;target=20;air=false;second=Long.MIN_VALUE;}
     @Override protected void saveAdditional(net.minecraft.nbt.CompoundTag t,net.minecraft.core.HolderLookup.Provider r){super.saveAdditional(t,r);t.putInt("PowerLimitWatts",powerLimitWatts);}
     public boolean stillValid(Player p){return !p.isSpectator()&&level!=null&&p.level()==level&&level.isLoaded(worldPosition)&&level.getBlockEntity(worldPosition)==this&&p.distanceToSqr(worldPosition.getCenter())<=64;}
     @Override public Component getDisplayName(){return Component.translatable("block.frozendawn.resistive_heater");}
