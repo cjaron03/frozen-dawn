@@ -20,6 +20,7 @@ public class ModMenuTypes {
 
     public static final DeferredHolder<MenuType<?>, MenuType<com.frozendawn.block.ResistiveHeaterMenu>> RESISTIVE_HEATER = MENU_TYPES.register("resistive_heater", () -> IMenuTypeExtension.create(com.frozendawn.block.ResistiveHeaterMenu::new));
 
+    public static final DeferredHolder<MenuType<?>, MenuType<com.frozendawn.block.SfrControllerMenu>> SFR_CONTROLLER = MENU_TYPES.register("sfr_controller", () -> IMenuTypeExtension.create(com.frozendawn.block.SfrControllerMenu::new));
     public static final DeferredHolder<MenuType<?>, MenuType<com.frozendawn.block.ReactorControllerMenu>> REACTOR_CONTROLLER = MENU_TYPES.register("reactor_controller", () -> IMenuTypeExtension.create(com.frozendawn.block.ReactorControllerMenu::new));
 
     public static final DeferredHolder<MenuType<?>, MenuType<com.frozendawn.block.PixieMenu>> PIXIE = MENU_TYPES.register("pixie", () -> IMenuTypeExtension.create(com.frozendawn.block.PixieMenu::new));
@@ -35,6 +36,8 @@ public class ModMenuTypes {
 
     public static final DeferredHolder<MenuType<?>, MenuType<com.frozendawn.block.InductionFurnaceMenu>> INDUCTION_FURNACE =
             MENU_TYPES.register("induction_furnace", () -> IMenuTypeExtension.create(com.frozendawn.block.InductionFurnaceMenu::new));
+    public static final DeferredHolder<MenuType<?>, MenuType<com.frozendawn.block.IsotopeColumnMenu>> ISOTOPE_COLUMN =
+            MENU_TYPES.register("isotope_column", () -> IMenuTypeExtension.create(com.frozendawn.block.IsotopeColumnMenu::new));
 
     public static final DeferredHolder<MenuType<?>, MenuType<com.frozendawn.block.PowerStorageMenu>> POWER_STORAGE =
             MENU_TYPES.register("power_storage", () -> IMenuTypeExtension.create(com.frozendawn.block.PowerStorageMenu::new));

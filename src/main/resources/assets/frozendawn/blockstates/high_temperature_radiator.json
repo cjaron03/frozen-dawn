@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "hot=false": {
+      "model": "frozendawn:block/high_temperature_radiator"
+    },
+    "hot=true": {
+      "model": "frozendawn:block/high_temperature_radiator_hot"
+    }
+  }
+}

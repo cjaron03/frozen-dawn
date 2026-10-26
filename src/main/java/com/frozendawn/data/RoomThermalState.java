@@ -43,7 +43,26 @@ public final class RoomThermalState extends SavedData {
         public double net() { return heater + passive - environmentLoss + airIn - airOut + materialIn - materialOut + capacityAdjustment; }
     }
     public final Map<Long, Room> rooms = new TreeMap<>();
-    public final Map<BlockPos, Material> materials = new HashMap<>();
+    /** Counts every write, so cached per-room views of the materials can tell they are stale.
+     * Writes must go through these methods, not through the key, value or entry views. */
+    public static final class MaterialMap extends HashMap<BlockPos, Material> {
+        private long version;
+        public long version() { return version; }
+        @Override public Material put(BlockPos key, Material value) { version++; return super.put(key, value); }
+        @Override public Material putIfAbsent(BlockPos key, Material value) { version++; return super.putIfAbsent(key, value); }
+        @Override public void putAll(Map<? extends BlockPos, ? extends Material> values) { version++; super.putAll(values); }
+        @Override public Material remove(Object key) { version++; return super.remove(key); }
+        @Override public boolean remove(Object key, Object value) { version++; return super.remove(key, value); }
+        @Override public Material replace(BlockPos key, Material value) { version++; return super.replace(key, value); }
+        @Override public boolean replace(BlockPos key, Material old, Material value) { version++; return super.replace(key, old, value); }
+        @Override public void replaceAll(java.util.function.BiFunction<? super BlockPos, ? super Material, ? extends Material> function) { version++; super.replaceAll(function); }
+        @Override public Material compute(BlockPos key, java.util.function.BiFunction<? super BlockPos, ? super Material, ? extends Material> function) { version++; return super.compute(key, function); }
+        @Override public Material computeIfAbsent(BlockPos key, java.util.function.Function<? super BlockPos, ? extends Material> function) { version++; return super.computeIfAbsent(key, function); }
+        @Override public Material computeIfPresent(BlockPos key, java.util.function.BiFunction<? super BlockPos, ? super Material, ? extends Material> function) { version++; return super.computeIfPresent(key, function); }
+        @Override public Material merge(BlockPos key, Material value, java.util.function.BiFunction<? super Material, ? super Material, ? extends Material> function) { version++; return super.merge(key, value, function); }
+        @Override public void clear() { version++; super.clear(); }
+    }
+    public final MaterialMap materials = new MaterialMap();
     public final Ledger ledger = new Ledger();
     public static RoomThermalState get(ServerLevel level) {
         return level.getDataStorage().computeIfAbsent(new Factory<>(RoomThermalState::new, RoomThermalState::load), NAME);

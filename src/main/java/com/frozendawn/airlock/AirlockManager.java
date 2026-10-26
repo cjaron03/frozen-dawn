@@ -162,7 +162,7 @@ public final class AirlockManager {
         if(current!=Layout.INVALID) {
             // A repaired partition retains its measured, already paid chamber gas.
             if(current==Layout.VALID&&c.gas.breathable()&&RoomAirState.get(level).isDepleted(c.cells))
-                RoomAirState.get(level).refill(c.cells);
+                RoomThermalManager.refillFrom(level,c.cells,c.base);
             return c;
         }
         var anchor=chamberAnchor(level,c);
@@ -291,7 +291,7 @@ public final class AirlockManager {
         // Keep ordinary door openings silent; explicit manual-valve use keeps its confirmation.
         if(player.isShiftKeyDown())notify(player,Status.VALVE_EQUALIZED,c,0);
     }
-    static boolean matchingPressure(double a,double b) {
+    public static boolean matchingPressure(double a,double b) {
         if(!Double.isFinite(a)||!Double.isFinite(b)||a<0||b<0)return false;
         if(a==0||b==0)return a==b; // Vacuum only matches vacuum, never a thin positive atmosphere.
         double higher=Math.max(a,b);
@@ -406,7 +406,7 @@ public final class AirlockManager {
                 // A successful match can contain less or more than nominal air.
                 boolean airPresent=c.gas.air()>0;
                 if(airPresent) {
-                    RoomAirState.get(level).refill(c.cells);
+                    RoomThermalManager.refillFrom(level,c.cells,c.base);
                     broadcast(level,c,Status.READY,0);
                 } else broadcast(level,c,Status.EVACUATED,c.gas.lost());
                 CombustionAtmosphere.reset();
@@ -438,7 +438,7 @@ public final class AirlockManager {
         if(c.gas.cycling())machinery(level,c,ModSounds.AIRLOCK_INTERRUPTED.get());
         boolean hadAir=c.gas.air()>0;
         if(CombustionAtmosphere.isVacuum(level)){c.gas.vent();RoomAirState.get(level).evacuate(c.cells);snuff(level,c.cells);}
-        else {c.gas=AirlockCycle.reconfigured(c.cells.size(),c.gas.capacity(),c.gas.reserve());RoomAirState.get(level).refill(c.cells);}
+        else {c.gas=AirlockCycle.reconfigured(c.cells.size(),c.gas.capacity(),c.gas.reserve());RoomThermalManager.refillFrom(level,c.cells,c.base);}
         AirlockSavedState.get(level).setDirty();CombustionAtmosphere.reset();
         if(hadAir&&hole!=null&&RoomAtmosphere.isPassage(level,hole,level.getBlockState(hole)))AtmosphericBreach.start(level,c.cells,hole);
     }

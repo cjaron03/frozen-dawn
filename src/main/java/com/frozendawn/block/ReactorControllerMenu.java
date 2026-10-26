@@ -72,7 +72,7 @@ public final class ReactorControllerMenu extends AbstractContainerMenu {
 
     private final class RodSlot extends Slot {
         RodSlot(Container c, int i, int x, int y) { super(c, i, x, y); }
-        @Override public boolean mayPlace(ItemStack s) { return s.is(ModItems.FUEL_ROD.get()) && !flag(ReactorControllerBlockEntity.F_LOCKED); }
+        @Override public boolean mayPlace(ItemStack s) { return (s.is(ModItems.FUEL_ROD.get()) || s.is(ModItems.LITHIUM_TARGET_ROD.get())) && !flag(ReactorControllerBlockEntity.F_LOCKED); }
         @Override public boolean mayPickup(Player p) { return !flag(ReactorControllerBlockEntity.F_LOCKED); }
         @Override public int getMaxStackSize() { return 1; }
     }

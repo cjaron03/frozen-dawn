@@ -23,6 +23,7 @@ public final class PowerLinkRules {
                 || state.getBlock() instanceof com.frozendawn.block.PowerStorageBlock
                 || state.getBlock() instanceof com.frozendawn.block.AcheronForgeBlock
                 || state.getBlock() instanceof com.frozendawn.block.InductionFurnaceBlock
+                || state.getBlock() instanceof com.frozendawn.block.IsotopeColumnBlock
                 || state.getBlock() instanceof com.frozendawn.block.UplinkConsoleBlock
                 || state.getBlock() instanceof com.frozendawn.block.PlumbLineBlock
                 || state.getBlock() instanceof com.frozendawn.block.PowerMonitorBlock
@@ -30,6 +31,7 @@ public final class PowerLinkRules {
                 || state.getBlock() instanceof com.frozendawn.block.ResistiveHeaterBlock
                 || state.getBlock() instanceof com.frozendawn.block.PixieBlock
                 || state.getBlock() instanceof com.frozendawn.block.ReactorControllerBlock
+                || state.getBlock() instanceof com.frozendawn.block.SfrPowerPortBlock
                 || state.getBlock() instanceof com.frozendawn.block.OxygenReservoirBlock ? 16 : 0;
     }
     /** Coolant plumbing shares the Binder and link store but never joins the electrical graph. */
@@ -97,7 +99,7 @@ public final class PowerLinkRules {
             if(com.frozendawn.world.ReadyChunks.ready(level, p)) {
                 var block=level.getBlockState(p).getBlock();
                 if(block instanceof com.frozendawn.block.PowerStorageBlock storage && !storage.isBank())dock=true;
-                else if(!(block instanceof com.frozendawn.block.AirlockControllerBlock)&&!(block instanceof com.frozendawn.block.OrsaEmergencyLightBlock)&&!(block instanceof GridLight)&&!(block instanceof com.frozendawn.block.DeconShowerBlock)&&!(block instanceof com.frozendawn.block.AcheronForgeBlock)&&!(block instanceof com.frozendawn.block.InductionFurnaceBlock)&&!(block instanceof com.frozendawn.block.UplinkConsoleBlock)&&!(block instanceof com.frozendawn.block.PlumbLineBlock)&&!(block instanceof com.frozendawn.block.PowerMonitorBlock)&&!(block instanceof com.frozendawn.block.ResistiveHeaterBlock)&&!(block instanceof com.frozendawn.block.PixieBlock)&&!(block instanceof com.frozendawn.block.OxygenReservoirBlock))infrastructure=true;
+                else if(!(block instanceof com.frozendawn.block.AirlockControllerBlock)&&!(block instanceof com.frozendawn.block.OrsaEmergencyLightBlock)&&!(block instanceof GridLight)&&!(block instanceof com.frozendawn.block.DeconShowerBlock)&&!(block instanceof com.frozendawn.block.AcheronForgeBlock)&&!(block instanceof com.frozendawn.block.InductionFurnaceBlock)&&!(block instanceof com.frozendawn.block.IsotopeColumnBlock)&&!(block instanceof com.frozendawn.block.UplinkConsoleBlock)&&!(block instanceof com.frozendawn.block.PlumbLineBlock)&&!(block instanceof com.frozendawn.block.PowerMonitorBlock)&&!(block instanceof com.frozendawn.block.ResistiveHeaterBlock)&&!(block instanceof com.frozendawn.block.PixieBlock)&&!(block instanceof com.frozendawn.block.OxygenReservoirBlock))infrastructure=true;
             } else infrastructure=true;
             if(dock && infrastructure)return false;
             queue.addAll(neighbors.getOrDefault(p,Set.of()));

@@ -9,6 +9,16 @@
     "frozendawn:reactor_controller",
     "frozendawn:reactor_radiator",
     "frozendawn:deepslate_uranium_ore",
-    "frozendawn:reactor_debris"
+    "frozendawn:reactor_debris",
+    "frozendawn:sfr_controller",
+    "frozendawn:sfr_fuel_port",
+    "frozendawn:sfr_power_port",
+    "frozendawn:sfr_vacuum_port",
+    "frozendawn:magnet_coil",
+    "frozendawn:first_wall",
+    "frozendawn:lithium_blanket",
+    "frozendawn:confinement_core",
+    "frozendawn:high_temperature_radiator",
+    "frozendawn:deepslate_spodumene_ore"
   ]
 }

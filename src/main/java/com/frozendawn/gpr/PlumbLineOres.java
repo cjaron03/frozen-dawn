@@ -31,6 +31,7 @@ public final class PlumbLineOres {
             new Ore("galena", Group.METALS, 0x8EA8D6, 2, true),
             new Ore("coal", Group.ENERGY, 0x9AA3AB, 0, true),
             new Ore("uranium", Group.ENERGY, 0xB6FF3C, 3, true),
+            new Ore("spodumene", Group.ENERGY, 0xE6B8D8, 2, true),
             new Ore("redstone", Group.MINERALS, 0xF0453A, 1, true),
             new Ore("lapis", Group.MINERALS, 0x4D6BFF, 1, true),
             new Ore("sulfur", Group.MINERALS, 0xE6E27A, 1, true),

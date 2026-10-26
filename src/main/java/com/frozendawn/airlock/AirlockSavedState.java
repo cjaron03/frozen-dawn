@@ -166,6 +166,12 @@ public final class AirlockSavedState extends SavedData {
         // room still completes its normal recovery only after its finite deficit is supplied.
         setDirty();return accepted;
     }
+    /** Sets a room's total gas, spread across its cells, and its breathability with it. */
+    public void setRoomGas(ServerLevel level,Set<BlockPos> cells,int total) {
+        if(cells.isEmpty())return;
+        int clamped=Math.clamp(total,0,cells.size()*AirlockCycle.UNITS_PER_CELL);
+        distributeRoomGas(cells,clamped);syncAir(level,cells,clamped>0);setDirty();
+    }
     private void distributeRoomGas(Set<BlockPos> cells,int total) {
         var sorted=cells.stream().sorted(Comparator.comparingLong(BlockPos::asLong)).toList();
         var chamberGas=new HashMap<Chamber,Integer>();

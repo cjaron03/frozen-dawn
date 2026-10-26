@@ -47,6 +47,7 @@ public final class ClientHandlers {
     public static void handleAurora(AuroraStatePayload payload) { com.frozendawn.client.AuroraRenderer.receive(payload); }
     public static void handlePowerBinder(PowerBinderPayload payload) { com.frozendawn.client.PowerBinderHud.receive(payload); }
     public static void handlePowerBinderNotice(PowerBinderNoticePayload payload) { com.frozendawn.client.PowerBinderHud.receive(payload); }
+    public static void handleSfrBlueprint(SfrBlueprintPayload payload) { com.frozendawn.client.SfrBlueprintRenderer.receive(payload); }
     public static void handlePowerLinks(PowerLinksPayload payload) { com.frozendawn.client.PowerLinkRenderer.receive(payload); }
     public static void handleRadiation(RadiationPayload payload) { com.frozendawn.client.RadiationClient.receive(payload); }
     public static void handleReactorFlash(ReactorFlashPayload payload) { com.frozendawn.client.RadiationClient.flash(payload); }

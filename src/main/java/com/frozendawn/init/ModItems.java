@@ -68,11 +68,31 @@ public class ModItems {
     public static final DeferredItem<BlockItem> REACTOR_RADIATOR = ITEMS.registerSimpleBlockItem("reactor_radiator", ModBlocks.REACTOR_RADIATOR);
     public static final DeferredItem<BlockItem> CORIUM = ITEMS.registerSimpleBlockItem("corium", ModBlocks.CORIUM);
     public static final DeferredItem<BlockItem> REACTOR_DEBRIS = ITEMS.registerSimpleBlockItem("reactor_debris", ModBlocks.REACTOR_DEBRIS);
+    // ORSA SFR-1 Solstice Reactor
+    public static final DeferredItem<BlockItem> SFR_CONTROLLER = ITEMS.registerSimpleBlockItem("sfr_controller", ModBlocks.SFR_CONTROLLER);
+    public static final DeferredItem<BlockItem> SFR_FUEL_PORT = ITEMS.registerSimpleBlockItem("sfr_fuel_port", ModBlocks.SFR_FUEL_PORT);
+    public static final DeferredItem<BlockItem> SFR_POWER_PORT = ITEMS.registerSimpleBlockItem("sfr_power_port", ModBlocks.SFR_POWER_PORT);
+    public static final DeferredItem<BlockItem> SFR_VACUUM_PORT = ITEMS.registerSimpleBlockItem("sfr_vacuum_port", ModBlocks.SFR_VACUUM_PORT);
+    public static final DeferredItem<net.minecraft.world.item.DoubleHighBlockItem> SFR_MAINTENANCE_HATCH = ITEMS.register("sfr_maintenance_hatch",
+            () -> new net.minecraft.world.item.DoubleHighBlockItem(ModBlocks.SFR_MAINTENANCE_HATCH.get(), new Item.Properties()));
+    public static final DeferredItem<BlockItem> MAGNET_COIL = ITEMS.registerSimpleBlockItem("magnet_coil", ModBlocks.MAGNET_COIL);
+    public static final DeferredItem<BlockItem> FIRST_WALL = ITEMS.registerSimpleBlockItem("first_wall", ModBlocks.FIRST_WALL);
+    public static final DeferredItem<BlockItem> LITHIUM_BLANKET = ITEMS.registerSimpleBlockItem("lithium_blanket", ModBlocks.LITHIUM_BLANKET);
+    public static final DeferredItem<BlockItem> CONFINEMENT_CORE = ITEMS.registerSimpleBlockItem("confinement_core", ModBlocks.CONFINEMENT_CORE);
+    public static final DeferredItem<BlockItem> HIGH_TEMPERATURE_RADIATOR = ITEMS.registerSimpleBlockItem("high_temperature_radiator", ModBlocks.HIGH_TEMPERATURE_RADIATOR);
+    public static final DeferredItem<Item> DEUTERIUM_CANISTER = ITEMS.registerSimpleItem("deuterium_canister");
+    public static final DeferredItem<Item> TRITIUM_CANISTER = ITEMS.registerSimpleItem("tritium_canister");
+    public static final DeferredItem<Item> HELIUM_CANISTER = ITEMS.registerSimpleItem("helium_canister");
     public static final DeferredItem<BlockItem> GALENA_ORE = ITEMS.registerSimpleBlockItem("galena_ore", ModBlocks.GALENA_ORE);
     public static final DeferredItem<BlockItem> DEEPSLATE_GALENA_ORE = ITEMS.registerSimpleBlockItem("deepslate_galena_ore", ModBlocks.DEEPSLATE_GALENA_ORE);
     public static final DeferredItem<BlockItem> LEAD_BLOCK = ITEMS.registerSimpleBlockItem("lead_block", ModBlocks.LEAD_BLOCK);
     public static final DeferredItem<BlockItem> DECON_SHOWER = ITEMS.registerSimpleBlockItem("decon_shower", ModBlocks.DECON_SHOWER);
     public static final DeferredItem<Item> RAW_GALENA = ITEMS.registerSimpleItem("raw_galena");
+    public static final DeferredItem<BlockItem> PEGMATITE = ITEMS.registerSimpleBlockItem("pegmatite", ModBlocks.PEGMATITE);
+    public static final DeferredItem<BlockItem> DEEPSLATE_SPODUMENE_ORE = ITEMS.registerSimpleBlockItem("deepslate_spodumene_ore", ModBlocks.DEEPSLATE_SPODUMENE_ORE);
+    public static final DeferredItem<Item> RAW_SPODUMENE = ITEMS.registerSimpleItem("raw_spodumene");
+    public static final DeferredItem<Item> LITHIUM_CARBONATE = ITEMS.registerSimpleItem("lithium_carbonate");
+    public static final DeferredItem<Item> LITHIUM = ITEMS.registerSimpleItem("lithium");
     public static final DeferredItem<Item> LEAD_INGOT = ITEMS.registerSimpleItem("lead_ingot");
     public static final DeferredItem<com.frozendawn.item.LeadLiningModuleItem> LEAD_LINING_MODULE = ITEMS.register("lead_lining_module",
             () -> new com.frozendawn.item.LeadLiningModuleItem(new Item.Properties().stacksTo(1).rarity(Rarity.UNCOMMON)));
@@ -82,6 +102,8 @@ public class ModItems {
     public static final DeferredItem<Item> URANIUM_PELLET = ITEMS.registerSimpleItem("uranium_pellet");
     public static final DeferredItem<com.frozendawn.item.FuelRodItem> FUEL_ROD = ITEMS.register("fuel_rod",
             () -> new com.frozendawn.item.FuelRodItem(new Item.Properties().durability(com.frozendawn.power.ReactorPhysics.ROD_LIFE_SECONDS)));
+    public static final DeferredItem<com.frozendawn.item.LithiumTargetRodItem> LITHIUM_TARGET_ROD = ITEMS.register("lithium_target_rod",
+            () -> new com.frozendawn.item.LithiumTargetRodItem(new Item.Properties().durability(com.frozendawn.power.ReactorPhysics.ROD_LIFE_SECONDS)));
     public static final DeferredItem<Item> SPENT_FUEL_ROD = ITEMS.register("spent_fuel_rod", () -> new Item(new Item.Properties().stacksTo(4)));
     public static final DeferredItem<com.frozendawn.item.ShieldedCaskItem> SHIELDED_CASK = ITEMS.register("shielded_cask",
             () -> new com.frozendawn.item.ShieldedCaskItem(new Item.Properties().stacksTo(1)));
@@ -148,6 +170,7 @@ public class ModItems {
     public static final DeferredItem<Item> FEED_HORN = ITEMS.registerSimpleItem("feed_horn", new Item.Properties().stacksTo(16));
 
     public static final DeferredItem<BlockItem> INDUCTION_FURNACE = ITEMS.registerSimpleBlockItem("induction_furnace", ModBlocks.INDUCTION_FURNACE);
+    public static final DeferredItem<BlockItem> ISOTOPE_COLUMN = ITEMS.registerSimpleBlockItem("isotope_column", ModBlocks.ISOTOPE_COLUMN);
 
     public static final DeferredItem<com.frozendawn.item.PowerCellItem> POWER_CELL = ITEMS.register("power_cell", () -> new com.frozendawn.item.PowerCellItem(new Item.Properties()));
     public static final DeferredItem<BlockItem> BATTERY_BANK = ITEMS.registerSimpleBlockItem("battery_bank", ModBlocks.BATTERY_BANK);
@@ -725,11 +748,26 @@ public class ModItems {
                         output.accept(CONTROL_ROD_DRIVE.get());
                         output.accept(COOLANT_PORT.get());
                         output.accept(REACTOR_RADIATOR.get());
+                        output.accept(SFR_CONTROLLER.get());
+                        output.accept(CONFINEMENT_CORE.get());
+                        output.accept(MAGNET_COIL.get());
+                        output.accept(FIRST_WALL.get());
+                        output.accept(LITHIUM_BLANKET.get());
+                        output.accept(SFR_FUEL_PORT.get());
+                        output.accept(SFR_POWER_PORT.get());
+                        output.accept(SFR_VACUUM_PORT.get());
+                        output.accept(SFR_MAINTENANCE_HATCH.get());
+                        output.accept(HIGH_TEMPERATURE_RADIATOR.get());
+                        output.accept(ISOTOPE_COLUMN.get());
+                        output.accept(DEUTERIUM_CANISTER.get());
+                        output.accept(TRITIUM_CANISTER.get());
+                        output.accept(HELIUM_CANISTER.get());
                         output.accept(DEEPSLATE_URANIUM_ORE.get());
                         output.accept(RAW_URANIUM.get());
                         output.accept(URANIUM_CONCENTRATE.get());
                         output.accept(URANIUM_PELLET.get());
                         output.accept(FUEL_ROD.get());
+                        output.accept(LITHIUM_TARGET_ROD.get());
                         output.accept(SPENT_FUEL_ROD.get());
                         output.accept(SHIELDED_CASK.get());
                         output.accept(RADIOACTIVE_ASH.get());
@@ -740,6 +778,11 @@ public class ModItems {
                         output.accept(GALENA_ORE.get());
                         output.accept(DEEPSLATE_GALENA_ORE.get());
                         output.accept(RAW_GALENA.get());
+                        output.accept(PEGMATITE.get());
+                        output.accept(DEEPSLATE_SPODUMENE_ORE.get());
+                        output.accept(RAW_SPODUMENE.get());
+                        output.accept(LITHIUM_CARBONATE.get());
+                        output.accept(LITHIUM.get());
                         output.accept(LEAD_INGOT.get());
                         output.accept(LEAD_BLOCK.get());
                         output.accept(LEAD_LINING_MODULE.get());

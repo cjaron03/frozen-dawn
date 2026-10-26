@@ -10,13 +10,16 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.stream.Collectors;
+import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTest;
+import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.gametest.framework.GameTestInfo;
 import net.minecraft.gametest.framework.GameTestListener;
 import net.minecraft.gametest.framework.GameTestRunner;
 import net.minecraft.gametest.framework.GameTestServer;
 import net.minecraft.gametest.framework.TestFunction;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.world.level.ChunkPos;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.server.ServerAboutToStartEvent;
@@ -93,20 +96,50 @@ public final class GameTestPacing {
         FrozenDawn.LOGGER.info("Game test server sprinting: ticks run back to back");
     }
 
+    /**
+     * A level with no player and no forced chunk stops ticking entities and block entities after 300 empty ticks.
+     * A sprint burns through those before the first batch starts, so a test that waits on a machine's own ticker
+     * would wait forever. The full gate only escaped this through tests that happen to force chunks.
+     */
+    @SubscribeEvent
+    static void keepAwake(net.neoforged.neoforge.event.tick.LevelTickEvent.Pre event) {
+        if (event.getLevel() instanceof net.minecraft.server.level.ServerLevel level && level.getServer() instanceof GameTestServer) level.resetEmptyTime();
+    }
+
+    /**
+     * Runs the body once every chunk under the test's structure has its entities loaded. Until then a chunk ticks no
+     * block entity, and a sprint can outrun that load, which finishes in real time; the wait holds normal pace.
+     */
+    public static void whenTicking(GameTestHelper helper, Runnable body) {
+        Runnable resume = holdNormalPace(helper.getLevel().getServer());
+        releaseAtEnd(helper, resume);
+        awaitEntities(helper, () -> { resume.run(); body.run(); });
+    }
+
+    private static void awaitEntities(GameTestHelper helper, Runnable then) {
+        var box = helper.getBounds();
+        boolean loaded = ChunkPos.rangeClosed(new ChunkPos(BlockPos.containing(box.minX, 0, box.minZ)), new ChunkPos(BlockPos.containing(box.maxX, 0, box.maxZ)))
+                .allMatch(chunk -> helper.getLevel().areEntitiesLoaded(chunk.toLong()));
+        if (loaded) then.run(); else helper.runAfterDelay(1, () -> awaitEntities(helper, then));
+    }
+
     /** The same test, holding normal pace from its first tick until it passes or fails. */
     private static TestFunction atNormalPace(TestFunction test) {
         return new TestFunction(test.batchName(), test.testName(), test.structureName(), test.rotation(), test.maxTicks(),
                 test.setupTicks(), test.required(), test.manualOnly(), test.maxAttempts(), test.requiredSuccesses(),
                 test.skyAccess(), helper -> {
-                    Runnable resume = holdNormalPace(helper.getLevel().getServer());
-                    helper.testInfo.addListener(new GameTestListener() {
-                        public void testStructureLoaded(GameTestInfo info) { }
-                        public void testPassed(GameTestInfo info, GameTestRunner runner) { resume.run(); }
-                        public void testFailed(GameTestInfo info, GameTestRunner runner) { resume.run(); }
-                        public void testAddedForRerun(GameTestInfo old, GameTestInfo next, GameTestRunner runner) { }
-                    });
+                    releaseAtEnd(helper, holdNormalPace(helper.getLevel().getServer()));
                     test.function().accept(helper);
                 });
+    }
+
+    private static void releaseAtEnd(GameTestHelper helper, Runnable resume) {
+        helper.testInfo.addListener(new GameTestListener() {
+            public void testStructureLoaded(GameTestInfo info) { }
+            public void testPassed(GameTestInfo info, GameTestRunner runner) { resume.run(); }
+            public void testFailed(GameTestInfo info, GameTestRunner runner) { resume.run(); }
+            public void testAddedForRerun(GameTestInfo old, GameTestInfo next, GameTestRunner runner) { }
+        });
     }
 
     /** The server copies the registry's list when it is made; that copy is the one it batches. */

@@ -24,11 +24,15 @@ public final class PowerNetworks {
         long coordinatedTick=Long.MIN_VALUE;
         final ArrayDeque<PowerLink> pending = new ArrayDeque<>();
         final Set<PowerLink> pendingSet = new HashSet<>();
+        final Set<PowerLink> undecided = new HashSet<>();
+        long undecidedRetry = Long.MIN_VALUE;
         final Set<PowerLink> active = new TreeSet<>();
         Map<BlockPos, Set<BlockPos>> components = Map.of();
         boolean graphDirty = true;
         Map<BlockPos, Budget> budgets = Map.of();
         Map<BlockPos, PowerMonitorReading> monitorReadings = Map.of();
+        /** Per cell, the component's generation and how much of it loads and banks took last interval. */
+        Map<BlockPos, Absorption> absorption = Map.of();
         Set<BlockPos> powered = Set.of();
         Set<BlockPos> lamps = Set.of();
         final Set<BlockPos> stores = new TreeSet<>();
@@ -95,6 +99,7 @@ public final class PowerNetworks {
     private record MachineGrant(int generationWatts, List<BlockPos> stores, long expires) {}
     private record Budget(int supplyWatts, int demandWatts, long storedJoules) {}
     public record Reading(int nodes, int links, int inactiveLinks, double supplyKw, double demandKw, double storedKj) {}
+    public record Absorption(int supplyWatts, int absorbedWatts) { static final Absorption NONE = new Absorption(0, 0); }
     private PowerNetworks() {}
     private static Runtime runtime(ServerLevel level) { return LEVELS.computeIfAbsent(level, unused -> new Runtime()); }
     public static void heaterLoaded(ServerLevel l,BlockPos p){runtime(l).heaters.add(p.immutable());}
@@ -138,6 +143,7 @@ public final class PowerNetworks {
     /** Scheduled load: an armed Uplink announces its transmit draw so load-follow ramps before it starts. Nothing is served. */
     static long scheduledWatts(ServerLevel l,BlockPos p){
         long sum=0;for(var cell:component(l,p))if(l.isLoaded(cell)&&l.getBlockEntity(cell) instanceof com.frozendawn.block.UplinkConsoleBlockEntity c)sum+=c.scheduledWatts();
+            else if(l.isLoaded(cell)&&l.getBlockEntity(cell) instanceof com.frozendawn.block.SfrPowerPortBlockEntity sfr)sum+=sfr.scheduledWatts();
         return sum;
     }
     public static Set<BlockPos> component(ServerLevel l,BlockPos p){return runtime(l).components.getOrDefault(p,Set.of(p));}
@@ -160,14 +166,16 @@ public final class PowerNetworks {
         if(grant==null||tick>grant.expires()||!level.isLoaded(pos)
                 ||rt.machineTicks.getOrDefault(pos,Long.MIN_VALUE)==tick)return false;
         if(!(level.getBlockEntity(pos) instanceof PoweredMachine furnace)||!furnace.wantsPower())return false;
-        // Revalidate the live component before paying: cut links and reduced generation
-        // must not keep a stale processing grant alive until the next allocation.
+        // Revalidate the live component before paying: cut links must not keep a stale
+        // processing grant alive until the next allocation.
         if(rt.graphDirty||rt.revision!=PowerNetworkSavedData.get(level).revision())update(level);
         var cells=component(level,pos);
-        if(cells.size()<2||!cells.containsAll(grant.stores())
-                ||cells.stream().mapToInt(p->supplyWatts(level,p)).sum()
-                    <rt.monitorReadings.getOrDefault(pos,PowerMonitorReading.EMPTY).generationWatts())return false;
-        int needed=Math.max(0,furnace.demandWatts()-grant.generationWatts())/20;
+        if(cells.size()<2||!cells.containsAll(grant.stores()))return false;
+        // Generation that fell since allocation (a reactor wobbling around its target) is paid
+        // from the banks, up to this machine's generator share; with no charge left it pauses.
+        int live=cells.stream().mapToInt(p->supplyWatts(level,p)).sum();
+        int shortfall=Math.min(grant.generationWatts(),Math.max(0,rt.monitorReadings.getOrDefault(pos,PowerMonitorReading.EMPTY).generationWatts()-live));
+        int needed=Math.max(0,furnace.demandWatts()-grant.generationWatts()+shortfall)/20;
         var stores=grant.stores().stream().filter(level::isLoaded).map(level::getBlockEntity)
                 .filter(com.frozendawn.block.PowerStorageBlockEntity.class::isInstance)
                 .map(com.frozendawn.block.PowerStorageBlockEntity.class::cast).toList();
@@ -262,11 +270,21 @@ public final class PowerNetworks {
             for(var link:data.links())if(!rt.active.contains(link))enqueue(rt,link);
             rt.revision = data.revision(); rt.graphDirty = true;
         }
+        // A room still being scanned (a door just joined a large base) has no seal decision yet.
+        // Such links keep their current state and are re-checked a few ticks later, not dropped.
+        if (!rt.undecided.isEmpty() && level.getGameTime() >= rt.undecidedRetry) {
+            for (var link : rt.undecided) if (data.links().contains(link)) enqueue(rt, link);
+            rt.undecided.clear();
+        }
         // Never force chunks, and never perform an unbounded flood-fill loop in a server tick.
         for (int budget = 0; budget < 8 && !rt.pending.isEmpty(); budget++) {
             var link = rt.pending.removeFirst();rt.pendingSet.remove(link);
-            if (PowerLinkRules.validate(level, link.a(), link.b()) == PowerLinkRules.Result.OK) {
+            var result = PowerLinkRules.validate(level, link.a(), link.b());
+            if (result == PowerLinkRules.Result.OK) {
                 if (!rt.active.contains(link)) {rt.active.add(link);rt.graphDirty=true;}
+            } else if (result == PowerLinkRules.Result.UNKNOWN_SEAL) {
+                if (rt.undecided.isEmpty()) rt.undecidedRetry = level.getGameTime() + 5;
+                rt.undecided.add(link);
             } else if (rt.active.contains(link)) {revokePumpGrants(rt,link);rt.active.remove(link);rt.graphDirty=true;}
         }
         if (rt.graphDirty) {
@@ -294,6 +312,7 @@ public final class PowerNetworks {
         var budget = rt.budgets.getOrDefault(node, new Budget(supplyWatts(level, node), demandWatts(level, node), storedJoules(level, node)));
         return new Reading(cells.size(), links, inactive, budget.supplyWatts() / 1000.0, budget.demandWatts() / 1000.0, budget.storedJoules() / 1000.0);
     }
+    public static Absorption absorption(ServerLevel level, BlockPos node) { return runtime(level).absorption.getOrDefault(node, Absorption.NONE); }
     public static PowerMonitorReading monitorReading(ServerLevel level, BlockPos pos) {
         var rt=runtime(level);
         if(!level.isLoaded(pos)||!rt.components.containsKey(pos))return PowerMonitorReading.EMPTY;
@@ -302,6 +321,7 @@ public final class PowerNetworks {
     private static int supplyWatts(ServerLevel level, BlockPos pos) {
         if (!level.isLoaded(pos)) return 0;
         if (level.getBlockEntity(pos) instanceof com.frozendawn.block.ReactorControllerBlockEntity reactor) return reactor.powerWatts();
+        if (level.getBlockEntity(pos) instanceof com.frozendawn.block.SfrPowerPortBlockEntity sfr) return sfr.supplyWatts();
         return level.getBlockEntity(pos) instanceof com.frozendawn.block.GeothermalCoreBlockEntity core
                 ? core.getPowerShare() * 200 : 0;
     }
@@ -349,6 +369,7 @@ public final class PowerNetworks {
         rt.storeEnergyTicks.keySet().removeIf(pos -> !level.isLoaded(pos)||!(level.getBlockEntity(pos) instanceof com.frozendawn.block.PowerStorageBlockEntity));
         var visited = new HashSet<BlockPos>(); var budgets = new HashMap<BlockPos, Budget>();
         var monitorReadings=new HashMap<BlockPos,PowerMonitorReading>();
+        var absorption=new HashMap<BlockPos,Absorption>();
         var powered = new HashSet<BlockPos>(); var lamps = new HashSet<BlockPos>();
         for (var node : nodes) {
             if (visited.contains(node)) continue;
@@ -374,6 +395,7 @@ public final class PowerNetworks {
                 for (var cell : cells) {
                     budgets.put(cell,rt.budgets.getOrDefault(cell,new Budget(supply,demand,stored)));
                     monitorReadings.put(cell,rt.monitorReadings.getOrDefault(cell,PowerMonitorReading.EMPTY));
+                    absorption.put(cell,rt.absorption.getOrDefault(cell,Absorption.NONE));
                     priorityRemaining.put(cell,rt.priorityRemaining.getOrDefault(cell,0));
                 }
                 continue;
@@ -425,12 +447,14 @@ public final class PowerNetworks {
             var shed=loads.stream().filter(load->!powered.contains(load)).map(load->new PowerMonitorReading.ShedLoad(
                     level.getBlockState(load).getBlock() instanceof com.frozendawn.block.WorkLampBlock?10:level.getBlockEntity(load) instanceof com.frozendawn.block.AcheronForgeBlockEntity?7:rt.airlockInputs.containsValue(load)?5:level.getBlockEntity(load) instanceof com.frozendawn.block.ResistiveHeaterBlockEntity?4:level.getBlockEntity(load) instanceof com.frozendawn.block.PixieBlockEntity?3:level.getBlockEntity(load) instanceof PoweredMachine?2:level.getBlockState(load).getBlock() instanceof com.frozendawn.block.DeconShowerBlock?6:level.getBlockEntity(load) instanceof com.frozendawn.block.UplinkConsoleBlockEntity?8:level.getBlockEntity(load) instanceof com.frozendawn.block.PlumbLineBlockEntity?9:1,load)).toList();
             var monitor=new PowerMonitorReading(cells.size()>1,budget.supplyWatts(),supply,demand,after,capacity,shed);
-            for (var cell : cells) {budgets.put(cell,budget);monitorReadings.put(cell,monitor);}
+            var absorbed=new Absorption(supply,supply-surplus);
+            for (var cell : cells) {budgets.put(cell,budget);monitorReadings.put(cell,monitor);absorption.put(cell,absorbed);}
         }
         var affected = new HashSet<>(rt.lamps); affected.addAll(lamps);
         rt.budgets = Map.copyOf(budgets); rt.powered = Set.copyOf(powered); rt.lamps = Set.copyOf(lamps);
         rt.machineGrants=Map.copyOf(machineGrants);
         rt.monitorReadings=Map.copyOf(monitorReadings);
+        rt.absorption=Map.copyOf(absorption);
         rt.priorityRemaining=Map.copyOf(priorityRemaining);
         for (var lamp : affected) if(level.isLoaded(lamp)&&level.getBlockState(lamp).getBlock() instanceof GridLight light)
             light.setGridPowered(level,lamp,powered.contains(lamp));

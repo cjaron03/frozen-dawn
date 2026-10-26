@@ -326,7 +326,7 @@ public final class ReactorGameTest {
         });
     }
 
-    private static BlockPos build(GameTestHelper h) {
+    static BlockPos build(GameTestHelper h) {
         for (int dx = -1; dx <= 1; dx++) for (int dy = -1; dy <= 1; dy++) for (int dz = -1; dz <= 1; dz++) {
             var rel = new BlockPos(CX + dx, CY + dy, CZ + dz);
             Block block = ModBlocks.REACTOR_CASING.get();
@@ -351,7 +351,7 @@ public final class ReactorGameTest {
         for (var p : list) h.getLevel().setBlock(p, ModBlocks.REACTOR_RADIATOR.get().defaultBlockState(), 3);
         return List.copyOf(list);
     }
-    private static ReactorControllerBlockEntity controller(GameTestHelper h, BlockPos pos) {
+    static ReactorControllerBlockEntity controller(GameTestHelper h, BlockPos pos) {
         if (!(h.getLevel().getBlockEntity(pos) instanceof ReactorControllerBlockEntity be)) throw new GameTestAssertException("Controller block entity missing");
         return be;
     }

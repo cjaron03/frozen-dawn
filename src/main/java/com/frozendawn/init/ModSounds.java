@@ -87,6 +87,20 @@ public class ModSounds {
     public static final DeferredHolder<SoundEvent, SoundEvent> DOSIMETER_ALARM = register("ui.dosimeter_alarm");
     public static final DeferredHolder<SoundEvent, SoundEvent> REACTOR_SCRAM = register("blocks.reactor_scram");
     public static final DeferredHolder<SoundEvent, SoundEvent> REACTOR_MELTDOWN_ALERT = register("blocks.reactor_meltdown_alert");
+    public static final DeferredHolder<SoundEvent, SoundEvent> SFR_CRYO = register("blocks.sfr_cryo");
+    public static final DeferredHolder<SoundEvent, SoundEvent> SFR_IGNITION = register("blocks.sfr_ignition");
+    public static final DeferredHolder<SoundEvent, SoundEvent> SFR_BURN = register("blocks.sfr_burn");
+    public static final DeferredHolder<SoundEvent, SoundEvent> SFR_PUMP = register("blocks.sfr_pump");
+    public static final DeferredHolder<SoundEvent, SoundEvent> SFR_ALARM = register("blocks.sfr_alarm");
+    public static final DeferredHolder<SoundEvent, SoundEvent> SFR_READY = register("blocks.sfr_ready");
+    public static final DeferredHolder<SoundEvent, SoundEvent> SFR_IGNITED = register("blocks.sfr_ignited");
+    public static final DeferredHolder<SoundEvent, SoundEvent> SFR_REFUSE = register("blocks.sfr_refuse");
+    public static final DeferredHolder<SoundEvent, SoundEvent> SFR_DISRUPTION = register("blocks.sfr_disruption");
+    public static final DeferredHolder<SoundEvent, SoundEvent> SFR_QUENCH = register("blocks.sfr_quench");
+    public static final DeferredHolder<SoundEvent, SoundEvent> SFR_DMS_OFF = register("blocks.sfr_dms_off");
+    public static final DeferredHolder<SoundEvent, SoundEvent> SFR_VALVE = register("blocks.sfr_valve");
+    public static final DeferredHolder<SoundEvent, SoundEvent> SFR_SHUTDOWN = register("blocks.sfr_shutdown");
+    public static final DeferredHolder<SoundEvent, SoundEvent> SFR_COLUMN = register("blocks.sfr_column");
 
     public static final DeferredHolder<SoundEvent, SoundEvent> TOWN_PA_CLEAR = SOUNDS.register("blocks.town_pa_clear",
             () -> SoundEvent.createVariableRangeEvent(

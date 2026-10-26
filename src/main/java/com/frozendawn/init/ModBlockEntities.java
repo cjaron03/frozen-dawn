@@ -64,6 +64,12 @@ public class ModBlockEntities {
 
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.frozendawn.block.ResistiveHeaterBlockEntity>> RESISTIVE_HEATER = BLOCK_ENTITIES.register("resistive_heater", () -> BlockEntityType.Builder.of(com.frozendawn.block.ResistiveHeaterBlockEntity::new,ModBlocks.RESISTIVE_HEATER.get()).build(null));
 
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.frozendawn.block.SfrControllerBlockEntity>> SFR_CONTROLLER =
+            BLOCK_ENTITIES.register("sfr_controller", () -> BlockEntityType.Builder.of(com.frozendawn.block.SfrControllerBlockEntity::new, ModBlocks.SFR_CONTROLLER.get()).build(null));
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.frozendawn.block.SfrFuelPortBlockEntity>> SFR_FUEL_PORT =
+            BLOCK_ENTITIES.register("sfr_fuel_port", () -> BlockEntityType.Builder.of(com.frozendawn.block.SfrFuelPortBlockEntity::new, ModBlocks.SFR_FUEL_PORT.get()).build(null));
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.frozendawn.block.SfrPowerPortBlockEntity>> SFR_POWER_PORT =
+            BLOCK_ENTITIES.register("sfr_power_port", () -> BlockEntityType.Builder.of(com.frozendawn.block.SfrPowerPortBlockEntity::new, ModBlocks.SFR_POWER_PORT.get()).build(null));
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.frozendawn.block.ReactorControllerBlockEntity>> REACTOR_CONTROLLER =
             BLOCK_ENTITIES.register("reactor_controller", () -> BlockEntityType.Builder.of(com.frozendawn.block.ReactorControllerBlockEntity::new, ModBlocks.REACTOR_CONTROLLER.get()).build(null));
 
@@ -83,6 +89,8 @@ public class ModBlockEntities {
 
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.frozendawn.block.InductionFurnaceBlockEntity>> INDUCTION_FURNACE =
             BLOCK_ENTITIES.register("induction_furnace", () -> BlockEntityType.Builder.of(com.frozendawn.block.InductionFurnaceBlockEntity::new,ModBlocks.INDUCTION_FURNACE.get()).build(null));
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.frozendawn.block.IsotopeColumnBlockEntity>> ISOTOPE_COLUMN =
+            BLOCK_ENTITIES.register("isotope_column", () -> BlockEntityType.Builder.of(com.frozendawn.block.IsotopeColumnBlockEntity::new, ModBlocks.ISOTOPE_COLUMN.get()).build(null));
 
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.frozendawn.block.PowerStorageBlockEntity>> POWER_STORAGE =
             BLOCK_ENTITIES.register("power_storage", () -> BlockEntityType.Builder.of(com.frozendawn.block.PowerStorageBlockEntity::new,

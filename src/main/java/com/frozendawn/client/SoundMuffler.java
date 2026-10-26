@@ -209,6 +209,8 @@ public class SoundMuffler {
             if (original.getSource() == SoundSource.MASTER) return;
             if (soundPath.startsWith("ambient.eva_")) return;
             if (isLocalHearthrotHurtCue) return;
+            // The SFR-1 is the player's own hardware; its cues carry through the structure and suit.
+            if (soundLocation.getNamespace().equals(FrozenDawn.MOD_ID) && soundPath.startsWith("blocks.sfr_")) return;
             if (AirlockAudioPolicy.isMachinery(soundLocation.getNamespace(), soundPath)) {
                 // Nearby panel/door vibration remains useful while the chamber is empty.
                 // Keep its position, BLOCKS slider and short range; distant vacuum stays silent.

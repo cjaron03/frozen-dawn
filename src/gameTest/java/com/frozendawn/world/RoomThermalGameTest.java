@@ -1081,9 +1081,9 @@ public final class RoomThermalGameTest {
             electric.setPowerLimitWatts(0);RoomAtmosphere.view(s.l,s.c.above());hot(s,-150,-150);
             double before=s.heat().ledger.heater;advanceHeat(s);double diamondHeat=s.heat().ledger.heater-before;
             near(h,diamondHeat,RoomThermalManager.BASE_HEATER_POWER*120/35.0,"Real Diamond plus capacitor delivers its full rated heat");
-            diamond.extinguish();electric.setPowerLimitWatts(50000);hot(s,-150,-150);
-            before=s.heat().ledger.heater;advanceHeat(s);double boostHeat=s.heat().ledger.heater-before;
-            h.assertTrue(electric.drawWatts()==50000&&bank.storedJoules()==450000,"50 kW boost spends exactly 50 kJ from its real cell");
+            diamond.extinguish();electric.setPowerLimitWatts(50000);rampUp(s);hot(s,-150,-150);
+            before=s.heat().ledger.heater;int banked=bank.storedJoules();advanceHeat(s);double boostHeat=s.heat().ledger.heater-before;
+            h.assertTrue(electric.drawWatts()==50000&&banked-bank.storedJoules()==50000,"50 kW boost spends exactly 50 kJ from its real cell");
             near(h,boostHeat,50000*ResistiveHeaterBlockEntity.HEAT_PER_JOULE,"Boost keeps the existing electricity-to-heat conversion");
             near(h,boostHeat/diamondHeat,50.0/12,"Boost is 4.17 times the maxed Diamond heater output");budget(h,s);
             hot(s,19.9,19.9);advanceHeat(s);
@@ -1107,7 +1107,7 @@ public final class RoomThermalGameTest {
         for(int id:new int[]{-1,0,99,151,Integer.MAX_VALUE})h.assertTrue(!server.clickMenuButton(player,id)&&heater.powerLimitWatts()==50000,"Out-of-range setting cannot mutate the heater");
         player.setGameMode(net.minecraft.world.level.GameType.SPECTATOR);h.assertTrue(!server.clickMenuButton(player,100),"Spectator cannot disable heater");player.setGameMode(net.minecraft.world.level.GameType.CREATIVE);
         player.setPos(s.c.east(12).getCenter());h.assertTrue(!server.clickMenuButton(player,100),"Remote menu cannot change power limit");player.setPos(s.c.getCenter());
-        RoomAtmosphere.view(s.l,s.c.above());hot(s,-150,-150);advanceHeat(s);server.broadcastChanges();
+        RoomAtmosphere.view(s.l,s.c.above());rampUp(s);hot(s,-150,-150);advanceHeat(s);server.broadcastChanges();
         var buf=new net.minecraft.network.FriendlyByteBuf(io.netty.buffer.Unpooled.buffer());buf.writeBlockPos(s.c);
         var client=new ResistiveHeaterMenu(1,player.getInventory(),buf);
         try {
@@ -1126,7 +1126,7 @@ public final class RoomThermalGameTest {
     public static void rh5BoostUsesIndividualCapsAndLeavesOxygenPriorityIntact(GameTestHelper h){electricScene(h,s->{
         var first=rh5Place(s,s.c);first.setPowerLimitWatts(1000);var second=rh5Place(s,s.c.north());second.setPowerLimitWatts(12000);
         rh5Bank(s,s.c.east(3),500000);rh5Link(h,s,s.c,s.c.east(3));rh5Link(h,s,s.c,s.c.north());
-        RoomAtmosphere.view(s.l,s.c.above());hot(s,-150,-150);advanceHeat(s);
+        RoomAtmosphere.view(s.l,s.c.above());rampUp(s);hot(s,-150,-150);advanceHeat(s);
         h.assertTrue(first.drawWatts()==1000&&second.drawWatts()==12000,"Mixed heaters each respect their own 1/12 kW cap");budget(h,s);
         PowerNetworks.clear(s.l,s.c.east(3));PowerNetworks.clear(s.l,s.c.north());first.setPowerLimitWatts(50000);
         var cp=s.c.east(3).above();s.l.setBlock(cp,ModBlocks.GEOTHERMAL_CORE.get().defaultBlockState(),3);
@@ -1140,6 +1140,21 @@ public final class RoomThermalGameTest {
         } finally {((net.minecraft.world.level.storage.ServerLevelData)s.l.getLevelData()).setGameTime(clock);}
     });}
 
+    @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="room_heat",timeoutTicks=100)
+    public static void rh5RampsUpInsteadOfJumpingToFullPower(GameTestHelper h){electricScene(h,s->{
+        var heater=rh5Place(s,s.c);heater.setPowerLimitWatts(50000);rh5Bank(s,s.c.east(3),5000000);rh5Link(h,s,s.c,s.c.east(3));
+        RoomAtmosphere.view(s.l,s.c.above());hot(s,50,50);advanceHeat(s);
+        h.assertTrue(heater.requestWatts()==0,"Idle above target");
+        hot(s,-150,-150);advanceHeat(s);
+        h.assertTrue(heater.requestWatts()==ResistiveHeaterBlockEntity.RAMP_WATTS_PER_SECOND,"A sudden cold dip asks for one ramp step, not 50 kW: "+heater.requestWatts());
+        for(int second=2;second<=10;second++){hot(s,-150,-150);advanceHeat(s);
+            h.assertTrue(heater.requestWatts()==Math.min(50000,second*ResistiveHeaterBlockEntity.RAMP_WATTS_PER_SECOND),"Second "+second+" climbs one step: "+heater.requestWatts());}
+        hot(s,50,50);advanceHeat(s);
+        h.assertTrue(heater.requestWatts()==0,"Dropping power is immediate");budget(h,s);
+    });}
+
+    /** Climbs a cold room's heaters to one step below 50 kW so the next second can reach full power. */
+    private static void rampUp(Scene s){for(int i=1;i<50000/ResistiveHeaterBlockEntity.RAMP_WATTS_PER_SECOND;i++){hot(s,-150,-150);advanceHeat(s);}}
     private static ResistiveHeaterBlockEntity rh5Place(Scene s,BlockPos p){s.l.setBlock(p,ModBlocks.RESISTIVE_HEATER.get().defaultBlockState(),3);var heater=(ResistiveHeaterBlockEntity)s.l.getBlockEntity(p);heater.onLoad();return heater;}
     private static PowerStorageBlockEntity rh5Bank(Scene s,BlockPos p,int joules){s.l.setBlock(p,ModBlocks.BATTERY_BANK.get().defaultBlockState(),3);var store=(PowerStorageBlockEntity)s.l.getBlockEntity(p);store.onLoad();var cell=new ItemStack(ModItems.POWER_CELL.get());PowerCellItem.setEnergy(cell,joules);store.setItem(0,cell);return store;}
     private static void rh5Link(GameTestHelper h,Scene s,BlockPos a,BlockPos b){var result=PowerNetworks.link(s.l,a,b);h.assertTrue(result==PowerLinkRules.Result.OK,"RH-5 fixture link "+a+" -> "+b+" must be legal: "+result);PowerNetworks.update(s.l);}
