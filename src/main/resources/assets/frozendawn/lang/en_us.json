@@ -1698,6 +1698,7 @@
   "screen.frozendawn.plumb_line.hint": "Pulse again from 8+ blocks away to pin a vein down.",
   "gpr.frozendawn.orsa.monitoring_station": "ORSA monitoring station",
   "gpr.frozendawn.orsa.reactor_site": "ORSA reactor site",
+  "gpr.frozendawn.orsa.helion_site": "ORSA Helion facility",
   "gpr.frozendawn.orsa.cargo_drop": "ORSA cargo drop",
   "subtitle.frozendawn.block.plumb_line.scan": "Ground radar listens",
   "subtitle.frozendawn.block.plumb_line.complete": "Ground radar finishes",

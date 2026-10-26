@@ -236,6 +236,7 @@ public final class PlumbLineScan {
         var sites = new ArrayList<Site>();
         for (var p : MonitoringStationState.get(server).getBuiltStationCenters()) sites.add(new Site("orsa.monitoring_station", p, 12));
         for (var p : ReactorSiteState.get(server).built()) sites.add(new Site("orsa.reactor_site", p, 22));
+        for (var p : com.frozendawn.data.HelionSiteState.get(server).built()) sites.add(new Site("orsa.helion_site", p, com.frozendawn.world.HelionSiteBuilder.HALF + 1));
         for (var p : CargoDropState.get(server).getBuiltDropCenters()) sites.add(new Site("orsa.cargo_drop", p, 8));
         long r = setting.radius;
         for (var s : sites) {
