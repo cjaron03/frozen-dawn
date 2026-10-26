@@ -9,6 +9,7 @@ import com.frozendawn.init.ModBlockEntities;
 import com.frozendawn.init.ModItems;
 import com.frozendawn.power.FusionPhysics;
 import com.frozendawn.power.PowerNetworks;
+import com.frozendawn.power.SfrAdvancements;
 import com.frozendawn.world.CombustionAtmosphere;
 import com.frozendawn.world.RoomAtmosphere;
 import java.util.*;
@@ -74,6 +75,8 @@ public final class SfrControllerBlockEntity extends BlockEntity implements MenuP
     private Sound sound = SILENT;
     /** False until the first second after a load, which plays no one-shot cue. */
     private boolean stepped;
+    /** Seconds of unbroken plasma, for Lawson Criterion; saved, so a day's burn survives a reload. */
+    private int burnSeconds;
 
     public SfrControllerBlockEntity(BlockPos p, BlockState s) { super(ModBlockEntities.SFR_CONTROLLER.get(), p, s); }
     public NonNullList<ItemStack> items() { return items; }
@@ -133,6 +136,8 @@ public final class SfrControllerBlockEntity extends BlockEntity implements MenuP
                 fuel == null ? 0 : fuel.deuterium(), pumping, wear, l.hasNeighborSignal(worldPosition), target));
         if (fuel != null) fuel.use(readout.deuteriumUsed());
         if (pumping && readout.deuteriumUsed() > 0) collectHelium(readout.deuteriumUsed());
+        burnSeconds = SfrAdvancements.burnSeconds(burnSeconds, readout);
+        advancements(l, before, port);
         // Coolant circulates through every linked radiator, buried or not, as on the CFU-7: a hot loop boils off their frost.
         var nowHot = valid && physics.loopC() >= com.frozendawn.power.ReactorPhysics.RADIATOR_HOT_C
                 ? new HashSet<>(HighTemperatureRadiatorBlock.linked(l, shell.coolantPorts())) : new HashSet<BlockPos>();
@@ -159,6 +164,23 @@ public final class SfrControllerBlockEntity extends BlockEntity implements MenuP
         int signal = comparator();
         if (signal != comparator) { comparator = signal; l.updateNeighbourForOutputSignal(worldPosition, getBlockState().getBlock()); }
         setChanged();
+    }
+
+    /** Before this second's publish, so the port's supply is the one last second's accounting split. */
+    private void advancements(ServerLevel l, @Nullable FusionPhysics.Readout before, @Nullable SfrPowerPortBlockEntity port) {
+        boolean lit = physics.plasma() && port != null;
+        double roomC = Double.NaN, exportedKw = 0;
+        if (SfrAdvancements.ignited(before, readout)) {
+            var apocalypse = com.frozendawn.data.ApocalypseState.get(l.getServer());
+            roomC = com.frozendawn.world.TemperatureManager.getTemperatureAt(l, worldPosition.relative(getBlockState().getValue(SfrControllerBlock.FACING)),
+                    apocalypse.getCurrentDay(), apocalypse.getTotalDays());
+        }
+        if (lit) {
+            var absorbed = PowerNetworks.absorption(l, shell.powerPort());
+            exportedKw = SfrAdvancements.exportedWatts(port.supplyWatts(), absorbed.supplyWatts(), absorbed.absorbedWatts()) / 1000.0;
+        }
+        SfrAdvancements.grantNear(l, worldPosition, SfrAdvancements.earned(before, readout,
+                new SfrAdvancements.Context(roomC, burnSeconds, lit && SfrAdvancements.mixedNetwork(l, shell.powerPort()), exportedKw)));
     }
 
     /** Loop temperature against the disruption limit, 0-15. */
@@ -351,6 +373,7 @@ public final class SfrControllerBlockEntity extends BlockEntity implements MenuP
         var fusion = new CompoundTag(); physics.save(fusion); tag.put("Fusion", fusion);
         tag.putDouble("ChannelPressure", channelPressure);
         tag.putBoolean("VacuumStage", vacuumStage); tag.putBoolean("Sealed", sealed);
+        tag.putInt("BurnSeconds", burnSeconds);
     }
     @Override protected void loadAdditional(CompoundTag tag, HolderLookup.Provider r) {
         super.loadAdditional(tag, r); items.clear(); ContainerHelper.loadAllItems(tag, items, r);
@@ -358,6 +381,7 @@ public final class SfrControllerBlockEntity extends BlockEntity implements MenuP
         double pressure = tag.contains("ChannelPressure") ? tag.getDouble("ChannelPressure") : 1;
         channelPressure = Double.isFinite(pressure) ? Math.clamp(pressure, 0, 1) : 1;
         vacuumStage = tag.getBoolean("VacuumStage"); sealed = tag.getBoolean("Sealed");
+        burnSeconds = Math.max(0, tag.getInt("BurnSeconds"));
         readout = IDLE;
     }
     @Override public CompoundTag getUpdateTag(HolderLookup.Provider r) {

@@ -31,6 +31,8 @@ public final class PowerNetworks {
         boolean graphDirty = true;
         Map<BlockPos, Budget> budgets = Map.of();
         Map<BlockPos, PowerMonitorReading> monitorReadings = Map.of();
+        /** Per cell, the component's generation and how much of it loads and banks took last interval. */
+        Map<BlockPos, Absorption> absorption = Map.of();
         Set<BlockPos> powered = Set.of();
         Set<BlockPos> lamps = Set.of();
         final Set<BlockPos> stores = new TreeSet<>();
@@ -97,6 +99,7 @@ public final class PowerNetworks {
     private record MachineGrant(int generationWatts, List<BlockPos> stores, long expires) {}
     private record Budget(int supplyWatts, int demandWatts, long storedJoules) {}
     public record Reading(int nodes, int links, int inactiveLinks, double supplyKw, double demandKw, double storedKj) {}
+    public record Absorption(int supplyWatts, int absorbedWatts) { static final Absorption NONE = new Absorption(0, 0); }
     private PowerNetworks() {}
     private static Runtime runtime(ServerLevel level) { return LEVELS.computeIfAbsent(level, unused -> new Runtime()); }
     public static void heaterLoaded(ServerLevel l,BlockPos p){runtime(l).heaters.add(p.immutable());}
@@ -309,6 +312,7 @@ public final class PowerNetworks {
         var budget = rt.budgets.getOrDefault(node, new Budget(supplyWatts(level, node), demandWatts(level, node), storedJoules(level, node)));
         return new Reading(cells.size(), links, inactive, budget.supplyWatts() / 1000.0, budget.demandWatts() / 1000.0, budget.storedJoules() / 1000.0);
     }
+    public static Absorption absorption(ServerLevel level, BlockPos node) { return runtime(level).absorption.getOrDefault(node, Absorption.NONE); }
     public static PowerMonitorReading monitorReading(ServerLevel level, BlockPos pos) {
         var rt=runtime(level);
         if(!level.isLoaded(pos)||!rt.components.containsKey(pos))return PowerMonitorReading.EMPTY;
@@ -365,6 +369,7 @@ public final class PowerNetworks {
         rt.storeEnergyTicks.keySet().removeIf(pos -> !level.isLoaded(pos)||!(level.getBlockEntity(pos) instanceof com.frozendawn.block.PowerStorageBlockEntity));
         var visited = new HashSet<BlockPos>(); var budgets = new HashMap<BlockPos, Budget>();
         var monitorReadings=new HashMap<BlockPos,PowerMonitorReading>();
+        var absorption=new HashMap<BlockPos,Absorption>();
         var powered = new HashSet<BlockPos>(); var lamps = new HashSet<BlockPos>();
         for (var node : nodes) {
             if (visited.contains(node)) continue;
@@ -390,6 +395,7 @@ public final class PowerNetworks {
                 for (var cell : cells) {
                     budgets.put(cell,rt.budgets.getOrDefault(cell,new Budget(supply,demand,stored)));
                     monitorReadings.put(cell,rt.monitorReadings.getOrDefault(cell,PowerMonitorReading.EMPTY));
+                    absorption.put(cell,rt.absorption.getOrDefault(cell,Absorption.NONE));
                     priorityRemaining.put(cell,rt.priorityRemaining.getOrDefault(cell,0));
                 }
                 continue;
@@ -441,12 +447,14 @@ public final class PowerNetworks {
             var shed=loads.stream().filter(load->!powered.contains(load)).map(load->new PowerMonitorReading.ShedLoad(
                     level.getBlockState(load).getBlock() instanceof com.frozendawn.block.WorkLampBlock?10:level.getBlockEntity(load) instanceof com.frozendawn.block.AcheronForgeBlockEntity?7:rt.airlockInputs.containsValue(load)?5:level.getBlockEntity(load) instanceof com.frozendawn.block.ResistiveHeaterBlockEntity?4:level.getBlockEntity(load) instanceof com.frozendawn.block.PixieBlockEntity?3:level.getBlockEntity(load) instanceof PoweredMachine?2:level.getBlockState(load).getBlock() instanceof com.frozendawn.block.DeconShowerBlock?6:level.getBlockEntity(load) instanceof com.frozendawn.block.UplinkConsoleBlockEntity?8:level.getBlockEntity(load) instanceof com.frozendawn.block.PlumbLineBlockEntity?9:1,load)).toList();
             var monitor=new PowerMonitorReading(cells.size()>1,budget.supplyWatts(),supply,demand,after,capacity,shed);
-            for (var cell : cells) {budgets.put(cell,budget);monitorReadings.put(cell,monitor);}
+            var absorbed=new Absorption(supply,supply-surplus);
+            for (var cell : cells) {budgets.put(cell,budget);monitorReadings.put(cell,monitor);absorption.put(cell,absorbed);}
         }
         var affected = new HashSet<>(rt.lamps); affected.addAll(lamps);
         rt.budgets = Map.copyOf(budgets); rt.powered = Set.copyOf(powered); rt.lamps = Set.copyOf(lamps);
         rt.machineGrants=Map.copyOf(machineGrants);
         rt.monitorReadings=Map.copyOf(monitorReadings);
+        rt.absorption=Map.copyOf(absorption);
         rt.priorityRemaining=Map.copyOf(priorityRemaining);
         for (var lamp : affected) if(level.isLoaded(lamp)&&level.getBlockState(lamp).getBlock() instanceof GridLight light)
             light.setGridPowered(level,lamp,powered.contains(lamp));

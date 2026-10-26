@@ -31,6 +31,12 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.*;
 import net.minecraft.server.level.ServerLevel;
+import com.mojang.authlib.GameProfile;
+import java.util.UUID;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ClientInformation;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -137,6 +143,45 @@ public final class SfrGameTest {
                 h.assertValueEqual(be.physics().status(), FusionPhysics.Status.ABORTED, "status");
                 h.assertTrue(be.physics().tritium() == 4, "An aborted ignition spends no tritium, got " + be.physics().tritium());
                 h.assertTrue(be.wear() == 0, "An aborted ignition adds no wear, got " + be.wear());
+            });
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "sfr", timeoutTicks = 100)
+    public static void sfrAdvancementsLoadWithOnlyASecondSunVisible(GameTestHelper h) {
+        for (var id : SfrAdvancements.ALL) {
+            var holder = h.getLevel().getServer().getAdvancements().get(ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, id));
+            h.assertTrue(holder != null, "Advancement loads: " + id);
+            h.assertValueEqual(holder.value().display().orElseThrow().isHidden(), !id.equals(SfrAdvancements.SECOND_SUN), "hidden " + id);
+        }
+        h.succeed();
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "sfr", timeoutTicks = 300, skyAccess = true)
+    public static void sfrIgnitionGrantsASecondSunNearby(GameTestHelper h) {
+        h.runAfterDelay(1, () -> {
+            var near = player(h, h.absolutePos(CENTER).above(6)); var far = player(h, h.absolutePos(CENTER).above(40));
+            var be = ready(h, 8_000_000);
+            h.succeedWhen(() -> {
+                h.assertValueEqual(be.physics().state(), FusionPhysics.State.BURNING, "state");
+                h.assertTrue(earned(near, SfrAdvancements.SECOND_SUN), "A player beside the torus sees the ignition");
+                h.assertTrue(!earned(far, SfrAdvancements.SECOND_SUN), "A player 40 blocks away does not");
+                h.assertTrue(!earned(near, SfrAdvancements.TWENTY_YEARS), "A lit plasma is not an abort");
+                near.discard(); far.discard();
+            });
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "sfr", timeoutTicks = 300, skyAccess = true)
+    public static void sfrAbortedIgnitionIsTwentyYearsAway(GameTestHelper h) {
+        h.runAfterDelay(1, () -> {
+            var near = player(h, h.absolutePos(CENTER).above(6));
+            var be = ready(h, 1_000_000);
+            h.succeedWhen(() -> {
+                h.assertValueEqual(be.physics().status(), FusionPhysics.Status.ABORTED, "status");
+                h.assertTrue(earned(near, SfrAdvancements.TWENTY_YEARS), "An aborted ignition grants Twenty Years Away");
+                h.assertTrue(!earned(near, SfrAdvancements.SECOND_SUN), "An aborted ignition is not A Second Sun");
+                near.discard();
             });
         });
     }
@@ -644,6 +689,17 @@ public final class SfrGameTest {
 
     /** Torus, 14 High-Temperature Radiators on its roof, banks holding bankJoules on the Power Port and
      * 4 Deuterium Canisters; READY with ignition requested and 4 tritium. */
+    private static ServerPlayer player(GameTestHelper h, BlockPos pos) {
+        var level = h.getLevel(); var profile = new GameProfile(UUID.randomUUID(), "sfr_" + pos.getY());
+        var player = new ServerPlayer(level.getServer(), level, profile, ClientInformation.createDefault());
+        player.connection = new net.neoforged.neoforge.common.util.FakePlayer(level, profile).connection;
+        player.setPos(pos.getCenter()); player.setGameMode(GameType.SURVIVAL); level.addNewPlayer(player);
+        return player;
+    }
+    private static boolean earned(ServerPlayer player, String id) {
+        var holder = player.getServer().getAdvancements().get(ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, id));
+        return holder != null && player.getAdvancements().getOrStartProgress(holder).isDone();
+    }
     private static SfrControllerBlockEntity ready(GameTestHelper h, int bankJoules) { return ready(h, bankJoules, BANKS); }
     private static SfrControllerBlockEntity ready(GameTestHelper h, int bankJoules, BlockPos banks) {
         var be = cold(h, bankJoules, banks); be.physics().setReadyForTest(); be.physics().start();
