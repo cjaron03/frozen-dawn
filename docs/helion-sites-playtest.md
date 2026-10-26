@@ -14,11 +14,11 @@ Owning checkout: `/Volumes/SSD/Work/frozen-dawn-helion`, branch `feat/helion-sit
 ## Commands
 
 ```
-/frozendawn world helionsite
+/fd world helionsite
 /frozendawn locate orsa
 ```
 
-`world helionsite` buries a site 24 blocks ahead of you and records it as built. `locate orsa` lists built, unlooted sites under "Helion Site:".
+`/fd world helionsite` (operator) buries a site 24 blocks ahead of you and records it as built. `/frozendawn locate orsa` (also in `locate all`) prints a "Helion Site:" line for the nearest built, unlooted site or unbuilt candidate.
 
 ## Checks
 
