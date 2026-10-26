@@ -38,6 +38,7 @@ public final class RoomThermalManager {
         final ArrayDeque<RoomChangeEvent.Change> changes=new ArrayDeque<>();
         final ArrayDeque<Long> saved=new ArrayDeque<>();
         Map<BlockPos,Integer> owners=Map.of(); boolean reconciling;
+        final Map<RoomThermalState.Room,StructureShares> shares=new IdentityHashMap<>();
         long lastTick=-1,profileBuilds;
         double refillTemperature=Double.NaN;
         final Map<BlockPos,Double> machineHeat=new HashMap<>();
@@ -171,16 +172,16 @@ public final class RoomThermalManager {
             if(binding.profile==null||binding.suspended||!loaded(level,binding)||!binding.profile.vents.contains(pos))continue;
             var room=binding.room;
             double temperature=room.airPresent?RoomHeatMath.temperature(room.airCapacity(),room.airEnergy)
-                    :RoomHeatMath.temperature(capacity(rt.state,room,rt.owners),structureEnergy(rt.state,room,rt.owners));
+                    :RoomHeatMath.temperature(capacity(rt,room,rt.owners),structureEnergy(rt,room,rt.owners));
             for(var outlet:cooling(level,binding))if(outlet.pos.equals(pos)&&temperature>outlet.outside+.1)return 2;
         }
         return 1;
     }
-    private static void cool(ServerLevel level,Binding binding,RoomThermalState state,Map<BlockPos,Integer> owners,
+    private static void cool(ServerLevel level,Binding binding,Runtime rt,Map<BlockPos,Integer> owners,
             double capacity,List<Cooling> outlets,double target,double dt) {
         var room=binding.room;
         double c=room.airPresent?room.airCapacity():capacity;
-        double energy=room.airPresent?room.airEnergy:structureEnergy(state,room,owners);
+        double energy=room.airPresent?room.airEnergy:structureEnergy(rt,room,owners);
         double temperature=RoomHeatMath.temperature(c,energy);
         boolean automatic=controlled(level,binding);
         if(automatic) {
@@ -198,8 +199,8 @@ public final class RoomThermalManager {
         double q=Math.min(Math.max(0,energy),Math.max(0,RoomHeatMath.reservoirLoss(c,temperature,weighted/k,k,dt)));
         // Even many oversized vents cannot cool past the thermostat target.
         if(automatic)q=Math.min(q,Math.max(0,energy-RoomHeatMath.energy(c,target)));
-        if(room.airPresent){room.airEnergy-=q;state.ledger.environmentLoss+=q;}
-        else {q=-addStructure(state,room,owners,-q);state.ledger.environmentLoss+=q;}
+        if(room.airPresent){room.airEnergy-=q;rt.state.ledger.environmentLoss+=q;}
+        else {q=-addStructure(rt,room,owners,-q);rt.state.ledger.environmentLoss+=q;}
         // Attribute the already-debited total to each parallel outlet by its flux.
         // This changes no energy budget; blocked/warmer fins receive no glow.
         double flux=k*temperature-weighted;
@@ -209,7 +210,7 @@ public final class RoomThermalManager {
         if(automatic&&q>=energy-RoomHeatMath.energy(c,target)-1e-9)binding.coolingDemand=false;
     }
     private static void index(Runtime rt) {
-        rt.layers.clear();rt.cells.clear();rt.owners=owners(rt.state);
+        rt.layers.clear();rt.cells.clear();rt.shares.clear();rt.owners=owners(rt.state);
         for(var binding:rt.rooms.values()) {
             for(var pos:binding.room.cells)rt.cells.computeIfAbsent(pos,ignored->new HashSet<>()).add(binding.room.id);
             if(binding.profile!=null)for(var pos:binding.profile.watched)rt.layers.computeIfAbsent(pos,ignored->new HashSet<>()).add(binding.room.id);
@@ -369,26 +370,18 @@ public final class RoomThermalManager {
     private static Map<BlockPos,Integer> owners(RoomThermalState state) {
         var owners=new HashMap<BlockPos,Integer>();for(var room:state.rooms.values())for(var pos:room.structure)owners.merge(pos,1,Integer::sum);return owners;
     }
-    private static double capacity(RoomThermalState state,RoomThermalState.Room room,Map<BlockPos,Integer> owners) {
-        double result=0;for(var pos:room.structure){var material=state.materials.get(pos);if(material!=null)result+=material.capacity/owners.get(pos);}return result;
+    private static StructureShares shares(Runtime rt,RoomThermalState.Room room,Map<BlockPos,Integer> owners) {
+        var cached=rt.shares.get(room);var current=StructureShares.of(cached,room.structure,rt.state.materials,owners);
+        if(current!=cached)rt.shares.put(room,current);return current;
     }
-    private static double structureEnergy(RoomThermalState state,RoomThermalState.Room room,Map<BlockPos,Integer> owners) {
-        double result=0;for(var pos:room.structure){var material=state.materials.get(pos);if(material!=null)result+=material.energy/owners.get(pos);}return result;
+    private static double capacity(Runtime rt,RoomThermalState.Room room,Map<BlockPos,Integer> owners) {
+        return shares(rt,room,owners).capacity();
     }
-    /** Distribute into the owned capacity shares, preserving a single physical reservoir and preventing negative energy. */
-    private static double addStructure(RoomThermalState state,RoomThermalState.Room room,Map<BlockPos,Integer> owners,double amount) {
-        double capacity=capacity(state,room,owners);if(capacity<=0)return 0;
-        if(amount<0) {
-            // An empty/cold block cannot stop the rest of the structure releasing stored heat.
-            // Debit each owned energy share, so shared physical blocks are never overdrawn.
-            double stored=structureEnergy(state,room,owners),removed=0;
-            double fraction=stored>0?Math.min(1,-amount/stored):0;
-            for(var pos:room.structure){var material=state.materials.get(pos);if(material==null)continue;
-                double debit=material.energy/owners.get(pos)*fraction;material.energy-=debit;removed+=debit;}
-            return -removed;
-        }
-        for(var pos:room.structure){var material=state.materials.get(pos);if(material!=null)material.energy+=amount*material.capacity/owners.get(pos)/capacity;}
-        return amount;
+    private static double structureEnergy(Runtime rt,RoomThermalState.Room room,Map<BlockPos,Integer> owners) {
+        return shares(rt,room,owners).energy();
+    }
+    private static double addStructure(Runtime rt,RoomThermalState.Room room,Map<BlockPos,Integer> owners,double amount) {
+        return shares(rt,room,owners).add(amount);
     }
     private static boolean connects(RoomThermalState.Room room,BlockPos source) {
         return room.cells.contains(source)||room.faces.stream().anyMatch(face->face.wallCell().equals(source));
@@ -427,8 +420,8 @@ public final class RoomThermalManager {
         if(rt==null)return;
         for(var b:rt.rooms.values())if(!b.suspended&&!b.geometryDirty&&loaded(level,b)) {
             var connected=heaters.stream().filter(p->connects(b.room,p)).toList();if(connected.isEmpty())continue;
-            var room=b.room;double c=capacity(rt.state,room,rt.owners);if(c<=0)continue;
-            double walls=RoomHeatMath.temperature(c,structureEnergy(rt.state,room,rt.owners));
+            var room=b.room;double c=capacity(rt,room,rt.owners);if(c<=0)continue;
+            double walls=RoomHeatMath.temperature(c,structureEnergy(rt,room,rt.owners));
             double sensed=room.airPresent?RoomHeatMath.temperature(room.airCapacity(),room.airEnergy):walls;
             double target=room.sealed?ThermostatManager.roomTarget(level,room.id,room.cells):HeaterControl.DEFAULT_TARGET;
             double max=connected.stream().mapToInt(p->((com.frozendawn.block.ResistiveHeaterBlockEntity)level.getBlockEntity(p)).rampLimitWatts()).sum()*com.frozendawn.block.ResistiveHeaterBlockEntity.HEAT_PER_JOULE;
@@ -450,7 +443,7 @@ public final class RoomThermalManager {
      * energy is still metered. Passive heat can
      * only reduce the actual electrical debit below this reservation. */
     private static double electricDemand(ServerLevel l,Binding b,Runtime rt,double c,double maximum,double target){
-        var room=b.room;double air=room.airEnergy,walls=structureEnergy(rt.state,room,rt.owners),needed=0,k=0,weighted=0,dt=1.0/SUBSTEPS;
+        var room=b.room;double air=room.airEnergy,walls=structureEnergy(rt,room,rt.owners),needed=0,k=0,weighted=0,dt=1.0/SUBSTEPS;
         for(var face:b.profile.faces){double coefficient=faceK(l,face);k+=coefficient;weighted+=coefficient*outside(l,face);}
         for(int n=0;n<SUBSTEPS;n++){
             double wallTemperature=RoomHeatMath.temperature(c,walls);
@@ -567,21 +560,21 @@ public final class RoomThermalManager {
             losses.put(binding.room.id,new double[]{k,k>0?weighted/k:0});
         }
         for(int step=0;step<SUBSTEPS;step++)for(var binding:loaded) {
-            var room=binding.room;double capacity=capacity(rt.state,room,owners);if(capacity<=0)continue;
+            var room=binding.room;double capacity=capacity(rt,room,owners);if(capacity<=0)continue;
             // Actual passive heat enters first. Heater admission sees it before spending fuel.
             // Each physical source has one budget, shared between all connected loaded volumes.
             for(var source:passive.get(room.id)) {
                 double c=room.airPresent?room.airCapacity():capacity;
-                double energy=room.airPresent?room.airEnergy:structureEnergy(rt.state,room,owners);
+                double energy=room.airPresent?room.airEnergy:structureEnergy(rt,room,owners);
                 double q=source.grant(c,RoomHeatMath.temperature(c,energy),dt,room.airPresent);
-                if(room.airPresent)room.airEnergy+=q;else q=addStructure(rt.state,room,owners,q);
+                if(room.airPresent)room.airEnergy+=q;else q=addStructure(rt,room,owners,q);
                 rt.state.ledger.passive+=q;binding.passivePower+=q;
             }
             double machine=machineEnergy.getOrDefault(room.id,0.0)/SUBSTEPS
                     *(room.airPresent?1:RoomHeatMath.VACUUM_HEATER_EFFICIENCY);
-            if(room.airPresent)room.airEnergy+=machine;else machine=addStructure(rt.state,room,owners,machine);
+            if(room.airPresent)room.airEnergy+=machine;else machine=addStructure(rt,room,owners,machine);
             rt.state.ledger.passive+=machine;binding.passivePower+=machine;
-            double wallsBefore = RoomHeatMath.temperature(capacity,structureEnergy(rt.state,room,owners));
+            double wallsBefore = RoomHeatMath.temperature(capacity,structureEnergy(rt,room,owners));
             double electricMaximum=electric.get(room.id).values().stream().mapToDouble(Double::doubleValue).sum()*dt;
             double supplied = room.airPresent
                     ? HeaterControl.airGrant(powers.get(room.id)*dt+electricMaximum,room.airCapacity(),capacity,
@@ -597,19 +590,19 @@ public final class RoomThermalManager {
             supplied=paid+fuel;
             suppliedByRoom.merge(room.id,fuel,Double::sum);
             if(room.airPresent)room.airEnergy+=supplied;
-            else supplied=addStructure(rt.state,room,owners,supplied*RoomHeatMath.VACUUM_HEATER_EFFICIENCY);
+            else supplied=addStructure(rt,room,owners,supplied*RoomHeatMath.VACUUM_HEATER_EFFICIENCY);
             rt.state.ledger.heater+=supplied;
-            double structure=RoomHeatMath.temperature(capacity,structureEnergy(rt.state,room,owners));
+            double structure=RoomHeatMath.temperature(capacity,structureEnergy(rt,room,owners));
             if(room.airPresent) {
                 double air=RoomHeatMath.temperature(room.airCapacity(),room.airEnergy);
                 double q=RoomHeatMath.exchange(room.airCapacity(),capacity,air,structure,room.faces.size()*4.0,dt);
-                double transferred=addStructure(rt.state,room,owners,q);room.airEnergy-=transferred;
-                structure=RoomHeatMath.temperature(capacity,structureEnergy(rt.state,room,owners));
+                double transferred=addStructure(rt,room,owners,q);room.airEnergy-=transferred;
+                structure=RoomHeatMath.temperature(capacity,structureEnergy(rt,room,owners));
             }
             var loss=losses.get(room.id);
             if(loss[0]>0){double q=RoomHeatMath.reservoirLoss(capacity,structure,loss[1],loss[0],dt);
-                rt.state.ledger.environmentLoss-=addStructure(rt.state,room,owners,-q);}
-            cool(level,binding,rt.state,owners,capacity,coolers.get(room.id),targets.get(room.id),dt);
+                rt.state.ledger.environmentLoss-=addStructure(rt,room,owners,-q);}
+            cool(level,binding,rt,owners,capacity,coolers.get(room.id),targets.get(room.id),dt);
         }
         // Shared boundary heaters are debited once, with their allocated fraction from every room.
         var fractions = new LinkedHashMap<ThermalHeaterBlockEntity,Double>();
@@ -629,7 +622,7 @@ public final class RoomThermalManager {
         for (var entry : fractions.entrySet()) {
             var binding = readings.get(entry.getKey());var room=binding.room;
             double temperature = room.airPresent ? RoomHeatMath.temperature(room.airCapacity(),room.airEnergy)
-                    : RoomHeatMath.temperature(capacity(rt.state,room,owners),structureEnergy(rt.state,room,owners));
+                    : RoomHeatMath.temperature(capacity(rt,room,owners),structureEnergy(rt,room,owners));
             entry.getKey().consumeRoomHeating(entry.getValue(),temperature,room.airPresent);
             var control=room.sealed?ThermostatManager.roomControl(level,room.id):null;
             if(control!=null){double base=room.airPresent?temperature:outsideAverage(level,binding.profile)+(temperature-outsideAverage(level,binding.profile))*RoomHeatMath.RADIANT_FEEL_WEIGHT;
@@ -637,7 +630,7 @@ public final class RoomThermalManager {
 
         }
         for(var b:loaded)for(var heater:electric.get(b.room.id).keySet()){
-            var room=b.room;double sensed=room.airPresent?RoomHeatMath.temperature(room.airCapacity(),room.airEnergy):RoomHeatMath.temperature(capacity(rt.state,room,owners),structureEnergy(rt.state,room,owners));
+            var room=b.room;double sensed=room.airPresent?RoomHeatMath.temperature(room.airCapacity(),room.airEnergy):RoomHeatMath.temperature(capacity(rt,room,owners),structureEnergy(rt,room,owners));
             heater.reading(sensed,targets.get(room.id),room.airPresent);
         }
         for(var p:com.frozendawn.power.PowerNetworks.heaters(level))((com.frozendawn.block.ResistiveHeaterBlockEntity)level.getBlockEntity(p)).publish();
@@ -654,8 +647,8 @@ public final class RoomThermalManager {
             double structureTemperature,double feltTemperature,double airCapacity,double structureCapacity,double conductance,
             double heaterPower,double passivePower,long profileBuilds,double totalEnergy,double ledgerNet,int coolingVents,double coolingConductance) {}
     private static Snapshot snapshot(ServerLevel level,Runtime rt,Binding binding,Map<BlockPos,Integer> owners) {
-        var room=binding.room;double capacity=capacity(rt.state,room,owners);
-        double structure=RoomHeatMath.temperature(capacity,structureEnergy(rt.state,room,owners));
+        var room=binding.room;double capacity=capacity(rt,room,owners);
+        double structure=RoomHeatMath.temperature(capacity,structureEnergy(rt,room,owners));
         double air=RoomHeatMath.temperature(room.airCapacity(),room.airEnergy);
         double outside=outsideAverage(level,binding.profile);
         double felt=room.airPresent?air:outside+(structure-outside)*RoomHeatMath.RADIANT_FEEL_WEIGHT;
@@ -692,8 +685,8 @@ public final class RoomThermalManager {
     private static double feltAt(ServerLevel level,Runtime rt,Binding binding) {
         var room=binding.room;
         if(room.airPresent)return RoomHeatMath.temperature(room.airCapacity(),room.airEnergy);
-        double capacity=capacity(rt.state,room,rt.owners),outside=outsideAverage(level,binding.profile);
-        double structure=RoomHeatMath.temperature(capacity,structureEnergy(rt.state,room,rt.owners));
+        double capacity=capacity(rt,room,rt.owners),outside=outsideAverage(level,binding.profile);
+        double structure=RoomHeatMath.temperature(capacity,structureEnergy(rt,room,rt.owners));
         return outside+(structure-outside)*RoomHeatMath.RADIANT_FEEL_WEIGHT;
     }
     /** Machinery freezing uses physical air/structure heat, not player vacuum exposure.
@@ -708,7 +701,7 @@ public final class RoomThermalManager {
     private static double physicalTemperature(Runtime rt,Binding binding) {
         var room=binding.room;
         return room.airPresent?RoomHeatMath.temperature(room.airCapacity(),room.airEnergy)
-                :RoomHeatMath.temperature(capacity(rt.state,room,rt.owners),structureEnergy(rt.state,room,rt.owners));
+                :RoomHeatMath.temperature(capacity(rt,room,rt.owners),structureEnergy(rt,room,rt.owners));
     }
     /** Read-only counterpart for validated open intakes; no discovery or forced chunks. */
     public static OptionalDouble cachedMachineryTemperatureAt(ServerLevel level,BlockPos pos) {
