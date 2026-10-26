@@ -1358,6 +1358,8 @@
   "item.frozendawn.deuterium_canister": "Deuterium Canister",
   "item.frozendawn.tritium_canister": "Tritium Canister",
   "item.frozendawn.helium_canister": "Helium Canister",
+  "item.frozendawn.superconducting_coil_scrap": "Superconducting Coil Scrap",
+  "item.frozendawn.first_wall_tile": "First-Wall Tile",
   "sfr.frozendawn.status.idle": "IDLE",
   "sfr.frozendawn.status.cooldown": "COOLDOWN",
   "sfr.frozendawn.status.ready": "READY",
