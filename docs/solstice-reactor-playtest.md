@@ -2,7 +2,7 @@
 
 Owning checkout: `/Volumes/SSD/Work/frozen-dawn-solstice`, branch `feat/solstice-reactor`, cut from `feat/maeve-director` at `866ca4c4`. Launch with Java 21 and `./gradlew runClient --console=plain`. No lab bridge function is needed.
 
-The core reactor blocks are creative tab and `/give` only, with no recipes, loot or Fabricator. The fuel chain (below) adds spodumene world generation, Lithium Carbonate smelting, battery salvage, the Lithium Target Rod recipe and Helium Canisters; the Isotope Column is creative only. Use a Creative world you are happy to build in; no fixture world is generated.
+When this check was written, the core reactor blocks were creative tab and `/give` only, with no recipes, loot or Fabricator. `feat/helion-sites` adds recipes for every part except the Confinement Core, which comes from Helion sites; see [helion-sites-playtest.md](helion-sites-playtest.md). The fuel chain (below) adds spodumene world generation, Lithium Carbonate smelting, battery salvage, the Lithium Target Rod recipe and Helium Canisters; the Isotope Column is creative only. Use a Creative world you are happy to build in; no fixture world is generated.
 
 ## Give list
 
