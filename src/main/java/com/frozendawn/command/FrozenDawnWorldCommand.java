@@ -48,6 +48,16 @@ final class FrozenDawnWorldCommand {
         return 1;
     }
 
+    /** Buries a Helion site 24 blocks ahead of the caller, for playtests. */
+    private static int placeHelionSite(CommandContext<CommandSourceStack> context) {
+        var source = context.getSource();
+        var look = net.minecraft.world.phys.Vec3.directionFromRotation(0, source.getRotation().y);
+        var at = source.getPosition().add(look.scale(24));
+        var hall = com.frozendawn.world.HelionSitePlacement.placeNow(source.getLevel(), (int) Math.floor(at.x), (int) Math.floor(at.z));
+        source.sendSuccess(() -> Component.literal("Helion site buried at (" + hall.getX() + ", " + hall.getY() + ", " + hall.getZ() + ")"), true);
+        return 1;
+    }
+
     static LiteralArgumentBuilder<CommandSourceStack> worldCommands() {
         return Commands.literal("world")
                 .executes(context -> status(context, false))
@@ -57,6 +67,7 @@ final class FrozenDawnWorldCommand {
                                 .executes(context -> status(context, true))))
                 .then(Commands.literal("rooms").executes(FrozenDawnWorldCommand::roomDiagnostics))
                 .then(Commands.literal("reactorsite").executes(FrozenDawnWorldCommand::placeReactorSite))
+                .then(Commands.literal("helionsite").executes(FrozenDawnWorldCommand::placeHelionSite))
                 .then(Commands.literal("oxygen").executes(FrozenDawnWorldCommand::oxygenDiagnostics)
                         .then(Commands.literal("here").executes(FrozenDawnWorldCommand::oxygenHere)))
                 .then(Commands.literal("thermal").executes(FrozenDawnWorldCommand::thermalDiagnostics))

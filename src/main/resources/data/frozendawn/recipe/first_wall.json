@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "OIO",
+    "IAI",
+    "OIO"
+  ],
+  "key": {
+    "O": {
+      "item": "minecraft:obsidian"
+    },
+    "I": {
+      "item": "minecraft:iron_ingot"
+    },
+    "A": {
+      "item": "frozendawn:refined_acheronite"
+    }
+  },
+  "result": {
+    "id": "frozendawn:first_wall",
+    "count": 8
+  }
+}

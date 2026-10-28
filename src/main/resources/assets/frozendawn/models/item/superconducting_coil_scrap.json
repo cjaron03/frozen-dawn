@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "frozendawn:item/superconducting_coil_scrap"
+  }
+}

@@ -465,6 +465,46 @@ TEXTURES.update({
     "isotope_column_top": isotope_column_top,
 })
 
+FROST = [(196, 222, 240), (236, 246, 252)]
+
+
+def superconducting_coil_scrap():
+    """A torn arc of copper winding from a Helion coil, its blue superconductor lead frayed and rimed with frost."""
+    rng = random.Random(51301)
+    im = new()
+    for i in range(11):
+        x, y = 2 + i, 11 - (4 * i * (10 - i)) // 25
+        for d, tone in ((-1, COPPER[4]), (0, COPPER[2]), (1, COPPER[1]), (2, COPPER[0])):
+            put(im, x, y + d, jitter(tone, rng, 6))
+        put(im, x, y + 3, INK)
+        if i % 3 == 1: put(im, x, y, STEEL[1])
+    for x, y in ((13, 11), (14, 10), (14, 12), (15, 9), (15, 13)):
+        put(im, x, y, BLUE[1] if (x + y) % 2 else BLUE[2])
+    for x, y in ((3, 9), (6, 6), (9, 6), (4, 10)):
+        put(im, x, y, FROST[rng.randrange(2)])
+    return im
+
+
+def first_wall_tile():
+    """One loose plasma-facing tungsten tile, prised from a Helion wall, scorched and cracked."""
+    rng = random.Random(51302)
+    im = new()
+    rect(im, 3, 3, 12, 12, INK)
+    for x in range(4, 12):
+        for y in range(4, 12):
+            put(im, x, y, jitter(TUNGSTEN[2], rng, 4))
+    rect(im, 4, 4, 11, 4, TUNGSTEN[3]); rect(im, 4, 4, 4, 11, TUNGSTEN[3])
+    rect(im, 4, 11, 11, 11, TUNGSTEN[0]); rect(im, 11, 4, 11, 11, TUNGSTEN[0])
+    for x, y in ((6, 6), (7, 7), (7, 8), (8, 9), (9, 9)):
+        put(im, x, y, (20, 20, 22))
+    for x, y in ((6, 7), (9, 10), (10, 5)):
+        put(im, x, y, ORANGE[1])
+    put(im, 5, 5, FROST[1]); put(im, 10, 6, FROST[0])
+    return im
+
+
+ITEMS.update({"superconducting_coil_scrap": superconducting_coil_scrap, "first_wall_tile": first_wall_tile})
+
 if __name__ == "__main__":
     for name, draw in TEXTURES.items():
         draw().save(OUT / f"{name}.png")

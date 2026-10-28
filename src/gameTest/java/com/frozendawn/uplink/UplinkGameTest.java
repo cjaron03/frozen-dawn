@@ -91,6 +91,7 @@ public final class UplinkGameTest {
             console.deliverHeld(player);
             var doc=player.getInventory().items.stream().filter(s->s.is(ModItems.ORSA_DOCUMENT)).findFirst().orElse(null);
             h.assertTrue(doc!=null&&doc.get(DataComponents.CUSTOM_DATA).copyTag().getString("doc_type").equals("relay_archive_1"),"Printed relay transcript #1 reaches the transmitter");
+            h.assertTrue(player.getInventory().items.stream().anyMatch(UplinkGameTest::helionPlot)&&console.log().stream().anyMatch(x->x.key().endsWith("log.helion")),"The fragment also plots a Helion facility");
             console.press(player,2);console.press(player,4);
             h.assertTrue(last(console).endsWith("refuse.cooldown"),"One transmission per in-game day: "+last(console));
         });
@@ -109,6 +110,25 @@ public final class UplinkGameTest {
         for(int i=0;i<3;i++){var doc=UplinkRewards.archive(i);h.assertTrue(doc.is(ModItems.ORSA_DOCUMENT)&&doc.get(DataComponents.CUSTOM_DATA).copyTag().getString("doc_type").equals(UplinkRewards.docType(i)),"Fragment "+(i+1)+" prints as a relay transcript");
             h.assertTrue(l.getServer().getAdvancements().get(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID,"relay_archive/"+(i+1)))!=null,"Field Manual unlock exists for fragment "+(i+1));}
         h.succeed();
+    }
+
+    @GameTest(template=GameTestTemplates.EMPTY,batch="uplink_rewards",timeoutTicks=100)
+    public static void uplinkFragmentRevealsNearestUnlootedHelionSite(GameTestHelper h){
+        var l=h.getLevel();var data=UplinkSavedData.get(l.getServer());var helion=com.frozendawn.data.HelionSiteState.get(l.getServer());
+        // Far from every other test, so only these halls are in reach.
+        var console=new BlockPos(40000,64,40000);var looted=console.offset(200,-30,0);var standing=console.offset(0,-30,300);
+        helion.markBuilt(looted.getX()>>4,looted.getZ()>>4,looted);helion.markLooted(looted);helion.markBuilt(standing.getX()>>4,standing.getZ()>>4,standing);
+        var first=UplinkRewards.helionReveal(l,console);
+        h.assertTrue(first!=null&&helionPlot(first.plot())&&first.chunkX()==standing.getX()>>4&&first.chunkZ()==standing.getZ()>>4,"Nearest unlooted hall is plotted, the looted one skipped");
+        h.assertTrue(data.promised(standing.getX()>>4,standing.getZ()>>4)&&!data.promised(looted.getX()>>4,looted.getZ()>>4),"The plotted hall is promised");
+        var second=UplinkRewards.helionReveal(l,console);
+        h.assertTrue(second!=null&&(second.chunkX()!=first.chunkX()||second.chunkZ()!=first.chunkZ()),"The next fragment reveals another site");
+        var expected=com.frozendawn.world.HelionSitePlacement.siteChunk(l.getSeed(),Math.floorDiv(second.chunkX(),com.frozendawn.world.HelionSitePlacement.REGION_SIZE),Math.floorDiv(second.chunkZ(),com.frozendawn.world.HelionSitePlacement.REGION_SIZE));
+        h.assertTrue(expected!=null&&expected[0]==second.chunkX()&&expected[1]==second.chunkZ()&&data.promised(second.chunkX(),second.chunkZ()),"An unbuilt candidate is promised so it stands when found");
+        h.succeed();
+    }
+    private static boolean helionPlot(net.minecraft.world.item.ItemStack s){
+        return s.is(Items.FILLED_MAP)&&s.get(DataComponents.ITEM_NAME) instanceof net.minecraft.network.chat.Component n&&n.getContents() instanceof net.minecraft.network.chat.contents.TranslatableContents t&&t.getKey().equals("item.frozendawn.uplink_helion_map");
     }
 
     @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="uplink_rewards",timeoutTicks=100)

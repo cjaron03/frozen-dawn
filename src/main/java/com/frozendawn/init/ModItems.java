@@ -83,6 +83,8 @@ public class ModItems {
     public static final DeferredItem<Item> DEUTERIUM_CANISTER = ITEMS.registerSimpleItem("deuterium_canister");
     public static final DeferredItem<Item> TRITIUM_CANISTER = ITEMS.registerSimpleItem("tritium_canister");
     public static final DeferredItem<Item> HELIUM_CANISTER = ITEMS.registerSimpleItem("helium_canister");
+    public static final DeferredItem<Item> SUPERCONDUCTING_COIL_SCRAP = ITEMS.registerSimpleItem("superconducting_coil_scrap");
+    public static final DeferredItem<Item> FIRST_WALL_TILE = ITEMS.registerSimpleItem("first_wall_tile");
     public static final DeferredItem<BlockItem> GALENA_ORE = ITEMS.registerSimpleBlockItem("galena_ore", ModBlocks.GALENA_ORE);
     public static final DeferredItem<BlockItem> DEEPSLATE_GALENA_ORE = ITEMS.registerSimpleBlockItem("deepslate_galena_ore", ModBlocks.DEEPSLATE_GALENA_ORE);
     public static final DeferredItem<BlockItem> LEAD_BLOCK = ITEMS.registerSimpleBlockItem("lead_block", ModBlocks.LEAD_BLOCK);
@@ -762,6 +764,8 @@ public class ModItems {
                         output.accept(DEUTERIUM_CANISTER.get());
                         output.accept(TRITIUM_CANISTER.get());
                         output.accept(HELIUM_CANISTER.get());
+                        output.accept(SUPERCONDUCTING_COIL_SCRAP.get());
+                        output.accept(FIRST_WALL_TILE.get());
                         output.accept(DEEPSLATE_URANIUM_ORE.get());
                         output.accept(RAW_URANIUM.get());
                         output.accept(URANIUM_CONCENTRATE.get());

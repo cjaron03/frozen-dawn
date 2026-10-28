@@ -44,7 +44,7 @@ public final class UplinkConsoleBlockEntity extends BlockEntity implements MenuP
     private BlockPos dish, driven;
     private int dishStatus;
     private boolean powered, reloaded;
-    private ItemStack held=ItemStack.EMPTY;
+    private ItemStack held=ItemStack.EMPTY,heldExtra=ItemStack.EMPTY;
     private final ArrayDeque<UplinkBroadcasts.Line> log=new ArrayDeque<>();
 
     public UplinkConsoleBlockEntity(BlockPos p,BlockState s){super(ModBlockEntities.UPLINK_CONSOLE.get(),p,s);}
@@ -182,11 +182,12 @@ public final class UplinkConsoleBlockEntity extends BlockEntity implements MenuP
         state=State.IDLE;mode=resume;elapsed=0;
         log(new UplinkBroadcasts.Line("uplink.frozendawn.log.complete",List.of()));
         logComponent(result.log());
+        if(result.extraLog()!=null)logComponent(result.extraLog());
         var player=transmitter==null?null:l.getServer().getPlayerList().getPlayer(transmitter);
         if(player!=null&&player.level()==l&&player.distanceToSqr(worldPosition.getCenter())<=32*32){
-            if(!player.getInventory().add(result.item().copy()))player.drop(result.item().copy(),false);
+            give(player,result.item().copy());if(!result.extra().isEmpty())give(player,result.extra().copy());
             player.displayClientMessage(Component.translatable("uplink.frozendawn.printed").withStyle(ChatFormatting.AQUA),true);
-        } else held=result.item().copy();
+        } else {held=result.item().copy();heldExtra=result.extra().copy();}
         l.playSound(null,worldPosition,ModSounds.RADIO_SIGNAL_LOCK.get(),SoundSource.BLOCKS,0.9f,1.0f);
         FrozenDawn.LOGGER.info("[Uplink] Transmission complete at {}: {}",worldPosition.toShortString(),result.reward());
         setChanged();sync();
@@ -222,13 +223,15 @@ public final class UplinkConsoleBlockEntity extends BlockEntity implements MenuP
     private void sync(){if(level instanceof ServerLevel l)l.sendBlockUpdated(worldPosition,getBlockState(),getBlockState(),3);}
 
     public void deliverHeld(ServerPlayer player){
-        if(held.isEmpty())return;
-        if(!player.getInventory().add(held))player.drop(held,false);
-        held=ItemStack.EMPTY;setChanged();
+        if(held.isEmpty()&&heldExtra.isEmpty())return;
+        if(!held.isEmpty())give(player,held);if(!heldExtra.isEmpty())give(player,heldExtra);
+        held=ItemStack.EMPTY;heldExtra=ItemStack.EMPTY;setChanged();
+    }
+    private static void give(ServerPlayer player,ItemStack stack){if(!player.getInventory().add(stack))player.drop(stack,false);
     }
     public void dropHeld(){
-        if(level!=null&&!held.isEmpty())net.minecraft.world.Containers.dropItemStack(level,worldPosition.getX()+.5,worldPosition.getY()+1,worldPosition.getZ()+.5,held);
-        held=ItemStack.EMPTY;
+        for(var s:List.of(held,heldExtra))if(level!=null&&!s.isEmpty())net.minecraft.world.Containers.dropItemStack(level,worldPosition.getX()+.5,worldPosition.getY()+1,worldPosition.getZ()+.5,s);
+        held=ItemStack.EMPTY;heldExtra=ItemStack.EMPTY;
     }
 
     public boolean stillValid(Player p){return !p.isSpectator()&&level!=null&&level.getBlockEntity(worldPosition)==this&&p.distanceToSqr(worldPosition.getCenter())<=64;}
@@ -254,6 +257,7 @@ public final class UplinkConsoleBlockEntity extends BlockEntity implements MenuP
         t.putInt("Elapsed",elapsed);t.putLong("Started",started);t.putLong("NextBroadcast",nextBroadcast);t.putInt("BroadcastIndex",broadcastIndex);
         if(transmitter!=null)t.putUUID("Transmitter",transmitter);
         if(!held.isEmpty())t.put("Held",held.save(r));
+        if(!heldExtra.isEmpty())t.put("HeldExtra",heldExtra.save(r));
         t.put("Log",saveLog(log));
     }
     @Override protected void loadAdditional(CompoundTag t,HolderLookup.Provider r){
@@ -265,6 +269,7 @@ public final class UplinkConsoleBlockEntity extends BlockEntity implements MenuP
         nextBroadcast=t.getLong("NextBroadcast");broadcastIndex=Math.max(0,t.getInt("BroadcastIndex"));
         transmitter=t.hasUUID("Transmitter")?t.getUUID("Transmitter"):null;
         held=t.contains("Held")?ItemStack.parseOptional(r,t.getCompound("Held")):ItemStack.EMPTY;
+        heldExtra=t.contains("HeldExtra")?ItemStack.parseOptional(r,t.getCompound("HeldExtra")):ItemStack.EMPTY;
         loadLog(t.getList("Log",Tag.TAG_COMPOUND));
         // An armed prompt never survives a reload; an in-flight handshake resumes and must re-qualify for power.
         if(state==State.ARMED)state=State.IDLE;
