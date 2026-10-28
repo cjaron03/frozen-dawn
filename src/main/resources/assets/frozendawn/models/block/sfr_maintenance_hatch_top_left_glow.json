@@ -1,5 +1,6 @@
 {
   "ambientocclusion": false,
+  "render_type": "minecraft:cutout",
   "textures": {
     "particle": "frozendawn:block/sfr_maintenance_hatch_top",
     "top": "frozendawn:block/sfr_maintenance_hatch_top",
@@ -73,31 +74,31 @@
     {
       "from": [
         -0.02,
-        5,
-        5
+        0,
+        0
       ],
       "to": [
         3.02,
-        11,
-        11
+        16,
+        16
       ],
       "shade": false,
       "faces": {
         "west": {
           "uv": [
-            5,
-            5,
-            11,
-            11
+            0,
+            0,
+            16,
+            16
           ],
           "texture": "#glow"
         },
         "east": {
           "uv": [
-            5,
-            5,
-            11,
-            11
+            16,
+            0,
+            0,
+            16
           ],
           "texture": "#glow"
         }
