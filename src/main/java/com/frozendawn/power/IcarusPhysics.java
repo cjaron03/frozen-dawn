@@ -7,7 +7,7 @@ import net.minecraft.nbt.CompoundTag;
  * startup is a staged sequence that holds, never fails, on a missing input; a charged core whose shield reaches zero
  * detonates, so the controller acts on Readout.detonate. */
 public final class IcarusPhysics {
-    public static final long CAPSULE = 1_000_000L;
+    public static final long CAPSULE = 1_000_000L, CLIP_LOSS = CAPSULE / 10;
     public static final int MAX_CAPSULES = 64, MIN_START_CAPSULES = 2;
     public static final double MIN_OUTPUT_MW = 1.0, MAX_OUTPUT_MW = 2.5, STARTUP_DRAW_KW = 1000;
     /** The reserve bank holds the shield about ten minutes at the Minimum draw; startup puts the first RESERVE_BOOT_MJ in from the grid. */
@@ -30,6 +30,10 @@ public final class IcarusPhysics {
     public static final double RAMP_MW_PER_SECOND = 0.05;
     public static final int POWER_CHECK_S = 10, RESERVE_CHARGE_S = 20, SPINUP_S = 30, COMMISSIONING_S = 60,
             INJECTION_S = 20, PRIMING_S = 15, IGNITION_S = 5, RAMP_S = 20, DISCHARGE_S = 20;
+    /** A restart after CLIP skips the checks the stabilizers already passed: 40 s from injection to RUNNING. */
+    public static final int RESTART_INJECTION_S = 10, RESTART_PRIMING_S = 5, RESTART_IGNITION_S = 5;
+    /** Cole Protocol: ramp down, cool, recover the antimatter into capsules, discharge. Three minutes from RUNNING. */
+    public static final int COLE_RAMP_DOWN_S = 60, COLE_COOL_S = 60, COLE_RECOVER_S = 40;
 
     /** Megajoules a capsule yields: a Minimum burn gets the most out of it. */
     public static double mjPerCapsule(double grossMw) {
@@ -84,13 +88,16 @@ public final class IcarusPhysics {
     private Status status = Status.OK;
     private Settings settings = Settings.MINIMUM;
     private int left;
-    private boolean commissioned;
-    private long coreCharge, loadedCharge, used;
-    private double grossMw, coreC = AMBIENT_C, shieldPct, reserveMJ, matterProgress, useRemainder;
+    private boolean commissioned, restart;
+    private long coreCharge, loadedCharge, used, lost;
+    private double grossMw, coreC = AMBIENT_C, shieldPct, reserveMJ, matterProgress, useRemainder, rampFrom;
 
     public State state() { return state; }
     public long coreCharge() { return coreCharge; }
     public boolean commissioned() { return commissioned; }
+    /** Antimatter spent producing power, and lost to CLIPs, in micro-capsules since the block was placed. */
+    public long used() { return used; }
+    public long lost() { return lost; }
     public Settings settings() { return settings; }
     public void settings(Settings s) { if (s != null) settings = s; }
     void setCoreChargeForTest(long c) { coreCharge = Math.clamp(c, 0, MAX_CAPSULES * CAPSULE); }
@@ -98,29 +105,50 @@ public final class IcarusPhysics {
     /** Clears the charge after the controller has queued the blast. */
     public void detonated() { coreCharge = 0; state = State.DETONATED; grossMw = 0; }
 
+    /** From COLD runs the full startup; from CLIPPED restarts at injection. */
     public boolean start() {
-        if (state != State.COLD) return false;
-        enter(State.POWER_CHECK); status = Status.OK; return true;
-    }
-    /** Before injection, aborts to COLD. */
-    public boolean cole() {
-        if (state == State.COLD || state == State.DETONATED) return false;
-        if (coreCharge == 0) { cold(Status.OK); return true; }
+        if (state == State.COLD) { restart = false; enter(State.POWER_CHECK); status = Status.OK; return true; }
+        if (state == State.CLIPPED) { restart = true; enter(State.INJECTION); status = Status.OK; return true; }
         return false;
+    }
+    /** Cascade Lockout, Injection Purge: the matter stream is cut and the reaction stops at once. Purging the injector loses
+     * CLIP_LOSS of the charge; the shield stays up on the grid or the reserve. Before injection it simply aborts. */
+    public boolean clip() {
+        if (!clippable()) return false;
+        if (coreCharge == 0) { cold(Status.OK); return true; }
+        long loss = Math.min(CLIP_LOSS, coreCharge);
+        coreCharge -= loss; lost += loss; grossMw = 0;
+        if (coreCharge == 0) enter(State.COLE_DISCHARGE);
+        else { state = State.CLIPPED; left = 0; }
+        status = Status.OK; return true;
+    }
+    private boolean clippable() {
+        return switch (state) {
+            case POWER_CHECK, RESERVE_CHARGE, STABILIZER_SPINUP, COMMISSIONING, INJECTION, PRIMING, IGNITION, RAMP, RUNNING -> true;
+            default -> false;
+        };
+    }
+    /** The safe shutdown. Before injection it aborts to COLD; a lit core ramps down first, an unlit one starts cooling. */
+    public boolean cole() {
+        if (state == State.COLD || state == State.DETONATED || state.ordinal() >= State.COLE_RAMP_DOWN.ordinal()) return false;
+        if (coreCharge == 0) { cold(Status.OK); return true; }
+        if (grossMw > 0) { rampFrom = grossMw; enter(State.COLE_RAMP_DOWN); }
+        else { grossMw = 0; enter(State.COLE_COOL); }
+        status = Status.OK; return true;
     }
 
     public Readout step(Inputs in) {
-        long injected = 0;
+        long injected = 0, recovered = 0;
         int matterUsed = 0;
         double requestKw = 0;
-        boolean startup = false, burning = false, starved = false;
+        boolean startup = false, burning = false, starved = false, held = false;
         if (state != State.COLD) status = Status.OK;
         switch (state) {
             case POWER_CHECK, RESERVE_CHARGE, STABILIZER_SPINUP, COMMISSIONING, INJECTION, PRIMING, IGNITION -> {
                 startup = true;
                 requestKw = STARTUP_DRAW_KW;
                 Status hold = startupHold(in);
-                if (hold != null) status = hold;
+                if (hold != null) { status = hold; held = true; }
                 else {
                     if (state == State.RESERVE_CHARGE) reserveMJ = Math.min(RESERVE_MJ, reserveMJ + STARTUP_DRAW_KW / 1000);
                     if (state == State.STABILIZER_SPINUP) shieldPct = Math.min(100, shieldPct + 100.0 / SPINUP_S);
@@ -140,7 +168,16 @@ public final class IcarusPhysics {
                 grossMw += Math.clamp(target - grossMw, -RAMP_MW_PER_SECOND, RAMP_MW_PER_SECOND);
                 if (state == State.RAMP) left--;
             }
-            case COLE_DISCHARGE -> left--;
+            case COLE_RAMP_DOWN -> {
+                burning = true;
+                grossMw = rampFrom * (1 - (double) (COLE_RAMP_DOWN_S - left + 1) / COLE_RAMP_DOWN_S);
+                left--;
+            }
+            case COLE_COOL, COLE_DISCHARGE -> left--;
+            case COLE_RECOVER -> {
+                if (in.dockEmpties() < (coreCharge + CAPSULE - 1) / CAPSULE) { status = Status.HOLD_CAPSULE_SPACE; held = true; }
+                else if (--left == 0) { recovered = coreCharge; coreCharge = 0; }
+            }
             default -> {}
         }
         double perSecond = burning ? grossMw / mjPerCapsule(grossMw) * CAPSULE : 0;
@@ -185,10 +222,9 @@ public final class IcarusPhysics {
         Alarm alarm = charged ? alarm(status, coreC, shieldPct, shieldEta, redLineEta, reserveEta, antimatterEta) : Alarm.NONE;
         Cascade cascade = charged ? cascade(coreC, shieldPct, falling) : Cascade.STABLE;
         Readout r = new Readout(state, status, left, grossMw, shieldDraw, netMw, requestKw, coreC, shieldPct, reserveMJ, coreCharge,
-                injected, 0, matterUsed, shieldEta, redLineEta, reserveEta, antimatterEta, alarm, cascade, detonate);
+                injected, recovered, matterUsed, shieldEta, redLineEta, reserveEta, antimatterEta, alarm, cascade, detonate);
         if (burning && coreCharge == 0) { grossMw = 0; enter(State.COLE_DISCHARGE); }
-        else if (left == 0 && status != Status.HOLD_STRUCTURE && status != Status.HOLD_POWER && status != Status.HOLD_CAPSULES
-                && status != Status.HOLD_MATTER) advance();
+        else if (left == 0 && !held && state != State.CLIPPED) advance();
         return r;
     }
 
@@ -219,7 +255,10 @@ public final class IcarusPhysics {
             case INJECTION -> enter(State.PRIMING);
             case PRIMING -> enter(State.IGNITION);
             case IGNITION -> enter(State.RAMP);
-            case RAMP -> enter(State.RUNNING);
+            case RAMP -> { restart = false; enter(State.RUNNING); }
+            case COLE_RAMP_DOWN -> { grossMw = 0; enter(State.COLE_COOL); }
+            case COLE_COOL -> enter(State.COLE_RECOVER);
+            case COLE_RECOVER -> enter(State.COLE_DISCHARGE);
             case COLE_DISCHARGE -> cold(Status.SAFE_TO_DISMANTLE);
             default -> {}
         }
@@ -232,9 +271,12 @@ public final class IcarusPhysics {
             case RESERVE_CHARGE -> RESERVE_CHARGE_S;
             case STABILIZER_SPINUP -> SPINUP_S;
             case COMMISSIONING -> COMMISSIONING_S;
-            case INJECTION -> INJECTION_S;
-            case PRIMING -> PRIMING_S;
-            case IGNITION -> IGNITION_S;
+            case INJECTION -> restart ? RESTART_INJECTION_S : INJECTION_S;
+            case PRIMING -> restart ? RESTART_PRIMING_S : PRIMING_S;
+            case IGNITION -> restart ? RESTART_IGNITION_S : IGNITION_S;
+            case COLE_RAMP_DOWN -> COLE_RAMP_DOWN_S;
+            case COLE_COOL -> COLE_COOL_S;
+            case COLE_RECOVER -> COLE_RECOVER_S;
             case RAMP -> RAMP_S;
             case COLE_DISCHARGE -> DISCHARGE_S;
             default -> 0;
@@ -247,7 +289,8 @@ public final class IcarusPhysics {
 
     public void save(CompoundTag t) {
         t.putString("State", state.name()); t.putString("Status", status.name()); t.putInt("Left", left);
-        t.putBoolean("Commissioned", commissioned); t.putLong("CoreCharge", coreCharge); t.putLong("LoadedCharge", loadedCharge); t.putLong("Used", used);
+        t.putBoolean("Commissioned", commissioned); t.putLong("CoreCharge", coreCharge); t.putLong("LoadedCharge", loadedCharge); t.putLong("Used", used); t.putLong("Lost", lost);
+        t.putBoolean("Restart", restart); t.putDouble("RampFrom", rampFrom);
         t.putDouble("UseRemainder", useRemainder);
         t.putDouble("GrossMw", grossMw); t.putDouble("CoreC", coreC); t.putDouble("ShieldPct", shieldPct);
         t.putDouble("ReserveMJ", reserveMJ); t.putDouble("MatterProgress", matterProgress);
@@ -260,7 +303,8 @@ public final class IcarusPhysics {
         commissioned = t.getBoolean("Commissioned");
         coreCharge = Math.clamp(t.getLong("CoreCharge"), 0, MAX_CAPSULES * CAPSULE);
         loadedCharge = Math.clamp(t.getLong("LoadedCharge"), coreCharge, MAX_CAPSULES * CAPSULE);
-        used = Math.max(0, t.getLong("Used"));
+        used = Math.max(0, t.getLong("Used")); lost = Math.max(0, t.getLong("Lost"));
+        restart = t.getBoolean("Restart"); rampFrom = Math.clamp(finite(t.getDouble("RampFrom"), 0), 0, MAX_OUTPUT_MW);
         useRemainder = Math.clamp(finite(t.getDouble("UseRemainder"), 0), 0, 1);
         grossMw = Math.clamp(finite(t.getDouble("GrossMw"), 0), 0, MAX_OUTPUT_MW);
         coreC = t.contains("CoreC") ? finite(t.getDouble("CoreC"), AMBIENT_C) : AMBIENT_C;
