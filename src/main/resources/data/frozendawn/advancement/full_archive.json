@@ -1,0 +1,23 @@
+{
+  "parent": "frozendawn:phase6",
+  "display": {
+    "icon": {
+      "id": "frozendawn:data_slate"
+    },
+    "title": {
+      "translate": "advancement.frozendawn.full_archive.title"
+    },
+    "description": {
+      "translate": "advancement.frozendawn.full_archive.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": true
+  },
+  "criteria": {
+    "impossible": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

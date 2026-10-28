@@ -89,9 +89,13 @@ public final class FabricatorGameTest {
             h.assertTrue(reloaded != null && reloaded.progress() == 1 && reloaded.total() == 45 * 20, "A saved job keeps its progress");
             f.setItem(1, new ItemStack(ModItems.LEAD_INGOT.get(), 1)); account(l); f.serverTick();
             h.assertTrue(f.progress() == 0 && f.status() == 3 && !f.working(), "Taking a needed ingredient resets the job");
-            var player = new FakePlayer(l, new GameProfile(UUID.randomUUID(), "fabricator_menu")); player.setPos(p.getCenter());
+            var player = player(h, p);
             var menu = new FabricatorMenu(1, player.getInventory(), f, f.data(), p);
             h.assertTrue(menu.stillValid(player) && menu.slots.size() == 43 && !menu.slots.get(0).mayPlace(slate) && !menu.slots.get(FabricatorBlockEntity.OUTPUT).mayPlace(new ItemStack(Items.IRON_INGOT)), "Menu inputs refuse slates and output refuses insertion");
+            var printed = new ItemStack(ModItems.LITHIUM_BLANKET.get(), 8); f.setItem(FabricatorBlockEntity.OUTPUT, printed.copy());
+            menu.slots.get(FabricatorBlockEntity.OUTPUT).onTake(player, printed);
+            h.assertTrue(earned(player, "printed_not_made"), "Taking a printed part grants Printed, Not Made");
+            l.removePlayerImmediately(player, net.minecraft.world.entity.Entity.RemovalReason.DISCARDED);
             l.destroyBlock(p, false);
             int dropped = l.getEntitiesOfClass(ItemEntity.class, new AABB(p).inflate(2)).stream().filter(e -> e.getItem().is(ModItems.LITHIUM.get())).mapToInt(e -> e.getItem().getCount()).sum();
             h.assertTrue(dropped == 4, "Breaking the Fabricator drops its inputs");
@@ -102,13 +106,16 @@ public final class FabricatorGameTest {
     @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "fabricator_machine", timeoutTicks = 40)
     public static void slateRightClickLearnsAndConsumes(GameTestHelper h) {
         h.runAfterDelay(1, () -> {
-            var l = h.getLevel(); var archive = FabricatorBlueprints.get(l.getServer()); archive.forget("first_wall");
+            var l = h.getLevel(); var archive = FabricatorBlueprints.get(l.getServer());
+            for (var id : FabricatorBlueprints.SLATES) archive.learn(id);
+            archive.forget("first_wall");
             var p = place(h, 3, 2, 3, ModBlocks.FABRICATOR.get()); var state = l.getBlockState(p);
-            var player = new FakePlayer(l, new GameProfile(UUID.randomUUID(), "fabricator_slate")); player.setPos(p.east().getCenter());
+            var player = player(h, p.east());
             var hit = new BlockHitResult(p.getCenter(), Direction.EAST, p, false);
             var stack = FabricatorBlueprints.slate("first_wall"); stack.setCount(2); player.setItemInHand(InteractionHand.MAIN_HAND, stack);
             state.useItemOn(stack, l, player, InteractionHand.MAIN_HAND, hit);
             h.assertTrue(archive.knows("first_wall") && stack.getCount() == 1, "Inserting a slate learns it and consumes one slate");
+            h.assertTrue(earned(player, "full_archive"), "The slate that completes the archive grants Full Archive");
             state.useItemOn(stack, l, player, InteractionHand.MAIN_HAND, hit);
             h.assertTrue(stack.getCount() == 1, "A slate for a known blueprint stays in hand");
             var forged = new ItemStack(ModItems.DATA_SLATE.get()); forged.set(ModDataComponents.BLUEPRINT.get(), "sweep_turret");
@@ -116,6 +123,7 @@ public final class FabricatorGameTest {
             var blank = new ItemStack(ModItems.DATA_SLATE.get());
             state.useItemOn(blank, l, player, InteractionHand.MAIN_HAND, hit);
             h.assertTrue(forged.getCount() == 1 && blank.getCount() == 1 && !archive.knows("sweep_turret"), "Blank and unknown slates teach nothing and are kept");
+            l.removePlayerImmediately(player, net.minecraft.world.entity.Entity.RemovalReason.DISCARDED);
             h.succeed();
         });
     }
@@ -166,6 +174,18 @@ public final class FabricatorGameTest {
         h.succeed();
     }
 
+    /** A real survival player: FakePlayer ignores advancements. */
+    private static net.minecraft.server.level.ServerPlayer player(GameTestHelper h, BlockPos pos) {
+        var level = h.getLevel(); var profile = new GameProfile(UUID.randomUUID(), "fabricator_" + pos.getX());
+        var player = new net.minecraft.server.level.ServerPlayer(level.getServer(), level, profile, net.minecraft.server.level.ClientInformation.createDefault());
+        player.connection = new FakePlayer(level, profile).connection;
+        player.setPos(pos.getCenter()); player.setGameMode(net.minecraft.world.level.GameType.SURVIVAL); level.addNewPlayer(player);
+        return player;
+    }
+    private static boolean earned(net.minecraft.server.level.ServerPlayer player, String id) {
+        var holder = player.getServer().getAdvancements().get(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, id));
+        return holder != null && player.getAdvancements().getOrStartProgress(holder).isDone();
+    }
     private static FabricatorBlockEntity fab(ServerLevel l, BlockPos p) { return (FabricatorBlockEntity) l.getBlockEntity(p); }
     private static BlockPos place(GameTestHelper h, int x, int y, int z, Block b) { var p = new BlockPos(x, y, z); h.setBlock(p, b); return h.absolutePos(p); }
     private static void link(GameTestHelper h, BlockPos a, BlockPos b) { var result = PowerNetworks.link(h.getLevel(), a, b); h.assertTrue(result == PowerLinkRules.Result.OK, "Expected fabricator link " + a + " -> " + b + ", got " + result); }
