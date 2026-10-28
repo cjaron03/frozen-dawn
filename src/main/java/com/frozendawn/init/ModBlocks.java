@@ -99,7 +99,8 @@ public class ModBlocks {
     public static final DeferredBlock<com.frozendawn.block.SfrVacuumPortBlock> SFR_VACUUM_PORT = BLOCKS.register("sfr_vacuum_port",
             () -> new com.frozendawn.block.SfrVacuumPortBlock(sfrShell()));
     public static final DeferredBlock<com.frozendawn.block.SfrHatchBlock> SFR_MAINTENANCE_HATCH = BLOCKS.register("sfr_maintenance_hatch",
-            () -> new com.frozendawn.block.SfrHatchBlock(BlockBehaviour.Properties.ofFullCopy(net.minecraft.world.level.block.Blocks.IRON_DOOR).pushReaction(PushReaction.BLOCK)));
+            () -> new com.frozendawn.block.SfrHatchBlock(BlockBehaviour.Properties.ofFullCopy(net.minecraft.world.level.block.Blocks.IRON_DOOR).pushReaction(PushReaction.BLOCK)
+                    .lightLevel(com.frozendawn.block.SfrHatchBlock::light)));
     public static final DeferredBlock<com.frozendawn.block.MagnetCoilBlock> MAGNET_COIL = BLOCKS.register("magnet_coil",
             () -> new com.frozendawn.block.MagnetCoilBlock(sfrShell()));
     public static final DeferredBlock<com.frozendawn.block.FirstWallBlock> FIRST_WALL = BLOCKS.register("first_wall",

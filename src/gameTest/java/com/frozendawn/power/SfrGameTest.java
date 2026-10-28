@@ -415,6 +415,29 @@ public final class SfrGameTest {
     }
 
     @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "sfr", timeoutTicks = 300, skyAccess = true)
+    public static void sfrHatchPortholeGlowsWithThePlasma(GameTestHelper h) {
+        h.runAfterDelay(1, () -> {
+            var be = ready(h, 8_000_000);
+            h.startSequence()
+                    .thenWaitUntil(() -> h.assertValueEqual(be.physics().state(), FusionPhysics.State.BURNING, "state"))
+                    .thenExecute(() -> {
+                        var level = h.getLevel(); var lower = be.shell().hatch(); var upper = lower.above();
+                        be.second(level);
+                        h.assertValueEqual(level.getBlockState(lower).getValue(SfrHatchBlock.GLOW), 2, "lower half glow while burning");
+                        h.assertValueEqual(level.getBlockState(upper).getValue(SfrHatchBlock.GLOW), 2, "upper half glow while burning");
+                        h.assertTrue(level.getLightEmission(upper) > 0 && level.getLightEmission(lower) == 0, "only the porthole half gives light");
+                        be.stop();
+                        be.second(level);
+                        h.assertValueEqual(level.getBlockState(upper).getValue(SfrHatchBlock.GLOW), 1, "glow while ramping down");
+                        for (int i = 1; i < FusionPhysics.RAMP_DOWN_SECONDS; i++) be.second(level);
+                        h.assertValueEqual(level.getBlockState(upper).getValue(SfrHatchBlock.GLOW), 0, "glow once off");
+                        h.assertValueEqual(level.getBlockState(lower).getValue(SfrHatchBlock.GLOW), 0, "lower half glow once off");
+                    })
+                    .thenSucceed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "sfr", timeoutTicks = 300, skyAccess = true)
     public static void sfrEStopDisruptsAndWears(GameTestHelper h) {
         h.runAfterDelay(1, () -> {
             var be = ready(h, 8_000_000);

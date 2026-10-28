@@ -1,0 +1,113 @@
+{
+  "ambientocclusion": false,
+  "textures": {
+    "particle": "frozendawn:block/sfr_maintenance_hatch_top",
+    "top": "frozendawn:block/sfr_maintenance_hatch_top",
+    "glow": "frozendawn:block/sfr_porthole_glow"
+  },
+  "elements": [
+    {
+      "from": [
+        0,
+        0,
+        0
+      ],
+      "to": [
+        3,
+        16,
+        16
+      ],
+      "faces": {
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            3
+          ],
+          "texture": "#top",
+          "cullface": "up",
+          "rotation": 270
+        },
+        "north": {
+          "uv": [
+            3,
+            0,
+            0,
+            16
+          ],
+          "texture": "#top",
+          "cullface": "north"
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            3,
+            16
+          ],
+          "texture": "#top",
+          "cullface": "south"
+        },
+        "west": {
+          "uv": [
+            16,
+            0,
+            0,
+            16
+          ],
+          "texture": "#top",
+          "cullface": "west"
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#top"
+        }
+      }
+    },
+    {
+      "from": [
+        -0.02,
+        5,
+        5
+      ],
+      "to": [
+        3.02,
+        11,
+        11
+      ],
+      "shade": false,
+      "faces": {
+        "west": {
+          "uv": [
+            5,
+            5,
+            11,
+            11
+          ],
+          "texture": "#glow"
+        },
+        "east": {
+          "uv": [
+            5,
+            5,
+            11,
+            11
+          ],
+          "texture": "#glow"
+        }
+      },
+      "neoforge_data": {
+        "color": "ffffffff",
+        "block_light": 15,
+        "sky_light": 15,
+        "ambient_occlusion": false
+      }
+    }
+  ]
+}
