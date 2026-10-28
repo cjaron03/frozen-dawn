@@ -1,6 +1,7 @@
 package com.frozendawn.item;
 
 import com.frozendawn.FrozenDawn;
+import com.frozendawn.data.FabricatorBlueprints;
 import com.frozendawn.init.ModDataComponents;
 import java.util.List;
 import net.minecraft.ChatFormatting;
@@ -18,7 +19,8 @@ public final class DataSlateItem extends Item {
 
     @Override public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
         var id = stack.get(ModDataComponents.BLUEPRINT.get());
-        if (id == null) { tooltip.add(Component.translatable("item.frozendawn.data_slate.blank").withStyle(ChatFormatting.GRAY)); return; }
+        // Only known slate ids reach the registry lookup; a hand-edited component reads as blank instead of throwing.
+        if (id == null || !FabricatorBlueprints.SLATES.contains(id)) { tooltip.add(Component.translatable("item.frozendawn.data_slate.blank").withStyle(ChatFormatting.GRAY)); return; }
         var part = BuiltInRegistries.ITEM.get(ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, id));
         tooltip.add(Component.translatable("item.frozendawn.data_slate.blueprint", part.getDescription()).withStyle(ChatFormatting.AQUA));
         tooltip.add(Component.translatable("item.frozendawn.data_slate.hint").withStyle(ChatFormatting.GRAY));
