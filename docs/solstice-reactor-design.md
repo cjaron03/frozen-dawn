@@ -49,6 +49,8 @@ The ORSA Fabricator is a separate spec. It supplies survival recipes for the SFR
 
 Every block and item in this slice is creative tab and `/give` only, with no recipes and no loot: Confinement Core, Deuterium Canister, Tritium Canister, Magnet Coil, First Wall, Lithium Blanket, High-Temperature Radiator, the SFR-1 Controller and every port. Survival access comes with the Fabricator and the fuel slice.
 
+Update 2026-10-26 (`feat/helion-sites`): every part except the Confinement Core now has a crafting recipe, and the core is found only at Helion sites. See [helion-sites-playtest.md](helion-sites-playtest.md).
+
 ## Structure (decided): 9x9x5
 
 The spec's four-ring layout needs 11x11. The owner chose to keep 9x9x5 and drop the outer First Wall, so the Blanket ring faces the plasma.
