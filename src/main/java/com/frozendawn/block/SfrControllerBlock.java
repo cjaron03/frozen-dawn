@@ -62,7 +62,8 @@ public final class SfrControllerBlock extends Block implements EntityBlock {
         PacketDistributor.sendToPlayer(player, new SfrBlueprintPayload(c.getBlockPos(), show));
         if (cells.isEmpty()) { player.displayClientMessage(Component.translatable("message.frozendawn.sfr.missing_ports"), true); return; }
         if (!show) { player.displayClientMessage(Component.translatable("message.frozendawn.sfr.blueprint_hidden"), true); return; }
-        player.displayClientMessage(Component.translatable("message.frozendawn.sfr.twenty_years"), true);
+        // Chat, not the action bar: the parts list below would cover an action-bar line.
+        player.displayClientMessage(Component.translatable("message.frozendawn.sfr.twenty_years").withStyle(net.minecraft.ChatFormatting.GOLD, net.minecraft.ChatFormatting.BOLD), false);
         var counts = new java.util.LinkedHashMap<Block, Integer>(); int clear = 0;
         for (var w : cells) {
             if (w.expected() == null) clear++;
