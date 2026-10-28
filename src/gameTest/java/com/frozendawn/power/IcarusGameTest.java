@@ -9,6 +9,7 @@ import com.frozendawn.gametest.GameTestTemplates;
 import com.frozendawn.init.*;
 import com.frozendawn.item.AntimatterCapsuleItem;
 import com.frozendawn.recipe.FabricatorRecipe;
+import com.frozendawn.world.IcarusCraterData;
 import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.core.BlockPos;
@@ -201,6 +202,109 @@ public final class IcarusGameTest {
         });
     }
 
+    // Detonation tests run in their own batch: a blast kills and pushes entities out to twice its radius, which must
+    // not reach another batch's scene. A core charge of 512 gives radius 8, which stays inside the template.
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "icarus_detonation", timeoutTicks = 100)
+    public static void icarusBreakingAFrameBlockWithChargeDetonates(GameTestHelper h) {
+        scene(h, () -> {
+            var l = h.getLevel(); var c = icarus(h, IcarusScenes.build(h, CENTER)); var core = h.absolutePos(CENTER);
+            c.physics().setCoreChargeForTest(512);
+            l.destroyBlock(IcarusScenes.cell(h, CENTER, Direction.SOUTH, 8, -6, 0), true);
+            var jobs = jobsAt(l, core);
+            h.assertValueEqual(jobs.size(), 1, "crater jobs at the core after a charged frame block breaks");
+            h.assertTrue(Math.abs(jobs.get(0).radius() - 8) < 0.01, "512 charge gives radius 8, got " + jobs.get(0).radius());
+            h.assertValueEqual(c.physics().coreCharge(), 0L, "core charge after the detonation");
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "icarus_detonation", timeoutTicks = 100)
+    public static void icarusBreakingAnEmptyReactorOnlyInvalidates(GameTestHelper h) {
+        scene(h, () -> {
+            var l = h.getLevel(); var controller = IcarusScenes.build(h, CENTER); var c = icarus(h, controller);
+            l.destroyBlock(IcarusScenes.cell(h, CENTER, Direction.SOUTH, 8, -6, 0), true);
+            h.assertValueEqual(jobsAt(l, h.absolutePos(CENTER)).size(), 0, "crater jobs after an empty reactor loses a part");
+            h.assertTrue(l.getBlockState(controller).is(ModBlocks.ICARUS_CONTROLLER.get()), "The controller is still there");
+            c.second(l);
+            h.assertValueEqual(c.problem(), IcarusStructure.Problem.FRAME, "the controller reports the missing frame block");
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "icarus_detonation", timeoutTicks = 100)
+    public static void icarusExplosionNextToFrameDetonates(GameTestHelper h) {
+        h.runAfterDelay(1, () -> {
+            var l = h.getLevel(); var c = icarus(h, IcarusScenes.build(h, CENTER));
+            var housing = IcarusScenes.cell(h, CENTER, Direction.SOUTH, -8, 0, 0);
+            var piston = housing.west();
+            l.setBlock(piston, Blocks.PISTON.defaultBlockState().setValue(net.minecraft.world.level.block.piston.PistonBaseBlock.FACING, Direction.EAST), 3);
+            l.setBlock(piston.west(), Blocks.REDSTONE_BLOCK.defaultBlockState(), 3);
+            h.runAfterDelay(6, () -> {
+                h.assertTrue(l.getBlockState(housing).is(ModBlocks.ICARUS_STABILIZER_HOUSING.get()), "A piston cannot push a stabilizer housing");
+                h.assertTrue(jobsAt(l, h.absolutePos(CENTER)).isEmpty(), "The piston did not set the reactor off");
+                c.physics().setCoreChargeForTest(512);
+                var beside = IcarusScenes.cell(h, CENTER, Direction.SOUTH, 9, -3, 0).getCenter();
+                l.explode(null, beside.x, beside.y, beside.z, 4f, net.minecraft.world.level.Level.ExplosionInteraction.TNT);
+                h.assertValueEqual(jobsAt(l, h.absolutePos(CENTER)).size(), 1, "crater jobs after TNT beside the frame");
+                h.succeed();
+            });
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "icarus_detonation", timeoutTicks = 100)
+    public static void icarusDetonationDoesNotRetriggerItself(GameTestHelper h) {
+        scene(h, () -> {
+            var l = h.getLevel(); var c = icarus(h, IcarusScenes.build(h, CENTER));
+            c.physics().setCoreChargeForTest(512);
+            l.destroyBlock(IcarusScenes.cell(h, CENTER, Direction.SOUTH, 8, -6, 0), true);
+            l.destroyBlock(IcarusScenes.cell(h, CENTER, Direction.SOUTH, 0, 0, 0), true);
+            l.destroyBlock(c.getBlockPos(), true);
+            h.assertValueEqual(jobsAt(l, h.absolutePos(CENTER)).size(), 1, "crater jobs after three parts break");
+        });
+    }
+
+    /** A second reactor's own part inside the first's crater: the carve removes it the way the crater does, without
+     * drops, and that charged reactor goes up too. Only its controller and one support part fit beside the first. */
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "icarus_detonation", timeoutTicks = 100)
+    public static void icarusCraterChainsIntoASecondReactor(GameTestHelper h) {
+        scene(h, () -> {
+            var l = h.getLevel(); var first = icarus(h, IcarusScenes.build(h, CENTER));
+            var secondCore = new BlockPos(2, 7, 10);
+            var controller = IcarusScenes.placeController(h, secondCore, Direction.NORTH);
+            var port = IcarusScenes.cell(h, secondCore, Direction.NORTH, -3, -5, 8);
+            IcarusScenes.set(h, port, ModBlocks.ICARUS_MATTER_PORT.get().defaultBlockState());
+            var second = icarus(h, controller);
+            first.physics().setCoreChargeForTest(512); second.physics().setCoreChargeForTest(1);
+            l.destroyBlock(IcarusScenes.cell(h, CENTER, Direction.SOUTH, 8, -6, 0), true);
+            l.setBlock(port, Blocks.AIR.defaultBlockState(), Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE | Block.UPDATE_SUPPRESS_DROPS);
+            h.assertValueEqual(jobsAt(l, h.absolutePos(CENTER)).size(), 1, "crater jobs at the first core");
+            h.assertValueEqual(jobsAt(l, h.absolutePos(secondCore)).size(), 1, "crater jobs at the second core");
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "icarus_detonation", timeoutTicks = 200)
+    public static void icarusShieldFailureDetonates(GameTestHelper h) {
+        GameTestPacing.whenTicking(h, () -> {
+            var l = h.getLevel(); var c = running(h); var core = h.absolutePos(CENTER);
+            h.assertTrue(c.press(IcarusControllerBlockEntity.BUTTON_CLIP), "CLIP is accepted while running");
+            c.physics().setCoreChargeForTest(512); c.physics().setReserveForTest(0);
+            c.second(l);
+            // As in icarusStartupHoldsWithoutGridPower: real ticks let the port find nothing to pay the shield's draw from.
+            h.runAfterDelay(21 + Math.floorMod(10 - (l.getGameTime() + 21), 20), () -> {
+                c.second(l);
+                h.assertValueEqual(c.physics().state(), IcarusPhysics.State.CLIPPED, "state with the shield on nothing");
+                h.assertTrue(Double.isFinite(c.readout().shieldEtaS()), "An unpowered shield with an empty reserve is falling");
+                // The ETA is a straight-line projection and the core cools once CLIPped, so the shield outlasts the first
+                // ETA; what must hold is that the core goes up on the second the shield runs out, not before.
+                var last = c.readout();
+                for (int s = 0; s < 2000 && jobsAt(l, core).isEmpty(); s++) { last = c.readout(); c.second(l); }
+                h.assertValueEqual(jobsAt(l, core).size(), 1, "crater jobs once the shield runs out");
+                h.assertTrue(last.shieldPct() > 0 && last.shieldEtaS() <= 1.5, "The second before the blast the shield was nearly out: "
+                        + last.shieldPct() + "%, ETA " + last.shieldEtaS() + " s");
+                h.assertValueEqual(c.physics().coreCharge(), 0L, "core charge after the detonation");
+                h.succeed();
+            });
+        });
+    }
+
     private static final BlockPos CENTER = new BlockPos(10, 7, 10);
 
     @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "icarus_structure", timeoutTicks = 100)
@@ -317,6 +421,9 @@ public final class IcarusGameTest {
         return banks;
     }
     private static long stored(List<PowerStorageBlockEntity> banks) { return banks.stream().mapToLong(PowerStorageBlockEntity::storedJoules).sum(); }
+    private static List<IcarusCraterData.Job> jobsAt(ServerLevel l, BlockPos core) {
+        return IcarusCraterData.get(l).jobs().stream().filter(j -> j.center().equals(core)).toList();
+    }
     private static void scene(GameTestHelper h, Runnable body) { h.runAfterDelay(1, () -> { body.run(); h.succeed(); }); }
     private static boolean namesProjectIcarus(Component line) {
         if (line.getString().contains("Project Icarus")) return true;

@@ -102,6 +102,7 @@ public final class IcarusPhysics {
     public void settings(Settings s) { if (s != null) settings = s; }
     void setCoreChargeForTest(long c) { coreCharge = Math.clamp(c, 0, MAX_CAPSULES * CAPSULE); }
     void setCommissionedForTest(boolean b) { commissioned = b; }
+    void setReserveForTest(double mj) { reserveMJ = Math.clamp(mj, 0, RESERVE_MJ); }
     /** Clears the charge after the controller has queued the blast. */
     public void detonated() { coreCharge = 0; state = State.DETONATED; grossMw = 0; }
 

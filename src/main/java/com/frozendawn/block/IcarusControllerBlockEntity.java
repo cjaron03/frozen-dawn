@@ -1,7 +1,9 @@
 package com.frozendawn.block;
 
 import com.frozendawn.init.ModBlockEntities;
+import com.frozendawn.power.IcarusBlast;
 import com.frozendawn.power.IcarusPhysics;
+import com.frozendawn.world.IcarusDetonation;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -63,6 +65,7 @@ public final class IcarusControllerBlockEntity extends BlockEntity implements Me
     public IcarusPhysics physics() { return physics; }
     public IcarusPhysics.Readout readout() { return readout; }
     public Set<UUID> crew() { return crew; }
+    public IcarusStructure.Problem problem() { return problem; }
 
     public List<GhostCell> blueprint(Level l) {
         return IcarusStructure.wrongCells(l, worldPosition, getBlockState().getValue(IcarusControllerBlock.FACING), Integer.MAX_VALUE);
@@ -97,6 +100,7 @@ public final class IcarusControllerBlockEntity extends BlockEntity implements Me
         long injectable = dock == null ? 0 : dock.injectable(room);
         readout = physics.step(new IcarusPhysics.Inputs(valid, port != null && port.paidFullSecond(), injectable,
                 dock == null ? 0 : dock.empties(), feed == null ? 0 : feed.count()));
+        if (readout.detonate() && physics.coreCharge() > 0) { detonate(l); return; }
         if (dock != null) { dock.consume(readout.injected()); dock.recover(readout.recovered()); }
         if (feed != null) feed.use(readout.matterUsed());
         if (port != null) port.publish((int) Math.round(readout.requestKw() * 1000), (int) Math.round(Math.max(0, readout.netMw()) * 1e6));
@@ -139,8 +143,17 @@ public final class IcarusControllerBlockEntity extends BlockEntity implements Me
         setChanged();
     }
 
-    /** A part of a running reactor was removed; Task 8's detonation. */
-    public void partRemoved(ServerLevel l) {}
+    /** One of this reactor's parts was removed by any means. A charged core goes up; an empty one is only invalid. */
+    public void partRemoved(ServerLevel l) { if (physics.coreCharge() > 0) detonate(l); }
+
+    /** The charge is cleared before the blast, so the reactor's own parts falling to it never set it off again. */
+    private void detonate(ServerLevel l) {
+        double radius = IcarusBlast.radius(physics.coreCharge());
+        physics.detonated();
+        if (publishedPort != null) release(l);
+        setChanged();
+        IcarusDetonation.detonate(l, IcarusStructure.core(worldPosition, getBlockState().getValue(IcarusControllerBlock.FACING)), radius, Set.copyOf(crew));
+    }
 
     private void release(ServerLevel l) {
         if (l.isLoaded(publishedPort) && l.getBlockEntity(publishedPort) instanceof IcarusPowerPortBlockEntity old) old.publish(0, 0);
