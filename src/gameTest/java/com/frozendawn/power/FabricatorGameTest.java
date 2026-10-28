@@ -32,6 +32,8 @@ public final class FabricatorGameTest {
     // Machine tests share the world's archive, so tests that learn and forget the same blueprint run in separate batches.
     @BeforeBatch(batch = "fabricator_machine")
     public static void reportMachine(ServerLevel level) { GameTestReporting.installReporter(level); }
+    @BeforeBatch(batch = "fabricator_uplink")
+    public static void reportUplink(ServerLevel level) { GameTestReporting.installReporter(level); }
     @BeforeBatch(batch = "fabricator_live")
     public static void reportLive(ServerLevel level) { GameTestReporting.installReporter(level); }
 
@@ -141,6 +143,27 @@ public final class FabricatorGameTest {
                 h.succeed();
             });
         });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY, batch = "fabricator_uplink", timeoutTicks = 40)
+    public static void uplinkResupplyOffersOnlyUnlearnedSlates(GameTestHelper h) {
+        var l = h.getLevel(); var archive = FabricatorBlueprints.get(l.getServer());
+        var known = FabricatorBlueprints.SLATES.stream().filter(archive::knows).toList();
+        try {
+            for (var id : FabricatorBlueprints.SLATES) if (!id.equals("isotope_column")) archive.learn(id);
+            archive.forget("isotope_column");
+            var crate = place(h, 1, 1, 1, Blocks.BARREL);
+            var barrel = (net.minecraft.world.level.block.entity.BarrelBlockEntity) l.getBlockEntity(crate);
+            barrel.setItem(0, new ItemStack(Items.PAPER));
+            h.assertTrue(com.frozendawn.uplink.UplinkEvents.stockSlate(l, crate), "A crate gets a slate while the archive has gaps");
+            h.assertTrue(barrel.getItem(0).is(Items.PAPER) && barrel.getItem(1).is(ModItems.DATA_SLATE.get())
+                    && "isotope_column".equals(barrel.getItem(1).get(ModDataComponents.BLUEPRINT.get())), "The only unlearned slate goes in the first free slot: " + barrel.getItem(1));
+            archive.learn("isotope_column"); barrel.setItem(1, ItemStack.EMPTY);
+            h.assertTrue(!com.frozendawn.uplink.UplinkEvents.stockSlate(l, crate) && barrel.getItem(1).isEmpty(), "A full archive gets no slates");
+        } finally {
+            for (var id : FabricatorBlueprints.SLATES) if (!known.contains(id)) archive.forget(id);
+        }
+        h.succeed();
     }
 
     private static FabricatorBlockEntity fab(ServerLevel l, BlockPos p) { return (FabricatorBlockEntity) l.getBlockEntity(p); }
