@@ -10,6 +10,7 @@ Owning checkout: `/Volumes/SSD/Work/frozen-dawn-fabricator`, branch `feat/fabric
 - **Slate sources.** The Helion log desk holds 2-3 distinct fusion slates. The CFU-7 shift locker holds the radiator slate. Half of Uplink resupply drops carry one slate the world has not learned.
 - **Status line.** Idle, no power, working, no recipe, output full, or "blueprint not archived" when the inputs match a part the world has not learned.
 - **JEI and advancements.** A Fabricator category shows each job's inputs, time, wattage and blueprint. Taking a printed part grants "Printed, Not Made"; archiving the last slate grants "Full Archive".
+- **SFR-1 easter eggs.** Showing the blueprint of an incomplete torus first puts "FUSION: 20 YEARS AWAY" on the action bar. Looking through the painted porthole on the Maintenance Hatch's upper half into a burning (or ramping-down) channel, from up to 24 blocks and through glass, gives faint white-blue retinal specks in the radiation eye-flash layer. The specks are visual only; no neutron dose is modelled yet.
 
 ## Commands
 
@@ -29,5 +30,7 @@ Owning checkout: `/Volumes/SSD/Work/frozen-dawn-fabricator`, branch `feat/fabric
 5. Cut power mid-job; progress should hold. Restore it and let the job finish.
 6. Open JEI on a Magnet Coil and on the Rocket Engine. Check that the Fabricator category shows counts, time, wattage and blueprint.
 7. Optional: learn the remaining slates with `blueprint learn`, leaving one, then insert that slate and check the "Full Archive" toast.
+8. Place an SFR-1 Controller with no torus. The action bar should read "FUSION: 20 YEARS AWAY" as the ghost outline appears, with the parts list in chat.
+9. With a burning SFR-1, look straight at the hatch porthole from outside, then at the metal around it and at the lower half. Specks should appear only through the porthole and should read as faint next to radiation flashes.
 
-Headless coverage: `FabricatorGameTest` (archive, rocket flag, slate insertion, locked status, wattage, hopper faces, save/load, reset, menu, drops, a powered job that pauses and finishes, Uplink slates, both advancements), `SfrRecipeGameTest` (table recipes, printed parts, coils need scrap, no core recipe), `HelionSiteGameTest` and the reactor-site test in `RadiationGameTest` (slates in site loot). The GUI, JEI layout, textures and toasts need a human pass.
+Headless coverage: `FabricatorGameTest` (archive, rocket flag, slate insertion, locked status, wattage, hopper faces, save/load, reset, menu, drops, a powered job that pauses and finishes, Uplink slates, both advancements), `SfrRecipeGameTest` (table recipes, printed parts, coils need scrap, no core recipe), `SfrGameTest.onlyThePortholeShowsTheChannel` (porthole line of sight), `HelionSiteGameTest` and the reactor-site test in `RadiationGameTest` (slates in site loot). The GUI, JEI layout, textures, toasts, the 20-years line and the specks need a human pass.

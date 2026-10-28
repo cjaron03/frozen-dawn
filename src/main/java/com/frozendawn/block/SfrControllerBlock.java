@@ -62,6 +62,7 @@ public final class SfrControllerBlock extends Block implements EntityBlock {
         PacketDistributor.sendToPlayer(player, new SfrBlueprintPayload(c.getBlockPos(), show));
         if (cells.isEmpty()) { player.displayClientMessage(Component.translatable("message.frozendawn.sfr.missing_ports"), true); return; }
         if (!show) { player.displayClientMessage(Component.translatable("message.frozendawn.sfr.blueprint_hidden"), true); return; }
+        player.displayClientMessage(Component.translatable("message.frozendawn.sfr.twenty_years"), true);
         var counts = new java.util.LinkedHashMap<Block, Integer>(); int clear = 0;
         for (var w : cells) {
             if (w.expected() == null) clear++;
@@ -92,7 +93,7 @@ public final class SfrControllerBlock extends Block implements EntityBlock {
     @Override public BlockEntity newBlockEntity(BlockPos p, BlockState s) { return new SfrControllerBlockEntity(p, s); }
     @Override public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level l, BlockState s, BlockEntityType<T> t) {
         if (t != ModBlockEntities.SFR_CONTROLLER.get()) return null;
-        return l.isClientSide() ? (w, pos, state, be) -> com.frozendawn.client.SfrLoopSound.tick((SfrControllerBlockEntity) be)
+        return l.isClientSide() ? (w, pos, state, be) -> { com.frozendawn.client.SfrLoopSound.tick((SfrControllerBlockEntity) be); com.frozendawn.client.PlasmaGlimpse.track((SfrControllerBlockEntity) be); }
                 : (w, pos, state, be) -> ((SfrControllerBlockEntity) be).serverTick();
     }
 }

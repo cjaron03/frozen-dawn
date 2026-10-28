@@ -1440,6 +1440,7 @@
   "message.frozendawn.sfr.blueprint_clear": "%s to clear",
   "message.frozendawn.sfr.blueprint_hidden": "SFR-1 blueprint hidden",
   "message.frozendawn.sfr.missing_ports": "SFR-1: needs every port and the hatch",
+  "message.frozendawn.sfr.twenty_years": "FUSION: 20 YEARS AWAY",
   "item.frozendawn.shielded_cask": "ORSA Shielded Cask",
   "item.frozendawn.shielded_cask.rods": "Spent rods: %s / %s",
   "item.frozendawn.shielded_cask.hint": "Place in a Reactor Controller's output slot to catch spent rods",

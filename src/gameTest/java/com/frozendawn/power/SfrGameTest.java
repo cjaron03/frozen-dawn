@@ -93,6 +93,30 @@ public final class SfrGameTest {
         });
     }
 
+    /** The hatch's porthole is the torus's one window: a look through it reaches the channel, a look at the hatch's
+     * metal, the lower half or the shell does not, and glass between the eye and the hatch does not block it. */
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "sfr", timeoutTicks = 100)
+    public static void onlyThePortholeShowsTheChannel(GameTestHelper h) {
+        scene(h, () -> {
+            var level = h.getLevel();
+            var controller = SfrScenes.build(h, CENTER);
+            var channel = SfrMultiblock.validate(level, controller, Direction.NORTH).channel();
+            var upper = SfrScenes.cell(h, CENTER, 2, 0, 4);
+            var north = new net.minecraft.world.phys.Vec3(0, 0, -1);
+            java.util.function.BiFunction<Double, Double, Boolean> sees = (x, y) -> com.frozendawn.block.PlasmaSight.seesPlasma(level,
+                    new net.minecraft.world.phys.Vec3(upper.getX() + x, upper.getY() + y, upper.getZ() + 3.5), north, 8, channel::contains);
+            h.assertTrue(sees.apply(.5, .5), "Through the porthole");
+            h.assertFalse(sees.apply(.5, .9), "At the metal above the porthole");
+            h.assertFalse(sees.apply(.1, .5), "At the metal beside the porthole");
+            h.assertFalse(sees.apply(.5, -.5), "At the lower half, which has no porthole");
+            h.assertFalse(sees.apply(1.5, .5), "At the shell beside the hatch");
+            SfrScenes.set(h, upper.south(), Blocks.GLASS.defaultBlockState());
+            h.assertTrue(sees.apply(.5, .5), "Through a glass wall, then the porthole");
+            h.assertFalse(com.frozendawn.block.PlasmaSight.seesPlasma(level, new net.minecraft.world.phys.Vec3(upper.getX() + .5, upper.getY() + .5,
+                    upper.getZ() + 3.5), north, 2, channel::contains), "Out of reach");
+        });
+    }
+
     @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "sfr", timeoutTicks = 100)
     public static void sfrWornFirstWallDropsNothing(GameTestHelper h) {
         scene(h, () -> {
