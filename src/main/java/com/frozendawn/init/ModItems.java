@@ -85,6 +85,7 @@ public class ModItems {
     public static final DeferredItem<Item> HELIUM_CANISTER = ITEMS.registerSimpleItem("helium_canister");
     public static final DeferredItem<Item> SUPERCONDUCTING_COIL_SCRAP = ITEMS.registerSimpleItem("superconducting_coil_scrap");
     public static final DeferredItem<Item> FIRST_WALL_TILE = ITEMS.registerSimpleItem("first_wall_tile");
+    public static final DeferredItem<com.frozendawn.item.DataSlateItem> DATA_SLATE = ITEMS.registerItem("data_slate", com.frozendawn.item.DataSlateItem::new, new Item.Properties().stacksTo(16));
     public static final DeferredItem<BlockItem> GALENA_ORE = ITEMS.registerSimpleBlockItem("galena_ore", ModBlocks.GALENA_ORE);
     public static final DeferredItem<BlockItem> DEEPSLATE_GALENA_ORE = ITEMS.registerSimpleBlockItem("deepslate_galena_ore", ModBlocks.DEEPSLATE_GALENA_ORE);
     public static final DeferredItem<BlockItem> LEAD_BLOCK = ITEMS.registerSimpleBlockItem("lead_block", ModBlocks.LEAD_BLOCK);
@@ -172,6 +173,7 @@ public class ModItems {
     public static final DeferredItem<Item> FEED_HORN = ITEMS.registerSimpleItem("feed_horn", new Item.Properties().stacksTo(16));
 
     public static final DeferredItem<BlockItem> INDUCTION_FURNACE = ITEMS.registerSimpleBlockItem("induction_furnace", ModBlocks.INDUCTION_FURNACE);
+    public static final DeferredItem<BlockItem> FABRICATOR = ITEMS.registerSimpleBlockItem("fabricator", ModBlocks.FABRICATOR);
     public static final DeferredItem<BlockItem> ISOTOPE_COLUMN = ITEMS.registerSimpleBlockItem("isotope_column", ModBlocks.ISOTOPE_COLUMN);
 
     public static final DeferredItem<com.frozendawn.item.PowerCellItem> POWER_CELL = ITEMS.register("power_cell", () -> new com.frozendawn.item.PowerCellItem(new Item.Properties()));
@@ -737,6 +739,7 @@ public class ModItems {
                         output.accept(SIGNAL_PROCESSOR.get());
                         output.accept(FEED_HORN.get());
                         output.accept(INDUCTION_FURNACE.get());
+                        output.accept(FABRICATOR.get());
                         output.accept(POWER_CELL.get());
                         output.accept(BATTERY_BANK.get());
                         output.accept(CELL_DOCK.get());
@@ -766,6 +769,7 @@ public class ModItems {
                         output.accept(HELIUM_CANISTER.get());
                         output.accept(SUPERCONDUCTING_COIL_SCRAP.get());
                         output.accept(FIRST_WALL_TILE.get());
+                        for (var id : com.frozendawn.data.FabricatorBlueprints.SLATES) output.accept(com.frozendawn.data.FabricatorBlueprints.slate(id));
                         output.accept(DEEPSLATE_URANIUM_ORE.get());
                         output.accept(RAW_URANIUM.get());
                         output.accept(URANIUM_CONCENTRATE.get());

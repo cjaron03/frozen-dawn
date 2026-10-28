@@ -28,6 +28,9 @@ public final class ModRecipeSerializers {
     public static final DeferredHolder<RecipeSerializer<?>, RationWarmerChargingRecipe.Serializer> RATION_WARMER_CHARGING =
             RECIPE_SERIALIZERS.register("ration_warmer_charging", RationWarmerChargingRecipe.Serializer::new);
 
+    public static final DeferredHolder<RecipeSerializer<?>, com.frozendawn.recipe.FabricatorRecipe.Serializer> FABRICATING =
+            RECIPE_SERIALIZERS.register("fabricating", com.frozendawn.recipe.FabricatorRecipe.Serializer::new);
+
     private ModRecipeSerializers() {
     }
 }

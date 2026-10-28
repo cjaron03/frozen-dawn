@@ -17,6 +17,7 @@ import com.frozendawn.init.ModLootModifiers;
 import com.frozendawn.init.ModMenuTypes;
 import com.frozendawn.init.ModParticles;
 import com.frozendawn.init.ModRecipeSerializers;
+import com.frozendawn.init.ModRecipeTypes;
 import com.frozendawn.init.ModSounds;
 import com.mojang.logging.LogUtils;
 import net.neoforged.bus.api.IEventBus;
@@ -45,6 +46,7 @@ public class FrozenDawn {
         ModBlockEntities.BLOCK_ENTITIES.register(modEventBus);
         ModMenuTypes.MENU_TYPES.register(modEventBus);
         ModRecipeSerializers.RECIPE_SERIALIZERS.register(modEventBus);
+        ModRecipeTypes.RECIPE_TYPES.register(modEventBus);
         ModLootModifiers.LOOT_MODIFIERS.register(modEventBus);
         ModSounds.SOUNDS.register(modEventBus);
         ModParticles.PARTICLES.register(modEventBus);

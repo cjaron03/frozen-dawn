@@ -505,6 +505,55 @@ def first_wall_tile():
 
 ITEMS.update({"superconducting_coil_scrap": superconducting_coil_scrap, "first_wall_tile": first_wall_tile})
 
+
+def data_slate():
+    """A thin dark ORSA slate with a lit blue readout and an orange data contact along the bottom."""
+    im = new()
+    bevel_box(im, 3, 1, 12, 14, STEEL[2], STEEL[0], STEEL[3])
+    rect(im, 4, 2, 11, 10, SCREEN)
+    for y, length in ((3, 6), (5, 4), (7, 7), (9, 3)):
+        for x in range(5, 5 + length):
+            put(im, x, y, BLUE[1] if x % 3 else BLUE[2])
+    put(im, 10, 3, BLUE[3])
+    for x in range(5, 11, 2):
+        put(im, x, 12, ORANGE[2]); put(im, x, 13, ORANGE[0])
+    return im
+
+
+ITEMS.update({"data_slate": data_slate})
+
+
+def fabricator_front(lit):
+    """A steel cabinet with a glass print bay: a gantry head over a half-built part, lit blue while it works."""
+    im, _ = panel(51401, STEEL, 3)
+    bevel_box(im, 2, 2, 13, 11, SCREEN, STEEL[0], STEEL[3])
+    rect(im, 3, 4, 12, 4, STEEL[1])
+    rect(im, 7, 5, 8, 6, ORANGE[2] if lit else STEEL[2])
+    put(im, 7, 7, BLUE[3] if lit else STEEL[3]); put(im, 8, 7, BLUE[2] if lit else STEEL[3])
+    rect(im, 5, 9, 10, 10, COPPER[2]); rect(im, 6, 8, 9, 8, COPPER[3] if lit else COPPER[1])
+    rect(im, 3, 13, 5, 13, BLUE[2] if lit else STEEL[3])
+    for x in range(8, 13): put(im, x, 13, ORANGE[2] if x % 2 else ORANGE[1])
+    return im
+
+
+def fabricator_side():
+    im, _ = panel(51402, STEEL, 3)
+    for y in (4, 6, 8, 10): rect(im, 4, y, 11, y, INK)
+    rivets(im)
+    return im
+
+
+def fabricator_top():
+    im, _ = panel(51403, STEEL, 3)
+    bevel_box(im, 3, 3, 12, 12, STEEL[1], STEEL[0], STEEL[3])
+    rect(im, 6, 6, 9, 9, SCREEN); put(im, 7, 7, BLUE[1])
+    rivets(im)
+    return im
+
+
+TEXTURES.update({"fabricator_front": lambda: fabricator_front(False), "fabricator_front_on": lambda: fabricator_front(True),
+                 "fabricator_side": fabricator_side, "fabricator_top": fabricator_top})
+
 if __name__ == "__main__":
     for name, draw in TEXTURES.items():
         draw().save(OUT / f"{name}.png")

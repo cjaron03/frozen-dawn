@@ -61,7 +61,8 @@ public class FrozenDawnJeiPlugin implements IModPlugin {
                 new AcheronForgeCategory(guiHelper),
                 new FuelProcessingSiloCategory(guiHelper),
                 new GeothermalCoreCategory(guiHelper),
-                new InductionFurnaceCategory(guiHelper)
+                new InductionFurnaceCategory(guiHelper),
+                new FabricatorCategory(guiHelper)
         );
     }
 
@@ -98,6 +99,10 @@ public class FrozenDawnJeiPlugin implements IModPlugin {
 
         registration.addRecipes(InductionFurnaceCategory.RECIPE_TYPE, com.frozendawn.recipe.InductionRecipes.all());
 
+        var level = net.minecraft.client.Minecraft.getInstance().level;
+        if (level != null) registration.addRecipes(FabricatorCategory.RECIPE_TYPE,
+                level.getRecipeManager().getAllRecipesFor(com.frozendawn.init.ModRecipeTypes.FABRICATING.get()));
+
         registration.addRecipes(FuelProcessingSiloCategory.RECIPE_TYPE,
                 FuelProcessingSiloRecipes.all().stream()
                         .map(FuelProcessingSiloRecipeDisplay::from)
@@ -111,6 +116,7 @@ public class FrozenDawnJeiPlugin implements IModPlugin {
         registration.addRecipeCatalyst(new ItemStack(ModItems.GEOTHERMAL_CORE.get()),
                 GeothermalCoreCategory.RECIPE_TYPE);
         registration.addRecipeCatalyst(new ItemStack(ModItems.INDUCTION_FURNACE.get()), InductionFurnaceCategory.RECIPE_TYPE);
+        registration.addRecipeCatalyst(new ItemStack(ModItems.FABRICATOR.get()), FabricatorCategory.RECIPE_TYPE);
         registration.addRecipeCatalyst(new ItemStack(ModItems.FUEL_PROCESSING_SILO_CONTROLLER.get()),
                 FuelProcessingSiloCategory.RECIPE_TYPE);
     }

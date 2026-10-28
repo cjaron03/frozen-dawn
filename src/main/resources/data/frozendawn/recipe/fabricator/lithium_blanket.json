@@ -1,0 +1,30 @@
+{
+  "type": "frozendawn:fabricating",
+  "blueprint": "lithium_blanket",
+  "ingredients": [
+    {
+      "ingredient": {
+        "item": "frozendawn:lithium"
+      },
+      "count": 4
+    },
+    {
+      "ingredient": {
+        "item": "frozendawn:lead_ingot"
+      },
+      "count": 2
+    },
+    {
+      "ingredient": {
+        "item": "minecraft:iron_ingot"
+      },
+      "count": 2
+    }
+  ],
+  "result": {
+    "id": "frozendawn:lithium_blanket",
+    "count": 8
+  },
+  "watts": 10000,
+  "seconds": 45
+}

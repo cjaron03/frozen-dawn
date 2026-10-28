@@ -2,6 +2,7 @@ package com.frozendawn.uplink;
 
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.data.CargoDropState;
+import com.frozendawn.data.FabricatorBlueprints;
 import com.frozendawn.init.ModSounds;
 import com.frozendawn.world.CargoDropPlacement;
 import com.frozendawn.world.CargoDropStructureBuilder;
@@ -9,6 +10,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.Container;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -45,10 +47,22 @@ public final class UplinkEvents {
             if (CargoDropPlacement.isEligibleCargoDropSite(level, x + n[0], z + n[1])) { bestX = x + n[0]; bestZ = z + n[1]; break; }
         int y = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, bestX, bestZ);
         var center = new BlockPos(bestX, Math.max(y, level.getMinBuildHeight() + 6), bestZ);
-        CargoDropStructureBuilder.placeUplinkResupply(level, center);
+        var crate = CargoDropStructureBuilder.placeUplinkResupply(level, center);
+        if (level.random.nextBoolean()) stockSlate(level, crate);
         CargoDropState.get(level.getServer()).markCargoDropBuilt(bestX >> 4, bestZ >> 4, CargoDropPlacement.getCargoDropDisplayPos(level.getSeed(), center));
         data.built(drop, center);
         FrozenDawn.LOGGER.info("[Uplink] Supply drop placed at ({}, {}, {})", center.getX(), center.getY(), center.getZ());
+    }
+
+    /** Adds a Data Slate the world has not learned to the crate's first free slot; false when there is none to give or no room. */
+    public static boolean stockSlate(ServerLevel level, BlockPos crate) {
+        if (!(level.getBlockEntity(crate) instanceof Container container)) return false;
+        var id = FabricatorBlueprints.get(level.getServer()).unlearned(level.random);
+        if (id == null) return false;
+        for (int i = 0; i < container.getContainerSize(); i++) if (container.getItem(i).isEmpty()) {
+            container.setItem(i, FabricatorBlueprints.slate(id)); container.setChanged(); return true;
+        }
+        return false;
     }
 
     private static void beacon(ServerLevel level, UplinkSavedData data, UplinkSavedData.Drop drop) {

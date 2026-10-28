@@ -89,6 +89,8 @@ public class ModBlockEntities {
 
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.frozendawn.block.InductionFurnaceBlockEntity>> INDUCTION_FURNACE =
             BLOCK_ENTITIES.register("induction_furnace", () -> BlockEntityType.Builder.of(com.frozendawn.block.InductionFurnaceBlockEntity::new,ModBlocks.INDUCTION_FURNACE.get()).build(null));
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.frozendawn.block.FabricatorBlockEntity>> FABRICATOR =
+            BLOCK_ENTITIES.register("fabricator", () -> BlockEntityType.Builder.of(com.frozendawn.block.FabricatorBlockEntity::new, ModBlocks.FABRICATOR.get()).build(null));
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.frozendawn.block.IsotopeColumnBlockEntity>> ISOTOPE_COLUMN =
             BLOCK_ENTITIES.register("isotope_column", () -> BlockEntityType.Builder.of(com.frozendawn.block.IsotopeColumnBlockEntity::new, ModBlocks.ISOTOPE_COLUMN.get()).build(null));
 

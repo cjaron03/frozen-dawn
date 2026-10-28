@@ -180,7 +180,7 @@ public final class ColdFloraGameTest {
         h.assertTrue(!ModBlocks.RIMEWOOD_PLANKS.get().defaultBlockState().is(ColdFlora.COLD_FLORA)&&ModBlocks.RIMEWOOD_PLANKS.get().defaultBlockState().is(BlockTags.PLANKS),"Planks are ordinary planks");
         h.assertTrue(new ItemStack(ModItems.RIMEWOOD_LOG.get()).is(ItemTags.LOGS_THAT_BURN)&&new ItemStack(ModItems.RIMEWOOD_PLANKS.get()).is(ItemTags.PLANKS),"Charcoal, fuel and wood recipes accept Rimewood");
         var rm=l.getRecipeManager();
-        for(var id:new String[]{"thermal_core","rocket_engine","reinforced_helmet","hot_wings"}){
+        for(var id:new String[]{"thermal_core","fabricator/rocket_engine","reinforced_helmet","hot_wings"}){
             var recipe=rm.byKey(ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID,id)).orElseThrow().value();
             h.assertTrue(recipe.getIngredients().stream().anyMatch(i->i.test(new ItemStack(ModItems.SULFUR_IGNITER.get())))
                     &&recipe.getIngredients().stream().anyMatch(i->i.test(new ItemStack(Items.BLAZE_POWDER))),id+" takes blaze powder or a Sulfur Igniter");
