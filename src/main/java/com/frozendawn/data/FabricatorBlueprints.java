@@ -7,6 +7,9 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import net.minecraft.core.HolderLookup;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.StringTag;
@@ -23,7 +26,9 @@ import org.jetbrains.annotations.Nullable;
 public final class FabricatorBlueprints extends SavedData {
     public static final String ROCKET = "rocket";
     /** Blueprints a Data Slate can teach, in archive order. */
-    public static final List<String> SLATES = List.of("magnet_coil", "first_wall", "lithium_blanket", "high_temperature_radiator", "isotope_column");
+    public static final List<String> SLATES = List.of("magnet_coil", "first_wall", "lithium_blanket", "high_temperature_radiator", "isotope_column", "icarus");
+    /** Slates that teach a project of several parts rather than the one part they are named for. */
+    private static final Set<String> PROJECTS = Set.of("icarus");
     private static final String DATA_NAME = FrozenDawn.MOD_ID + "_fabricator_blueprints";
     private final Set<String> learned = new LinkedHashSet<>();
 
@@ -60,11 +65,17 @@ public final class FabricatorBlueprints extends SavedData {
         setDirty();
         return true;
     }
-    public boolean knowsAll() { return learned.containsAll(SLATES); }
+    /** Full Archive: every fusion blueprint. Project slates such as Icarus are optional and do not count. */
+    public boolean knowsAll() { return SLATES.stream().filter(id -> !PROJECTS.contains(id)).allMatch(learned::contains); }
     /** A random blueprint this world has not learned yet, or null when the archive is full. */
     public @Nullable String unlearned(RandomSource random) {
         var missing = SLATES.stream().filter(id -> !learned.contains(id)).toList();
         return missing.isEmpty() ? null : missing.get(random.nextInt(missing.size()));
+    }
+    /** What a slate teaches, as players read it: the part, or the project name for a multi-part slate. Only for ids in {@link #SLATES}. */
+    public static Component title(String id) {
+        return PROJECTS.contains(id) ? Component.translatable("blueprint." + FrozenDawn.MOD_ID + "." + id)
+                : BuiltInRegistries.ITEM.get(ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, id)).getDescription();
     }
     public static ItemStack slate(String id) {
         var stack = new ItemStack(ModItems.DATA_SLATE.get());

@@ -168,6 +168,16 @@ public class ModBlocks {
     public static final DeferredBlock<com.frozendawn.block.FabricatorBlock> FABRICATOR = BLOCKS.register("fabricator",
             () -> new com.frozendawn.block.FabricatorBlock(BlockBehaviour.Properties.of().strength(4f).requiresCorrectToolForDrops().sound(SoundType.METAL).pushReaction(PushReaction.BLOCK)
                     .lightLevel(state -> state.getValue(com.frozendawn.block.FabricatorBlock.LIT) ? 4 : 0)));
+    public static final DeferredBlock<com.frozendawn.block.AntiparticleFoundryBlock> ANTIPARTICLE_FOUNDRY = BLOCKS.register("antiparticle_foundry",
+            () -> new com.frozendawn.block.AntiparticleFoundryBlock(BlockBehaviour.Properties.of().strength(5f).requiresCorrectToolForDrops().sound(SoundType.METAL).pushReaction(PushReaction.BLOCK)
+                    .lightLevel(state -> state.getValue(com.frozendawn.block.AntiparticleFoundryBlock.LIT) ? 7 : 0)));
+    // Icarus parts printed by the Fabricator. Task 6 gives them their multiblock classes.
+    public static final DeferredBlock<Block> HALSEY_CORE = BLOCKS.register("halsey_core",
+            () -> new Block(BlockBehaviour.Properties.of().strength(6f).requiresCorrectToolForDrops().sound(SoundType.NETHERITE_BLOCK).pushReaction(PushReaction.BLOCK)));
+    public static final DeferredBlock<Block> ICARUS_STABILIZER = BLOCKS.register("icarus_stabilizer",
+            () -> new Block(BlockBehaviour.Properties.of().strength(5f).requiresCorrectToolForDrops().sound(SoundType.METAL).pushReaction(PushReaction.BLOCK)));
+    public static final DeferredBlock<Block> ICARUS_INJECTOR = BLOCKS.register("icarus_injector",
+            () -> new Block(BlockBehaviour.Properties.of().strength(5f).requiresCorrectToolForDrops().sound(SoundType.METAL).pushReaction(PushReaction.BLOCK)));
     public static final DeferredBlock<com.frozendawn.block.IsotopeColumnBlock> ISOTOPE_COLUMN = BLOCKS.register("isotope_column",
             () -> new com.frozendawn.block.IsotopeColumnBlock(BlockBehaviour.Properties.of().strength(4f).requiresCorrectToolForDrops().sound(SoundType.METAL).pushReaction(PushReaction.BLOCK)
                     .lightLevel(state -> state.getValue(com.frozendawn.block.IsotopeColumnBlock.LIT) ? 6 : 0)));
