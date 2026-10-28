@@ -80,10 +80,10 @@
       "text": "Yields $(bold)9$(): one full 3x3 pad."
     },
     {
-      "type": "patchouli:crafting",
-      "recipe": "frozendawn:rocket_engine",
+      "type": "patchouli:spotlight",
+      "item": "frozendawn:rocket_engine",
       "title": "Rocket Engine",
-      "text": "The base of the rocket, on the centerline. Place it first."
+      "text": "Printed on an $(bold)ORSA Fabricator$() at 15 kW: 2 Obsidian, an igniter, 2 Refined Acheronite, a Thermal Core, 2 Copper and a Blast Furnace.$(br2)The base of the rocket, on the centerline. Place it first."
     },
     {
       "type": "patchouli:crafting",
@@ -92,10 +92,10 @@
       "text": "Craft 4."
     },
     {
-      "type": "patchouli:crafting",
-      "recipe": "frozendawn:rocket_hull",
+      "type": "patchouli:spotlight",
+      "item": "frozendawn:rocket_hull",
       "title": "Rocket Hull",
-      "text": "Craft 4."
+      "text": "Printed on an $(bold)ORSA Fabricator$() at 10 kW: 6 Iron, 2 Copper and a Refined Acheronite.$(br2)Print 4."
     },
     {
       "type": "patchouli:crafting",

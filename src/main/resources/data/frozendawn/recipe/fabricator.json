@@ -3,7 +3,7 @@
   "category": "misc",
   "pattern": [
     "ICI",
-    "CSC",
+    "TFR",
     "ICI"
   ],
   "key": {
@@ -13,12 +13,18 @@
     "C": {
       "item": "minecraft:copper_ingot"
     },
-    "S": {
-      "item": "frozendawn:superconducting_coil_scrap"
+    "T": {
+      "item": "minecraft:crafting_table"
+    },
+    "F": {
+      "item": "frozendawn:induction_furnace"
+    },
+    "R": {
+      "item": "minecraft:redstone_block"
     }
   },
   "result": {
-    "id": "frozendawn:magnet_coil",
-    "count": 8
+    "id": "frozendawn:fabricator",
+    "count": 1
   }
 }
