@@ -64,6 +64,8 @@ public final class SfrControllerBlockEntity extends BlockEntity implements MenuP
     private List<BlockPos> lastFirstWall = List.of(), lastCoils = List.of();
     /** Linked radiators this controller last marked HOT. */
     private final Set<BlockPos> hot = new HashSet<>();
+    /** The hatch whose porthole this controller last lit; darkened when the shell moves or breaks. */
+    @Nullable private BlockPos litHatch;
     /** Ticks of quench frost left on the coils. */
     private int quenchTicks;
     /** Players shown this Controller's ghost-block blueprint; transient, like the client's own copy. */
@@ -144,6 +146,10 @@ public final class SfrControllerBlockEntity extends BlockEntity implements MenuP
         for (var p : hot) if (!nowHot.contains(p) && l.isLoaded(p)) ReactorRadiatorBlock.publish(l, p, false);
         for (var p : nowHot) ReactorRadiatorBlock.publish(l, p, true);
         hot.clear(); hot.addAll(nowHot);
+        var glowing = valid ? shell.hatch() : null;
+        if (litHatch != null && !litHatch.equals(glowing) && l.isLoaded(litHatch)) SfrHatchBlock.glow(l, litHatch, 0);
+        litHatch = glowing;
+        if (glowing != null) SfrHatchBlock.glow(l, glowing, switch (physics.state()) { case BURNING -> 2; case RAMP_DOWN -> 1; default -> 0; });
         if (readout.disrupted()) {
             boolean melt = readout.status() == FusionPhysics.Status.WALL_MELT;
             if (melt) meltFirstWall(l); else wearFirstWall(l);
@@ -333,6 +339,7 @@ public final class SfrControllerBlockEntity extends BlockEntity implements MenuP
         if (level instanceof ServerLevel l) {
             if (publishedPort != null) release(l);
             for (var p : hot) if (l.isLoaded(p)) ReactorRadiatorBlock.publish(l, p, false);
+            if (litHatch != null && l.isLoaded(litHatch)) SfrHatchBlock.glow(l, litHatch, 0);
         }
         super.setRemoved();
     }

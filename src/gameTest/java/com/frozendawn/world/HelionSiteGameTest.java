@@ -1,12 +1,16 @@
 package com.frozendawn.world;
 
 import com.frozendawn.FrozenDawn;
+import com.frozendawn.data.FabricatorBlueprints;
 import com.frozendawn.data.HelionSiteState;
 import com.frozendawn.gametest.GameTestReporting;
 import com.frozendawn.gametest.GameTestTemplates;
 import com.frozendawn.init.ModBlocks;
+import com.frozendawn.init.ModDataComponents;
 import com.frozendawn.init.ModItems;
 import com.mojang.authlib.GameProfile;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponents;
@@ -35,7 +39,7 @@ public final class HelionSiteGameTest {
     public static void helionSiteHoldsOneCoreSalvageAndTheSealedLog(GameTestHelper h) {
         h.runAfterDelay(1, () -> {
             var level = h.getLevel(); var hall = build(h); int half = HelionSiteBuilder.HALF;
-            int cores = 0, scrap = 0, tiles = 0; boolean log = false;
+            int cores = 0, scrap = 0, tiles = 0; boolean log = false; var slates = new ArrayList<String>();
             for (var p : BlockPos.betweenClosed(hall.offset(-half, -1, -half), hall.offset(half, HelionSiteBuilder.CEILING, half))) {
                 if (level.getBlockState(p).is(ModBlocks.CONFINEMENT_CORE.get())) cores++;
                 if (!(level.getBlockEntity(p) instanceof BarrelBlockEntity barrel)) continue;
@@ -43,6 +47,7 @@ public final class HelionSiteGameTest {
                     var s = barrel.getItem(i);
                     if (s.is(ModItems.SUPERCONDUCTING_COIL_SCRAP.get())) scrap += s.getCount();
                     if (s.is(ModItems.FIRST_WALL_TILE.get())) tiles += s.getCount();
+                    if (s.is(ModItems.DATA_SLATE.get())) for (int n = 0; n < s.getCount(); n++) slates.add(s.get(ModDataComponents.BLUEPRINT.get()));
                     var lore = s.get(DataComponents.LORE);
                     if (lore != null && lore.lines().stream().anyMatch(l -> l.getString().contains("Ignition achieved, June 13, 2077. Q = 1.8.")))
                         log = true;
@@ -52,6 +57,8 @@ public final class HelionSiteGameTest {
                     "One Confinement Core at the heart of the tokamak: " + cores);
             h.assertTrue(scrap == 16 && tiles == 12, "16 Coil Scrap and 12 First-Wall Tiles: " + scrap + ", " + tiles);
             h.assertTrue(log, "The sealed log carries the ignition line");
+            h.assertTrue(slates.size() >= 2 && slates.size() <= 3 && new HashSet<>(slates).size() == slates.size()
+                    && FabricatorBlueprints.SLATES.containsAll(slates), "Two or three distinct fusion Data Slates: " + slates);
             h.succeed();
         });
     }

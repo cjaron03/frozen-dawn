@@ -14,13 +14,27 @@ import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.level.block.DoorBlock;
 import net.minecraft.world.level.block.state.properties.BlockSetType;
+import net.minecraft.world.level.block.state.properties.IntegerProperty;
+import net.minecraft.world.level.block.state.StateDefinition;
 
 /** Two-high maintenance hatch in the outer ring, lower half at Y2. Opens into the vacuum channel. */
 public final class SfrHatchBlock extends DoorBlock {
     public static final com.mojang.serialization.MapCodec<SfrHatchBlock> CODEC = simpleCodec(SfrHatchBlock::new);
     @Override public com.mojang.serialization.MapCodec<? extends DoorBlock> codec() { return CODEC; }
+    /** Plasma behind the porthole: 0 dark, 1 ramping down, 2 burning. Both halves carry it; only the upper half shows it. */
+    public static final IntegerProperty GLOW = IntegerProperty.create("glow", 0, 2);
     public SfrHatchBlock(Properties p) { super(BlockSetType.IRON, p); }
+    @Override protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> b) { super.createBlockStateDefinition(b); b.add(GLOW); }
+    public static int light(BlockState state) {
+        if (state.getValue(HALF) == DoubleBlockHalf.LOWER) return 0;
+        return switch (state.getValue(GLOW)) { case 2 -> 7; case 1 -> 4; default -> 0; };
+    }
 
+    /** Sets the hatch's glow; the upper half copies the lower through the door's shape update. */
+    public static void glow(ServerLevel level, BlockPos lower, int glow) {
+        var state = level.getBlockState(lower);
+        if (state.getBlock() instanceof SfrHatchBlock && state.getValue(GLOW) != glow) level.setBlock(lower, state.setValue(GLOW, glow), 3);
+    }
     /** Opens by hand or redstone only when the channel matches the outside by the airlock rule. A hatch outside a valid torus opens freely. */
     public static boolean canOpen(ServerLevel level, BlockPos lower) {
         return SfrControllerBlockEntity.forHatch(level, lower).map(c -> AirlockManager.matchingPressure(c.channelPressure(), c.outsidePressure(level))).orElse(true);

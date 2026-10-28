@@ -246,6 +246,8 @@ public final class RadiationGameTest {
             var medical = (net.minecraft.world.level.block.entity.BarrelBlockEntity) level.getBlockEntity(c.offset(com.frozendawn.world.ReactorSiteBuilder.MEDICAL));
             h.assertTrue(locker.hasAnyMatching(st -> st.is(ModItems.GEIGER_COUNTER.get())) && locker.hasAnyMatching(st -> st.is(ModItems.RAD_AID.get()))
                     && medical.hasAnyMatching(st -> st.is(ModItems.SHIELDED_CASK.get())), "Control room: counter, RadAid and an empty cask");
+            h.assertTrue(locker.hasAnyMatching(st -> st.is(ModItems.DATA_SLATE.get()) && "high_temperature_radiator".equals(st.get(ModDataComponents.BLUEPRINT.get()))),
+                    "The shift locker keeps the radiator's Data Slate");
             int heavy = 0, debris = 0;
             for (var p : BlockPos.betweenClosed(c.offset(-22, -10, -22), c.offset(22, 10, 22))) {
                 var st = level.getBlockState(p);

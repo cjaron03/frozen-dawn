@@ -1,5 +1,6 @@
 package com.frozendawn.world;
 
+import com.frozendawn.data.FabricatorBlueprints;
 import com.frozendawn.init.ModBlocks;
 import com.frozendawn.init.ModItems;
 import java.util.List;
@@ -100,7 +101,11 @@ public final class HelionSiteBuilder {
         for (var p : List.of(COIL_STORE, LOG_DESK, WALL_SPARES)) set(l, c, p.getX(), p.getY(), p.getZ(), Blocks.BARREL.defaultBlockState());
         fill(l, c.offset(COIL_STORE), new ItemStack(ModItems.SUPERCONDUCTING_COIL_SCRAP.get(), 16));
         fill(l, c.offset(WALL_SPARES), new ItemStack(ModItems.FIRST_WALL_TILE.get(), 12));
-        fill(l, c.offset(LOG_DESK), sealedLog());
+        // Two or three of the facility's fabrication slates survived in the log desk.
+        var ids = new java.util.ArrayList<>(FabricatorBlueprints.SLATES); net.minecraft.Util.shuffle(ids, r);
+        var desk = new java.util.ArrayList<ItemStack>(List.of(sealedLog()));
+        for (var id : ids.subList(0, 2 + r.nextInt(2))) desk.add(FabricatorBlueprints.slate(id));
+        fill(l, c.offset(LOG_DESK), desk.toArray(ItemStack[]::new));
     }
     /** Ladder from the hall floor up through the ceiling and ice, plugged below a hatch at the surface. */
     private static void shaft(ServerLevel l, BlockPos c, int top) {

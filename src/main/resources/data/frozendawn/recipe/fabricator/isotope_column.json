@@ -1,0 +1,36 @@
+{
+  "type": "frozendawn:fabricating",
+  "blueprint": "isotope_column",
+  "ingredients": [
+    {
+      "ingredient": {
+        "item": "minecraft:iron_ingot"
+      },
+      "count": 4
+    },
+    {
+      "ingredient": {
+        "item": "frozendawn:insulated_glass"
+      },
+      "count": 4
+    },
+    {
+      "ingredient": {
+        "item": "minecraft:copper_ingot"
+      },
+      "count": 2
+    },
+    {
+      "ingredient": {
+        "item": "minecraft:redstone_block"
+      },
+      "count": 1
+    }
+  ],
+  "result": {
+    "id": "frozendawn:isotope_column",
+    "count": 1
+  },
+  "watts": 10000,
+  "seconds": 90
+}

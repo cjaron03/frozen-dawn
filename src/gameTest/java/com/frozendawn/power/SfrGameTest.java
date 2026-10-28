@@ -93,6 +93,30 @@ public final class SfrGameTest {
         });
     }
 
+    /** The hatch's porthole is the torus's one window: a look through it reaches the channel, a look at the hatch's
+     * metal, the lower half or the shell does not, and glass between the eye and the hatch does not block it. */
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "sfr", timeoutTicks = 100)
+    public static void onlyThePortholeShowsTheChannel(GameTestHelper h) {
+        scene(h, () -> {
+            var level = h.getLevel();
+            var controller = SfrScenes.build(h, CENTER);
+            var channel = SfrMultiblock.validate(level, controller, Direction.NORTH).channel();
+            var upper = SfrScenes.cell(h, CENTER, 2, 0, 4);
+            var north = new net.minecraft.world.phys.Vec3(0, 0, -1);
+            java.util.function.BiFunction<Double, Double, Boolean> sees = (x, y) -> com.frozendawn.block.PlasmaSight.seesPlasma(level,
+                    new net.minecraft.world.phys.Vec3(upper.getX() + x, upper.getY() + y, upper.getZ() + 3.5), north, 8, channel::contains);
+            h.assertTrue(sees.apply(.5, .5), "Through the porthole");
+            h.assertFalse(sees.apply(.5, .9), "At the metal above the porthole");
+            h.assertFalse(sees.apply(.1, .5), "At the metal beside the porthole");
+            h.assertFalse(sees.apply(.5, -.5), "At the lower half, which has no porthole");
+            h.assertFalse(sees.apply(1.5, .5), "At the shell beside the hatch");
+            SfrScenes.set(h, upper.south(), Blocks.GLASS.defaultBlockState());
+            h.assertTrue(sees.apply(.5, .5), "Through a glass wall, then the porthole");
+            h.assertFalse(com.frozendawn.block.PlasmaSight.seesPlasma(level, new net.minecraft.world.phys.Vec3(upper.getX() + .5, upper.getY() + .5,
+                    upper.getZ() + 3.5), north, 2, channel::contains), "Out of reach");
+        });
+    }
+
     @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "sfr", timeoutTicks = 100)
     public static void sfrWornFirstWallDropsNothing(GameTestHelper h) {
         scene(h, () -> {
@@ -385,6 +409,42 @@ public final class SfrGameTest {
                         h.assertValueEqual(be.physics().state(), FusionPhysics.State.OFF, "state");
                         h.assertValueEqual(be.physics().status(), FusionPhysics.Status.SHUT_DOWN, "status");
                         for (var wall : walls) h.assertValueEqual(level.getBlockState(wall).getValue(FirstWallBlock.WEAR), 0, "wear at " + wall);
+                    })
+                    .thenSucceed();
+        });
+    }
+
+    /** The lab command's torus: complete, every link made, fuelled and off, so Start is the first thing that happens.
+     * Its own batch, so it does not move the burn tests to new grid slots. */
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "sfr_lab", timeoutTicks = 100, skyAccess = true)
+    public static void sfrLabBuildIsCompleteAndOff(GameTestHelper h) {
+        var lab = com.frozendawn.world.SfrLabPlacement.build(h.getLevel(), h.absolutePos(CENTER));
+        h.assertTrue(lab.failedLinks() == 0, "Expected every lab link to be made, but " + lab.failedLinks() + " failed");
+        h.assertTrue(SfrMultiblock.validate(h.getLevel(), lab.controller(), Direction.NORTH).valid(), "Expected the lab torus to validate");
+        if (!(h.getLevel().getBlockEntity(lab.controller()) instanceof SfrControllerBlockEntity be)) throw new GameTestAssertException("SFR-1 controller block entity missing");
+        h.assertTrue(be.physics().state() == FusionPhysics.State.OFF, "Expected the lab reactor OFF, but was " + be.physics().state());
+        h.assertTrue(be.physics().tritium() >= FusionPhysics.IGNITION_TRITIUM, "Expected tritium for one ignition");
+        h.succeed();
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "sfr", timeoutTicks = 300, skyAccess = true)
+    public static void sfrHatchPortholeGlowsWithThePlasma(GameTestHelper h) {
+        h.runAfterDelay(1, () -> {
+            var be = ready(h, 8_000_000);
+            h.startSequence()
+                    .thenWaitUntil(() -> h.assertValueEqual(be.physics().state(), FusionPhysics.State.BURNING, "state"))
+                    .thenExecute(() -> {
+                        var level = h.getLevel(); var lower = be.shell().hatch(); var upper = lower.above();
+                        be.second(level);
+                        h.assertValueEqual(level.getBlockState(lower).getValue(SfrHatchBlock.GLOW), 2, "lower half glow while burning");
+                        h.assertValueEqual(level.getBlockState(upper).getValue(SfrHatchBlock.GLOW), 2, "upper half glow while burning");
+                        h.assertTrue(level.getLightEmission(upper) > 0 && level.getLightEmission(lower) == 0, "only the porthole half gives light");
+                        be.stop();
+                        be.second(level);
+                        h.assertValueEqual(level.getBlockState(upper).getValue(SfrHatchBlock.GLOW), 1, "glow while ramping down");
+                        for (int i = 1; i < FusionPhysics.RAMP_DOWN_SECONDS; i++) be.second(level);
+                        h.assertValueEqual(level.getBlockState(upper).getValue(SfrHatchBlock.GLOW), 0, "glow once off");
+                        h.assertValueEqual(level.getBlockState(lower).getValue(SfrHatchBlock.GLOW), 0, "lower half glow once off");
                     })
                     .thenSucceed();
         });

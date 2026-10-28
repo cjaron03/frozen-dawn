@@ -150,4 +150,6 @@ public class ModDataComponents {
                             .persistent(Codec.INT)
                             .networkSynchronized(ByteBufCodecs.INT)
                             .build());
+    /** The Fabricator blueprint a Data Slate teaches. */
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<String>> BLUEPRINT = DATA_COMPONENTS.register("blueprint", () -> DataComponentType.<String>builder().persistent(Codec.STRING).networkSynchronized(ByteBufCodecs.STRING_UTF8).build());
 }

@@ -38,7 +38,12 @@ public final class RadiationClient {
         whiteFlash = Math.max(whiteFlash, (float) Math.clamp(1 - d / 64, 0.25, 1));
     }
     private static long receivedAt;
-    private record Flash(int x, int y, int dx, int dy, int ttl) {}
+    private record Flash(int x, int y, int dx, int dy, int ttl, int color) {}
+    /** Brightness of the radiation flashes, and of the faint specks a burning SFR-1 leaves through the porthole. */
+    private static final int FLASH_COLOR = 0xE0DCEBFF, GLIMPSE_COLOR = 0x50DCEBFF;
+    public static final double GLIMPSE_CHANCE = 0.06;
+    private static boolean glimpsing;
+    public static void glimpse(boolean seen) { glimpsing = seen; }
     private static final List<Flash> FLASHES = new ArrayList<>();
     private static int blueFrames;
     private static GeigerLoop dense, alarm;
@@ -85,7 +90,7 @@ public final class RadiationClient {
     @SubscribeEvent public static void respawn(ClientPlayerNetworkEvent.Clone event) {
         if (event.getOldPlayer().isDeadOrDying()) { grime = 0; sootShown = 0; whiteFlash = 0; contamination = 0; }
     }
-    @SubscribeEvent public static void logout(ClientPlayerNetworkEvent.LoggingOut event) { rate = 0; dose = 0; FLASHES.clear(); dense = null; alarm = null; chirpCooldown = 0; contamination = 0; sootShown = 0; whiteFlash = 0; airborne = 0; grime = 0; }
+    @SubscribeEvent public static void logout(ClientPlayerNetworkEvent.LoggingOut event) { rate = 0; dose = 0; FLASHES.clear(); glimpsing = false; dense = null; alarm = null; chirpCooldown = 0; contamination = 0; sootShown = 0; whiteFlash = 0; airborne = 0; grime = 0; }
 
     @SubscribeEvent public static void tick(ClientTickEvent.Post event) {
         var mc = Minecraft.getInstance(); var player = mc.player;
@@ -189,15 +194,17 @@ public final class RadiationClient {
         if (whiteFlash > 0.01f) { g.fill(0, 0, w, h, (int) (whiteFlash * 235) << 24 | 0xFFFFFF); whiteFlash *= 0.94f; }
         if (r >= FLASH_FROM && random.nextDouble() < Math.min(0.6, (r - FLASH_FROM) / 500)) {
             int len = 1 + random.nextInt(5);
-            FLASHES.add(new Flash(random.nextInt(w), random.nextInt(h), random.nextInt(3) - 1, random.nextInt(3) - 1, 2 + random.nextInt(2)));
-            if (len > 3) FLASHES.add(new Flash(random.nextInt(w), random.nextInt(h), 0, 0, 2));
+            FLASHES.add(new Flash(random.nextInt(w), random.nextInt(h), random.nextInt(3) - 1, random.nextInt(3) - 1, 2 + random.nextInt(2), FLASH_COLOR));
+            if (len > 3) FLASHES.add(new Flash(random.nextInt(w), random.nextInt(h), 0, 0, 2, FLASH_COLOR));
         }
+        if (glimpsing && random.nextDouble() < GLIMPSE_CHANCE)
+            FLASHES.add(new Flash(random.nextInt(w), random.nextInt(h), random.nextInt(3) - 1, random.nextInt(3) - 1, 2, GLIMPSE_COLOR));
         if (r >= BLUE_FROM && blueFrames == 0 && random.nextDouble() < 0.015) blueFrames = 3;
         if (blueFrames > 0) { g.fill(0, 0, w, h, (blueFrames == 3 ? 0x60 : 0x30) << 24 | 0x8CC8FF); blueFrames--; }
         var next = new ArrayList<Flash>();
         for (var f : FLASHES) {
-            for (int i = 0; i < 4; i++) g.fill(f.x() + f.dx() * i, f.y() + f.dy() * i, f.x() + f.dx() * i + 1, f.y() + f.dy() * i + 1, 0xE0DCEBFF);
-            if (f.ttl() > 1) next.add(new Flash(f.x(), f.y(), f.dx(), f.dy(), f.ttl() - 1));
+            for (int i = 0; i < 4; i++) g.fill(f.x() + f.dx() * i, f.y() + f.dy() * i, f.x() + f.dx() * i + 1, f.y() + f.dy() * i + 1, f.color());
+            if (f.ttl() > 1) next.add(new Flash(f.x(), f.y(), f.dx(), f.dy(), f.ttl() - 1, f.color()));
         }
         FLASHES.clear(); FLASHES.addAll(next.size() > 200 ? next.subList(next.size() - 200, next.size()) : next);
     }

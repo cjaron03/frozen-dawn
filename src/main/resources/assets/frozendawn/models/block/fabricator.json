@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "north": "frozendawn:block/fabricator_front",
+    "south": "frozendawn:block/fabricator_side",
+    "east": "frozendawn:block/fabricator_side",
+    "west": "frozendawn:block/fabricator_side",
+    "up": "frozendawn:block/fabricator_top",
+    "down": "frozendawn:block/fabricator_top",
+    "particle": "frozendawn:block/fabricator_side"
+  }
+}
