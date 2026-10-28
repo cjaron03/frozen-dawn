@@ -3,6 +3,7 @@ package com.frozendawn.power;
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.block.*;
 import com.frozendawn.data.FabricatorBlueprints;
+import com.frozendawn.gametest.GameTestPacing;
 import com.frozendawn.gametest.GameTestReporting;
 import com.frozendawn.gametest.GameTestTemplates;
 import com.frozendawn.init.*;
@@ -19,6 +20,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
@@ -34,6 +36,8 @@ public final class IcarusGameTest {
     public static void reportStructure(ServerLevel level) { GameTestReporting.installReporter(level); }
     @BeforeBatch(batch = "icarus_foundry")
     public static void reportFoundry(ServerLevel level) { GameTestReporting.installReporter(level); }
+    @BeforeBatch(batch = "icarus_reactor")
+    public static void reportReactor(ServerLevel level) { GameTestReporting.installReporter(level); }
 
     @GameTest(template = GameTestTemplates.EMPTY, batch = "icarus_archive", timeoutTicks = 40)
     public static void icarusSlateTeachesAllFourBlueprints(GameTestHelper h) {
@@ -100,6 +104,100 @@ public final class IcarusGameTest {
                 h.assertTrue(f.getItem(AntiparticleFoundryBlockEntity.INPUT).getCount() == 1, "The empty capsule is kept");
                 h.succeed();
             });
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "icarus_reactor", timeoutTicks = 200)
+    public static void icarusColdStartExportsPowerAfterTwoMinutes(GameTestHelper h) {
+        GameTestPacing.whenTicking(h, () -> {
+            var l = h.getLevel(); var c = icarus(h, IcarusScenes.build(h, CENTER));
+            var banks = banks(h, 3);
+            c.physics().setCommissionedForTest(true);
+            dock(h).setItem(0, AntimatterCapsuleItem.sealed(IcarusPhysics.CAPSULE).copyWithCount(2));
+            matter(h).setItem(0, new ItemStack(Items.COBBLESTONE, 64));
+            h.assertTrue(c.press(IcarusControllerBlockEntity.BUTTON_START), "Start is accepted from COLD");
+            c.second(l);
+            long full = stored(banks);
+            h.startSequence()
+                    .thenWaitUntil(() -> h.assertTrue(stored(banks) < full, "The banks pay the 1 MW startup draw through the power port"))
+                    .thenExecute(() -> {
+                        for (int s = 0; s < 121; s++) c.second(l);
+                        h.assertValueEqual(c.physics().state(), IcarusPhysics.State.RUNNING, "state after two minutes");
+                        h.assertTrue(port(h).supplyWatts() > 0, "A running reactor exports net power, got " + port(h).supplyWatts() + " W");
+                        h.assertValueEqual(dock(h).empties(), 2, "empty casings left in the dock");
+                    })
+                    .thenSucceed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "icarus_reactor", timeoutTicks = 200)
+    public static void icarusStartupHoldsWithoutGridPower(GameTestHelper h) {
+        GameTestPacing.whenTicking(h, () -> {
+            var l = h.getLevel(); var c = icarus(h, IcarusScenes.build(h, CENTER));
+            c.physics().setCommissionedForTest(true);
+            dock(h).setItem(0, AntimatterCapsuleItem.sealed(IcarusPhysics.CAPSULE).copyWithCount(2));
+            h.assertTrue(c.press(IcarusControllerBlockEntity.BUTTON_START), "Start is accepted from COLD");
+            c.second(l);
+            // Real ticks let the port find nothing to pay its request from. The loop runs ten ticks clear of the
+            // controller's own second, so the port has counted several unpaid ticks, not the one it forgives.
+            h.runAfterDelay(21 + Math.floorMod(10 - (l.getGameTime() + 21), 20), () -> {
+                for (int s = 0; s < 40; s++) c.second(l);
+                h.assertValueEqual(c.physics().state(), IcarusPhysics.State.POWER_CHECK, "an unpowered start stays on the power check");
+                h.assertValueEqual(c.readout().status(), IcarusPhysics.Status.HOLD_POWER, "hold reason");
+                h.assertValueEqual(c.physics().coreCharge(), 0L, "nothing is injected without power");
+                h.succeed();
+            });
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY, batch = "icarus_reactor", timeoutTicks = 40)
+    public static void icarusMatterPortRejectsBlockEntityItems(GameTestHelper h) {
+        h.assertTrue(IcarusMatterPortBlockEntity.accepts(new ItemStack(Items.COBBLESTONE)), "Plain blocks are matter");
+        h.assertFalse(IcarusMatterPortBlockEntity.accepts(new ItemStack(Items.CHEST)), "A block with a block entity is refused");
+        h.assertFalse(IcarusMatterPortBlockEntity.accepts(new ItemStack(Items.STICK)), "Items that are not blocks are refused");
+        h.succeed();
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "icarus_reactor", timeoutTicks = 100)
+    public static void icarusShieldVaporizesIntrudingBlocks(GameTestHelper h) {
+        scene(h, () -> {
+            var l = h.getLevel(); var c = running(h); var core = h.absolutePos(CENTER);
+            l.setBlock(core.east(2), Blocks.DIRT.defaultBlockState(), 3);
+            l.setBlock(core.above(3), Blocks.CHEST.defaultBlockState(), 3);
+            ((net.minecraft.world.level.block.entity.ChestBlockEntity) l.getBlockEntity(core.above(3))).setItem(0, new ItemStack(Items.DIAMOND, 5));
+            c.second(l);
+            h.assertTrue(l.getBlockState(core.east(2)).isAir(), "Dirt inside the shield is vaporized");
+            h.assertTrue(l.getBlockState(core.above(3)).isAir(), "A chest inside the shield is vaporized");
+            h.assertTrue(l.getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class, new net.minecraft.world.phys.AABB(core).inflate(8)).isEmpty(),
+                    "Vaporized blocks and their contents leave no items");
+            h.assertValueEqual(c.physics().state(), IcarusPhysics.State.RUNNING, "state after an intrusion");
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "icarus_reactor", timeoutTicks = 100)
+    public static void icarusColeProtocolReturnsAntimatterToTheDock(GameTestHelper h) {
+        scene(h, () -> {
+            var l = h.getLevel(); var c = running(h);
+            h.assertTrue(c.press(IcarusControllerBlockEntity.BUTTON_COLE), "Cole Protocol is accepted while running");
+            long atRecovery = -1;
+            for (int s = 0; s < 181; s++) {
+                c.second(l);
+                if (atRecovery < 0 && c.physics().state() == IcarusPhysics.State.COLE_RECOVER) atRecovery = c.physics().coreCharge();
+            }
+            h.assertTrue(atRecovery > 0, "The core still held antimatter at recovery");
+            h.assertValueEqual(c.readout().status(), IcarusPhysics.Status.SAFE_TO_DISMANTLE, "status after the Cole Protocol");
+            h.assertValueEqual(c.physics().coreCharge(), 0L, "core charge after the Cole Protocol");
+            h.assertValueEqual(dock(h).charge(), atRecovery, "sealed charge returned to the dock");
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "icarus_reactor", timeoutTicks = 100)
+    public static void icarusRedstoneClips(GameTestHelper h) {
+        scene(h, () -> {
+            var l = h.getLevel(); var c = running(h);
+            l.setBlock(c.getBlockPos().above(), Blocks.REDSTONE_BLOCK.defaultBlockState(), 3);
+            c.second(l);
+            h.assertValueEqual(c.physics().state(), IcarusPhysics.State.CLIPPED, "state after a redstone signal");
         });
     }
 
@@ -190,6 +288,35 @@ public final class IcarusGameTest {
         h.succeed();
     }
 
+    private static IcarusControllerBlockEntity icarus(GameTestHelper h, BlockPos controller) {
+        if (!(h.getLevel().getBlockEntity(controller) instanceof IcarusControllerBlockEntity c)) throw new GameTestAssertException("Icarus controller block entity missing");
+        return c;
+    }
+    private static IcarusPowerPortBlockEntity port(GameTestHelper h) { return (IcarusPowerPortBlockEntity) h.getLevel().getBlockEntity(IcarusScenes.cell(h, CENTER, Direction.SOUTH, 1, -5, 8)); }
+    private static IcarusCapsuleDockBlockEntity dock(GameTestHelper h) { return (IcarusCapsuleDockBlockEntity) h.getLevel().getBlockEntity(IcarusScenes.cell(h, CENTER, Direction.SOUTH, -2, -5, 8)); }
+    private static IcarusMatterPortBlockEntity matter(GameTestHelper h) { return (IcarusMatterPortBlockEntity) h.getLevel().getBlockEntity(IcarusScenes.cell(h, CENTER, Direction.SOUTH, -3, -5, 8)); }
+    /** A commissioned reactor with two capsules and a stack of cobblestone, started and driven straight to RUNNING. */
+    private static IcarusControllerBlockEntity running(GameTestHelper h) {
+        var l = h.getLevel(); var c = icarus(h, IcarusScenes.build(h, CENTER));
+        c.physics().setCommissionedForTest(true);
+        dock(h).setItem(0, AntimatterCapsuleItem.sealed(IcarusPhysics.CAPSULE).copyWithCount(2));
+        matter(h).setItem(0, new ItemStack(Items.COBBLESTONE, 64));
+        h.assertTrue(c.press(IcarusControllerBlockEntity.BUTTON_START), "Start is accepted from COLD");
+        for (int s = 0; s < 121; s++) c.second(l);
+        h.assertValueEqual(c.physics().state(), IcarusPhysics.State.RUNNING, "state after two minutes");
+        return c;
+    }
+    /** Full battery banks on the row behind the support blocks, each linked to the power port. */
+    private static List<PowerStorageBlockEntity> banks(GameTestHelper h, int count) {
+        var banks = new ArrayList<PowerStorageBlockEntity>(); var target = IcarusScenes.cell(h, CENTER, Direction.SOUTH, 1, -5, 8);
+        for (int i = 0; i < count; i++) {
+            var p = place(h, 9 + 2 * i, 2, 20, ModBlocks.BATTERY_BANK.get()); var store = (PowerStorageBlockEntity) h.getLevel().getBlockEntity(p);
+            for (int cell = 0; cell < store.getContainerSize(); cell++) store.setItem(cell, com.frozendawn.item.PowerCellItem.charged(com.frozendawn.item.PowerCellItem.CAPACITY_JOULES));
+            link(h, p, target); banks.add(store);
+        }
+        return banks;
+    }
+    private static long stored(List<PowerStorageBlockEntity> banks) { return banks.stream().mapToLong(PowerStorageBlockEntity::storedJoules).sum(); }
     private static void scene(GameTestHelper h, Runnable body) { h.runAfterDelay(1, () -> { body.run(); h.succeed(); }); }
     private static boolean namesProjectIcarus(Component line) {
         if (line.getString().contains("Project Icarus")) return true;

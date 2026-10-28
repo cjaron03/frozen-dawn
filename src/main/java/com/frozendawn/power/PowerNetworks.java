@@ -322,6 +322,7 @@ public final class PowerNetworks {
         if (!level.isLoaded(pos)) return 0;
         if (level.getBlockEntity(pos) instanceof com.frozendawn.block.ReactorControllerBlockEntity reactor) return reactor.powerWatts();
         if (level.getBlockEntity(pos) instanceof com.frozendawn.block.SfrPowerPortBlockEntity sfr) return sfr.supplyWatts();
+        if (level.getBlockEntity(pos) instanceof com.frozendawn.block.IcarusPowerPortBlockEntity icarus) return icarus.supplyWatts();
         return level.getBlockEntity(pos) instanceof com.frozendawn.block.GeothermalCoreBlockEntity core
                 ? core.getPowerShare() * 200 : 0;
     }

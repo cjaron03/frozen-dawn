@@ -1,5 +1,6 @@
 package com.frozendawn.block;
 
+import com.frozendawn.init.ModBlockEntities;
 import com.frozendawn.init.ModItems;
 import com.frozendawn.network.IcarusBlueprintPayload;
 import net.minecraft.ChatFormatting;
@@ -18,6 +19,8 @@ import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.Mirror;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityTicker;
+import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
@@ -37,9 +40,11 @@ public final class IcarusControllerBlock extends IcarusPartBlock implements Enti
     @Override protected InteractionResult useWithoutItem(BlockState s, Level l, BlockPos p, Player player, BlockHitResult hit) {
         if (player.getMainHandItem().is(ModItems.CONDUIT_BINDER) || player.getOffhandItem().is(ModItems.CONDUIT_BINDER)) return InteractionResult.PASS;
         if (player instanceof ServerPlayer server && l.getBlockEntity(p) instanceof IcarusControllerBlockEntity c) {
-            // An unfinished reactor toggles its ghost-block blueprint; the screen arrives with the running reactor.
-            if (!player.isShiftKeyDown() && !IcarusStructure.validate(server.serverLevel(), p, s.getValue(FACING), true).valid())
+            // An unfinished reactor toggles its ghost-block blueprint; sneaking opens the screen anyway, with what is left to build.
+            if (!player.isShiftKeyDown() && c.physics().state() == com.frozendawn.power.IcarusPhysics.State.COLD
+                    && !IcarusStructure.validate(server.serverLevel(), p, s.getValue(FACING), true).valid())
                 blueprint(server, c, c.toggleBlueprint(server.getUUID()));
+            else server.openMenu(c, buf -> buf.writeBlockPos(p));
         }
         return InteractionResult.sidedSuccess(l.isClientSide());
     }
@@ -51,7 +56,7 @@ public final class IcarusControllerBlock extends IcarusPartBlock implements Enti
             blueprint(server, c, c.toggleBlueprint(server.getUUID()));
     }
     /** Sends the blueprint state, then names the current stage and every block still needed, in chat where the list wraps. */
-    private static void blueprint(ServerPlayer player, IcarusControllerBlockEntity c, boolean show) {
+    static void blueprint(ServerPlayer player, IcarusControllerBlockEntity c, boolean show) {
         var level = player.serverLevel(); var pos = c.getBlockPos(); var facing = c.getBlockState().getValue(FACING);
         var cells = c.blueprint(level);
         if (cells.isEmpty()) { if (show) c.toggleBlueprint(player.getUUID()); show = false; }
@@ -69,4 +74,7 @@ public final class IcarusControllerBlock extends IcarusPartBlock implements Enti
         player.displayClientMessage(Component.translatable("message.frozendawn.icarus.blueprint", name, parts), false);
     }
     @Override public BlockEntity newBlockEntity(BlockPos p, BlockState s) { return new IcarusControllerBlockEntity(p, s); }
+    @Override public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level l, BlockState s, BlockEntityType<T> t) {
+        return l.isClientSide() || t != ModBlockEntities.ICARUS_CONTROLLER.get() ? null : (w, pos, state, be) -> ((IcarusControllerBlockEntity) be).serverTick();
+    }
 }

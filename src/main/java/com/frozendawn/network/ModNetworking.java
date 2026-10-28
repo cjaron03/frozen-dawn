@@ -46,6 +46,10 @@ public class ModNetworking {
         registrar.playToClient(AuroraStatePayload.TYPE, AuroraStatePayload.STREAM_CODEC,
                 (payload, context) -> context.enqueueWork(() -> ClientHandlers.handleAurora(payload)));
 
+        registrar.playToServer(IcarusSettingsPayload.TYPE, IcarusSettingsPayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(() -> {
+                    if (context.player() instanceof ServerPlayer player) IcarusSettingsPayload.handle(player, payload);
+                }));
         registrar.playToServer(HeadlampTogglePayload.TYPE, HeadlampTogglePayload.STREAM_CODEC,
                 (payload, context) -> context.enqueueWork(() -> {
                     if (context.player() instanceof ServerPlayer player) HeadlampTogglePayload.handle(player);

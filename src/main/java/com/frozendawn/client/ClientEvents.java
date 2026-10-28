@@ -382,6 +382,7 @@ public class ClientEvents {
         event.register(ModMenuTypes.RESISTIVE_HEATER.get(), ResistiveHeaterScreen::new);
         event.register(ModMenuTypes.REACTOR_CONTROLLER.get(), ReactorControllerScreen::new);
         event.register(ModMenuTypes.SFR_CONTROLLER.get(), SfrControllerScreen::new);
+        event.register(ModMenuTypes.ICARUS_CONTROLLER.get(), IcarusControllerScreen::new);
         event.register(ModMenuTypes.PIXIE.get(), PixieScreen::new);
         event.register(ModMenuTypes.POWER_MONITOR.get(), PowerMonitorScreen::new);
         event.register(ModMenuTypes.UPLINK_CONSOLE.get(), UplinkConsoleScreen::new);
