@@ -3,6 +3,7 @@ package com.frozendawn.world;
 import com.frozendawn.block.IcarusControllerBlock;
 import com.frozendawn.block.IcarusControllerBlockEntity;
 import com.frozendawn.block.IcarusStructure;
+import com.frozendawn.config.FrozenDawnConfig;
 import com.frozendawn.init.ModDamageTypes;
 import com.frozendawn.power.IcarusBlast;
 import java.util.ArrayList;
@@ -62,6 +63,6 @@ public final class IcarusDetonation {
                 e.hurtMarked = true;
             }
         }
-        IcarusCraterData.get(l).queue(core, radius, l.getSeed() ^ core.asLong() ^ l.getGameTime());
+        if (FrozenDawnConfig.ICARUS_TERRAIN_DESTRUCTION.get()) IcarusCraterData.get(l).queue(core, radius, l.getSeed() ^ core.asLong() ^ l.getGameTime());
     }
 }

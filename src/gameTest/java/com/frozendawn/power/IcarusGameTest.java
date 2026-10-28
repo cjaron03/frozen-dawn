@@ -39,6 +39,8 @@ public final class IcarusGameTest {
     public static void reportFoundry(ServerLevel level) { GameTestReporting.installReporter(level); }
     @BeforeBatch(batch = "icarus_reactor")
     public static void reportReactor(ServerLevel level) { GameTestReporting.installReporter(level); }
+    @BeforeBatch(batch = "icarus_detonation")
+    public static void reportDetonation(ServerLevel level) { GameTestReporting.installReporter(level); }
 
     @GameTest(template = GameTestTemplates.EMPTY, batch = "icarus_archive", timeoutTicks = 40)
     public static void icarusSlateTeachesAllFourBlueprints(GameTestHelper h) {

@@ -49,6 +49,13 @@ public final class IcarusCraterData extends SavedData {
 
     public List<Job> jobs() { return Collections.unmodifiableList(jobs); }
 
+    /** Marks a chunk of job done, and drops the job once nothing is pending. */
+    public void carved(Job job, long chunk) {
+        job.pending().remove(chunk);
+        if (job.pending().isEmpty()) jobs.removeIf(j -> j == job);
+        setDirty();
+    }
+
     public static IcarusCraterData load(CompoundTag tag, HolderLookup.Provider registries) {
         var data = new IcarusCraterData();
         for (Tag t : tag.getList("Jobs", Tag.TAG_COMPOUND)) {
