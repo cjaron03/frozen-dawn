@@ -58,6 +58,20 @@ final class FrozenDawnWorldCommand {
         return 1;
     }
 
+    /** Builds a complete SFR-1 that is off, 12 blocks ahead of the caller and sunk one block, for playtests. */
+    private static int placeSfrLab(CommandContext<CommandSourceStack> context) {
+        var source = context.getSource(); var level = source.getLevel();
+        var look = net.minecraft.world.phys.Vec3.directionFromRotation(0, source.getRotation().y);
+        var at = source.getPosition().add(look.scale(12));
+        int x = (int) Math.floor(at.x), z = (int) Math.floor(at.z);
+        // The bottom coil ring replaces the top ground block, so the Hatch's lower half stands at foot level.
+        var center = new net.minecraft.core.BlockPos(x, level.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z) + 1, z);
+        var lab = com.frozendawn.world.SfrLabPlacement.build(level, center);
+        if (lab.failedLinks() > 0) source.sendFailure(Component.literal(lab.failedLinks() + " SFR-1 lab link(s) failed"));
+        source.sendSuccess(() -> Component.literal("SFR-1 built, off, at (" + center.getX() + ", " + center.getY() + ", " + center.getZ() + "); Controller on the north side"), true);
+        return 1;
+    }
+
     private static final SuggestionProvider<CommandSourceStack> BLUEPRINTS = (context, builder) ->
             SharedSuggestionProvider.suggest(java.util.stream.Stream.concat(java.util.stream.Stream.of("all"), com.frozendawn.data.FabricatorBlueprints.SLATES.stream()), builder);
 
@@ -88,6 +102,7 @@ final class FrozenDawnWorldCommand {
                 .then(Commands.literal("rooms").executes(FrozenDawnWorldCommand::roomDiagnostics))
                 .then(Commands.literal("reactorsite").executes(FrozenDawnWorldCommand::placeReactorSite))
                 .then(Commands.literal("helionsite").executes(FrozenDawnWorldCommand::placeHelionSite))
+                .then(Commands.literal("sfrlab").executes(FrozenDawnWorldCommand::placeSfrLab))
                 .then(Commands.literal("blueprint")
                         .then(Commands.literal("learn").then(Commands.argument("id", StringArgumentType.word()).suggests(BLUEPRINTS)
                                 .executes(context -> blueprint(context, true))))

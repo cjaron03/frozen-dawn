@@ -414,6 +414,19 @@ public final class SfrGameTest {
         });
     }
 
+    /** The lab command's torus: complete, every link made, fuelled and off, so Start is the first thing that happens.
+     * Its own batch, so it does not move the burn tests to new grid slots. */
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "sfr_lab", timeoutTicks = 100, skyAccess = true)
+    public static void sfrLabBuildIsCompleteAndOff(GameTestHelper h) {
+        var lab = com.frozendawn.world.SfrLabPlacement.build(h.getLevel(), h.absolutePos(CENTER));
+        h.assertTrue(lab.failedLinks() == 0, "Expected every lab link to be made, but " + lab.failedLinks() + " failed");
+        h.assertTrue(SfrMultiblock.validate(h.getLevel(), lab.controller(), Direction.NORTH).valid(), "Expected the lab torus to validate");
+        if (!(h.getLevel().getBlockEntity(lab.controller()) instanceof SfrControllerBlockEntity be)) throw new GameTestAssertException("SFR-1 controller block entity missing");
+        h.assertTrue(be.physics().state() == FusionPhysics.State.OFF, "Expected the lab reactor OFF, but was " + be.physics().state());
+        h.assertTrue(be.physics().tritium() >= FusionPhysics.IGNITION_TRITIUM, "Expected tritium for one ignition");
+        h.succeed();
+    }
+
     @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "sfr", timeoutTicks = 300, skyAccess = true)
     public static void sfrHatchPortholeGlowsWithThePlasma(GameTestHelper h) {
         h.runAfterDelay(1, () -> {
