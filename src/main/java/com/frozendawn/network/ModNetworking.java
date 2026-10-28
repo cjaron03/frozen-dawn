@@ -62,6 +62,8 @@ public class ModNetworking {
 
         registrar.playToClient(ReactorFlashPayload.TYPE, ReactorFlashPayload.STREAM_CODEC,
                 (payload, context) -> context.enqueueWork(() -> ClientHandlers.handleReactorFlash(payload)));
+        registrar.playToClient(IcarusBlastPayload.TYPE, IcarusBlastPayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(() -> ClientHandlers.handleIcarusBlast(payload)));
         registrar.playToClient(RadiationPayload.TYPE, RadiationPayload.STREAM_CODEC,
                 (payload, context) -> context.enqueueWork(() -> ClientHandlers.handleRadiation(payload)));
 

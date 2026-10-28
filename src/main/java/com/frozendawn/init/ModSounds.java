@@ -91,6 +91,10 @@ public class ModSounds {
     public static final DeferredHolder<SoundEvent, SoundEvent> SFR_IGNITION = register("blocks.sfr_ignition");
     public static final DeferredHolder<SoundEvent, SoundEvent> SFR_BURN = register("blocks.sfr_burn");
     public static final DeferredHolder<SoundEvent, SoundEvent> SFR_PUMP = register("blocks.sfr_pump");
+    public static final DeferredHolder<SoundEvent, SoundEvent> ICARUS_BOOM = register("blocks.icarus_boom");
+    public static final DeferredHolder<SoundEvent, SoundEvent> ICARUS_RUMBLE = register("blocks.icarus_rumble");
+    public static final DeferredHolder<SoundEvent, SoundEvent> ICARUS_VACUUM_THUD = register("blocks.icarus_vacuum_thud");
+    public static final DeferredHolder<SoundEvent, SoundEvent> SUIT_ICARUS_RADIATION = register("ui.suit.icarus_radiation");
     public static final DeferredHolder<SoundEvent, SoundEvent> SFR_ALARM = register("blocks.sfr_alarm");
     public static final DeferredHolder<SoundEvent, SoundEvent> SFR_READY = register("blocks.sfr_ready");
     public static final DeferredHolder<SoundEvent, SoundEvent> SFR_IGNITED = register("blocks.sfr_ignited");

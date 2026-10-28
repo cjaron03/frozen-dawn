@@ -34,6 +34,25 @@ class IcarusBlastTest {
         }
     }
 
+    @Test void flashFadesWithDistanceAndReducedFlashIsCapped() {
+        assertEquals(1.0, IcarusBlast.flashStrength(0, 100, false), 1e-12);
+        assertTrue(IcarusBlast.flashStrength(600, 100, false) >= 0.15, "Still a real flash at six radii");
+        double last = 1;
+        for (int d = 0; d <= 2000; d += 10) {
+            double full = IcarusBlast.flashStrength(d, 100, false), reduced = IcarusBlast.flashStrength(d, 100, true);
+            assertTrue(full <= last + 1e-12, "The flash never brightens with distance, at " + d);
+            assertTrue(full >= 0 && reduced <= 0.35 + 1e-12 && reduced <= full + 1e-12, "Reduced flash is capped at 35%, at " + d);
+            last = full;
+        }
+        assertEquals(0.35, IcarusBlast.flashStrength(0, 100, true), 1e-12);
+    }
+
+    @Test void burstDoseFadesToNothingAtTwoRadii() {
+        assertEquals(IcarusBlast.BURST_DOSE / 2, IcarusBlast.burstDose(100, 100), 1e-9);
+        assertEquals(0, IcarusBlast.burstDose(200, 100), 1e-12);
+        assertEquals(0, IcarusBlast.burstDose(900, 100), 1e-12);
+    }
+
     @Test void meltRingIsOneAndAHalfRadii() { assertEquals(300, IcarusBlast.meltRadius(200), 1e-12); }
 
     @Test void boomTravelsAtTheSpeedOfSound() { assertEquals(2.0, IcarusBlast.soundDelaySeconds(686), 1e-12); }

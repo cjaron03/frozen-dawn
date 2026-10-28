@@ -4,14 +4,20 @@ import com.frozendawn.block.IcarusControllerBlock;
 import com.frozendawn.block.IcarusControllerBlockEntity;
 import com.frozendawn.block.IcarusStructure;
 import com.frozendawn.config.FrozenDawnConfig;
+import com.frozendawn.event.SuitIntegrityHandler;
+import com.frozendawn.init.ModAttachments;
 import com.frozendawn.init.ModDamageTypes;
+import com.frozendawn.init.ModSounds;
+import com.frozendawn.network.IcarusBlastPayload;
 import com.frozendawn.power.IcarusBlast;
+import com.frozendawn.radiation.RadiationHandler;
 import java.util.ArrayList;
 import java.util.Set;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.ExperienceOrb;
@@ -19,6 +25,7 @@ import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import net.neoforged.neoforge.network.PacketDistributor;
 
 /** Decides what removing an AMR-1 Icarus part does, and applies a detonation's immediate effects. */
 public final class IcarusDetonation {
@@ -43,6 +50,20 @@ public final class IcarusDetonation {
         for (var c : owners) c.partRemoved(l);
     }
 
+    /** Every player close enough to see it gets the flash, sound and shake, told whether they stand in air. Those within
+     * 2r who are not immune take a one-off radiation dose, and a sealed suit warns of the spike. No fallout is placed. */
+    private static void blast(ServerLevel l, Vec3 center, double radius) {
+        for (var p : l.players()) {
+            double distance = p.position().distanceTo(center);
+            if (IcarusBlast.flashStrength(distance, radius, false) <= 0) continue;
+            PacketDistributor.sendToPlayer(p, new IcarusBlastPayload(center, radius, !RoomAtmosphere.hasAir(l, p.blockPosition()), distance));
+            double dose = IcarusBlast.burstDose(distance, radius);
+            if (dose <= 0 || !p.isAlive() || RadiationHandler.immune(p)) continue;
+            p.getData(ModAttachments.RADIATION.get()).dose += dose;
+            if (SuitIntegrityHandler.isWearingSealedSuit(p)) p.playNotifySound(ModSounds.SUIT_ICARUS_RADIATION.get(), SoundSource.PLAYERS, 1, 1);
+        }
+    }
+
     /** Everything inside radius dies, items and experience vanish, and out to twice the radius damage and knockback
      * fade with distance; creative and spectator players are untouched. Then the crater is queued. */
     public static void detonate(ServerLevel l, BlockPos core, double radius, Set<UUID> crew) {
@@ -63,6 +84,7 @@ public final class IcarusDetonation {
                 e.hurtMarked = true;
             }
         }
+        blast(l, center, radius);
         if (FrozenDawnConfig.ICARUS_TERRAIN_DESTRUCTION.get()) IcarusCraterData.get(l).queue(core, radius, l.getSeed() ^ core.asLong() ^ l.getGameTime());
     }
 }

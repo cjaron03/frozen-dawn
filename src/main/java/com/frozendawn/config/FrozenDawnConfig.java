@@ -111,6 +111,7 @@ public class FrozenDawnConfig {
     // Client
     public static final ModConfigSpec.DoubleValue CYCLONE_FLASH_INTENSITY;
     public static final ModConfigSpec.BooleanValue CYCLONE_CAMERA_SHAKE;
+    public static final ModConfigSpec.BooleanValue ICARUS_REDUCED_FLASH;
     public static final ModConfigSpec.BooleanValue ENABLE_SKY_DARKENING;
     public static final ModConfigSpec.BooleanValue ENABLE_FROST_OVERLAY;
     public static final ModConfigSpec.BooleanValue ENABLE_SKY_COLOR_SHIFT;
@@ -476,6 +477,9 @@ public class FrozenDawnConfig {
                 .defineInRange("cycloneFlashIntensity", 1.0D, 0.0D, 1.0D);
         CYCLONE_CAMERA_SHAKE = BUILDER.comment("Optional exposed cyclone wind camera movement; off by default.")
                 .define("cycloneCameraShake", false);
+        ICARUS_REDUCED_FLASH = BUILDER
+                .comment("Soften an Icarus detonation's flash: at most 35% white and no strobe.")
+                .define("icarusReducedFlash", false);
         ENABLE_SKY_DARKENING = BUILDER
                 .comment("Enable progressive sky darkening and fog")
                 .define("enableSkyDarkening", true);

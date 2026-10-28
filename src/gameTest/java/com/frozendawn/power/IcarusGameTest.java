@@ -12,6 +12,11 @@ import com.frozendawn.recipe.FabricatorRecipe;
 import com.frozendawn.world.IcarusCraterData;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
+import com.mojang.authlib.GameProfile;
+import net.minecraft.server.level.ClientInformation;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.level.GameType;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.*;
@@ -423,6 +428,32 @@ public final class IcarusGameTest {
         return banks;
     }
     private static long stored(List<PowerStorageBlockEntity> banks) { return banks.stream().mapToLong(PowerStorageBlockEntity::storedJoules).sum(); }
+    /** Radius 8: a survival player at 1.75r (10 damage, so alive) takes an eighth of the burst, a creative player at the same range and a survival
+     * player past 2r take nothing. */
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "icarus_detonation", timeoutTicks = 100)
+    public static void icarusDetonationDosesNearbySurvivalPlayers(GameTestHelper h) {
+        scene(h, () -> {
+            var l = h.getLevel(); var core = h.absolutePos(CENTER);
+            var near = player(h, core.offset(14, 0, 0), GameType.SURVIVAL);
+            var creative = player(h, core.offset(-14, 0, 0), GameType.CREATIVE);
+            var far = player(h, core.offset(0, 0, 17), GameType.SURVIVAL);
+            try {
+                com.frozendawn.world.IcarusDetonation.detonate(l, core, 8, java.util.Set.of());
+                h.assertTrue(Math.abs(dose(near) - IcarusBlast.BURST_DOSE / 8) < 1e-6, "Burst dose at 1.75r, got " + dose(near));
+                h.assertValueEqual(dose(creative), 0.0, "creative dose");
+                h.assertValueEqual(dose(far), 0.0, "dose past 2r");
+            } finally { near.discard(); creative.discard(); far.discard(); }
+        });
+    }
+    private static double dose(ServerPlayer p) { return p.getData(ModAttachments.RADIATION.get()).dose; }
+    private static ServerPlayer player(GameTestHelper h, BlockPos pos, GameType mode) {
+        var level = h.getLevel(); var profile = new GameProfile(UUID.randomUUID(), "icarus_" + mode.getName());
+        var player = new ServerPlayer(level.getServer(), level, profile, ClientInformation.createDefault());
+        player.connection = new net.neoforged.neoforge.common.util.FakePlayer(level, profile).connection;
+        player.setPos(pos.getCenter()); player.setGameMode(mode); level.addNewPlayer(player);
+        return player;
+    }
+
     private static List<IcarusCraterData.Job> jobsAt(ServerLevel l, BlockPos core) {
         return IcarusCraterData.get(l).jobs().stream().filter(j -> j.center().equals(core)).toList();
     }

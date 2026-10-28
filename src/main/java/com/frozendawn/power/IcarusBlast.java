@@ -56,6 +56,19 @@ public final class IcarusBlast {
         return EDGE_KNOCKBACK * (1 - (distance - radius) / radius);
     }
 
+    /** One-off radiation dose at the crater edge for a player standing at the centre; it falls to nothing at 2r. */
+    public static final double BURST_DOSE = 600;
+    public static double burstDose(double distance, double radius) {
+        return distance >= 2 * radius ? 0 : BURST_DOSE * (1 - distance / (2 * radius));
+    }
+
+    /** The white flash's peak opacity: full at the centre, still 0.15 at 6r, gone by 12r. Reduced flash caps it at 0.35. */
+    public static double flashStrength(double distance, double radius, boolean reduced) {
+        double t = distance / (6 * radius);
+        double full = t <= 1 ? 1 - 0.85 * t : Math.max(0, 0.15 * (2 - t));
+        return reduced ? Math.min(0.35, full) : full;
+    }
+
     public static boolean witness(double distance, double radius) {
         return distance > radius && distance <= 3 * radius;
     }
