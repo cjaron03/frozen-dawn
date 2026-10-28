@@ -3,8 +3,11 @@ package com.frozendawn.power;
 import static com.frozendawn.power.IcarusPhysics.CAPSULE;
 import static org.junit.jupiter.api.Assertions.*;
 
+import com.frozendawn.power.IcarusPhysics.Alarm;
+import com.frozendawn.power.IcarusPhysics.Cascade;
 import com.frozendawn.power.IcarusPhysics.Inputs;
 import com.frozendawn.power.IcarusPhysics.Readout;
+import com.frozendawn.power.IcarusPhysics.Settings;
 import com.frozendawn.power.IcarusPhysics.State;
 import com.frozendawn.power.IcarusPhysics.Status;
 import org.junit.jupiter.api.Test;
@@ -116,5 +119,174 @@ class IcarusPhysicsTest {
 
     @Test void startOnlyFromCold() {
         var p = commissioned(); assertTrue(p.start()); assertFalse(p.start());
+    }
+
+    private static final double INF = Double.POSITIVE_INFINITY, FOUNDRY_MJ = 1440;
+    private static final Settings FULL = new Settings(2.5, 1.0, 30);
+    private static final Inputs STARVED = new Inputs(true, true, 0, 8, 0), STARVED_UNPAID = new Inputs(true, false, 0, 8, 0);
+    /** Returns a reactor whose next step is its first RUNNING second. */
+    private static IcarusPhysics runToRunning(Settings settings, int capsules) {
+        var p = commissioned(); p.settings(settings); p.start();
+        run(p, ok(capsules * CAPSULE), 120);
+        assertEquals(State.RUNNING, p.state());
+        return p;
+    }
+    private record Run(long used, double netMJ) {}
+    private static Run burn(IcarusPhysics p, Inputs in, int seconds) {
+        long before = p.coreCharge(); double net = 0;
+        for (int i = 0; i < seconds; i++) net += p.step(in).netMw();
+        return new Run(before - p.coreCharge(), net);
+    }
+
+    @Test void antimatterIsUsedPerEnergyNotTime() {
+        assertEquals(7200, IcarusPhysics.mjPerCapsule(1.0), 1e-9);
+        assertEquals(4500, IcarusPhysics.mjPerCapsule(2.5), 1e-9);
+        assertEquals(7200, IcarusPhysics.mjPerCapsule(0.3), 1e-9);
+    }
+
+    @Test void minimumRunsAboutTwoHoursPerCapsule() {
+        assertEquals(CAPSULE, burn(runToRunning(Settings.MINIMUM, 3), ok(0), 7200).used(), CAPSULE * 0.03);
+    }
+
+    @Test void minimumReturnsAtLeastTwoPointSevenTimesTheFoundryCost() {
+        assertTrue(burn(runToRunning(Settings.MINIMUM, 3), ok(0), 7200).netMJ() >= 2.7 * FOUNDRY_MJ);
+    }
+
+    @Test void fullOutputBurnsACapsuleInAboutThirtyMinutes() {
+        assertEquals(CAPSULE, burn(runToRunning(FULL, 3), ok(0), 1800).used(), CAPSULE * 0.05);
+    }
+
+    @Test void fullOutputReturnsAboutOnePointFiveTimes() {
+        double net = burn(runToRunning(FULL, 3), ok(0), 1800).netMJ();
+        assertTrue(net >= 1.3 * FOUNDRY_MJ && net <= 1.7 * FOUNDRY_MJ, "net " + net);
+        assertTrue(net > FOUNDRY_MJ);
+    }
+
+    @Test void minimumNetIsAboutSixHundredKilowatts() {
+        var p = runToRunning(Settings.MINIMUM, 3);
+        Readout r = run(p, ok(0), 1200);
+        assertEquals(IcarusPhysics.RESERVE_MJ, r.reserveMJ(), 1e-6);
+        assertEquals(0.60, r.netMw(), 0.06); assertEquals(0.40, r.shieldDrawMw(), 0.05);
+    }
+
+    @Test void fullNetIsAboutOnePointTwoMegawatts() {
+        Readout r = run(runToRunning(FULL, 3), ok(0), 1200);
+        assertEquals(IcarusPhysics.RESERVE_MJ, r.reserveMJ(), 1e-6);
+        assertEquals(1.2, r.netMw(), 0.18); assertEquals(1.3, r.shieldDrawMw(), 0.2);
+    }
+
+    @Test void minimumNeverRaisesMoreThanCaution() {
+        var p = runToRunning(Settings.MINIMUM, 2);
+        for (int s = 0; s < 20_000 && p.state() != State.COLD; s++) {
+            Readout r = p.step(ok(0));
+            assertTrue(r.alarm().compareTo(Alarm.CAUTION) <= 0, "second " + s + " " + r.alarm());
+            assertFalse(r.detonate());
+        }
+        assertEquals(State.COLD, p.state(), "The load burns out to a safe end");
+        assertEquals(Status.SAFE_TO_DISMANTLE, p.step(ok(0)).status());
+    }
+
+    @Test void depletionDriftForcesARetuneAtFullOutput() {
+        var p = runToRunning(FULL, 4);
+        boolean warned = false;
+        for (int s = 0; s < 20_000 && p.coreCharge() > 0 && !warned; s++) {
+            Readout r = p.step(ok(0));
+            assertFalse(r.detonate());
+            warned = r.alarm().compareTo(Alarm.WARNING) >= 0;
+        }
+        assertTrue(warned && p.coreCharge() > 0);
+    }
+
+    @Test void shieldDrainClimbsSteeplyAboveTheRedLine() {
+        double below = IcarusPhysics.shieldDrainPerSecond(IcarusPhysics.RED_LINE_C - 500);
+        double above = IcarusPhysics.shieldDrainPerSecond(IcarusPhysics.RED_LINE_C + 500);
+        assertTrue(above >= 3 * below, below + " -> " + above);
+    }
+
+    @Test void starvedMatterCutsOutputButNotAntimatter() {
+        var p = runToRunning(Settings.MINIMUM, 3);
+        run(p, ok(0), 10);
+        assertEquals(Status.MATTER_STARVED, p.step(STARVED).status());
+        Readout r = run(p, STARVED, 60);
+        assertEquals(0, r.grossMw(), 1e-9);
+        long charge = r.coreCharge();
+        assertEquals(charge, run(p, STARVED, 30).coreCharge());
+    }
+
+    @Test void underfeedCapsOutput() {
+        assertTrue(run(runToRunning(new Settings(2.5, 1.0, 12), 3), ok(0), 200).grossMw() <= 1.0 + 0.05);
+    }
+
+    @Test void reserveCoversAGridFailure() {
+        var p = runToRunning(Settings.MINIMUM, 3);
+        run(p, ok(0), 1200); run(p, STARVED, 60);
+        Readout last = p.step(STARVED);
+        for (int i = 0; i < 60; i++) {
+            Readout r = p.step(STARVED_UNPAID);
+            assertEquals(Status.RESERVE_IN_USE, r.status());
+            assertEquals(last.shieldPct(), r.shieldPct(), 1e-9);
+            assertEquals(last.reserveMJ() - r.shieldDrawMw(), r.reserveMJ(), 1e-9);
+            last = r;
+        }
+    }
+
+    @Test void reserveDoesNotRechargeFromGridWhileBacking() {
+        var p = runToRunning(Settings.MINIMUM, 3);
+        run(p, STARVED, 60);
+        double reserve = p.step(STARVED).reserveMJ();
+        for (int i = 0; i < 120; i++) {
+            Readout r = p.step(i % 2 == 0 ? STARVED_UNPAID : STARVED);
+            assertTrue(r.reserveMJ() <= reserve + 1e-12); reserve = r.reserveMJ();
+        }
+    }
+
+    @Test void shieldFailureWithChargeDetonates() {
+        var p = runToRunning(Settings.MINIMUM, 3);
+        run(p, STARVED, 30);
+        Readout r = null;
+        for (int s = 0; s < 5000 && (r == null || !r.detonate()); s++) r = p.step(STARVED_UNPAID);
+        assertTrue(r.detonate()); assertEquals(State.DETONATED, r.state()); assertTrue(r.coreCharge() > 0);
+        assertEquals(0, r.shieldPct(), 1e-9);
+        p.detonated();
+        assertEquals(0, p.coreCharge()); assertFalse(p.step(STARVED_UNPAID).detonate());
+    }
+
+    @Test void predictionsCountDown() {
+        var p = runToRunning(Settings.MINIMUM, 3);
+        Readout stable = run(p, ok(0), 30);
+        assertEquals(INF, stable.shieldEtaS()); assertEquals(INF, stable.reserveEtaS()); assertEquals(INF, stable.redLineEtaS());
+        assertEquals(stable.coreCharge() / (CAPSULE / 7200.0), stable.antimatterEtaS(), 1);
+        run(p, STARVED, 30);
+        Readout backing = p.step(STARVED_UNPAID);
+        assertEquals(backing.reserveMJ() / backing.shieldDrawMw(), backing.reserveEtaS(), 1e-6);
+        Readout r = backing;
+        while (r.reserveMJ() > 0 || r.shieldEtaS() == INF) r = p.step(STARVED_UNPAID);
+        Readout next = p.step(STARVED_UNPAID);
+        assertTrue(Double.isFinite(r.shieldEtaS()));
+        assertEquals(r.shieldEtaS() - 1, next.shieldEtaS(), 0.5);
+    }
+
+    @Test void alarmTiers() {
+        assertEquals(Alarm.NONE, IcarusPhysics.alarm(Status.OK, 3000, 100, INF, INF, INF, INF));
+        assertEquals(Alarm.CAUTION, IcarusPhysics.alarm(Status.OK, 3000, 100, 599, INF, INF, INF));
+        assertEquals(Alarm.CAUTION, IcarusPhysics.alarm(Status.OK, 3000, 100, INF, 599, INF, INF));
+        assertEquals(Alarm.CAUTION, IcarusPhysics.alarm(Status.MATTER_STARVED, 3000, 100, INF, INF, INF, INF));
+        assertEquals(Alarm.CAUTION, IcarusPhysics.alarm(Status.RESERVE_IN_USE, 3000, 100, INF, INF, INF, INF));
+        assertEquals(Alarm.CAUTION, IcarusPhysics.alarm(Status.OK, 3000, 100, INF, INF, INF, 10), "Running out of fuel is a safe end");
+        assertEquals(Alarm.WARNING, IcarusPhysics.alarm(Status.OK, 3000, 100, 179, INF, INF, INF));
+        assertEquals(Alarm.WARNING, IcarusPhysics.alarm(Status.OK, 3000, 100, INF, 10, INF, INF));
+        assertEquals(Alarm.WARNING, IcarusPhysics.alarm(Status.OK, IcarusPhysics.RED_LINE_C, 100, INF, INF, INF, INF));
+        assertEquals(Alarm.WARNING, IcarusPhysics.alarm(Status.RESERVE_IN_USE, 3000, 100, INF, INF, 179, INF));
+        assertEquals(Alarm.CRITICAL, IcarusPhysics.alarm(Status.OK, 3000, 14, INF, INF, INF, INF));
+        assertEquals(Alarm.CRITICAL, IcarusPhysics.alarm(Status.OK, 3000, 100, 59, INF, INF, INF));
+        assertEquals(Alarm.CRITICAL, IcarusPhysics.alarm(Status.RESERVE_IN_USE, 3000, 100, INF, INF, 59, INF));
+    }
+
+    @Test void cascadeReadout() {
+        assertEquals(Cascade.STABLE, IcarusPhysics.cascade(3000, 100, false));
+        assertEquals(Cascade.STRAINED, IcarusPhysics.cascade(3000, 90, true));
+        assertEquals(Cascade.STRAINED, IcarusPhysics.cascade(IcarusPhysics.RED_LINE_C, 100, false));
+        assertEquals(Cascade.RUNAWAY, IcarusPhysics.cascade(IcarusPhysics.CRITICAL_C, 100, false));
+        assertEquals(Cascade.RUNAWAY, IcarusPhysics.cascade(3000, 14, true));
     }
 }
