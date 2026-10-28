@@ -66,6 +66,8 @@ public class ModBlockEntities {
 
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.frozendawn.block.SfrControllerBlockEntity>> SFR_CONTROLLER =
             BLOCK_ENTITIES.register("sfr_controller", () -> BlockEntityType.Builder.of(com.frozendawn.block.SfrControllerBlockEntity::new, ModBlocks.SFR_CONTROLLER.get()).build(null));
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.frozendawn.block.IcarusControllerBlockEntity>> ICARUS_CONTROLLER =
+            BLOCK_ENTITIES.register("icarus_controller", () -> BlockEntityType.Builder.of(com.frozendawn.block.IcarusControllerBlockEntity::new, ModBlocks.ICARUS_CONTROLLER.get()).build(null));
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.frozendawn.block.SfrFuelPortBlockEntity>> SFR_FUEL_PORT =
             BLOCK_ENTITIES.register("sfr_fuel_port", () -> BlockEntityType.Builder.of(com.frozendawn.block.SfrFuelPortBlockEntity::new, ModBlocks.SFR_FUEL_PORT.get()).build(null));
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.frozendawn.block.SfrPowerPortBlockEntity>> SFR_POWER_PORT =

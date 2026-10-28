@@ -11,6 +11,7 @@ import com.frozendawn.recipe.FabricatorRecipe;
 import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.*;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.contents.TranslatableContents;
@@ -20,6 +21,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
 import net.neoforged.neoforge.gametest.*;
 
 /** ORSA AMR-1 Icarus: blueprints, fuel, structure and the running reactor. */
@@ -28,6 +30,8 @@ import net.neoforged.neoforge.gametest.*;
 public final class IcarusGameTest {
     @BeforeBatch(batch = "icarus_archive")
     public static void reportArchive(ServerLevel level) { GameTestReporting.installReporter(level); }
+    @BeforeBatch(batch = "icarus_structure")
+    public static void reportStructure(ServerLevel level) { GameTestReporting.installReporter(level); }
     @BeforeBatch(batch = "icarus_foundry")
     public static void reportFoundry(ServerLevel level) { GameTestReporting.installReporter(level); }
 
@@ -99,6 +103,94 @@ public final class IcarusGameTest {
         });
     }
 
+    private static final BlockPos CENTER = new BlockPos(10, 7, 10);
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "icarus_structure", timeoutTicks = 100)
+    public static void icarusStructureValidatesAndNamesTheWrongCell(GameTestHelper h) {
+        scene(h, () -> {
+            var l = h.getLevel(); var controller = IcarusScenes.build(h, CENTER);
+            var result = IcarusStructure.validate(l, controller, Direction.SOUTH, true);
+            h.assertTrue(result.valid(), "The canonical build is valid: " + result.problem() + " at " + result.wrong());
+            h.assertValueEqual(result.core(), h.absolutePos(CENTER), "core");
+            h.assertValueEqual(result.parts().size(), 1 + 1 + 9 + 4 + 36 + 104 + 5, "part cells");
+            h.assertValueEqual(result.powerPort(), IcarusScenes.cell(h, CENTER, Direction.SOUTH, 1, -5, 8), "power port");
+            h.assertValueEqual(result.reserveBank(), IcarusScenes.cell(h, CENTER, Direction.SOUTH, 2, -5, 8), "reserve bank");
+            var corner = IcarusScenes.cell(h, CENTER, Direction.SOUTH, 8, -6, 8);
+            IcarusScenes.set(h, corner, Blocks.STONE.defaultBlockState());
+            var broken = IcarusStructure.validate(l, controller, Direction.SOUTH, true);
+            h.assertValueEqual(broken.problem(), IcarusStructure.Problem.FRAME, "stone in the frame");
+            h.assertValueEqual(broken.wrong(), corner, "the stone cell");
+            IcarusScenes.set(h, corner, ModBlocks.ICARUS_FRAME.get().defaultBlockState());
+            var emitter = IcarusScenes.cell(h, CENTER, Direction.SOUTH, 7, 0, 0);
+            IcarusScenes.set(h, emitter, ModBlocks.ICARUS_STABILIZER.get().defaultBlockState().setValue(IcarusStabilizerBlock.FACING, Direction.NORTH));
+            h.assertValueEqual(IcarusStructure.validate(l, controller, Direction.SOUTH, true).problem(), IcarusStructure.Problem.STABILIZER, "an emitter facing away from the core");
+            IcarusScenes.set(h, emitter, ModBlocks.ICARUS_STABILIZER.get().defaultBlockState().setValue(IcarusStabilizerBlock.FACING, Direction.WEST));
+            var dirt = h.absolutePos(CENTER).above(2);
+            IcarusScenes.set(h, dirt, Blocks.DIRT.defaultBlockState());
+            var envelope = IcarusStructure.validate(l, controller, Direction.SOUTH, true);
+            h.assertValueEqual(envelope.problem(), IcarusStructure.Problem.ENVELOPE, "dirt inside the shield");
+            h.assertValueEqual(envelope.wrong(), dirt, "the dirt cell");
+            h.assertTrue(IcarusStructure.validate(l, controller, Direction.SOUTH, false).valid(), "The envelope is only checked on request");
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "icarus_structure", timeoutTicks = 100)
+    public static void icarusStructureTurnsWithTheController(GameTestHelper h) {
+        scene(h, () -> {
+            var l = h.getLevel(); var controller = IcarusScenes.build(h, CENTER, Direction.EAST);
+            var result = IcarusStructure.validate(l, controller, Direction.EAST, true);
+            h.assertTrue(result.valid(), "The east-facing build is valid: " + result.problem() + " at " + result.wrong());
+            h.assertValueEqual(IcarusStructure.core(controller, Direction.EAST), h.absolutePos(CENTER), "core from an east-facing controller");
+            h.assertFalse(IcarusStructure.validate(l, controller, Direction.SOUTH, false).valid(), "The same blocks do not read as a south-facing build");
+            h.assertTrue(IcarusStructure.contains(controller, Direction.EAST, IcarusScenes.cell(h, CENTER, Direction.EAST, 0, -3, 8)), "a pillar cell is a part");
+            h.assertFalse(IcarusStructure.contains(controller, Direction.EAST, h.absolutePos(CENTER).above(2)), "an envelope cell is not a part");
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "icarus_structure", timeoutTicks = 100)
+    public static void icarusGhostGuideShowsOneStageAtATime(GameTestHelper h) {
+        scene(h, () -> {
+            var l = h.getLevel(); var controller = IcarusScenes.placeController(h, CENTER, Direction.SOUTH);
+            var frame = IcarusStructure.wrongCells(l, controller, Direction.SOUTH, Integer.MAX_VALUE);
+            h.assertValueEqual(frame.size(), 104, "frame ghosts around a lone controller");
+            h.assertTrue(frame.stream().allMatch(c -> c.expected() == ModBlocks.ICARUS_FRAME.get()), "Only frame ghosts show first");
+            h.assertValueEqual(IcarusStructure.wrongCells(l, controller, Direction.SOUTH, 3).size(), 3, "limit");
+            var remaining = IcarusStructure.remaining(l, controller, Direction.SOUTH);
+            var first = remaining.entrySet().iterator().next();
+            h.assertTrue(first.getKey() == ModBlocks.ICARUS_FRAME.get() && first.getValue() == 104, "Frame counts first: " + remaining);
+            h.assertValueEqual(remaining.get(ModBlocks.ICARUS_STABILIZER_HOUSING.get()), 36, "housings remaining");
+            h.assertValueEqual(remaining.get(ModBlocks.HALSEY_CORE.get()), 1, "core remaining");
+            h.assertFalse(remaining.containsKey(ModBlocks.ICARUS_CONTROLLER.get()), "The placed controller is not remaining");
+            IcarusScenes.frame(h, CENTER, Direction.SOUTH);
+            var injector = IcarusStructure.wrongCells(l, controller, Direction.SOUTH, Integer.MAX_VALUE);
+            h.assertValueEqual(injector.size(), 10, "injector stage cells");
+            h.assertTrue(injector.stream().allMatch(c -> c.expected() == ModBlocks.ICARUS_INJECTOR_CASING.get() || c.expected() == ModBlocks.ICARUS_INJECTOR.get()),
+                    "After the frame, only the injector stage shows");
+            h.assertFalse(IcarusStructure.remaining(l, controller, Direction.SOUTH).containsKey(ModBlocks.ICARUS_FRAME.get()), "No frame remains");
+            IcarusScenes.injector(h, CENTER, Direction.SOUTH); IcarusScenes.stabilizers(h, CENTER, Direction.SOUTH);
+            IcarusScenes.core(h, CENTER, Direction.SOUTH); IcarusScenes.support(h, CENTER, Direction.SOUTH);
+            h.assertTrue(IcarusStructure.wrongCells(l, controller, Direction.SOUTH, Integer.MAX_VALUE).isEmpty(), "A finished reactor shows no ghosts");
+            var dirt = h.absolutePos(CENTER).above(2);
+            IcarusScenes.set(h, dirt, Blocks.DIRT.defaultBlockState());
+            var intruders = IcarusStructure.wrongCells(l, controller, Direction.SOUTH, Integer.MAX_VALUE);
+            h.assertTrue(intruders.size() == 1 && intruders.get(0).pos().equals(dirt) && intruders.get(0).ghost() == null, "A block in the envelope shows as a cell to clear: " + intruders);
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "icarus_structure", timeoutTicks = 100)
+    public static void icarusPartsCannotBePushed(GameTestHelper h) {
+        for (var b : List.of(ModBlocks.ICARUS_FRAME, ModBlocks.ICARUS_INJECTOR_CASING, ModBlocks.ICARUS_STABILIZER_HOUSING, ModBlocks.ICARUS_INJECTOR,
+                ModBlocks.ICARUS_STABILIZER, ModBlocks.HALSEY_CORE, ModBlocks.ICARUS_CONTROLLER, ModBlocks.ICARUS_POWER_PORT, ModBlocks.ICARUS_MATTER_PORT,
+                ModBlocks.ICARUS_CAPSULE_DOCK, ModBlocks.ICARUS_RESERVE_BANK)) {
+            var state = b.get().defaultBlockState();
+            h.assertTrue(state.getPistonPushReaction() == net.minecraft.world.level.material.PushReaction.BLOCK, b.getId() + " resists pistons");
+            h.assertFalse(state.is(net.minecraft.tags.BlockTags.ENDERMAN_HOLDABLE), b.getId() + " is not enderman-holdable");
+            h.assertTrue(b.get() instanceof IcarusPartBlock, b.getId() + " is an Icarus part");
+        }
+        h.succeed();
+    }
+
+    private static void scene(GameTestHelper h, Runnable body) { h.runAfterDelay(1, () -> { body.run(); h.succeed(); }); }
     private static boolean namesProjectIcarus(Component line) {
         if (line.getString().contains("Project Icarus")) return true;
         return line.getContents() instanceof TranslatableContents t && java.util.Arrays.stream(t.getArgs())

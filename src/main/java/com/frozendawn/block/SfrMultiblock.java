@@ -104,21 +104,17 @@ public final class SfrMultiblock {
                 List.copyOf(firstWall), List.copyOf(coils));
     }
 
-    /** A cell that does not hold what the torus needs there, with the state its ghost shows; null for a channel cell that must be air. */
-    public record Wrong(BlockPos pos, @org.jetbrains.annotations.Nullable BlockState ghost) {
-        public @org.jetbrains.annotations.Nullable Block expected() { return ghost == null ? null : ghost.getBlock(); }
-    }
     /** Up to limit wrong cells, in validate's scan order, by the same table. Port-eligible cells accept any port or the hatch;
      * while a part is still missing from the whole ring, its suggested cell asks for it instead of shell. */
-    public static List<Wrong> wrongCells(Level level, BlockPos controller, Direction facing, int limit) {
-        var center = center(controller, facing); var wrong = new ArrayList<Wrong>();
+    public static List<GhostCell> wrongCells(Level level, BlockPos controller, Direction facing, int limit) {
+        var center = center(controller, facing); var wrong = new ArrayList<GhostCell>();
         var missing = missingParts(level, center);
         for (int dx = -RADIUS; dx <= RADIUS && wrong.size() < limit; dx++) for (int dy = -2; dy <= 2 && wrong.size() < limit; dy++)
             for (int dz = -RADIUS; dz <= RADIUS && wrong.size() < limit; dz++) {
                 var pos = center.offset(dx, dy, dz);
                 if (pos.equals(controller)) continue;
                 var block = level.getBlockState(pos).getBlock();
-                if (channel(dx, dy, dz)) { if (!level.getBlockState(pos).isAir()) wrong.add(new Wrong(pos, null)); continue; }
+                if (channel(dx, dy, dz)) { if (!level.getBlockState(pos).isAir()) wrong.add(new GhostCell(pos, null)); continue; }
                 var expected = expected(dx, dy, dz);
                 var ghost = expected == null ? null : expected.defaultBlockState();
                 if (expected == null && shell(dx, dy, dz) != null) {
@@ -126,7 +122,7 @@ public final class SfrMultiblock {
                     var suggested = suggestion(dx, dy, dz, facing);
                     ghost = suggested != null && missing.contains(suggested.getBlock()) ? suggested : shell(dx, dy, dz).defaultBlockState();
                 }
-                if (ghost != null && block != ghost.getBlock()) wrong.add(new Wrong(pos, ghost));
+                if (ghost != null && block != ghost.getBlock()) wrong.add(new GhostCell(pos, ghost));
             }
         return wrong;
     }

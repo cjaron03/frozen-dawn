@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "FAF",
+    "AHA",
+    "FAF"
+  ],
+  "key": {
+    "F": {
+      "item": "frozendawn:icarus_frame"
+    },
+    "A": {
+      "item": "frozendawn:refined_acheronite"
+    },
+    "H": {
+      "item": "minecraft:hopper"
+    }
+  },
+  "result": {
+    "id": "frozendawn:icarus_capsule_dock",
+    "count": 1
+  }
+}

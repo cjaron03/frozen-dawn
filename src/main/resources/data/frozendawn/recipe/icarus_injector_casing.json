@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "FAF",
+    "A A",
+    "FAF"
+  ],
+  "key": {
+    "F": {
+      "item": "frozendawn:icarus_frame"
+    },
+    "A": {
+      "item": "frozendawn:refined_acheronite"
+    }
+  },
+  "result": {
+    "id": "frozendawn:icarus_injector_casing",
+    "count": 4
+  }
+}

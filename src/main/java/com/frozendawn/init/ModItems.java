@@ -179,6 +179,14 @@ public class ModItems {
     public static final DeferredItem<BlockItem> HALSEY_CORE = ITEMS.registerSimpleBlockItem("halsey_core", ModBlocks.HALSEY_CORE);
     public static final DeferredItem<BlockItem> ICARUS_STABILIZER = ITEMS.registerSimpleBlockItem("icarus_stabilizer", ModBlocks.ICARUS_STABILIZER);
     public static final DeferredItem<BlockItem> ICARUS_INJECTOR = ITEMS.registerSimpleBlockItem("icarus_injector", ModBlocks.ICARUS_INJECTOR);
+    public static final DeferredItem<BlockItem> ICARUS_FRAME = ITEMS.registerSimpleBlockItem("icarus_frame", ModBlocks.ICARUS_FRAME);
+    public static final DeferredItem<BlockItem> ICARUS_INJECTOR_CASING = ITEMS.registerSimpleBlockItem("icarus_injector_casing", ModBlocks.ICARUS_INJECTOR_CASING);
+    public static final DeferredItem<BlockItem> ICARUS_STABILIZER_HOUSING = ITEMS.registerSimpleBlockItem("icarus_stabilizer_housing", ModBlocks.ICARUS_STABILIZER_HOUSING);
+    public static final DeferredItem<BlockItem> ICARUS_RESERVE_BANK = ITEMS.registerSimpleBlockItem("icarus_reserve_bank", ModBlocks.ICARUS_RESERVE_BANK);
+    public static final DeferredItem<BlockItem> ICARUS_CONTROLLER = ITEMS.registerSimpleBlockItem("icarus_controller", ModBlocks.ICARUS_CONTROLLER);
+    public static final DeferredItem<BlockItem> ICARUS_POWER_PORT = ITEMS.registerSimpleBlockItem("icarus_power_port", ModBlocks.ICARUS_POWER_PORT);
+    public static final DeferredItem<BlockItem> ICARUS_MATTER_PORT = ITEMS.registerSimpleBlockItem("icarus_matter_port", ModBlocks.ICARUS_MATTER_PORT);
+    public static final DeferredItem<BlockItem> ICARUS_CAPSULE_DOCK = ITEMS.registerSimpleBlockItem("icarus_capsule_dock", ModBlocks.ICARUS_CAPSULE_DOCK);
     public static final DeferredItem<com.frozendawn.item.AntimatterCapsuleItem> ANTIMATTER_CAPSULE = ITEMS.register("antimatter_capsule", () -> new com.frozendawn.item.AntimatterCapsuleItem(
             new Item.Properties().stacksTo(16).rarity(net.minecraft.world.item.Rarity.RARE).component(ModDataComponents.ANTIMATTER.get(), com.frozendawn.power.IcarusPhysics.CAPSULE)));
     public static final DeferredItem<Item> EMPTY_ANTIMATTER_CAPSULE = ITEMS.registerItem("empty_antimatter_capsule", Item::new, new Item.Properties().stacksTo(16));
@@ -753,6 +761,14 @@ public class ModItems {
                         output.accept(HALSEY_CORE.get());
                         output.accept(ICARUS_STABILIZER.get());
                         output.accept(ICARUS_INJECTOR.get());
+                        output.accept(ICARUS_FRAME.get());
+                        output.accept(ICARUS_INJECTOR_CASING.get());
+                        output.accept(ICARUS_STABILIZER_HOUSING.get());
+                        output.accept(ICARUS_RESERVE_BANK.get());
+                        output.accept(ICARUS_CONTROLLER.get());
+                        output.accept(ICARUS_POWER_PORT.get());
+                        output.accept(ICARUS_MATTER_PORT.get());
+                        output.accept(ICARUS_CAPSULE_DOCK.get());
                         output.accept(POWER_CELL.get());
                         output.accept(BATTERY_BANK.get());
                         output.accept(CELL_DOCK.get());

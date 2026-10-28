@@ -66,6 +66,8 @@ public class ModNetworking {
 
         registrar.playToClient(SfrBlueprintPayload.TYPE, SfrBlueprintPayload.STREAM_CODEC,
                 (payload, context) -> context.enqueueWork(() -> ClientHandlers.handleSfrBlueprint(payload)));
+        registrar.playToClient(IcarusBlueprintPayload.TYPE, IcarusBlueprintPayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(() -> ClientHandlers.handleIcarusBlueprint(payload)));
 
         registrar.playToClient(PowerLinksPayload.TYPE, PowerLinksPayload.STREAM_CODEC,
                 (payload, context) -> context.enqueueWork(() -> ClientHandlers.handlePowerLinks(payload)));

@@ -19,6 +19,7 @@ import com.frozendawn.block.ReactorControllerBlock;
 import com.frozendawn.block.ReactorControllerBlockEntity;
 import com.frozendawn.block.SfrControllerBlockEntity;
 import com.frozendawn.block.SfrFuelPortBlockEntity;
+import com.frozendawn.block.GhostCell;
 import com.frozendawn.block.SfrMultiblock;
 import com.frozendawn.block.PowerStorageBlockEntity;
 import com.frozendawn.item.PowerCellItem;
@@ -601,8 +602,8 @@ public final class SfrGameTest {
             level.setBlock(wall, Blocks.STONE.defaultBlockState(), 3); level.setBlock(channel, Blocks.DIRT.defaultBlockState(), 3);
             var wrong = SfrMultiblock.wrongCells(level, pos, Direction.NORTH, 32);
             h.assertValueEqual(wrong.size(), 2, "wrong cells " + wrong);
-            h.assertTrue(wrong.contains(new SfrMultiblock.Wrong(wall, ModBlocks.FIRST_WALL.get().defaultBlockState())), "The stone First Wall cell is not marked");
-            h.assertTrue(wrong.contains(new SfrMultiblock.Wrong(channel, null)), "The filled channel cell is not marked");
+            h.assertTrue(wrong.contains(new GhostCell(wall, ModBlocks.FIRST_WALL.get().defaultBlockState())), "The stone First Wall cell is not marked");
+            h.assertTrue(wrong.contains(new GhostCell(channel, null)), "The filled channel cell is not marked");
             h.assertValueEqual(SfrMultiblock.wrongCells(level, pos, Direction.NORTH, 1).size(), 1, "limit");
         });
     }
@@ -635,7 +636,7 @@ public final class SfrGameTest {
             // Facing north, the Controller's face is dz = -4 and "across" runs east.
             java.util.function.Function<BlockPos, net.minecraft.world.level.block.state.BlockState> ghost = p ->
                     SfrMultiblock.wrongCells(level, pos, Direction.NORTH, Integer.MAX_VALUE).stream()
-                            .filter(w -> w.pos().equals(p)).findFirst().map(SfrMultiblock.Wrong::ghost).orElse(null);
+                            .filter(w -> w.pos().equals(p)).findFirst().map(GhostCell::ghost).orElse(null);
             var fuelSpot = SfrScenes.cell(h, CENTER, 2, 0, -4);
             h.assertValueEqual(ghost.apply(fuelSpot).getBlock(), ModBlocks.SFR_FUEL_PORT.get(), "Fuel Port ghost beside the Controller");
             h.assertValueEqual(ghost.apply(SfrScenes.cell(h, CENTER, 2, -1, -4)).getBlock(), ModBlocks.SFR_POWER_PORT.get(), "Power Port ghost below it");
