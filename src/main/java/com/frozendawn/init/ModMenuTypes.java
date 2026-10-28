@@ -36,6 +36,8 @@ public class ModMenuTypes {
 
     public static final DeferredHolder<MenuType<?>, MenuType<com.frozendawn.block.InductionFurnaceMenu>> INDUCTION_FURNACE =
             MENU_TYPES.register("induction_furnace", () -> IMenuTypeExtension.create(com.frozendawn.block.InductionFurnaceMenu::new));
+    public static final DeferredHolder<MenuType<?>, MenuType<com.frozendawn.block.FabricatorMenu>> FABRICATOR =
+            MENU_TYPES.register("fabricator", () -> IMenuTypeExtension.create(com.frozendawn.block.FabricatorMenu::new));
     public static final DeferredHolder<MenuType<?>, MenuType<com.frozendawn.block.IsotopeColumnMenu>> ISOTOPE_COLUMN =
             MENU_TYPES.register("isotope_column", () -> IMenuTypeExtension.create(com.frozendawn.block.IsotopeColumnMenu::new));
 
