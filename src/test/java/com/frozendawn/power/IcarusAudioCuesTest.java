@@ -26,6 +26,9 @@ class IcarusAudioCuesTest {
         assertEquals(EnumSet.of(Cue.IGNITION), IcarusAudioCues.cues(r(PRIMING), r(IGNITION)));
         assertEquals(EnumSet.of(Cue.CLIP_SLAM), IcarusAudioCues.cues(r(RUNNING), r(CLIPPED)));
         assertEquals(EnumSet.of(Cue.COLE_COMPLETE), IcarusAudioCues.cues(r(COLE_DISCHARGE), r(COLD)));
+        assertEquals(EnumSet.of(Cue.WIND_DOWN), IcarusAudioCues.cues(r(RUNNING), r(COLE_RAMP_DOWN)));
+        assertEquals(EnumSet.of(Cue.WIND_DOWN), IcarusAudioCues.cues(r(CLIPPED), r(COLE_RAMP_DOWN)));
+        assertEquals(EnumSet.of(Cue.CORE_COLLAPSE), IcarusAudioCues.cues(r(COLE_RECOVER), r(COLE_DISCHARGE)));
         assertEquals(EnumSet.of(Cue.ALARM_WARNING), IcarusAudioCues.cues(r(RUNNING, Alarm.NONE, 0), r(RUNNING, Alarm.WARNING, 0)));
     }
     @Test void steadyStatesAndFallingAlarmsAreSilent() {
@@ -34,6 +37,8 @@ class IcarusAudioCuesTest {
         assertEquals(none(), IcarusAudioCues.cues(r(RUNNING, Alarm.CRITICAL, 0), r(RUNNING, Alarm.CAUTION, 0)));
         // Aborting the spin-up is not the shield forming.
         assertEquals(none(), IcarusAudioCues.cues(r(STABILIZER_SPINUP), r(COLD)));
+        assertEquals(none(), IcarusAudioCues.cues(r(COLE_RAMP_DOWN), r(COLE_RAMP_DOWN)));
+        assertEquals(none(), IcarusAudioCues.cues(r(COLE_DISCHARGE), r(COLE_DISCHARGE)));
     }
     @Test void firstSecondAfterLoadIsSilent() {
         assertEquals(none(), IcarusAudioCues.cues(null, r(RUNNING, Alarm.CRITICAL, 0)));

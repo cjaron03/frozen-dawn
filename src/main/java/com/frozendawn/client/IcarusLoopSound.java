@@ -16,9 +16,10 @@ import net.minecraft.sounds.SoundSource;
 
 /** AMR-1 Icarus running sounds, one instance per Halsey Core and kind, read from the synced core Visual. They follow
  * SfrLoopSound: a heartbeat shows the engine still ticks a loop, a muted start is retried every two seconds, and loops fade
- * in and out. All four sit at the core; the block-sound namespace keeps them audible in vacuum. */
+ * in and out. All of them sit at the core; the block-sound namespace keeps them audible in vacuum. The core's roar and
+ * song follow the plasma's eased glow, so they swell through ignition and spool down with the Cole ramp-down. */
 public final class IcarusLoopSound extends AbstractTickableSoundInstance {
-    public enum Kind { FRAME, STABILIZER, SHIELD, CORE }
+    public enum Kind { FRAME, STABILIZER, SHIELD, CORE, PLASMA }
     private static final Map<HalseyCoreBlockEntity, EnumMap<Kind, IcarusLoopSound>> PLAYING = new WeakHashMap<>();
     private static final Map<HalseyCoreBlockEntity, EnumMap<Kind, Long>> RETRY = new WeakHashMap<>();
     private static final float FADE = 0.05F;
@@ -37,26 +38,28 @@ public final class IcarusLoopSound extends AbstractTickableSoundInstance {
         return switch (kind) {
             case FRAME -> ModSounds.ICARUS_FRAME_HUM.get(); case STABILIZER -> ModSounds.ICARUS_STABILIZER_WHINE.get();
             case SHIELD -> ModSounds.ICARUS_SHIELD_HUM.get(); case CORE -> ModSounds.ICARUS_CORE_ROAR.get();
+            case PLASMA -> ModSounds.ICARUS_CORE_SONG.get();
         };
     }
-    private static boolean wanted(Kind kind, HalseyCoreBlockEntity.Visual v) {
+    private static boolean wanted(Kind kind, HalseyCoreBlockEntity core) {
+        var v = core.visual();
         return switch (kind) {
             case FRAME -> v.state() != State.COLD && v.state() != State.DETONATED;
             case STABILIZER -> IcarusLook.beamsLit(v.state(), v.stepLeft()) > 0;
             case SHIELD -> IcarusLook.beamsLit(v.state(), v.stepLeft()) > 0 && v.shieldPct() > 0;
-            case CORE -> v.grossMw() > 0 || v.coreC() > 500;
+            case CORE -> IcarusCoreAnim.of(core).glow(1) > .01F || v.coreC() > 500;
+            case PLASMA -> IcarusCoreAnim.of(core).glow(1) > .01F;
         };
     }
 
     /** Client block entity ticker. */
     public static void tick(HalseyCoreBlockEntity core) {
-        var v = core.visual();
         var manager = Minecraft.getInstance().getSoundManager();
         var playing = PLAYING.computeIfAbsent(core, k -> new EnumMap<>(Kind.class));
         var retry = RETRY.computeIfAbsent(core, k -> new EnumMap<>(Kind.class));
         long now = core.getLevel() == null ? 0 : core.getLevel().getGameTime();
         for (var kind : Kind.values()) {
-            if (!wanted(kind, v)) continue; // a playing loop fades itself out
+            if (!wanted(kind, core)) continue; // a playing loop fades itself out
             var sound = playing.get(kind);
             if (sound != null && !sound.isStopped() && now - sound.heartbeat < 40) continue;
             if (sound != null && !sound.isStopped() && now - retry.getOrDefault(kind, Long.MIN_VALUE / 2) < 40) continue;
@@ -70,20 +73,23 @@ public final class IcarusLoopSound extends AbstractTickableSoundInstance {
 
     private float target() {
         var v = core.visual();
-        if (core.isRemoved() || !wanted(kind, v)) return 0;
-        double heat = IcarusCoreAnim.heat(v.coreC());
+        if (core.isRemoved() || !wanted(kind, core)) return 0;
+        double heat = IcarusCoreAnim.heat(v.coreC()), glow = IcarusCoreAnim.of(core).glow(1);
         return switch (kind) {
             case FRAME -> .5F;
             case STABILIZER -> .2F + .15F * IcarusLook.beamsLit(v.state(), v.stepLeft());
             case SHIELD -> (float) (.4 + .5 * Math.clamp(v.shieldPct() / 100, 0, 1));
-            case CORE -> (float) (.5 + .4 * Math.clamp(v.grossMw() / IcarusPhysics.MAX_OUTPUT_MW, 0, 1) + .9 * heat);
+            case CORE -> (float) (glow * (.5 + .4 * Math.clamp(v.grossMw() / IcarusPhysics.MAX_OUTPUT_MW, 0, 1)) + .9 * heat);
+            case PLASMA -> (float) (glow * (.55 + .3 * heat));
         };
     }
-    /** The roar climbs from 0.6 to 1.6 with heat; the shield hum rises as the shield weakens. */
+    /** The roar and song climb with heat and sink as the plasma dims; the shield hum rises as the shield weakens. */
     private float pitch() {
         var v = core.visual();
+        double heat = IcarusCoreAnim.heat(v.coreC()), glow = IcarusCoreAnim.of(core).glow(1);
         return switch (kind) {
-            case CORE -> (float) (.6 + IcarusCoreAnim.heat(v.coreC()));
+            case CORE -> (float) (.5 + .25 * glow + heat);
+            case PLASMA -> (float) (.75 + .25 * glow + .35 * heat);
             case SHIELD -> (float) (.8 + .5 * (1 - Math.clamp(v.shieldPct() / 100, 0, 1)));
             case STABILIZER -> .85F + .05F * IcarusLook.beamsLit(v.state(), v.stepLeft());
             default -> 1F;

@@ -61,15 +61,41 @@ render shield_hum \
   -f lavfi -i "anoisesrc=color=pink:duration=7.5:sample_rate=44100:seed=61006" \
   -filter_complex "[1:a]bandpass=f=1400:width_type=q:w=1.4,tremolo=f=0.3333:d=0.7,volume=0.18[ripple];[0:a][ripple]amix=inputs=2:normalize=0,alimiter=limit=0.45:level=0[mix];$(seam 6 mix out)"
 
-# Core roar, 8 s loop: annihilation. A 27.5 Hz sub beating against 27.625 Hz, a band-passed roar breathing at 0.25 Hz,
-# a thin gamma sizzle and dense crackle, all throbbing at 2 Hz. Runtime pitch 0.6 to 1.6 follows core temperature.
+# Core roar, 8 s loop: annihilation. A 27.5 Hz sub beating against 27.625 Hz with its octave pair, a deep turbulent body
+# of brown noise breathing at 1/4 Hz, a band-passed roar breathing against it at 3/8 Hz, sparse crackle and a faint
+# gamma sizzle, all throbbing gently at 2 Hz. Runtime pitch follows the plasma's glow and core temperature.
 render core_roar \
-  -f lavfi -i "aevalsrc=0.22*sin(2*PI*27.5*t)+0.22*sin(2*PI*27.625*t)+0.10*sin(2*PI*55*t)+0.05*sin(2*PI*82.5*t):s=44100:d=9.5" \
-  -f lavfi -i "anoisesrc=color=pink:duration=9.5:sample_rate=44100:seed=61007" \
+  -f lavfi -i "aevalsrc=0.20*sin(2*PI*27.5*t)+0.20*sin(2*PI*27.625*t)+0.10*sin(2*PI*55*t)+0.07*sin(2*PI*55.25*t)+0.04*sin(2*PI*82.5*t):s=44100:d=9.5" \
+  -f lavfi -i "anoisesrc=color=brown:duration=9.5:sample_rate=44100:seed=61007" \
+  -f lavfi -i "anoisesrc=color=pink:duration=9.5:sample_rate=44100:seed=61018" \
   -f lavfi -i "anoisesrc=color=white:duration=9.5:sample_rate=44100:seed=61008" \
   -f lavfi -i "anoisesrc=color=white:duration=9.5:sample_rate=44100:seed=61009" \
-  -f lavfi -i "aevalsrc='pow(abs(sin(2*PI*3.375*t)*sin(2*PI*5.125*t))\,6)':s=44100:d=9.5" \
-  -filter_complex "[1:a]bandpass=f=220:width_type=q:w=0.7,tremolo=f=0.25:d=0.5,volume=0.9[roar];[2:a]highpass=f=7000,volume=0.07[sizzle];[3:a]bandpass=f=2600:width_type=q:w=1.1[c];[c][4:a]amultiply,volume=1.1[crackle];[0:a][roar][sizzle][crackle]amix=inputs=4:normalize=0,tremolo=f=2:d=0.15,alimiter=limit=0.6:level=0[mix];$(seam 8 mix out)"
+  -f lavfi -i "aevalsrc='pow(abs(sin(2*PI*3.375*t)*sin(2*PI*5.125*t))\,12)':s=44100:d=9.5" \
+  -filter_complex "[1:a]lowpass=f=320,lowpass=f=320,volume=2.2,tremolo=f=0.25:d=0.45[body];[2:a]bandpass=f=150:width_type=q:w=0.6,volume=0.7,tremolo=f=0.375:d=0.5[roar];[3:a]highpass=f=6500,volume=0.03[sizzle];[4:a]bandpass=f=1900:width_type=q:w=1.3[c];[c][5:a]amultiply,volume=0.9[crackle];[0:a][body][roar][sizzle][crackle]amix=inputs=5:normalize=0,tremolo=f=2:d=0.08,alimiter=limit=0.6:level=0[mix];$(seam 8 mix out)"
+
+# Core song, 8 s loop: the plasma's tone under the roar. Partials of a 55 Hz A, each swelling on its own slow LFO so the
+# timbre turns over without repeating inside the loop, close pairs beating at 1/4 Hz, a breathy 3 kHz shimmer and a
+# short room echo. Every rate is a multiple of 1/8 Hz. Runtime volume and pitch follow the plasma's glow.
+render core_song \
+  -f lavfi -i "aevalsrc='0.10*sin(2*PI*110*t)*(0.6+0.4*sin(2*PI*0.125*t)) + 0.08*sin(2*PI*165*t)*(0.5+0.5*sin(2*PI*0.25*t+1)) + 0.05*(sin(2*PI*220*t)+sin(2*PI*220.25*t))*(0.5+0.5*sin(2*PI*0.125*t+2)) + 0.05*sin(2*PI*330*t)*(0.5+0.5*sin(2*PI*0.375*t+3)) + 0.03*(sin(2*PI*440*t)+sin(2*PI*440.25*t))*(0.5+0.5*sin(2*PI*0.25*t+4)) + 0.03*sin(2*PI*660*t)*(0.5+0.5*sin(2*PI*0.5*t+5)) + 0.02*sin(2*PI*880.5*t)*(0.5+0.5*sin(2*PI*0.125*t+0.5)) + 0.012*sin(2*PI*1320*t)*(0.5+0.5*sin(2*PI*0.375*t+2.5))':s=44100:d=9.5" \
+  -f lavfi -i "anoisesrc=color=pink:duration=9.5:sample_rate=44100:seed=61019" \
+  -filter_complex "[1:a]bandpass=f=3000:width_type=q:w=3,tremolo=f=0.375:d=0.6,volume=0.12[air];[0:a][air]amix=inputs=2:normalize=0,aecho=0.8:0.6:70|131:0.25|0.15,volume=4,alimiter=limit=0.5:level=0[mix];$(seam 8 mix out)"
+
+# Wind down, 6 s: the Cole ramp-down taking the roar away. A tone and its octave falling exponentially from 220 Hz to 40 Hz,
+# a fading turbulent body under it and a high whoop dropping from 1600 Hz to 200 Hz.
+render wind_down \
+  -f lavfi -i "aevalsrc='exp(-0.3*t)*(0.22*sin(2*PI*220*(5/log(5.5))*(1-exp(-log(5.5)*t/5))) + 0.10*sin(4*PI*220*(5/log(5.5))*(1-exp(-log(5.5)*t/5)))) + 0.08*exp(-0.9*t)*sin(2*PI*1600*(3/log(8))*(1-exp(-log(8)*t/3)))':s=44100:d=6" \
+  -f lavfi -i "anoisesrc=color=brown:duration=6:sample_rate=44100:seed=61020" \
+  -f lavfi -i "aevalsrc='exp(-0.55*t)':s=44100:d=6" \
+  -filter_complex "[1:a]lowpass=f=260,volume=2.0[n];[n][2:a]amultiply[body];[0:a][body]amix=inputs=2:normalize=0,afade=t=in:st=0:d=0.3,afade=t=out:st=4.8:d=1.2,alimiter=limit=0.75:level=0[out]"
+
+# Core collapse, 2.5 s: the plasma falling back to a speck. An inward rush of noise swelling for 1.2 s, then a soft deep
+# thump and a thin glassy ring.
+render core_collapse \
+  -f lavfi -i "aevalsrc='if(gte(t\,1.2)\, 0.9*exp(-6*(t-1.2))*sin(2*PI*(48*(t-1.2)-6*(t-1.2)*(t-1.2))) + 0.08*exp(-2.5*(t-1.2))*(sin(2*PI*1975.5*(t-1.2))+0.6*sin(2*PI*2963*(t-1.2)))\, 0)':s=44100:d=2.5" \
+  -f lavfi -i "anoisesrc=color=pink:duration=2.5:sample_rate=44100:seed=61021" \
+  -f lavfi -i "aevalsrc='if(lt(t\,1.2)\, pow(t/1.2\,3)\, exp(-30*(t-1.2)))':s=44100:d=2.5" \
+  -filter_complex "[1:a]bandpass=f=900:width_type=q:w=0.7,volume=1.1[n];[n][2:a]amultiply[rush];[0:a][rush]amix=inputs=2:normalize=0,afade=t=out:st=2.1:d=0.4,alimiter=limit=0.85:level=0[out]"
 
 # Injector feed, 3 s: magnetic gates clocking the antimatter down the line, a 14 Hz train of falling blips over a
 # cold vapor hiss.

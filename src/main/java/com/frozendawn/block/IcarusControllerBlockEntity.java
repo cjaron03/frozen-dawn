@@ -167,6 +167,8 @@ public final class IcarusControllerBlockEntity extends BlockEntity implements Me
             case INJECTOR_FEED -> ModSounds.ICARUS_INJECTOR_FEED.get();
             case IGNITION -> ModSounds.ICARUS_IGNITION.get();
             case CLIP_SLAM -> ModSounds.ICARUS_CLIP_SLAM.get();
+            case WIND_DOWN -> ModSounds.ICARUS_WIND_DOWN.get();
+            case CORE_COLLAPSE -> ModSounds.ICARUS_CORE_COLLAPSE.get();
             case COLE_COMPLETE -> ModSounds.ICARUS_COLE_COMPLETE.get();
             case ALARM_CAUTION -> ModSounds.ICARUS_ALARM_CAUTION.get();
             case ALARM_WARNING -> ModSounds.ICARUS_ALARM_WARNING.get();
