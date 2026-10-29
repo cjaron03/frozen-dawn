@@ -63,7 +63,7 @@ class IcarusAssetsTest {
         }
     }
 
-    @Test void everyIcarusSoundHasAMonoAsset() throws IOException {
+    @Test void everyIcarusSoundHasAnAssetAndBlockSoundsAreMono() throws IOException {
         JsonObject sounds = json("sounds.json").getAsJsonObject();
         var found = new TreeSet<String>();
         for (var entry : sounds.entrySet()) {
@@ -72,7 +72,9 @@ class IcarusAssetsTest {
             for (var sound : entry.getValue().getAsJsonObject().getAsJsonArray("sounds")) {
                 String name = sound.isJsonObject() ? sound.getAsJsonObject().get("name").getAsString() : sound.getAsString();
                 var file = "sounds/" + path(name) + ".ogg";
-                assertEquals(1, channels(read(file)), file + " must be mono");
+                // Positional block sounds must be mono to attenuate; suit lines share the stereo Piper pipeline.
+                if (entry.getKey().startsWith("blocks.")) assertEquals(1, channels(read(file)), file + " must be mono");
+                else assertTrue(channels(read(file)) > 0, file + " must be readable");
             }
         }
         assertEquals(new TreeSet<>(SOUNDS), found);
