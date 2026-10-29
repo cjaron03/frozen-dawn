@@ -2725,7 +2725,7 @@ public final class LabBridgeGameTest {
             var manager = s.server.tickRateManager(); boolean frozen = manager.isFrozen();
             var player = s.player("fast_wait_join", 2, 4); player.setOnGround(true);
             var records = new java.util.ArrayList<JsonObject>();
-            var wait = new com.frozendawn.labbridge.LabNaturalWait(s.level, player, 24000, records::add);
+            s.clock(1000); var wait = new com.frozendawn.labbridge.LabNaturalWait(s.level, player, 24000, records::add);
             java.util.function.Consumer<net.neoforged.neoforge.event.entity.EntityJoinLevelEvent> listener = e -> {
                 if (e.getEntity() instanceof com.frozendawn.entity.ArchitectEntity actor) wait.joining(actor);
             };
@@ -2767,7 +2767,7 @@ public final class LabBridgeGameTest {
             var manager = s.server.tickRateManager(); boolean frozen = manager.isFrozen();
             var player = s.player("same_tick_wait", 2, 4); player.setOnGround(true);
             var records = new java.util.ArrayList<JsonObject>();
-            var wait = new com.frozendawn.labbridge.LabNaturalWait(s.level, player, 24000, records::add);
+            s.clock(3000); var wait = new com.frozendawn.labbridge.LabNaturalWait(s.level, player, 24000, records::add);
             java.util.function.Consumer<net.neoforged.neoforge.event.entity.EntityJoinLevelEvent> listener = e -> {
                 if (e.getEntity() instanceof com.frozendawn.entity.ArchitectEntity actor) wait.joining(actor);
             };
@@ -2913,7 +2913,7 @@ public final class LabBridgeGameTest {
             var player = s.player("fast_wait_deadline", 2, 4); player.setOnGround(true);
             try {
                 manager.setFrozen(false); manager.tick();
-                var wait = new com.frozendawn.labbridge.LabNaturalWait(s.level, player, 1, row -> true);
+                s.clock(2000); var wait = new com.frozendawn.labbridge.LabNaturalWait(s.level, player, 1, row -> true);
                 for (int i = 1; i <= 40; i++) { s.clock(2000 + i); wait.tick(player, true); }
                 helper.assertTrue(manager.checkShouldSprintThisTick() && manager.isSprinting(), "Last scheduled tick has remaining zero while scheduled sprint is still active");
                 s.clock(2041); wait.tick(player, true); manager.tick();
@@ -2934,7 +2934,7 @@ public final class LabBridgeGameTest {
             var player = s.player("fast_wait_damage", 2, 4); player.setOnGround(true);
             try {
                 manager.setFrozen(false); manager.tick();
-                var wait = new com.frozendawn.labbridge.LabNaturalWait(s.level, player, 24000, row -> true);
+                s.clock(3000); var wait = new com.frozendawn.labbridge.LabNaturalWait(s.level, player, 24000, row -> true);
                 for (int i = 1; i <= 40; i++) { s.clock(3000 + i); wait.tick(player, true); }
                 player.setHealth(player.getHealth() - 1); s.clock(3041); wait.tick(player, true);
                 helper.assertTrue(wait.held() && wait.reason().equals("PLAYER_OR_CONTEXT_CHANGED") && player.getHealth() == 19
