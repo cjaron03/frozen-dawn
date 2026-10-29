@@ -26,7 +26,7 @@ import net.minecraft.world.phys.Vec3;
  * shield's cracks and the arcs from core to shield. Everything follows the synced Visual through IcarusLook and the eased
  * IcarusCoreAnim; nothing here decides state. */
 public final class HalseyCoreRenderer implements BlockEntityRenderer<HalseyCoreBlockEntity> {
-    private static final float SHIELD_RADIUS = 4.5f, BEAM_START = IcarusStabilizerBlockEntity.CORE_DISTANCE - 0.5f;
+    private static final float SHIELD_RADIUS = IcarusFx.SHIELD_RADIUS, BEAM_START = IcarusStabilizerBlockEntity.CORE_DISTANCE - 0.5f;
     private static final float NOZZLE_Y = -IcarusInjectorBlockEntity.CORE_DISTANCE + 0.5f;
     private static final int SPECK = 0xB45CFF, SPECK_HOT = 0xE8D0FF, STREAM = 0xFFB040, BEAM = 0x8CF0FF, WHITE = 0xFFFFFF;
     private static final int PLASMA_HOT = 0xFFF4D8;
@@ -36,7 +36,9 @@ public final class HalseyCoreRenderer implements BlockEntityRenderer<HalseyCoreB
     /** Beats per heartbeat; it divides IcarusCoreAnim.BEAT_WRAP, as must every other period of beat. */
     private static final float BEAT = 36;
     private static final ResourceLocation CORE_TEXTURE = ResourceLocation.fromNamespaceAndPath("frozendawn", "textures/block/halsey_core.png");
-    private static final int CRACKS = 7, ARCS = 3;
+    private static final int CRACKS = 7, ARCS = 3, SPUTTER = 0xFF7A30;
+    /** Angular radius of the open port over the injector, from the shield's bottom pole. */
+    private static final float PORT = 0.42f;
 
     public HalseyCoreRenderer(BlockEntityRendererProvider.Context context) {}
 
@@ -86,7 +88,7 @@ public final class HalseyCoreRenderer implements BlockEntityRenderer<HalseyCoreB
             for (int i = 0; i < filaments; i++) {
                 double lat = 1.1 * Math.sin(time * 0.021 + i * 1.3), lon = time * 0.017 * (i % 2 == 0 ? 1 : -1) + i * 1.05;
                 long seed = (long) Mth.floor(time / crackle) * 31 + i + core.getBlockPos().asLong();
-                double strobe = 0.5 + 0.5 * hash01((int) seed) + 0.4 * heart;
+                double strobe = 0.5 + 0.5 * IcarusFx.hash01((int) seed) + 0.4 * heart;
                 IcarusDraw.bolt(lightBuf, pose, IcarusDraw.onSphere(r * 0.28, lat + 0.3, lon - 0.2), IcarusDraw.onSphere(r * 0.97, lat, lon), seed, 8, r * 0.07,
                         0.05f, IcarusDraw.argb(IcarusLook.mix(WHITE, anti, 0.45), Math.min(1, 0.7 * k * strobe)));
             }
@@ -180,7 +182,13 @@ public final class HalseyCoreRenderer implements BlockEntityRenderer<HalseyCoreB
         }
 
         // The shield: a hexagon lattice that grows from the four beam strikes, bright at its rim where the eye looks
-        // through the most of it, rippling out from each strike, with a glowing front while it spreads or withdraws.
+        // through the most of it, rippling out from each strike, with a glowing front while it spreads or withdraws. It
+        // stands open over the injector, a collared port the matter stream climbs through, and flashes wherever a stray
+        // annihilation strikes it.
+        var hits = IcarusFx.hits(core, time, plasmaRadius > 0.3f && glow > 0.05f);
+        double failing = IcarusFx.failing(core);
+        int failingIndex = IcarusFx.sputterIndex(core);
+        boolean beamOut = IcarusFx.cutOut(core, Mth.floor(time / IcarusFx.SPUTTER_SLOT), failing);
         double shieldAlpha = a.shield(pt) * (critical && !reduced ? 0.75 + 0.25 * Math.sin(time * 1.7) : 1);
         int shieldRgb = IcarusLook.shieldColor(v.coreC(), v.shieldPct(), v.alarm());
         float[] spread = new float[IcarusLook.STABILIZERS];
@@ -198,13 +206,27 @@ public final class HalseyCoreRenderer implements BlockEntityRenderer<HalseyCoreB
                     reveal = Math.max(reveal, Math.clamp((spread[i] * 2.3 - d) / 0.35, 0, 1));
                     ripple += spread[i] * Math.pow(Math.max(0, Math.sin(d * 7 - time * 0.22 + i)), 12) * Math.exp(-d * 0.9);
                 }
-                if (reveal <= 0) return 0;
+                double port = Math.clamp((lat + Math.PI / 2 - PORT) / 0.15, 0, 1);
+                if (reveal <= 0 || port <= 0) return 0;
+                double struck = 0;
+                for (var hit : hits) {
+                    double d = Math.acos(Math.clamp(nx * hit.dir().x + ny * hit.dir().y + nz * hit.dir().z, -1, 1)) / (0.12 + 0.5 * hit.age());
+                    struck += (1 - hit.age()) * (1 - hit.age()) * Math.exp(-d * d) * (reduced ? 1.2 : 3);
+                }
                 double rim = Math.pow(1 - facing(eye, SHIELD_RADIUS, lat, lon), 3), front = 4 * reveal * (1 - reveal);
-                return IcarusDraw.argb(shieldRgb, Math.min(1, shieldAlpha * (0.45 + 2.4 * rim + 1.6 * ripple + 2 * front) * reveal));
+                return IcarusDraw.argb(shieldRgb, Math.min(1, shieldAlpha * (0.45 + 2.4 * rim + 1.6 * ripple + 2 * front + struck) * reveal * port));
             };
             // Additive only: the shield is light, so it brightens what lies behind it and never hides the injector or frame.
             IcarusDraw.texturedSphere(buffers.getBuffer(IcarusDraw.additive(IcarusDraw.SHIELD)), pose, SHIELD_RADIUS, 24, 40, 4, 2, drift, 0,
                     (lat, lon) -> { int c = lattice.argb(lat, lon); return IcarusDraw.glow(c, (c >>> 24) / 255.0); });
+            float portY = -SHIELD_RADIUS * Mth.cos(PORT + 0.075f), portR = SHIELD_RADIUS * Mth.sin(PORT + 0.075f);
+            double collar = shieldAlpha * Math.clamp(anySpread * 2 - 1, 0, 1);
+            poses.pushPose();
+            poses.translate(0, portY, 0);
+            poses.mulPose(Axis.XP.rotationDegrees(90));
+            IcarusDraw.annulus(buffers.getBuffer(IcarusDraw.additive(IcarusDraw.WHITE)), poses.last(), portR - 0.05f, portR + 0.05f, 0, 48,
+                    j -> IcarusDraw.glow(shieldRgb, collar * (0.6 + 0.4 * Math.sin(j * Math.PI * 2 / 12 + time * 0.3))));
+            poses.popPose();
         }
 
         var glowBuf = buffers.getBuffer(IcarusDraw.light());
@@ -216,6 +238,12 @@ public final class HalseyCoreRenderer implements BlockEntityRenderer<HalseyCoreB
             var to = new Vec3(dir.getStepX(), 0, dir.getStepZ()).scale(BEAM_START - (BEAM_START - SHIELD_RADIUS) * reach);
             int beamRgb = IcarusLook.mix(BEAM, shieldRgb, 0.5);
             float width = 0.16f + 0.04f * Mth.sin(time * 0.5f + i);
+            // The failing stabilizer sputters: its beam cuts out, comes back ragged and runs hot orange.
+            if (i == failingIndex && failing > 0) {
+                if (beamOut) continue;
+                width *= (float) (0.5 + 0.9 * IcarusFx.hash01(Mth.floor(time) * 31 + i));
+                beamRgb = IcarusLook.mix(beamRgb, SPUTTER, 0.35 + 0.45 * failing);
+            }
             IcarusDraw.beam(glowBuf, pose, from, to, width, IcarusDraw.argb(beamRgb, 0.8), IcarusDraw.argb(beamRgb, 0.55));
             IcarusDraw.beam(glowBuf, pose, from, to, width * 2.5f, IcarusDraw.argb(beamRgb, 0.15), IcarusDraw.argb(beamRgb, 0.1));
         }
@@ -223,15 +251,43 @@ public final class HalseyCoreRenderer implements BlockEntityRenderer<HalseyCoreB
         var flares = buffers.getBuffer(IcarusDraw.additive(IcarusDraw.GLOW));
         for (int i = 0; i < IcarusLook.STABILIZERS; i++) {
             float reach = a.beam(i, pt);
-            if (reach < 0.98f) continue;
             var dir = Direction.from2DDataValue(i);
+            if (i == failingIndex && failing > 0) {
+                // Sparks spit from the failing emitter, thickest while its beam is out.
+                int salt = Mth.floor(time) * 131 + i;
+                for (int k = 0; k < (beamOut ? 5 : 2); k++) {
+                    double ox = IcarusFx.hash01(salt + k * 3) - 0.5, oy = IcarusFx.hash01(salt + k * 3 + 1) - 0.5, oz = IcarusFx.hash01(salt + k * 3 + 2) - 0.5;
+                    poses.pushPose();
+                    poses.translate(dir.getStepX() * BEAM_START + ox * 0.9, oy * 0.9, dir.getStepZ() * BEAM_START + oz * 0.9);
+                    poses.mulPose(camera.rotation());
+                    IcarusDraw.billboard(flares, poses.last(), 0.12f + 0.2f * (float) IcarusFx.hash01(salt + k), IcarusDraw.glow(IcarusLook.mix(SPUTTER, WHITE, 0.3), 0.9 * failing + 0.1));
+                    poses.popPose();
+                }
+                if (beamOut) continue;
+            }
+            if (reach < 0.98f) continue;
             poses.pushPose();
             poses.translate(dir.getStepX() * SHIELD_RADIUS, 0, dir.getStepZ() * SHIELD_RADIUS);
             poses.mulPose(camera.rotation());
             IcarusDraw.billboard(flares, poses.last(), 0.8f + 0.15f * Mth.sin(time * 0.7f + i * 1.9f), IcarusDraw.glow(IcarusLook.mix(BEAM, shieldRgb, 0.5), 0.7));
             poses.popPose();
         }
+        // Each stray annihilation flares where it lands on the shield.
+        for (var hit : hits) {
+            var at = hit.dir().scale(SHIELD_RADIUS);
+            poses.pushPose();
+            poses.translate(at.x, at.y, at.z);
+            poses.mulPose(camera.rotation());
+            IcarusDraw.billboard(flares, poses.last(), 0.4f + 1.4f * hit.age(), IcarusDraw.glow(IcarusLook.mix(shieldRgb, WHITE, 0.6), (1 - hit.age()) * (1 - hit.age()) * (reduced ? 0.4 : 0.9)));
+            poses.popPose();
+        }
         glowBuf = buffers.getBuffer(IcarusDraw.light());
+        // ...and for its first moments the bolt that carried it is still visible, from the plasma to the strike.
+        for (var hit : hits) {
+            if (hit.age() > 0.3f) continue;
+            IcarusDraw.bolt(glowBuf, pose, hit.dir().scale(plasmaRadius * 0.95), hit.dir().scale(SHIELD_RADIUS), hit.slot() * 977 + core.getBlockPos().asLong(), 7,
+                    0.18, 0.05f, IcarusDraw.argb(IcarusLook.mix(WHITE, POSITRON, 0.35), 0.9 * (1 - hit.age() / 0.3)));
+        }
 
         // The matter stream climbs from the nozzle to the speck or the plasma's underside; a CLIP lifts its tail away.
         float front = a.streamFront(pt), tail = a.streamTail(pt);
@@ -287,7 +343,6 @@ public final class HalseyCoreRenderer implements BlockEntityRenderer<HalseyCoreB
         float x = phase - Mth.floor(phase);
         return (float) (Math.exp(-Math.pow((x - 0.08) / 0.04, 2)) + 0.6 * Math.exp(-Math.pow((x - 0.22) / 0.05, 2)));
     }
-    private static double hash01(int seed) { return (Mth.murmurHash3Mixer(seed) & 0xFFFFFF) / (double) 0x1000000; }
 
     /** Brief star-like flashes on a sphere of radius r, each living SPARK_LIFE ticks at a fresh place; staggered so a
      * steady handful burn at once. */
@@ -298,9 +353,9 @@ public final class HalseyCoreRenderer implements BlockEntityRenderer<HalseyCoreB
             float t = time + i * 2.37f;
             int gen = Mth.floor(t / SPARK_LIFE), seed = gen * 7919 + i * 104729 + salt;
             float age = t / SPARK_LIFE - gen;
-            double lat = Math.asin(2 * hash01(seed) - 1), lon = 2 * Math.PI * hash01(seed + 1), depth = 0.92 + 0.14 * hash01(seed + 2);
+            double lat = Math.asin(2 * IcarusFx.hash01(seed) - 1), lon = 2 * Math.PI * IcarusFx.hash01(seed + 1), depth = 0.92 + 0.14 * IcarusFx.hash01(seed + 2);
             var at = IcarusDraw.onSphere(r * depth, lat, lon);
-            int rgb = IcarusLook.mix(WHITE, hash01(seed + 3) < 0.5 ? ELECTRON : POSITRON, 0.35);
+            int rgb = IcarusLook.mix(WHITE, IcarusFx.hash01(seed + 3) < 0.5 ? ELECTRON : POSITRON, 0.35);
             poses.pushPose();
             poses.translate(at.x, at.y, at.z);
             poses.mulPose(camera.rotation());
@@ -316,11 +371,11 @@ public final class HalseyCoreRenderer implements BlockEntityRenderer<HalseyCoreB
         for (int j = 0; j < PAIRS; j++) {
             float t = time + j * (PAIR_LIFE / (float) PAIRS) + j * 3.1f;
             int gen = Mth.floor(t / PAIR_LIFE), seed = gen * 6151 + j * 92821 + salt;
-            if (hash01(seed + 9) < 0.25) continue; // some beats stay dark, so the rhythm never settles
+            if (IcarusFx.hash01(seed + 9) < 0.25) continue; // some beats stay dark, so the rhythm never settles
             float age = t / PAIR_LIFE - gen;
-            var dir = IcarusDraw.onSphere(1, Math.asin(2 * hash01(seed) - 1), 2 * Math.PI * hash01(seed + 1));
+            var dir = IcarusDraw.onSphere(1, Math.asin(2 * IcarusFx.hash01(seed) - 1), 2 * Math.PI * IcarusFx.hash01(seed + 1));
             var start = dir.scale(r);
-            var vertex = dir.scale(r + (SHIELD_RADIUS - r) * (0.3 + 0.3 * hash01(seed + 2)));
+            var vertex = dir.scale(r + (SHIELD_RADIUS - r) * (0.3 + 0.3 * IcarusFx.hash01(seed + 2)));
             double fade = (1 - age) * (1 - age) * glow;
             float shot = Math.min(1, age / 0.15f);
             IcarusDraw.beam(c, pose, start, start.add(vertex.subtract(start).scale(shot)), 0.03f,
@@ -329,9 +384,9 @@ public final class HalseyCoreRenderer implements BlockEntityRenderer<HalseyCoreB
             float grown = Math.min(1, (age - 0.15f) / 0.35f);
             var up = Math.abs(dir.y) > 0.9 ? new Vec3(1, 0, 0) : new Vec3(0, 1, 0);
             var n = dir.cross(up).normalize(); var b = dir.cross(n);
-            double tilt = 2 * Math.PI * hash01(seed + 3);
+            double tilt = 2 * Math.PI * IcarusFx.hash01(seed + 3);
             var plane = n.scale(Math.cos(tilt)).add(b.scale(Math.sin(tilt)));
-            double r0 = 0.3 + 0.3 * hash01(seed + 4), turns = 4 * Math.PI * grown;
+            double r0 = 0.3 + 0.3 * IcarusFx.hash01(seed + 4), turns = 4 * Math.PI * grown;
             int steps = Math.max(2, Math.round(32 * grown));
             for (int sign = -1; sign <= 1; sign += 2) {
                 int rgb = sign > 0 ? ELECTRON : POSITRON;

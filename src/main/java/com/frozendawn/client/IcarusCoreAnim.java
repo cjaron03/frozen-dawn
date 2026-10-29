@@ -2,12 +2,16 @@ package com.frozendawn.client;
 
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.block.HalseyCoreBlockEntity;
+import com.frozendawn.block.IcarusStabilizerBlockEntity;
+import com.frozendawn.init.ModSounds;
 import com.frozendawn.power.IcarusLook;
 import com.frozendawn.power.IcarusPhysics;
 import com.frozendawn.power.IcarusPhysics.State;
 import java.util.Map;
 import java.util.WeakHashMap;
 import net.minecraft.client.Minecraft;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -57,7 +61,14 @@ public final class IcarusCoreAnim {
         float out = (float) Math.clamp(v.grossMw() / IcarusPhysics.MAX_OUTPUT_MW, 0, 1);
         float glowTarget = switch (v.state()) {
             case IGNITION -> 1;
-            case RAMP, RUNNING, COLE_RAMP_DOWN -> (float) (0.3 + 0.5 * out + 0.2 * heat);
+            case RAMP, COLE_RAMP_DOWN -> (float) (0.3 + 0.5 * out + 0.2 * heat);
+            // Running, output only falls to nothing when the matter runs out: the cascade starves, so the plasma sinks to
+            // a flickering ember over the last quarter megawatt and swells back as matter returns.
+            case RUNNING -> {
+                float live = (float) Math.clamp(v.grossMw() / 0.25, 0, 1);
+                float ember = 0.06f + 0.04f * Mth.sin(a.stateTicks * 0.9f) * Mth.sin(a.stateTicks * 0.37f);
+                yield (float) (ember + live * (0.24 + 0.5 * out) + 0.2 * heat);
+            }
             case COLE_COOL, COLE_RECOVER -> (float) (0.1 + 0.5 * heat);
             default -> 0;
         };
@@ -124,11 +135,43 @@ public final class IcarusCoreAnim {
         a.beat += 0.6f + 0.9f * a.glow + 0.8f * (float) heat;
         if (a.beat >= BEAT_WRAP) { a.beat -= BEAT_WRAP; a.beatO -= BEAT_WRAP; }
 
+        effects(core, a);
         var player = Minecraft.getInstance().player;
         if (IcarusLook.critical(v.coreC(), v.alarm()) && player != null && core.getLevel() != null) {
             double d = Math.sqrt(player.distanceToSqr(core.getBlockPos().getCenter()));
             if (d < SHAKE_RANGE) { shake = (float) (SHAKE * (1 - d / SHAKE_RANGE)); shakeUntil = core.getLevel().getGameTime() + 2; }
         }
+    }
+
+    /** Sounds and particles for the chance events IcarusFx rolls: a crackle where each stray annihilation lands, and the
+     * failing stabilizer spitting sparks, smoking while its beam is out and sputtering each time it cuts. */
+    private static void effects(HalseyCoreBlockEntity core, IcarusCoreAnim a) {
+        var level = core.getLevel();
+        if (level == null) return;
+        long now = level.getGameTime();
+        var centre = core.getBlockPos().getCenter();
+        var random = level.getRandom();
+        if (now % IcarusFx.HIT_SLOT == 0) {
+            int sounded = 0;
+            for (var hit : IcarusFx.hits(core, now, a.radius > 0.3f && a.glow > 0.05f)) {
+                if (hit.slot() * IcarusFx.HIT_SLOT != now || sounded++ >= 2) continue;
+                var at = centre.add(hit.dir().scale(IcarusFx.SHIELD_RADIUS));
+                level.playLocalSound(at.x, at.y, at.z, ModSounds.ICARUS_SHIELD_HIT.get(), SoundSource.BLOCKS, 0.6f, 0.8f + 0.5f * random.nextFloat(), false);
+            }
+        }
+        double failing = IcarusFx.failing(core);
+        if (failing <= 0) return;
+        var dir = net.minecraft.core.Direction.from2DDataValue(IcarusFx.sputterIndex(core));
+        var emitter = centre.add(dir.getStepX() * (IcarusStabilizerBlockEntity.CORE_DISTANCE - 0.5), 0, dir.getStepZ() * (IcarusStabilizerBlockEntity.CORE_DISTANCE - 0.5));
+        long slot = Math.floorDiv(now, IcarusFx.SPUTTER_SLOT);
+        boolean out = IcarusFx.cutOut(core, slot, failing);
+        if (out && now % IcarusFx.SPUTTER_SLOT == 0 && !IcarusFx.cutOut(core, slot - 1, failing))
+            level.playLocalSound(emitter.x, emitter.y, emitter.z, ModSounds.ICARUS_STABILIZER_SPUTTER.get(), SoundSource.BLOCKS, 0.8f, 0.85f + 0.3f * random.nextFloat(), false);
+        for (int i = 0; i < (out ? 3 : 1); i++)
+            level.addParticle(ParticleTypes.ELECTRIC_SPARK, emitter.x + random.nextGaussian() * 0.3, emitter.y + random.nextGaussian() * 0.3, emitter.z + random.nextGaussian() * 0.3,
+                    random.nextGaussian() * 0.15, random.nextFloat() * 0.15, random.nextGaussian() * 0.15);
+        if (out && random.nextFloat() < 0.35f + 0.4f * failing)
+            level.addParticle(ParticleTypes.SMOKE, emitter.x, emitter.y + 0.4, emitter.z, 0, 0.04, 0);
     }
 
     private static float approach(float from, float to, float step) { return from < to ? Math.min(to, from + step) : Math.max(to, from - step); }

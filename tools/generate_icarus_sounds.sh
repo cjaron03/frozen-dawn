@@ -97,6 +97,22 @@ render core_collapse \
   -f lavfi -i "aevalsrc='if(lt(t\,1.2)\, pow(t/1.2\,3)\, exp(-30*(t-1.2)))':s=44100:d=2.5" \
   -filter_complex "[1:a]bandpass=f=900:width_type=q:w=0.7,volume=1.1[n];[n][2:a]amultiply[rush];[0:a][rush]amix=inputs=2:normalize=0,afade=t=out:st=2.1:d=0.4,alimiter=limit=0.85:level=0[out]"
 
+# Shield hit, 0.5 s: a stray annihilation striking the shield. A crisp band-passed crack, a glassy ping falling from
+# 2400 Hz to 1500 Hz and a small thump under it. The client varies its pitch per hit.
+render shield_hit \
+  -f lavfi -i "aevalsrc='0.35*exp(-10*t)*sin(2*PI*2400*(0.5/log(1.6))*(1-exp(-log(1.6)*t/0.5))) + 0.12*exp(-8*t)*sin(2*PI*3610*t) + 0.5*exp(-30*t)*sin(2*PI*(72*t-20*t*t))':s=44100:d=0.5" \
+  -f lavfi -i "anoisesrc=color=white:duration=0.5:sample_rate=44100:seed=61022" \
+  -f lavfi -i "aevalsrc='exp(-45*t)':s=44100:d=0.5" \
+  -filter_complex "[1:a]bandpass=f=3200:width_type=q:w=0.9,volume=1.4[n];[n][2:a]amultiply[crack];[0:a][crack]amix=inputs=2:normalize=0,afade=t=in:st=0:d=0.002,afade=t=out:st=0.38:d=0.12,alimiter=limit=0.8:level=0[out]"
+
+# Stabilizer sputter, 0.7 s: the failing stabilizer cutting out. A burst of irregular electrical crackle, a motor whine
+# dropping from 1800 Hz to 500 Hz as the beam dies, and a dull pop.
+render stabilizer_sputter \
+  -f lavfi -i "aevalsrc='0.16*exp(-3*t)*sin(2*PI*1800*(0.7/log(3.6))*(1-exp(-log(3.6)*t/0.7))) + 0.5*exp(-22*t)*sin(2*PI*(95*t-30*t*t))':s=44100:d=0.7" \
+  -f lavfi -i "anoisesrc=color=white:duration=0.7:sample_rate=44100:seed=61023" \
+  -f lavfi -i "aevalsrc='gt(sin(2*PI*37*t)*sin(2*PI*23*t+1)*sin(2*PI*61*t+2)\,0.05)*exp(-4*t)':s=44100:d=0.7" \
+  -filter_complex "[1:a]bandpass=f=1500:width_type=q:w=0.8,volume=1.6[n];[n][2:a]amultiply[crackle];[0:a][crackle]amix=inputs=2:normalize=0,afade=t=in:st=0:d=0.003,afade=t=out:st=0.55:d=0.15,alimiter=limit=0.8:level=0[out]"
+
 # Injector feed, 3 s: magnetic gates clocking the antimatter down the line, a 14 Hz train of falling blips over a
 # cold vapor hiss.
 render injector_feed \

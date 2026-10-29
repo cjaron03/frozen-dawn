@@ -4843,6 +4843,24 @@
       }
     ]
   },
+  "blocks.icarus_shield_hit": {
+    "category": "blocks",
+    "subtitle": "subtitle.frozendawn.blocks.icarus_shield_hit",
+    "sounds": [
+      {
+        "name": "frozendawn:blocks/icarus/shield_hit"
+      }
+    ]
+  },
+  "blocks.icarus_stabilizer_sputter": {
+    "category": "blocks",
+    "subtitle": "subtitle.frozendawn.blocks.icarus_stabilizer_sputter",
+    "sounds": [
+      {
+        "name": "frozendawn:blocks/icarus/stabilizer_sputter"
+      }
+    ]
+  },
   "blocks.icarus_injector_feed": {
     "category": "blocks",
     "subtitle": "subtitle.frozendawn.blocks.icarus_injector_feed",
