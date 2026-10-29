@@ -1969,5 +1969,19 @@
   "subtitle.frozendawn.ui.suit.icarus_caution": "Icarus caution. Check the reactor.",
   "subtitle.frozendawn.ui.suit.icarus_warning": "Icarus warning. Shield margin falling.",
   "subtitle.frozendawn.ui.suit.icarus_critical": "Icarus critical. Shield failure imminent.",
-  "subtitle.frozendawn.ui.suit.icarus_radiation": "Radiation spike detected."
+  "subtitle.frozendawn.ui.suit.icarus_radiation": "Radiation spike detected.",
+  "advancement.frozendawn.e_equals_mc2.title": "E = mc²",
+  "advancement.frozendawn.e_equals_mc2.description": "Ignite a Halsey Cascade.",
+  "advancement.frozendawn.too_close_to_the_sun.title": "Too Close to the Sun",
+  "advancement.frozendawn.too_close_to_the_sun.description": "Run the AMR-1 Icarus at full output.",
+  "advancement.frozendawn.clipped_wings.title": "Clipped Wings",
+  "advancement.frozendawn.clipped_wings.description": "CLIP the matter stream of a running Icarus.",
+  "advancement.frozendawn.wake_me_when_you_need_me.title": "Wake Me When You Need Me",
+  "advancement.frozendawn.wake_me_when_you_need_me.description": "Restart Icarus after a full Cole Protocol shutdown.",
+  "advancement.frozendawn.continuity_beyond.title": "Continuity Beyond",
+  "advancement.frozendawn.continuity_beyond.description": "Run Geothermal, Hearthstone, Solstice and Icarus on one grid.",
+  "advancement.frozendawn.the_fall_of_icarus.title": "The Fall of Icarus",
+  "advancement.frozendawn.the_fall_of_icarus.description": "Lose an Icarus reactor to detonation.",
+  "advancement.frozendawn.dont_look_up.title": "Don't Look Up",
+  "advancement.frozendawn.dont_look_up.description": "Witness an Icarus detonation from outside the blast."
 }

@@ -5,8 +5,10 @@ import com.frozendawn.init.ModBlockEntities;
 import com.frozendawn.init.ModSounds;
 import com.frozendawn.power.IcarusAudioCues;
 import com.frozendawn.power.IcarusBlast;
+import com.frozendawn.power.IcarusAdvancements;
 import com.frozendawn.power.IcarusPhysics;
 import com.frozendawn.world.IcarusDetonation;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -72,6 +74,8 @@ public final class IcarusControllerBlockEntity extends BlockEntity implements Me
     @Nullable private IcarusPhysics.Readout heard;
     /** Seconds the alarm has stayed critical since it rose, for the suit's repeat. */
     private int criticalSeconds;
+    /** A full Cole Protocol has finished since the core last ignited, for Wake Me When You Need Me. */
+    private boolean coleDone;
     public IcarusControllerBlockEntity(BlockPos p, BlockState s) { super(ModBlockEntities.ICARUS_CONTROLLER.get(), p, s); }
 
     public IcarusPhysics physics() { return physics; }
@@ -113,7 +117,10 @@ public final class IcarusControllerBlockEntity extends BlockEntity implements Me
         readout = physics.step(new IcarusPhysics.Inputs(valid, port != null && port.paidFullSecond(), injectable,
                 dock == null ? 0 : dock.empties(), feed == null ? 0 : feed.count()));
         if (readout.detonate() && physics.coreCharge() > 0) { detonate(l); return; }
+        if (phase == IcarusPhysics.State.COLE_DISCHARGE && readout.state() == IcarusPhysics.State.COLD) coleDone = true;
+        var before = heard;
         sound(l, valid ? result.core() : worldPosition);
+        advancements(l, before, valid ? result.core() : worldPosition, portAt);
         if (dock != null) { dock.consume(readout.injected()); dock.recover(readout.recovered()); }
         if (feed != null) feed.use(readout.matterUsed());
         if (port != null) port.publish((int) Math.round(readout.requestKw() * 1000), (int) Math.round(Math.max(0, readout.netMw()) * 1e6));
@@ -141,6 +148,13 @@ public final class IcarusControllerBlockEntity extends BlockEntity implements Me
         };
         for (var id : crew)
             if (l.getPlayerByUUID(id) instanceof ServerPlayer p && SuitIntegrityHandler.isWearingSealedSuit(p)) p.playNotifySound(event, SoundSource.PLAYERS, 1f, 1f);
+    }
+
+    private void advancements(ServerLevel l, @Nullable IcarusPhysics.Readout before, BlockPos core, @Nullable BlockPos port) {
+        var earned = new ArrayList<>(IcarusAdvancements.earned(before, readout, coleDone));
+        if (earned.contains(IcarusAdvancements.E_EQUALS_MC2)) coleDone = false;
+        if (readout.state() == IcarusPhysics.State.RUNNING && port != null && IcarusAdvancements.continuity(l, port)) earned.add(IcarusAdvancements.CONTINUITY);
+        IcarusAdvancements.grantCrewNear(l, core, crew, earned);
     }
 
     private static SoundEvent cueSound(IcarusAudioCues.Cue cue) {
@@ -196,6 +210,7 @@ public final class IcarusControllerBlockEntity extends BlockEntity implements Me
     private void detonate(ServerLevel l) {
         double radius = IcarusBlast.radius(physics.coreCharge());
         physics.detonated();
+        coleDone = false;
         if (publishedPort != null) release(l);
         setChanged();
         IcarusDetonation.detonate(l, IcarusStructure.core(worldPosition, getBlockState().getValue(IcarusControllerBlock.FACING)), radius, Set.copyOf(crew));
@@ -254,12 +269,14 @@ public final class IcarusControllerBlockEntity extends BlockEntity implements Me
         super.saveAdditional(tag, r);
         var icarus = new CompoundTag(); physics.save(icarus); tag.put("Icarus", icarus);
         tag.putBoolean("Signal", signal);
+        tag.putBoolean("ColeDone", coleDone);
         var list = new ListTag(); for (var id : crew) list.add(NbtUtils.createUUID(id)); tag.put("Crew", list);
     }
     @Override protected void loadAdditional(CompoundTag tag, HolderLookup.Provider r) {
         super.loadAdditional(tag, r);
         physics.load(tag.getCompound("Icarus"));
         signal = tag.getBoolean("Signal");
+        coleDone = tag.getBoolean("ColeDone");
         crew.clear(); for (var id : tag.getList("Crew", Tag.TAG_INT_ARRAY)) crew.add(NbtUtils.loadUUID(id));
         readout = IDLE; heard = null; criticalSeconds = 0;
     }

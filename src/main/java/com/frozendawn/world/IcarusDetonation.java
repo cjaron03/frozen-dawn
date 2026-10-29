@@ -9,14 +9,17 @@ import com.frozendawn.init.ModAttachments;
 import com.frozendawn.init.ModDamageTypes;
 import com.frozendawn.init.ModSounds;
 import com.frozendawn.network.IcarusBlastPayload;
+import com.frozendawn.power.IcarusAdvancements;
 import com.frozendawn.power.IcarusBlast;
 import com.frozendawn.radiation.RadiationHandler;
+import com.frozendawn.radiation.ReactorAdvancements;
 import java.util.ArrayList;
 import java.util.Set;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
@@ -64,6 +67,14 @@ public final class IcarusDetonation {
         }
     }
 
+    /** The Fall of Icarus to its crew wherever they are online; Don't Look Up to anyone alive who watched from outside the blast. */
+    private static void advancements(ServerLevel l, Vec3 center, double radius, Set<UUID> crew) {
+        for (var id : crew)
+            if (l.getServer().getPlayerList().getPlayer(id) instanceof ServerPlayer p) ReactorAdvancements.grant(p, IcarusAdvancements.FALL);
+        for (var p : l.players())
+            if (p.isAlive() && !p.isSpectator() && IcarusBlast.witness(p.position().distanceTo(center), radius)) ReactorAdvancements.grant(p, IcarusAdvancements.DONT_LOOK_UP);
+    }
+
     /** Everything inside radius dies, items and experience vanish, and out to twice the radius damage and knockback
      * fade with distance; creative and spectator players are untouched. Then the crater is queued. */
     public static void detonate(ServerLevel l, BlockPos core, double radius, Set<UUID> crew) {
@@ -84,6 +95,7 @@ public final class IcarusDetonation {
                 e.hurtMarked = true;
             }
         }
+        advancements(l, center, radius, crew);
         blast(l, center, radius);
         if (FrozenDawnConfig.ICARUS_TERRAIN_DESTRUCTION.get()) IcarusCraterData.get(l).queue(core, radius, l.getSeed() ^ core.asLong() ^ l.getGameTime());
     }
