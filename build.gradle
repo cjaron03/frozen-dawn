@@ -350,6 +350,11 @@ tasks.named('runGameTestServer') {
 def gameTestShards = providers.gradleProperty('fdShards').map { it as int }.getOrElse(3)
 def gameTestShardDirectory = { int shard -> layout.buildDirectory.dir("gametest/shard-${shard}").get().asFile }
 def monkeyShardDirectory = { int shard -> layout.buildDirectory.dir("architect-monkey/shard-${shard}").get().asFile }
+// The shard servers run on the internal disk, a little faster than the external one, and their worlds, about
+// 450 MB each, are deleted after a passing run; a failed run leaves them until the next. Everything else in the run
+// directory, logs and evidence, is copied back to build/. -PfdShardWorlds=build runs them in build/ instead.
+def shardWorldsInBuild = providers.gradleProperty('fdShardWorlds').map { it == 'build' }.getOrElse(false)
+def shardWorldRoot = new File(System.getProperty('java.io.tmpdir'), 'frozendawn-gametest/' + projectDir.absolutePath.digest('SHA-256').take(12))
 def shardReports = { Closure<File> directory -> (0..<gameTestShards).collectMany { ['--report', new File(directory(it), 'report.xml').absolutePath] } }
 // Starts each shard's server exactly as the named run task would, with its own world, report and evidence folder.
 def registerShardedRun = { String name, String runName, Closure<File> shardDirectory, Provider<Directory> artifacts ->
@@ -363,12 +368,19 @@ def registerShardedRun = { String name, String runName, Closure<File> shardDirec
             def server = run.get()
             def log = logger
             def processes = []
+            def runDirectories = []
+            def passed = false
             try {
+                // Worlds a failed run left, with any shard count.
+                if (shardWorldRoot.isDirectory()) shardWorldRoot.listFiles().findAll { it.name.startsWith("${name}-") }.each { delete(it) }
                 (0..<gameTestShards).each { shard ->
                     def directory = shardDirectory(shard)
                     delete(directory)
-                    def runDirectory = new File(directory, 'run')
+                    directory.mkdirs()
+                    def runDirectory = shardWorldsInBuild ? new File(directory, 'run') : new File(shardWorldRoot, "${name}-${shard}")
+                    delete(runDirectory)
                     runDirectory.mkdirs()
+                    runDirectories << runDirectory
                     def command = [server.javaLauncher.get().executablePath.asFile.absolutePath]
                     command += server.allJvmArgs
                     // After the run's own argument file, so these win.
@@ -389,9 +401,16 @@ def registerShardedRun = { String name, String runName, Closure<File> shardDirec
                 def failed = exits.withIndex().findAll { exit, shard -> exit != 0 }
                 if (!failed.isEmpty())
                     throw new GradleException('GameTest servers exited with failures: ' + failed.collect { exit, shard -> "shard ${shard} exit ${exit}" }.join(', '))
+                passed = true
             } finally {
                 // Only the servers this task started.
                 processes.findAll { it.alive }*.destroy()
+                runDirectories.eachWithIndex { runDirectory, shard ->
+                    if (shardWorldsInBuild) { if (passed) delete(new File(runDirectory, 'world')); return }
+                    // Logs, and evidence some tests write relative to the working directory.
+                    copy { from(runDirectory) { exclude 'world/**' }; into(new File(shardDirectory(shard), 'run')) }
+                    if (passed) delete(runDirectory)
+                }
             }
         }
     }
