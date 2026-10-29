@@ -40,6 +40,16 @@ public final class IcarusDetonation {
     /** Called from IcarusPartBlock.onRemove when the block actually changes. The owning Controller is found from the
      * block entities loaded around pos, not a static map, so this works straight after a reload. */
     public static void partRemoved(ServerLevel l, BlockPos pos) {
+        // Collected first: a detonation must not run while the chunk's block entity map is being walked.
+        for (var c : owners(l, pos)) c.partRemoved(l);
+    }
+
+    /** Whether breaking the block at pos would detonate a loaded reactor: it belongs to one whose core holds antimatter. */
+    public static boolean armed(ServerLevel l, BlockPos pos) {
+        return owners(l, pos).stream().anyMatch(c -> c.physics().coreCharge() > 0);
+    }
+
+    private static ArrayList<IcarusControllerBlockEntity> owners(ServerLevel l, BlockPos pos) {
         var owners = new ArrayList<IcarusControllerBlockEntity>();
         for (int cx = (pos.getX() - REACH) >> 4; cx <= (pos.getX() + REACH) >> 4; cx++)
             for (int cz = (pos.getZ() - REACH) >> 4; cz <= (pos.getZ() + REACH) >> 4; cz++) {
@@ -49,8 +59,7 @@ public final class IcarusDetonation {
                     if (be instanceof IcarusControllerBlockEntity c && !c.isRemoved()
                             && IcarusStructure.contains(c.getBlockPos(), c.getBlockState().getValue(IcarusControllerBlock.FACING), pos)) owners.add(c);
             }
-        // Collected first: a detonation must not run while the chunk's block entity map is being walked.
-        for (var c : owners) c.partRemoved(l);
+        return owners;
     }
 
     /** Every player close enough to see it gets the flash, sound and shake, told whether they stand in air. Those within

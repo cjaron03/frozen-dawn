@@ -232,6 +232,18 @@ public final class IcarusGameTest {
     }
 
     @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "icarus_detonation", timeoutTicks = 100)
+    public static void icarusPartsAreArmedOnlyWhileTheCoreHoldsCharge(GameTestHelper h) {
+        scene(h, () -> {
+            var l = h.getLevel(); var c = icarus(h, IcarusScenes.build(h, CENTER));
+            var frame = IcarusScenes.cell(h, CENTER, Direction.SOUTH, 8, -6, 0);
+            h.assertFalse(com.frozendawn.world.IcarusDetonation.armed(l, frame), "an empty reactor's frame is not armed");
+            c.physics().setCoreChargeForTest(512);
+            h.assertTrue(com.frozendawn.world.IcarusDetonation.armed(l, frame), "a charged reactor's frame is armed");
+            h.assertFalse(com.frozendawn.world.IcarusDetonation.armed(l, frame.east(3)), "a block outside the reactor is not armed");
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "icarus_detonation", timeoutTicks = 100)
     public static void icarusBreakingAnEmptyReactorOnlyInvalidates(GameTestHelper h) {
         scene(h, () -> {
             var l = h.getLevel(); var controller = IcarusScenes.build(h, CENTER); var c = icarus(h, controller);

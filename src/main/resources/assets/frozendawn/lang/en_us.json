@@ -1396,6 +1396,7 @@
   "message.frozendawn.icarus.blueprint_part": "%s %s",
   "message.frozendawn.icarus.blueprint_clear": "%s to clear",
   "message.frozendawn.icarus.blueprint_hidden": "AMR-1 Icarus blueprint hidden",
+  "message.frozendawn.icarus.armed_part": "The core holds antimatter. Breaking this detonates it.",
   "message.frozendawn.icarus.stage.frame": "Stage 1 of 5: frame",
   "message.frozendawn.icarus.stage.injector": "Stage 2 of 5: injector",
   "message.frozendawn.icarus.stage.stabilizer": "Stage 3 of 5: stabilizers, emitters facing the core",
