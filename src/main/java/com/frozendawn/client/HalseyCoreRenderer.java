@@ -127,9 +127,9 @@ public final class HalseyCoreRenderer implements BlockEntityRenderer<HalseyCoreB
                 double rim = Math.pow(1 - facing(eye, SHIELD_RADIUS, lat, lon), 3), front = 4 * reveal * (1 - reveal);
                 return IcarusDraw.argb(shieldRgb, Math.min(1, shieldAlpha * (0.45 + 2.4 * rim + 1.6 * ripple + 2 * front) * reveal));
             };
-            IcarusDraw.texturedSphere(buffers.getBuffer(IcarusDraw.surface(IcarusDraw.SHIELD)), pose, SHIELD_RADIUS, 24, 40, 4, 2, drift, 0, lattice);
-            IcarusDraw.texturedSphere(buffers.getBuffer(IcarusDraw.additive(IcarusDraw.SHIELD)), pose, SHIELD_RADIUS + 0.01f, 24, 40, 4, 2, drift, 0,
-                    (lat, lon) -> { int c = lattice.argb(lat, lon); return IcarusDraw.glow(c, (c >>> 24) / 255.0 * 0.8); });
+            // Additive only: the shield is light, so it brightens what lies behind it and never hides the injector or frame.
+            IcarusDraw.texturedSphere(buffers.getBuffer(IcarusDraw.additive(IcarusDraw.SHIELD)), pose, SHIELD_RADIUS, 24, 40, 4, 2, drift, 0,
+                    (lat, lon) -> { int c = lattice.argb(lat, lon); return IcarusDraw.glow(c, (c >>> 24) / 255.0); });
         }
 
         var glowBuf = buffers.getBuffer(IcarusDraw.light());
