@@ -343,11 +343,11 @@ tasks.named('runGameTestServer') {
     }
 }
 
-// The gate's tests run on several servers side by side. A server ticks on one thread and the gate is bound by
+// The gate's tests run on three servers side by side. A server ticks on one thread and the gate is bound by
 // that thread, so one server leaves the rest of the machine idle. Each shard keeps whole batches, the same ones a
 // single server runs (GameTestPacing#keepShard), at the normal tick rate, and gameTestGate checks that the shards
 // together ran every test exactly once. -PfdShards=1 runs them all on one server.
-def gameTestShards = providers.gradleProperty('fdShards').map { it as int }.getOrElse(2)
+def gameTestShards = providers.gradleProperty('fdShards').map { it as int }.getOrElse(3)
 def gameTestShardDirectory = { int shard -> layout.buildDirectory.dir("gametest/shard-${shard}").get().asFile }
 tasks.register('runGameTestShards') {
     group = 'verification'

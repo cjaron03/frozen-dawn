@@ -62,6 +62,8 @@ public final class GameTestPacing {
     /** GameTestBatchFactory's batch size. */
     private static final int BATCH_SIZE = 50;
     private static final String DEFAULT_BATCH = "defaultBatch";
+    /** Named batches as slow as a full default batch, in the same units: about 25 s on the gate (2026-10-29). */
+    private static final Map<String, Integer> SLOW_BATCHES = Map.of("blindWorkbench", BATCH_SIZE);
     /** These freeze, step or sprint the server themselves, or call the lab bridge, which refuses work mid-sprint. */
     private static final List<Class<?>> NORMAL_PACE = List.of(
             LabBridgeGameTest.class, ArchitectLabGameTest.class, BlindArchitectGameTest.class, MaeveConvergenceGameTest.class);
@@ -168,26 +170,33 @@ public final class GameTestPacing {
     }
 
     /**
-     * Keeps this shard's whole batches. Default batches go round-robin; named batches go whole, largest first, to the
-     * shard holding the fewest tests so far. Batch names break ties, so every shard, each in its own JVM, computes the
-     * same split. Writes what it kept beside the report, before any test runs.
+     * Keeps this shard's whole batches. Each goes to the shard with the least work so far, the costliest first, by a
+     * rough cost: a default batch is slow per test, a named batch usually takes about a second whatever its size,
+     * and {@link #SLOW_BATCHES} are measured exceptions. Batch names break ties, so every shard, each in its own JVM,
+     * computes the same split. A wrong cost only unbalances the shards. Writes what it kept beside the report, before
+     * any test runs.
      */
     private static void keepShard(List<TestFunction> tests, String spec) {
         String[] parts = spec.split("/");
         int index = Integer.parseInt(parts[0].trim());
         int count = Integer.parseInt(parts[1].trim());
         if (count < 1 || index < 0 || index >= count) throw new IllegalArgumentException("No such shard: " + spec);
-        Map<String, List<TestFunction>> batches = new TreeMap<>();
-        for (TestFunction test : tests) batches.computeIfAbsent(test.batchName(), name -> new ArrayList<>()).add(test);
+        Map<String, List<TestFunction>> named = new TreeMap<>();
+        for (TestFunction test : tests) named.computeIfAbsent(test.batchName(), name -> new ArrayList<>()).add(test);
+        List<Batch> batches = new ArrayList<>();
+        // Cut as GameTestBatchFactory cuts it, in list order: what a shard keeps, it cuts back into the same batches.
+        List<TestFunction> unnamed = named.remove(DEFAULT_BATCH);
+        List<List<TestFunction>> defaults = Lists.partition(unnamed == null ? List.of() : unnamed, BATCH_SIZE);
+        for (int i = 0; i < defaults.size(); i++) batches.add(new Batch("%s:%03d".formatted(DEFAULT_BATCH, i), defaults.get(i), defaults.get(i).size()));
+        named.forEach((name, batch) -> batches.add(new Batch(name, batch, SLOW_BATCHES.getOrDefault(name, 1))));
+        batches.sort(Comparator.comparingInt(Batch::cost).reversed().thenComparing(Batch::name));
         int[] load = new int[count];
         Set<String> kept = new HashSet<>();
-        // Cut as GameTestBatchFactory cuts it, in list order: what a shard keeps, it cuts back into the same batches.
-        List<TestFunction> unnamed = batches.remove(DEFAULT_BATCH);
-        List<List<TestFunction>> defaults = Lists.partition(unnamed == null ? List.of() : unnamed, BATCH_SIZE);
-        for (int i = 0; i < defaults.size(); i++) assign(defaults.get(i), i % count, index, load, kept);
-        batches.entrySet().stream().sorted(Comparator.comparingInt((Map.Entry<String, List<TestFunction>> batch) -> -batch.getValue().size())
-                        .thenComparing(Map.Entry::getKey))
-                .forEach(batch -> assign(batch.getValue(), lightest(load), index, load, kept));
+        for (Batch batch : batches) {
+            int shard = lightest(load);
+            load[shard] += batch.cost();
+            if (shard == index) batch.tests().forEach(test -> kept.add(test.testName()));
+        }
         int total = tests.size();
         String all = HexFormat.of().formatHex(sha256(tests.stream().map(TestFunction::testName).sorted().collect(Collectors.joining("\n"))));
         tests.removeIf(test -> !kept.contains(test.testName()));
@@ -202,10 +211,7 @@ public final class GameTestPacing {
         FrozenDawn.LOGGER.info("Game test shard {}: {} of {} tests", spec, tests.size(), total);
     }
 
-    private static void assign(List<TestFunction> batch, int shard, int index, int[] load, Set<String> kept) {
-        load[shard] += batch.size();
-        if (shard == index) batch.forEach(test -> kept.add(test.testName()));
-    }
+    private record Batch(String name, List<TestFunction> tests, int cost) { }
 
     private static int lightest(int[] load) {
         int best = 0;
