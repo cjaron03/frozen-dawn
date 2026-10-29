@@ -52,6 +52,8 @@ public final class IcarusCoreAnim {
     /** Client block entity ticker. */
     public static void tick(HalseyCoreBlockEntity core) {
         var a = of(core); var v = core.visual();
+        // Ignition seen as it happens, from priming, not a reactor found already igniting as its chunk loads.
+        boolean ignited = v.state() == State.IGNITION && a.state == State.PRIMING;
         if (v.state() != a.state) { a.state = v.state(); a.stateTicks = 0; } else a.stateTicks++;
         a.glowO = a.glow; a.bloomO = a.bloom; a.flashO = a.flash; a.frontO = a.front; a.tailO = a.tail; a.churnO = a.churn; a.ringO = a.ring; a.beatO = a.beat;
         a.radiusO = a.radius; a.speckO = a.speck; a.solidO = a.solid; a.shieldO = a.shield;
@@ -129,7 +131,9 @@ public final class IcarusCoreAnim {
 
         // Churn in degrees per tick; the rings spin with the beams and park square when they stop.
         a.churn += (float) (IcarusLook.churn(v.grossMw(), v.coreC()) * 360 / 20);
-        float ringTarget = lit > 0 ? (float) (4 + 8 * heat) : 0;
+        // Spinning up, the rings wind from a crawl to a whir well past running speed, then settle once the field is set.
+        float ringTarget = v.state() == State.STABILIZER_SPINUP ? 2 + 22 * Math.min(1, a.stateTicks / (IcarusPhysics.SPINUP_S * 20f))
+                : lit > 0 ? (float) (4 + 8 * heat) : 0;
         a.ringSpeed = approach(a.ringSpeed, ringTarget, 0.08f);
         a.ring += a.ringSpeed;
         if (ringTarget == 0 && a.ringSpeed < 0.3f) a.ring += (Math.round(a.ring / 90) * 90 - a.ring) * 0.1f;
@@ -140,6 +144,15 @@ public final class IcarusCoreAnim {
         if (a.beat >= BEAT_WRAP) { a.beat -= BEAT_WRAP; a.beatO -= BEAT_WRAP; }
 
         effects(core, a);
+        var viewer = Minecraft.getInstance().player;
+        if (ignited && viewer != null && core.getLevel() != null) {
+            // The first annihilation: a whump of air, a white-out and a shove, all as strong as the viewer is close.
+            var c = core.getBlockPos().getCenter();
+            double d = Math.sqrt(viewer.distanceToSqr(c));
+            core.getLevel().playLocalSound(c.x, c.y, c.z, ModSounds.ICARUS_IGNITION_WHUMP.get(), SoundSource.BLOCKS, 3.0f, 1.0f, false);
+            kick = Math.max(kick, (float) (4 * Math.sqrt(Math.max(0, 1 - d / SHAKE_RANGE))));
+            if (d < IcarusIgnitionFlash.RANGE) IcarusIgnitionFlash.trigger(core.getLevel().getGameTime(), (float) (1 - d / IcarusIgnitionFlash.RANGE));
+        }
         // Near the end the ground shakes harder the worse it gets, the core thumps on every heartbeat and jolts the view,
         // and the screen's edges pulse red (IcarusDangerHud).
         var player = Minecraft.getInstance().player;

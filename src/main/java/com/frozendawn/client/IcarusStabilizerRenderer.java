@@ -22,6 +22,8 @@ public final class IcarusStabilizerRenderer implements BlockEntityRenderer<Icaru
         var core = stabilizer.core();
         var anim = core == null ? null : IcarusCoreAnim.of(core);
         float beam = anim == null ? 0 : anim.beam(stabilizer.index(), pt), ring = anim == null ? 0 : anim.ring(pt);
+        // Past running speed the rings blur into bright discs, so a spin-up reads from across the room.
+        float whir = anim == null ? 0 : Math.clamp((anim.ringSpeed() - 6) / 14, 0, 1);
         var facing = stabilizer.getBlockState().getValue(IcarusStabilizerBlock.FACING);
 
         poses.pushPose();
@@ -32,13 +34,18 @@ public final class IcarusStabilizerRenderer implements BlockEntityRenderer<Icaru
         for (int k = 0; k < 3; k++) {
             float outer = 0.46f - 0.12f * k, inner = outer - 0.07f, z = -0.52f - 0.08f * k;
             float angle = (k % 2 == 0 ? ring : -ring) * (1 + 0.35f * k) + 15 * k;
-            int accent = IcarusLook.mix(GOLD, LIT, beam);
+            int accent = IcarusLook.mix(GOLD, LIT, Math.max(beam, whir));
             poses.pushPose();
             poses.mulPose(Axis.ZP.rotationDegrees(angle));
             var pose = poses.last();
             // Every fourth segment is a bright notch, so the spin reads at a glance.
             IcarusDraw.annulus(body, pose, inner, outer, z, SEGMENTS, j -> IcarusDraw.argb(j % 4 == 0 ? accent : GRAPHITE, 1));
             IcarusDraw.band(body, pose, outer, z, z + 0.06f, SEGMENTS, j -> IcarusDraw.argb(j % 4 == 0 ? accent : GRAPHITE, 1));
+            if (whir > 0.01f) {
+                int blur = IcarusDraw.glow(LIT, whir * (0.35f + 0.15f * k));
+                IcarusDraw.annulus(buffers.getBuffer(IcarusDraw.additive(IcarusDraw.WHITE)), pose, inner, outer, z - 0.01f, SEGMENTS, j -> blur);
+            }
+            body = buffers.getBuffer(IcarusDraw.body());
             poses.popPose();
         }
         if (beam > 0.01f) {
