@@ -1,5 +1,6 @@
 package com.frozendawn.client;
 
+import com.frozendawn.block.HalseyCoreBlock;
 import com.frozendawn.block.HalseyCoreBlockEntity;
 import com.frozendawn.block.IcarusInjectorBlockEntity;
 import com.frozendawn.block.IcarusStabilizerBlockEntity;
@@ -7,10 +8,12 @@ import com.frozendawn.config.FrozenDawnConfig;
 import com.frozendawn.power.IcarusLook;
 import com.frozendawn.power.IcarusPhysics.State;
 import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.core.Direction;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.phys.AABB;
@@ -22,7 +25,9 @@ import net.minecraft.world.phys.Vec3;
 public final class HalseyCoreRenderer implements BlockEntityRenderer<HalseyCoreBlockEntity> {
     private static final float SHIELD_RADIUS = 4.5f, BEAM_START = IcarusStabilizerBlockEntity.CORE_DISTANCE - 0.5f;
     private static final float NOZZLE_Y = -IcarusInjectorBlockEntity.CORE_DISTANCE + 0.5f;
-    private static final int DARK = 0x16121A, SPECK = 0xB45CFF, STREAM = 0xFFB040, BEAM = 0x8CF0FF, WHITE = 0xFFFFFF;
+    private static final int SPECK = 0xB45CFF, SPECK_HOT = 0xE8D0FF, STREAM = 0xFFB040, BEAM = 0x8CF0FF, WHITE = 0xFFFFFF;
+    private static final int PLASMA_HOT = 0xFFF4D8, LIMB = 0x6A0C04;
+    private static final ResourceLocation CORE_TEXTURE = ResourceLocation.fromNamespaceAndPath("frozendawn", "textures/block/halsey_core.png");
     private static final int CRACKS = 7, ARCS = 3;
 
     public HalseyCoreRenderer(BlockEntityRendererProvider.Context context) {}
@@ -34,51 +39,100 @@ public final class HalseyCoreRenderer implements BlockEntityRenderer<HalseyCoreB
         float time = core.getLevel().getGameTime() + pt;
         boolean reduced = FrozenDawnConfig.ICARUS_REDUCED_FLASH.get(), critical = IcarusLook.critical(v.coreC(), v.alarm());
         double heat = IcarusCoreAnim.heat(v.coreC());
-        float glow = a.glow(pt), bloom = a.bloom(pt);
+        float glow = a.glow(pt), plasmaRadius = a.radius(pt);
         // A white flicker when critical: a hard strobe every few ticks, or with reduced flash a slow gentle swell.
         double flicker = !critical ? 0 : reduced ? 0.12 + 0.08 * Math.sin(time * 0.15)
                 : (Mth.murmurHash3Mixer((int) (time / 2) * 31 + core.getBlockPos().hashCode()) & 3) == 0 ? 0.55 : 0.1;
-        int coreRgb = IcarusLook.mix(IcarusLook.mix(DARK, IcarusLook.coreColor(v.coreC(), v.alarm()), glow), WHITE, flicker);
-        float plasmaRadius = glow > 0.01f ? IcarusCoreAnim.SPECK_RADIUS + (IcarusCoreAnim.CORE_RADIUS - IcarusCoreAnim.SPECK_RADIUS) * (bloom * bloom * (3 - 2 * bloom)) : 0;
+        int coreRgb = IcarusLook.mix(IcarusLook.coreColor(Math.max(v.coreC(), 1500), v.alarm()), WHITE, flicker);
         plasmaRadius *= 1 + (float) (0.03 * heat * Math.sin(time * (0.25 + 0.5 * heat)));
-        double churn = Math.toRadians(a.churn(pt));
+        double churn = a.churn(pt) / 360.0;
+        var camera = Minecraft.getInstance().gameRenderer.getMainCamera();
+        var eye = camera.getPosition().subtract(Vec3.atCenterOf(core.getBlockPos()));
 
         poses.pushPose();
         poses.translate(0.5, 0.5, 0.5);
         var pose = poses.last();
 
-        var body = buffers.getBuffer(IcarusDraw.body());
-        // The cold core: a dark, still shell that the plasma replaces as it brightens and returns to as it dims.
-        double shellAlpha = 0.5 * (1 - Math.min(1, glow * 1.5));
-        if (shellAlpha > 0.01) IcarusDraw.sphere(body, pose, true, IcarusCoreAnim.CORE_RADIUS, 16, 24, (lat, lon) -> IcarusDraw.argb(DARK, shellAlpha));
-        if (plasmaRadius > 0) {
-            double alpha = Math.min(0.95, 0.3 + glow);
-            IcarusDraw.sphere(body, pose, true, plasmaRadius, 16, 24, (lat, lon) -> {
-                double swirl = 0.78 + 0.22 * Math.sin(lat * 5 + lon * 3 + churn) * Math.cos(lat * 3 - lon * 2 + churn * 0.7);
-                return IcarusDraw.argb(scale(coreRgb, swirl), alpha);
-            });
+        // The core block's stand-in while HIDDEN: it shrinks into violet light at injection and condenses back at the end.
+        float solid = a.solid(pt);
+        if (solid > 0.01f && core.getBlockState().getValue(HalseyCoreBlock.HIDDEN)) {
+            float melt = 1 - solid;
+            IcarusDraw.cube(buffers.getBuffer(IcarusDraw.surface(CORE_TEXTURE)), pose, 0.5f * (0.15f + 0.85f * solid),
+                    IcarusDraw.argb(IcarusLook.mix(WHITE, SPECK_HOT, melt), solid * solid));
+            IcarusDraw.cube(buffers.getBuffer(IcarusDraw.additive(CORE_TEXTURE)), pose, 0.5f * (0.15f + 0.85f * solid) + 0.01f,
+                    IcarusDraw.glow(SPECK, 4 * melt * solid));
         }
-        double shieldAlpha = IcarusLook.shieldAlpha(v.state(), v.shieldPct()) * (critical && !reduced ? 0.75 + 0.25 * Math.sin(time * 1.7) : 1);
-        int shieldRgb = IcarusLook.shieldColor(v.coreC(), v.shieldPct(), v.alarm());
-        double drift = Math.toRadians(time * 0.4);
-        IcarusDraw.sphere(body, pose, true, SHIELD_RADIUS, 20, 32, (lat, lon) ->
-                IcarusDraw.argb(shieldRgb, shieldAlpha * (0.7 + 0.3 * Math.abs(Math.sin(lat * 9) * Math.sin(lon * 9 + drift)))));
 
-        var glowBuf = buffers.getBuffer(IcarusDraw.light());
-        if (plasmaRadius > 0) {
-            double halo = 0.16 * glow + 0.25 * flicker;
-            IcarusDraw.sphere(glowBuf, pose, false, plasmaRadius * 1.12f, 12, 18, (lat, lon) -> IcarusDraw.argb(coreRgb, halo));
+        // The plasma: a granulated surface, hot white at the centre of the disc and deep red at the limb, a second layer
+        // drifting the other way, and a corona.
+        if (plasmaRadius > 0.01f) {
+            float r = plasmaRadius;
+            int hot = IcarusLook.mix(coreRgb, PLASMA_HOT, 0.45 + 0.35 * glow), limb = IcarusLook.mix(scale(coreRgb, 0.55), LIMB, 0.35);
+            double bright = 0.35 + 0.65 * glow;
+            IcarusDraw.texturedSphere(buffers.getBuffer(IcarusDraw.surface(IcarusDraw.PLASMA)), pose, r, 20, 32, 3, 2, (float) churn, (float) (time * 0.0015),
+                    (lat, lon) -> {
+                        double mu = facing(eye, r, lat, lon);
+                        return IcarusDraw.argb(scale(IcarusLook.mix(limb, hot, Math.pow(mu, 0.8)), bright), 0.97);
+                    });
+            IcarusDraw.texturedSphere(buffers.getBuffer(IcarusDraw.additive(IcarusDraw.PLASMA)), pose, r * 1.004f, 20, 32, 2, 1.5f, (float) (-churn * 1.3), (float) (-time * 0.002),
+                    (lat, lon) -> IcarusDraw.glow(hot, (0.15 + 0.3 * Math.pow(facing(eye, r, lat, lon), 2)) * glow));
+            var halo = buffers.getBuffer(IcarusDraw.additive(IcarusDraw.GLOW));
+            poses.pushPose();
+            poses.mulPose(camera.rotation());
+            IcarusDraw.billboard(halo, poses.last(), r * 1.9f, IcarusDraw.glow(coreRgb, 0.55 * glow + 0.3 * flicker));
+            IcarusDraw.billboard(halo, poses.last(), r * 3.6f, IcarusDraw.glow(coreRgb, 0.22 * glow));
+            poses.popPose();
         }
-        // The antimatter speck, from injection until the bloom swallows it.
-        boolean speck = switch (v.state()) { case INJECTION, PRIMING -> true; case IGNITION -> bloom < 0.4f; default -> false; };
-        if (speck) {
-            float pulse = IcarusCoreAnim.SPECK_RADIUS * (1 + 0.25f * Mth.sin(time * 0.4f)) * (v.state() == State.INJECTION ? Math.min(1, a.stateTicks / 40f) : 1);
-            IcarusDraw.sphere(glowBuf, pose, false, pulse, 6, 8, (lat, lon) -> IcarusDraw.argb(SPECK, 0.9));
-            IcarusDraw.sphere(glowBuf, pose, false, pulse * 2.4f, 6, 8, (lat, lon) -> IcarusDraw.argb(SPECK, 0.25));
+
+        // The antimatter speck, a violet point with a soft halo, whenever antimatter sits in the core without plasma.
+        float speck = a.speck(pt);
+        if (speck > 0.01f) {
+            float pulse = IcarusCoreAnim.SPECK_RADIUS * speck * (1 + 0.25f * Mth.sin(time * 0.4f));
+            IcarusDraw.sphere(buffers.getBuffer(IcarusDraw.light()), pose, false, pulse, 8, 10, (lat, lon) -> IcarusDraw.argb(SPECK_HOT, 0.95));
+            poses.pushPose();
+            poses.mulPose(camera.rotation());
+            var halo = buffers.getBuffer(IcarusDraw.additive(IcarusDraw.GLOW));
+            IcarusDraw.billboard(halo, poses.last(), pulse * 6, IcarusDraw.glow(SPECK, 0.9 * speck));
+            IcarusDraw.billboard(halo, poses.last(), pulse * 14, IcarusDraw.glow(SPECK, 0.3 * speck));
+            poses.popPose();
         }
         float flash = a.flash(pt) * (reduced ? 0.35f : 0.9f);
-        if (flash > 0.01f) IcarusDraw.sphere(glowBuf, pose, false, 1 + 5 * (1 - a.flash(pt)), 10, 14, (lat, lon) -> IcarusDraw.argb(WHITE, flash));
+        if (flash > 0.01f) {
+            poses.pushPose();
+            poses.mulPose(camera.rotation());
+            IcarusDraw.billboard(buffers.getBuffer(IcarusDraw.additive(IcarusDraw.GLOW)), poses.last(), 2 + 12 * (1 - a.flash(pt)), IcarusDraw.glow(WHITE, flash));
+            poses.popPose();
+        }
 
+        // The shield: a hexagon lattice that grows from the four beam strikes, bright at its rim where the eye looks
+        // through the most of it, rippling out from each strike, with a glowing front while it spreads or withdraws.
+        double shieldAlpha = a.shield(pt) * (critical && !reduced ? 0.75 + 0.25 * Math.sin(time * 1.7) : 1);
+        int shieldRgb = IcarusLook.shieldColor(v.coreC(), v.shieldPct(), v.alarm());
+        float[] spread = new float[IcarusLook.STABILIZERS];
+        float anySpread = 0;
+        for (int i = 0; i < spread.length; i++) { spread[i] = a.spread(i, pt); anySpread = Math.max(anySpread, spread[i]); }
+        if (shieldAlpha > 0.003 && anySpread > 0.003f) {
+            float drift = (float) (time * 0.0006);
+            IcarusDraw.Shade lattice = (lat, lon) -> {
+                double nx = Math.cos(lat) * Math.cos(lon), ny = Math.sin(lat), nz = Math.cos(lat) * Math.sin(lon);
+                double reveal = 0, ripple = 0;
+                for (int i = 0; i < spread.length; i++) {
+                    if (spread[i] <= 0) continue;
+                    var dir = Direction.from2DDataValue(i);
+                    double d = Math.acos(Math.clamp(nx * dir.getStepX() + nz * dir.getStepZ(), -1, 1));
+                    reveal = Math.max(reveal, Math.clamp((spread[i] * 2.3 - d) / 0.35, 0, 1));
+                    ripple += spread[i] * Math.pow(Math.max(0, Math.sin(d * 7 - time * 0.22 + i)), 12) * Math.exp(-d * 0.9);
+                }
+                if (reveal <= 0) return 0;
+                double rim = Math.pow(1 - facing(eye, SHIELD_RADIUS, lat, lon), 3), front = 4 * reveal * (1 - reveal);
+                return IcarusDraw.argb(shieldRgb, Math.min(1, shieldAlpha * (0.45 + 2.4 * rim + 1.6 * ripple + 2 * front) * reveal));
+            };
+            IcarusDraw.texturedSphere(buffers.getBuffer(IcarusDraw.surface(IcarusDraw.SHIELD)), pose, SHIELD_RADIUS, 24, 40, 4, 2, drift, 0, lattice);
+            IcarusDraw.texturedSphere(buffers.getBuffer(IcarusDraw.additive(IcarusDraw.SHIELD)), pose, SHIELD_RADIUS + 0.01f, 24, 40, 4, 2, drift, 0,
+                    (lat, lon) -> { int c = lattice.argb(lat, lon); return IcarusDraw.glow(c, (c >>> 24) / 255.0 * 0.8); });
+        }
+
+        var glowBuf = buffers.getBuffer(IcarusDraw.light());
         for (int i = 0; i < IcarusLook.STABILIZERS; i++) {
             float reach = a.beam(i, pt);
             if (reach < 0.002f) continue;
@@ -90,6 +144,19 @@ public final class HalseyCoreRenderer implements BlockEntityRenderer<HalseyCoreB
             IcarusDraw.beam(glowBuf, pose, from, to, width, IcarusDraw.argb(beamRgb, 0.8), IcarusDraw.argb(beamRgb, 0.55));
             IcarusDraw.beam(glowBuf, pose, from, to, width * 2.5f, IcarusDraw.argb(beamRgb, 0.15), IcarusDraw.argb(beamRgb, 0.1));
         }
+        // A flare where each beam strikes the shield.
+        var flares = buffers.getBuffer(IcarusDraw.additive(IcarusDraw.GLOW));
+        for (int i = 0; i < IcarusLook.STABILIZERS; i++) {
+            float reach = a.beam(i, pt);
+            if (reach < 0.98f) continue;
+            var dir = Direction.from2DDataValue(i);
+            poses.pushPose();
+            poses.translate(dir.getStepX() * SHIELD_RADIUS, 0, dir.getStepZ() * SHIELD_RADIUS);
+            poses.mulPose(camera.rotation());
+            IcarusDraw.billboard(flares, poses.last(), 0.8f + 0.15f * Mth.sin(time * 0.7f + i * 1.9f), IcarusDraw.glow(IcarusLook.mix(BEAM, shieldRgb, 0.5), 0.7));
+            poses.popPose();
+        }
+        glowBuf = buffers.getBuffer(IcarusDraw.light());
 
         // The matter stream climbs from the nozzle to the speck or the plasma's underside; a CLIP lifts its tail away.
         float front = a.streamFront(pt), tail = a.streamTail(pt);
@@ -128,6 +195,13 @@ public final class HalseyCoreRenderer implements BlockEntityRenderer<HalseyCoreB
             }
         }
         poses.popPose();
+    }
+
+    /** How squarely the eye looks at a point on a sphere: 1 at the middle of the disc, 0 at its edge. */
+    private static double facing(Vec3 eye, double radius, double lat, double lon) {
+        double nx = Math.cos(lat) * Math.cos(lon), ny = Math.sin(lat), nz = Math.cos(lat) * Math.sin(lon);
+        double vx = eye.x - nx * radius, vy = eye.y - ny * radius, vz = eye.z - nz * radius, len = Math.sqrt(vx * vx + vy * vy + vz * vz);
+        return len < 1e-6 ? 1 : Math.abs(nx * vx + ny * vy + nz * vz) / len;
     }
 
     private static int scale(int rgb, double k) {

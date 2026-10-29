@@ -7,6 +7,7 @@ stabilizer emitters with a lens, a matter injector nozzle, an open truss frame, 
 stabilizer housing, a cell-gauge reserve bank, a console Controller, a power port with bus bars, a matter port with a
 hopper throat, a capsule dock with cradle slots and an Antiparticle Foundry with a ring accelerator. Emissive faces
 are separate animated overlays with .mcmeta timing; the block models mark them full-bright. Noise is seeded per texture, so output is reproducible.
+The running reactor's plasma, shield lattice and corona sprite go to textures/entity/icarus.
 
 Run: python3 -I tools/generate_icarus_textures.py
 """
@@ -438,6 +439,98 @@ def antiparticle_foundry():
     animate("antiparticle_foundry_glow", frames, 2)
 
 
+# Render textures for the running reactor, tiled over spheres by HalseyCoreRenderer and tinted by vertex colour, so they
+# are greyscale. Every one tiles seamlessly: noise lattices wrap at the tile edge.
+FX_OUT = OUT.parent / "entity/icarus"
+
+
+def wrapped_noise(size, cells, rng):
+    """Smooth value noise on a cells x cells lattice that wraps, sampled at size x size."""
+    grid = [[rng.random() for _ in range(cells)] for _ in range(cells)]
+    out = []
+    for y in range(size):
+        row = []
+        for x in range(size):
+            fx, fy = x * cells / size, y * cells / size
+            x0, y0 = int(fx), int(fy)
+            tx, ty = fx - x0, fy - y0
+            tx, ty = tx * tx * (3 - 2 * tx), ty * ty * (3 - 2 * ty)
+            a, b = grid[y0 % cells][x0 % cells], grid[y0 % cells][(x0 + 1) % cells]
+            c, d = grid[(y0 + 1) % cells][x0 % cells], grid[(y0 + 1) % cells][(x0 + 1) % cells]
+            row.append((a + (b - a) * tx) * (1 - ty) + (c + (d - c) * tx) * ty)
+        out.append(row)
+    return out
+
+
+def icarus_plasma():
+    """Plasma surface, 128 px: bright granules parted by dark lanes (wrapped Worley cells) over rolling fBm turbulence."""
+    size, rng = 128, random.Random(62001)
+    octaves = [(wrapped_noise(size, cells, rng), weight) for cells, weight in ((4, 0.5), (8, 0.28), (16, 0.15), (32, 0.07))]
+    seeds = [(rng.random() * size, rng.random() * size) for _ in range(90)]
+    im = Image.new("RGBA", (size, size))
+    for y in range(size):
+        for x in range(size):
+            near = []
+            for sx, sy in seeds:
+                dx = min(abs(x - sx), size - abs(x - sx))
+                dy = min(abs(y - sy), size - abs(y - sy))
+                near.append(dx * dx + dy * dy)
+            near.sort()
+            lane = min(1.0, (math.sqrt(near[1]) - math.sqrt(near[0])) / 4)
+            turb = sum(n[y][x] * w for n, w in octaves)
+            v = 0.3 + 0.28 * lane ** 0.5 + 1.1 * (turb - 0.5) + 0.12
+            g = max(0, min(255, round(255 * v)))
+            im.putpixel((x, y), (g, g, g, 255))
+    save(im, "plasma", FX_OUT)
+
+
+def icarus_shield():
+    """Shield lattice, 128 px: a wrapping 8 x 4 hexagon grid, bright edges with a soft halo, each cell faintly tinted so the
+    lattice shimmers as it scrolls. Premultiplied grey, so it works in the additive layer as well as the translucent one."""
+    size, cols, rows = 128, 8, 4
+    rng = random.Random(62002)
+    shade = {}
+    im = Image.new("RGBA", (size, size))
+    sq3 = math.sqrt(3)
+    for y in range(size):
+        for x in range(size):
+            # Lattice units: one tile is cols hexes across and rows hex row-pairs down, so it wraps exactly.
+            px, py = x / size * cols * sq3, y / size * rows * 3
+            best = None
+            for cy in range(-1, rows * 2 + 2):
+                for cx in range(-1, cols + 2):
+                    hx, hy = cx * sq3 + (sq3 / 2 if cy % 2 else 0), cy * 1.5
+                    d = (px - hx) ** 2 + (py - hy) ** 2
+                    if best is None or d < best[0]:
+                        best = (d, cx, cy, hx, hy)
+            _, cx, cy, hx, hy = best
+            # Hexagonal distance from the centre: 1 at the edge of a pointy-top hexagon of circumradius 1.
+            ax, ay = abs(px - hx), abs(py - hy)
+            edge = max(ax / (sq3 / 2), (ax * 0.5 + ay * sq3 / 2) / (sq3 / 2))
+            key = (cx % cols, cy % (rows * 2))
+            if key not in shade:
+                shade[key] = 0.05 + 0.1 * rng.random()
+            line = max(0.0, 1 - abs(1 - edge) / 0.09)
+            halo = max(0.0, 1 - abs(1 - edge) / 0.32) ** 2
+            a = min(1.0, line + 0.45 * halo + shade[key])
+            g = round(255 * a)
+            im.putpixel((x, y), (g, g, g, g))
+    save(im, "shield", FX_OUT)
+
+
+def icarus_glow():
+    """Corona sprite, 64 px: a soft white disc falling off to nothing, for camera-facing halos."""
+    size = 64
+    im = Image.new("RGBA", (size, size))
+    for y in range(size):
+        for x in range(size):
+            r = math.hypot(x + 0.5 - size / 2, y + 0.5 - size / 2) / (size / 2)
+            v = max(0.0, 1 - r) ** 2.2
+            g = round(255 * v)
+            im.putpixel((x, y), (g, g, g, g))
+    save(im, "glow", FX_OUT)
+
+
 if __name__ == "__main__":
     OUT.mkdir(parents=True, exist_ok=True)
     ITEM_OUT.mkdir(parents=True, exist_ok=True)
@@ -447,3 +540,6 @@ if __name__ == "__main__":
         f()
     capsule(True)
     capsule(False)
+    FX_OUT.mkdir(parents=True, exist_ok=True)
+    for f in (icarus_plasma, icarus_shield, icarus_glow):
+        f()

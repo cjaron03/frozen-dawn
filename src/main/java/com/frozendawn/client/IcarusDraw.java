@@ -17,12 +17,26 @@ public final class IcarusDraw {
     public static final ResourceLocation WHITE = ResourceLocation.fromNamespaceAndPath("neoforge", "textures/white.png");
     private static final int FULL_BRIGHT = LightTexture.FULL_BRIGHT;
 
+    /** Greyscale running-reactor textures from tools/generate_icarus_textures.py, tinted by vertex colour. */
+    public static final ResourceLocation PLASMA = ResourceLocation.fromNamespaceAndPath("frozendawn", "textures/entity/icarus/plasma.png"),
+            SHIELD = ResourceLocation.fromNamespaceAndPath("frozendawn", "textures/entity/icarus/shield.png"),
+            GLOW = ResourceLocation.fromNamespaceAndPath("frozendawn", "textures/entity/icarus/glow.png");
+
     public interface Shade { int argb(double lat, double lon); }
 
     private IcarusDraw() {}
 
     public static RenderType body() { return RenderType.entityTranslucentEmissive(WHITE); }
     public static RenderType light() { return RenderType.lightning(); }
+    /** A textured translucent surface, full-bright and seen from both sides. */
+    public static RenderType surface(ResourceLocation texture) { return RenderType.entityTranslucentEmissive(texture); }
+    /** A textured additive layer: it ignores alpha, so dim it through the colour (see glow). */
+    public static RenderType additive(ResourceLocation texture) { return RenderType.energySwirl(texture, 0, 0); }
+    /** rgb scaled by k, opaque: the colour of light of strength k in an additive layer. */
+    public static int glow(int rgb, double k) {
+        k = Math.clamp(k, 0, 1);
+        return 0xFF000000 | (int) ((rgb >> 16 & 0xFF) * k) << 16 | (int) ((rgb >> 8 & 0xFF) * k) << 8 | (int) ((rgb & 0xFF) * k);
+    }
 
     public static int argb(int rgb, double alpha) { return Math.clamp(Math.round(alpha * 255), 0, 255) << 24 | rgb & 0xFFFFFF; }
 
@@ -44,6 +58,49 @@ public final class IcarusDraw {
         int color = shade.argb(lat, lon);
         if (body) bodyVertex(c, pose, nx * radius, ny * radius, nz * radius, color, nx, ny, nz);
         else c.addVertex(pose.pose(), nx * radius, ny * radius, nz * radius).setColor(color);
+    }
+
+    /** A sphere in a body format with its texture tiled uTiles times around and vTiles times pole to pole, shifted by
+     * (uShift, vShift) to animate it. */
+    public static void texturedSphere(VertexConsumer c, PoseStack.Pose pose, float radius, int rings, int segments, float uTiles, float vTiles,
+                                      float uShift, float vShift, Shade shade) {
+        for (int i = 0; i < rings; i++) {
+            double lat0 = -Math.PI / 2 + Math.PI * i / rings, lat1 = -Math.PI / 2 + Math.PI * (i + 1) / rings;
+            for (int j = 0; j < segments; j++) {
+                double lon0 = 2 * Math.PI * j / segments, lon1 = 2 * Math.PI * (j + 1) / segments;
+                texturedCorner(c, pose, radius, lat0, lon0, uTiles, vTiles, uShift, vShift, shade);
+                texturedCorner(c, pose, radius, lat0, lon1, uTiles, vTiles, uShift, vShift, shade);
+                texturedCorner(c, pose, radius, lat1, lon1, uTiles, vTiles, uShift, vShift, shade);
+                texturedCorner(c, pose, radius, lat1, lon0, uTiles, vTiles, uShift, vShift, shade);
+            }
+        }
+    }
+    private static void texturedCorner(VertexConsumer c, PoseStack.Pose pose, float radius, double lat, double lon, float uTiles, float vTiles,
+                                       float uShift, float vShift, Shade shade) {
+        float nx = (float) (Math.cos(lat) * Math.cos(lon)), ny = (float) Math.sin(lat), nz = (float) (Math.cos(lat) * Math.sin(lon));
+        float u = (float) (lon / (2 * Math.PI)) * uTiles + uShift, v = (float) ((lat + Math.PI / 2) / Math.PI) * vTiles + vShift;
+        c.addVertex(pose, nx * radius, ny * radius, nz * radius).setColor(shade.argb(lat, lon)).setUv(u, v).setOverlay(OverlayTexture.NO_OVERLAY)
+                .setLight(FULL_BRIGHT).setNormal(pose, nx, ny, nz);
+    }
+
+    /** A square sprite of the given half-size facing the camera, centred on the pose's origin; rotate the pose to the
+     * camera first. */
+    public static void billboard(VertexConsumer c, PoseStack.Pose pose, float half, int argb) {
+        float[][] q = {{-half, -half, 0, 1}, {half, -half, 1, 1}, {half, half, 1, 0}, {-half, half, 0, 0}};
+        for (var p : q) c.addVertex(pose, p[0], p[1], 0).setColor(argb).setUv(p[2], p[3]).setOverlay(OverlayTexture.NO_OVERLAY)
+                .setLight(FULL_BRIGHT).setNormal(pose, 0, 0, 1);
+    }
+
+    /** A textured cube of the given half-size about the pose's origin, each face mapping the whole texture. */
+    public static void cube(VertexConsumer c, PoseStack.Pose pose, float h, int argb) {
+        float[][][] faces = {
+                {{-h, -h, -h}, {-h, h, -h}, {h, h, -h}, {h, -h, -h}, {0, 0, -1}}, {{h, -h, h}, {h, h, h}, {-h, h, h}, {-h, -h, h}, {0, 0, 1}},
+                {{-h, -h, h}, {-h, h, h}, {-h, h, -h}, {-h, -h, -h}, {-1, 0, 0}}, {{h, -h, -h}, {h, h, -h}, {h, h, h}, {h, -h, h}, {1, 0, 0}},
+                {{-h, h, -h}, {-h, h, h}, {h, h, h}, {h, h, -h}, {0, 1, 0}}, {{-h, -h, h}, {-h, -h, -h}, {h, -h, -h}, {h, -h, h}, {0, -1, 0}}};
+        float[][] uv = {{0, 1}, {0, 0}, {1, 0}, {1, 1}};
+        for (var f : faces) for (int i = 0; i < 4; i++)
+            c.addVertex(pose, f[i][0], f[i][1], f[i][2]).setColor(argb).setUv(uv[i][0], uv[i][1]).setOverlay(OverlayTexture.NO_OVERLAY)
+                    .setLight(FULL_BRIGHT).setNormal(pose, f[4][0], f[4][1], f[4][2]);
     }
 
     public static void bodyVertex(VertexConsumer c, PoseStack.Pose pose, float x, float y, float z, int argb, float nx, float ny, float nz) {
