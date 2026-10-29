@@ -54,6 +54,35 @@ class IcarusPhysicsTest {
         }
     }
 
+    @Test void aColdStartDrawsOnlyDuringTheReserveAndStabilizerSteps() {
+        var p = commissioned(); p.start();
+        double kJ = 0;
+        for (int s = 1; s <= 100; s++) {
+            Readout r = p.step(ok());
+            boolean draws = r.state() == State.RESERVE_CHARGE || r.state() == State.STABILIZER_SPINUP;
+            double expected = draws ? IcarusPhysics.STARTUP_DRAW_KW : r.state() == State.POWER_CHECK ? IcarusPhysics.POWER_PROBE_KW : 0;
+            assertEquals(expected, r.requestKw(), 1e-9, "second " + s + " " + r.state());
+            kJ += r.requestKw();
+        }
+        assertEquals(50_100, kJ, 1e-6);
+    }
+
+    @Test void aHeldStartupDrawsNothingUnlessItWaitsForPower() {
+        var p = commissioned(); p.start();
+        run(p, ok(), 80);
+        var noMatter = new Inputs(true, true, 0, 8, 0);
+        for (int i = 0; i < 60; i++) {
+            Readout r = p.step(noMatter);
+            assertEquals(Status.HOLD_MATTER, r.status()); assertEquals(0, r.requestKw(), 1e-9);
+        }
+        var q = commissioned(); q.start();
+        run(q, ok(), 15);
+        Readout broken = q.step(new Inputs(false, true, 2 * CAPSULE, 8, 64));
+        assertEquals(Status.HOLD_STRUCTURE, broken.status()); assertEquals(0, broken.requestKw(), 1e-9);
+        Readout unpaid = q.step(new Inputs(true, false, 2 * CAPSULE, 8, 64));
+        assertEquals(Status.HOLD_POWER, unpaid.status()); assertEquals(IcarusPhysics.STARTUP_DRAW_KW, unpaid.requestKw(), 1e-9);
+    }
+
     @Test void reserveHoldsBootChargeAfterStepTwo() {
         var p = commissioned(); p.start();
         Readout r = run(p, ok(), 30);

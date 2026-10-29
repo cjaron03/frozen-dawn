@@ -10,6 +10,8 @@ public final class IcarusPhysics {
     public static final long CAPSULE = 1_000_000L, CLIP_LOSS = CAPSULE / 10;
     public static final int MAX_CAPSULES = 64, MIN_START_CAPSULES = 2;
     public static final double MIN_OUTPUT_MW = 1.0, MAX_OUTPUT_MW = 2.5, STARTUP_DRAW_KW = 1000;
+    /** The power check proves the grid can pay with a token draw; the real draw waits for the reserve and stabilizer steps. */
+    public static final double POWER_PROBE_KW = 10;
     /** The reserve bank holds the shield about ten minutes at the Minimum draw; startup puts the first RESERVE_BOOT_MJ in from the grid. */
     public static final double RESERVE_MJ = 240, RESERVE_BOOT_MJ = 20;
     public static final double AMBIENT_C = 20, RED_LINE_C = 6500, CRITICAL_C = 8000;
@@ -147,8 +149,10 @@ public final class IcarusPhysics {
         switch (state) {
             case POWER_CHECK, RESERVE_CHARGE, STABILIZER_SPINUP, COMMISSIONING, INJECTION, PRIMING, IGNITION -> {
                 startup = true;
-                requestKw = STARTUP_DRAW_KW;
                 Status hold = startupHold(in);
+                // Only the reserve and stabilizer steps draw; a hold pauses the draw unless it is waiting for that power.
+                if (drawsPower(state) && (hold == null || hold == Status.HOLD_POWER))
+                    requestKw = state == State.POWER_CHECK ? POWER_PROBE_KW : STARTUP_DRAW_KW;
                 if (hold != null) { status = hold; held = true; }
                 else {
                     if (state == State.RESERVE_CHARGE) reserveMJ = Math.min(RESERVE_MJ, reserveMJ + STARTUP_DRAW_KW / 1000);
@@ -229,9 +233,13 @@ public final class IcarusPhysics {
         return r;
     }
 
+    private static boolean drawsPower(State s) {
+        return s == State.POWER_CHECK || s == State.RESERVE_CHARGE || s == State.STABILIZER_SPINUP || s == State.COMMISSIONING;
+    }
+
     private Status startupHold(Inputs in) {
         if (!in.structureValid()) return Status.HOLD_STRUCTURE;
-        if (!in.powered()) return Status.HOLD_POWER;
+        if (drawsPower(state) && !in.powered()) return Status.HOLD_POWER;
         if (state == State.INJECTION && coreCharge + Math.min(in.dockCharge(), MAX_CAPSULES * CAPSULE - coreCharge) < MIN_START_CAPSULES * CAPSULE)
             return Status.HOLD_CAPSULES;
         if (state == State.PRIMING && in.matter() <= 0) return Status.HOLD_MATTER;
