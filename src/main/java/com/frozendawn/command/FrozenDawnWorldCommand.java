@@ -72,6 +72,21 @@ final class FrozenDawnWorldCommand {
         return 1;
     }
 
+    private static int placeIcarusLab(CommandContext<CommandSourceStack> context) {
+        var source = context.getSource(); var level = source.getLevel();
+        var look = net.minecraft.world.phys.Vec3.directionFromRotation(0, source.getRotation().y);
+        var at = source.getPosition().add(look.scale(16));
+        int x = (int) Math.floor(at.x), z = (int) Math.floor(at.z);
+        // The frame replaces the top ground block, so the support row stands at foot level; the Controller faces the player.
+        int ground = level.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z) - 1;
+        var core = new net.minecraft.core.BlockPos(x, ground - com.frozendawn.block.IcarusStructure.BOTTOM, z);
+        var facing = net.minecraft.core.Direction.fromYRot(source.getRotation().y).getOpposite();
+        var lab = com.frozendawn.world.IcarusLabPlacement.build(level, core, facing);
+        if (lab.failedLinks() > 0) source.sendFailure(Component.literal(lab.failedLinks() + " Icarus lab link(s) failed"));
+        source.sendSuccess(() -> Component.literal("AMR-1 Icarus built, cold and uncommissioned, core at (" + core.getX() + ", " + core.getY() + ", " + core.getZ() + "); Controller faces " + facing.getName()), true);
+        return 1;
+    }
+
     private static final SuggestionProvider<CommandSourceStack> BLUEPRINTS = (context, builder) ->
             SharedSuggestionProvider.suggest(java.util.stream.Stream.concat(java.util.stream.Stream.of("all"), com.frozendawn.data.FabricatorBlueprints.SLATES.stream()), builder);
 
@@ -103,6 +118,7 @@ final class FrozenDawnWorldCommand {
                 .then(Commands.literal("reactorsite").executes(FrozenDawnWorldCommand::placeReactorSite))
                 .then(Commands.literal("helionsite").executes(FrozenDawnWorldCommand::placeHelionSite))
                 .then(Commands.literal("sfrlab").executes(FrozenDawnWorldCommand::placeSfrLab))
+                .then(Commands.literal("icaruslab").executes(FrozenDawnWorldCommand::placeIcarusLab))
                 .then(Commands.literal("blueprint")
                         .then(Commands.literal("learn").then(Commands.argument("id", StringArgumentType.word()).suggests(BLUEPRINTS)
                                 .executes(context -> blueprint(context, true))))

@@ -101,6 +101,14 @@ public final class IcarusStructure {
         return controller.offset(across.getStepX() - 8 * facing.getStepX(), 5, across.getStepZ() - 8 * facing.getStepZ());
     }
 
+    /** Places every part around core, as the ghost guide shows it, and returns the Controller. The envelope is left as it is. */
+    public static BlockPos place(Level l, BlockPos core, Direction facing) {
+        for (var part : PARTS) l.setBlock(at(core, facing, part.x, part.y, part.z), ghost(part, facing), Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE);
+        return at(core, facing, -1, BOTTOM + 1, HALF);
+    }
+    /** The world cell at canonical (x, y, z) around core. */
+    public static BlockPos cell(BlockPos core, Direction facing, int x, int y, int z) { return at(core, facing, x, y, z); }
+
     public static Result validate(Level l, BlockPos controller, Direction facing, boolean checkEnvelope) {
         var core = core(controller, facing);
         BlockPos matter = at(core, facing, -3, BOTTOM + 1, HALF), dock = at(core, facing, -2, BOTTOM + 1, HALF);

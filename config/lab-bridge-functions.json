@@ -1,6 +1,7 @@
 {
   "schema": 1,
   "functions": {
+    "icarus_perf:full_blast": {"world":"Icarus Perf","scores":[{"objective":"icarus_perf","holder":"#stage","equals":1}]},
     "advancement_check:setup": {"world":"Advancement Check","scores":[{"objective":"advcheck","holder":"#built","equals":1}]},
     "advancement_check:grove": {"world":"Advancement Check","scores":[{"objective":"advcheck","holder":"#built","equals":1}]},
     "advancement_check:architect": {"world":"Advancement Check","scores":[{"objective":"advcheck","holder":"#built","equals":1}]},

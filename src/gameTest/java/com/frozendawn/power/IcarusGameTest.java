@@ -46,6 +46,8 @@ public final class IcarusGameTest {
     public static void reportReactor(ServerLevel level) { GameTestReporting.installReporter(level); }
     @BeforeBatch(batch = "icarus_detonation")
     public static void reportDetonation(ServerLevel level) { GameTestReporting.installReporter(level); }
+    @BeforeBatch(batch = "icarus_lab")
+    public static void reportLab(ServerLevel level) { GameTestReporting.installReporter(level); }
 
     @GameTest(template = GameTestTemplates.EMPTY, batch = "icarus_archive", timeoutTicks = 40)
     public static void icarusSlateTeachesAllFourBlueprints(GameTestHelper h) {
@@ -397,6 +399,33 @@ public final class IcarusGameTest {
             h.assertTrue(b.get() instanceof IcarusPartBlock, b.getId() + " is an Icarus part");
         }
         h.succeed();
+    }
+
+    /** The lab command's reactor: valid, cold and uncommissioned, with matter in a chest and enough stored charge on the
+     * power port's grid for a commissioning start and a restart after the Cole Protocol. Its own batch: the banks reach
+     * past the template. */
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "icarus_lab", timeoutTicks = 100)
+    public static void icarusLabBuildsAValidChargedReactor(GameTestHelper h) {
+        var l = h.getLevel();
+        var lab = com.frozendawn.world.IcarusLabPlacement.build(l, h.absolutePos(CENTER), Direction.SOUTH);
+        h.assertValueEqual(lab.failedLinks(), 0, "failed lab links");
+        var result = IcarusStructure.validate(l, lab.controller(), Direction.SOUTH, true);
+        h.assertTrue(result.valid(), "Expected the lab reactor to validate, got " + result.problem() + " at " + result.wrong());
+        var c = icarus(h, lab.controller());
+        h.assertValueEqual(c.physics().state(), IcarusPhysics.State.COLD, "lab reactor state");
+        h.assertFalse(c.physics().commissioned(), "the lab reactor shows commissioning on its first start");
+        if (!(l.getBlockEntity(lab.matterChest()) instanceof net.minecraft.world.level.block.entity.ChestBlockEntity chest))
+            throw new GameTestAssertException("Expected a matter chest at " + lab.matterChest());
+        int matter = 0;
+        for (int i = 0; i < chest.getContainerSize(); i++) if (chest.getItem(i).is(Items.COBBLESTONE)) matter += chest.getItem(i).getCount();
+        h.assertTrue(matter >= 64, "Expected at least a stack of matter in the chest, got " + matter);
+        long first = IcarusPhysics.POWER_CHECK_S + IcarusPhysics.RESERVE_CHARGE_S + IcarusPhysics.SPINUP_S + IcarusPhysics.COMMISSIONING_S
+                + IcarusPhysics.INJECTION_S + IcarusPhysics.PRIMING_S + IcarusPhysics.IGNITION_S;
+        long needed = (long) ((2 * first - IcarusPhysics.COMMISSIONING_S) * IcarusPhysics.STARTUP_DRAW_KW * 1000);
+        h.startSequence()
+                .thenWaitUntil(() -> h.assertTrue(PowerNetworks.priorityBudget(l, result.powerPort()) >= needed,
+                        "Expected " + needed + " J on the power port's grid, got " + PowerNetworks.priorityBudget(l, result.powerPort())))
+                .thenSucceed();
     }
 
     private static IcarusControllerBlockEntity icarus(GameTestHelper h, BlockPos controller) {

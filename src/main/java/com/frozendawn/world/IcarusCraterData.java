@@ -2,6 +2,8 @@ package com.frozendawn.world;
 
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.power.IcarusBlast;
+import it.unimi.dsi.fastutil.longs.Long2IntMap;
+import it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import it.unimi.dsi.fastutil.longs.LongSet;
 import java.util.ArrayList;
@@ -10,6 +12,7 @@ import java.util.List;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.IntArrayTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.LongArrayTag;
 import net.minecraft.nbt.NbtUtils;
@@ -22,8 +25,9 @@ import net.minecraft.world.level.saveddata.SavedData;
 /** Icarus craters still being carved in one level. A job keeps the chunks it has not reached yet, so a crater left
  * half-done by a save or an unloaded chunk resumes where it stopped. */
 public final class IcarusCraterData extends SavedData {
-    /** pending holds the chunk longs within meltRadius that are not carved yet. */
-    public record Job(BlockPos center, double radius, long seed, LongSet pending) {}
+    /** pending holds the chunk longs within meltRadius that are not carved yet; columns holds, for a part-carved pending
+     * chunk, the index of its next column. Carving a column again would cut deeper from the lowered surface. */
+    public record Job(BlockPos center, double radius, long seed, LongSet pending, Long2IntMap columns) {}
 
     private static final String DATA_NAME = FrozenDawn.MOD_ID + "_icarus_craters";
     private final List<Job> jobs = new ArrayList<>();
@@ -43,15 +47,22 @@ public final class IcarusCraterData extends SavedData {
             double dz = Math.clamp(center.getZ(), cz << 4, (cz << 4) + 15) - center.getZ();
             if (dx * dx + dz * dz <= reach * reach) pending.add(ChunkPos.asLong(cx, cz));
         }
-        jobs.add(new Job(center.immutable(), radius, seed, pending));
+        jobs.add(new Job(center.immutable(), radius, seed, pending, new Long2IntOpenHashMap()));
         setDirty();
     }
 
     public List<Job> jobs() { return Collections.unmodifiableList(jobs); }
 
+    /** Records that chunk of job is carved up to, not including, column. */
+    public void progress(Job job, long chunk, int column) {
+        job.columns().put(chunk, column);
+        setDirty();
+    }
+
     /** Marks a chunk of job done, and drops the job once nothing is pending. */
     public void carved(Job job, long chunk) {
         job.pending().remove(chunk);
+        job.columns().remove(chunk);
         if (job.pending().isEmpty()) jobs.removeIf(j -> j == job);
         setDirty();
     }
@@ -62,7 +73,10 @@ public final class IcarusCraterData extends SavedData {
             var job = (CompoundTag) t;
             var center = NbtUtils.readBlockPos(job, "Center").orElse(null);
             if (center == null) continue;
-            data.jobs.add(new Job(center, job.getDouble("Radius"), job.getLong("Seed"), new LongOpenHashSet(job.getLongArray("Pending"))));
+            var columns = new Long2IntOpenHashMap();
+            long[] partial = job.getLongArray("PartialChunks"); int[] next = job.getIntArray("PartialColumns");
+            for (int i = 0; i < Math.min(partial.length, next.length); i++) columns.put(partial[i], next[i]);
+            data.jobs.add(new Job(center, job.getDouble("Radius"), job.getLong("Seed"), new LongOpenHashSet(job.getLongArray("Pending")), columns));
         }
         return data;
     }
@@ -75,6 +89,10 @@ public final class IcarusCraterData extends SavedData {
             t.putDouble("Radius", job.radius());
             t.putLong("Seed", job.seed());
             t.put("Pending", new LongArrayTag(job.pending().toLongArray()));
+            long[] partial = job.columns().keySet().toLongArray(); int[] next = new int[partial.length];
+            for (int i = 0; i < partial.length; i++) next[i] = job.columns().get(partial[i]);
+            t.put("PartialChunks", new LongArrayTag(partial));
+            t.put("PartialColumns", new IntArrayTag(next));
             list.add(t);
         }
         tag.put("Jobs", list);

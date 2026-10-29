@@ -75,8 +75,12 @@ public final class IcarusCraterGameTest {
             data.queue(h.absolutePos(CENTER), 8, 1L);
             int before = data.jobs().get(0).pending().size();
             h.assertTrue(before > 1, "A radius 8 crater with its melt ring spans more than one chunk, got " + before);
-            h.assertValueEqual(IcarusCrater.run(l, data, 0), 1, "chunks carved in one tick with no budget");
-            h.assertValueEqual(data.jobs().get(0).pending().size(), before - 1, "chunks still pending");
+            // The budget is checked after every column: one deep chunk near the centre took 180 ms in the full-load run.
+            h.assertValueEqual(IcarusCrater.run(l, data, 0), 1, "columns carved in one tick with no budget");
+            h.assertValueEqual(data.jobs().get(0).pending().size(), before, "a chunk stays pending until its last column");
+            int ticks = 1;
+            while (data.jobs().get(0).pending().size() == before && ticks < 1000) { IcarusCrater.run(l, data, 0); ticks++; }
+            h.assertValueEqual(ticks, IcarusCrater.COLUMNS, "no-budget ticks to finish the first chunk");
             h.succeed();
         });
     }
@@ -92,6 +96,8 @@ public final class IcarusCraterGameTest {
             h.assertValueEqual(loaded.jobs().size(), 1, "jobs after a reload");
             var again = loaded.jobs().get(0);
             h.assertValueEqual(again.pending(), job.pending(), "pending chunks after a reload");
+            h.assertTrue(job.columns().size() == 1 && job.columns().values().iterator().nextInt() == 1, "One column of the first chunk is done, got " + job.columns());
+            h.assertValueEqual(again.columns(), job.columns(), "column cursors after a reload");
             h.assertTrue(again.center().equals(job.center()) && again.radius() == job.radius() && again.seed() == job.seed(), "The job's centre, radius and seed survive");
             h.succeed();
         });

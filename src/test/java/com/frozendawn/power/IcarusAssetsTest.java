@@ -25,7 +25,7 @@ class IcarusAssetsTest {
     private static final String ASSETS = "/assets/frozendawn/";
     private static final List<String> BLOCKS = List.of("halsey_core", "icarus_stabilizer", "icarus_injector", "icarus_frame",
             "icarus_injector_casing", "icarus_stabilizer_housing", "icarus_reserve_bank", "icarus_controller", "icarus_power_port",
-            "icarus_matter_port", "icarus_capsule_dock");
+            "icarus_matter_port", "icarus_capsule_dock", "antiparticle_foundry");
     private static final Set<String> SOUNDS = Set.of("blocks.icarus_frame_hum", "blocks.icarus_stabilizer_spinup", "blocks.icarus_stabilizer_whine",
             "blocks.icarus_shield_hum", "blocks.icarus_core_roar", "blocks.icarus_injector_feed", "blocks.icarus_capsule_dock",
             "blocks.icarus_ignition", "blocks.icarus_clip_slam", "blocks.icarus_cole_complete", "blocks.icarus_alarm_caution",
@@ -40,6 +40,7 @@ class IcarusAssetsTest {
             var models = new TreeSet<String>();
             collectModels(json("blockstates/" + block + ".json"), models);
             assertFalse(models.isEmpty(), block + " has no model");
+            read("models/item/" + block + ".json");
             var textures = new TreeSet<String>();
             for (var model : models) textures(model, textures, icarusModels);
             assertFalse(textures.isEmpty(), block + " has no texture");

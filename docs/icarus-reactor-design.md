@@ -200,3 +200,27 @@ There is a generated blast-pit site (`BlastPitPlacement`). If any world-generate
 - Run the full `architectVerify` before handing back.
 - Owner visual and audio pass in a disposable generated world: every state's animation, vacuum audibility, startup and shutdown readability, ghost-guide clarity, and a full-size detonation. Never test detonation in an ordinary save.
 - Measure full-radius crater performance separately; small-scale tests do not prove it.
+
+## Status
+
+Recorded 2026-10-28 on branch `feat/icarus-reactor`, before the owner's visual pass.
+
+### Full-radius crater performance
+
+One 64-capsule detonation (radius 400, 4596 chunks in reach) at the origin of a disposable normal-terrain world, timed by the lab-only `LabIcarusPerf` from the blast until no loaded chunk was left to carve. The crater budget is 10 ms a tick. Unloaded chunks stay pending and carve when they load, so each run counts loaded chunks only. Evidence is under `build/icarus-evidence/perf-run1` to `perf-run4`.
+
+| Run | Change before it | Ticks to carve loaded | Pending unloaded | Worst whole tick | Worst crater phase | Peak heap |
+|---|---|---|---|---|---|---|
+| 1 | none | 732 | 3719 | 16 536 ms | not measured | 3185 MB |
+| 2 | carve only chunks in block-ticking range | 707 | 3831 | 177 ms | not measured | 2711 MB |
+| 3 | crater phase timed on its own | 665 | 3831 | 190 ms | 181 ms | 2802 MB |
+| 4 | carve a column at a time | 1198 | 3831 | 762 ms | 44 ms | 1472 MB |
+
+- Run 1: a chunk can still be cached while the server unloads it. Reading it blocked the tick until it loaded again (16.5 s). Fix: `IcarusCrater.carvable` also requires the block-ticking range.
+- Run 3: the budget was checked only between chunks, and one deep chunk near the centre took about 180 ms. Fix: carving is per column, with the budget checked after each one. A part-carved chunk keeps a saved column cursor, because carving a column twice would cut deeper from the lowered surface.
+- Run 4: the crater phase peaked at 44 ms, under the 50 ms limit. That figure is an upper bound, since it brackets every normal-priority level post-tick handler. The slow whole ticks happened outside the crater phase. Stack samples put them in existing code waiting on fresh-terrain chunk loads (`FrozenTownRuntime` town scans, `RocketLaunchManager.diagnosePad`, block entity ticks). Ticks of 600 ms or more also appeared before any blast in run 2.
+- `detonate()` itself took 15 to 44 ms.
+
+### Open check result
+
+The crater clears world-generated blocks that are never rebuilt, and no protection was added. Affected sites: the satellite's black-box chest (it holds the only Transponder Schematic, which unlocks the win), the ORSA Blast Pit crate, and the lower block of the First Crossing memory wall. This is reported to the owner for a decision.

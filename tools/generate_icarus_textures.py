@@ -5,8 +5,8 @@ Look: heavy containment hardware. Dark graphite plate with gold-anodized trim, u
 violet where antimatter lives and cyan where the shield is made. Every block has its own motif: a caged core node,
 stabilizer emitters with a lens, a matter injector nozzle, an open truss frame, banded injector casing, a finned
 stabilizer housing, a cell-gauge reserve bank, a console Controller, a power port with bus bars, a matter port with a
-hopper throat and a capsule dock with cradle slots. Emissive faces are separate animated overlays with .mcmeta
-timing; the block models mark them full-bright. Noise is seeded per texture, so output is reproducible.
+hopper throat, a capsule dock with cradle slots and an Antiparticle Foundry with a ring accelerator. Emissive faces
+are separate animated overlays with .mcmeta timing; the block models mark them full-bright. Noise is seeded per texture, so output is reproducible.
 
 Run: python3 -I tools/generate_icarus_textures.py
 """
@@ -389,11 +389,61 @@ def capsule(full):
         save(frames[0], "empty_antimatter_capsule", ITEM_OUT)
 
 
+# Antiparticle Foundry: a ring accelerator on the front, magnet coils down the sides, a capsule port on top. While it
+# runs, a violet bunch circles the ring and the trap at its centre fills.
+RING = [(x, y) for x, y in ((5, 3), (6, 3), (7, 3), (8, 3), (9, 3), (10, 3), (11, 4), (12, 5), (12, 6), (12, 7), (12, 8), (12, 9),
+                            (11, 10), (10, 11), (9, 11), (8, 11), (7, 11), (6, 11), (5, 11), (4, 10), (3, 9), (3, 8), (3, 7),
+                            (3, 6), (3, 5), (4, 4))]
+
+
+def antiparticle_foundry():
+    im, rng = plate(71030)
+    for x, y in RING:
+        put(im, x, y, GRAPHITE[4])
+    for x, y in ((7, 2), (12, 7), (7, 12), (2, 7)):
+        rect(im, x, y, x + 1, y, GOLD[1]) if y in (2, 12) else rect(im, x, y - 1, x, y, GOLD[1])
+    rect(im, 6, 6, 9, 8, SCREEN)
+    for x in range(6, 10):
+        put(im, x, 6, GOLD[0])
+    hazard(im, 14, 15)
+    save(im, "antiparticle_foundry")
+
+    im, rng = plate(71031)
+    for y0 in (2, 6, 10):
+        rect(im, 3, y0, 12, y0 + 2, GOLD[0])
+        for x in range(3, 13):
+            put(im, x, y0 + 1, GOLD[1] if x % 2 else GOLD[2])
+    bolts(im)
+    save(im, "antiparticle_foundry_side")
+
+    im, rng = plate(71032)
+    rect(im, 5, 5, 10, 10, GRAPHITE[4])
+    rect(im, 6, 6, 9, 9, SCREEN)
+    for x in range(5, 11):
+        put(im, x, 5, GOLD[2]); put(im, x, 10, GOLD[0])
+    bolts(im)
+    save(im, "antiparticle_foundry_top")
+
+    frames = []
+    for i in range(len(RING) // 2):
+        f = new()
+        for k in range(3):
+            put(f, *RING[(2 * i - k) % len(RING)], VIOLET[3 - k])
+        fill = i * 4 // (len(RING) // 2)
+        for x in range(6, 10):
+            for y in range(8 - fill, 9):
+                if y >= 7:
+                    put(f, x, y, VIOLET[1] if (x + y + i) % 3 else VIOLET[2])
+        frames.append(f)
+    animate("antiparticle_foundry_glow", frames, 2)
+
+
 if __name__ == "__main__":
     OUT.mkdir(parents=True, exist_ok=True)
     ITEM_OUT.mkdir(parents=True, exist_ok=True)
     for f in (halsey_core, icarus_stabilizer, icarus_injector, icarus_frame, icarus_injector_casing, icarus_stabilizer_housing,
-              icarus_reserve_bank, icarus_controller, icarus_power_port, icarus_matter_port, icarus_capsule_dock):
+              icarus_reserve_bank, icarus_controller, icarus_power_port, icarus_matter_port, icarus_capsule_dock,
+              antiparticle_foundry):
         f()
     capsule(True)
     capsule(False)
