@@ -4,10 +4,13 @@ import com.frozendawn.block.HalseyCoreBlock;
 import com.frozendawn.block.HalseyCoreBlockEntity;
 import com.frozendawn.block.IcarusInjectorBlockEntity;
 import com.frozendawn.block.IcarusStabilizerBlockEntity;
+import com.frozendawn.block.IcarusStructure;
 import com.frozendawn.config.FrozenDawnConfig;
 import com.frozendawn.power.IcarusLook;
+import com.frozendawn.power.IcarusPhysics;
 import com.frozendawn.power.IcarusPhysics.State;
 import com.mojang.blaze3d.vertex.PoseStack;
+import java.util.ArrayList;
 import com.mojang.math.Axis;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
@@ -36,7 +39,7 @@ public final class HalseyCoreRenderer implements BlockEntityRenderer<HalseyCoreB
     /** Beats per heartbeat; it divides IcarusCoreAnim.BEAT_WRAP, as must every other period of beat. */
     private static final float BEAT = 36;
     private static final ResourceLocation CORE_TEXTURE = ResourceLocation.fromNamespaceAndPath("frozendawn", "textures/block/halsey_core.png");
-    private static final int CRACKS = 7, ARCS = 3, SPUTTER = 0xFF7A30;
+    private static final int CRACKS = 7, ARCS = 3, SPUTTER = 0xFF7A30, HEAT = 0xFFB070, AMBER_LAMP = 0xFFA020, RED_LAMP = 0xFF2A1A, PLUMES = 7;
     /** Angular radius of the open port over the injector, from the shield's bottom pole. */
     private static final float PORT = 0.42f;
 
@@ -306,6 +309,15 @@ public final class HalseyCoreRenderer implements BlockEntityRenderer<HalseyCoreB
         // tracks do in a bubble chamber; the pair shrinks inward as it loses energy.
         if (plasmaRadius > 0.3f && glow > 0.05f) pairs(glowBuf, pose, core, plasmaRadius, time, glow);
 
+        // Heat shimmer: as the core runs hot, faint warm plumes waver up out of the top of the shield.
+        if (heat > 0.35 && plasmaRadius > 0.3f) shimmer(glowBuf, pose, time, (float) ((heat - 0.35) / 0.65));
+        // Alarm beacons on the stabilizer housings and the frame's corners: amber and turning slowly at caution, red at
+        // warning, red, fast and strobing at critical.
+        if (v.alarm() != IcarusPhysics.Alarm.NONE) {
+            beacons(glowBuf, buffers, poses, camera, v.alarm(), time, reduced);
+            glowBuf = buffers.getBuffer(IcarusDraw.light()); // the beacons' halos ended the light batch
+        }
+
         if (critical && plasmaRadius > 0) {
             float strength = reduced ? 0.45f : 0.9f;
             long seed = core.getBlockPos().asLong();
@@ -330,6 +342,49 @@ public final class HalseyCoreRenderer implements BlockEntityRenderer<HalseyCoreB
             }
         }
         poses.popPose();
+    }
+
+    private static void shimmer(com.mojang.blaze3d.vertex.VertexConsumer c, PoseStack.Pose pose, float time, float k) {
+        for (int i = 0; i < PLUMES; i++) {
+            double angle = i * Math.PI * 2 / PLUMES + time * 0.004, reach = 1.6 + 0.8 * Math.sin(i * 2.3);
+            Vec3 last = null;
+            for (int seg = 0; seg <= 10; seg++) {
+                double y = SHIELD_RADIUS - 0.8 + seg * 0.55, sway = 0.35 * Math.sin(y * 1.4 - time * 0.12 + i * 1.7);
+                var at = new Vec3(Math.cos(angle) * (reach + sway), y, Math.sin(angle) * (reach + sway));
+                if (last != null) {
+                    double fade = Math.sin(Math.PI * seg / 10.0) * (0.5 + 0.5 * Math.sin(time * 0.05 + i * 2.1));
+                    IcarusDraw.beam(c, pose, last, at, 0.7f, IcarusDraw.argb(HEAT, 0.07 * k * fade), IcarusDraw.argb(HEAT, 0.07 * k * fade));
+                }
+                last = at;
+            }
+        }
+    }
+
+    private static void beacons(com.mojang.blaze3d.vertex.VertexConsumer light, MultiBufferSource buffers, PoseStack poses, net.minecraft.client.Camera camera,
+                                IcarusPhysics.Alarm alarm, float time, boolean reduced) {
+        int rgb = alarm == IcarusPhysics.Alarm.CAUTION ? AMBER_LAMP : RED_LAMP;
+        float turn = alarm == IcarusPhysics.Alarm.CAUTION ? 4 : alarm == IcarusPhysics.Alarm.WARNING ? 8 : reduced ? 10 : 16;
+        boolean strobe = alarm == IcarusPhysics.Alarm.CRITICAL && !reduced && (Mth.floor(time / 3) & 1) == 0;
+        var lamps = new ArrayList<Vec3>();
+        for (var dir : Direction.Plane.HORIZONTAL) lamps.add(new Vec3(dir.getStepX() * IcarusStructure.HALF, 1.75, dir.getStepZ() * IcarusStructure.HALF));
+        for (int sx = -1; sx <= 1; sx += 2) for (int sz = -1; sz <= 1; sz += 2)
+            lamps.add(new Vec3(sx * IcarusStructure.HALF, IcarusStructure.BOTTOM + 0.75, sz * IcarusStructure.HALF));
+        for (int n = 0; n < lamps.size(); n++) {
+            var lamp = lamps.get(n);
+            double sweep = Math.toRadians(time * turn + n * 45);
+            for (int side = 0; side < 2; side++) {
+                var out = new Vec3(Math.cos(sweep + side * Math.PI), 0, Math.sin(sweep + side * Math.PI)).scale(3.5);
+                IcarusDraw.beam(light, poses.last(), lamp, lamp.add(out), 0.45f, IcarusDraw.argb(rgb, 0.45), IcarusDraw.argb(rgb, 0));
+            }
+        }
+        var halo = buffers.getBuffer(IcarusDraw.additive(IcarusDraw.GLOW));
+        for (var lamp : lamps) {
+            poses.pushPose();
+            poses.translate(lamp.x, lamp.y, lamp.z);
+            poses.mulPose(camera.rotation());
+            IcarusDraw.billboard(halo, poses.last(), strobe ? 1.4f : 0.7f, IcarusDraw.glow(strobe ? IcarusLook.mix(rgb, WHITE, 0.5) : rgb, strobe ? 1 : 0.75));
+            poses.popPose();
+        }
     }
 
     /** The matter and antimatter domains over the plasma, -1 to 1 and drifting: matter where positive, antimatter where
@@ -410,7 +465,7 @@ public final class HalseyCoreRenderer implements BlockEntityRenderer<HalseyCoreB
         return len < 1e-6 ? 1 : Math.abs(nx * vx + ny * vy + nz * vz) / len;
     }
 
-    @Override public AABB getRenderBoundingBox(HalseyCoreBlockEntity core) { return new AABB(core.getBlockPos()).inflate(IcarusStabilizerBlockEntity.CORE_DISTANCE + 1); }
+    @Override public AABB getRenderBoundingBox(HalseyCoreBlockEntity core) { return new AABB(core.getBlockPos()).inflate(IcarusStructure.HALF + 4); }
     @Override public boolean shouldRenderOffScreen(HalseyCoreBlockEntity core) { return true; }
     @Override public int getViewDistance() { return 128; }
 }

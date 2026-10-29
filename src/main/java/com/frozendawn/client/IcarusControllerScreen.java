@@ -6,6 +6,8 @@ import com.frozendawn.block.IcarusStructure;
 import com.frozendawn.network.IcarusSettingsPayload;
 import com.frozendawn.power.IcarusBlast;
 import com.frozendawn.power.IcarusPhysics;
+import com.mojang.blaze3d.platform.GlStateManager;
+import com.mojang.blaze3d.systems.RenderSystem;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -20,6 +22,7 @@ import net.minecraft.locale.Language;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.FormattedText;
 import net.minecraft.util.FormattedCharSequence;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Inventory;
 import net.neoforged.neoforge.network.PacketDistributor;
 
@@ -35,12 +38,14 @@ public final class IcarusControllerScreen extends AbstractContainerScreen<Icarus
             AMBER = 0xFFE5A064, RED = 0xFFE5534B, CYAN = 0xFF64C9CC, TRACK = 0xFF0B1418, CLIP_HOLD_TICKS = 20;
     private static final int LEFT = 10, TEXT_WIDTH = 236, STEP_Y = 20, BAR_Y = 31, BOX_TOP = 38, BOX_BOTTOM = 71,
             GAUGE_TOP = 74, GAUGE_BOTTOM = 116, GAUGE_ROW = 13, GRID_TOP = 119, GRID_BOTTOM = 161, GRID_ROW = 21, CELL_W = 59,
-            BUTTON_Y = 166, SLIDER_Y = 192, BAR_X = 56, BAR_W = 134;
+            BUTTON_Y = 166, SLIDER_Y = 192, BAR_X = 56, BAR_W = 134, PREVIEW = 34, TOP_WIDTH = TEXT_WIDTH - PREVIEW - 6;
+    private static final int PREVIEW_MATTER = 0xFFB878, PREVIEW_ANTI = 0xB47CFF, PREVIEW_SPECK = 0xB45CFF;
     private Button start, cole, clip;
     private Setting output, shield, feed;
     private boolean clipHolding;
     private int clipTicks, stepTotal;
     private IcarusPhysics.State shownState;
+    private float previewGlow, previewGlowO;
     private List<Component> remaining = List.of();
 
     public IcarusControllerScreen(IcarusControllerMenu menu, Inventory inv, Component title) {
@@ -85,6 +90,17 @@ public final class IcarusControllerScreen extends AbstractContainerScreen<Icarus
         if (!clip.active) { clipHolding = false; clipTicks = 0; }
         if (clipHolding && ++clipTicks >= CLIP_HOLD_TICKS) { send(BUTTON_CLIP); clipHolding = false; clipTicks = 0; }
         output.sync(data(OUTPUT_KW)); shield.sync(data(SHIELD_SET)); feed.sync(data(FEED));
+        previewGlowO = previewGlow;
+        double heat = Math.clamp((data(CORE_C) - IcarusPhysics.AMBIENT_C) / (IcarusPhysics.CRITICAL_C - IcarusPhysics.AMBIENT_C), 0, 1);
+        double out = Math.clamp(data(GROSS) / 1000.0 / IcarusPhysics.MAX_OUTPUT_MW, 0, 1);
+        float target = (float) switch (s) {
+            case IGNITION -> 1;
+            case RAMP, COLE_RAMP_DOWN -> 0.3 + 0.5 * out + 0.2 * heat;
+            case RUNNING -> 0.06 + Math.clamp(data(GROSS) / 250.0, 0, 1) * (0.24 + 0.5 * out) + 0.2 * heat;
+            case COLE_COOL, COLE_RECOVER -> 0.1 + 0.5 * heat;
+            default -> 0;
+        };
+        previewGlow += (target - previewGlow) * 0.08f;
         remaining = menu.flag(F_VALID) ? List.of() : remaining();
         // A step seen starting runs from its own clock (a restart's steps are shorter); one already under way when the
         // screen opens is measured against its nominal length.
@@ -125,10 +141,53 @@ public final class IcarusControllerScreen extends AbstractContainerScreen<Icarus
         g.fill(x + 6, y + BOX_TOP, x + imageWidth - 6, y + BOX_BOTTOM, PANEL);
         g.fill(x + 6, y + GAUGE_TOP, x + imageWidth - 6, y + GAUGE_BOTTOM, PANEL);
         g.fill(x + 6, y + GRID_TOP, x + imageWidth - 6, y + GRID_BOTTOM, PANEL);
+        renderPreview(g, x + LEFT + TEXT_WIDTH - PREVIEW, y + 2, partial);
+    }
+    /** A live miniature of the core in the top corner: the shield's ring, the plasma's glow with its white heart, the two
+     * rings turning, or the violet speck before ignition. It eases like the real core but reads only the synced data. */
+    private void renderPreview(GuiGraphics g, int x, int y, float partial) {
+        g.fill(x, y, x + PREVIEW, y + PREVIEW, PANEL);
+        var s = state();
+        float time = (minecraft != null && minecraft.level != null ? minecraft.level.getGameTime() : 0) + partial;
+        float glow = Mth.lerp(partial, previewGlowO, previewGlow), cx = x + PREVIEW / 2f, cy = y + PREVIEW / 2f;
+        double shieldK = s == IcarusPhysics.State.COLD || s == IcarusPhysics.State.DETONATED ? 0 : Math.clamp(data(SHIELD) / 10000.0, 0, 1);
+        int shieldRgb = data(SHIELD) >= 6000 ? 0x64C9CC : data(SHIELD) >= 3000 ? 0xE5A064 : 0xE5534B;
+        if (shieldK > 0) for (int i = 0; i < 40; i++) {
+            double a = i * Math.PI * 2 / 40;
+            dot(g, cx + 15 * Math.cos(a), cy + 15 * Math.sin(a), shieldRgb, 0.35 + 0.5 * shieldK);
+        }
+        RenderSystem.enableBlend();
+        RenderSystem.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE);
+        if (glow > 0.02f) {
+            float heart = (float) Math.exp(-Math.pow(((time % 36) / 36 - 0.08) / 0.05, 2));
+            sprite(g, cx, cy, 6 + 22 * glow, PREVIEW_MATTER, 0.9f * glow);
+            sprite(g, cx, cy, 4 + 12 * glow, PREVIEW_ANTI, 0.8f * glow);
+            sprite(g, cx, cy, 4 + 4 * glow + 2 * heart, 0xFFFFFF, Math.min(1, 0.7f + glow));
+        } else if (s.ordinal() >= IcarusPhysics.State.INJECTION.ordinal() && s != IcarusPhysics.State.DETONATED && data(CHARGE) > 0) {
+            sprite(g, cx, cy, 7 + Mth.sin(time * 0.4f), PREVIEW_SPECK, 0.9f);
+        }
+        g.setColor(1, 1, 1, 1);
+        RenderSystem.defaultBlendFunc();
+        if (glow > 0.02f) for (int ring = 0; ring < 2; ring++) {
+            double tilt = ring == 0 ? 0.35 : -0.5, turn = time * (ring == 0 ? 0.05 : -0.07);
+            for (int i = 0; i < 28; i++) {
+                double a = turn + i * Math.PI * 2 / 28, ex = 12 * Math.cos(a), ey = 12 * Math.sin(a) * 0.3;
+                dot(g, cx + ex * Math.cos(tilt) - ey * Math.sin(tilt), cy + ex * Math.sin(tilt) + ey * Math.cos(tilt), ring == 0 ? PREVIEW_MATTER : PREVIEW_ANTI, 0.8 * glow);
+            }
+        }
+    }
+    private static void dot(GuiGraphics g, double x, double y, int rgb, double alpha) {
+        int px = (int) Math.floor(x), py = (int) Math.floor(y);
+        g.fill(px, py, px + 1, py + 1, (int) (Math.clamp(alpha, 0, 1) * 255) << 24 | rgb);
+    }
+    private static void sprite(GuiGraphics g, float cx, float cy, float size, int rgb, float alpha) {
+        g.setColor((rgb >> 16 & 0xFF) / 255f, (rgb >> 8 & 0xFF) / 255f, (rgb & 0xFF) / 255f, Math.clamp(alpha, 0, 1));
+        int half = Math.round(size / 2);
+        g.blit(IcarusDraw.GLOW, Math.round(cx) - half, Math.round(cy) - half, half * 2, half * 2, 0, 0, 64, 64, 64, 64);
     }
 
     @Override protected void renderLabels(GuiGraphics g, int mx, int my) {
-        g.drawString(font, fit(title), LEFT, 6, TEXT, false);
+        g.drawString(font, fit(title, TOP_WIDTH), LEFT, 6, TEXT, false);
         var s = state();
         renderStep(g, s);
         boolean building = !menu.flag(F_VALID) && s == IcarusPhysics.State.COLD;
@@ -205,11 +264,11 @@ public final class IcarusControllerScreen extends AbstractContainerScreen<Icarus
         int number = step(s);
         Component text = number > 0 ? Component.translatable("screen.frozendawn.icarus.step", number, name) : Component.translatable("screen.frozendawn.icarus.state", name);
         int left = data(STEP_LEFT), clockW = left > 0 ? font.width(clock(left)) + 6 : 0;
-        if (left > 0) g.drawString(font, clock(left), LEFT + TEXT_WIDTH - font.width(clock(left)), STEP_Y, TEXT, false);
-        g.drawString(font, fit(text, TEXT_WIDTH - clockW), LEFT, STEP_Y, MUTED, false);
-        g.fill(LEFT, BAR_Y, LEFT + TEXT_WIDTH, BAR_Y + 3, TRACK);
-        if (left > 0 && stepTotal > 0) g.fill(LEFT, BAR_Y, LEFT + TEXT_WIDTH * (stepTotal - left) / stepTotal, BAR_Y + 3, CYAN);
-        else if (s == IcarusPhysics.State.RUNNING) g.fill(LEFT, BAR_Y, LEFT + TEXT_WIDTH, BAR_Y + 3, GREEN);
+        if (left > 0) g.drawString(font, clock(left), LEFT + TOP_WIDTH - font.width(clock(left)), STEP_Y, TEXT, false);
+        g.drawString(font, fit(text, TOP_WIDTH - clockW), LEFT, STEP_Y, MUTED, false);
+        g.fill(LEFT, BAR_Y, LEFT + TOP_WIDTH, BAR_Y + 3, TRACK);
+        if (left > 0 && stepTotal > 0) g.fill(LEFT, BAR_Y, LEFT + TOP_WIDTH * (stepTotal - left) / stepTotal, BAR_Y + 3, CYAN);
+        else if (s == IcarusPhysics.State.RUNNING) g.fill(LEFT, BAR_Y, LEFT + TOP_WIDTH, BAR_Y + 3, GREEN);
     }
     private static int step(IcarusPhysics.State s) {
         return switch (s) {
