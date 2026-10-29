@@ -146,6 +146,14 @@ public final class PixieGameTest {
     }
     private static void scene(GameTestHelper h,java.util.function.Consumer<Scene> test){scene(h,0,test);}
     private static void scene(GameTestHelper h,int yOffset,java.util.function.Consumer<Scene> test){
+        // A chunk's flame scan runs after the tick it loads in, and oxygen holds every PIXIE at WAITING until the scan
+        // has covered its room. The first batch on a new server starts on chunks it has just loaded.
+        var from=new net.minecraft.world.level.ChunkPos(h.absolutePos(BlockPos.ZERO));var to=new net.minecraft.world.level.ChunkPos(h.absolutePos(new BlockPos(14,0,14)));
+        var fixture=new HashSet<Long>();net.minecraft.world.level.ChunkPos.rangeClosed(new net.minecraft.world.level.ChunkPos(Math.min(from.x,to.x),Math.min(from.z,to.z)),new net.minecraft.world.level.ChunkPos(Math.max(from.x,to.x),Math.max(from.z,to.z))).forEach(c->fixture.add(c.toLong()));
+        h.startSequence().thenWaitUntil(()->h.assertTrue(Collections.disjoint(VacuumFlames.snapshot(h.getLevel()).pendingChunks(),fixture),"Waiting for the fixture's flame scan"))
+                .thenExecute(()->sceneNow(h,yOffset,test));
+    }
+    private static void sceneNow(GameTestHelper h,int yOffset,java.util.function.Consumer<Scene> test){
         var s=new Scene(h,yOffset);var l=s.l;var phase=ApocalypseState.get(l.getServer());long oldPhase=phase.getApocalypseTicks(),clock=l.getGameTime();
         var identity=RoomIdentityState.get(l).save(new CompoundTag(),l.registryAccess());var air=RoomAirState.get(l).save(new CompoundTag(),l.registryAccess());var oxygen=RoomOxygenState.get(l).save(new CompoundTag(),l.registryAccess());var heat=RoomThermalState.get(l).save(new CompoundTag(),l.registryAccess());var transfer=OxygenTransferState.get(l).save(new CompoundTag(),l.registryAccess());var links=PowerNetworkSavedData.get(l).save(new CompoundTag(),l.registryAccess());
         try{phase.setApocalypseTicks(0,l.getServer());RoomAtmosphere.reset();RoomOxygenManager.reset();RoomThermalManager.reset();CombustionAtmosphere.reset();PowerNetworks.stopped(null);

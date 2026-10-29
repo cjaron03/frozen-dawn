@@ -11,21 +11,23 @@ from pathlib import Path
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--report', type=Path, required=True)
+    parser.add_argument('--report', type=Path, action='append', required=True, help='repeat once per shard')
     parser.add_argument('--required', type=Path, required=True)
     parser.add_argument('--artifacts', type=Path, required=True)
     args = parser.parse_args()
     args.artifacts.mkdir(parents=True, exist_ok=True)
     names = [line.split()[0] for line in args.required.read_text().splitlines() if line.strip() and not line.startswith('#')]
     cases = {}
-    if args.report.is_file():
-        shutil.copy2(args.report, args.artifacts / 'gametest-report.xml')
+    for index, report in enumerate(args.report):
+        if not report.is_file(): continue
+        shutil.copy2(report, args.artifacts / ('gametest-report.xml' if len(args.report) == 1 else f'gametest-report-{index}.xml'))
         try:
-            cases = {case.get('name'): case for case in ET.parse(args.report).getroot().iter('testcase')}
+            cases.update({case.get('name'): case for case in ET.parse(report).getroot().iter('testcase')})
         except ET.ParseError:
             pass
     summaries = {}
-    for path in args.artifacts.glob('run-*/summary.json'):
+    # Each shard writes its evidence into its own folder under the artifacts root.
+    for path in args.artifacts.glob('**/run-*/summary.json'):
         data = json.loads(path.read_text())
         summaries[data.get('context', {}).get('testName')] = (path, data)
     rows = []
