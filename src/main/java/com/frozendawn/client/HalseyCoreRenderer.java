@@ -27,6 +27,9 @@ public final class HalseyCoreRenderer implements BlockEntityRenderer<HalseyCoreB
     private static final float NOZZLE_Y = -IcarusInjectorBlockEntity.CORE_DISTANCE + 0.5f;
     private static final int SPECK = 0xB45CFF, SPECK_HOT = 0xE8D0FF, STREAM = 0xFFB040, BEAM = 0x8CF0FF, WHITE = 0xFFFFFF;
     private static final int PLASMA_HOT = 0xFFF4D8, LIMB = 0x6A0C04;
+    /** The antimatter side of the plasma, and the two halves of each electron-positron pair. */
+    private static final int ANTI_HOT = 0xD2B4FF, ANTI_LIMB = 0x2A0858, ELECTRON = 0xFFB878, POSITRON = 0xB47CFF;
+    private static final int SPARKS = 18, SPARK_LIFE = 7, PAIRS = 3, PAIR_LIFE = 28;
     private static final ResourceLocation CORE_TEXTURE = ResourceLocation.fromNamespaceAndPath("frozendawn", "textures/block/halsey_core.png");
     private static final int CRACKS = 7, ARCS = 3;
 
@@ -63,25 +66,38 @@ public final class HalseyCoreRenderer implements BlockEntityRenderer<HalseyCoreB
                     IcarusDraw.glow(SPECK, 4 * melt * solid));
         }
 
-        // The plasma: a granulated surface, hot white at the centre of the disc and deep red at the limb, a second layer
-        // drifting the other way, and a corona.
+        // The plasma: matter and antimatter in drifting domains, amber and violet, hot at the centre of the disc and dark at
+        // the limb, with a white-hot annihilation front wherever they meet; a second layer drifts the other way, then a
+        // two-tone corona and the flashes of single annihilations.
         if (plasmaRadius > 0.01f) {
             float r = plasmaRadius;
             int hot = IcarusLook.mix(coreRgb, PLASMA_HOT, 0.45 + 0.35 * glow), limb = IcarusLook.mix(scale(coreRgb, 0.55), LIMB, 0.35);
+            int antiHot = IcarusLook.mix(ANTI_HOT, WHITE, flicker), front = IcarusLook.mix(PLASMA_HOT, WHITE, 0.6);
             double bright = 0.35 + 0.65 * glow;
-            IcarusDraw.texturedSphere(buffers.getBuffer(IcarusDraw.surface(IcarusDraw.PLASMA)), pose, r, 20, 32, 3, 2, (float) churn, (float) (time * 0.0015),
+            IcarusDraw.texturedSphere(buffers.getBuffer(IcarusDraw.surface(IcarusDraw.PLASMA)), pose, r, 24, 40, 3, 2, (float) churn, (float) (time * 0.0015),
                     (lat, lon) -> {
-                        double mu = facing(eye, r, lat, lon);
-                        return IcarusDraw.argb(scale(IcarusLook.mix(limb, hot, Math.pow(mu, 0.8)), bright), 0.97);
+                        double mu = Math.pow(facing(eye, r, lat, lon), 0.8), matter = side(domain(lat, lon, churn, time));
+                        int surface = IcarusLook.mix(IcarusLook.mix(ANTI_LIMB, antiHot, mu), IcarusLook.mix(limb, hot, mu), matter);
+                        return IcarusDraw.argb(scale(surface, bright), 0.97);
                     });
-            IcarusDraw.texturedSphere(buffers.getBuffer(IcarusDraw.additive(IcarusDraw.PLASMA)), pose, r * 1.004f, 20, 32, 2, 1.5f, (float) (-churn * 1.3), (float) (-time * 0.002),
-                    (lat, lon) -> IcarusDraw.glow(hot, (0.15 + 0.3 * Math.pow(facing(eye, r, lat, lon), 2)) * glow));
+            IcarusDraw.texturedSphere(buffers.getBuffer(IcarusDraw.additive(IcarusDraw.PLASMA)), pose, r * 1.004f, 24, 40, 2, 1.5f, (float) (-churn * 1.3), (float) (-time * 0.002),
+                    (lat, lon) -> {
+                        double mu = facing(eye, r, lat, lon), matter = side(domain(lat, lon, churn, time));
+                        return IcarusDraw.glow(IcarusLook.mix(antiHot, hot, matter), (0.15 + 0.3 * mu * mu) * glow);
+                    });
+            IcarusDraw.texturedSphere(buffers.getBuffer(IcarusDraw.additive(IcarusDraw.WHITE)), pose, r * 1.008f, 32, 56, 1, 1, 0, 0,
+                    (lat, lon) -> {
+                        double f = domain(lat, lon, churn, time) / 0.13;
+                        return IcarusDraw.glow(front, Math.exp(-f * f) * (0.5 + 0.5 * facing(eye, r, lat, lon)) * glow);
+                    });
             var halo = buffers.getBuffer(IcarusDraw.additive(IcarusDraw.GLOW));
             poses.pushPose();
             poses.mulPose(camera.rotation());
             IcarusDraw.billboard(halo, poses.last(), r * 1.9f, IcarusDraw.glow(coreRgb, 0.55 * glow + 0.3 * flicker));
-            IcarusDraw.billboard(halo, poses.last(), r * 3.6f, IcarusDraw.glow(coreRgb, 0.22 * glow));
+            IcarusDraw.billboard(halo, poses.last(), r * 3.6f, IcarusDraw.glow(IcarusLook.mix(coreRgb, POSITRON, 0.45), 0.22 * glow));
             poses.popPose();
+            int count = Math.round(SPARKS * (0.35f + 0.65f * glow) + 8 * (float) heat);
+            sparks(halo, poses, camera, core, r, count, r * 0.22f, time, glow * (reduced ? 0.4f : 1f));
         }
 
         // The antimatter speck, a violet point with a soft halo, whenever antimatter sits in the core without plasma.
@@ -95,6 +111,9 @@ public final class HalseyCoreRenderer implements BlockEntityRenderer<HalseyCoreB
             IcarusDraw.billboard(halo, poses.last(), pulse * 6, IcarusDraw.glow(SPECK, 0.9 * speck));
             IcarusDraw.billboard(halo, poses.last(), pulse * 14, IcarusDraw.glow(SPECK, 0.3 * speck));
             poses.popPose();
+            // Where the matter stream touches the speck, single annihilations flicker around it.
+            if (a.streamFront(pt) > 0.98f && a.streamTail(pt) < 0.5f)
+                sparks(halo, poses, camera, core, pulse * 1.6f, 5, 0.16f, time, speck * (reduced ? 0.4f : 1f));
         }
         float flash = a.flash(pt) * (reduced ? 0.35f : 0.9f);
         if (flash > 0.01f) {
@@ -171,6 +190,10 @@ public final class HalseyCoreRenderer implements BlockEntityRenderer<HalseyCoreB
             }
         }
 
+        // Gamma rays leaving the plasma, each ending in an electron-positron pair that curls away in opposite spirals, as
+        // tracks do in a bubble chamber; the pair shrinks inward as it loses energy.
+        if (plasmaRadius > 0.3f && glow > 0.05f) pairs(glowBuf, pose, core, plasmaRadius, time, glow);
+
         if (critical && plasmaRadius > 0) {
             float strength = reduced ? 0.45f : 0.9f;
             long seed = core.getBlockPos().asLong();
@@ -195,6 +218,75 @@ public final class HalseyCoreRenderer implements BlockEntityRenderer<HalseyCoreB
             }
         }
         poses.popPose();
+    }
+
+    /** The matter and antimatter domains over the plasma, -1 to 1 and drifting: matter where positive, antimatter where
+     * negative, the annihilation front along zero. */
+    private static double domain(double lat, double lon, double churn, float time) {
+        return Math.sin(3 * lon + churn * Math.PI * 2 + 1.7 * Math.sin(2 * lat + time * 0.013))
+                * Math.cos(2 * lat - 0.8 * Math.sin(2 * lon - time * 0.009));
+    }
+    /** 1 on the matter side of a domain value, 0 on the antimatter side, a narrow blend between. */
+    private static double side(double f) { double t = Math.clamp(0.5 + f * 2.5, 0, 1); return t * t * (3 - 2 * t); }
+    private static double hash01(int seed) { return (Mth.murmurHash3Mixer(seed) & 0xFFFFFF) / (double) 0x1000000; }
+
+    /** Brief star-like flashes on a sphere of radius r, each living SPARK_LIFE ticks at a fresh place; staggered so a
+     * steady handful burn at once. */
+    private static void sparks(com.mojang.blaze3d.vertex.VertexConsumer c, PoseStack poses, net.minecraft.client.Camera camera,
+                               HalseyCoreBlockEntity core, float r, int count, float size, float time, float strength) {
+        int salt = core.getBlockPos().hashCode();
+        for (int i = 0; i < count; i++) {
+            float t = time + i * 2.37f;
+            int gen = Mth.floor(t / SPARK_LIFE), seed = gen * 7919 + i * 104729 + salt;
+            float age = t / SPARK_LIFE - gen;
+            double lat = Math.asin(2 * hash01(seed) - 1), lon = 2 * Math.PI * hash01(seed + 1), depth = 0.92 + 0.14 * hash01(seed + 2);
+            var at = IcarusDraw.onSphere(r * depth, lat, lon);
+            int rgb = IcarusLook.mix(WHITE, hash01(seed + 3) < 0.5 ? ELECTRON : POSITRON, 0.35);
+            poses.pushPose();
+            poses.translate(at.x, at.y, at.z);
+            poses.mulPose(camera.rotation());
+            IcarusDraw.billboard(c, poses.last(), size * (0.5f + age), IcarusDraw.glow(rgb, (1 - age) * (1 - age) * strength));
+            poses.popPose();
+        }
+    }
+
+    /** PAIRS gamma rays at a time: each streaks out from the plasma, then splits into a warm electron track and a violet
+     * positron track spiralling apart in a tilted plane, all fading over PAIR_LIFE ticks. */
+    private static void pairs(com.mojang.blaze3d.vertex.VertexConsumer c, PoseStack.Pose pose, HalseyCoreBlockEntity core, float r, float time, float glow) {
+        int salt = core.getBlockPos().hashCode() * 31;
+        for (int j = 0; j < PAIRS; j++) {
+            float t = time + j * (PAIR_LIFE / (float) PAIRS) + j * 3.1f;
+            int gen = Mth.floor(t / PAIR_LIFE), seed = gen * 6151 + j * 92821 + salt;
+            if (hash01(seed + 9) < 0.25) continue; // some beats stay dark, so the rhythm never settles
+            float age = t / PAIR_LIFE - gen;
+            var dir = IcarusDraw.onSphere(1, Math.asin(2 * hash01(seed) - 1), 2 * Math.PI * hash01(seed + 1));
+            var start = dir.scale(r);
+            var vertex = dir.scale(r + (SHIELD_RADIUS - r) * (0.3 + 0.3 * hash01(seed + 2)));
+            double fade = (1 - age) * (1 - age) * glow;
+            float shot = Math.min(1, age / 0.15f);
+            IcarusDraw.beam(c, pose, start, start.add(vertex.subtract(start).scale(shot)), 0.03f,
+                    IcarusDraw.argb(WHITE, 0.15 * fade), IcarusDraw.argb(BEAM, 0.6 * fade));
+            if (age < 0.15f) continue;
+            float grown = Math.min(1, (age - 0.15f) / 0.35f);
+            var up = Math.abs(dir.y) > 0.9 ? new Vec3(1, 0, 0) : new Vec3(0, 1, 0);
+            var n = dir.cross(up).normalize(); var b = dir.cross(n);
+            double tilt = 2 * Math.PI * hash01(seed + 3);
+            var plane = n.scale(Math.cos(tilt)).add(b.scale(Math.sin(tilt)));
+            double r0 = 0.3 + 0.3 * hash01(seed + 4), turns = 4 * Math.PI * grown;
+            int steps = Math.max(2, Math.round(32 * grown));
+            for (int sign = -1; sign <= 1; sign += 2) {
+                int rgb = sign > 0 ? ELECTRON : POSITRON;
+                var centre = vertex.add(plane.scale(sign * r0));
+                Vec3 last = vertex;
+                for (int k = 1; k <= steps; k++) {
+                    double th = turns * k / steps, rad = r0 * Math.exp(-0.2 * th);
+                    var next = centre.add(plane.scale(-sign * rad * Math.cos(th))).add(dir.scale(rad * Math.sin(th)));
+                    double along = 1 - 0.6 * k / (double) steps;
+                    IcarusDraw.beam(c, pose, last, next, 0.035f, IcarusDraw.argb(rgb, 0.85 * fade * along), IcarusDraw.argb(rgb, 0.85 * fade * along));
+                    last = next;
+                }
+            }
+        }
     }
 
     /** How squarely the eye looks at a point on a sphere: 1 at the middle of the disc, 0 at its edge. */
