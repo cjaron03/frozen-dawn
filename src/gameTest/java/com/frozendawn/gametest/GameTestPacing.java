@@ -62,8 +62,11 @@ public final class GameTestPacing {
     /** GameTestBatchFactory's batch size. */
     private static final int BATCH_SIZE = 50;
     private static final String DEFAULT_BATCH = "defaultBatch";
-    /** Named batches as slow as a full default batch, in the same units: about 25 s on the gate (2026-10-29). */
-    private static final Map<String, Integer> SLOW_BATCHES = Map.of("blindWorkbench", BATCH_SIZE);
+    /**
+     * Cost per test of the batches measured as slow, in units of a default-batch test (2026-10-29): a full default or
+     * stress batch takes 15-35 s on the gate, and blindWorkbench's one test about 25 s.
+     */
+    private static final Map<String, Integer> TEST_COSTS = Map.of(DEFAULT_BATCH, 1, "architectMonkey", 1, "blindWorkbench", BATCH_SIZE);
     /** These freeze, step or sprint the server themselves, or call the lab bridge, which refuses work mid-sprint. */
     private static final List<Class<?>> NORMAL_PACE = List.of(
             LabBridgeGameTest.class, ArchitectLabGameTest.class, BlindArchitectGameTest.class, MaeveConvergenceGameTest.class);
@@ -171,10 +174,10 @@ public final class GameTestPacing {
 
     /**
      * Keeps this shard's whole batches. Each goes to the shard with the least work so far, the costliest first, by a
-     * rough cost: a default batch is slow per test, a named batch usually takes about a second whatever its size,
-     * and {@link #SLOW_BATCHES} are measured exceptions. Batch names break ties, so every shard, each in its own JVM,
-     * computes the same split. A wrong cost only unbalances the shards. Writes what it kept beside the report, before
-     * any test runs.
+     * rough cost: {@link #TEST_COSTS} per test for batches measured as slow, one for any other batch, which usually
+     * takes about a second whatever its size. Batch names break ties, so every shard, each in its own JVM, computes
+     * the same split. A wrong cost only unbalances the shards. Writes what it kept beside the report, before any
+     * test runs.
      */
     private static void keepShard(List<TestFunction> tests, String spec) {
         String[] parts = spec.split("/");
@@ -184,11 +187,12 @@ public final class GameTestPacing {
         Map<String, List<TestFunction>> named = new TreeMap<>();
         for (TestFunction test : tests) named.computeIfAbsent(test.batchName(), name -> new ArrayList<>()).add(test);
         List<Batch> batches = new ArrayList<>();
-        // Cut as GameTestBatchFactory cuts it, in list order: what a shard keeps, it cuts back into the same batches.
-        List<TestFunction> unnamed = named.remove(DEFAULT_BATCH);
-        List<List<TestFunction>> defaults = Lists.partition(unnamed == null ? List.of() : unnamed, BATCH_SIZE);
-        for (int i = 0; i < defaults.size(); i++) batches.add(new Batch("%s:%03d".formatted(DEFAULT_BATCH, i), defaults.get(i), defaults.get(i).size()));
-        named.forEach((name, batch) -> batches.add(new Batch(name, batch, SLOW_BATCHES.getOrDefault(name, 1))));
+        // Cut as GameTestBatchFactory cuts them, in list order: what a shard keeps, it cuts back into the same batches.
+        named.forEach((name, list) -> {
+            List<List<TestFunction>> cut = Lists.partition(list, BATCH_SIZE);
+            for (int i = 0; i < cut.size(); i++)
+                batches.add(new Batch("%s:%03d".formatted(name, i), cut.get(i), TEST_COSTS.containsKey(name) ? TEST_COSTS.get(name) * cut.get(i).size() : 1));
+        });
         batches.sort(Comparator.comparingInt(Batch::cost).reversed().thenComparing(Batch::name));
         int[] load = new int[count];
         Set<String> kept = new HashSet<>();
