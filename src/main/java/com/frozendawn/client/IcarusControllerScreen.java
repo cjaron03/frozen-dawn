@@ -25,15 +25,17 @@ import net.neoforged.neoforge.network.PacketDistributor;
 
 import static com.frozendawn.block.IcarusControllerBlockEntity.*;
 
-/** AMR-1 Icarus Controller. From the top: the current step with its clock and progress bar; a box with the status and
- * what to do next; shield, core and reserve gauges; the readout lines; the Start, Cole Protocol, CLIP and Blueprint row;
- * and the three settings sliders. CLIP fires only after its button is held for a second. While the structure is
- * incomplete the readout lists what is still to build. Every line is fitted to the panel width. */
+/** AMR-1 Icarus Controller. From the top: the current step with its clock and progress bar; a box with the status, the
+ * cascade and what to do next; shield, core and reserve gauges with their values; a grid of the key numbers and the
+ * predictions; the Start, Cole Protocol, CLIP and Blueprint row; and the three settings sliders. The finer figures sit in
+ * tooltips on the gauges and cells. CLIP fires only after its button is held for a second. While the structure is
+ * incomplete the gauges and grid give way to what is still to build. Every line is fitted to its space. */
 public final class IcarusControllerScreen extends AbstractContainerScreen<IcarusControllerMenu> {
     private static final int BG = 0xFF28353D, PANEL = 0xFF152128, TEXT = 0xFFE0E6E8, MUTED = 0xFF9BAAB1, GREEN = 0xFF9CD5A5,
             AMBER = 0xFFE5A064, RED = 0xFFE5534B, CYAN = 0xFF64C9CC, TRACK = 0xFF0B1418, CLIP_HOLD_TICKS = 20;
     private static final int LEFT = 10, TEXT_WIDTH = 236, STEP_Y = 20, BAR_Y = 31, BOX_TOP = 38, BOX_BOTTOM = 71,
-            READOUT_TOP = 74, READOUT_BOTTOM = 161, LINES_Y = 112, BUTTON_Y = 166, SLIDER_Y = 192, GAUGE_X = 132, GAUGE_W = 112;
+            GAUGE_TOP = 74, GAUGE_BOTTOM = 116, GAUGE_ROW = 13, GRID_TOP = 119, GRID_BOTTOM = 161, GRID_ROW = 21, CELL_W = 59,
+            BUTTON_Y = 166, SLIDER_Y = 192, BAR_X = 56, BAR_W = 134;
     private Button start, cole, clip;
     private Setting output, shield, feed;
     private boolean clipHolding;
@@ -121,7 +123,8 @@ public final class IcarusControllerScreen extends AbstractContainerScreen<Icarus
         int x = leftPos, y = topPos;
         g.fill(x, y, x + imageWidth, y + imageHeight, BG);
         g.fill(x + 6, y + BOX_TOP, x + imageWidth - 6, y + BOX_BOTTOM, PANEL);
-        g.fill(x + 6, y + READOUT_TOP, x + imageWidth - 6, y + READOUT_BOTTOM, PANEL);
+        g.fill(x + 6, y + GAUGE_TOP, x + imageWidth - 6, y + GAUGE_BOTTOM, PANEL);
+        g.fill(x + 6, y + GRID_TOP, x + imageWidth - 6, y + GRID_BOTTOM, PANEL);
     }
 
     @Override protected void renderLabels(GuiGraphics g, int mx, int my) {
@@ -133,33 +136,68 @@ public final class IcarusControllerScreen extends AbstractContainerScreen<Icarus
         Component head = s == IcarusPhysics.State.COLD ? structureLine()
                 : Component.translatable("icarus.frozendawn.status." + status.name().toLowerCase(Locale.ROOT));
         int headColor = s == IcarusPhysics.State.COLD ? (menu.flag(F_VALID) ? GREEN : AMBER) : statusColor(status);
-        g.drawString(font, fit(head), LEFT, BOX_TOP + 4, headColor, false);
+        boolean live = s != IcarusPhysics.State.COLD;
+        var alarm = pick(IcarusPhysics.Alarm.values(), data(ALARM)); var cascade = pick(IcarusPhysics.Cascade.values(), data(CASCADE));
+        int chipW = 0;
+        if (live && s != IcarusPhysics.State.DETONATED) {
+            var chip = Component.translatable("screen.frozendawn.icarus.cascade_chip", Component.translatable("icarus.frozendawn.cascade." + cascade.name().toLowerCase(Locale.ROOT)));
+            if (alarm != IcarusPhysics.Alarm.NONE) chip.append(" | ").append(Component.translatable("icarus.frozendawn.alarm." + alarm.name().toLowerCase(Locale.ROOT)));
+            chipW = font.width(chip) + 8;
+            g.drawString(font, chip, LEFT + TEXT_WIDTH - font.width(chip), BOX_TOP + 4, alarmColor(alarm), false);
+        }
+        g.drawString(font, fit(head, TEXT_WIDTH - chipW), LEFT, BOX_TOP + 4, headColor, false);
         var hint = font.split(hint(s, status), TEXT_WIDTH);
         for (int i = 0; i < Math.min(2, hint.size()); i++) g.drawString(font, hint.get(i), LEFT, BOX_TOP + 15 + i * 10, TEXT, false);
         if (building) {
-            line(g, READOUT_TOP + 4, Component.translatable("screen.frozendawn.icarus.remaining"), AMBER);
-            for (int i = 0; i < Math.min(remaining.size(), 7); i++) line(g, READOUT_TOP + 16 + i * 10, remaining.get(i), TEXT);
+            line(g, GAUGE_TOP + 4, Component.translatable("screen.frozendawn.icarus.remaining"), AMBER);
+            for (int i = 0; i < Math.min(remaining.size(), 7); i++) line(g, GAUGE_TOP + 16 + i * 10, remaining.get(i), TEXT);
             return;
         }
         int shieldPct = data(SHIELD), coreC = data(CORE_C), reserve = data(RESERVE);
-        boolean live = s != IcarusPhysics.State.COLD;
-        gauge(g, READOUT_TOP + 5, Component.translatable("screen.frozendawn.icarus.gauge.shield", String.format(Locale.ROOT, "%.1f", shieldPct / 100.0)),
-                shieldPct / 10000.0, !live ? MUTED : shieldPct >= 6000 ? GREEN : shieldPct >= 3000 ? AMBER : RED);
-        gauge(g, READOUT_TOP + 17, Component.translatable("screen.frozendawn.icarus.gauge.core", coreC, (int) IcarusPhysics.RED_LINE_C),
-                coreC / IcarusPhysics.RED_LINE_C, coreC >= IcarusPhysics.RED_LINE_C ? RED : coreC >= IcarusPhysics.RED_LINE_C * 0.85 ? AMBER : CYAN);
-        var reserveText = Component.translatable("screen.frozendawn.icarus.gauge.reserve", String.format(Locale.ROOT, "%.0f", reserve / 10.0), (int) IcarusPhysics.RESERVE_MJ);
-        if (data(ETA_RESERVE) >= 0) reserveText.append(" ").append(Component.translatable("screen.frozendawn.icarus.gauge.out", eta(ETA_RESERVE)));
-        gauge(g, READOUT_TOP + 29, reserveText, reserve / 10.0 / IcarusPhysics.RESERVE_MJ, data(ETA_RESERVE) >= 0 ? RED : CYAN);
-        var alarm = pick(IcarusPhysics.Alarm.values(), data(ALARM)); var cascade = pick(IcarusPhysics.Cascade.values(), data(CASCADE));
-        line(g, LINES_Y - 2, Component.translatable("screen.frozendawn.icarus.cascade",
-                Component.translatable("icarus.frozendawn.cascade." + cascade.name().toLowerCase(Locale.ROOT)),
-                Component.translatable("icarus.frozendawn.alarm." + alarm.name().toLowerCase(Locale.ROOT))), live ? alarmColor(alarm) : MUTED);
-        line(g, LINES_Y + 8, Component.translatable("screen.frozendawn.icarus.power", mw(GROSS), mw(SHIELD_DRAW), mw(NET)), CYAN);
-        line(g, LINES_Y + 18, Component.translatable("screen.frozendawn.icarus.supplies", data(REQUEST),
-                String.format(Locale.ROOT, "%.2f", data(CHARGE) / 100.0), data(MATTER)), TEXT);
-        line(g, LINES_Y + 28, Component.translatable("screen.frozendawn.icarus.etas", eta(ETA_SHIELD), eta(ETA_RED_LINE), eta(ETA_ANTIMATTER)), MUTED);
-        long now = Math.round(data(CHARGE) / 100.0 * IcarusPhysics.CAPSULE), next = Math.round(data(NEXT_CHARGE) / 100.0 * IcarusPhysics.CAPSULE);
-        line(g, LINES_Y + 38, Component.translatable("screen.frozendawn.icarus.blast", (int) Math.round(IcarusBlast.radius(now)), (int) Math.round(IcarusBlast.radius(next))), AMBER);
+        gauge(g, 0, "screen.frozendawn.icarus.label.shield", shieldPct / 10000.0, !live ? MUTED : shieldPct >= 6000 ? GREEN : shieldPct >= 3000 ? AMBER : RED,
+                String.format(Locale.ROOT, "%.1f%%", shieldPct / 100.0));
+        gauge(g, 1, "screen.frozendawn.icarus.label.core", coreC / IcarusPhysics.RED_LINE_C,
+                coreC >= IcarusPhysics.RED_LINE_C ? RED : coreC >= IcarusPhysics.RED_LINE_C * 0.85 ? AMBER : CYAN, coreC + " C");
+        gauge(g, 2, "screen.frozendawn.icarus.label.reserve", reserve / 10.0 / IcarusPhysics.RESERVE_MJ, data(ETA_RESERVE) >= 0 ? RED : CYAN,
+                String.format(Locale.ROOT, "%.0f MJ", reserve / 10.0));
+        cell(g, 0, 0, "net", Component.literal(mw(NET) + " MW"), CYAN);
+        cell(g, 1, 0, "capsules", Component.literal(String.format(Locale.ROOT, "%.2f", data(CHARGE) / 100.0)), TEXT);
+        cell(g, 2, 0, "matter", Component.literal(String.valueOf(data(MATTER))), data(MATTER) > 0 ? TEXT : AMBER);
+        cell(g, 3, 0, "blast", Component.literal(blastNow() + " m"), AMBER);
+        cell(g, 0, 1, "shield_out", eta(ETA_SHIELD), data(ETA_SHIELD) >= 0 ? AMBER : TEXT);
+        cell(g, 1, 1, "red_line", eta(ETA_RED_LINE), data(ETA_RED_LINE) >= 0 ? AMBER : TEXT);
+        cell(g, 2, 1, "fuel_out", eta(ETA_ANTIMATTER), TEXT);
+        cell(g, 3, 1, "reserve_out", eta(ETA_RESERVE), data(ETA_RESERVE) >= 0 ? RED : TEXT);
+    }
+    private int blastNow() { return (int) Math.round(IcarusBlast.radius(Math.round(data(CHARGE) / 100.0 * IcarusPhysics.CAPSULE))); }
+    private int blastNext() { return (int) Math.round(IcarusBlast.radius(Math.round(data(NEXT_CHARGE) / 100.0 * IcarusPhysics.CAPSULE))); }
+    /** The finer figures behind a gauge or cell under the mouse, in panel coordinates; empty elsewhere. */
+    private List<Component> details(int x, int y) {
+        if (!menu.flag(F_VALID) && state() == IcarusPhysics.State.COLD) return List.of();
+        if (x < LEFT || x >= LEFT + TEXT_WIDTH) return List.of();
+        if (y >= BOX_TOP && y < BOX_TOP + 13 && x > LEFT + TEXT_WIDTH / 2) {
+            var alarm = pick(IcarusPhysics.Alarm.values(), data(ALARM)); var cascade = pick(IcarusPhysics.Cascade.values(), data(CASCADE));
+            return List.of(Component.translatable("screen.frozendawn.icarus.cascade",
+                    Component.translatable("icarus.frozendawn.cascade." + cascade.name().toLowerCase(Locale.ROOT)),
+                    Component.translatable("icarus.frozendawn.alarm." + alarm.name().toLowerCase(Locale.ROOT))));
+        }
+        if (y >= GAUGE_TOP && y < GAUGE_BOTTOM) {
+            return switch ((y - GAUGE_TOP - 2) / GAUGE_ROW) {
+                case 0 -> List.of(Component.translatable("screen.frozendawn.icarus.power", mw(GROSS), mw(SHIELD_DRAW), mw(NET)));
+                case 1 -> List.of(Component.translatable("screen.frozendawn.icarus.gauge.core", data(CORE_C), (int) IcarusPhysics.RED_LINE_C));
+                case 2 -> List.of(Component.translatable("screen.frozendawn.icarus.gauge.reserve", String.format(Locale.ROOT, "%.0f", data(RESERVE) / 10.0), (int) IcarusPhysics.RESERVE_MJ));
+                default -> List.of();
+            };
+        }
+        if (y >= GRID_TOP && y < GRID_BOTTOM && y < GRID_TOP + GRID_ROW) {
+            return switch ((x - LEFT) / CELL_W) {
+                case 0 -> List.of(Component.translatable("screen.frozendawn.icarus.power", mw(GROSS), mw(SHIELD_DRAW), mw(NET)),
+                        Component.translatable("screen.frozendawn.icarus.grid_draw", data(REQUEST)));
+                case 1, 3 -> List.of(Component.translatable("screen.frozendawn.icarus.blast", blastNow(), blastNext()));
+                default -> List.of();
+            };
+        }
+        return List.of();
     }
     /** The step line, its clock on the right, and a bar for any timed step. */
     private void renderStep(GuiGraphics g, IcarusPhysics.State s) {
@@ -216,10 +254,19 @@ public final class IcarusControllerScreen extends AbstractContainerScreen<Icarus
     private static int alarmColor(IcarusPhysics.Alarm a) {
         return switch (a) { case NONE -> GREEN; case CAUTION -> AMBER; case WARNING, CRITICAL -> RED; };
     }
-    private void gauge(GuiGraphics g, int y, Component label, double fraction, int color) {
-        g.drawString(font, fit(label, GAUGE_X - LEFT - 4), LEFT, y, TEXT, false);
-        g.fill(GAUGE_X, y + 1, GAUGE_X + GAUGE_W, y + 7, TRACK);
-        g.fill(GAUGE_X, y + 1, GAUGE_X + (int) Math.round(GAUGE_W * Math.clamp(fraction, 0, 1)), y + 7, color);
+    /** A gauge row: its name, a bar, and its value on the right. */
+    private void gauge(GuiGraphics g, int row, String label, double fraction, int color, String value) {
+        int y = GAUGE_TOP + 4 + row * GAUGE_ROW;
+        g.drawString(font, fit(Component.translatable(label), BAR_X - LEFT - 4), LEFT, y, MUTED, false);
+        g.fill(BAR_X, y + 1, BAR_X + BAR_W, y + 7, TRACK);
+        g.fill(BAR_X, y + 1, BAR_X + (int) Math.round(BAR_W * Math.clamp(fraction, 0, 1)), y + 7, color);
+        g.drawString(font, value, LEFT + TEXT_WIDTH - font.width(value), y, TEXT, false);
+    }
+    /** One cell of the grid: a muted name over its value. */
+    private void cell(GuiGraphics g, int column, int row, String key, Component value, int color) {
+        int x = LEFT + column * CELL_W, y = GRID_TOP + 3 + row * GRID_ROW;
+        g.drawString(font, fit(Component.translatable("screen.frozendawn.icarus.label." + key), CELL_W - 4), x, y, MUTED, false);
+        g.drawString(font, fit(value, CELL_W - 4), x, y + 10, color, false);
     }
     private void line(GuiGraphics g, int y, Component text, int color) { g.drawString(font, fit(text), LEFT, y, color, false); }
     private FormattedCharSequence fit(Component text) { return fit(text, TEXT_WIDTH); }
@@ -241,7 +288,9 @@ public final class IcarusControllerScreen extends AbstractContainerScreen<Icarus
     @Override public void render(GuiGraphics g, int mx, int my, float partial) {
         super.render(g, mx, my, partial);
         if (clipTicks > 0) g.fill(clip.getX(), clip.getY() + clip.getHeight(), clip.getX() + clip.getWidth() * clipTicks / CLIP_HOLD_TICKS, clip.getY() + clip.getHeight() + 2, RED);
-        renderTooltip(g, mx, my);
+        var details = details(mx - leftPos, my - topPos);
+        if (!details.isEmpty()) g.renderComponentTooltip(font, details, mx, my);
+        else renderTooltip(g, mx, my);
     }
 
     /** One setting in its payload units, snapped to step; sent with the other two when released. */
