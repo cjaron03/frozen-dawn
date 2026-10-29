@@ -135,6 +135,14 @@ render rumble \
   -f lavfi -i "aevalsrc='min(1\, t/1.2)*exp(-0.35*t)*(0.8+0.2*sin(2*PI*0.7*t))':s=44100:d=8" \
   -filter_complex "[0:a]lowpass=f=90,lowpass=f=90,volume=4.5[r];[r][1:a]amultiply,afade=t=out:st=7:d=1,alimiter=limit=0.85:level=0[out]"
 
+# Ringing, 8 s: the ears after the boom in air. A 4186 Hz tone beating against 4189 Hz, a faint 6.3 kHz overtone and a
+# thin high hiss, at full strength at once and fading slowly. The client starts it as the boom lands.
+render ringing \
+  -f lavfi -i "aevalsrc='(0.16*sin(2*PI*4186*t)+0.12*sin(2*PI*4189*t)+0.03*sin(2*PI*6279*t))*min(1\, t/0.08)*exp(-0.42*t)':s=44100:d=8" \
+  -f lavfi -i "anoisesrc=color=white:duration=8:sample_rate=44100:seed=61030" \
+  -f lavfi -i "aevalsrc='min(1\, t/0.08)*exp(-0.5*t)':s=44100:d=8" \
+  -filter_complex "[1:a]highpass=f=7000,volume=0.05[h];[h][2:a]amultiply[hiss];[0:a][hiss]amix=inputs=2:normalize=0,afade=t=out:st=7:d=1,alimiter=limit=0.5:level=0[out]"
+
 # Vacuum thud, 1.5 s: the ground shock through the boots. A dull 34 Hz thump with no air above 200 Hz.
 render vacuum_thud \
   -f lavfi -i "aevalsrc='1.0*exp(-4.5*t)*sin(2*PI*(34*t-4*t*t)) + 0.3*exp(-8*t)*sin(2*PI*68*t)':s=44100:d=1.5" \

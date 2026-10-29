@@ -94,6 +94,7 @@ public class ModSounds {
     public static final DeferredHolder<SoundEvent, SoundEvent> ICARUS_BOOM = register("blocks.icarus_boom");
     public static final DeferredHolder<SoundEvent, SoundEvent> ICARUS_RUMBLE = register("blocks.icarus_rumble");
     public static final DeferredHolder<SoundEvent, SoundEvent> ICARUS_VACUUM_THUD = register("blocks.icarus_vacuum_thud");
+    public static final DeferredHolder<SoundEvent, SoundEvent> ICARUS_RINGING = register("blocks.icarus_ringing");
     public static final DeferredHolder<SoundEvent, SoundEvent> SUIT_ICARUS_RADIATION = register("ui.suit.icarus_radiation");
     public static final DeferredHolder<SoundEvent, SoundEvent> ICARUS_FRAME_HUM = register("blocks.icarus_frame_hum");
     public static final DeferredHolder<SoundEvent, SoundEvent> ICARUS_POWER_ON = register("blocks.icarus_power_on");

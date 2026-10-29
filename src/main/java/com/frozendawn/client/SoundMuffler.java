@@ -55,6 +55,12 @@ public class SoundMuffler {
             event.setSound(null);
             return;
         }
+        // Ringing ears after an Icarus boom dull everything but the blast and the interface.
+        float deaf = IcarusBlastEffects.deafness();
+        if (deaf > 0.01F && original.getSource() != SoundSource.MASTER && !IcarusBlastEffects.isBlastSound(soundLocation)) {
+            event.setSound(muffled(original, 1 - 0.85F * deaf, 1 - 0.08F * deaf));
+            return;
+        }
         String soundPath = soundLocation.getPath();
         boolean isGeothermalCue = isGeothermalCue(soundLocation, soundPath);
         boolean isThaevenSound = ThaevenTransmissionOverlay.isTransmissionSound(soundLocation);

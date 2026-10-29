@@ -69,6 +69,21 @@ public final class IcarusBlast {
         return reduced ? Math.min(0.35, full) : full;
     }
 
+    /** The flash for a player in air facing the blast: facing is the cosine between the view and the blast, 0 when it is
+     * out of sight. Looking straight at it triples the strength, up to full white; looking away leaves the base flash. */
+    public static double gazeFlash(double strength, double facing, boolean reduced) {
+        double gaze = Math.pow(Math.max(0, facing), 3), flash = Math.min(1, strength * (1 + 2 * gaze));
+        return reduced ? Math.min(0.35, flash) : flash;
+    }
+
+    public static final double MAX_RINGING_SECONDS = 12;
+    /** How long the ears ring after the boom in air: the longest at the crater edge, fading to nothing at 3r. Vacuum carries
+     * no boom, so nothing rings. */
+    public static double ringingSeconds(double distance, double radius, boolean vacuum) {
+        if (vacuum || distance >= 3 * radius) return 0;
+        return MAX_RINGING_SECONDS * Math.min(1, 1 - (distance - radius) / (2 * radius));
+    }
+
     public static boolean witness(double distance, double radius) {
         return distance > radius && distance <= 3 * radius;
     }

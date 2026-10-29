@@ -2,6 +2,7 @@ package com.frozendawn.power;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import com.frozendawn.client.IcarusBlastEffects;
 import com.frozendawn.client.SoundMuffler;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -29,7 +30,7 @@ class IcarusAssetsTest {
     private static final Set<String> SOUNDS = Set.of("blocks.icarus_frame_hum", "blocks.icarus_stabilizer_spinup", "blocks.icarus_stabilizer_whine",
             "blocks.icarus_shield_hum", "blocks.icarus_core_roar", "blocks.icarus_injector_feed", "blocks.icarus_capsule_dock",
             "blocks.icarus_ignition", "blocks.icarus_clip_slam", "blocks.icarus_cole_complete", "blocks.icarus_alarm_caution",
-            "blocks.icarus_alarm_warning", "blocks.icarus_alarm_critical", "blocks.icarus_boom", "blocks.icarus_rumble",
+            "blocks.icarus_alarm_warning", "blocks.icarus_alarm_critical", "blocks.icarus_boom", "blocks.icarus_ringing", "blocks.icarus_rumble",
             "blocks.icarus_vacuum_thud", "blocks.icarus_power_on", "blocks.icarus_shield_form",
             "ui.suit.icarus_caution", "ui.suit.icarus_warning", "ui.suit.icarus_critical", "ui.suit.icarus_radiation");
 
@@ -79,6 +80,13 @@ class IcarusAssetsTest {
             }
         }
         assertEquals(new TreeSet<>(SOUNDS), found);
+    }
+
+    @Test void ringingEarsDoNotDullTheBlastItself() {
+        assertTrue(IcarusBlastEffects.isBlastSound(ResourceLocation.fromNamespaceAndPath("frozendawn", "blocks.icarus_boom")));
+        assertTrue(IcarusBlastEffects.isBlastSound(ResourceLocation.fromNamespaceAndPath("frozendawn", "blocks.icarus_ringing")));
+        assertFalse(IcarusBlastEffects.isBlastSound(ResourceLocation.fromNamespaceAndPath("frozendawn", "blocks.icarus_core_roar")));
+        assertFalse(IcarusBlastEffects.isBlastSound(ResourceLocation.withDefaultNamespace("block.stone.break")));
     }
 
     @Test void icarusSoundsPassTheVacuumMuffler() {

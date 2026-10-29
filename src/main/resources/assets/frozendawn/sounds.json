@@ -4915,6 +4915,16 @@
       }
     ]
   },
+  "blocks.icarus_ringing": {
+    "category": "blocks",
+    "subtitle": "subtitle.frozendawn.blocks.icarus_ringing",
+    "sounds": [
+      {
+        "name": "frozendawn:blocks/icarus/ringing",
+        "stream": false
+      }
+    ]
+  },
   "blocks.icarus_vacuum_thud": {
     "category": "blocks",
     "subtitle": "subtitle.frozendawn.blocks.icarus_vacuum_thud",

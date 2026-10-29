@@ -47,6 +47,25 @@ class IcarusBlastTest {
         assertEquals(0.35, IcarusBlast.flashStrength(0, 100, true), 1e-12);
     }
 
+    @Test void staringIntoTheBlastIsBrighterAndReducedFlashStillCaps() {
+        double far = IcarusBlast.flashStrength(600, 100, false), near = IcarusBlast.flashStrength(200, 100, false);
+        assertEquals(far, IcarusBlast.gazeFlash(far, 0, false), 1e-12);
+        assertEquals(far, IcarusBlast.gazeFlash(far, -1, false), 1e-12);
+        assertTrue(IcarusBlast.gazeFlash(far, 1, false) >= 2 * far, "Staring at six radii is far brighter than looking away");
+        assertEquals(1, IcarusBlast.gazeFlash(near, 1, false), 1e-12);
+        assertTrue(IcarusBlast.gazeFlash(near, 0.5, false) < IcarusBlast.gazeFlash(near, 0.9, false));
+        for (double f = -1; f <= 1; f += 0.05) assertTrue(IcarusBlast.gazeFlash(1, f, true) <= 0.35 + 1e-12);
+    }
+
+    @Test void ringingIsLongerCloserAndNeverInVacuum() {
+        assertEquals(0, IcarusBlast.ringingSeconds(200, 100, true), 1e-12);
+        assertEquals(0, IcarusBlast.ringingSeconds(301, 100, false), 1e-12);
+        assertTrue(IcarusBlast.ringingSeconds(150, 100, false) > IcarusBlast.ringingSeconds(250, 100, false));
+        assertTrue(IcarusBlast.ringingSeconds(250, 100, false) > 0);
+        assertEquals(IcarusBlast.MAX_RINGING_SECONDS, IcarusBlast.ringingSeconds(50, 100, false), 1e-12);
+        assertTrue(IcarusBlast.MAX_RINGING_SECONDS <= 12);
+    }
+
     @Test void burstDoseFadesToNothingAtTwoRadii() {
         assertEquals(IcarusBlast.BURST_DOSE / 2, IcarusBlast.burstDose(100, 100), 1e-9);
         assertEquals(0, IcarusBlast.burstDose(200, 100), 1e-12);

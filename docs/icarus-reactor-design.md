@@ -155,9 +155,9 @@ Size scales with antimatter inside: radius = 400 x cube root(capsules / 64). A f
 
 Air or vacuum is decided per player by the existing atmosphere at their position.
 
-**With air:** a blinding white flash from the blast direction, visible far beyond the crater. The boom arrives after a distance-based delay at the speed of sound (about 343 blocks per second), followed by a long rumble. A shockwave pushes and shakes, strong near the edge and fading with distance. A rising fireball with a smoke and debris column.
+**With air:** a blinding white flash from the blast direction, visible far beyond the crater. The boom arrives after a distance-based delay at the speed of sound (about 343 blocks per second), followed by a long rumble. A shockwave pushes and shakes, strong near the edge and fading with distance. A rising fireball with a smoke and debris column. Added at the owner's request: an orange shock ring of hot dust sweeps out along the ground at the speed of sound and arrives with the boom; the flash is far brighter while the player looks at the blast, up to full white, and leaves a warm afterimage; and after the boom the ears ring for up to 12 seconds (longest at the crater edge, nothing past 3r) while other sounds are dulled. The reduced-flash setting caps the gaze flash at 35% and softens the afterimage.
 
-**In vacuum:** the same flash. No boom. Ground shock comes through the suit as vibration, a muffled thud in the helmet and a low rumble. No fireball: an expanding glowing plasma and debris cloud. The suit voice warns of the radiation spike.
+**In vacuum:** the same flash. No boom. Ground shock comes through the suit as vibration, a muffled thud in the helmet and a low rumble. No fireball: an expanding glowing plasma and debris cloud. The suit voice warns of the radiation spike. No orange shock ring and no ringing: the orange comes from heated air, and there is no air to carry a shock or a sound.
 
 Entities inside the radius die. Outside it, damage and knockback fade with distance.
 
