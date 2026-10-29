@@ -1,0 +1,108 @@
+package com.frozendawn.client;
+
+import com.frozendawn.FrozenDawn;
+import com.frozendawn.block.HalseyCoreBlockEntity;
+import com.frozendawn.power.IcarusLook;
+import com.frozendawn.power.IcarusPhysics;
+import com.frozendawn.power.IcarusPhysics.State;
+import java.util.Map;
+import java.util.WeakHashMap;
+import net.minecraft.client.Minecraft;
+import net.minecraft.util.Mth;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.client.event.ViewportEvent;
+
+/** The Icarus's moving parts on one client, eased tick by tick toward what the synced core Visual says, so the renderers
+ * draw smooth motion from a state that only changes once a second. Kept per core and dropped with it. Also nudges the
+ * camera of a player within 24 blocks of a critical core. */
+@EventBusSubscriber(modid = FrozenDawn.MOD_ID, value = Dist.CLIENT)
+public final class IcarusCoreAnim {
+    private static final Map<HalseyCoreBlockEntity, IcarusCoreAnim> ANIMS = new WeakHashMap<>();
+    public static final float CORE_RADIUS = 2.5f, SPECK_RADIUS = 0.18f;
+    private static final double SHAKE_RANGE = 24;
+    /** Degrees of camera roll at the core, falling to nothing at SHAKE_RANGE. */
+    private static final float SHAKE = 0.5f;
+    private static float shake;
+    private static long shakeUntil;
+
+    private State state = State.COLD;
+    /** Ticks since the core entered its current state. */
+    public int stateTicks;
+    private float glow, glowO, bloom, bloomO, flash, flashO, front, frontO, tail, tailO, churn, churnO, ring, ringO, ringSpeed;
+    private final float[] beam = new float[IcarusLook.STABILIZERS], beamO = new float[IcarusLook.STABILIZERS];
+
+    public static IcarusCoreAnim of(HalseyCoreBlockEntity core) { return ANIMS.computeIfAbsent(core, k -> new IcarusCoreAnim()); }
+
+    /** Client block entity ticker. */
+    public static void tick(HalseyCoreBlockEntity core) {
+        var a = of(core); var v = core.visual();
+        if (v.state() != a.state) { a.state = v.state(); a.stateTicks = 0; } else a.stateTicks++;
+        a.glowO = a.glow; a.bloomO = a.bloom; a.flashO = a.flash; a.frontO = a.front; a.tailO = a.tail; a.churnO = a.churn; a.ringO = a.ring;
+        System.arraycopy(a.beam, 0, a.beamO, 0, a.beam.length);
+        double heat = heat(v.coreC());
+
+        // Glow: CLIP dims within a second or two, the Cole Protocol over the length of its ramp-down.
+        float glowTarget = switch (v.state()) {
+            case IGNITION, RAMP, RUNNING, COLE_RAMP_DOWN, COLE_COOL, COLE_RECOVER ->
+                    (float) (0.3 + 0.5 * Math.clamp(v.grossMw() / IcarusPhysics.MAX_OUTPUT_MW, 0, 1) + 0.2 * heat);
+            case CLIPPED -> (float) (0.15 * heat);
+            default -> 0;
+        };
+        if (v.state() == State.IGNITION) glowTarget = 1;
+        float glowRate = v.state() == State.CLIPPED ? 0.06f : v.state().name().startsWith("COLE") ? 0.006f : 0.03f;
+        a.glow = approach(a.glow, glowTarget, glowRate);
+
+        // Ignition: a flash, then the plasma blooms from the speck to the full sphere over the step.
+        boolean plasma = glowTarget > 0 || a.glow > 0.01f;
+        if (v.state() == State.IGNITION) {
+            if (a.stateTicks == 0) a.flash = 1;
+            a.bloom = Math.min(1, a.stateTicks / (IcarusPhysics.IGNITION_S * 20f));
+        } else a.bloom = plasma ? approach(a.bloom, 1, 0.05f) : 0;
+        a.flash = Math.max(0, a.flash - 0.07f);
+
+        // Matter stream: it climbs from the nozzle while priming, and on a cut its tail lifts away into the core.
+        boolean feeding = switch (v.state()) { case PRIMING, IGNITION, RAMP, RUNNING -> true; case COLE_RAMP_DOWN -> v.grossMw() > 0.05; default -> false; };
+        if (feeding) { a.tail = 0; a.front = approach(a.front, 1, 0.025f); }
+        else if (a.front > 0) { a.tail = approach(a.tail, 1, 0.15f); if (a.tail >= 1) { a.front = 0; a.tail = 0; a.frontO = 0; a.tailO = 0; } }
+
+        int lit = IcarusLook.beamsLit(v.state(), v.stepLeft());
+        for (int i = 0; i < a.beam.length; i++) a.beam[i] = approach(a.beam[i], i < lit ? 1 : 0, 0.06f);
+
+        // Churn in degrees per tick; the rings spin with the beams and park square when they stop.
+        a.churn += (float) (IcarusLook.churn(v.grossMw(), v.coreC()) * 360 / 20);
+        float ringTarget = lit > 0 ? (float) (4 + 8 * heat) : 0;
+        a.ringSpeed = approach(a.ringSpeed, ringTarget, 0.08f);
+        a.ring += a.ringSpeed;
+        if (ringTarget == 0 && a.ringSpeed < 0.3f) a.ring += (Math.round(a.ring / 90) * 90 - a.ring) * 0.1f;
+
+        var player = Minecraft.getInstance().player;
+        if (IcarusLook.critical(v.coreC(), v.alarm()) && player != null && core.getLevel() != null) {
+            double d = Math.sqrt(player.distanceToSqr(core.getBlockPos().getCenter()));
+            if (d < SHAKE_RANGE) { shake = (float) (SHAKE * (1 - d / SHAKE_RANGE)); shakeUntil = core.getLevel().getGameTime() + 2; }
+        }
+    }
+
+    private static float approach(float from, float to, float step) { return from < to ? Math.min(to, from + step) : Math.max(to, from - step); }
+    public static double heat(double coreC) { return Math.clamp((coreC - IcarusPhysics.AMBIENT_C) / (IcarusPhysics.CRITICAL_C - IcarusPhysics.AMBIENT_C), 0, 1); }
+
+    public float glow(float pt) { return Mth.lerp(pt, glowO, glow); }
+    public float bloom(float pt) { return Mth.lerp(pt, bloomO, bloom); }
+    public float flash(float pt) { return Mth.lerp(pt, flashO, flash); }
+    public float streamFront(float pt) { return Mth.lerp(pt, frontO, front); }
+    public float streamTail(float pt) { return Mth.lerp(pt, tailO, tail); }
+    public float churn(float pt) { return Mth.lerp(pt, churnO, churn); }
+    public float ring(float pt) { return Mth.lerp(pt, ringO, ring); }
+    public float ringSpeed() { return ringSpeed; }
+    public float beam(int index, float pt) { return Mth.lerp(pt, beamO[index], beam[index]); }
+
+    @SubscribeEvent public static void shakeCamera(ViewportEvent.ComputeCameraAngles event) {
+        var mc = Minecraft.getInstance();
+        if (mc.level == null || shake <= 0) return;
+        if (mc.level.getGameTime() > shakeUntil) { shake = 0; return; }
+        float amount = shake * mc.options.screenEffectScale().get().floatValue(), time = (float) (mc.level.getGameTime() + event.getPartialTick());
+        event.setRoll(event.getRoll() + amount * Mth.sin(time * 2.3f));
+        event.setPitch(event.getPitch() + amount * 0.5f * Mth.sin(time * 3.7f + 1.1f));
+    }
+}

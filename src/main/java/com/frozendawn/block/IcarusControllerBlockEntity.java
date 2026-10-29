@@ -1,6 +1,9 @@
 package com.frozendawn.block;
 
+import com.frozendawn.event.SuitIntegrityHandler;
 import com.frozendawn.init.ModBlockEntities;
+import com.frozendawn.init.ModSounds;
+import com.frozendawn.power.IcarusAudioCues;
 import com.frozendawn.power.IcarusBlast;
 import com.frozendawn.power.IcarusPhysics;
 import com.frozendawn.world.IcarusDetonation;
@@ -16,6 +19,9 @@ import net.minecraft.nbt.NbtUtils;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.Clearable;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.LivingEntity;
@@ -44,6 +50,8 @@ public final class IcarusControllerBlockEntity extends BlockEntity implements Me
     /** Fire damage per second to anything inside the shield. */
     private static final float SHIELD_DAMAGE = 4;
     private static final double SHIELD_RADIUS = 4.5;
+    /** One-shots carry about 32 blocks, across the whole structure and some way beyond. */
+    private static final float CUE_VOLUME = 2;
     private static final IcarusPhysics.Readout IDLE = new IcarusPhysics.Readout(IcarusPhysics.State.COLD, IcarusPhysics.Status.OK, 0, 0, 0, 0, 0,
             IcarusPhysics.AMBIENT_C, 0, 0, 0, 0, 0, 0, Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY,
             Double.POSITIVE_INFINITY, IcarusPhysics.Alarm.NONE, IcarusPhysics.Cascade.STABLE, false);
@@ -60,6 +68,10 @@ public final class IcarusControllerBlockEntity extends BlockEntity implements Me
     private final Set<UUID> crew = new HashSet<>();
     /** Players shown this Controller's ghost-block blueprint; transient, like the client's own copy. */
     private final Set<UUID> blueprintViewers = new HashSet<>();
+    /** The readout the last cues were taken from; null after a load, so the first second plays nothing. */
+    @Nullable private IcarusPhysics.Readout heard;
+    /** Seconds the alarm has stayed critical since it rose, for the suit's repeat. */
+    private int criticalSeconds;
     public IcarusControllerBlockEntity(BlockPos p, BlockState s) { super(ModBlockEntities.ICARUS_CONTROLLER.get(), p, s); }
 
     public IcarusPhysics physics() { return physics; }
@@ -101,6 +113,7 @@ public final class IcarusControllerBlockEntity extends BlockEntity implements Me
         readout = physics.step(new IcarusPhysics.Inputs(valid, port != null && port.paidFullSecond(), injectable,
                 dock == null ? 0 : dock.empties(), feed == null ? 0 : feed.count()));
         if (readout.detonate() && physics.coreCharge() > 0) { detonate(l); return; }
+        sound(l, valid ? result.core() : worldPosition);
         if (dock != null) { dock.consume(readout.injected()); dock.recover(readout.recovered()); }
         if (feed != null) feed.use(readout.matterUsed());
         if (port != null) port.publish((int) Math.round(readout.requestKw() * 1000), (int) Math.round(Math.max(0, readout.netMw()) * 1e6));
@@ -111,6 +124,39 @@ public final class IcarusControllerBlockEntity extends BlockEntity implements Me
             core.publish(l, new HalseyCoreBlockEntity.Visual(physics.state(), (int) Math.round(readout.coreC()), Math.round(readout.shieldPct() * 100) / 100.0,
                     Math.round(readout.grossMw() * 100) / 100.0, readout.alarm(), readout.stepSecondsLeft()));
         setChanged();
+    }
+
+    /** This second's one-shots at the core, and the suit's alarm line to crew in sealed suits in this level. */
+    private void sound(ServerLevel l, BlockPos at) {
+        for (var cue : IcarusAudioCues.cues(heard, readout)) l.playSound(null, at, cueSound(cue), SoundSource.BLOCKS, CUE_VOLUME, 1f);
+        boolean stillCritical = heard != null && heard.alarm() == IcarusPhysics.Alarm.CRITICAL && readout.alarm() == IcarusPhysics.Alarm.CRITICAL;
+        criticalSeconds = stillCritical ? criticalSeconds + 1 : 0;
+        var line = IcarusAudioCues.suitLine(heard, readout, criticalSeconds);
+        heard = readout;
+        if (line == null) return;
+        var event = switch (line) {
+            case CAUTION -> ModSounds.SUIT_ICARUS_CAUTION.get();
+            case WARNING -> ModSounds.SUIT_ICARUS_WARNING.get();
+            default -> ModSounds.SUIT_ICARUS_CRITICAL.get();
+        };
+        for (var id : crew)
+            if (l.getPlayerByUUID(id) instanceof ServerPlayer p && SuitIntegrityHandler.isWearingSealedSuit(p)) p.playNotifySound(event, SoundSource.PLAYERS, 1f, 1f);
+    }
+
+    private static SoundEvent cueSound(IcarusAudioCues.Cue cue) {
+        return switch (cue) {
+            case FRAME_HUM_ON -> ModSounds.ICARUS_POWER_ON.get();
+            case STABILIZER_SPINUP -> ModSounds.ICARUS_STABILIZER_SPINUP.get();
+            case SHIELD_FORM -> ModSounds.ICARUS_SHIELD_FORM.get();
+            case CAPSULE_DOCK -> ModSounds.ICARUS_CAPSULE_DOCK.get();
+            case INJECTOR_FEED -> ModSounds.ICARUS_INJECTOR_FEED.get();
+            case IGNITION -> ModSounds.ICARUS_IGNITION.get();
+            case CLIP_SLAM -> ModSounds.ICARUS_CLIP_SLAM.get();
+            case COLE_COMPLETE -> ModSounds.ICARUS_COLE_COMPLETE.get();
+            case ALARM_CAUTION -> ModSounds.ICARUS_ALARM_CAUTION.get();
+            case ALARM_WARNING -> ModSounds.ICARUS_ALARM_WARNING.get();
+            case ALARM_CRITICAL -> ModSounds.ICARUS_ALARM_CRITICAL.get();
+        };
     }
 
     /** The shield fills its space: blocks in it are vaporized without drops, and anything alive inside burns. */
@@ -215,7 +261,7 @@ public final class IcarusControllerBlockEntity extends BlockEntity implements Me
         physics.load(tag.getCompound("Icarus"));
         signal = tag.getBoolean("Signal");
         crew.clear(); for (var id : tag.getList("Crew", Tag.TAG_INT_ARRAY)) crew.add(NbtUtils.loadUUID(id));
-        readout = IDLE;
+        readout = IDLE; heard = null; criticalSeconds = 0;
     }
     public boolean stillValid(Player p) { return !p.isSpectator() && level != null && level.getBlockEntity(worldPosition) == this && p.distanceToSqr(worldPosition.getCenter()) <= 64; }
     @Override public Component getDisplayName() { return Component.translatable("block.frozendawn.icarus_controller"); }

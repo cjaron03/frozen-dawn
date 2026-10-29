@@ -173,3 +173,14 @@ are included in the mod jar.
 ## Atmospheric breach warning — October 9, 2026
 
 Added only `ui/suit/atmospheric_breach.ogg`, spoken text “Warning. Atmospheric breach detected.”, through the existing local Piper `en_US-amy-medium` model and `orsa` processing profile. Amy model card and Mycroft Mimic 3 CC BY-SA 4.0 license were checked at their official sources on October 9. The manifestation, notice, packaged attribution and inventory include the new performance; existing speech files are unchanged. The raw generated WAV and current model/config hashes are retained in the local breach evidence directory. No weights or engine are shipped.
+
+## AMR-1 Icarus suit warnings — October 28, 2026
+
+Added four `orsa` performances for the optional AMR-1 Icarus reactor, rendered only these lines through a temporary four-line manifest with `tools/generate_local_voice_assets.sh`, the local Piper `en_US-amy-medium` model (SHA-256 `b3a6e47b57b8c7fbe6a0ce2518161a50f59a9cdd8a50835c02cb02bdd6206c18`) and piper-tts 1.8.0. Existing speech files are unchanged. An earlier draft of these lines rendered with the macOS Samantha voice was discarded before commit and never shipped.
+
+- `ui/suit/icarus_caution.ogg`, "Icarus caution. Check the reactor.": 2.554195 seconds; SHA-256 `d418b4133fc3702a63332143cb02a8c106f49953095591f6a0eb25281b59697d`.
+- `ui/suit/icarus_warning.ogg`, "Icarus warning. Shield margin falling.": 3.204354 seconds; SHA-256 `b738f4301442bc074dc1837c9a60330072fbd1ce5d1e985ff3f0ecd766cf3c5a`.
+- `ui/suit/icarus_critical.ogg`, "Icarus critical. Shield failure imminent.": 3.134694 seconds; SHA-256 `b70ad4393fb1b642b127d27d3cdb50e012794de37374650d4901d1c2ec1cda81`.
+- `ui/suit/icarus_radiation.ogg`, "Radiation spike detected.": 2.263946 seconds; SHA-256 `a07d542f7c7616abafb6ef574763e8cae544e38811e6cb9d908d15ade61d046a`.
+
+The notice, packaged attribution and shipped audio inventory count 62 performances. No weights or engine are shipped.

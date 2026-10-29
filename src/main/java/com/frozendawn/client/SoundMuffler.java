@@ -209,8 +209,7 @@ public class SoundMuffler {
             if (original.getSource() == SoundSource.MASTER) return;
             if (soundPath.startsWith("ambient.eva_")) return;
             if (isLocalHearthrotHurtCue) return;
-            // The SFR-1 is the player's own hardware; its cues carry through the structure and suit.
-            if (soundLocation.getNamespace().equals(FrozenDawn.MOD_ID) && soundPath.startsWith("blocks.sfr_")) return;
+            if (isVacuumExempt(soundLocation)) return;
             if (AirlockAudioPolicy.isMachinery(soundLocation.getNamespace(), soundPath)) {
                 // Nearby panel/door vibration remains useful while the chamber is empty.
                 // Keep its position, BLOCKS slider and short range; distant vacuum stays silent.
@@ -295,6 +294,13 @@ public class SoundMuffler {
         float pitchMult = 1f - (intensity * 0.25f);    // noticeable pitch drop
 
         event.setSound(muffled(original, volumeMult, pitchMult));
+    }
+
+    /** The player's own reactors carry through the structure and suit: SFR-1 and Icarus cues, and the suit's Icarus lines. */
+    public static boolean isVacuumExempt(ResourceLocation location) {
+        if (!location.getNamespace().equals(FrozenDawn.MOD_ID)) return false;
+        String path = location.getPath();
+        return path.startsWith("blocks.sfr_") || path.startsWith("blocks.icarus_") || path.startsWith("ui.suit.icarus_");
     }
 
     @SubscribeEvent
