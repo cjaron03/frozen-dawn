@@ -91,6 +91,13 @@ public final class IcarusDraw {
                 .setLight(FULL_BRIGHT).setNormal(pose, 0, 0, 1);
     }
 
+    /** A billboard stretched to halfW by halfH, for a lens streak; rotate the pose to the camera first. */
+    public static void streak(VertexConsumer c, PoseStack.Pose pose, float halfW, float halfH, int argb) {
+        float[][] q = {{-halfW, -halfH, 0, 1}, {halfW, -halfH, 1, 1}, {halfW, halfH, 1, 0}, {-halfW, halfH, 0, 0}};
+        for (var p : q) c.addVertex(pose, p[0], p[1], 0).setColor(argb).setUv(p[2], p[3]).setOverlay(OverlayTexture.NO_OVERLAY)
+                .setLight(FULL_BRIGHT).setNormal(pose, 0, 0, 1);
+    }
+
     /** A textured cube of the given half-size about the pose's origin, each face mapping the whole texture. */
     public static void cube(VertexConsumer c, PoseStack.Pose pose, float h, int argb) {
         float[][][] faces = {
