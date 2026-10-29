@@ -35,6 +35,18 @@ public final class IcarusLook {
         };
     }
 
+    /** How close the reactor feels to the end, 0 to 1, for the escalating alarm, shake and screen warnings: nothing without
+     * an alarm, a little at caution, tense at warning, and from 0.55 at critical up to 1 as the shield runs out, sooner if
+     * the core is past the red line. */
+    public static double danger(double coreC, double shieldPct, Alarm alarm) {
+        double hot = Math.clamp((coreC - IcarusPhysics.RED_LINE_C) / (IcarusPhysics.CRITICAL_C - IcarusPhysics.RED_LINE_C), 0, 1);
+        return switch (alarm) {
+            case NONE -> 0;
+            case CAUTION -> 0.05;
+            case WARNING -> 0.2 + 0.3 * Math.max(hot, Math.clamp((30 - shieldPct) / 30, 0, 1));
+            case CRITICAL -> 0.55 + 0.45 * Math.max(Math.clamp((15 - shieldPct) / 15, 0, 1), hot);
+        };
+    }
     public static boolean critical(double coreC, Alarm alarm) { return alarm == Alarm.CRITICAL || coreC >= IcarusPhysics.CRITICAL_C; }
 
     public static int coreColor(double coreC, Alarm alarm) {

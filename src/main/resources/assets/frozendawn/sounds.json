@@ -4861,6 +4861,35 @@
       }
     ]
   },
+  "blocks.icarus_klaxon": {
+    "category": "blocks",
+    "subtitle": "subtitle.frozendawn.blocks.icarus_klaxon",
+    "sounds": [
+      {
+        "name": "frozendawn:blocks/icarus/klaxon",
+        "stream": true
+      }
+    ]
+  },
+  "blocks.icarus_strain": {
+    "category": "blocks",
+    "subtitle": "subtitle.frozendawn.blocks.icarus_strain",
+    "sounds": [
+      {
+        "name": "frozendawn:blocks/icarus/strain",
+        "stream": true
+      }
+    ]
+  },
+  "blocks.icarus_core_thump": {
+    "category": "blocks",
+    "subtitle": "subtitle.frozendawn.blocks.icarus_core_thump",
+    "sounds": [
+      {
+        "name": "frozendawn:blocks/icarus/core_thump"
+      }
+    ]
+  },
   "blocks.icarus_injector_feed": {
     "category": "blocks",
     "subtitle": "subtitle.frozendawn.blocks.icarus_injector_feed",

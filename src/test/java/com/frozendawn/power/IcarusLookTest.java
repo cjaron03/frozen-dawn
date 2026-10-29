@@ -67,4 +67,12 @@ class IcarusLookTest {
         assertTrue(IcarusLook.churn(2.5, 3000) > IcarusLook.churn(1, 3000));
         assertTrue(IcarusLook.churn(1, 7000) > IcarusLook.churn(1, 3000));
     }
+    @Test void dangerClimbsFromCalmThroughWarningToCertainLossAsTheShieldEmpties() {
+        assertEquals(0, IcarusLook.danger(7000, 10, Alarm.NONE));
+        double warning = IcarusLook.danger(6600, 40, Alarm.WARNING), critical = IcarusLook.danger(5000, 14, Alarm.CRITICAL);
+        assertTrue(warning > 0 && warning < critical, "a warning is tense, a critical more so");
+        assertTrue(IcarusLook.danger(5000, 5, Alarm.CRITICAL) > critical, "a falling shield raises it");
+        assertTrue(IcarusLook.danger(7800, 14, Alarm.CRITICAL) > critical, "so does heat past the red line");
+        assertEquals(1, IcarusLook.danger(5000, 0, Alarm.CRITICAL), 1e-9);
+    }
 }

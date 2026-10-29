@@ -27,9 +27,12 @@ public final class IcarusCoreAnim {
     public static final float CORE_RADIUS = 2.5f, SPECK_RADIUS = 0.18f;
     /** Where beat wraps; a multiple of every period the renderer animates by. */
     public static final float BEAT_WRAP = 7200;
-    private static final double SHAKE_RANGE = 24;
-    /** Degrees of camera roll at the core, falling to nothing at SHAKE_RANGE. */
-    private static final float SHAKE = 0.5f;
+    private static final double SHAKE_RANGE = 48;
+    /** Beats per heartbeat; it divides BEAT_WRAP, as must every other period of beat. The thump lands just before the
+     * visual swell. */
+    public static final float BEAT = 36, THUMP_AT = 2;
+    private static float kick;
+    private static long kickDecayed;
     private static float shake;
     private static long shakeUntil;
 
@@ -132,14 +135,26 @@ public final class IcarusCoreAnim {
         if (ringTarget == 0 && a.ringSpeed < 0.3f) a.ring += (Math.round(a.ring / 90) * 90 - a.ring) * 0.1f;
         // The running core's own clock: it quickens with glow and heat, and wraps after BEAT_WRAP, which every period the
         // renderer uses divides, so the wrap never shows.
-        a.beat += 0.6f + 0.9f * a.glow + 0.8f * (float) heat;
+        double danger = IcarusLook.danger(v.coreC(), v.shieldPct(), v.alarm());
+        a.beat += 0.6f + 0.9f * a.glow + 0.8f * (float) heat + 1.5f * (float) danger;
         if (a.beat >= BEAT_WRAP) { a.beat -= BEAT_WRAP; a.beatO -= BEAT_WRAP; }
 
         effects(core, a);
+        // Near the end the ground shakes harder the worse it gets, the core thumps on every heartbeat and jolts the view,
+        // and the screen's edges pulse red (IcarusDangerHud).
         var player = Minecraft.getInstance().player;
-        if (IcarusLook.critical(v.coreC(), v.alarm()) && player != null && core.getLevel() != null) {
+        if (player != null && core.getLevel() != null && danger > 0) {
+            long now = core.getLevel().getGameTime();
             double d = Math.sqrt(player.distanceToSqr(core.getBlockPos().getCenter()));
-            if (d < SHAKE_RANGE) { shake = (float) (SHAKE * (1 - d / SHAKE_RANGE)); shakeUntil = core.getLevel().getGameTime() + 2; }
+            float near = (float) Math.max(0, 1 - d / SHAKE_RANGE);
+            if (danger > 0.2 && near > 0) { shake = (float) ((0.1 + 1.4 * danger * danger) * near); shakeUntil = now + 2; }
+            boolean beat = Mth.floor((a.beat - THUMP_AT) / BEAT) != Mth.floor((a.beatO - THUMP_AT) / BEAT);
+            if (beat && danger > 0.3) {
+                var c = core.getBlockPos().getCenter();
+                core.getLevel().playLocalSound(c.x, c.y, c.z, ModSounds.ICARUS_CORE_THUMP.get(), SoundSource.BLOCKS, (float) (0.6 + 1.2 * danger), (float) (0.9 + 0.2 * danger), false);
+                kick = Math.max(kick, (float) (1.5 * danger * near));
+            }
+            if (d < IcarusDangerHud.RANGE) IcarusDangerHud.report(now, (float) (danger * Math.sqrt(1 - d / IcarusDangerHud.RANGE)), v.shieldPct(), a.beat);
         }
     }
 
@@ -174,6 +189,12 @@ public final class IcarusCoreAnim {
             level.addParticle(ParticleTypes.SMOKE, emitter.x, emitter.y + 0.4, emitter.z, 0, 0.04, 0);
     }
 
+    /** A double pulse, lub-dub, over a phase of 0 to 1. */
+    public static float heartbeat(float phase) {
+        float x = phase - Mth.floor(phase);
+        return (float) (Math.exp(-Math.pow((x - 0.08) / 0.04, 2)) + 0.6 * Math.exp(-Math.pow((x - 0.22) / 0.05, 2)));
+    }
+
     private static float approach(float from, float to, float step) { return from < to ? Math.min(to, from + step) : Math.max(to, from - step); }
     /** Moves rate of the way to the target each tick, and at least min, so it settles without a hard stop or a long tail. */
     private static float ease(float from, float to, float rate, float min) { return approach(from, to, Math.max(min, Math.abs(to - from) * rate)); }
@@ -199,10 +220,15 @@ public final class IcarusCoreAnim {
 
     @SubscribeEvent public static void shakeCamera(ViewportEvent.ComputeCameraAngles event) {
         var mc = Minecraft.getInstance();
-        if (mc.level == null || shake <= 0) return;
-        if (mc.level.getGameTime() > shakeUntil) { shake = 0; return; }
-        float amount = shake * mc.options.screenEffectScale().get().floatValue(), time = (float) (mc.level.getGameTime() + event.getPartialTick());
-        event.setRoll(event.getRoll() + amount * Mth.sin(time * 2.3f));
-        event.setPitch(event.getPitch() + amount * 0.5f * Mth.sin(time * 3.7f + 1.1f));
+        if (mc.level == null) return;
+        long now = mc.level.getGameTime();
+        if (now != kickDecayed) { kick *= 0.75f; kickDecayed = now; }
+        if (now > shakeUntil) shake = 0;
+        if (shake <= 0 && kick < 0.01f) return;
+        float scale = mc.options.screenEffectScale().get().floatValue(), time = (float) (now + event.getPartialTick());
+        float amount = shake * scale, jolt = kick * scale;
+        event.setRoll(event.getRoll() + amount * Mth.sin(time * 2.3f) + jolt * Mth.sin(time * 9.1f));
+        event.setPitch(event.getPitch() + amount * 0.5f * Mth.sin(time * 3.7f + 1.1f) + jolt * 0.6f * Mth.sin(time * 11.3f + 0.4f));
+        event.setYaw(event.getYaw() + jolt * 0.4f * Mth.sin(time * 7.7f + 2.0f));
     }
 }

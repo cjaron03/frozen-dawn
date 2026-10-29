@@ -113,6 +113,26 @@ render stabilizer_sputter \
   -f lavfi -i "aevalsrc='gt(sin(2*PI*37*t)*sin(2*PI*23*t+1)*sin(2*PI*61*t+2)\,0.05)*exp(-4*t)':s=44100:d=0.7" \
   -filter_complex "[1:a]bandpass=f=1500:width_type=q:w=0.8,volume=1.6[n];[n][2:a]amultiply[crackle];[0:a][crackle]amix=inputs=2:normalize=0,afade=t=in:st=0:d=0.003,afade=t=out:st=0.55:d=0.15,alimiter=limit=0.8:level=0[out]"
 
+# Klaxon, 2 s loop: the critical siren that runs for as long as the reactor stays critical. A harsh hi-lo two-tone,
+# 960 and 770 Hz with their third harmonics, switching every half second through a soft gate so it never clicks.
+render klaxon \
+  -f lavfi -i "aevalsrc='(0.5+0.5*tanh(25*sin(2*PI*0.5*t)))*(0.26*sin(2*PI*960*t)+0.09*sin(2*PI*2880*t)) + (0.5-0.5*tanh(25*sin(2*PI*0.5*t)))*(0.26*sin(2*PI*770*t)+0.09*sin(2*PI*2310*t))':s=44100:d=3.5" \
+  -filter_complex "[0:a]lowpass=f=5500,volume=2.2,alimiter=limit=0.7:level=0[mix];$(seam 2 mix out)"
+
+# Strain, 6 s loop: the frame groaning under the load near the end. A resonant metal groan bending around 55 Hz, a band of
+# rumbling brown noise swelling at 1/3 Hz and dry creaks at 700 Hz, every rate a multiple of 1/6 Hz.
+render strain \
+  -f lavfi -i "aevalsrc='0.22*sin(2*PI*55*t + 9*sin(2*PI*t/6))*(0.6+0.4*sin(2*PI*t/3)) + 0.08*sin(2*PI*110*t + 18*sin(2*PI*t/6+1))':s=44100:d=7.5" \
+  -f lavfi -i "anoisesrc=color=brown:duration=7.5:sample_rate=44100:seed=61024" \
+  -f lavfi -i "anoisesrc=color=white:duration=7.5:sample_rate=44100:seed=61025" \
+  -f lavfi -i "aevalsrc='pow(abs(sin(2*PI*1.5*t)*sin(2*PI*0.8333333*t+0.7))\,10)':s=44100:d=7.5" \
+  -filter_complex "[1:a]bandpass=f=120:width_type=q:w=3,volume=3.5,tremolo=f=0.3333333:d=0.6[groan];[2:a]bandpass=f=700:width_type=q:w=2.5[c];[c][3:a]amultiply,volume=1.2[creak];[0:a][groan][creak]amix=inputs=3:normalize=0,alimiter=limit=0.6:level=0[mix];$(seam 6 mix out)"
+
+# Core thump, 0.7 s: the unstable core's heartbeat, a double sub-bass thump felt more than heard.
+render core_thump \
+  -f lavfi -i "aevalsrc='0.95*exp(-14*t)*sin(2*PI*(50*t-12*t*t)) + if(gte(t\,0.2)\, 0.65*exp(-14*(t-0.2))*sin(2*PI*(46*(t-0.2)-10*(t-0.2)*(t-0.2)))\, 0)':s=44100:d=0.7" \
+  -filter_complex "[0:a]lowpass=f=200,afade=t=in:st=0:d=0.004,afade=t=out:st=0.55:d=0.15,alimiter=limit=0.9:level=0[out]"
+
 # Injector feed, 3 s: magnetic gates clocking the antimatter down the line, a 14 Hz train of falling blips over a
 # cold vapor hiss.
 render injector_feed \

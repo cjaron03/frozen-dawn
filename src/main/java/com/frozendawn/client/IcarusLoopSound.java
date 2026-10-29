@@ -19,7 +19,7 @@ import net.minecraft.sounds.SoundSource;
  * in and out. All of them sit at the core; the block-sound namespace keeps them audible in vacuum. The core's roar and
  * song follow the plasma's eased glow, so they swell through ignition and spool down with the Cole ramp-down. */
 public final class IcarusLoopSound extends AbstractTickableSoundInstance {
-    public enum Kind { FRAME, STABILIZER, SHIELD, CORE, PLASMA }
+    public enum Kind { FRAME, STABILIZER, SHIELD, CORE, PLASMA, KLAXON, STRAIN }
     private static final Map<HalseyCoreBlockEntity, EnumMap<Kind, IcarusLoopSound>> PLAYING = new WeakHashMap<>();
     private static final Map<HalseyCoreBlockEntity, EnumMap<Kind, Long>> RETRY = new WeakHashMap<>();
     private static final float FADE = 0.05F;
@@ -39,6 +39,7 @@ public final class IcarusLoopSound extends AbstractTickableSoundInstance {
             case FRAME -> ModSounds.ICARUS_FRAME_HUM.get(); case STABILIZER -> ModSounds.ICARUS_STABILIZER_WHINE.get();
             case SHIELD -> ModSounds.ICARUS_SHIELD_HUM.get(); case CORE -> ModSounds.ICARUS_CORE_ROAR.get();
             case PLASMA -> ModSounds.ICARUS_CORE_SONG.get();
+            case KLAXON -> ModSounds.ICARUS_KLAXON.get(); case STRAIN -> ModSounds.ICARUS_STRAIN.get();
         };
     }
     private static boolean wanted(Kind kind, HalseyCoreBlockEntity core) {
@@ -49,6 +50,8 @@ public final class IcarusLoopSound extends AbstractTickableSoundInstance {
             case SHIELD -> IcarusLook.beamsLit(v.state(), v.stepLeft()) > 0 && v.shieldPct() > 0;
             case CORE -> IcarusCoreAnim.of(core).glow(1) > .01F || v.coreC() > 500;
             case PLASMA -> IcarusCoreAnim.of(core).glow(1) > .01F;
+            case KLAXON -> v.alarm() == IcarusPhysics.Alarm.CRITICAL;
+            case STRAIN -> IcarusLook.danger(v.coreC(), v.shieldPct(), v.alarm()) > .15;
         };
     }
 
@@ -81,6 +84,9 @@ public final class IcarusLoopSound extends AbstractTickableSoundInstance {
             case SHIELD -> (float) (.4 + .5 * Math.clamp(v.shieldPct() / 100, 0, 1));
             case CORE -> (float) (glow * (.5 + .4 * Math.clamp(v.grossMw() / IcarusPhysics.MAX_OUTPUT_MW, 0, 1)) + .9 * heat);
             case PLASMA -> (float) (glow * (.55 + .3 * heat));
+            // Volume above 1 carries further: the klaxon reaches about 35 blocks at its worst.
+            case KLAXON -> (float) (.8 + 1.4 * IcarusLook.danger(v.coreC(), v.shieldPct(), v.alarm()));
+            case STRAIN -> (float) (.2 + IcarusLook.danger(v.coreC(), v.shieldPct(), v.alarm()));
         };
     }
     /** The roar and song climb with heat and sink as the plasma dims; the shield hum rises as the shield weakens. */
@@ -90,6 +96,8 @@ public final class IcarusLoopSound extends AbstractTickableSoundInstance {
         return switch (kind) {
             case CORE -> (float) (.5 + .25 * glow + heat);
             case PLASMA -> (float) (.75 + .25 * glow + .35 * heat);
+            case KLAXON -> (float) (.95 + .3 * Math.max(0, IcarusLook.danger(v.coreC(), v.shieldPct(), v.alarm()) - .55) / .45);
+            case STRAIN -> (float) (.75 + .35 * IcarusLook.danger(v.coreC(), v.shieldPct(), v.alarm()));
             case SHIELD -> (float) (.8 + .5 * (1 - Math.clamp(v.shieldPct() / 100, 0, 1)));
             case STABILIZER -> .85F + .05F * IcarusLook.beamsLit(v.state(), v.stepLeft());
             default -> 1F;

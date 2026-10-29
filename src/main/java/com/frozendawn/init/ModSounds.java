@@ -108,6 +108,9 @@ public class ModSounds {
     public static final DeferredHolder<SoundEvent, SoundEvent> ICARUS_CORE_COLLAPSE = register("blocks.icarus_core_collapse");
     public static final DeferredHolder<SoundEvent, SoundEvent> ICARUS_SHIELD_HIT = register("blocks.icarus_shield_hit");
     public static final DeferredHolder<SoundEvent, SoundEvent> ICARUS_STABILIZER_SPUTTER = register("blocks.icarus_stabilizer_sputter");
+    public static final DeferredHolder<SoundEvent, SoundEvent> ICARUS_KLAXON = register("blocks.icarus_klaxon");
+    public static final DeferredHolder<SoundEvent, SoundEvent> ICARUS_STRAIN = register("blocks.icarus_strain");
+    public static final DeferredHolder<SoundEvent, SoundEvent> ICARUS_CORE_THUMP = register("blocks.icarus_core_thump");
     public static final DeferredHolder<SoundEvent, SoundEvent> ICARUS_INJECTOR_FEED = register("blocks.icarus_injector_feed");
     public static final DeferredHolder<SoundEvent, SoundEvent> ICARUS_CAPSULE_DOCK = register("blocks.icarus_capsule_dock");
     public static final DeferredHolder<SoundEvent, SoundEvent> ICARUS_IGNITION = register("blocks.icarus_ignition");
