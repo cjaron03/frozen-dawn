@@ -4744,5 +4744,18 @@
         "weight": 2
       }
     ]
+  },
+  "ambient.wind_phase_two": {
+    "subtitle": "subtitle.frozendawn.ambient.wind_phase_two",
+    "sounds": [
+      {
+        "name": "frozendawn:ambient/wind_phase_two_1",
+        "stream": true
+      },
+      {
+        "name": "frozendawn:ambient/wind_phase_two_2",
+        "stream": true
+      }
+    ]
   }
 }
