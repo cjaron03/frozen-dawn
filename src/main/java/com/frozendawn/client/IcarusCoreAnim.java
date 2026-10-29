@@ -146,13 +146,14 @@ public final class IcarusCoreAnim {
         if (player != null && core.getLevel() != null && danger > 0) {
             long now = core.getLevel().getGameTime();
             double d = Math.sqrt(player.distanceToSqr(core.getBlockPos().getCenter()));
-            float near = (float) Math.max(0, 1 - d / SHAKE_RANGE);
-            if (danger > 0.2 && near > 0) { shake = (float) ((0.1 + 1.4 * danger * danger) * near); shakeUntil = now + 2; }
+            float near = (float) Math.sqrt(Math.max(0, 1 - d / SHAKE_RANGE));
+            // Degrees of shake: about half a degree as warnings start, nearly a degree and a half at critical, four at the end.
+            if (danger > 0.2 && near > 0) { shake = (float) ((0.3 + 3.6 * danger * danger) * near); shakeUntil = now + 2; }
             boolean beat = Mth.floor((a.beat - THUMP_AT) / BEAT) != Mth.floor((a.beatO - THUMP_AT) / BEAT);
             if (beat && danger > 0.3) {
                 var c = core.getBlockPos().getCenter();
                 core.getLevel().playLocalSound(c.x, c.y, c.z, ModSounds.ICARUS_CORE_THUMP.get(), SoundSource.BLOCKS, (float) (0.6 + 1.2 * danger), (float) (0.9 + 0.2 * danger), false);
-                kick = Math.max(kick, (float) (1.5 * danger * near));
+                kick = Math.max(kick, (float) (3 * danger * near));
             }
             if (d < IcarusDangerHud.RANGE) IcarusDangerHud.report(now, (float) (danger * Math.sqrt(1 - d / IcarusDangerHud.RANGE)), v.shieldPct(), a.beat);
         }
@@ -227,8 +228,15 @@ public final class IcarusCoreAnim {
         if (shake <= 0 && kick < 0.01f) return;
         float scale = mc.options.screenEffectScale().get().floatValue(), time = (float) (now + event.getPartialTick());
         float amount = shake * scale, jolt = kick * scale;
-        event.setRoll(event.getRoll() + amount * Mth.sin(time * 2.3f) + jolt * Mth.sin(time * 9.1f));
-        event.setPitch(event.getPitch() + amount * 0.5f * Mth.sin(time * 3.7f + 1.1f) + jolt * 0.6f * Mth.sin(time * 11.3f + 0.4f));
-        event.setYaw(event.getYaw() + jolt * 0.4f * Mth.sin(time * 7.7f + 2.0f));
+        // A slow sway with a fast tremor riding on it, and a sharp jolt on each heartbeat.
+        event.setRoll(event.getRoll() + amount * (0.6f * Mth.sin(time * 2.3f) + 0.4f * Mth.sin(time * 13.7f)) + jolt * Mth.sin(time * 9.1f));
+        event.setPitch(event.getPitch() + amount * 0.5f * (Mth.sin(time * 3.7f + 1.1f) + 0.5f * Mth.sin(time * 17.3f)) + jolt * 0.6f * Mth.sin(time * 11.3f + 0.4f));
+        event.setYaw(event.getYaw() + amount * 0.3f * Mth.sin(time * 11.1f + 0.3f) + jolt * 0.4f * Mth.sin(time * 7.7f + 2.0f));
+    }
+
+    /** Each heartbeat jolt also punches the field of view out a little. */
+    @SubscribeEvent public static void punchFov(ViewportEvent.ComputeFov event) {
+        if (kick < 0.01f) return;
+        event.setFOV(event.getFOV() + kick * 1.5f * Minecraft.getInstance().options.screenEffectScale().get().floatValue());
     }
 }
