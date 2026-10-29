@@ -3,6 +3,7 @@ package com.frozendawn.client;
 import com.frozendawn.block.IcarusControllerBlock;
 import com.frozendawn.block.IcarusControllerMenu;
 import com.frozendawn.block.IcarusStructure;
+import com.frozendawn.init.ModSounds;
 import com.frozendawn.network.IcarusSettingsPayload;
 import com.frozendawn.power.IcarusBlast;
 import com.frozendawn.power.IcarusPhysics;
@@ -18,9 +19,12 @@ import net.minecraft.client.gui.components.AbstractSliderButton;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.client.resources.sounds.SimpleSoundInstance;
+import net.minecraft.client.resources.sounds.SoundInstance;
 import net.minecraft.locale.Language;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.FormattedText;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Inventory;
@@ -44,6 +48,7 @@ public final class IcarusControllerScreen extends AbstractContainerScreen<Icarus
     private Setting output, shield, feed;
     private boolean clipHolding;
     private int clipTicks, stepTotal;
+    private SoundInstance clipArm;
     private IcarusPhysics.State shownState;
     private float previewGlow, previewGlowO;
     private List<Component> remaining = List.of();
@@ -53,17 +58,29 @@ public final class IcarusControllerScreen extends AbstractContainerScreen<Icarus
     }
     private int data(int i) { return menu.data().get(i); }
     private void send(int id) { if (minecraft != null && minecraft.gameMode != null) minecraft.gameMode.handleInventoryButtonClick(menu.containerId, id); }
+    /** A command or setting the Controller takes: the button's own click, then its confirm chirp. */
+    private void confirmed(int id) { send(id); ui(ModSounds.ICARUS_UI_CONFIRM.get(), 1.0f); }
+    private SoundInstance ui(SoundEvent sound, float pitch) {
+        var instance = SimpleSoundInstance.forUI(sound, pitch, 0.6f);
+        if (minecraft != null) minecraft.getSoundManager().play(instance);
+        return instance;
+    }
+    /** Holding CLIP arms it: the rising arming tone plays for the one-second hold and stops if the hold is let go. */
+    private void holdClip() { clipHolding = true; clipTicks = 0; stopArming(); clipArm = ui(ModSounds.ICARUS_CLIP_ARM.get(), 1.0f); }
+    private void dropClip() { clipHolding = false; clipTicks = 0; stopArming(); }
+    private void stopArming() { if (clipArm != null && minecraft != null) minecraft.getSoundManager().stop(clipArm); clipArm = null; }
+    @Override public void removed() { stopArming(); super.removed(); }
 
     @Override protected void init() {
         super.init();
         // Start 44, Cole Protocol 74, CLIP 44, Blueprint 58, 6 apart: 238 wide, centred.
         int x = leftPos + (imageWidth - 238) / 2, y = topPos + BUTTON_Y;
-        start = addRenderableWidget(Button.builder(Component.translatable("screen.frozendawn.icarus.start"), b -> send(BUTTON_START)).bounds(x, y, 44, 20).build());
-        cole = addRenderableWidget(Button.builder(Component.translatable("screen.frozendawn.icarus.cole"), b -> send(BUTTON_COLE)).bounds(x + 50, y, 74, 20)
+        start = addRenderableWidget(Button.builder(Component.translatable("screen.frozendawn.icarus.start"), b -> confirmed(BUTTON_START)).bounds(x, y, 44, 20).build());
+        cole = addRenderableWidget(Button.builder(Component.translatable("screen.frozendawn.icarus.cole"), b -> confirmed(BUTTON_COLE)).bounds(x + 50, y, 74, 20)
                 .tooltip(Tooltip.create(Component.translatable("screen.frozendawn.icarus.cole.tooltip"))).build());
         clip = addRenderableWidget(Button.builder(Component.translatable("screen.frozendawn.icarus.clip").withStyle(ChatFormatting.RED), b -> {}).bounds(x + 130, y, 44, 20)
                 .tooltip(Tooltip.create(Component.translatable("screen.frozendawn.icarus.clip.tooltip"))).build());
-        addRenderableWidget(Button.builder(Component.translatable("screen.frozendawn.icarus.blueprint"), b -> send(BUTTON_BLUEPRINT)).bounds(x + 180, y, 58, 20)
+        addRenderableWidget(Button.builder(Component.translatable("screen.frozendawn.icarus.blueprint"), b -> confirmed(BUTTON_BLUEPRINT)).bounds(x + 180, y, 58, 20)
                 .tooltip(Tooltip.create(Component.translatable("screen.frozendawn.icarus.blueprint.tooltip"))).build());
         int w = (imageWidth - 24) / 3, sx = leftPos + (imageWidth - 3 * w - 8) / 2, sy = topPos + SLIDER_Y;
         output = addRenderableWidget(new Setting(sx, sy, w, OUTPUT_KW, (int) (IcarusPhysics.MIN_OUTPUT_MW * 1000), (int) (IcarusPhysics.MAX_OUTPUT_MW * 1000), 50,
@@ -78,7 +95,9 @@ public final class IcarusControllerScreen extends AbstractContainerScreen<Icarus
     private static <E> E pick(E[] values, int i) { return values[Math.clamp(i, 0, values.length - 1)]; }
     private void sendSettings() {
         var pos = menu.pos();
-        if (pos != null) PacketDistributor.sendToServer(new IcarusSettingsPayload(pos, output.current(), shield.current(), feed.current()));
+        if (pos == null) return;
+        PacketDistributor.sendToServer(new IcarusSettingsPayload(pos, output.current(), shield.current(), feed.current()));
+        ui(ModSounds.ICARUS_UI_CONFIRM.get(), 1.25f);
     }
 
     @Override protected void containerTick() {
@@ -87,8 +106,9 @@ public final class IcarusControllerScreen extends AbstractContainerScreen<Icarus
         start.active = s == IcarusPhysics.State.COLD || s == IcarusPhysics.State.CLIPPED;
         cole.active = s != IcarusPhysics.State.COLD && s != IcarusPhysics.State.DETONATED && s.ordinal() < IcarusPhysics.State.COLE_RAMP_DOWN.ordinal();
         clip.active = s.ordinal() >= IcarusPhysics.State.POWER_CHECK.ordinal() && s.ordinal() <= IcarusPhysics.State.RUNNING.ordinal();
-        if (!clip.active) { clipHolding = false; clipTicks = 0; }
-        if (clipHolding && ++clipTicks >= CLIP_HOLD_TICKS) { send(BUTTON_CLIP); clipHolding = false; clipTicks = 0; }
+        if (!clip.active && clipHolding) dropClip();
+        if (!clip.active) clipTicks = 0;
+        if (clipHolding && ++clipTicks >= CLIP_HOLD_TICKS) { send(BUTTON_CLIP); clipHolding = false; clipTicks = 0; clipArm = null; }
         output.sync(data(OUTPUT_KW)); shield.sync(data(SHIELD_SET)); feed.sync(data(FEED));
         previewGlowO = previewGlow;
         double heat = Math.clamp((data(CORE_C) - IcarusPhysics.AMBIENT_C) / (IcarusPhysics.CRITICAL_C - IcarusPhysics.AMBIENT_C), 0, 1);
@@ -118,20 +138,20 @@ public final class IcarusControllerScreen extends AbstractContainerScreen<Icarus
         return lines;
     }
     @Override public boolean mouseClicked(double mx, double my, int button) {
-        if (clip.active && clip.isMouseOver(mx, my) && button == 0) { clipHolding = true; clipTicks = 0; setFocused(clip); return true; }
+        if (clip.active && clip.isMouseOver(mx, my) && button == 0) { holdClip(); setFocused(clip); return true; }
         return super.mouseClicked(mx, my, button);
     }
     @Override public boolean mouseReleased(double mx, double my, int button) {
-        if (clipHolding && button == 0) { clipHolding = false; clipTicks = 0; }
+        if (clipHolding && button == 0) dropClip();
         return super.mouseReleased(mx, my, button);
     }
     @Override public boolean keyPressed(int key, int scan, int mods) {
         boolean activate = key == org.lwjgl.glfw.GLFW.GLFW_KEY_ENTER || key == org.lwjgl.glfw.GLFW.GLFW_KEY_SPACE || key == org.lwjgl.glfw.GLFW.GLFW_KEY_KP_ENTER;
-        if (getFocused() == clip && clip.active && activate) { if (!clipHolding) { clipHolding = true; clipTicks = 0; } return true; }
+        if (getFocused() == clip && clip.active && activate) { if (!clipHolding) holdClip(); return true; }
         return super.keyPressed(key, scan, mods);
     }
     @Override public boolean keyReleased(int key, int scan, int mods) {
-        if (clipHolding && getFocused() == clip) { clipHolding = false; clipTicks = 0; }
+        if (clipHolding && getFocused() == clip) dropClip();
         return super.keyReleased(key, scan, mods);
     }
 
@@ -346,7 +366,19 @@ public final class IcarusControllerScreen extends AbstractContainerScreen<Icarus
 
     @Override public void render(GuiGraphics g, int mx, int my, float partial) {
         super.render(g, mx, my, partial);
-        if (clipTicks > 0) g.fill(clip.getX(), clip.getY() + clip.getHeight(), clip.getX() + clip.getWidth() * clipTicks / CLIP_HOLD_TICKS, clip.getY() + clip.getHeight() + 2, RED);
+        if (clipTicks > 0) {
+            // The held CLIP glows red, deeper and pulsing faster as the hold nears its end, with the fill bar beneath.
+            float k = Math.min(1, (clipTicks + (clipHolding ? partial : 0)) / CLIP_HOLD_TICKS);
+            float pulse = 0.5f + 0.5f * Mth.sin((clipTicks + partial) * (0.6f + 1.4f * k));
+            int a = (int) (40 + 150 * k * (0.6f + 0.4f * pulse));
+            int x0 = clip.getX(), y0 = clip.getY(), x1 = x0 + clip.getWidth(), y1 = y0 + clip.getHeight();
+            g.fill(x0, y0, x1, y1, a << 24 | 0xFF2A1A);
+            int edge = (int) (120 + 135 * k) << 24 | 0xFF5040;
+            g.fill(x0 - 1, y0 - 1, x1 + 1, y0, edge); g.fill(x0 - 1, y1, x1 + 1, y1 + 1, edge);
+            g.fill(x0 - 1, y0, x0, y1, edge); g.fill(x1, y0, x1 + 1, y1, edge);
+            g.drawCenteredString(font, clip.getMessage(), (x0 + x1) / 2, y0 + (clip.getHeight() - 8) / 2, 0xFFFFE0D8);
+            g.fill(x0, y1 + 1, x0 + (int) (clip.getWidth() * k), y1 + 3, RED);
+        }
         var details = details(mx - leftPos, my - topPos);
         if (!details.isEmpty()) g.renderComponentTooltip(font, details, mx, my);
         else renderTooltip(g, mx, my);

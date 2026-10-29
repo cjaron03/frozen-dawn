@@ -212,3 +212,23 @@ render vacuum_thud \
   -f lavfi -i "aevalsrc='exp(-5*t)':s=44100:d=1.5" \
   -filter_complex "[1:a]lowpass=f=150,volume=1.5[n];[n][2:a]amultiply[body];[0:a][body]amix=inputs=2:normalize=0,lowpass=f=200,afade=t=in:st=0:d=0.01,afade=t=out:st=1.2:d=0.3,alimiter=limit=0.9:level=0[out]"
 
+
+# UI confirm, 0.3 s: the Controller accepting a command or setting. Two clean blips, A5 then E6.
+render ui_confirm \
+  -f lavfi -i "aevalsrc='0.35*exp(-30*t)*sin(2*PI*880*t)*lt(t\,0.12) + if(gte(t\,0.09)\, 0.35*exp(-22*(t-0.09))*sin(2*PI*1318.5*(t-0.09))\, 0)':s=44100:d=0.3" \
+  -filter_complex "[0:a]afade=t=in:st=0:d=0.003,afade=t=out:st=0.24:d=0.06,alimiter=limit=0.8:level=0[out]"
+
+# CLIP arm, 1 s: the hold-to-clip charge, matching the one-second hold. A pulsed tone climbing 400 to 1600 Hz, its
+# pulse rate rising from 8 to 20 Hz.
+render clip_arm \
+  -f lavfi -i "aevalsrc='(0.18+0.14*t)*sin(2*PI*(400*t+600*t*t))*(0.55+0.45*sin(2*PI*(8*t+6*t*t)))':s=44100:d=1" \
+  -f lavfi -i "anoisesrc=color=pink:duration=1:sample_rate=44100:seed=61090" \
+  -filter_complex "[1:a]highpass=f=1500,volume=0.08[n];[0:a][n]amix=inputs=2:normalize=0,afade=t=in:st=0:d=0.02,afade=t=out:st=0.94:d=0.06,alimiter=limit=0.8:level=0[out]"
+
+# Ignition whump, 2.5 s: the shove of air as the first annihilation lights. A falling sub-bass punch under a pink
+# pressure rush that swells and dies away.
+render ignition_whump \
+  -f lavfi -i "aevalsrc='1.0*exp(-3.2*t)*sin(2*PI*(44*t-9*t*t)) + 0.4*exp(-6*t)*sin(2*PI*(88*t-18*t*t))':s=44100:d=2.5" \
+  -f lavfi -i "anoisesrc=color=pink:duration=2.5:sample_rate=44100:seed=61091" \
+  -f lavfi -i "aevalsrc='min(1\, t/0.04)*exp(-2.4*t)':s=44100:d=2.5" \
+  -filter_complex "[1:a]lowpass=f=420,volume=1.6[n];[n][2:a]amultiply[rush];[0:a][rush]amix=inputs=2:normalize=0,afade=t=in:st=0:d=0.004,afade=t=out:st=2.0:d=0.5,alimiter=limit=0.9:level=0[out]"

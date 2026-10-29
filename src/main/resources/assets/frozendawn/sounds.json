@@ -4890,6 +4890,33 @@
       }
     ]
   },
+  "blocks.icarus_ui_confirm": {
+    "category": "blocks",
+    "subtitle": "subtitle.frozendawn.blocks.icarus_ui_confirm",
+    "sounds": [
+      {
+        "name": "frozendawn:blocks/icarus/ui_confirm"
+      }
+    ]
+  },
+  "blocks.icarus_clip_arm": {
+    "category": "blocks",
+    "subtitle": "subtitle.frozendawn.blocks.icarus_clip_arm",
+    "sounds": [
+      {
+        "name": "frozendawn:blocks/icarus/clip_arm"
+      }
+    ]
+  },
+  "blocks.icarus_ignition_whump": {
+    "category": "blocks",
+    "subtitle": "subtitle.frozendawn.blocks.icarus_ignition_whump",
+    "sounds": [
+      {
+        "name": "frozendawn:blocks/icarus/ignition_whump"
+      }
+    ]
+  },
   "blocks.icarus_injector_feed": {
     "category": "blocks",
     "subtitle": "subtitle.frozendawn.blocks.icarus_injector_feed",
