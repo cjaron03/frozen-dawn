@@ -7,17 +7,44 @@ from pathlib import Path
 import xml.etree.ElementTree as ET
 
 
-def verify(report, requirements, artifacts, fingerprint):
+def read_report(report):
     if not report.is_file(): raise ValueError(f'No completed GameTest report: {report}')
     root = ET.parse(report).getroot()
     cases = list(root.iter('testcase'))
-    if not cases: raise ValueError('GameTest report contains zero tests')
+    if not cases: raise ValueError(f'GameTest report contains zero tests: {report}')
     for problem in ('failure', 'error', 'skipped'):
         found = list(root.iter(problem))
         if found: raise ValueError(f'{len(found)} {problem} result(s): ' + '; '.join(e.get('message', '') for e in found))
     for element in root.iter():
         for attr in ('failures', 'errors', 'skipped'):
             if int(element.get(attr, '0')): raise ValueError(f'Report declares {attr}={element.get(attr)}')
+    return cases
+
+
+def check_shards(reports, cases_by_report):
+    """Shards must together run every test of one test list, each exactly once (GameTestPacing#keepShard)."""
+    shards = []
+    for report, cases in zip(reports, cases_by_report):
+        manifest = report.with_name(report.name + '.shard')
+        if not manifest.is_file(): raise ValueError(f'No shard manifest beside {report}')
+        shard = dict(line.split('=', 1) for line in manifest.read_text().splitlines() if '=' in line)
+        if len({case.get('name') for case in cases}) != int(shard['kept']):
+            raise ValueError(f'Shard {shard["index"]} kept {shard["kept"]} tests but reported a different set')
+        shards.append(shard)
+    if len({(s['count'], s['total'], s['all']) for s in shards}) != 1: raise ValueError('Shards split different test lists')
+    if sorted(int(s['index']) for s in shards) != list(range(int(shards[0]['count']))) or len(shards) != int(shards[0]['count']):
+        raise ValueError('Shard reports are missing or repeated')
+    names = [case.get('name') for cases in cases_by_report for case in cases]
+    if sum(int(s['kept']) for s in shards) != int(shards[0]['total']) or len(set(names)) != int(shards[0]['total']):
+        raise ValueError('Shards do not cover every test exactly once')
+
+
+def verify(reports, requirements, artifacts, fingerprint):
+    reports = [reports] if isinstance(reports, Path) else list(reports)
+    cases_by_report = [read_report(report) for report in reports]
+    if len(reports) > 1 or any(report.with_name(report.name + '.shard').exists() for report in reports):
+        check_shards(reports, cases_by_report)
+    cases = [case for found in cases_by_report for case in found]
     required = {}
     for line in requirements.read_text().splitlines():
         if not line.strip() or line.startswith('#'): continue
@@ -50,7 +77,7 @@ def verify(report, requirements, artifacts, fingerprint):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--report', type=Path, required=True)
+    parser.add_argument('--report', type=Path, action='append', required=True, help='repeat once per shard')
     parser.add_argument('--required', type=Path, required=True)
     parser.add_argument('--artifacts', type=Path, required=True)
     parser.add_argument('--build-info', type=Path, required=True)

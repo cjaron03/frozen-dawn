@@ -343,6 +343,57 @@ tasks.named('runGameTestServer') {
     }
 }
 
+// The gate's tests run on several servers side by side. A server ticks on one thread and the gate is bound by
+// that thread, so one server leaves the rest of the machine idle. Each shard keeps whole batches, the same ones a
+// single server runs (GameTestPacing#keepShard), at the normal tick rate, and gameTestGate checks that the shards
+// together ran every test exactly once. -PfdShards=1 runs them all on one server.
+def gameTestShards = providers.gradleProperty('fdShards').map { it as int }.getOrElse(2)
+def gameTestShardDirectory = { int shard -> layout.buildDirectory.dir("gametest/shard-${shard}").get().asFile }
+tasks.register('runGameTestShards') {
+    group = 'verification'
+    description = "Runs every GameTest on ${gameTestShards} servers side by side, each with its own world and report."
+    def run = tasks.named('runGameTestServer')
+    dependsOn { run.get().taskDependencies.getDependencies(run.get()) }
+    outputs.upToDateWhen { false }
+    def artifacts = architectReports
+    doLast {
+        // The servers start exactly as runGameTestServer would, with their own world, report and evidence.
+        def server = run.get()
+        def log = logger
+        def processes = []
+        try {
+            (0..<gameTestShards).each { shard ->
+                def directory = gameTestShardDirectory(shard)
+                delete(directory)
+                def runDirectory = new File(directory, 'run')
+                runDirectory.mkdirs()
+                def command = [server.javaLauncher.get().executablePath.asFile.absolutePath]
+                command += server.allJvmArgs
+                // After the run's own argument file, so these win.
+                command += ["-Dfrozendawn.gametest.report=${new File(directory, 'report.xml').absolutePath}",
+                            "-Dfrozendawn.architect.reports=${new File(artifacts.get().asFile, "shard-${shard}").absolutePath}",
+                            "-Dfrozendawn.gametest.shard=${shard}/${gameTestShards}"]
+                command += ['-cp', server.classpathProvider.asPath, server.mainClass.get()]
+                command += server.args
+                def builder = new ProcessBuilder(command.collect { it.toString() }).directory(runDirectory).redirectErrorStream(true)
+                builder.environment().putAll(server.environmentProperty.get())
+                processes << builder.start()
+            }
+            def pumps = processes.withIndex().collect { process, shard ->
+                Thread.start { process.inputStream.eachLine { log.lifecycle("[shard ${shard}] ${it}") } }
+            }
+            def exits = processes.collect { it.waitFor() }
+            pumps*.join()
+            def failed = exits.withIndex().findAll { exit, shard -> exit != 0 }
+            if (!failed.isEmpty())
+                throw new GradleException('GameTest servers exited with failures: ' + failed.collect { exit, shard -> "shard ${shard} exit ${exit}" }.join(', '))
+        } finally {
+            // Only the servers this task started.
+            processes.findAll { it.alive }*.destroy()
+        }
+    }
+}
+
 tasks.named('runGameTestQuick') {
     def report = quickReport
     def runDirectory = quickRunDirectory
@@ -375,9 +426,9 @@ tasks.register('gameTestQuick') {
 tasks.register('gameTestGate', Exec) {
     group = 'verification'
     description = 'Requires every named Architect GameTest and validates its current-build report.'
-    dependsOn tasks.named('runGameTestServer')
+    dependsOn tasks.named('runGameTestShards')
     commandLine 'python3', '-B', 'tools/verify_architect_gate.py',
-            '--report', gameTestReport.get().asFile.absolutePath,
+            *(0..<gameTestShards).collectMany { ['--report', new File(gameTestShardDirectory(it), 'report.xml').absolutePath] },
             '--required', file('config/architect-required-tests.txt').absolutePath,
             '--artifacts', architectReports.get().asFile.absolutePath,
             '--build-info', layout.buildDirectory.file('resources/main/architect-build.properties').get().asFile.absolutePath
