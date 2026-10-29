@@ -16,8 +16,6 @@ public final class IcarusFx {
     public static final int HIT_SLOT = 2, HIT_LIFE = 8;
     /** The drawn shield's radius in blocks, about the core's centre. */
     public static final float SHIELD_RADIUS = 4.5f;
-    /** Below this shield percentage one stabilizer starts to fail. */
-    public static final double SPUTTER_BELOW_PCT = 30;
     /** A failing stabilizer's beam may cut out in each slot of this many ticks. */
     public static final int SPUTTER_SLOT = 2;
     private IcarusFx() {}
@@ -54,12 +52,10 @@ public final class IcarusFx {
     /** Which stabilizer fails for this core, as a 2D direction index. */
     public static int sputterIndex(HalseyCoreBlockEntity core) { return Math.floorMod(core.getBlockPos().hashCode() * 31 + 7, IcarusLook.STABILIZERS); }
 
-    /** How badly the failing stabilizer misbehaves, 0 while the shield holds above SPUTTER_BELOW_PCT, rising to 1 as it
-     * empties; 0 too once its beam is dark. */
+    /** How badly this core's failing stabilizer misbehaves (IcarusLook.stabilizerFailing), or 0 while its beam is dark. */
     public static double failing(HalseyCoreBlockEntity core) {
         var v = core.visual();
-        if (IcarusLook.beamsLit(v.state(), v.stepLeft()) <= sputterIndex(core) || v.shieldPct() <= 0 || v.shieldPct() >= SPUTTER_BELOW_PCT) return 0;
-        return Math.clamp((SPUTTER_BELOW_PCT - v.shieldPct()) / SPUTTER_BELOW_PCT, 0.15, 1);
+        return IcarusLook.beamsLit(v.state(), v.stepLeft()) <= sputterIndex(core) ? 0 : IcarusLook.stabilizerFailing(v.state(), v.shieldPct());
     }
 
     /** Whether the failing beam is out during this slot: more often the worse it fails, never for long. */

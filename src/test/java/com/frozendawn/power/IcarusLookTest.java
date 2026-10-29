@@ -67,6 +67,15 @@ class IcarusLookTest {
         assertTrue(IcarusLook.churn(2.5, 3000) > IcarusLook.churn(1, 3000));
         assertTrue(IcarusLook.churn(1, 7000) > IcarusLook.churn(1, 3000));
     }
+    @Test void aStabilizerFailsOnlyWhenARunningShieldRunsLowNotWhileItChargesOrDischarges() {
+        for (var state : State.values()) {
+            boolean running = state == State.RAMP || state == State.RUNNING;
+            assertEquals(running ? 0.5 : 0, IcarusLook.stabilizerFailing(state, 15), 1e-9, state + " at 15%");
+        }
+        assertEquals(0, IcarusLook.stabilizerFailing(State.RUNNING, 30));
+        assertEquals(0, IcarusLook.stabilizerFailing(State.RUNNING, 0));
+        assertTrue(IcarusLook.stabilizerFailing(State.RUNNING, 3) > IcarusLook.stabilizerFailing(State.RUNNING, 25));
+    }
     @Test void dangerClimbsFromCalmThroughWarningToCertainLossAsTheShieldEmpties() {
         assertEquals(0, IcarusLook.danger(7000, 10, Alarm.NONE));
         double warning = IcarusLook.danger(6600, 40, Alarm.WARNING), critical = IcarusLook.danger(5000, 14, Alarm.CRITICAL);

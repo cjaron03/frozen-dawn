@@ -35,6 +35,15 @@ public final class IcarusLook {
         };
     }
 
+    /** Below this shield percentage, in a running reactor, one stabilizer starts to fail. */
+    public static final double SPUTTER_BELOW_PCT = 30;
+    /** How badly the failing stabilizer misbehaves, 0 to 1: nothing unless the reactor is ramping or running and its shield
+     * has fallen below SPUTTER_BELOW_PCT, so a shield still charging at startup or draining in the Cole Protocol never sets
+     * it off; from 0.15 rising to 1 as the shield empties. Cosmetic. */
+    public static double stabilizerFailing(State state, double shieldPct) {
+        if ((state != State.RAMP && state != State.RUNNING) || shieldPct <= 0 || shieldPct >= SPUTTER_BELOW_PCT) return 0;
+        return Math.clamp((SPUTTER_BELOW_PCT - shieldPct) / SPUTTER_BELOW_PCT, 0.15, 1);
+    }
     /** How close the reactor feels to the end, 0 to 1, for the escalating alarm, shake and screen warnings: nothing without
      * an alarm, a little at caution, tense at warning, and from 0.55 at critical up to 1 as the shield runs out, sooner if
      * the core is past the red line. */
