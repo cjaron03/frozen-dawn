@@ -52,6 +52,16 @@ class IcarusLookTest {
         assertTrue(IcarusLook.shieldAlpha(State.RUNNING, 100) > IcarusLook.shieldAlpha(State.RUNNING, 20), "a weak shield thins");
     }
 
+    @Test void theCoreBlockGivesWayToThePlasmaFromInjectionUntilTheReactorIsColdAgain() {
+        for (var s : State.values()) {
+            boolean hidden = switch (s) {
+                case INJECTION, PRIMING, IGNITION, RAMP, RUNNING, CLIPPED, COLE_RAMP_DOWN, COLE_COOL, COLE_RECOVER, COLE_DISCHARGE -> true;
+                default -> false;
+            };
+            assertEquals(hidden, IcarusLook.coreHidden(s), s.name());
+        }
+    }
+
     @Test void churnRisesWithOutputAndHeat() {
         assertEquals(0, IcarusLook.churn(0, 20));
         assertTrue(IcarusLook.churn(2.5, 3000) > IcarusLook.churn(1, 3000));

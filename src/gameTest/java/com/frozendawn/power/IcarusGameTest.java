@@ -125,6 +125,8 @@ public final class IcarusGameTest {
             c.physics().setCommissionedForTest(true);
             dock(h).setItem(0, AntimatterCapsuleItem.sealed(IcarusPhysics.CAPSULE).copyWithCount(2));
             matter(h).setItem(0, new ItemStack(Items.COBBLESTONE, 64));
+            var core = h.absolutePos(CENTER);
+            h.assertFalse(l.getBlockState(core).getValue(HalseyCoreBlock.HIDDEN), "a cold core block is solid");
             h.assertTrue(c.press(IcarusControllerBlockEntity.BUTTON_START), "Start is accepted from COLD");
             c.second(l);
             long full = stored(banks);
@@ -135,6 +137,9 @@ public final class IcarusGameTest {
                         h.assertValueEqual(c.physics().state(), IcarusPhysics.State.RUNNING, "state after two minutes");
                         h.assertTrue(port(h).supplyWatts() > 0, "A running reactor exports net power, got " + port(h).supplyWatts() + " W");
                         h.assertValueEqual(dock(h).empties(), 2, "empty casings left in the dock");
+                        h.assertTrue(l.getBlockState(core).getValue(HalseyCoreBlock.HIDDEN), "the plasma replaces the core block");
+                        h.assertValueEqual(l.getBlockState(core).getLightEmission(l, core), 15, "the running core lights its chamber");
+                        h.assertTrue(l.getBlockEntity(core) instanceof HalseyCoreBlockEntity, "the core keeps its block entity");
                     })
                     .thenSucceed();
         });

@@ -127,7 +127,8 @@ public final class IcarusControllerBlockEntity extends BlockEntity implements Me
         nextCharge = physics.coreCharge() + (dock == null ? 0 : dock.injectable(IcarusPhysics.MAX_CAPSULES * IcarusPhysics.CAPSULE - physics.coreCharge()));
         empties = dock == null ? 0 : dock.empties();
         matter = feed == null ? 0 : feed.count();
-        if (valid && l.getBlockEntity(result.core()) instanceof HalseyCoreBlockEntity core)
+        // Published even while the frame is incomplete, so a core never stays hidden after its reactor goes cold.
+        if (l.getBlockEntity(result.core()) instanceof HalseyCoreBlockEntity core)
             core.publish(l, new HalseyCoreBlockEntity.Visual(physics.state(), (int) Math.round(readout.coreC()), Math.round(readout.shieldPct() * 100) / 100.0,
                     Math.round(readout.grossMw() * 100) / 100.0, readout.alarm(), readout.stepSecondsLeft()));
         setChanged();

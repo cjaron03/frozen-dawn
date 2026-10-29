@@ -1,6 +1,7 @@
 package com.frozendawn.block;
 
 import com.frozendawn.init.ModBlockEntities;
+import com.frozendawn.power.IcarusLook;
 import com.frozendawn.power.IcarusPhysics;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
@@ -26,6 +27,10 @@ public final class HalseyCoreBlockEntity extends BlockEntity {
     public void publish(ServerLevel l, Visual next) {
         if (next.equals(visual)) return;
         visual = next; l.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_CLIENTS);
+        boolean hidden = IcarusLook.coreHidden(next.state());
+        // Same block, new state: the block entity stays and IcarusPartBlock does not count it as a removed part.
+        if (getBlockState().hasProperty(HalseyCoreBlock.HIDDEN) && getBlockState().getValue(HalseyCoreBlock.HIDDEN) != hidden)
+            l.setBlock(worldPosition, getBlockState().setValue(HalseyCoreBlock.HIDDEN, hidden), Block.UPDATE_ALL);
     }
 
     @Override public CompoundTag getUpdateTag(HolderLookup.Provider r) {

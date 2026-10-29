@@ -1,7 +1,10 @@
 {
   "variants": {
-    "": {
+    "hidden=false": {
       "model": "frozendawn:block/halsey_core"
+    },
+    "hidden=true": {
+      "model": "frozendawn:block/halsey_core_hidden"
     }
   }
 }

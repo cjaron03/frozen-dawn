@@ -27,6 +27,14 @@ public final class IcarusLook {
         };
     }
 
+    /** Whether the plasma has taken the core block's place: from injection until the antimatter is back in its capsules. */
+    public static boolean coreHidden(State state) {
+        return switch (state) {
+            case INJECTION, PRIMING, IGNITION, RAMP, RUNNING, CLIPPED, COLE_RAMP_DOWN, COLE_COOL, COLE_RECOVER, COLE_DISCHARGE -> true;
+            default -> false;
+        };
+    }
+
     public static boolean critical(double coreC, Alarm alarm) { return alarm == Alarm.CRITICAL || coreC >= IcarusPhysics.CRITICAL_C; }
 
     public static int coreColor(double coreC, Alarm alarm) {
