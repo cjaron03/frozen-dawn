@@ -8,7 +8,7 @@ capsules loaded. A sealed glass room stands beside the reactor and another
 about 300 blocks south, with an open vacuum spot next to it; once both rooms
 hold air the world moves to late phase 6, so everything outside is vacuum.
 The witness spots suit a 2-capsule load (blast radius 126). A clickable chat
-menu gives the kit, teleports, an air reading, day and night, and game modes.
+menu gives the kit, a battery recharge, teleports, an air reading, day and night, and game modes.
 
 --perf writes the disposable "Icarus Perf" world instead: the template's own
 terrain at phase 0, for the lab-only full-load blast timed by LabIcarusPerf.
@@ -35,7 +35,7 @@ def button(label, function, color='aqua'):
 
 
 MENU = json.dumps(['', {'text': 'Icarus: ', 'color': 'gray'},
-                   button('Kit', 'kit', 'green'), button('Reactor', 'reactor'), button('Near room', 'near_room'),
+                   button('Kit', 'kit', 'green'), button('Recharge', 'recharge', 'green'), button('Reactor', 'reactor'), button('Near room', 'near_room'),
                    button('Air room', 'air_room'), button('Vacuum spot', 'vacuum_spot'), button('Air?', 'air', 'light_purple'),
                    button('Day', 'day'), button('Night', 'night'),
                    button('Survival', 'survival', 'yellow'), button('Creative', 'creative', 'yellow'),
@@ -85,6 +85,8 @@ SCRIPTS = {
         'item replace entity @s hotbar.8 with frozendawn:o2_tank_mk3',
         f'function {NS}:menu',
     ]),
+    # Refills the lab's banks, which a commissioning start and three cold starts would empty.
+    'recharge': 'execute positioned -1 -60 -8 run frozendawn debug world icaruslab recharge\n' + f'function {NS}:menu',
     'reactor': 'tp @s 0 -60 0 180 0\n' + f'function {NS}:menu',
     'near_room': 'tp @s -12 -60 -2 180 0\n' + f'function {NS}:menu',
     'air_room': 'tp @s -6 -60 282 180 0\n' + f'function {NS}:menu',

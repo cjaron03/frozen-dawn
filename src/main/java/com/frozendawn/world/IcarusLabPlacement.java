@@ -16,11 +16,13 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.ChestBlockEntity;
 
 /** A complete, cold, uncommissioned AMR-1 Icarus for playtests, with no capsules loaded: the player docks them and
- * presses Start. A block of charged banks beside the frame pays a commissioning start and a restart after the Cole
- * Protocol, and a chest by the Matter Port holds matter. */
+ * presses Start. A block of charged banks beside the frame pays a commissioning start and three cold starts after it,
+ * and a chest by the Matter Port holds matter. */
 public final class IcarusLabPlacement {
-    /** A 6 x 6 x 4 block of banks at 2 MJ each: 288 MJ against the 260 MJ two starts draw at 1 MW. */
+    /** A 6 x 6 x 4 block of banks at 2 MJ each, 288 MJ: a commissioning start draws 110 MJ and each later cold start 50 MJ. */
     public static final int BANKS_X = 6, BANKS_Z = 6, BANKS_Y = 4;
+    /** Horizontal reach of recharge: the banks stand within 20 blocks of the Controller. */
+    static final int RECHARGE_REACH = 32;
     private IcarusLabPlacement() {}
 
     public record Lab(BlockPos controller, BlockPos matterChest, int failedLinks) {}
@@ -45,5 +47,16 @@ public final class IcarusLabPlacement {
         if (level.getBlockEntity(chest) instanceof ChestBlockEntity box)
             for (int slot = 0; slot < 9; slot++) box.setItem(slot, new ItemStack(Items.COBBLESTONE, 64));
         return new Lab(controller, chest, failed);
+    }
+
+    /** Refills every bank within RECHARGE_REACH of center, for another playtest run; returns how many it refilled. */
+    public static int recharge(ServerLevel level, BlockPos center) {
+        int refilled = 0;
+        for (var pos : BlockPos.betweenClosed(center.offset(-RECHARGE_REACH, -8, -RECHARGE_REACH), center.offset(RECHARGE_REACH, 8, RECHARGE_REACH)))
+            if (level.getBlockEntity(pos) instanceof PowerStorageBlockEntity store) {
+                for (int cell = 0; cell < store.getContainerSize(); cell++) store.setItem(cell, PowerCellItem.charged(PowerCellItem.CAPACITY_JOULES));
+                refilled++;
+            }
+        return refilled;
     }
 }

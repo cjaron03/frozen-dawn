@@ -87,6 +87,14 @@ final class FrozenDawnWorldCommand {
         return 1;
     }
 
+    /** Op playtest hook: refills the batteries near the source, such as a lab reactor's banks. */
+    private static int rechargeIcarusLab(CommandContext<CommandSourceStack> context) {
+        var source = context.getSource();
+        int banks = com.frozendawn.world.IcarusLabPlacement.recharge(source.getLevel(), net.minecraft.core.BlockPos.containing(source.getPosition()));
+        source.sendSuccess(() -> Component.literal("Recharged " + banks + " battery bank(s)"), true);
+        return banks;
+    }
+
     private static final SuggestionProvider<CommandSourceStack> BLUEPRINTS = (context, builder) ->
             SharedSuggestionProvider.suggest(java.util.stream.Stream.concat(java.util.stream.Stream.of("all"), com.frozendawn.data.FabricatorBlueprints.SLATES.stream()), builder);
 
@@ -118,7 +126,8 @@ final class FrozenDawnWorldCommand {
                 .then(Commands.literal("reactorsite").executes(FrozenDawnWorldCommand::placeReactorSite))
                 .then(Commands.literal("helionsite").executes(FrozenDawnWorldCommand::placeHelionSite))
                 .then(Commands.literal("sfrlab").executes(FrozenDawnWorldCommand::placeSfrLab))
-                .then(Commands.literal("icaruslab").executes(FrozenDawnWorldCommand::placeIcarusLab))
+                .then(Commands.literal("icaruslab").executes(FrozenDawnWorldCommand::placeIcarusLab)
+                        .then(Commands.literal("recharge").executes(FrozenDawnWorldCommand::rechargeIcarusLab)))
                 .then(Commands.literal("blueprint")
                         .then(Commands.literal("learn").then(Commands.argument("id", StringArgumentType.word()).suggests(BLUEPRINTS)
                                 .executes(context -> blueprint(context, true))))

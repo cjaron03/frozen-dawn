@@ -402,7 +402,7 @@ public final class IcarusGameTest {
     }
 
     /** The lab command's reactor: valid, cold and uncommissioned, with matter in a chest and enough stored charge on the
-     * power port's grid for a commissioning start and a restart after the Cole Protocol. Its own batch: the banks reach
+     * power port's grid for a commissioning start and three cold starts after it. Its own batch: the banks reach
      * past the template. */
     @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "icarus_lab", timeoutTicks = 100)
     public static void icarusLabBuildsAValidChargedReactor(GameTestHelper h) {
@@ -421,11 +421,30 @@ public final class IcarusGameTest {
         h.assertTrue(matter >= 64, "Expected at least a stack of matter in the chest, got " + matter);
         long first = IcarusPhysics.POWER_CHECK_S + IcarusPhysics.RESERVE_CHARGE_S + IcarusPhysics.SPINUP_S + IcarusPhysics.COMMISSIONING_S
                 + IcarusPhysics.INJECTION_S + IcarusPhysics.PRIMING_S + IcarusPhysics.IGNITION_S;
-        long needed = (long) ((2 * first - IcarusPhysics.COMMISSIONING_S) * IcarusPhysics.STARTUP_DRAW_KW * 1000);
+        // A commissioning start, then three cold starts after Cole Protocols; only the reserve and stabilizer steps draw.
+        long needed = (long) ((4 * (IcarusPhysics.RESERVE_CHARGE_S + IcarusPhysics.SPINUP_S) + IcarusPhysics.COMMISSIONING_S) * IcarusPhysics.STARTUP_DRAW_KW * 1000);
         h.startSequence()
                 .thenWaitUntil(() -> h.assertTrue(PowerNetworks.priorityBudget(l, result.powerPort()) >= needed,
                         "Expected " + needed + " J on the power port's grid, got " + PowerNetworks.priorityBudget(l, result.powerPort())))
                 .thenSucceed();
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "icarus_lab", timeoutTicks = 100)
+    public static void icarusLabRechargeRefillsDrainedBanks(GameTestHelper h) {
+        var l = h.getLevel();
+        var lab = com.frozendawn.world.IcarusLabPlacement.build(l, h.absolutePos(CENTER), Direction.SOUTH);
+        var banks = new java.util.ArrayList<PowerStorageBlockEntity>();
+        for (int y = 0; y < com.frozendawn.world.IcarusLabPlacement.BANKS_Y; y++) for (int z = 0; z < com.frozendawn.world.IcarusLabPlacement.BANKS_Z; z++)
+            for (int x = 0; x < com.frozendawn.world.IcarusLabPlacement.BANKS_X; x++)
+                if (l.getBlockEntity(IcarusStructure.cell(h.absolutePos(CENTER), Direction.SOUTH, 10 + x, IcarusStructure.BOTTOM + 1 + y, 2 - z)) instanceof PowerStorageBlockEntity store) banks.add(store);
+        h.assertValueEqual(banks.size(), com.frozendawn.world.IcarusLabPlacement.BANKS_X * com.frozendawn.world.IcarusLabPlacement.BANKS_Z * com.frozendawn.world.IcarusLabPlacement.BANKS_Y, "lab banks found");
+        long full = stored(banks);
+        for (var store : banks) for (int cell = 0; cell < store.getContainerSize(); cell++) store.setItem(cell, com.frozendawn.item.PowerCellItem.charged(0));
+        h.assertValueEqual(stored(banks), 0L, "drained banks");
+        int refilled = com.frozendawn.world.IcarusLabPlacement.recharge(l, lab.controller());
+        h.assertTrue(refilled >= banks.size(), "Expected every lab bank recharged, got " + refilled);
+        h.assertValueEqual(stored(banks), full, "stored after recharge");
+        h.succeed();
     }
 
     private static IcarusControllerBlockEntity icarus(GameTestHelper h, BlockPos controller) {
