@@ -5,9 +5,7 @@ import com.frozendawn.entity.ArchitectLabGameTest;
 import com.frozendawn.maeve.BlindArchitectGameTest;
 import com.frozendawn.maeve.LabBridgeGameTest;
 import com.frozendawn.maeve.MaeveConvergenceGameTest;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
@@ -29,8 +27,7 @@ import net.neoforged.neoforge.event.server.ServerStartedEvent;
 
 /**
  * How fast, and how much of, a game test run goes. Both are opt-in through system properties, so a plain
- * {@code runGameTestServer} runs every test at 20 ticks per second, as vanilla does; only the order of the default
- * batch differs ({@link #longestFirst}).
+ * {@code runGameTestServer} behaves as vanilla does.
  *
  * <p>{@value #SPRINT_PROPERTY}: tests wait in ticks, never in seconds, so the server may tick as fast as it can
  * instead of at 20 per second. This is {@code /tick sprint} for the whole run; what each test sees is unchanged,
@@ -43,7 +40,6 @@ import net.neoforged.neoforge.event.server.ServerStartedEvent;
 public final class GameTestPacing {
     public static final String SPRINT_PROPERTY = "frozendawn.gametest.sprint";
     public static final String ONLY_PROPERTY = "frozendawn.gametest.only";
-    private static final String DEFAULT_BATCH = "defaultBatch";
     /** These freeze, step or sprint the server themselves, or call the lab bridge, which refuses work mid-sprint. */
     private static final List<Class<?>> NORMAL_PACE = List.of(
             LabBridgeGameTest.class, ArchitectLabGameTest.class, BlindArchitectGameTest.class, MaeveConvergenceGameTest.class);
@@ -73,7 +69,6 @@ public final class GameTestPacing {
     static void prepare(ServerAboutToStartEvent event) {
         if (!(event.getServer() instanceof GameTestServer server)) return;
         List<TestFunction> tests = testFunctions(server);
-        longestFirst(tests);
         if (Boolean.getBoolean(SPRINT_PROPERTY)) {
             Set<String> paced = NORMAL_PACE.stream().flatMap(type -> Arrays.stream(type.getDeclaredMethods()))
                     .filter(method -> method.isAnnotationPresent(GameTest.class))
@@ -89,19 +84,6 @@ public final class GameTestPacing {
         FrozenDawn.LOGGER.info("Game tests selected by {}: {} of {}", fragments, tests.size(), before);
         // An empty selection would let the server finish with nothing run and call it a pass.
         if (tests.isEmpty()) throw new IllegalStateException("No game test name contains any of " + fragments);
-    }
-
-    /**
-     * The server cuts each batch name into runs of 50 in list order and runs a run's tests side by side, so a run
-     * lasts as long as its slowest test. Ordering the default batch by timeout puts the long tests in the same runs
-     * instead of one in each. Named batches keep their order and their own runs. The same tests run either way.
-     */
-    static void longestFirst(List<TestFunction> tests) {
-        List<Integer> slots = new ArrayList<>();
-        for (int i = 0; i < tests.size(); i++) if (DEFAULT_BATCH.equals(tests.get(i).batchName())) slots.add(i);
-        List<TestFunction> sorted = slots.stream().map(tests::get)
-                .sorted(Comparator.comparingLong((TestFunction test) -> test.setupTicks() + test.maxTicks()).reversed()).toList();
-        for (int i = 0; i < slots.size(); i++) tests.set(slots.get(i), sorted.get(i));
     }
 
     @SubscribeEvent
