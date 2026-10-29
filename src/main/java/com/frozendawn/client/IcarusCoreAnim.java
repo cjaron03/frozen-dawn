@@ -143,6 +143,8 @@ public final class IcarusCoreAnim {
         // Near the end the ground shakes harder the worse it gets, the core thumps on every heartbeat and jolts the view,
         // and the screen's edges pulse red (IcarusDangerHud).
         var player = Minecraft.getInstance().player;
+        if (player != null && core.getLevel() != null && v.state() != IcarusPhysics.State.COLD)
+            IcarusSuitHud.report(core.getLevel().getGameTime(), Math.sqrt(player.distanceToSqr(core.getBlockPos().getCenter())), v);
         if (player != null && core.getLevel() != null && danger > 0) {
             long now = core.getLevel().getGameTime();
             double d = Math.sqrt(player.distanceToSqr(core.getBlockPos().getCenter()));

@@ -1998,6 +1998,8 @@
   "subtitle.frozendawn.blocks.icarus_core_thump": "Core thumps",
   "hud.frozendawn.icarus.critical": "ICARUS CRITICAL",
   "hud.frozendawn.icarus.critical_hint": "Shield %s%%. CLIP it or get clear.",
+  "hud.frozendawn.icarus.suit_title": "ICARUS",
+  "hud.frozendawn.icarus.suit_line": "Shield %s%%  Core %s °C",
   "subtitle.frozendawn.blocks.icarus_injector_feed": "Icarus injector feeds",
   "subtitle.frozendawn.blocks.icarus_capsule_dock": "Antimatter capsule docks",
   "subtitle.frozendawn.blocks.icarus_ignition": "Halsey core ignites",
