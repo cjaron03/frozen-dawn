@@ -21,6 +21,8 @@ import net.neoforged.neoforge.client.event.ViewportEvent;
 public final class IcarusCoreAnim {
     private static final Map<HalseyCoreBlockEntity, IcarusCoreAnim> ANIMS = new WeakHashMap<>();
     public static final float CORE_RADIUS = 2.5f, SPECK_RADIUS = 0.18f;
+    /** Where beat wraps; a multiple of every period the renderer animates by. */
+    public static final float BEAT_WRAP = 7200;
     private static final double SHAKE_RANGE = 24;
     /** Degrees of camera roll at the core, falling to nothing at SHAKE_RANGE. */
     private static final float SHAKE = 0.5f;
@@ -30,7 +32,7 @@ public final class IcarusCoreAnim {
     private State state = State.COLD;
     /** Ticks since the core entered its current state. */
     public int stateTicks;
-    private float glow, glowO, bloom, bloomO, flash, flashO, front, frontO, tail, tailO, churn, churnO, ring, ringO, ringSpeed;
+    private float glow, glowO, bloom, bloomO, flash, flashO, front, frontO, tail, tailO, churn, churnO, ring, ringO, ringSpeed, beat, beatO;
     /** The plasma's radius in blocks, the antimatter speck's size (0 to 1), how solid the dissolving core block is (0 to
      * 1) and the shield's eased opacity. */
     private float radius, radiusO, speck, speckO, solid = -1, solidO, shield, shieldO;
@@ -44,7 +46,7 @@ public final class IcarusCoreAnim {
     public static void tick(HalseyCoreBlockEntity core) {
         var a = of(core); var v = core.visual();
         if (v.state() != a.state) { a.state = v.state(); a.stateTicks = 0; } else a.stateTicks++;
-        a.glowO = a.glow; a.bloomO = a.bloom; a.flashO = a.flash; a.frontO = a.front; a.tailO = a.tail; a.churnO = a.churn; a.ringO = a.ring;
+        a.glowO = a.glow; a.bloomO = a.bloom; a.flashO = a.flash; a.frontO = a.front; a.tailO = a.tail; a.churnO = a.churn; a.ringO = a.ring; a.beatO = a.beat;
         a.radiusO = a.radius; a.speckO = a.speck; a.solidO = a.solid; a.shieldO = a.shield;
         System.arraycopy(a.beam, 0, a.beamO, 0, a.beam.length);
         System.arraycopy(a.spread, 0, a.spreadO, 0, a.spread.length);
@@ -117,6 +119,10 @@ public final class IcarusCoreAnim {
         a.ringSpeed = approach(a.ringSpeed, ringTarget, 0.08f);
         a.ring += a.ringSpeed;
         if (ringTarget == 0 && a.ringSpeed < 0.3f) a.ring += (Math.round(a.ring / 90) * 90 - a.ring) * 0.1f;
+        // The running core's own clock: it quickens with glow and heat, and wraps after BEAT_WRAP, which every period the
+        // renderer uses divides, so the wrap never shows.
+        a.beat += 0.6f + 0.9f * a.glow + 0.8f * (float) heat;
+        if (a.beat >= BEAT_WRAP) { a.beat -= BEAT_WRAP; a.beatO -= BEAT_WRAP; }
 
         var player = Minecraft.getInstance().player;
         if (IcarusLook.critical(v.coreC(), v.alarm()) && player != null && core.getLevel() != null) {
@@ -140,6 +146,7 @@ public final class IcarusCoreAnim {
     public float churn(float pt) { return Mth.lerp(pt, churnO, churn); }
     public float ring(float pt) { return Mth.lerp(pt, ringO, ring); }
     public float ringSpeed() { return ringSpeed; }
+    public float beat(float pt) { return Mth.lerp(pt, beatO, beat); }
     public float beam(int index, float pt) { return Mth.lerp(pt, beamO[index], beam[index]); }
     public float spread(int index, float pt) { return Mth.lerp(pt, spreadO[index], spread[index]); }
     public float radius(float pt) { return Mth.lerp(pt, radiusO, radius); }

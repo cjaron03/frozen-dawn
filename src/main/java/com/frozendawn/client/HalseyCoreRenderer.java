@@ -9,6 +9,8 @@ import com.frozendawn.power.IcarusLook;
 import com.frozendawn.power.IcarusPhysics.State;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
+import org.joml.Quaternionf;
+import org.joml.Vector3f;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
@@ -30,7 +32,9 @@ public final class HalseyCoreRenderer implements BlockEntityRenderer<HalseyCoreB
     private static final int PLASMA_HOT = 0xFFF4D8;
     /** The antimatter side of the plasma, and the two halves of each electron-positron pair. */
     private static final int ELECTRON = 0xFFB878, POSITRON = 0xB47CFF;
-    private static final int SPARKS = 18, SPARK_LIFE = 7, PAIRS = 3, PAIR_LIFE = 28;
+    private static final int SPARKS = 18, SPARK_LIFE = 7, PAIRS = 3, PAIR_LIFE = 28, MOTES = 3;
+    /** Beats per heartbeat; it divides IcarusCoreAnim.BEAT_WRAP, as must every other period of beat. */
+    private static final float BEAT = 36;
     private static final ResourceLocation CORE_TEXTURE = ResourceLocation.fromNamespaceAndPath("frozendawn", "textures/block/halsey_core.png");
     private static final int CRACKS = 7, ARCS = 3;
 
@@ -72,22 +76,25 @@ public final class HalseyCoreRenderer implements BlockEntityRenderer<HalseyCoreB
         // plasma-ball filaments crawling from heart to shell; two gyroscope rings, one matter and one antimatter; then a
         // corona, a lens streak and the flashes of single annihilations.
         if (plasmaRadius > 0.01f) {
-            float r = plasmaRadius, k = (float) (0.4 + 0.6 * glow);
+            float r = plasmaRadius, k = (float) (0.4 + 0.6 * glow), b = a.beat(pt);
             int matter = IcarusLook.mix(coreRgb, PLASMA_HOT, 0.3), anti = IcarusLook.mix(POSITRON, WHITE, flicker), front = IcarusLook.mix(PLASMA_HOT, WHITE, 0.5);
+            // A double heartbeat every BEAT beats swells the heart, then each shell a moment later.
+            float beatPhase = (b % BEAT) / BEAT, heart = heartbeat(beatPhase);
             var lightBuf = buffers.getBuffer(IcarusDraw.light());
-            IcarusDraw.sphere(lightBuf, pose, false, r * 0.3f, 12, 16, (lat, lon) -> IcarusDraw.argb(WHITE, 0.95));
+            IcarusDraw.sphere(lightBuf, pose, false, r * 0.3f * (1 + 0.2f * heart), 12, 16, (lat, lon) -> IcarusDraw.argb(WHITE, 0.95));
             int filaments = 6, crackle = reduced ? 6 : 2;
             for (int i = 0; i < filaments; i++) {
                 double lat = 1.1 * Math.sin(time * 0.021 + i * 1.3), lon = time * 0.017 * (i % 2 == 0 ? 1 : -1) + i * 1.05;
                 long seed = (long) Mth.floor(time / crackle) * 31 + i + core.getBlockPos().asLong();
+                double strobe = 0.5 + 0.5 * hash01((int) seed) + 0.4 * heart;
                 IcarusDraw.bolt(lightBuf, pose, IcarusDraw.onSphere(r * 0.28, lat + 0.3, lon - 0.2), IcarusDraw.onSphere(r * 0.97, lat, lon), seed, 8, r * 0.07,
-                        0.05f, IcarusDraw.argb(IcarusLook.mix(WHITE, anti, 0.45), 0.8 * k));
+                        0.05f, IcarusDraw.argb(IcarusLook.mix(WHITE, anti, 0.45), Math.min(1, 0.7 * k * strobe)));
             }
             var shells = buffers.getBuffer(IcarusDraw.additive(IcarusDraw.PLASMA));
             float[] radii = {0.55f, 0.78f, 1f}, rims = {0.75f, 0.55f, 0.95f};
             int[] tints = {anti, front, matter};
             for (int sh = 0; sh < 3; sh++) {
-                float sr = r * radii[sh], rimK = rims[sh]; int tint = tints[sh]; boolean frontShell = sh == 1;
+                float sr = r * radii[sh] * (1 + 0.035f * heartbeat(beatPhase - 0.05f * (sh + 1))), rimK = rims[sh]; int tint = tints[sh]; boolean frontShell = sh == 1;
                 float spin = (float) ((sh % 2 == 0 ? 1 : -1) * (churn * (1 + 0.6 * sh) + time * 0.002 * (sh + 1)));
                 IcarusDraw.texturedSphere(shells, pose, sr, 20, 32, 2 + sh, 1.5f, spin, (float) (time * 0.001 * (sh + 1)), (lat, lon) -> {
                     double rim = Math.pow(1 - facing(eye, sr, lat, lon), 2.2), lift = 1;
@@ -95,23 +102,55 @@ public final class HalseyCoreRenderer implements BlockEntityRenderer<HalseyCoreB
                     return IcarusDraw.glow(tint, (0.08 + rimK * rim) * lift * k);
                 });
             }
+            // Each heartbeat sends a ripple of light out from the heart through the shells.
+            var ripple = buffers.getBuffer(IcarusDraw.additive(IcarusDraw.WHITE));
+            float spread = 1 - (1 - beatPhase) * (1 - beatPhase), rr = r * (0.3f + 0.8f * spread);
+            double fade = (1 - beatPhase) * (1 - beatPhase) * k * (reduced ? 0.5 : 1);
+            IcarusDraw.texturedSphere(ripple, pose, rr, 16, 28, 1, 1, 0, 0,
+                    (lat, lon) -> IcarusDraw.glow(front, Math.pow(1 - facing(eye, rr, lat, lon), 3) * 0.9 * fade));
+            // Gyroscope rings that precess as they spin, lights running along them, and motes racing round each one; a
+            // third, white ring joins them as the core heats.
             var rings = buffers.getBuffer(IcarusDraw.additive(IcarusDraw.WHITE));
-            for (int ring = 0; ring < 2; ring++) {
-                int rgb = ring == 0 ? matter : anti; float radius = r * (1.22f + 0.1f * ring), half = 0.035f * r;
+            int ringCount = heat > 0.3 ? 3 : 2;
+            var orbits = new Quaternionf[ringCount];
+            float[] orbitRadius = new float[ringCount];
+            for (int ring = 0; ring < ringCount; ring++) {
+                int rgb = ring == 0 ? matter : ring == 1 ? anti : WHITE;
+                float radius = r * (1.22f + 0.1f * ring), half = (ring == 2 ? 0.02f : 0.035f) * r;
+                double ringK = ring == 2 ? k * Math.min(1, (heat - 0.3) / 0.4) : k;
+                float wobble = 10 * Mth.sin((float) (Math.PI * 2 * b / 720) + ring * 2.1f);
+                float spin = b * (ring == 0 ? 2.4f : ring == 1 ? -3.1f : 6f), chase = (float) (Math.PI * 2 * b / (ring == 1 ? 60 : 48));
+                var q = new Quaternionf(Axis.YP.rotationDegrees(ring * 70 + b * 0.25f))
+                        .mul(Axis.XP.rotationDegrees((ring == 0 ? 72 : ring == 1 ? -64 : 20) + wobble)).mul(Axis.ZP.rotationDegrees(spin));
+                orbits[ring] = q; orbitRadius[ring] = radius;
                 poses.pushPose();
-                poses.mulPose(Axis.YP.rotationDegrees(ring * 70));
-                poses.mulPose(Axis.XP.rotationDegrees(ring == 0 ? 72 : -64));
-                poses.mulPose(Axis.ZP.rotationDegrees(time * (ring == 0 ? 2.4f : -3.1f)));
+                poses.mulPose(q);
+                int sign = ring == 1 ? -1 : 1;
                 IcarusDraw.annulus(rings, poses.last(), radius - half, radius + half, 0, 72,
-                        j -> IcarusDraw.glow(rgb, (0.3 + 0.7 * Math.pow(Math.max(0, Math.cos(j * Math.PI * 2 / 18)), 6)) * k));
+                        j -> IcarusDraw.glow(rgb, (0.25 + 0.75 * Math.pow(Math.max(0, Math.cos(j * Math.PI * 2 / 18 - sign * chase)), 6)) * ringK));
                 poses.popPose();
             }
             var halo = buffers.getBuffer(IcarusDraw.additive(IcarusDraw.GLOW));
+            for (int ring = 0; ring < ringCount; ring++) {
+                int rgb = ring == 0 ? ELECTRON : ring == 1 ? POSITRON : WHITE;
+                double ringK = ring == 2 ? k * Math.min(1, (heat - 0.3) / 0.4) : k;
+                for (int m = 0; m < MOTES; m++) {
+                    for (int trail = 0; trail < 5; trail++) {
+                        float angle = (float) (Math.PI * 2 * ((ring == 1 ? -1 : 1) * b / 30 + m / (double) MOTES)) - (ring == 1 ? -1 : 1) * trail * 0.07f;
+                        var at = new Quaternionf(orbits[ring]).mul(Axis.ZP.rotation(angle)).transform(new Vector3f(orbitRadius[ring], 0, 0));
+                        poses.pushPose();
+                        poses.translate(at.x, at.y, at.z);
+                        poses.mulPose(camera.rotation());
+                        IcarusDraw.billboard(halo, poses.last(), r * 0.07f * (1 - trail * 0.15f), IcarusDraw.glow(IcarusLook.mix(rgb, WHITE, 0.4), ringK * (1 - trail * 0.2)));
+                        poses.popPose();
+                    }
+                }
+            }
             poses.pushPose();
             poses.mulPose(camera.rotation());
-            IcarusDraw.billboard(halo, poses.last(), r * 1.5f, IcarusDraw.glow(IcarusLook.mix(front, WHITE, 0.4), 0.6 * glow + 0.3 * flicker));
+            IcarusDraw.billboard(halo, poses.last(), r * 1.5f * (1 + 0.12f * heart), IcarusDraw.glow(IcarusLook.mix(front, WHITE, 0.4), 0.6 * glow + 0.3 * flicker + 0.15 * heart));
             IcarusDraw.billboard(halo, poses.last(), r * 3.4f, IcarusDraw.glow(IcarusLook.mix(matter, POSITRON, 0.5), 0.25 * glow));
-            IcarusDraw.streak(halo, poses.last(), r * 5.5f, r * 0.12f, IcarusDraw.glow(IcarusLook.mix(BEAM, WHITE, 0.5), (reduced ? 0.25 : 0.5) * glow));
+            IcarusDraw.streak(halo, poses.last(), r * 5.5f * (1 + 0.1f * heart), r * 0.12f * (1 + 0.4f * heart), IcarusDraw.glow(IcarusLook.mix(BEAM, WHITE, 0.5), (reduced ? 0.25 : 0.5 + 0.25 * heart) * glow));
             poses.popPose();
             int count = Math.round(SPARKS * (0.35f + 0.65f * glow) + 8 * (float) heat);
             sparks(halo, poses, camera, core, r * 0.85f, count, r * 0.15f, time, glow * (reduced ? 0.4f : 1f));
@@ -242,6 +281,11 @@ public final class HalseyCoreRenderer implements BlockEntityRenderer<HalseyCoreB
     private static double domain(double lat, double lon, double churn, float time) {
         return Math.sin(3 * lon + churn * Math.PI * 2 + 1.7 * Math.sin(2 * lat + time * 0.013))
                 * Math.cos(2 * lat - 0.8 * Math.sin(2 * lon - time * 0.009));
+    }
+    /** A double pulse, lub-dub, over a phase of 0 to 1. */
+    private static float heartbeat(float phase) {
+        float x = phase - Mth.floor(phase);
+        return (float) (Math.exp(-Math.pow((x - 0.08) / 0.04, 2)) + 0.6 * Math.exp(-Math.pow((x - 0.22) / 0.05, 2)));
     }
     private static double hash01(int seed) { return (Mth.murmurHash3Mixer(seed) & 0xFFFFFF) / (double) 0x1000000; }
 
