@@ -181,7 +181,9 @@ public final class SfrGameTest {
         h.succeed();
     }
 
-    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "sfr", timeoutTicks = 300, skyAccess = true)
+    // Each in a batch of its own: every SFR-1 controller grants its advancements to any player within 32 blocks, so a
+    // reactor lit or aborted by a neighbouring test in the shared sfr batch would reach these probe players too.
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "sfr_second_sun", timeoutTicks = 300, skyAccess = true)
     public static void sfrIgnitionGrantsASecondSunNearby(GameTestHelper h) {
         h.runAfterDelay(1, () -> {
             var near = player(h, h.absolutePos(CENTER).above(6)); var far = player(h, h.absolutePos(CENTER).above(40));
@@ -196,7 +198,8 @@ public final class SfrGameTest {
         });
     }
 
-    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "sfr", timeoutTicks = 300, skyAccess = true)
+    // A batch of its own, as for sfrIgnitionGrantsASecondSunNearby.
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "sfr_twenty_years", timeoutTicks = 300, skyAccess = true)
     public static void sfrAbortedIgnitionIsTwentyYearsAway(GameTestHelper h) {
         h.runAfterDelay(1, () -> {
             var near = player(h, h.absolutePos(CENTER).above(6));
