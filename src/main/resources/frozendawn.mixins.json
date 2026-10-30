@@ -25,6 +25,7 @@
     "DisplayWindowMixin",
     "GenericMessageScreenMixin",
     "LevelRendererMixin",
+    "LightTextureMixin",
     "HumanoidArmorLayerMixin",
     "GameRendererAccessor",
     "TitleScreenMixin",

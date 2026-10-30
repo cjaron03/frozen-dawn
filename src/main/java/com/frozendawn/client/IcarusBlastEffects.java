@@ -65,12 +65,13 @@ public final class IcarusBlastEffects {
     private static int ringStart, ringTicks;
     private static int ticks = Integer.MAX_VALUE / 2, shakeStart, shakeTicks, plumeTicks;
     private static float shakeStrength;
+    private static double distance;
 
     private IcarusBlastEffects() {}
 
     public static void receive(IcarusBlastPayload p) {
         var mc = Minecraft.getInstance(); if (mc.player == null) return;
-        center = p.center(); radius = p.radius(); vacuum = p.vacuum(); ticks = 0;
+        center = p.center(); radius = p.radius(); vacuum = p.vacuum(); distance = p.distance(); ticks = 0;
         reduced = FrozenDawnConfig.ICARUS_REDUCED_FLASH.get();
         flashPeak = (float) IcarusBlast.flashStrength(p.distance(), p.radius(), reduced);
         baseFlash = (float) IcarusBlast.flashStrength(p.distance(), p.radius(), false);
@@ -102,6 +103,19 @@ public final class IcarusBlastEffects {
         // Too far to see the cloud: no particles, only the flash and sound.
         double view = mc.options.getEffectiveRenderDistance() * 16;
         if (p.distance() > view + 2 * p.radius()) plumeTicks = 0;
+        IcarusBlastCloud.start(mc, plumeTicks > 0);
+    }
+
+    static int ticks() { return ticks; }
+    static Vec3 center() { return center; }
+    static double radius() { return radius; }
+    static boolean vacuum() { return vacuum; }
+    static boolean reduced() { return reduced; }
+    static float baseFlash() { return baseFlash; }
+
+    /** Plays a sound from the blast after the same delay as the boom, so a far stroke of lightning is heard late. */
+    static void scheduleFromBlast(SoundEvent sound, float volume, float pitch) {
+        if (!vacuum) SOUNDS.add(new Pending(ticks + (int) Math.round(IcarusBlast.soundDelaySeconds(distance) * 20), sound, volume, pitch, center, false));
     }
 
     private static void shake(int at, int duration, float strength) { shakeStart = at; shakeTicks = duration; shakeStrength = strength; }
@@ -137,6 +151,7 @@ public final class IcarusBlastEffects {
 
     @SubscribeEvent public static void logout(ClientPlayerNetworkEvent.LoggingOut event) {
         SOUNDS.clear(); ticks = Integer.MAX_VALUE / 2; plumeTicks = 0; shakeTicks = 0; flashPeak = 0; afterimage = 0; ringTicks = 0;
+        IcarusBlastCloud.clear();
     }
 
     @SubscribeEvent public static void tick(ClientTickEvent.Post event) {
@@ -154,6 +169,7 @@ public final class IcarusBlastEffects {
                     SoundInstance.createUnseededRandom(), false, 0, SoundInstance.Attenuation.NONE, at.x, at.y, at.z, s.head()));
         }
         if (ticks <= plumeTicks) { if (vacuum) shell(mc); else plume(mc); }
+        IcarusBlastCloud.tick(mc, ticks);
         if (!vacuum && IcarusBlast.SPEED_OF_SOUND * ticks / 20 <= RING_REACH * radius) ring(mc);
     }
 
@@ -221,7 +237,8 @@ public final class IcarusBlastEffects {
             }
             float alpha = peak * (1 - t) * (1 - t);
             if (!reduced && ticks < STROBE_TICKS && ticks % 2 == 1) alpha *= 0.55f;
-            g.fill(0, 0, g.guiWidth(), g.guiHeight(), Math.clamp(Math.round(alpha * 255), 0, 255) << 24 | 0xFFFFFF);
+            // Annihilation's first instant is violet-white before the flash turns plain white.
+            g.fill(0, 0, g.guiWidth(), g.guiHeight(), Math.clamp(Math.round(alpha * 255), 0, 255) << 24 | IcarusBlastCloud.lightColor() & 0xFFFFFF);
         } else if (afterimage > 0.01f) {
             float t = (now - FLASH_TICKS) / AFTERIMAGE_TICKS, alpha = afterimage * (reduced ? 0.12f : 0.4f) * (1 - t) * (1 - t);
             g.fill(0, 0, g.guiWidth(), g.guiHeight(), Math.clamp(Math.round(alpha * 255), 0, 255) << 24 | 0xFFA040);
@@ -249,15 +266,17 @@ public final class IcarusBlastEffects {
         poses.translate(at.x, at.y, at.z);
         poses.mulPose(camera.rotation());
         var lines = buffers.getBuffer(RenderType.lightning());
+        int rgb = IcarusBlastCloud.lightColor();
+        float red = (rgb >> 16 & 0xFF) / 255f, green = (rgb >> 8 & 0xFF) / 255f, blue = (rgb & 0xFF) / 255f;
         // Stacked additive squares at two angles read as a soft round glow.
         for (int layer = 0; layer < 3; layer++) for (int turn = 0; turn < 2; turn++) {
             poses.pushPose(); poses.mulPose(Axis.ZP.rotationDegrees(45 * turn));
             float size = 0.6f + 1.1f * layer, a = alpha * 0.32f / (1 + layer);
             var m = poses.last().pose();
-            lines.addVertex(m, -size, -size, 0).setColor(1f, 0.97f, 0.9f, a);
-            lines.addVertex(m, size, -size, 0).setColor(1f, 0.97f, 0.9f, a);
-            lines.addVertex(m, size, size, 0).setColor(1f, 0.97f, 0.9f, a);
-            lines.addVertex(m, -size, size, 0).setColor(1f, 0.97f, 0.9f, a);
+            lines.addVertex(m, -size, -size, 0).setColor(red, green, blue, a);
+            lines.addVertex(m, size, -size, 0).setColor(red, green, blue, a);
+            lines.addVertex(m, size, size, 0).setColor(red, green, blue, a);
+            lines.addVertex(m, -size, size, 0).setColor(red, green, blue, a);
             poses.popPose();
         }
         buffers.endBatch(RenderType.lightning());
