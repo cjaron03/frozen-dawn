@@ -220,7 +220,7 @@ public final class HalseyCoreRenderer implements BlockEntityRenderer<HalseyCoreB
                 if (reveal <= 0 || port <= 0) return 0;
                 double struck = 0;
                 for (var hit : hits) {
-                    double d = Math.acos(Math.clamp(nx * hit.dir().x + ny * hit.dir().y + nz * hit.dir().z, -1, 1)) / (0.12 + 0.5 * hit.age());
+                    double d = Math.acos(Math.clamp(nx * hit.dir().x + ny * hit.dir().y + nz * hit.dir().z, -1, 1)) / (0.25 + 0.5 * hit.age());
                     struck += (1 - hit.age()) * (1 - hit.age()) * Math.exp(-d * d) * (reduced ? 1.2 : 3);
                 }
                 double rim = Math.pow(1 - facing(eye, SHIELD_RADIUS, lat, lon), 3), front = 4 * reveal * (1 - reveal);
@@ -290,6 +290,22 @@ public final class HalseyCoreRenderer implements BlockEntityRenderer<HalseyCoreB
             poses.mulPose(camera.rotation());
             IcarusDraw.billboard(flares, poses.last(), 0.4f + 1.4f * hit.age(), IcarusDraw.glow(IcarusLook.mix(shieldRgb, WHITE, 0.6), (1 - hit.age()) * (1 - hit.age()) * (reduced ? 0.4 : 0.9)));
             poses.popPose();
+        }
+        // On the shield's inner face each strike bursts as a bright patch with a shock ring spreading out across it; drawn as
+        // its own disc so it shows wherever it lands, not only where the lattice mesh has a vertex.
+        if (!hits.isEmpty()) {
+            var splash = buffers.getBuffer(IcarusDraw.additive(IcarusDraw.WHITE));
+            int hot = IcarusLook.mix(shieldRgb, WHITE, 0.7);
+            for (var hit : hits) {
+                float age = hit.age(), fade = (1 - age) * (1 - age) * (reduced ? 0.45f : 1f);
+                poses.pushPose();
+                poses.mulPose(new Quaternionf().rotationTo(0, 0, 1, (float) hit.dir().x, (float) hit.dir().y, (float) hit.dir().z));
+                var at = poses.last();
+                float wave = 0.3f + 1.6f * age;
+                IcarusDraw.annulus(splash, at, 0, 0.35f + 0.45f * age, SHIELD_RADIUS - 0.04f, 16, j -> IcarusDraw.glow(hot, 0.95 * fade));
+                IcarusDraw.annulus(splash, at, wave, wave + 0.14f, SHIELD_RADIUS - 0.05f, 24, j -> IcarusDraw.glow(shieldRgb, 0.8 * (1 - age) * (reduced ? 0.45f : 1f)));
+                poses.popPose();
+            }
         }
         glowBuf = buffers.getBuffer(IcarusDraw.light());
         // ...and for its first moments the bolt that carried it is still visible, from the plasma to the strike.

@@ -22,10 +22,10 @@ public final class IcarusFx {
 
     public record Hit(Vec3 dir, float age, long slot) {}
 
-    /** Stray annihilations reaching the shield per second: rare while the core runs cool, about one every three seconds at
-     * 5200 C, and rising exponentially, ten-fold every 1500 C, towards a storm near critical. */
+    /** Stray annihilations reaching the shield per second: about one every two seconds at a gentle 2900 C, three a second
+     * at full output, eight at the red line and a storm of 25 near critical, rising exponentially, ten-fold every 3150 C. */
     public static double hitRate(int coreC) {
-        return Math.min(25, 0.3 * Math.exp(10 * (coreC / IcarusPhysics.RED_LINE_C - 0.8)));
+        return Math.min(25, 0.6 * Math.exp((coreC - 2900) / 1366.0));
     }
 
     /** The hits alive at time, newest last; none unless the plasma burns inside a standing shield. */
