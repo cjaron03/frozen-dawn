@@ -105,10 +105,12 @@ SCRIPTS = {
 
 # On real terrain the pad's position is found at the first join and kept in storage; the reactor is built relative to it
 # as in the flat world (Controller one west and eight north of the pad's origin).
-ANCHOR = NS + ':anchor'
+ANCHOR, BACK = NS + ':anchor', NS + ':back'
+# Before a spot teleport the player's block is kept, so Back returns them there (or to the reactor before any spot).
+REMEMBER = '\n'.join(f'execute store result storage {BACK} {axis} int 1 run data get entity @s Pos[{i}]' for i, axis in enumerate('xyz'))
 TERRAIN_MENU = json.dumps(['', {'text': 'Icarus: ', 'color': 'gray'},
                    button('Kit', 'kit', 'green'), button('Recharge', 'recharge', 'green'), button('Reactor', 'reactor'),
-                   button('Edge 180', 'edge_spot'), button('Witness 300', 'witness_spot'), button('Air?', 'air', 'light_purple'),
+                   button('Edge 180', 'edge_spot'), button('Witness 300', 'witness_spot'), button('Back', 'back', 'gold'), button('Air?', 'air', 'light_purple'),
                    button('Day', 'day'), button('Night', 'night'),
                    button('Survival', 'survival', 'yellow'), button('Creative', 'creative', 'yellow'),
                    {'text': '(spots suit a 2-capsule load)', 'color': 'dark_gray'}])
@@ -142,11 +144,14 @@ TERRAIN_SCRIPTS = {
     'recharge_at': '$execute positioned $(x) $(y) $(z) positioned ~-1 ~ ~-8 run frozendawn debug world icaruslab recharge',
     'reactor': f'function {NS}:reactor_at with storage {ANCHOR}\n' + f'function {NS}:menu',
     'reactor_at': '$tp @s $(x) $(y) $(z) 180 0',
-    'edge_spot': f'function {NS}:edge_at with storage {ANCHOR}\n' + f'function {NS}:menu',
+    'edge_spot': REMEMBER + '\n' + f'function {NS}:edge_at with storage {ANCHOR}\n' + f'function {NS}:menu',
     # Over the spot first, high enough to clear the land, then down onto the nearest dry ground within 64 blocks; if
     # none is found the player still hangs over the spot instead of staying put.
     'edge_at': '$execute positioned $(x) $(y) $(z) run tp @s ~ ~60 ~180 180 0\n' + f'execute at @s run function {NS}:land',
-    'witness_spot': f'function {NS}:witness_at with storage {ANCHOR}\n' + f'function {NS}:menu',
+    'witness_spot': REMEMBER + '\n' + f'function {NS}:witness_at with storage {ANCHOR}\n' + f'function {NS}:menu',
+    'back': '\n'.join([f'execute if data storage {BACK} x run function {NS}:back_at with storage {BACK}',
+                       f'execute unless data storage {BACK} x run function {NS}:reactor_at with storage {ANCHOR}', f'function {NS}:menu']),
+    'back_at': '$tp @s $(x) $(y) $(z)',
     'witness_at': '$execute positioned $(x) $(y) $(z) run tp @s ~ ~60 ~300 180 0\n' + f'execute at @s run function {NS}:land',
     'land': 'spreadplayers ~ ~ 0 64 false @s\nexecute at @s run tp @s ~ ~ ~ 180 0',
     'air': SCRIPTS['air'],
