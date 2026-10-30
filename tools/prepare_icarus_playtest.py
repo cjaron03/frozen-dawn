@@ -10,6 +10,10 @@ hold air the world moves to late phase 6, so everything outside is vacuum.
 The witness spots suit a 2-capsule load (blast radius 126). A clickable chat
 menu gives the kit, a battery recharge, teleports, an air reading, day and night, and game modes.
 
+--terrain writes a check world on the template's own overworld terrain at phase 0, so the air is breathable: the
+reactor is built on the surface near the origin on a cleared stone pad, and its chat menu offers witness spots out on
+the land 180 and 300 blocks south.
+
 --perf writes the disposable "Icarus Perf" world instead: the template's own
 terrain at phase 0, for the lab-only full-load blast timed by LabIcarusPerf.
 """
@@ -99,6 +103,57 @@ SCRIPTS = {
     'menu': 'tellraw @s ' + MENU,
 }
 
+# On real terrain the pad's position is found at the first join and kept in storage; the reactor is built relative to it
+# as in the flat world (Controller one west and eight north of the pad's origin).
+ANCHOR = NS + ':anchor'
+TERRAIN_MENU = json.dumps(['', {'text': 'Icarus: ', 'color': 'gray'},
+                   button('Kit', 'kit', 'green'), button('Recharge', 'recharge', 'green'), button('Reactor', 'reactor'),
+                   button('Edge 180', 'edge_spot'), button('Witness 300', 'witness_spot'), button('Air?', 'air', 'light_purple'),
+                   button('Day', 'day'), button('Night', 'night'),
+                   button('Survival', 'survival', 'yellow'), button('Creative', 'creative', 'yellow'),
+                   {'text': '(spots suit a 2-capsule load)', 'color': 'dark_gray'}])
+TERRAIN_SCRIPTS = {
+    'load': SCRIPTS['load'],
+    'tick': SCRIPTS['tick'],
+    'prepare': '\n'.join([
+        f'scoreboard players set #stage {NS} 1',
+        'frozendawn debug world set phase 0',
+        'spreadplayers 0 0 0 48 false @s',
+        f'execute at @s run function {NS}:build_here',
+        f'function {NS}:kit',
+        'datapack list enabled',
+    ]),
+    'build_here': '\n'.join([
+        f'execute store result storage {ANCHOR} x int 1 run data get entity @s Pos[0]',
+        f'execute store result storage {ANCHOR} y int 1 run data get entity @s Pos[1]',
+        f'execute store result storage {ANCHOR} z int 1 run data get entity @s Pos[2]',
+        # A level stone pad with the air above it cleared, wide enough for the frame, the banks and the chest.
+        'fill ~-18 ~ ~-30 ~20 ~20 ~4 minecraft:air',
+        'fill ~-18 ~21 ~-30 ~20 ~40 ~4 minecraft:air',
+        'fill ~-18 ~-3 ~-30 ~20 ~-1 ~4 minecraft:stone',
+        'tp @s ~ ~ ~ 180 0',
+        'spawnpoint @s ~ ~ ~',
+        'execute rotated 180 0 run frozendawn debug world icaruslab',
+        'execute if block ~-1 ~ ~-8 frozendawn:icarus_controller run say Icarus lab: reactor built on terrain',
+        f'scoreboard players set #stage {NS} 2',
+    ]),
+    'kit': SCRIPTS['kit'],
+    'recharge': f'function {NS}:recharge_at with storage {ANCHOR}\n' + f'function {NS}:menu',
+    'recharge_at': '$execute positioned $(x) $(y) $(z) positioned ~-1 ~ ~-8 run frozendawn debug world icaruslab recharge',
+    'reactor': f'function {NS}:reactor_at with storage {ANCHOR}\n' + f'function {NS}:menu',
+    'reactor_at': '$tp @s $(x) $(y) $(z) 180 0',
+    'edge_spot': f'function {NS}:edge_at with storage {ANCHOR}\n' + f'function {NS}:menu',
+    'edge_at': '$execute positioned $(x) $(y) $(z) run spreadplayers ~ ~180 0 6 false @s',
+    'witness_spot': f'function {NS}:witness_at with storage {ANCHOR}\n' + f'function {NS}:menu',
+    'witness_at': '$execute positioned $(x) $(y) $(z) run spreadplayers ~ ~300 0 6 false @s',
+    'air': SCRIPTS['air'],
+    'day': SCRIPTS['day'],
+    'night': SCRIPTS['night'],
+    'survival': SCRIPTS['survival'],
+    'creative': SCRIPTS['creative'],
+    'menu': 'tellraw @s ' + TERRAIN_MENU,
+}
+
 PERF_SCRIPTS = {
     'load': f'scoreboard objectives add {PERF_NS} dummy\nexecute unless score #stage {PERF_NS} matches 0.. run scoreboard players set #stage {PERF_NS} 0',
     'tick': f'execute if score #stage {PERF_NS} matches 0 as @a[limit=1] run function {PERF_NS}:prepare',
@@ -135,7 +190,7 @@ def layer(block, height):
     return {'block': (8, block), 'height': (3, height)}
 
 
-def prepare(template, title, perf):
+def prepare(template, title, perf, terrain=False):
     destination = ROOT/'run-lab/saves'/title
     if destination.exists():
         raise SystemExit(f'Refusing to overwrite {destination}')
@@ -149,11 +204,11 @@ def prepare(template, title, perf):
         data = {name: copy.deepcopy(original[name]) for name in ('version', 'DataVersion', 'Version', 'WorldGenSettings')}
     worldgen = data['WorldGenSettings'][1]
     worldgen['bonus_chest'] = (1, 0)
-    if perf:
+    if perf or terrain:
         overworld = worldgen['dimensions'][1]['minecraft:overworld'][1]['generator'][1]
         if overworld['type'][1] != 'minecraft:noise':
-            raise SystemExit(f'--perf needs a template with normal terrain, not {overworld["type"][1]}')
-        spawn_y, angle, pack_name = 100, 0.0, 'icarus-perf'
+            raise SystemExit(f'--perf and --terrain need a template with normal terrain, not {overworld["type"][1]}')
+        spawn_y, angle, pack_name = 100, 0.0, 'icarus-perf' if perf else 'icarus-overworld'
     else:
         worldgen['generate_features'] = (1, 0)
         # Vanilla's classic superflat: grass at y -61, so feet stand at -60.
@@ -183,6 +238,8 @@ def prepare(template, title, perf):
     (destination/'data/frozendawn_apocalypse.dat').write_bytes(gzip.compress(lab_state(data['DataVersion'][1])))
     if perf:
         pack(destination/'datapacks'/pack_name, PERF_NS, PERF_SCRIPTS, 'Icarus full-load perf; advancements hidden')
+    elif terrain:
+        pack(destination/'datapacks'/pack_name, CHECK_NS, TERRAIN_SCRIPTS, 'AMR-1 Icarus playtest on terrain; advancements hidden')
     else:
         pack(destination/'datapacks'/pack_name, CHECK_NS, SCRIPTS, 'AMR-1 Icarus playtest; advancements hidden')
     print(f'Prepared {destination}; not opened.')
@@ -192,8 +249,11 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--template', type=Path, required=True)
     parser.add_argument('--perf', action='store_true', help='write the disposable full-load perf world')
+    parser.add_argument('--terrain', action='store_true', help='build the check reactor on the template\'s own overworld terrain')
     parser.add_argument('--title', help='save name; the perf world must keep its own, which LabIcarusPerf requires')
     args = parser.parse_args()
     if args.perf and args.title not in (None, PERF_TITLE):
         raise SystemExit(f'--perf writes "{PERF_TITLE}"; LabIcarusPerf refuses any other world name')
-    prepare(args.template, args.title or (PERF_TITLE if args.perf else CHECK_TITLE), args.perf)
+    if args.perf and args.terrain:
+        raise SystemExit('--perf and --terrain are separate worlds')
+    prepare(args.template, args.title or (PERF_TITLE if args.perf else CHECK_TITLE), args.perf, args.terrain)
