@@ -3,12 +3,14 @@ package com.frozendawn.client;
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.power.IcarusBlast;
 import com.frozendawn.power.IcarusLook;
+import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.FogRenderer;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.texture.OverlayTexture;
@@ -31,16 +33,17 @@ import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 import net.neoforged.neoforge.client.event.ViewportEvent;
 import org.joml.Vector3f;
 
-/** The shapes of an Icarus detonation, drawn over IcarusBlastEffects' particles and timed by its clock. In air: a
+/** The shapes of an Icarus detonation, drawn over IcarusBlastEffects' particles and timed by its clock. A
  * violet-white fireball that rolls up into a mushroom cloud (a churning cap and crown on a rising stem, a base surge
  * spreading over the ground), lit orange from within and cooling to grey over two minutes, with lightning crawling through
- * it for the first half minute; and a pale condensation shell racing out at the speed of sound. In vacuum: a plasma
- * sphere swelling from violet to orange with lightning inside. Everywhere: the flash lights the world itself for a moment,
+ * it for the first half minute; a pale shock shell racing out at the speed of sound and a milky condensation dome
+ * billowing behind it. At the owner's request all of that shows in vacuum too, with a plasma sphere swelling from violet to
+ * orange around it. Everywhere: the flash lights the world itself for a moment,
  * and blocks torn from the crater tumble out and rain down. All of it cosmetic: the crater is carved on the server. */
 @EventBusSubscriber(modid = FrozenDawn.MOD_ID, value = Dist.CLIENT)
 public final class IcarusBlastCloud {
     /** Ticks the cloud hangs, the last FADE_TICKS of them thinning away; the fireball's glow and the lightning's span. */
-    static final int CLOUD_TICKS = 2400, FADE_TICKS = 600, LIGHTNING_TICKS = 600, PLASMA_TICKS = 200, LIGHT_TICKS = 70;
+    static final int CLOUD_TICKS = 2400, FADE_TICKS = 600, LIGHTNING_TICKS = 600, PLASMA_TICKS = 200, LIGHT_TICKS = 70, CONDENSATION_TICKS = 120;
     /** The condensation shell is drawn out to this many blast radii. */
     private static final double DOME_REACH = 2.5;
     private static final int DEBRIS_COUNT = 90, DEBRIS_LIFE = 400;
@@ -155,16 +158,24 @@ public final class IcarusBlastCloud {
         var poses = event.getPoseStack(); var buffers = mc.renderBuffers().bufferSource();
 
         if (visible && ticks < CLOUD_TICKS) {
+            // The cloud stands hundreds of blocks off, past where distance fog would swallow it whole: it is drawn clear of
+            // fog, then the fog is put back for everything else.
+            float fogStart = RenderSystem.getShaderFogStart(), fogEnd = RenderSystem.getShaderFogEnd();
+            var fogShape = RenderSystem.getShaderFogShape();
+            FogRenderer.setupNoFog();
             poses.pushPose();
             poses.translate(center.x - cam.x, center.y - cam.y, center.z - cam.z);
             var rel = center.subtract(cam);
+            // At the owner's request the cloud and the shock show in vacuum too, with the plasma sphere besides.
             if (IcarusBlastEffects.vacuum()) plasma(buffers, poses, radius, t, reduced);
-            else {
-                dome(buffers, poses, rel, radius, t, reduced);
-                mushroom(buffers, poses, radius, t, reduced);
-            }
+            dome(buffers, poses, rel, radius, t, reduced);
+            condensation(buffers, poses, rel, radius, t, reduced);
+            mushroom(buffers, poses, radius, t, reduced);
             poses.popPose();
             buffers.endBatch();
+            RenderSystem.setShaderFogStart(fogStart);
+            RenderSystem.setShaderFogEnd(fogEnd);
+            RenderSystem.setShaderFogShape(fogShape);
         }
 
         for (var d : DEBRIS) {
@@ -191,7 +202,24 @@ public final class IcarusBlastCloud {
             double nx = Math.cos(lat) * Math.cos(lon), ny = Math.sin(lat), nz = Math.cos(lat) * Math.sin(lon);
             double vx = rel.x + nx * front, vy = rel.y + ny * front, vz = rel.z + nz * front, len = Math.sqrt(vx * vx + vy * vy + vz * vz);
             double rim = 1 - Math.abs((nx * vx + ny * vy + nz * vz) / Math.max(1e-6, len));
-            return IcarusDraw.glow(SHOCK, strength * (0.05 + 0.55 * rim * rim * rim));
+            return IcarusDraw.glow(SHOCK, strength * (0.12 + 0.88 * rim * rim));
+        });
+    }
+
+    /** The condensation dome left behind the shock: a milky hemisphere that billows out to 1.3 radii over a few seconds,
+     * thickest a second in, after the flash has faded, and thinning away by six seconds. */
+    private static void condensation(net.minecraft.client.renderer.MultiBufferSource buffers, PoseStack poses, Vec3 rel, float radius, float t, boolean reduced) {
+        if (t >= CONDENSATION_TICKS) return;
+        float r = (float) (radius * 1.3 * (1 - Math.exp(-t / 25.0))) + 1;
+        float rise = Math.min(1, t / 12f), fall = 1 - Math.clamp((t - 20) / (CONDENSATION_TICKS - 20f), 0, 1);
+        float strength = rise * fall * fall * (reduced ? 0.6f : 1f);
+        if (strength <= 0.01f) return;
+        IcarusDraw.texturedSphere(buffers.getBuffer(IcarusDraw.surface(IcarusDraw.PLASMA)), poses.last(), r, 20, 48, 6, 3, t * 0.002f, 0, (lat, lon) -> {
+            if (lat < -0.05) return 0;
+            double nx = Math.cos(lat) * Math.cos(lon), ny = Math.sin(lat), nz = Math.cos(lat) * Math.sin(lon);
+            double vx = rel.x + nx * r, vy = rel.y + ny * r, vz = rel.z + nz * r, len = Math.sqrt(vx * vx + vy * vy + vz * vz);
+            double rim = 1 - Math.abs((nx * vx + ny * vy + nz * vz) / Math.max(1e-6, len));
+            return IcarusDraw.argb(SHOCK, strength * (0.12 + 0.5 * rim * rim) * Math.min(1, lat * 6 + 0.3));
         });
     }
 
