@@ -106,6 +106,7 @@ SCRIPTS = {
 # On real terrain the pad's position is found at the first join and kept in storage; the reactor is built relative to it
 # as in the flat world (Controller one west and eight north of the pad's origin).
 ANCHOR, BACK = NS + ':anchor', NS + ':back'
+PAD_CHUNKS = '~-18 ~-30 ~20 ~4'
 # Before a spot teleport the player's block is kept, so Back returns them there (or to the reactor before any spot).
 REMEMBER = '\n'.join(f'execute store result storage {BACK} {axis} int 1 run data get entity @s Pos[{i}]' for i, axis in enumerate('xyz'))
 TERRAIN_MENU = json.dumps(['', {'text': 'Icarus: ', 'color': 'gray'},
@@ -121,22 +122,27 @@ TERRAIN_SCRIPTS = {
         f'scoreboard players set #stage {NS} 1',
         'frozendawn debug world set phase 0',
         'spreadplayers 0 0 0 48 false @s',
-        f'execute at @s run function {NS}:build_here',
+        *[f'execute store result storage {ANCHOR} {axis} int 1 run data get entity @s Pos[{i}]' for i, axis in enumerate('xyz')],
+        # The player may land beyond the loaded spawn chunks: hold the pad's chunks and build once they have loaded.
+        f'function {NS}:hold with storage {ANCHOR}',
+        f'schedule function {NS}:build 40t',
         f'function {NS}:kit',
         'datapack list enabled',
     ]),
+    'hold': f'$execute positioned $(x) $(y) $(z) run forceload add {PAD_CHUNKS}',
+    'build': f'function {NS}:build_at with storage {ANCHOR}',
+    'build_at': '\n'.join([f'$execute positioned $(x) $(y) $(z) rotated 180 0 run function {NS}:build_here',
+                           f'$execute positioned $(x) $(y) $(z) run forceload remove {PAD_CHUNKS}']),
     'build_here': '\n'.join([
-        f'execute store result storage {ANCHOR} x int 1 run data get entity @s Pos[0]',
-        f'execute store result storage {ANCHOR} y int 1 run data get entity @s Pos[1]',
-        f'execute store result storage {ANCHOR} z int 1 run data get entity @s Pos[2]',
         # A level stone pad with the air above it cleared, wide enough for the frame, the banks and the chest.
         'fill ~-18 ~ ~-30 ~20 ~20 ~4 minecraft:air',
         'fill ~-18 ~21 ~-30 ~20 ~40 ~4 minecraft:air',
         'fill ~-18 ~-3 ~-30 ~20 ~-1 ~4 minecraft:stone',
-        'tp @s ~ ~ ~ 180 0',
-        'spawnpoint @s ~ ~ ~',
-        'execute rotated 180 0 run frozendawn debug world icaruslab',
+        'tp @a[limit=1] ~ ~ ~ 180 0',
+        'spawnpoint @a[limit=1] ~ ~ ~',
+        'frozendawn debug world icaruslab',
         'execute if block ~-1 ~ ~-8 frozendawn:icarus_controller run say Icarus lab: reactor built on terrain',
+        'execute unless block ~-1 ~ ~-8 frozendawn:icarus_controller run say Icarus lab: reactor build FAILED; run /function icarus_lab:prepare to try again',
         f'scoreboard players set #stage {NS} 2',
     ]),
     'kit': SCRIPTS['kit'],
