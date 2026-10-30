@@ -143,9 +143,12 @@ TERRAIN_SCRIPTS = {
     'reactor': f'function {NS}:reactor_at with storage {ANCHOR}\n' + f'function {NS}:menu',
     'reactor_at': '$tp @s $(x) $(y) $(z) 180 0',
     'edge_spot': f'function {NS}:edge_at with storage {ANCHOR}\n' + f'function {NS}:menu',
-    'edge_at': '$execute positioned $(x) $(y) $(z) run spreadplayers ~ ~180 0 6 false @s',
+    # Over the spot first, high enough to clear the land, then down onto the nearest dry ground within 64 blocks; if
+    # none is found the player still hangs over the spot instead of staying put.
+    'edge_at': '$execute positioned $(x) $(y) $(z) run tp @s ~ ~60 ~180 180 0\n' + f'execute at @s run function {NS}:land',
     'witness_spot': f'function {NS}:witness_at with storage {ANCHOR}\n' + f'function {NS}:menu',
-    'witness_at': '$execute positioned $(x) $(y) $(z) run spreadplayers ~ ~300 0 6 false @s',
+    'witness_at': '$execute positioned $(x) $(y) $(z) run tp @s ~ ~60 ~300 180 0\n' + f'execute at @s run function {NS}:land',
+    'land': 'spreadplayers ~ ~ 0 64 false @s\nexecute at @s run tp @s ~ ~ ~ 180 0',
     'air': SCRIPTS['air'],
     'day': SCRIPTS['day'],
     'night': SCRIPTS['night'],
