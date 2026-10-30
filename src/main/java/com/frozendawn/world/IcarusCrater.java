@@ -25,7 +25,10 @@ public final class IcarusCrater {
     /** Columns in a chunk. The budget is checked after each one: a deep chunk near the centre took 180 ms whole. */
     public static final int COLUMNS = 256;
     private static final int MELT_DEPTH = 8;
-    private static final float MAGMA_CHANCE = 0.15f;
+    /** The crater floor: this share turns to magma, then glass fused from the rock, obsidian and violet-glinting crying
+     * obsidian, cumulatively; the rest stays as it was. Near the rim, where there is air, fires burn on the floor. */
+    private static final float MAGMA_CHANCE = 0.15f, GLASS_CHANCE = 0.40f, OBSIDIAN_CHANCE = 0.58f, CRYING_CHANCE = 0.63f, FIRE_CHANCE = 0.3f;
+    private static final double FIRE_FROM_EDGE = 0.8;
     private static final int FLAGS = Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE | Block.UPDATE_SUPPRESS_DROPS;
 
     private IcarusCrater() {}
@@ -81,7 +84,8 @@ public final class IcarusCrater {
         double d = Math.hypot(dx, dz);
         if (d > melt) return 0;
         int surface = l.getHeight(Heightmap.Types.WORLD_SURFACE, x, z);
-        if (d <= IcarusBlast.edge(radius, job.seed(), Math.atan2(dz, dx))) {
+        double edge = IcarusBlast.edge(radius, job.seed(), Math.atan2(dz, dx));
+        if (d <= edge) {
             int floor = Math.max(bottom, Math.min(center.getY() - IcarusBlast.depth(d, radius, job.seed(), dx, dz),
                     surface - IcarusBlast.rimDepth(job.seed(), dx, dz)));
             for (int y = surface - 1; y > floor; y--) {
@@ -92,10 +96,19 @@ public final class IcarusCrater {
                 changed++;
             }
             var ground = l.getBlockState(pos.set(x, floor, z));
-            if (!ground.isAir() && !ground.is(Blocks.BEDROCK)
-                    && RandomSource.create(job.seed() ^ BlockPos.asLong(x, floor, z)).nextFloat() < MAGMA_CHANCE) {
+            var random = RandomSource.create(job.seed() ^ BlockPos.asLong(x, floor, z));
+            float roll = random.nextFloat();
+            var fused = roll < MAGMA_CHANCE ? Blocks.MAGMA_BLOCK : roll < GLASS_CHANCE ? Blocks.TINTED_GLASS
+                    : roll < OBSIDIAN_CHANCE ? Blocks.OBSIDIAN : roll < CRYING_CHANCE ? Blocks.CRYING_OBSIDIAN : null;
+            if (fused != null && !ground.isAir() && !ground.is(Blocks.BEDROCK)) {
                 Clearable.tryClear(l.getBlockEntity(pos));
-                l.setBlock(pos, Blocks.MAGMA_BLOCK.defaultBlockState(), FLAGS);
+                l.setBlock(pos, fused.defaultBlockState(), FLAGS);
+                changed++;
+            }
+            var above = pos.set(x, floor + 1, z).immutable();
+            if (d > FIRE_FROM_EDGE * edge && random.nextFloat() < FIRE_CHANCE && l.getBlockState(above).isAir()
+                    && !l.getBlockState(above.below()).isAir() && RoomAtmosphere.hasAir(l, above)) {
+                l.setBlock(above, Blocks.FIRE.defaultBlockState(), FLAGS);
                 changed++;
             }
         } else {

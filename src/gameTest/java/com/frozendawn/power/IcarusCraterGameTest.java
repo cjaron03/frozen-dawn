@@ -47,15 +47,16 @@ public final class IcarusCraterGameTest {
             IcarusCraterData.get(l).queue(core, 8, 42L);
             h.succeedWhen(() -> {
                 h.assertTrue(IcarusCraterData.get(l).jobs().stream().noneMatch(j -> j.center().equals(core)), "The crater job is finished");
-                boolean magma = false;
+                boolean magma = false, glassed = false;
                 for (int x = 0; x <= 20; x++) for (int z = 0; z <= 20; z++) {
                     double d = Math.hypot(x - CENTER.getX(), z - CENTER.getZ());
                     for (int y = 2; y <= TOP; y++) {
                         var at = new BlockPos(x, y, z); var state = l.getBlockState(h.absolutePos(at));
                         if (state.is(Blocks.MAGMA_BLOCK)) magma = true;
+                        if (state.is(Blocks.TINTED_GLASS)) glassed = true;
                         // The floor sits at least four below the surface, so the top three layers inside 0.9r are gone.
                         if (d <= 0.9 * 8 && y >= TOP - 2 && !at.equals(new BlockPos(10, 8, 10)))
-                            h.assertTrue(state.isAir(), "Inside the crater at " + at + " found " + state);
+                            h.assertTrue(state.isAir() || state.is(Blocks.FIRE), "Inside the crater at " + at + " found " + state);
                         if (d > 8) h.assertTrue(state.is(Blocks.STONE), "Outside the crater at " + at + " found " + state);
                     }
                 }
@@ -63,6 +64,7 @@ public final class IcarusCraterGameTest {
                 for (int x = 0; x <= 20; x++) for (int z = 0; z <= 20; z++)
                     h.assertTrue(l.getBlockState(h.absolutePos(new BlockPos(x, 1, z))).is(Blocks.BEDROCK), "The bedrock floor stays");
                 h.assertTrue(magma, "The crater floor has magma");
+                h.assertTrue(glassed, "The crater floor is fused to glass in places");
                 h.assertTrue(l.getEntitiesOfClass(ItemEntity.class, new AABB(h.absolutePos(BlockPos.ZERO)).inflate(30)).isEmpty(), "Nothing dropped");
             });
         });
