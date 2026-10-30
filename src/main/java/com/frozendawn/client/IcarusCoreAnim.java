@@ -39,6 +39,14 @@ public final class IcarusCoreAnim {
     private State state = State.COLD;
     /** Ticks since the core entered its current state. */
     public int stateTicks;
+    /** Ticks into ignition at which the first annihilation lands, on the hit of the ignition sound after its charge. */
+    public static final int IGNITE_AT = 30;
+    /** Ticks the Cole collapse takes to draw the plasma in, ending on the collapse sound's thump; and CLIP's spark burst. */
+    private static final int COLLAPSE_TICKS = 24, DUMP_TICKS = 12;
+    /** The state before this one; COLD for a core first seen mid-sequence, so a chunk load replays no transition. */
+    private State from = State.COLD;
+    private int collapse = -1, dump;
+    private float implode, implodeO;
     private float glow, glowO, bloom, bloomO, flash, flashO, front, frontO, tail, tailO, churn, churnO, ring, ringO, ringSpeed, beat, beatO;
     /** The plasma's radius in blocks, the antimatter speck's size (0 to 1), how solid the dissolving core block is (0 to
      * 1) and the shield's eased opacity. */
@@ -52,9 +60,12 @@ public final class IcarusCoreAnim {
     /** Client block entity ticker. */
     public static void tick(HalseyCoreBlockEntity core) {
         var a = of(core); var v = core.visual();
-        // Ignition seen as it happens, from priming, not a reactor found already igniting as its chunk loads.
-        boolean ignited = v.state() == State.IGNITION && a.state == State.PRIMING;
-        if (v.state() != a.state) { a.state = v.state(); a.stateTicks = 0; } else a.stateTicks++;
+        if (v.state() != a.state) { a.from = a.state; a.state = v.state(); a.stateTicks = 0; } else a.stateTicks++;
+        // Transitions seen as they happen, not a reactor found mid-sequence as its chunk loads.
+        boolean ignited = v.state() == State.IGNITION && a.from == State.PRIMING && a.stateTicks == IGNITE_AT;
+        boolean clipped = v.state() == State.CLIPPED && a.stateTicks == 0 && a.from.ordinal() >= State.POWER_CHECK.ordinal() && a.from.ordinal() <= State.RUNNING.ordinal();
+        if (v.state() == State.COLE_DISCHARGE && a.stateTicks == 0 && a.from != State.COLD && a.radius > 0) a.collapse = 0;
+        a.implodeO = a.implode;
         a.glowO = a.glow; a.bloomO = a.bloom; a.flashO = a.flash; a.frontO = a.front; a.tailO = a.tail; a.churnO = a.churn; a.ringO = a.ring; a.beatO = a.beat;
         a.radiusO = a.radius; a.speckO = a.speck; a.solidO = a.solid; a.shieldO = a.shield;
         System.arraycopy(a.beam, 0, a.beamO, 0, a.beam.length);
@@ -65,7 +76,7 @@ public final class IcarusCoreAnim {
         // Protocol follows the falling output, then the cooling core, so the plasma fades and shrinks step by step.
         float out = (float) Math.clamp(v.grossMw() / IcarusPhysics.MAX_OUTPUT_MW, 0, 1);
         float glowTarget = switch (v.state()) {
-            case IGNITION -> 1;
+            case IGNITION -> a.stateTicks < IGNITE_AT ? 0 : 1;
             case RAMP, COLE_RAMP_DOWN -> (float) (0.3 + 0.5 * out + 0.2 * heat);
             // Running, output only falls to nothing when the matter runs out: the cascade starves, so the plasma sinks to
             // a flickering ember over the last quarter megawatt and swells back as matter returns.
@@ -77,14 +88,25 @@ public final class IcarusCoreAnim {
             case COLE_COOL, COLE_RECOVER -> (float) (0.1 + 0.5 * heat);
             default -> 0;
         };
-        float glowRate = v.state() == State.CLIPPED ? 0.15f : v.state().name().startsWith("COLE") ? 0.025f : 0.06f;
+        float glowRate = v.state() == State.CLIPPED ? 0.15f : a.collapse >= 0 ? 0.06f : v.state().name().startsWith("COLE") ? 0.025f : 0.06f;
         a.glow = ease(a.glow, glowTarget, glowRate, 0.002f);
+        // The Cole collapse: the plasma's light is drawn in over COLLAPSE_TICKS and snuffed on the thump.
+        boolean snuffed = false;
+        if (a.collapse >= 0) {
+            a.implode = ++a.collapse / (float) COLLAPSE_TICKS;
+            if (a.collapse >= COLLAPSE_TICKS) { a.collapse = -1; a.implode = a.implodeO = 0; a.glow = 0; a.flash = Math.max(a.flash, 0.7f); snuffed = true; }
+        }
+        // CLIP dumps it all at once: the plasma gutters, the beams cut out and return, and the shield flares as it takes the load.
+        if (clipped) {
+            a.glow *= 0.3f; a.flash = Math.max(a.flash, 0.8f); a.shield = 1; a.dump = DUMP_TICKS;
+            java.util.Arrays.fill(a.beam, 0);
+        }
 
         // Ignition: a flash, then the plasma blooms from the speck past full size and settles back.
         boolean was = a.radius > 0;
         if (v.state() == State.IGNITION) {
-            if (a.stateTicks == 0) a.flash = 1;
-            a.bloom = Math.min(1, a.stateTicks / (IcarusPhysics.IGNITION_S * 20f));
+            if (a.stateTicks == IGNITE_AT) a.flash = 1;
+            a.bloom = Math.clamp((a.stateTicks - IGNITE_AT) / (IcarusPhysics.IGNITION_S * 20f - IGNITE_AT), 0, 1);
             a.radius = SPECK_RADIUS + (CORE_RADIUS - SPECK_RADIUS) * overshoot(a.bloom);
         } else if (a.glow > 0.02f) {
             a.bloom = 1;
@@ -145,13 +167,35 @@ public final class IcarusCoreAnim {
 
         effects(core, a);
         var viewer = Minecraft.getInstance().player;
-        if (ignited && viewer != null && core.getLevel() != null) {
-            // The first annihilation: a whump of air, a white-out and a shove, all as strong as the viewer is close.
+        if (viewer != null && core.getLevel() != null) {
             var c = core.getBlockPos().getCenter();
+            long now = core.getLevel().getGameTime();
             double d = Math.sqrt(viewer.distanceToSqr(c));
-            core.getLevel().playLocalSound(c.x, c.y, c.z, ModSounds.ICARUS_IGNITION_WHUMP.get(), SoundSource.BLOCKS, 3.0f, 1.0f, false);
-            kick = Math.max(kick, (float) (4 * Math.sqrt(Math.max(0, 1 - d / SHAKE_RANGE))));
-            if (d < IcarusIgnitionFlash.RANGE) IcarusIgnitionFlash.trigger(core.getLevel().getGameTime(), (float) (1 - d / IcarusIgnitionFlash.RANGE));
+            float near = (float) Math.sqrt(Math.max(0, 1 - d / SHAKE_RANGE)), seen = (float) Math.max(0, 1 - d / IcarusScreenFlash.RANGE);
+            if (ignited) {
+                // The first annihilation: a whump of air, a white-out and a shove, all as strong as the viewer is close.
+                core.getLevel().playLocalSound(c.x, c.y, c.z, ModSounds.ICARUS_IGNITION_WHUMP.get(), SoundSource.BLOCKS, 3.0f, 1.0f, false);
+                kick = Math.max(kick, 4 * near);
+                if (seen > 0) IcarusScreenFlash.trigger(now, seen, IcarusScreenFlash.IGNITION);
+            }
+            if (clipped) {
+                kick = Math.max(kick, 2.5f * near);
+                if (seen > 0) IcarusScreenFlash.trigger(now, 0.7f * seen, IcarusScreenFlash.CLIP);
+            }
+            if (snuffed) kick = Math.max(kick, 1.5f * near);
+        }
+        if (a.dump > 0) {
+            // CLIP's burst: every stabilizer spits sparks and smoke as the clip dumps its load.
+            a.dump--;
+            var level = core.getLevel(); var random = level.getRandom(); var centre = core.getBlockPos().getCenter();
+            for (int i = 0; i < IcarusLook.STABILIZERS; i++) {
+                var dir = net.minecraft.core.Direction.from2DDataValue(i);
+                var e = centre.add(dir.getStepX() * (IcarusStabilizerBlockEntity.CORE_DISTANCE - 0.5), 0, dir.getStepZ() * (IcarusStabilizerBlockEntity.CORE_DISTANCE - 0.5));
+                for (int n = 0; n < 4; n++)
+                    level.addParticle(ParticleTypes.ELECTRIC_SPARK, e.x + random.nextGaussian() * 0.3, e.y + random.nextGaussian() * 0.3, e.z + random.nextGaussian() * 0.3,
+                            random.nextGaussian() * 0.3, random.nextFloat() * 0.3, random.nextGaussian() * 0.3);
+                if (random.nextFloat() < 0.5f) level.addParticle(ParticleTypes.LARGE_SMOKE, e.x, e.y + 0.3, e.z, 0, 0.05, 0);
+            }
         }
         // Near the end the ground shakes harder the worse it gets, the core thumps on every heartbeat and jolts the view,
         // and the screen's edges pulse red (IcarusDangerHud).
@@ -221,6 +265,8 @@ public final class IcarusCoreAnim {
     public float glow(float pt) { return Mth.lerp(pt, glowO, glow); }
     public float bloom(float pt) { return Mth.lerp(pt, bloomO, bloom); }
     public float flash(float pt) { return Mth.lerp(pt, flashO, flash); }
+    /** How far the Cole collapse has drawn the plasma's light in, 0 to 1, or 0 when none is under way. */
+    public float implode(float pt) { return Mth.lerp(pt, implodeO, implode); }
     public float streamFront(float pt) { return Mth.lerp(pt, frontO, front); }
     public float streamTail(float pt) { return Mth.lerp(pt, tailO, tail); }
     public float churn(float pt) { return Mth.lerp(pt, churnO, churn); }

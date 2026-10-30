@@ -348,6 +348,22 @@ public final class HalseyCoreRenderer implements BlockEntityRenderer<HalseyCoreB
                         hop * 13 + k, 6, 0.25, 0.07f, IcarusDraw.argb(0xFFD8D0, strength));
             }
         }
+
+        // The Cole collapse: the plasma's light drawn in from the shield to the core, brighter as it closes, with streaks
+        // falling inward behind it.
+        float implode = a.implode(pt);
+        if (implode > 0) {
+            float r = 0.15f + (SHIELD_RADIUS - 0.15f) * (1 - implode) * (1 - implode), k = (reduced ? 0.5f : 1f) * (0.25f + 0.75f * implode);
+            IcarusDraw.sphere(glowBuf, pose, false, r, 10, 20, (lat, lon) -> IcarusDraw.argb(BEAM, 0.35 * k));
+            IcarusDraw.sphere(glowBuf, pose, false, r * 0.8f, 8, 16, (lat, lon) -> IcarusDraw.argb(WHITE, 0.2 * k));
+            long seed = core.getBlockPos().asLong();
+            for (int i = 0; i < 12; i++) {
+                var random = RandomSource.create(seed * 7 + i);
+                double lat = (random.nextDouble() - 0.5) * 2.6, lon = random.nextDouble() * Math.PI * 2;
+                IcarusDraw.beam(glowBuf, pose, IcarusDraw.onSphere(r + 0.3 + 1.2 * (1 - implode), lat, lon), IcarusDraw.onSphere(r, lat, lon), 0.05f,
+                        IcarusDraw.argb(BEAM, 0), IcarusDraw.argb(WHITE, 0.7 * k));
+            }
+        }
         poses.popPose();
     }
 
