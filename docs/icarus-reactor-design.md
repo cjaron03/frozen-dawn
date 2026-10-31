@@ -206,7 +206,7 @@ There is a generated blast-pit site (`BlastPitPlacement`). If any world-generate
 
 ## Status
 
-Recorded 2026-10-28 on branch `feat/icarus-reactor`, before the owner's visual pass.
+First recorded 2026-10-28 on branch `feat/icarus-reactor`, before the owner's visual pass; updated 2026-10-30 after it.
 
 ### Full-radius crater performance
 
@@ -231,4 +231,8 @@ One 64-capsule detonation (radius 400, 4596 chunks in reach) at the origin of a 
 
 ### Open check result
 
-The crater clears world-generated blocks that are never rebuilt, and no protection was added. Affected sites: the satellite's black-box chest (it holds the only Transponder Schematic, which unlocks the win), the ORSA Blast Pit crate, and the lower block of the First Crossing memory wall. This is reported to the owner for a decision.
+The crater cleared world-generated blocks that are never rebuilt: the satellite's black-box chest (it holds the only Transponder Schematic, which unlocks the win), the ORSA Blast Pit crate, and the First Crossing memory wall. Each is generated once per world. Reported to the owner, who chose on 2026-10-30 to protect them and cover them in ash so they do not look out of place. A crater now leaves standing every container still holding an ORSA document and every recorded Thaeven carrier, on a volcanic-ash heap that reaches the block's level beside it and falls away; nothing lands on top, so a chest still opens. An emptied container is ordinary and is carved. GameTest: `icarusCraterBuriesStoryBlocksInAsh`.
+
+### Owner pass, 2026-10-30
+
+In the generated worlds "Icarus Overworld 3" and "Icarus Overworld 4 (advancements)" (the second is the one owner-approved world without the advancement filter), the owner passed the near-instant crater, its hazards and soot pall, advancement popups and chat lines, Continuity Beyond with all four plants on one grid, the CFU-7 startup, running, shutdown and SCRAM sounds, the AMR-1 running chime, and the ACRONYM "Nickname" reactor names. Two advancement bugs found on the way were fixed with failing GameTests first: Wake Me When You Need Me could never arm, and Continuity Beyond looked for the Solstice's Controller instead of its power port. Every Icarus advancement now has an in-game GameTest. `architectVerify`: 813 GameTests passed on the branch merged with `feat/maeve-director` at 72f6a574.
