@@ -1,0 +1,27 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "frozendawn:block/hyperion_port"
+    },
+    "facing=east": {
+      "model": "frozendawn:block/hyperion_port",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "frozendawn:block/hyperion_port",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "frozendawn:block/hyperion_port",
+      "y": 270
+    },
+    "facing=up": {
+      "model": "frozendawn:block/hyperion_port",
+      "x": 270
+    },
+    "facing=down": {
+      "model": "frozendawn:block/hyperion_port",
+      "x": 90
+    }
+  }
+}

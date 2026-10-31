@@ -71,6 +71,12 @@
     "frozendawn:confinement_core",
     "frozendawn:high_temperature_radiator",
     "frozendawn:pegmatite",
-    "frozendawn:deepslate_spodumene_ore"
+    "frozendawn:deepslate_spodumene_ore",
+    "frozendawn:hyperion_frame",
+    "frozendawn:superconducting_cell",
+    "frozendawn:hyperion_port",
+    "frozendawn:cryocooler",
+    "frozendawn:quench_vent",
+    "frozendawn:hyperion_controller"
   ]
 }

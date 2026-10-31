@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "north": "frozendawn:block/hyperion_port",
+    "south": "frozendawn:block/hyperion_frame",
+    "east": "frozendawn:block/hyperion_frame",
+    "west": "frozendawn:block/hyperion_frame",
+    "up": "frozendawn:block/hyperion_frame",
+    "down": "frozendawn:block/hyperion_frame",
+    "particle": "frozendawn:block/hyperion_frame"
+  }
+}

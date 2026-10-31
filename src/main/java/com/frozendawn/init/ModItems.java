@@ -76,6 +76,12 @@ public class ModItems {
     public static final DeferredItem<net.minecraft.world.item.DoubleHighBlockItem> SFR_MAINTENANCE_HATCH = ITEMS.register("sfr_maintenance_hatch",
             () -> new net.minecraft.world.item.DoubleHighBlockItem(ModBlocks.SFR_MAINTENANCE_HATCH.get(), new Item.Properties()));
     public static final DeferredItem<BlockItem> MAGNET_COIL = ITEMS.registerSimpleBlockItem("magnet_coil", ModBlocks.MAGNET_COIL);
+    public static final DeferredItem<BlockItem> HYPERION_FRAME = ITEMS.registerSimpleBlockItem("hyperion_frame", ModBlocks.HYPERION_FRAME);
+    public static final DeferredItem<BlockItem> SUPERCONDUCTING_CELL = ITEMS.registerSimpleBlockItem("superconducting_cell", ModBlocks.SUPERCONDUCTING_CELL);
+    public static final DeferredItem<BlockItem> HYPERION_PORT = ITEMS.registerSimpleBlockItem("hyperion_port", ModBlocks.HYPERION_PORT);
+    public static final DeferredItem<BlockItem> CRYOCOOLER = ITEMS.registerSimpleBlockItem("cryocooler", ModBlocks.CRYOCOOLER);
+    public static final DeferredItem<BlockItem> QUENCH_VENT = ITEMS.registerSimpleBlockItem("quench_vent", ModBlocks.QUENCH_VENT);
+    public static final DeferredItem<BlockItem> HYPERION_CONTROLLER = ITEMS.registerSimpleBlockItem("hyperion_controller", ModBlocks.HYPERION_CONTROLLER);
     public static final DeferredItem<BlockItem> FIRST_WALL = ITEMS.registerSimpleBlockItem("first_wall", ModBlocks.FIRST_WALL);
     public static final DeferredItem<BlockItem> LITHIUM_BLANKET = ITEMS.registerSimpleBlockItem("lithium_blanket", ModBlocks.LITHIUM_BLANKET);
     public static final DeferredItem<BlockItem> CONFINEMENT_CORE = ITEMS.registerSimpleBlockItem("confinement_core", ModBlocks.CONFINEMENT_CORE);
@@ -760,6 +766,12 @@ public class ModItems {
                         output.accept(LITHIUM_BLANKET.get());
                         output.accept(SFR_FUEL_PORT.get());
                         output.accept(SFR_POWER_PORT.get());
+                        output.accept(HYPERION_CONTROLLER.get());
+                        output.accept(HYPERION_FRAME.get());
+                        output.accept(SUPERCONDUCTING_CELL.get());
+                        output.accept(HYPERION_PORT.get());
+                        output.accept(CRYOCOOLER.get());
+                        output.accept(QUENCH_VENT.get());
                         output.accept(SFR_VACUUM_PORT.get());
                         output.accept(SFR_MAINTENANCE_HATCH.get());
                         output.accept(HIGH_TEMPERATURE_RADIATOR.get());
