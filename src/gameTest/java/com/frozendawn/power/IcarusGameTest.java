@@ -472,6 +472,69 @@ public final class IcarusGameTest {
     private static IcarusCapsuleDockBlockEntity dock(GameTestHelper h) { return (IcarusCapsuleDockBlockEntity) h.getLevel().getBlockEntity(IcarusScenes.cell(h, CENTER, Direction.SOUTH, -2, -5, 8)); }
     private static IcarusMatterPortBlockEntity matter(GameTestHelper h) { return (IcarusMatterPortBlockEntity) h.getLevel().getBlockEntity(IcarusScenes.cell(h, CENTER, Direction.SOUTH, -3, -5, 8)); }
     /** A commissioned reactor with two capsules and a stack of cobblestone, started and driven straight to RUNNING. */
+    /** The running advancements reach crew near the core in game: E = mc² at ignition, Too Close to the Sun at full
+     * output, Clipped Wings on a CLIP, and Wake Me When You Need Me on the restart after a full Cole Protocol. Continuity
+     * Beyond's grid check needs all four plants and is only checked here to be grantable. */
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "icarus_reactor", timeoutTicks = 100)
+    public static void icarusRunningAdvancementsReachTheCrew(GameTestHelper h) {
+        var l = h.getLevel(); var c = icarus(h, IcarusScenes.build(h, CENTER));
+        var crew = player(h, h.absolutePos(new BlockPos(2, 2, 2)), GameType.CREATIVE);
+        var stranger = player(h, h.absolutePos(new BlockPos(18, 2, 2)), GameType.CREATIVE);
+        try {
+            c.crew().add(crew.getUUID());
+            c.physics().setCommissionedForTest(true);
+            // Four, so what full output burns still leaves the two a restart needs.
+            dock(h).setItem(0, AntimatterCapsuleItem.sealed(IcarusPhysics.CAPSULE).copyWithCount(4));
+            matter(h).setItem(0, new ItemStack(Items.COBBLESTONE, 64));
+            h.assertTrue(c.press(IcarusControllerBlockEntity.BUTTON_START), "Start is accepted from COLD");
+            for (int s = 0; s < 121; s++) c.second(l);
+            h.assertTrue(earned(crew, IcarusAdvancements.E_EQUALS_MC2), "E = mc² at ignition");
+            h.assertTrue(!earned(stranger, IcarusAdvancements.E_EQUALS_MC2), "Only crew earn it");
+            h.assertTrue(!earned(crew, IcarusAdvancements.WAKE_ME), "A first start is no restart");
+            c.settings((int) (IcarusPhysics.MAX_OUTPUT_MW * 1000), 600, 30);
+            for (int s = 0; s < 300 && !earned(crew, IcarusAdvancements.TOO_CLOSE); s++) c.second(l);
+            h.assertTrue(earned(crew, IcarusAdvancements.TOO_CLOSE), "Too Close to the Sun at full output, gross " + c.readout().grossMw());
+            h.assertTrue(c.press(IcarusControllerBlockEntity.BUTTON_COLE), "Cole Protocol is accepted while running");
+            for (int s = 0; s < 181; s++) c.second(l);
+            h.assertValueEqual(c.readout().status(), IcarusPhysics.Status.SAFE_TO_DISMANTLE, "status after the Cole Protocol");
+            matter(h).setItem(0, new ItemStack(Items.COBBLESTONE, 64));
+            h.assertTrue(c.press(IcarusControllerBlockEntity.BUTTON_START), "Start is accepted after the Cole Protocol");
+            for (int s = 0; s < 121; s++) c.second(l);
+            h.assertTrue(earned(crew, IcarusAdvancements.WAKE_ME), "Wake Me When You Need Me on the restart; state " + c.physics().state()
+                    + ", dock " + dock(h).charge() + ", core " + c.physics().coreCharge());
+            h.assertTrue(c.press(IcarusControllerBlockEntity.BUTTON_CLIP), "CLIP is accepted while running");
+            c.second(l);
+            h.assertTrue(earned(crew, IcarusAdvancements.CLIPPED_WINGS), "Clipped Wings on a CLIP");
+            com.frozendawn.radiation.ReactorAdvancements.grant(crew, IcarusAdvancements.CONTINUITY);
+            h.assertTrue(earned(crew, IcarusAdvancements.CONTINUITY), "Continuity Beyond is a grantable advancement");
+            h.succeed();
+        } finally { crew.discard(); stranger.discard(); }
+    }
+
+    /** The Fall of Icarus goes to the crew even when the blast kills them; Don't Look Up to a survivor watching from
+     * between r and 3r, not to one past 3r. */
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "icarus_detonation", timeoutTicks = 100)
+    public static void icarusDetonationAdvancementsReachCrewAndWitnesses(GameTestHelper h) {
+        scene(h, () -> {
+            var l = h.getLevel(); var core = h.absolutePos(CENTER);
+            var crew = player(h, core, GameType.SURVIVAL);
+            var witness = player(h, core.offset(16, 0, 0), GameType.SURVIVAL);
+            var far = player(h, core.offset(30, 0, 0), GameType.SURVIVAL);
+            try {
+                com.frozendawn.world.IcarusDetonation.detonate(l, core, 8, java.util.Set.of(crew.getUUID()));
+                h.assertTrue(earned(crew, IcarusAdvancements.FALL), "The Fall of Icarus to the crew");
+                h.assertTrue(!earned(witness, IcarusAdvancements.FALL), "Not to a bystander");
+                h.assertTrue(earned(witness, IcarusAdvancements.DONT_LOOK_UP), "Don't Look Up to a witness at 2r");
+                h.assertTrue(!earned(far, IcarusAdvancements.DONT_LOOK_UP), "Not past 3r");
+            } finally { crew.discard(); witness.discard(); far.discard(); }
+        });
+    }
+
+    private static boolean earned(ServerPlayer p, String name) {
+        var holder = p.getServer().getAdvancements().get(ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, name));
+        return holder != null && p.getAdvancements().getOrStartProgress(holder).isDone();
+    }
+
     private static IcarusControllerBlockEntity running(GameTestHelper h) {
         var l = h.getLevel(); var c = icarus(h, IcarusScenes.build(h, CENTER));
         c.physics().setCommissionedForTest(true);

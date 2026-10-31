@@ -16,6 +16,9 @@ the land 180 and 300 blocks south.
 
 --perf writes the disposable "Icarus Perf" world instead: the template's own
 terrain at phase 0, for the lab-only full-load blast timed by LabIcarusPerf.
+
+--advancements leaves out the datapack's advancement filter and announces them in chat, so the Icarus advancements
+can be earned and seen in this one world. The owner approved it as the exception to hidden advancements in test saves.
 """
 import argparse
 import copy
@@ -186,9 +189,11 @@ PERF_SCRIPTS = {
 }
 
 
-def pack(destination, namespace, scripts, description):
+def pack(destination, namespace, scripts, description, advancements=False):
     destination.mkdir(parents=True, exist_ok=False)
-    (destination/'pack.mcmeta').write_text(json.dumps(pack_metadata(description))+'\n')
+    metadata = pack_metadata(description)
+    if advancements: del metadata['filter']
+    (destination/'pack.mcmeta').write_text(json.dumps(metadata)+'\n')
     write_sync_advancement(destination)
     functions = destination/('data/'+namespace+'/function')
     functions.mkdir(parents=True)
@@ -204,7 +209,7 @@ def layer(block, height):
     return {'block': (8, block), 'height': (3, height)}
 
 
-def prepare(template, title, perf, terrain=False):
+def prepare(template, title, perf, terrain=False, advancements=False):
     destination = ROOT/'run-lab/saves'/title
     if destination.exists():
         raise SystemExit(f'Refusing to overwrite {destination}')
@@ -238,7 +243,7 @@ def prepare(template, title, perf, terrain=False):
         'LastPlayed': (4, int(time.time()*1000)), 'SpawnX': (3, 0), 'SpawnY': (3, spawn_y), 'SpawnZ': (3, 0),
         'SpawnAngle': (5, angle), 'WasModded': (1, 1),
         'GameRules': (10, {'doMobSpawning': (8, 'false'), 'keepInventory': (8, 'true'),
-                           'announceAdvancements': (8, 'false'), 'doDaylightCycle': (8, 'false'),
+                           'announceAdvancements': (8, 'true' if advancements else 'false'), 'doDaylightCycle': (8, 'false'),
                            'doWeatherCycle': (8, 'false')}),
         'DataPacks': (10, {'Enabled': (9, (8, ['vanilla', 'mod_data', 'file/'+pack_name])), 'Disabled': (9, (8, []))}),
         'enabled_features': (9, (8, ['minecraft:vanilla']))})
@@ -253,9 +258,10 @@ def prepare(template, title, perf, terrain=False):
     if perf:
         pack(destination/'datapacks'/pack_name, PERF_NS, PERF_SCRIPTS, 'Icarus full-load perf; advancements hidden')
     elif terrain:
-        pack(destination/'datapacks'/pack_name, CHECK_NS, TERRAIN_SCRIPTS, 'AMR-1 Icarus playtest on terrain; advancements hidden')
+        pack(destination/'datapacks'/pack_name, CHECK_NS, TERRAIN_SCRIPTS,
+             'AMR-1 Icarus playtest on terrain; advancements ' + ('shown' if advancements else 'hidden'), advancements)
     else:
-        pack(destination/'datapacks'/pack_name, CHECK_NS, SCRIPTS, 'AMR-1 Icarus playtest; advancements hidden')
+        pack(destination/'datapacks'/pack_name, CHECK_NS, SCRIPTS, 'AMR-1 Icarus playtest; advancements ' + ('shown' if advancements else 'hidden'), advancements)
     print(f'Prepared {destination}; not opened.')
 
 
@@ -264,10 +270,13 @@ if __name__ == '__main__':
     parser.add_argument('--template', type=Path, required=True)
     parser.add_argument('--perf', action='store_true', help='write the disposable full-load perf world')
     parser.add_argument('--terrain', action='store_true', help='build the check reactor on the template\'s own overworld terrain')
+    parser.add_argument('--advancements', action='store_true', help='no advancement filter, announced in chat (owner-approved exception)')
     parser.add_argument('--title', help='save name; the perf world must keep its own, which LabIcarusPerf requires')
     args = parser.parse_args()
     if args.perf and args.title not in (None, PERF_TITLE):
         raise SystemExit(f'--perf writes "{PERF_TITLE}"; LabIcarusPerf refuses any other world name')
     if args.perf and args.terrain:
         raise SystemExit('--perf and --terrain are separate worlds')
-    prepare(args.template, args.title or (PERF_TITLE if args.perf else CHECK_TITLE), args.perf, args.terrain)
+    if args.perf and args.advancements:
+        raise SystemExit('the perf world keeps advancements hidden')
+    prepare(args.template, args.title or (PERF_TITLE if args.perf else CHECK_TITLE), args.perf, args.terrain, args.advancements)

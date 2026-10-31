@@ -117,7 +117,8 @@ public final class IcarusControllerBlockEntity extends BlockEntity implements Me
         readout = physics.step(new IcarusPhysics.Inputs(valid, port != null && port.paidFullSecond(), injectable,
                 dock == null ? 0 : dock.empties(), feed == null ? 0 : feed.count()));
         if (readout.detonate() && physics.coreCharge() > 0) { detonate(l); return; }
-        if (phase == IcarusPhysics.State.COLE_DISCHARGE && readout.state() == IcarusPhysics.State.COLD) coleDone = true;
+        // The readout shows the state the step ran in; the move to COLD at the discharge's end is only in the physics.
+        if (phase == IcarusPhysics.State.COLE_DISCHARGE && physics.state() == IcarusPhysics.State.COLD) coleDone = true;
         var before = heard;
         sound(l, valid ? result.core() : worldPosition);
         advancements(l, before, valid ? result.core() : worldPosition, portAt);

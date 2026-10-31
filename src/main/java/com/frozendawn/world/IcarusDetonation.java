@@ -78,8 +78,8 @@ public final class IcarusDetonation {
 
     /** The Fall of Icarus to its crew wherever they are online; Don't Look Up to anyone alive who watched from outside the blast. */
     private static void advancements(ServerLevel l, Vec3 center, double radius, Set<UUID> crew) {
-        for (var id : crew)
-            if (l.getServer().getPlayerList().getPlayer(id) instanceof ServerPlayer p) ReactorAdvancements.grant(p, IcarusAdvancements.FALL);
+        for (var level : l.getServer().getAllLevels())
+            for (var p : level.players()) if (crew.contains(p.getUUID())) ReactorAdvancements.grant(p, IcarusAdvancements.FALL);
         for (var p : l.players())
             if (p.isAlive() && !p.isSpectator() && IcarusBlast.witness(p.position().distanceTo(center), radius)) ReactorAdvancements.grant(p, IcarusAdvancements.DONT_LOOK_UP);
     }
