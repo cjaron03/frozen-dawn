@@ -1875,5 +1875,17 @@
   "hyperion.frozendawn.problem.controllers": "Needs exactly 1 Hyperion Controller",
   "hyperion.frozendawn.problem.ports": "Needs at least 1 Hyperion Port",
   "hyperion.frozendawn.problem.coolers": "Needs at least 1 Cryocooler",
-  "hyperion.frozendawn.problem.vents": "Needs exactly 2 Quench Vents, facing out"
+  "hyperion.frozendawn.problem.vents": "Needs exactly 2 Quench Vents, facing out",
+  "hyperion.frozendawn.stage.cold": "Cold",
+  "hyperion.frozendawn.stage.chirp": "Heat is winning",
+  "hyperion.frozendawn.stage.warning": "Quench warning",
+  "hyperion.frozendawn.stage.final": "Quench imminent",
+  "hyperion.frozendawn.stage.warm": "Warm: cooling down",
+  "screen.frozendawn.hyperion.stored": "Stored: %s / %s (%s%%)",
+  "screen.frozendawn.hyperion.flow": "In: %s   Out: %s",
+  "screen.frozendawn.hyperion.ports": "Ports: %s, up to %s each way",
+  "screen.frozendawn.hyperion.cells": "Cells: %s (quench at %s)",
+  "screen.frozendawn.hyperion.surroundings": "Surroundings: %s",
+  "screen.frozendawn.hyperion.cooler": "Cryocooler draw: %s",
+  "screen.frozendawn.hyperion.quench_in": "Quench in %s"
 }

@@ -12,6 +12,14 @@ import java.util.Map;
 import java.util.WeakHashMap;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
+import net.minecraft.network.Connection;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
+import net.minecraft.world.MenuProvider;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtUtils;
 import net.minecraft.server.level.ServerLevel;
@@ -22,7 +30,13 @@ import net.minecraft.world.level.block.state.BlockState;
 /** The SMS-1 Hyperion's brain and its only store: the charge is a long here, never in the cells. Once formed it re-checks
  * only its own saved box, so nothing built beside it can break it. Ports reach it as one EnergyStore, rate-capped per
  * one-second interval at PORT_WATTS per port in each direction. */
-public final class HyperionControllerBlockEntity extends BlockEntity implements EnergyStore {
+public final class HyperionControllerBlockEntity extends BlockEntity implements EnergyStore, MenuProvider {
+    /** What the client shows: synced once per second when anything in it changed. */
+    public record Snapshot(HyperionMultiblock.Problem problem, HyperionPhysics.Stage stage, long stored, long capacity, long flowIn, long flowOut,
+                           int ports, long rateWatts, double cellC, double surroundingsC, long coolerWatts, double secondsToQuench, long lastQuenchTick) {
+        public static final Snapshot EMPTY = new Snapshot(HyperionMultiblock.Problem.UNLOADED, HyperionPhysics.Stage.COLD, 0, 0, 0, 0, 0, 0,
+                HyperionPhysics.OPERATING_C, 0, 0, Double.POSITIVE_INFINITY, Long.MIN_VALUE);
+    }
     /** Per level, each formed controller's saved box, so a changed part finds its controller without a scan. */
     private static final Map<Level, Map<BlockPos, BlockPos[]>> BOXES = new WeakHashMap<>();
     private static final Map<Level, Integer> QUENCHES = new WeakHashMap<>();
@@ -37,6 +51,9 @@ public final class HyperionControllerBlockEntity extends BlockEntity implements 
     private HyperionPhysics.Readout readout;
     private long cooldownGranted, lastQuenchTick = Long.MIN_VALUE;
     private int hotNeighbors, secondsSinceScan;
+    private double lastSurroundingsC;
+    private long machineDrawn;
+    private Snapshot snapshot = Snapshot.EMPTY, sent;
 
     public HyperionControllerBlockEntity(BlockPos p, BlockState s) { super(ModBlockEntities.HYPERION_CONTROLLER.get(), p, s); }
 
@@ -78,12 +95,24 @@ public final class HyperionControllerBlockEntity extends BlockEntity implements 
             min = shell.min(); max = shell.max(); register(l);
             physics.reset(surroundingsC(l)); readout = null; setChanged();
             return;
-        } else return;
+        } else { sync(l); return; }
         step(l);
+        sync(l);
+    }
+    public Snapshot snapshot() { return snapshot; }
+    private Snapshot current() {
+        var r = readout();
+        return new Snapshot(shell.problem(), r.stage(), stored, capacity(), lastCharged, lastDrawn + machineDrawn, portCount(), rateWatts(), r.cellC(),
+                lastSurroundingsC, r.coolerJoules(), r.secondsToQuench(), lastQuenchTick);
+    }
+    private void sync(ServerLevel l) {
+        snapshot = current(); machineDrawn = 0;
+        if (!snapshot.equals(sent)) { sent = snapshot; l.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_CLIENTS); }
     }
     private void step(ServerLevel l) {
         if (secondsSinceScan++ % 5 == 0) hotNeighbors = hotNeighbors(l);
-        readout = physics.step(new HyperionPhysics.Inputs(shell.cells(), shell.coolers().size(), surroundingsC(l), hotNeighbors, cooldownGranted), stored);
+        lastSurroundingsC = surroundingsC(l);
+        readout = physics.step(new HyperionPhysics.Inputs(shell.cells(), shell.coolers().size(), lastSurroundingsC, hotNeighbors, cooldownGranted), stored);
         cooldownGranted = 0;
         stored -= Math.min(stored, readout.coolerJoules());
         if (readout.quenched()) quench();
@@ -155,6 +184,7 @@ public final class HyperionControllerBlockEntity extends BlockEntity implements 
         return readout != null ? readout : new HyperionPhysics.Readout(physics.stage(), physics.cellC(), 0, Double.POSITIVE_INFINITY, false, false, 0);
     }
     public long lastQuenchTick() { return lastQuenchTick; }
+    public String problemKey() { return "hyperion.frozendawn.problem." + shell.problem().name().toLowerCase(java.util.Locale.ROOT); }
     private boolean warm() { return physics.stage() == HyperionPhysics.Stage.WARM; }
 
     private void interval() {
@@ -184,9 +214,27 @@ public final class HyperionControllerBlockEntity extends BlockEntity implements 
     }
     @Override public boolean acceptsCharge() { return shell.valid(); }
     @Override public void publish(int charged, int drawn) { lastCharged = charged; lastDrawn = drawn; }
-    @Override public void publishMachineDraw(int joules) {}
-    @Override public void publishHeaterDraw(int joules) {}
+    @Override public void publishMachineDraw(int joules) { machineDrawn += Math.max(0, joules); }
+    @Override public void publishHeaterDraw(int joules) { machineDrawn += Math.max(0, joules); }
 
+    @Override public CompoundTag getUpdateTag(HolderLookup.Provider r) {
+        var t = new CompoundTag(); var s = snapshot;
+        t.putInt("Problem", s.problem().ordinal()); t.putInt("Stage", s.stage().ordinal()); t.putLong("Stored", s.stored()); t.putLong("Capacity", s.capacity());
+        t.putLong("In", s.flowIn()); t.putLong("Out", s.flowOut()); t.putInt("Ports", s.ports()); t.putLong("Rate", s.rateWatts());
+        t.putDouble("CellC", s.cellC()); t.putDouble("AroundC", s.surroundingsC()); t.putLong("Cooler", s.coolerWatts());
+        t.putDouble("ToQuench", s.secondsToQuench()); t.putLong("LastQuench", s.lastQuenchTick());
+        return t;
+    }
+    @Override public ClientboundBlockEntityDataPacket getUpdatePacket() { return ClientboundBlockEntityDataPacket.create(this); }
+    @Override public void handleUpdateTag(CompoundTag t, HolderLookup.Provider r) {
+        var problems = HyperionMultiblock.Problem.values(); var stages = HyperionPhysics.Stage.values();
+        snapshot = new Snapshot(problems[Math.clamp(t.getInt("Problem"), 0, problems.length - 1)], stages[Math.clamp(t.getInt("Stage"), 0, stages.length - 1)],
+                t.getLong("Stored"), t.getLong("Capacity"), t.getLong("In"), t.getLong("Out"), t.getInt("Ports"), t.getLong("Rate"),
+                t.getDouble("CellC"), t.getDouble("AroundC"), t.getLong("Cooler"), t.getDouble("ToQuench"), t.getLong("LastQuench"));
+    }
+    @Override public void onDataPacket(Connection c, ClientboundBlockEntityDataPacket p, HolderLookup.Provider r) { handleUpdateTag(p.getTag(), r); }
+    @Override public Component getDisplayName() { return Component.translatable("block.frozendawn.hyperion_controller"); }
+    @Override public AbstractContainerMenu createMenu(int id, Inventory inv, Player p) { return new HyperionControllerMenu(id, worldPosition); }
     @Override public void setRemoved() {
         if (level instanceof ServerLevel l && registered) {
             var boxes = BOXES.get(l); if (boxes != null) boxes.remove(worldPosition);

@@ -270,6 +270,15 @@ public final class HyperionGameTest {
         h.succeed();
     }
 
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "hyperion", timeoutTicks = 100)
+    public static void hyperionControllerExplainsAnIncompleteShell(GameTestHelper h) {
+        var l = h.getLevel(); var b = fresh(h, 3, 3, 3);
+        l.setBlock(b.vents().getFirst(), ModBlocks.HYPERION_FRAME.get().defaultBlockState(), 3);
+        var c = (com.frozendawn.block.HyperionControllerBlockEntity) l.getBlockEntity(b.controller()); c.second(l);
+        h.assertTrue("hyperion.frozendawn.problem.vents".equals(c.problemKey()), "Explains the missing vent: " + c.problemKey());
+        h.succeed();
+    }
+
     static int quenches(ServerLevel l) { return com.frozendawn.block.HyperionControllerBlockEntity.quenchCount(l); }
 
     /** The built controller, formed by one second. */

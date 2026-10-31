@@ -20,6 +20,7 @@ public class ModMenuTypes {
 
     public static final DeferredHolder<MenuType<?>, MenuType<com.frozendawn.block.ResistiveHeaterMenu>> RESISTIVE_HEATER = MENU_TYPES.register("resistive_heater", () -> IMenuTypeExtension.create(com.frozendawn.block.ResistiveHeaterMenu::new));
 
+    public static final DeferredHolder<MenuType<?>, MenuType<com.frozendawn.block.HyperionControllerMenu>> HYPERION_CONTROLLER = MENU_TYPES.register("hyperion_controller", () -> IMenuTypeExtension.create(com.frozendawn.block.HyperionControllerMenu::new));
     public static final DeferredHolder<MenuType<?>, MenuType<com.frozendawn.block.SfrControllerMenu>> SFR_CONTROLLER = MENU_TYPES.register("sfr_controller", () -> IMenuTypeExtension.create(com.frozendawn.block.SfrControllerMenu::new));
     public static final DeferredHolder<MenuType<?>, MenuType<com.frozendawn.block.ReactorControllerMenu>> REACTOR_CONTROLLER = MENU_TYPES.register("reactor_controller", () -> IMenuTypeExtension.create(com.frozendawn.block.ReactorControllerMenu::new));
 
