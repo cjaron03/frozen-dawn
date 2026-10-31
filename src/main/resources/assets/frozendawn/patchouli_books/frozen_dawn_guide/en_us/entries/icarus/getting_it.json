@@ -16,7 +16,7 @@
     {
       "type": "patchouli:text",
       "title": "Building",
-      "text": "Place the Controller and use it: a ghost guide shows every block, in build order, with what is still missing.$(br2)The structure is open, about 19x19x13. Keep the space around the core clear."
+      "text": "Place the Controller and use it: a ghost guide shows every block, in build order, with what is still missing.$(br2)The structure is open, 17x17 and 8 tall. Keep the space around the core clear."
     },
     {
       "type": "patchouli:multiblock",
@@ -194,7 +194,7 @@
           "R": "frozendawn:icarus_reserve_bank"
         }
       },
-      "text": "The Controller faces out from the south side. Leave the space round the core empty: the shield fills it."
+      "text": "The Controller faces out from the south side."
     }
   ]
 }

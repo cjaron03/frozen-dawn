@@ -18,7 +18,7 @@
     {
       "type": "patchouli:text",
       "title": "Where To Find Them",
-      "text": "$(li)Helion site log desks: two or three fusion slates$(li)CFU-7 site shift lockers: the radiator slate$(li)Half of Uplink supply drops: one you have not learned"
+      "text": "$(li)Helion site log desks: two or three slates, Project Icarus among them$(li)CFU-7 site shift lockers: the radiator slate$(li)Half of Uplink supply drops: one you have not learned"
     },
     {
       "type": "patchouli:text",

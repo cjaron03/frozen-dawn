@@ -21,7 +21,7 @@
     {
       "type": "patchouli:text",
       "title": "Helium",
-      "text": "A burning plasma makes helium ash, which the Vacuum Port pumps out as Helium Canisters. One in the Controller halves the next cooldown."
+      "text": "Each Deuterium Canister burned leaves a Helium Canister in the Controller's helium slot while the Vacuum Port pumps. One used from there halves the next cooldown."
     }
   ]
 }
