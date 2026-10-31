@@ -30,9 +30,9 @@ public final class HyperionControllerBlock extends HyperionFacingPartBlock imple
         if (player instanceof ServerPlayer server && l.getBlockEntity(p) instanceof HyperionControllerBlockEntity c) server.openMenu(c, buf -> buf.writeBlockPos(p));
         return InteractionResult.sidedSuccess(l.isClientSide());
     }
-    /** Breaking a charged Controller vents before its store is gone. */
+    /** Breaking a Controller takes its battery apart before its store is gone: a charged one vents. */
     @Override protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState next, boolean moved) {
-        if (!state.is(next.getBlock()) && level instanceof ServerLevel l && l.getBlockEntity(pos) instanceof HyperionControllerBlockEntity c && c.stored() > 0) c.broken(l);
+        if (!state.is(next.getBlock()) && level instanceof ServerLevel l && l.getBlockEntity(pos) instanceof HyperionControllerBlockEntity c) c.broken(l);
         super.onRemove(state, level, pos, next, moved);
     }
     @Override public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level l, BlockState s, BlockEntityType<T> t) {

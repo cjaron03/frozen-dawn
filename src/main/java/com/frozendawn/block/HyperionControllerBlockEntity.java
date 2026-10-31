@@ -81,10 +81,12 @@ public final class HyperionControllerBlockEntity extends BlockEntity implements 
         for (var c : hit) if (!(l.getBlockState(pos).getBlock() instanceof HyperionPartBlock) || !c.stillValid(l)) c.broken(l);
     }
     private boolean stillValid(ServerLevel l) { return min != null && HyperionMultiblock.validate(l, min, max).valid(); }
-    /** The box lost a part: vent any charge at once, then come apart. */
+    /** The box lost a part: vent any charge at once, then come apart, leaving scarred cells after a quench and plain
+     * ones otherwise, with the lamps out. */
     void broken(ServerLevel l) {
-        if (stored > 0) { quench(); play(l, HyperionAudioCues.cues(readout(), readout(), true)); if (min != null) show(l, SuperconductingCellBlock.Look.SCARRED, false); }
-        if (min != null) unform(l);
+        boolean charged = stored > 0;
+        if (charged) { quench(); play(l, HyperionAudioCues.cues(readout(), readout(), true)); }
+        if (min != null) { show(l, charged ? SuperconductingCellBlock.Look.SCARRED : SuperconductingCellBlock.Look.PLAIN, false); unform(l); }
     }
     public static int quenchCount(ServerLevel l) { return QUENCHES.getOrDefault(l, 0); }
     static boolean inside(BlockPos p, BlockPos lo, BlockPos hi) {

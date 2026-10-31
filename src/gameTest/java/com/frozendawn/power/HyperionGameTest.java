@@ -210,6 +210,23 @@ public final class HyperionGameTest {
         h.succeed();
     }
 
+    /** Review finding: an empty battery warns above -180C; taking it apart must put out its cracks and lamps. */
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "hyperion", timeoutTicks = 100)
+    public static void hyperionQuietBreakClearsTheWarningLook(GameTestHelper h) {
+        var l = h.getLevel(); var b = fresh(h, 3, 3, 3); var c = controller(h, b);
+        c.setSurroundingsForTest(20.0); c.second(l);
+        h.assertTrue(c.readout().stage() == HyperionPhysics.Stage.CHIRP && c.stored() == 0, "An empty battery in a warm room warns: " + c.readout().stage());
+        l.destroyBlock(b.min().offset(1, 1, 0), false);
+        var cell = b.min().offset(1, 1, 2);
+        h.assertTrue(l.getBlockState(cell).getValue(SuperconductingCellBlock.LOOK) == Look.PLAIN, "The cells left behind go plain: " + l.getBlockState(cell));
+        h.assertTrue(!l.getBlockState(b.ports().get(0)).getValue(HyperionControllerBlock.ALERT) && !l.getBlockState(b.controller()).getValue(HyperionControllerBlock.ALERT), "Its lamps go out");
+        b = fresh(h, 3, 3, 3); c = controller(h, b); c.setSurroundingsForTest(20.0); c.second(l);
+        l.destroyBlock(b.controller(), false);
+        h.assertTrue(l.getBlockState(cell).getValue(SuperconductingCellBlock.LOOK) == Look.PLAIN && !l.getBlockState(b.ports().get(0)).getValue(HyperionControllerBlock.ALERT),
+                "Breaking the Controller of a warning empty battery does the same");
+        h.succeed();
+    }
+
     @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "hyperion", timeoutTicks = 100)
     public static void hyperionEmptyBatteryComesApartQuietly(GameTestHelper h) {
         var l = h.getLevel(); var b = fresh(h, 3, 3, 3); controller(h, b); int before = quenches(l);
@@ -340,6 +357,32 @@ public final class HyperionGameTest {
         h.succeed();
     }
 
+    /** Every state of every Hyperion block has a blockstate variant, and every variant names only real properties. */
+    @GameTest(template = GameTestTemplates.EMPTY, batch = "hyperion", timeoutTicks = 20)
+    public static void hyperionBlockstatesNameRealProperties(GameTestHelper h) {
+        for (var block : List.of(ModBlocks.HYPERION_FRAME.get(), ModBlocks.SUPERCONDUCTING_CELL.get(), ModBlocks.HYPERION_PORT.get(),
+                ModBlocks.CRYOCOOLER.get(), ModBlocks.QUENCH_VENT.get(), ModBlocks.HYPERION_CONTROLLER.get())) {
+            var id = net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(block).getPath();
+            com.google.gson.JsonObject variants;
+            try (var in = HyperionGameTest.class.getResourceAsStream("/assets/frozendawn/blockstates/" + id + ".json")) {
+                h.assertTrue(in != null, "Blockstate file for " + id);
+                variants = com.google.gson.JsonParser.parseReader(new java.io.InputStreamReader(in, java.nio.charset.StandardCharsets.UTF_8)).getAsJsonObject().getAsJsonObject("variants");
+            } catch (java.io.IOException e) { throw new GameTestAssertException(e.toString()); }
+            var definition = block.getStateDefinition();
+            for (var key : variants.keySet()) for (var pair : key.isEmpty() ? new String[0] : key.split(",")) {
+                var property = definition.getProperty(pair.split("=")[0]);
+                h.assertTrue(property != null && property.getValue(pair.split("=")[1]).isPresent(), id + " variant names " + pair);
+            }
+            for (var state : definition.getPossibleStates())
+                h.assertTrue(variants.keySet().stream().anyMatch(key -> key.isEmpty() || java.util.Arrays.stream(key.split(",")).allMatch(pair ->
+                        valueName(state, definition.getProperty(pair.split("=")[0])).equals(pair.split("=")[1]))), id + " has no variant for " + state);
+        }
+        h.succeed();
+    }
+
+    private static <T extends Comparable<T>> String valueName(net.minecraft.world.level.block.state.BlockState state, net.minecraft.world.level.block.state.properties.Property<T> property) {
+        return property.getName(state.getValue(property));
+    }
     static int quenches(ServerLevel l) { return com.frozendawn.block.HyperionControllerBlockEntity.quenchCount(l); }
 
     /** The built controller, formed by one second. */

@@ -12,11 +12,16 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.sounds.AbstractTickableSoundInstance;
 import net.minecraft.client.resources.sounds.SoundInstance;
 import net.minecraft.sounds.SoundSource;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 
 /** SMS-1 Hyperion loops, one instance per Controller and kind, read from the synced snapshot, with the SFR-1 loops'
  * lifecycle: a heartbeat shows the engine still ticks them, and a muted start is retried every two seconds. The hum
  * plays while the battery holds charge or is being cooled, quieter the colder it sits; the warning loop rises in pitch
  * as the quench nears. */
+@EventBusSubscriber(modid = com.frozendawn.FrozenDawn.MOD_ID, value = Dist.CLIENT)
 public final class HyperionLoopSound extends AbstractTickableSoundInstance {
     public enum Kind { HUM, WARNING }
     private static final Map<HyperionControllerBlockEntity, EnumMap<Kind, HyperionLoopSound>> PLAYING = new WeakHashMap<>();
@@ -41,6 +46,10 @@ public final class HyperionLoopSound extends AbstractTickableSoundInstance {
             case WARNING -> s.stage() == Stage.WARNING;
         };
     }
+
+    /** Leaving a world clears the sound manager without ticking these sounds, and each one holds its Controller, so the
+     * weak keys would never go: drop them here. */
+    @SubscribeEvent public static void logout(ClientPlayerNetworkEvent.LoggingOut event) { PLAYING.clear(); RETRY.clear(); }
 
     /** Client block entity ticker. */
     public static void tick(HyperionControllerBlockEntity controller) {

@@ -19,10 +19,10 @@ import net.minecraft.world.level.block.state.BlockState;
 
 /** The puck behind the Controller's window, over three magnets. It rides from 1/16 to 7/16 of a block above them with
  * the charge, bobs at rest, wobbles in a warning and shudders in the final seconds. A quench drops it onto the magnets
- * in 4 ticks; it stays down while the battery is empty, warm or not formed. Model space faces north, as the block model. */
+ * in 4 ticks. The puck fills the 14 px window: 12 px wide, 3 px thick; it stays down while the battery is empty, warm or not formed. Model space faces north, as the block model. */
 public final class HyperionControllerRenderer implements BlockEntityRenderer<HyperionControllerBlockEntity> {
     private static final float PX = 1 / 16f, MAGNET_TOP = 3, FALL_TICKS = 4;
-    private static final float[] MAGNETS_X = {4.5f, 7.25f, 10f};
+    private static final float[] MAGNETS_X = {3f, 7f, 11f};
     private final BlockRenderDispatcher blocks;
     private final Map<HyperionControllerBlockEntity, Puck> pucks = new WeakHashMap<>();
 
@@ -74,12 +74,12 @@ public final class HyperionControllerRenderer implements BlockEntityRenderer<Hyp
         }
         pose.translate(-0.5, -0.5, -0.5);
         BlockState magnet = ModBlocks.HYPERION_FRAME.get().defaultBlockState();
-        for (float x : MAGNETS_X) box(pose, buffers, magnet, x, 2, 1.5f, 1.5f, 1, 3, lit, overlay);
+        for (float x : MAGNETS_X) box(pose, buffers, magnet, x, 2, 1.5f, 2, 1, 3, lit, overlay);
         BlockState ceramic = ModBlocks.SUPERCONDUCTING_CELL.get().defaultBlockState().setValue(SuperconductingCellBlock.LOOK, SuperconductingCellBlock.Look.PLAIN);
         pose.pushPose();
-        pose.translate(8 * PX + dx * PX, (MAGNET_TOP + puck.height + 0.75f + dy) * PX, 3 * PX);
+        pose.translate(8 * PX + dx * PX, (MAGNET_TOP + puck.height + 1.5f + dy) * PX, 3 * PX);
         pose.mulPose(Axis.ZP.rotationDegrees(tilt));
-        box(pose, buffers, ceramic, -4, -0.75f, -2, 8, 1.5f, 4, lit, overlay);
+        box(pose, buffers, ceramic, -6, -1.5f, -2.5f, 12, 3, 5, lit, overlay);
         pose.popPose();
         pose.popPose();
     }

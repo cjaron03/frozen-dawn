@@ -26,6 +26,7 @@ SCRATCH = (90, 96, 104)
 FROST = (205, 220, 235)
 SCAR = (48, 30, 26)
 WINDOW = [(7, 8, 10), (13, 15, 18), (22, 24, 27)]
+WINDOW_WALL = [(26, 30, 35), (44, 50, 57)]
 CYAN = (43, 111, 128)
 LAMP_OFF = (86, 52, 26)
 LAMP_ON = (255, 176, 72)
@@ -78,7 +79,7 @@ def cell(seed, frost=0.0, frost_top=False, heat=0.0, crack=None, scars=False):
                 c = mix(c, SCRATCH, 0.45)
             if frost > 0:
                 if frost_top:
-                    edge = 0.55 + 0.45 * max(0.0, 1 - min(x, 15 - x, y, 15 - y) / 3)
+                    edge = 0.9 * max(0.0, 1 - min(x, 15 - x, y, 15 - y) / 4)
                 else:
                     edge = max(0.0, 1 - y / 6) * 0.9 + max(0.0, 1 - min(x, 15 - x) / 2) * 0.35
                 if rng.random() < frost * edge * 0.7:
@@ -137,13 +138,9 @@ def port(on):
 
 
 def controller_front(on):
+    # Only a 1 px bezel shows at the sides and 2 px top and bottom; the model cuts the window out of the rest.
     im = frame_base(61, rivets=False)
-    # The window's own rim; the opening itself is cut by the model.
-    for x in range(2, 14):
-        im.putpixel((x, 1), FRAME_DARK + (255,)); im.putpixel((x, 14), FRAME_LIGHT + (255,))
-    for y in range(2, 14):
-        im.putpixel((2, y), FRAME_DARK + (255,)); im.putpixel((13, y), FRAME_LIGHT + (255,))
-    lamp(im, 14, 0, on)
+    lamp(im, 13, 0, on)
     return im
 
 
@@ -176,9 +173,9 @@ def main():
     window = Image.new("RGBA", (16, 16))
     for y in range(16):
         for x in range(16):
-            c = mix(WINDOW[0], WINDOW[2], y / 15)
-            if min(x, 15 - x) == 0 or y == 15:
-                c = mix(c, CYAN, 0.35)
+            # Lit from the magnets below: brighter low down, with a faint cyan glow along the floor and sides.
+            c = mix(WINDOW_WALL[0], WINDOW_WALL[1], y / 15)
+            c = mix(c, CYAN, 0.12 + 0.3 * max(0.0, (y - 9) / 6) + (0.15 if min(x, 15 - x) <= 1 else 0))
             window.putpixel((x, y), c + (255,))
     save(window, "hyperion_controller_window")
     inner = Image.new("RGBA", (16, 16))

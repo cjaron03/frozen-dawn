@@ -23,7 +23,7 @@ public final class SuperconductingCellBlock extends HyperionPartBlock {
     public static final EnumProperty<Look> LOOK = EnumProperty.create("look", Look.class);
     public SuperconductingCellBlock(Properties p) {
         super(p.lightLevel(s -> switch (s.getValue(LOOK)) { case STRESSED -> 3; case CRITICAL -> 7; default -> 0; }));
-        registerDefaultState(stateDefinition.any().setValue(LOOK, Look.FROSTED));
+        registerDefaultState(stateDefinition.any().setValue(LOOK, Look.PLAIN));
     }
     @Override protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> b) { b.add(LOOK); }
     /** Frosted cells spill sinking vapour off open sides; stressed and critical cells steam upward, critical more. */
