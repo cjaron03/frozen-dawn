@@ -29,6 +29,8 @@ public final class HyperionScenes {
         for (int k = 0; k < ports; k++) { var p = edges.get(i++); place(h, p, ModBlocks.HYPERION_PORT.get().defaultBlockState(), lo, hi); portList.add(p); }
         for (int k = 0; k < coolers; k++) { var p = edges.get(i++); place(h, p, ModBlocks.CRYOCOOLER.get().defaultBlockState(), lo, hi); coolerList.add(p); }
         for (int k = 0; k < 2; k++) { var p = edges.get(i++); place(h, p, ModBlocks.QUENCH_VENT.get().defaultBlockState(), lo, hi); ventList.add(p); }
+        // Deep cold by default, so storage tests never wait on a cool-down; thermal tests set their own surroundings.
+        if (level.getBlockEntity(controller) instanceof HyperionControllerBlockEntity c) c.setSurroundingsForTest(-250.0);
         return new Built(controller, List.copyOf(portList), List.copyOf(coolerList), List.copyOf(ventList), lo, hi);
     }
     public static int extremes(BlockPos p, BlockPos lo, BlockPos hi) {

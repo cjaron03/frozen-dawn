@@ -36,6 +36,8 @@ public final class PowerNetworks {
         Set<BlockPos> powered = Set.of();
         Set<BlockPos> lamps = Set.of();
         final Set<BlockPos> stores = new TreeSet<>();
+        /** Formed Hyperions' ports, by controller: chained together as extra edges so one battery is one component. */
+        final Map<BlockPos, List<BlockPos>> hyperions = new HashMap<>();
         final Map<BlockPos,Long> storeEnergyTicks = new HashMap<>();
         final Set<BlockPos> machines = new TreeSet<>();
         final Set<BlockPos> heaters = new TreeSet<>();
@@ -290,6 +292,10 @@ public final class PowerNetworks {
                 neighbors.computeIfAbsent(link.a(), unused -> new HashSet<>()).add(link.b());
                 neighbors.computeIfAbsent(link.b(), unused -> new HashSet<>()).add(link.a());
             }
+            for (var ports : rt.hyperions.values()) for (int i = 1; i < ports.size(); i++) {
+                neighbors.computeIfAbsent(ports.get(i - 1), unused -> new HashSet<>()).add(ports.get(i));
+                neighbors.computeIfAbsent(ports.get(i), unused -> new HashSet<>()).add(ports.get(i - 1));
+            }
             var components = new HashMap<BlockPos, Set<BlockPos>>();
             for (var node : neighbors.keySet()) if (!components.containsKey(node)) {
                 var cells = new HashSet<BlockPos>(); var queue = new ArrayDeque<BlockPos>(); queue.add(node);
@@ -328,10 +334,23 @@ public final class PowerNetworks {
     /** The store a node reaches: a bank or dock itself. Never loads chunks. */
     public static Optional<EnergyStore> store(ServerLevel level, BlockPos pos) {
         if (!level.isLoaded(pos)) return Optional.empty();
-        return level.getBlockEntity(pos) instanceof com.frozendawn.block.PowerStorageBlockEntity bank ? Optional.of(bank) : Optional.empty();
+        var be = level.getBlockEntity(pos);
+        if (be instanceof com.frozendawn.block.PowerStorageBlockEntity bank) return Optional.of(bank);
+        if (be instanceof com.frozendawn.block.HyperionPortBlockEntity port) return port.controller().map(EnergyStore.class::cast);
+        return be instanceof com.frozendawn.block.HyperionControllerBlockEntity c && c.shell().valid() ? Optional.of(c) : Optional.empty();
     }
     /** Nodes whose block can hold a store, formed or not; the runtime keeps them registered across formation. */
-    private static boolean storeBlock(ServerLevel level, BlockPos pos) { return level.getBlockEntity(pos) instanceof com.frozendawn.block.PowerStorageBlockEntity; }
+    private static boolean storeBlock(ServerLevel level, BlockPos pos) {
+        var be = level.getBlockEntity(pos);
+        return be instanceof com.frozendawn.block.PowerStorageBlockEntity || be instanceof com.frozendawn.block.HyperionPortBlockEntity;
+    }
+    public static void hyperionFormed(ServerLevel level, BlockPos controller, List<BlockPos> ports) {
+        var rt = runtime(level); var copy = List.copyOf(ports);
+        if (!copy.equals(rt.hyperions.put(controller.immutable(), copy))) rt.graphDirty = true;
+    }
+    public static void hyperionUnformed(ServerLevel level, BlockPos controller) {
+        var rt = LEVELS.get(level); if (rt != null && rt.hyperions.remove(controller) != null) rt.graphDirty = true;
+    }
     /** One node per distinct store among these positions, loaded only, in sorted order: the first node that reaches it. */
     static List<BlockPos> storeNodes(ServerLevel level, Collection<BlockPos> nodes) {
         var keys = new HashSet<BlockPos>(); var out = new ArrayList<BlockPos>();
