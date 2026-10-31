@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:block/door_top_right_open",
+  "textures": {
+    "top": "frozendawn:block/sfr_maintenance_hatch_top",
+    "bottom": "frozendawn:block/sfr_maintenance_hatch_bottom"
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "name": "Alarms & SCRAM",
+  "category": "frozendawn:reactor",
+  "icon": "minecraft:bell",
+  "sortnum": 5,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "text": "Core temperature decides everything. Know these numbers."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Thresholds",
+      "text": "$(bold)350°C$(): warning, klaxon, rods lock$(br)$(bold)450°C$(): automatic SCRAM$(br)$(danger)600°C$(): permanent damage$(br)$(danger)700°C$(): loss of coolant$(br)$(danger)800°C$(): meltdown"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "SCRAM",
+      "text": "SCRAM drops the rods. Manual SCRAM always saves the core.$(br2)A trip stays latched until $(bold)Reset$(). Reset is refused under redstone, or at 450°C or hotter with auto-SCRAM on."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Decay Heat",
+      "text": "After a SCRAM the core still makes 7% heat, fading to 1% over a day. Keep the radiators working."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Damage",
+      "text": "Above 600°C the core is damaged 0.2% per second, up to 75%. Damage cuts electrical output, never fission heat."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Auto-SCRAM",
+      "text": "You can turn off automatic SCRAM behind two confirmations. $(danger)Only then can the core melt down.$()$(br2)$(flavor)See History.$()"
+    }
+  ]
+}

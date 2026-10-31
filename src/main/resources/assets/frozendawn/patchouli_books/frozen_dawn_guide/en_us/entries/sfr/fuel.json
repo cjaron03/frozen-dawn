@@ -1,0 +1,27 @@
+{
+  "name": "Fuel",
+  "category": "frozendawn:sfr",
+  "icon": "frozendawn:deuterium_canister",
+  "sortnum": 2,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "text": "$(bold)Deuterium$(): one canister lasts 10 minutes at full output. The $(bold)Isotope Column$() makes it from ice or snow, drawing 10 kW. Canisters go in the Fuel Port; hoppers work."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Tritium",
+      "text": "The tank holds 8 units. Ignition uses one. The Lithium Blankets breed a little more than the burn uses.$(br2)For the first tritium, load a $(bold)Lithium Target Rod$() into a CFU-7 rod slot: it breeds 4 canisters."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Lithium",
+      "text": "Mined from Spodumene inside deep Pegmatite. Smelt it to Lithium Carbonate, then refine it in the Isotope Column."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Helium",
+      "text": "Each Deuterium Canister burned leaves a Helium Canister in the Controller's helium slot while the Vacuum Port pumps. One used from there halves the next cooldown."
+    }
+  ]
+}

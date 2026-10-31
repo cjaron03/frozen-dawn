@@ -1,6 +1,7 @@
 package com.frozendawn.client;
 
 import com.frozendawn.FrozenDawn;
+import com.frozendawn.client.particle.ColdBreathParticle;
 import com.frozendawn.client.compat.curios.CuriosClientCompat;
 import com.frozendawn.client.renderer.FrostbittenRenderer;
 import com.frozendawn.client.renderer.AggregateRenderer;
@@ -33,6 +34,7 @@ import com.frozendawn.client.renderer.BloomSporeCorpseRenderer;
 import com.frozendawn.client.renderer.ArchivistRenderer;
 import com.frozendawn.client.renderer.ArchivistRelicRenderer;
 import com.frozendawn.client.renderer.HearthrotSuitLayer;
+import com.frozendawn.client.renderer.EmergencyEvaSuitLayer;
 import com.frozendawn.client.particle.BloomSporeRootParticle;
 import com.frozendawn.client.particle.BloomDriftParticle;
 import com.frozendawn.client.particle.AggregateConvergenceParticle;
@@ -50,6 +52,7 @@ import com.frozendawn.init.ModDataComponents;
 import com.frozendawn.init.ModEntities;
 import com.frozendawn.init.ModFluids;
 import com.frozendawn.init.ModItems;
+import com.frozendawn.item.MielHoneyItem;
 import com.frozendawn.init.ModMenuTypes;
 import com.frozendawn.init.ModParticles;
 import com.frozendawn.init.ModSkullTypes;
@@ -96,6 +99,8 @@ public class ClientEvents {
 
     @SubscribeEvent
     public static void onRegisterParticleProviders(RegisterParticleProvidersEvent event) {
+        event.registerSpriteSet(ModParticles.COLD_BREATH.get(),
+                com.frozendawn.client.particle.ColdBreathParticle.Provider::new);
         event.registerSpriteSet(ModParticles.BLOOM_SPORE_ROOTING.get(),
                 BloomSporeRootParticle.Provider::new);
         event.registerSpriteSet(ModParticles.BLOOM_DRIFT.get(),
@@ -114,6 +119,12 @@ public class ClientEvents {
 
     @SubscribeEvent
     public static void onRegisterShaders(RegisterShadersEvent event) throws IOException {
+        event.registerShader(new ShaderInstance(event.getResourceProvider(),
+                        ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "cold_breath"),
+                        DefaultVertexFormat.PARTICLE), ColdBreathParticle::setShader);
+        event.registerShader(new ShaderInstance(event.getResourceProvider(),
+                        ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "aurora"),
+                        DefaultVertexFormat.POSITION_TEX_COLOR), AuroraRenderer::setShader);
         event.registerShader(
                 new ShaderInstance(
                         event.getResourceProvider(),
@@ -132,10 +143,23 @@ public class ClientEvents {
 
     @SubscribeEvent
     public static void onRegisterGuiLayers(RegisterGuiLayersEvent event) {
+        // Visor material covers the world; every instrument is projected above it.
+        event.registerAbove(
+                net.neoforged.neoforge.client.gui.VanillaGuiLayers.CAMERA_OVERLAYS,
+                ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "eva_visor"),
+                SuitIntegrityClient::renderVisor
+        );
         event.registerAboveAll(
                 ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "frost_overlay"),
                 FrostOverlay::render
         );
+        event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "radiation_soot"), RadiationClient::renderSoot);
+        event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "icarus_danger"), IcarusDangerHud::render);
+        event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "icarus_suit"), IcarusSuitHud::render);
+        event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "icarus_screen_flash"), IcarusScreenFlash::render);
+        event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "icarus_flash"), IcarusBlastEffects::renderFlash);
+        event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "radiation_flashes"), RadiationClient::renderFlashes);
+        event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "geiger_readout"), RadiationClient::renderReadout);
         event.registerAboveAll(
                 ResourceLocation.fromNamespaceAndPath(
                         FrozenDawn.MOD_ID, "frostwrithe_overrun"),
@@ -172,6 +196,10 @@ public class ClientEvents {
         event.registerAboveAll(
                 ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "orsa_awakening_intro"),
                 OrsaAwakeningIntro::render
+        );
+        event.registerAboveAll(
+                ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "first_boot_epigraph"),
+                FirstBootEpigraph::render
         );
         event.registerAboveAll(
                 ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "thaeven_transmission"),
@@ -212,6 +240,7 @@ public class ClientEvents {
     public static void onRegisterKeyMappings(RegisterKeyMappingsEvent event) {
         event.register(SurveyorLensVision.thermalModeKey());
         event.register(SurveyorLensVision.blizzardModeKey());
+        event.register(ContinuityRecoveryHud.targetKey());
     }
 
     @SubscribeEvent
@@ -235,6 +264,10 @@ public class ClientEvents {
                         return tracker != null ? tracker.target().orElse(null) : null;
                     })
             );
+            ItemProperties.register(ModItems.GEIGER_COUNTER.get(), ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "reading"),
+                    (stack, level, entity, seed) -> entity == net.minecraft.client.Minecraft.getInstance().player ? RadiationClient.needle() : 0);
+            ItemProperties.register(ModItems.MIEL_HONEY.get(), ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "fill"),
+                    (stack, level, entity, seed) -> stack.getOrDefault(ModDataComponents.MIEL_SPOONFULS, MielHoneyItem.SPOONFULS) / (float) MielHoneyItem.SPOONFULS);
             CuriosClientCompat.registerRenderers();
         });
     }
@@ -278,6 +311,7 @@ public class ClientEvents {
             PlayerRenderer renderer = event.getSkin(skin);
             if (renderer != null) {
                 renderer.addLayer(new HearthrotSuitLayer(renderer));
+                renderer.addLayer(new EmergencyEvaSuitLayer(renderer));
             }
         }
     }
@@ -325,6 +359,12 @@ public class ClientEvents {
         event.registerBlockEntityRenderer(ModBlockEntities.ORSA_FLAG.get(), OrsaFlagRenderer::new);
         event.registerBlockEntityRenderer(ModBlockEntities.ALARM_BEACON.get(), AlarmBeaconRenderer::new);
         event.registerBlockEntityRenderer(ModBlockEntities.PHASE_BAROMETER.get(), PhaseBarometerRenderer::new);
+        event.registerBlockEntityRenderer(ModBlockEntities.UPLINK_DISH.get(), com.frozendawn.client.renderer.UplinkDishRenderer::new);
+        event.registerBlockEntityRenderer(ModBlockEntities.OXYGEN_RESERVOIR.get(),com.frozendawn.client.renderer.OxygenReservoirRenderer::new);
+        event.registerBlockEntityRenderer(ModBlockEntities.OXYGEN_GAUGE.get(), com.frozendawn.client.renderer.OxygenGaugeRenderer::new);
+        event.registerBlockEntityRenderer(ModBlockEntities.HALSEY_CORE.get(), HalseyCoreRenderer::new);
+        event.registerBlockEntityRenderer(ModBlockEntities.ICARUS_STABILIZER.get(), IcarusStabilizerRenderer::new);
+        event.registerBlockEntityRenderer(ModBlockEntities.ICARUS_INJECTOR.get(), IcarusInjectorRenderer::new);
     }
 
     @SubscribeEvent
@@ -340,7 +380,25 @@ public class ClientEvents {
     }
 
     @SubscribeEvent
+    public static void onRegisterAdditionalModels(net.neoforged.neoforge.client.event.ModelEvent.RegisterAdditional event) {
+        event.register(com.frozendawn.client.renderer.UplinkDishRenderer.REFLECTOR);
+    }
+
+    @SubscribeEvent
     public static void onRegisterMenuScreens(RegisterMenuScreensEvent event) {
+        event.register(ModMenuTypes.RESISTIVE_HEATER.get(), ResistiveHeaterScreen::new);
+        event.register(ModMenuTypes.REACTOR_CONTROLLER.get(), ReactorControllerScreen::new);
+        event.register(ModMenuTypes.SFR_CONTROLLER.get(), SfrControllerScreen::new);
+        event.register(ModMenuTypes.ICARUS_CONTROLLER.get(), IcarusControllerScreen::new);
+        event.register(ModMenuTypes.PIXIE.get(), PixieScreen::new);
+        event.register(ModMenuTypes.POWER_MONITOR.get(), PowerMonitorScreen::new);
+        event.register(ModMenuTypes.UPLINK_CONSOLE.get(), UplinkConsoleScreen::new);
+        event.register(ModMenuTypes.PLUMB_LINE.get(), PlumbLineScreen::new);
+        event.register(ModMenuTypes.INDUCTION_FURNACE.get(), InductionFurnaceScreen::new);
+        event.register(ModMenuTypes.FABRICATOR.get(), FabricatorScreen::new);
+        event.register(ModMenuTypes.ANTIPARTICLE_FOUNDRY.get(), AntiparticleFoundryScreen::new);
+        event.register(ModMenuTypes.ISOTOPE_COLUMN.get(), IsotopeColumnScreen::new);
+        event.register(ModMenuTypes.POWER_STORAGE.get(), PowerStorageScreen::new);
         event.register(ModMenuTypes.GEOTHERMAL_CORE.get(), GeothermalCoreScreen::new);
         event.register(ModMenuTypes.FUEL_PROCESSING_SILO.get(), FuelProcessingSiloScreen::new);
         event.register(ModMenuTypes.THERMAL_CONTAINER.get(), ThermalContainerScreen::new);
@@ -348,6 +406,23 @@ public class ClientEvents {
         event.register(ModMenuTypes.TRANSPONDER.get(), TransponderScreen::new);
         event.register(ModMenuTypes.PHASE_BAROMETER.get(), PhaseBarometerScreen::new);
         event.register(ModMenuTypes.THERMAL_HEATER.get(), ThermalHeaterScreen::new);
+        event.register(ModMenuTypes.THERMOSTAT.get(), ThermostatScreen::new);
+    }
+
+    /** Deep crimson glass palette; only the lens/highlight faces carry these tint indices. */
+    private static int emergencyLensTint(boolean lit,int tintIndex) {
+        return switch(tintIndex) {
+            case 0 -> lit ? 0xFFD20B23 : 0xFF700B18;
+            case 1 -> lit ? 0xFFE52236 : 0xFF8B1525;
+            default -> -1;
+        };
+    }
+
+    @SubscribeEvent
+    public static void onRegisterBlockColors(RegisterColorHandlersEvent.Block event) {
+        event.register((state,level,pos,tintIndex) -> emergencyLensTint(
+                state.getValue(com.frozendawn.block.OrsaEmergencyLightBlock.LIT),tintIndex),
+                ModBlocks.ORSA_EMERGENCY_LIGHT.get());
     }
 
     /**
@@ -356,6 +431,16 @@ public class ClientEvents {
      */
     @SubscribeEvent
     public static void onRegisterItemColors(RegisterColorHandlersEvent.Item event) {
+        event.register((stack, tintIndex) -> 0xFF000000 | (tintIndex == 0
+                ? com.frozendawn.item.ScribeSpawnEggItem.BASE_COLOR
+                : com.frozendawn.item.ScribeSpawnEggItem.SPOT_COLOR), ModItems.SCRIBE_SPAWN_EGG.get());
+        event.register((stack, tintIndex) -> 0xFF000000 | (tintIndex == 0
+                ? com.frozendawn.item.BlindSpawnEggItem.BASE_COLOR
+                : com.frozendawn.item.BlindSpawnEggItem.SPOT_COLOR), ModItems.BLIND_SPAWN_EGG.get());
+        event.register((stack, tintIndex) -> 0xFF000000 | (tintIndex == 0
+                ? com.frozendawn.item.PyroSpawnEggItem.BASE_COLOR
+                : com.frozendawn.item.PyroSpawnEggItem.SPOT_COLOR), ModItems.PYRO_SPAWN_EGG.get());
+        event.register((stack,tintIndex) -> emergencyLensTint(false,tintIndex),ModBlocks.ORSA_EMERGENCY_LIGHT.get().asItem());
         ItemColor frostTint = (stack, tintIndex) -> {
             if (tintIndex != 0) return -1;
             Integer frost = stack.get(ModDataComponents.FROST_TICKS.get());

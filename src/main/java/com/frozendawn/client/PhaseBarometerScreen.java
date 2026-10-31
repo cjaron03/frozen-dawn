@@ -15,7 +15,7 @@ import java.util.List;
 public class PhaseBarometerScreen extends AbstractContainerScreen<PhaseBarometerMenu> {
 
     private static final int GUI_W = 236;
-    private static final int GUI_H = 154;
+    private static final int GUI_H = 204;
     private static final int SECTION_X = 10;
     private static final int SECTION_W = GUI_W - 20;
     private static final int VALUE_X = 78;
@@ -127,6 +127,18 @@ public class PhaseBarometerScreen extends AbstractContainerScreen<PhaseBarometer
         graphics.drawString(font, Component.translatable("screen.frozendawn.phase_barometer.severity"),
                 12, 132, 0xFF6E8B93, false);
         drawSeverityBar(graphics, 12, 141, snapshot);
+        var pos=menu.getBarometerPos();
+        var cyclone=CycloneClientState.forecast(pos.getX()+.5,pos.getZ()+.5);
+        graphics.drawString(font, Component.translatable("barometer.frozendawn.cyclone.title"),12,158,0xFF7BE5ED,false);
+        if(cyclone.visible()) {
+            graphics.drawString(font,Component.translatable("barometer.frozendawn.cyclone.pressure",
+                    String.format(java.util.Locale.ROOT,"%.0f",cyclone.pressureHpa()),
+                    String.format(java.util.Locale.ROOT,"%+.1f",cyclone.trendHpaPerMin())),12,170,0xFFE6F3F6,false);
+            graphics.drawString(font,Component.translatable(cyclone.etaSeconds()>0?"barometer.frozendawn.cyclone.forecast":
+                    cyclone.stage()==com.frozendawn.cyclone.CycloneStage.AFTERMATH?"barometer.frozendawn.cyclone.recovery":"barometer.frozendawn.cyclone.active",
+                    Component.translatable("cyclone.frozendawn.severity."+cyclone.severity().name().toLowerCase(java.util.Locale.ROOT)),
+                    String.format(java.util.Locale.ROOT,"%.1f",cyclone.etaSeconds()/60f)),12,182,0xFFE3C87F,false);
+        } else graphics.drawString(font,Component.translatable("barometer.frozendawn.cyclone.none"),12,174,0xFF8A9FA7,false);
     }
 
     private void drawField(GuiGraphics graphics, int x, int y, Component label, String value, int color, int maxLines) {
@@ -240,6 +252,11 @@ public class PhaseBarometerScreen extends AbstractContainerScreen<PhaseBarometer
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         super.render(graphics, mouseX, mouseY, partialTick);
         renderTooltip(graphics, mouseX, mouseY);
+        String advice = currentSnapshot().warning().preparationAdvice();
+        if (!advice.isEmpty() && mouseX >= leftPos + SECTION_X && mouseX < leftPos + GUI_W - SECTION_X
+                && mouseY >= topPos + 101 && mouseY < topPos + 127) {
+            graphics.renderComponentTooltip(font, List.of(Component.literal(advice)), mouseX, mouseY);
+        }
     }
 
     @Override

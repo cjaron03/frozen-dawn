@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:block/cube_column",
+  "textures": {
+    "end": "frozendawn:block/icarus_injector_casing_end",
+    "side": "frozendawn:block/icarus_injector_casing"
+  }
+}

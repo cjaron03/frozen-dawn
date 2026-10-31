@@ -1,0 +1,30 @@
+{
+  "type": "frozendawn:fabricating",
+  "blueprint": "magnet_coil",
+  "ingredients": [
+    {
+      "ingredient": {
+        "item": "frozendawn:superconducting_coil_scrap"
+      },
+      "count": 2
+    },
+    {
+      "ingredient": {
+        "item": "minecraft:copper_ingot"
+      },
+      "count": 4
+    },
+    {
+      "ingredient": {
+        "item": "frozendawn:refined_acheronite"
+      },
+      "count": 1
+    }
+  ],
+  "result": {
+    "id": "frozendawn:magnet_coil",
+    "count": 8
+  },
+  "watts": 15000,
+  "seconds": 60
+}

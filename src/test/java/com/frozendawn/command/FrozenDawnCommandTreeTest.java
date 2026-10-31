@@ -33,8 +33,9 @@ class FrozenDawnCommandTreeTest {
         CommandNode<CommandSourceStack> debug = dispatcher().getRoot()
                 .getChild("frozendawn").getChild("debug");
 
+        // "flora" is development-only; tests run as a development build.
         assertEquals(Set.of("world", "hearth", "heart", "postmaeve",
-                        "aggregate", "architect", "suit", "lore"), childNames(debug));
+                        "aggregate", "architect", "maeve", "uplink", "cyclone", "suit", "lore", "flora"), childNames(debug));
         assertNotNull(debug.getChild("postmaeve").getChild("bloom"));
         assertNull(debug.getChild("hearth").getChild("postmaeve"));
         assertNull(debug.getChild("hearth").getChild("heart"));
@@ -86,6 +87,8 @@ class FrozenDawnCommandTreeTest {
     void architectLabHasAFullResetAndOperatorBoundary() {
         var commands = dispatcher();
         var architect = commands.getRoot().getChild("frozendawn").getChild("debug").getChild("architect");
+        var maeve = commands.getRoot().getChild("frozendawn").getChild("debug").getChild("maeve");
+        assertEquals(Set.of("status", "dump", "explain", "confidence"), childNames(maeve));
         var lab = architect.getChild("lab");
         assertNotNull(lab.getChild("reset").getCommand());
         assertNotNull(lab.getChild("run").getCommand());
@@ -95,6 +98,7 @@ class FrozenDawnCommandTreeTest {
                     net.minecraft.world.phys.Vec3.ZERO, net.minecraft.world.phys.Vec2.ZERO, null, permission,
                     "test", net.minecraft.network.chat.Component.literal("test"), null, null);
             assertEquals(permission == 2, architect.getRequirement().test(source));
+            assertEquals(permission == 2, maeve.getRequirement().test(source));
             assertEquals(permission == 2, commands.getRoot().getChild("fd").getRequirement().test(source));
         }
     }

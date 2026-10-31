@@ -1,0 +1,78 @@
+{
+  "name": "ORSA Uplink",
+  "category": "frozendawn:signals",
+  "icon": "frozendawn:uplink_console",
+  "sortnum": 0,
+  "pages": [
+    {
+      "type": "patchouli:spotlight",
+      "item": "frozendawn:uplink_console",
+      "text": "Talks to the ORSA relay. Listens for free broadcasts; transmits for supplies, maps and records."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Building",
+      "text": "$(li)$(bold)Console$(): a grid machine, linked with the $(l:power/binder)Binder$(/l)$(li)$(bold)Dish$(): open sky straight above, within $(bold)8 blocks$() of the console$(br2)The console uses the nearest dish with sky."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Parts",
+      "text": "The $(bold)Signal Processor$() and $(bold)Feed Horn$() can't be crafted.$(li)Monitoring station back rooms: one of each$(li)Ruined reactor sites: a Feed Horn$(li)Uplink supply drops"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "The Dish",
+      "text": "Mining it returns it, so you can move it.$(br2)$(danger)Blizzards can tear it away, and explosions destroy it.$() Either way it's gone; a new one needs another Feed Horn."
+    },
+    {
+      "type": "patchouli:multiblock",
+      "name": "Uplink Site",
+      "enable_visualize": false,
+      "multiblock": {
+        "pattern": [
+          [
+            "  D",
+            "   ",
+            "   "
+          ],
+          [
+            "  W",
+            "   ",
+            "   "
+          ],
+          [
+            "   ",
+            " C ",
+            "   "
+          ],
+          [
+            "GGG",
+            "G0G",
+            "GGG"
+          ]
+        ],
+        "mapping": {
+          "D": "frozendawn:uplink_dish",
+          "W": "minecraft:stone_bricks",
+          "C": "frozendawn:uplink_console",
+          "G": "minecraft:polished_andesite",
+          "0": "minecraft:polished_andesite"
+        }
+      },
+      "text": "Dish on a mast under open sky, console within 8 blocks."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:uplink_console",
+      "title": "Console",
+      "text": "Copper, glass, iron, redstone and a Signal Processor."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:uplink_dish",
+      "title": "Dish",
+      "text": "Iron and a Feed Horn on an iron block."
+    }
+  ],
+  "priority": true
+}

@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "IHI",
+    "IPI",
+    "I I"
+  ],
+  "key": {
+    "I": {
+      "item": "minecraft:iron_ingot"
+    },
+    "H": {
+      "item": "minecraft:hopper"
+    },
+    "P": {
+      "item": "frozendawn:coolant_port"
+    }
+  },
+  "result": {
+    "id": "frozendawn:sfr_fuel_port",
+    "count": 1
+  }
+}

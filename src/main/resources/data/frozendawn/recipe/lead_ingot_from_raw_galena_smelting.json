@@ -1,0 +1,13 @@
+{
+  "type": "minecraft:smelting",
+  "category": "misc",
+  "group": "lead_ingot",
+  "ingredient": {
+    "item": "frozendawn:raw_galena"
+  },
+  "result": {
+    "id": "frozendawn:lead_ingot"
+  },
+  "experience": 0.5,
+  "cookingtime": 200
+}

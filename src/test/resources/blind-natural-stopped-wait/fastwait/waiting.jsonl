@@ -1,0 +1,2 @@
+{"event":"SPRINT_STARTED","phase":"WAITING","reason":"","gameTime":1317,"armedAt":1277,"sprintAt":1317,"limit":24000,"participant":"380df991-f603-344c-a090-369bad2a924a","candidate":"","frozen":false,"sprinting":true,"stepping":false,"tickRate":20.0}
+{"event":"PLAYER_OR_CONTEXT_CHANGED","phase":"HELD","reason":"PLAYER_OR_CONTEXT_CHANGED","gameTime":6475,"armedAt":1277,"sprintAt":1317,"limit":24000,"participant":"380df991-f603-344c-a090-369bad2a924a","candidate":"","frozen":true,"sprinting":false,"stepping":false,"tickRate":20.0}

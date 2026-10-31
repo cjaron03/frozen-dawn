@@ -97,6 +97,10 @@ public final class ArchitectFxController {
         if (isDrinkingPotion) {
             return;
         }
+        if (entity.isShowingReconnaissancePose()) {
+            entity.setItemSlot(EquipmentSlot.MAINHAND, ItemStack.EMPTY);
+            return;
+        }
 
         switch (action) {
             case ArchitectEntity.ACTION_ATTACK_MELEE ->

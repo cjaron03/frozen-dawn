@@ -1,0 +1,73 @@
+{
+  "name": "Relays",
+  "category": "frozendawn:power",
+  "icon": "frozendawn:power_relay",
+  "sortnum": 2,
+  "pages": [
+    {
+      "type": "patchouli:spotlight",
+      "item": "frozendawn:power_relay",
+      "text": "Carries power across distance. Mounts on any face."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Pylons",
+      "text": "$(li)$(bold)Relay Pylon$(): 16-block links$(li)$(bold)Large Relay Pylon$(): 32-block links$(br2)Blocks between pylons don't matter. Sealed walls do."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Feedthrough",
+      "text": "A full block that carries links through a sealed wall without breaking the seal. Link to it from both sides.$(br2)Breaking it removes its links."
+    },
+    {
+      "type": "patchouli:multiblock",
+      "name": "Through a Sealed Wall",
+      "enable_visualize": false,
+      "multiblock": {
+        "pattern": [
+          [
+            "   ",
+            "WWW",
+            "   "
+          ],
+          [
+            " R ",
+            "WBW",
+            " R "
+          ],
+          [
+            "SSS",
+            "SSS",
+            "S0S"
+          ]
+        ],
+        "mapping": {
+          "W": "minecraft:stone_bricks",
+          "B": "frozendawn:bulkhead_feedthrough",
+          "R": "frozendawn:power_relay[facing=up]",
+          "S": "minecraft:polished_andesite",
+          "0": "minecraft:polished_andesite"
+        }
+      },
+      "text": "Relay outside, feedthrough in the wall, relay inside."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:power_relay",
+      "title": "Relay Pylon",
+      "text": "Copper, redstone and iron."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:large_power_relay",
+      "title": "Large Relay Pylon",
+      "text": "A Relay Pylon with copper and redstone blocks."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:bulkhead_feedthrough",
+      "title": "Bulkhead Feedthrough",
+      "text": "Iron, copper and redstone."
+    }
+  ]
+}

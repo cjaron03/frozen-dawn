@@ -1,6 +1,6 @@
 {
   "name": "ORSA Intelligence",
-  "description": "Classified ORSA-UN joint assessment of projected Earth conditions. Read carefully.",
+  "description": "Classified ORSA-UN files. Locked ones open when you archive the matching $(l:orsa_intel/field_documents)document$(/l).",
   "icon": "minecraft:writable_book",
-  "sortnum": -1
+  "sortnum": 5
 }

@@ -1,0 +1,92 @@
+{
+  "command": "./gradlew architectVerify architectMonkey --console=plain",
+  "sourceSha256": "ac1305fd1edcb6b1d312c7a86ce6cd4dc0b65a93c81adc2ce5ac865d1ee8d8d8",
+  "jarSha256": "1110097c8c4dde40773140b93bc5b1a7de57c0fd632cd184992c1665ee578356",
+  "unit": {
+    "tests": 609,
+    "failed": 0,
+    "skipped": 0
+  },
+  "gateHarnessTests": 8,
+  "native": {
+    "tests": 162,
+    "failed": 0,
+    "skipped": 0
+  },
+  "nativeRequired": 157,
+  "stressServer": {
+    "tests": 662,
+    "failed": 0,
+    "skipped": 0
+  },
+  "seededStress": {
+    "passed": 500,
+    "failed": 0,
+    "missing": 0
+  },
+  "warnings": [
+    "Existing Gradle deprecation and development dependency refmap notices; expected negative-fixture diagnostics retained.",
+    "Client retains the existing Sampler2 shader warning."
+  ],
+  "verificationScope": "Completed full local gates before packaging; exact published head is identified by the PR verification comment and required statuses.",
+  "inputsSha256": {
+    "config/architect-required-tests.txt": "a64ff78346af5e2081e7a54bee882bf866ab71c95469095cdf745b41cc8c7222",
+    "config/architect-monkey-tests.txt": "bf114be8fced69e9a18fa0b640b4a9f77dc07cf9b7ce79f379dac7b0b8759487",
+    "src/gameTest/java/com/frozendawn/entity/ArchitectMonkeyGameTest.java": "efd7709ab3f9f72357e7167d53bfb47e9af9c753055021c9caeb04be9f9c9dff",
+    "tools/architect_fixtures.py": "b40987e56353eaed01918ffab4c162136ad31ef8df59fa95200a3f820605ae80",
+    "tools/prepare_macs_shield_playtest.py": "79d28ab75c85692e3068a01f17d19ae05c00d1938d549274ee64f0ef7bf2fdf2",
+    "tools/macs_guard_acceptance.py": "bef165190389d44b5a16436d898c4ff1d506b01b5b15617f0255fd01ca5b264c"
+  },
+  "reportSha256": {
+    "native-report.xml": "6211d873035bb4004a93e5d9fa72102156a02becc82d12d5eefe6d04f2e7c865",
+    "stress-report.xml": "5013ce77251bb750aa23a61fc2112548f299961da08af21ab5afbadb28a7c0ad",
+    "before-fix-final-fixture-report.xml": "59b782373c4701113786b539d6a0bf88115a0a835886fafd1953f1a02d3ac347"
+  },
+  "liveReplay": {
+    "runId": "3a287804-9d5d-4bbf-885d-01fb81144183",
+    "actorUuid": "bce29527-657a-45d0-ac68-cf0eec71e04c",
+    "encounter": "e568ae5f-4a72-4de1-94b5-41636b499b02",
+    "world": "MACS Guard Snow Handoff - Normal",
+    "sourceSha256": "ac1305fd1edcb6b1d312c7a86ce6cd4dc0b65a93c81adc2ce5ac865d1ee8d8d8",
+    "ownerFeedback": "there we go. better. i like how we are really killing two birds with one stone here. fixing overall architect pathfinding issues AND the sword, but i think both are ready",
+    "startGameTime": 628818,
+    "lastTraceTick": 962,
+    "endGameTime": 629780,
+    "outcome": "Player killed by Architect naturally at tick 962; QA cleanup followed. Mechanical acceptance, not a player-victory claim.",
+    "shield": {
+      "equipped": 1,
+      "raises": 6,
+      "blocks": 2,
+      "preventedDamage": 12.0,
+      "historicalConfidence": 1.0,
+      "finalConfidence": 1.0,
+      "sameCommitment": true,
+      "healingThisRound": false
+    },
+    "terrain": {
+      "completedBreaks": 9,
+      "openRouteCancellations": 5,
+      "staleElevationRefreshTick": 237,
+      "stalledTicksAtRefresh": 40,
+      "peakStalledTicks": 45,
+      "prolongedWalkStuckRescues": 0
+    },
+    "traceCoverage": {
+      "exports": 10,
+      "combinedRows": 608,
+      "lastRetained": 400,
+      "lastDropped": 208,
+      "completeThroughPlayerFatalHit": true
+    },
+    "acceptance": "Owner accepted solo sword guard and pursuit repairs. Covers active shield mining, open-route cancellation and the stale raised-goal trigger live; does not prove zero possible stalls. Multiplayer remains deferred.",
+    "evidenceHashes": {
+      "combined-rows.json": "8305a0adddfba713d50816308e63e81c686aa8826b3833f29a34682e31a14df7",
+      "latest.log": "dd9e8845dc3859ede2dd2ba6dac1606e5cfd4b78ccd8a3f82aacf8edf1079806"
+    }
+  },
+  "remainingIntegrationWork": [
+    "Current-build live multiplayer and performance, deferred by owner",
+    "Fresh blind combined encounter and broader difficulty calibration",
+    "Natural spawning and full survival hazards"
+  ]
+}

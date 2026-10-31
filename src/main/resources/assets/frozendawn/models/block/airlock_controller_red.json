@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/orientable",
+  "textures": {
+    "front": "frozendawn:block/airlock_controller_red",
+    "side": "frozendawn:block/airlock_casing",
+    "top": "frozendawn:block/airlock_casing"
+  }
+}

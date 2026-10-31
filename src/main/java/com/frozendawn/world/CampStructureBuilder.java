@@ -236,7 +236,7 @@ public final class CampStructureBuilder {
         placeCrateWithLoot(level, crate2Pos, Direction.WEST, phase, false, hasLinkedVehicle);
     }
 
-    private static void placeCrateWithLoot(ServerLevel level, BlockPos pos,
+    static void placeCrateWithLoot(ServerLevel level, BlockPos pos,
                                            Direction facing, int phase,
                                            boolean foodCrate, boolean hasLinkedVehicle) {
         // Phase 5+: crate may be buried under snow, skip placement
@@ -265,9 +265,13 @@ public final class CampStructureBuilder {
                 crate.setItem(9, hasLinkedVehicle ? createTransferLogDocument() : createPersonalNoteDocument());
                 crate.setItem(13, new ItemStack(Items.STRING, 4));
                 crate.setItem(18, new ItemStack(Items.FLINT_AND_STEEL));
+                if (level.random.nextFloat() < FrozenTownRuntime.MIEL_CHANCE) {
+                    crate.setItem(17, new ItemStack(ModItems.MIEL_HONEY.get()));
+                }
                 if (hasLinkedVehicle) {
                     crate.setItem(22, new ItemStack(ModItems.EMERGENCY_O2_CARTRIDGE.get()));
                 }
+                crate.setItem(23, com.frozendawn.loot.SalvagedPowerCells.create(level.getSeed() ^ pos.asLong()));
             }
         }
     }

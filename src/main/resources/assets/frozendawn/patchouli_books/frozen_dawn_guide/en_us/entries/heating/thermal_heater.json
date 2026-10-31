@@ -5,14 +5,50 @@
   "sortnum": 1,
   "pages": [
     {
-      "type": "patchouli:text",
+      "type": "patchouli:spotlight",
+      "item": "frozendawn:thermal_heater",
       "title": "Thermal Heater",
-      "text": "A fuel-burning heater that radiates warmth in its vicinity. Right-click with coal, charcoal, blaze powder, coal blocks, or cryo fuel to activate.$(br2)Essential for early survival. Place these in your base to keep temperatures livable through Phases 2-4. Multiple heaters stack their warmth.$(br2)Can be $(l:heating/heater_upgrades)upgraded$(/l) with iron, gold, or diamond for greater output.$(br2)$(italic)ORSA FAQ: \"Can I hug the heater?\" No. \"Can I sleep next to the heater?\" Also no. \"Can I name the heater?\" ...we can't stop you, but please seek companionship elsewhere.$()"
+      "text": "Burns fuel to heat a sealed room or an open camp."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Fueling",
+      "text": "Right-click with coal, charcoal, blaze powder, coal blocks or $(l:heating/cryo_fuel)Cryo Fuel$(/l).$(br2)Redstone stops it and pauses fuel use."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Sealed Rooms",
+      "text": "It heats the air first, then the walls and floor.$(br2)Bigger rooms take longer. See $(l:heating/room_climate)Room Heating$(/l)."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Shared Target",
+      "text": "Every heater in a room aims for $(bold)20°C$() and throttles as it warms. Core and fire heat count toward it.$(br2)More heaters warm faster, not hotter. A $(l:heating/thermostat)Thermostat$(/l) changes the target."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Status Panel",
+      "text": "Shows $(bold)Heating$() or $(bold)Holding$(), burn percentage and fuel time left.$(br2)Good insulation lowers Holding."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Airless Rooms",
+      "text": "Without air, heat reaches the walls slowly and vacuum still feels cold.$(br2)$(danger)A heater does not replace EVA.$()"
     },
     {
       "type": "patchouli:crafting",
       "recipe": "frozendawn:thermal_heater",
-      "text": "Surround a Thermal Core with 8 iron ingots. It's essentially an iron box with a hot thing inside. ORSA charged the UN four billion credits for this design."
+      "text": "Eight iron around a Thermal Core.$(br2)$(flavor)An iron box with a hot thing inside. ORSA billed the UN four billion credits for it.$()"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Specs",
+      "text": "$(li)Target: 20°C, or 10-30°C with a Thermostat$(li)Open camps: warms by proximity$(li)Extra fuel: frostmites, machinery$(li)Unloaded rooms pause$(li)Hot walls cool slowly; a $(l:heating/heat_vent)Heat Vent$(/l) helps"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Without air, a heater stops at its target and passive sources can't push walls past their own temperature. Refilling air adds no heat. Resealing doesn't reset hot walls.$(br2)$(flavor)Can you name the heater? We cannot stop you.$()"
     }
-  ]
+  ],
+  "priority": true
 }

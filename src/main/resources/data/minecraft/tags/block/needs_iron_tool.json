@@ -1,6 +1,36 @@
 {
   "replace": false,
   "values": [
-    "frozendawn:phase_barometer"
+    "frozendawn:phase_barometer",
+    "frozendawn:reactor_casing",
+    "frozendawn:reactor_core",
+    "frozendawn:control_rod_drive",
+    "frozendawn:coolant_port",
+    "frozendawn:reactor_controller",
+    "frozendawn:reactor_radiator",
+    "frozendawn:deepslate_uranium_ore",
+    "frozendawn:reactor_debris",
+    "frozendawn:sfr_controller",
+    "frozendawn:sfr_fuel_port",
+    "frozendawn:sfr_power_port",
+    "frozendawn:sfr_vacuum_port",
+    "frozendawn:magnet_coil",
+    "frozendawn:first_wall",
+    "frozendawn:lithium_blanket",
+    "frozendawn:confinement_core",
+    "frozendawn:high_temperature_radiator",
+    "frozendawn:deepslate_spodumene_ore",
+    "frozendawn:halsey_core",
+    "frozendawn:icarus_stabilizer",
+    "frozendawn:icarus_injector",
+    "frozendawn:icarus_frame",
+    "frozendawn:icarus_injector_casing",
+    "frozendawn:icarus_stabilizer_housing",
+    "frozendawn:icarus_reserve_bank",
+    "frozendawn:icarus_controller",
+    "frozendawn:icarus_power_port",
+    "frozendawn:icarus_matter_port",
+    "frozendawn:icarus_capsule_dock",
+    "frozendawn:antiparticle_foundry"
   ]
 }

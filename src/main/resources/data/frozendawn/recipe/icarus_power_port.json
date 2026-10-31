@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "FCF",
+    "CLC",
+    "FCF"
+  ],
+  "key": {
+    "F": {
+      "item": "frozendawn:icarus_frame"
+    },
+    "C": {
+      "item": "minecraft:copper_ingot"
+    },
+    "L": {
+      "item": "frozendawn:large_power_relay"
+    }
+  },
+  "result": {
+    "id": "frozendawn:icarus_power_port",
+    "count": 1
+  }
+}

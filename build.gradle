@@ -17,6 +17,8 @@ def enableEnhancedClassRedefinition = providers
         .gradleProperty('fdEnableEnhancedClassRedefinition')
         .map { it.toBoolean() }
         .getOrElse(false)
+// Optional: ./gradlew runClientLab -PfdLabWorld='World Name' opens that existing save directly.
+def labQuickPlayWorld = providers.gradleProperty('fdLabWorld').getOrNull()
 
 repositories {
     maven { url = "https://maven.blamejared.com" }
@@ -38,6 +40,8 @@ java.toolchain.languageVersion = JavaLanguageVersion.of(21)
 
 def gameTestReport = layout.buildDirectory.file('gametest/report.xml')
 def gameTestRunDirectory = layout.buildDirectory.dir('gametest/run')
+def quickReport = layout.buildDirectory.file('gametest-quick/report.xml')
+def quickRunDirectory = layout.buildDirectory.dir('gametest-quick/run')
 def monkeyReport = layout.buildDirectory.file('architect-monkey/report.xml')
 def monkeyRunDirectory = layout.buildDirectory.dir('architect-monkey/run')
 def monkeyReports = layout.buildDirectory.dir('architect-monkey-reports/' + java.util.UUID.randomUUID().toString())
@@ -50,7 +54,17 @@ def client2RunDirectory = layout.projectDirectory.dir('run2')
 // and off the JUnit classpath, but are registered with the mod below so that NeoForge's
 // annotation scan (ModList#getAllScanData) can find the @GameTestHolder classes.
 sourceSets {
+    labBridge {
+        compileClasspath += sourceSets.main.output
+        runtimeClasspath += sourceSets.main.output
+    }
+    test {
+        compileClasspath += sourceSets.labBridge.output
+        runtimeClasspath += sourceSets.labBridge.output
+    }
     gameTest {
+        compileClasspath += sourceSets.labBridge.output
+        runtimeClasspath += sourceSets.labBridge.output
         compileClasspath += sourceSets.main.output
         runtimeClasspath += sourceSets.main.output
     }
@@ -77,10 +91,29 @@ neoForge {
         clientLab {
             client()
             gameDirectory = layout.projectDirectory.dir('run-lab')
+            if (labQuickPlayWorld) {
+                programArguments.addAll '--quickPlaySingleplayer', labQuickPlayWorld
+            }
+            systemProperty 'frozendawn.labBridge', 'true'
+            if (labQuickPlayWorld == 'Cyclone Drift Check') {
+                programArguments.addAll '--mixin', 'frozendawn.lab.mixins.json'
+                systemProperty 'frozendawn.labCycloneDrift', 'true'
+            }
+            systemProperty 'frozendawn.labWindowLabels', providers.gradleProperty('fdLabWindowLabels').getOrElse('false')
+            systemProperty 'frozendawn.labAirlockWatch', providers.gradleProperty('fdLabAirlockWatch').getOrElse('false')
+            if (providers.gradleProperty('fdRoomArchiveReplay').isPresent()) {
+                systemProperty 'frozendawn.labRoomArchiveReplay', file(providers.gradleProperty('fdRoomArchiveReplay').get()).absolutePath
+            }
+            systemProperty 'frozendawn.labLanGate', file('run-lab/lab-bridge/lan-input-gate.json').absolutePath
+            systemProperty 'frozendawn.labBridge.policy', file('config/lab-bridge-functions.json').absolutePath
+            systemProperty 'frozendawn.labBridge.checkout', projectDir.absolutePath
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
             systemProperty 'frozendawn.dev.skipOrsaAwakening', 'true'
             systemProperty 'frozendawn.debug.architect', 'true'
-            systemProperty 'frozendawn.debug.architectSeed', '1'
+            if (!project.hasProperty('labNatural')) {
+                systemProperty 'frozendawn.debug.architectSeed', '1'
+            }
+            systemProperty 'frozendawn.labCommands', 'true'
         }
 
         // A second local player for LAN disconnect/reconnect tests. Keep saves,
@@ -88,7 +121,10 @@ neoForge {
         clientLabGuest {
             client()
             gameDirectory = layout.projectDirectory.dir('runs/architect-guest')
-            programArguments.addAll '--username', 'ArchitectGuest'
+            programArguments.addAll '--username', 'ArchitectGuest', '--uuid', '347c4be4-4dda-3d32-a649-477c0bff527c'
+            systemProperty 'frozendawn.labLanGuest', 'true'
+            systemProperty 'frozendawn.labBridge.checkout', projectDir.absolutePath
+            systemProperty 'frozendawn.labLanGate', file('run-lab/lab-bridge/lan-input-gate.json').absolutePath
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
             systemProperty 'frozendawn.dev.skipOrsaAwakening', 'true'
             systemProperty 'frozendawn.debug.architect', 'true'
@@ -128,6 +164,8 @@ neoForge {
             sourceSet = sourceSets.gameTest
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
             systemProperty 'frozendawn.gametest.report', gameTestReport.get().asFile.absolutePath
+            // Lab-only commands must parse where the lab packs are checked.
+            systemProperty 'frozendawn.labCommands', 'true'
             systemProperty 'frozendawn.architect.reports', architectReports.get().asFile.absolutePath
             // Its own throwaway world, wiped before every run. Sharing run/ with runClient let
             // saved data from one gate run leak into the next, which makes any test that touches
@@ -135,11 +173,27 @@ neoForge {
             gameDirectory = gameTestRunDirectory
         }
 
+        // A fast loop while iterating: only the tests named by -PfdTests. Never a gate.
+        gameTestQuick {
+            type = 'gameTestServer'
+            sourceSet = sourceSets.gameTest
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+            systemProperty 'frozendawn.gametest.report', quickReport.get().asFile.absolutePath
+            systemProperty 'frozendawn.labCommands', 'true'
+            systemProperty 'frozendawn.architect.reports', layout.buildDirectory.dir('gametest-quick/reports').get().asFile.absolutePath
+            // Tests wait in ticks, so the server ticks back to back rather than at 20 per second (GameTestPacing).
+            systemProperty 'frozendawn.gametest.sprint', 'true'
+            systemProperty 'frozendawn.gametest.only', providers.gradleProperty('fdTests').getOrElse('')
+            gameDirectory = quickRunDirectory
+        }
+
         architectMonkeyServer {
             type = 'gameTestServer'
             sourceSet = sourceSets.gameTest
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
             systemProperty 'frozendawn.gametest.report', monkeyReport.get().asFile.absolutePath
+            // It repeats the regressions, lab-pack parse checks included.
+            systemProperty 'frozendawn.labCommands', 'true'
             systemProperty 'frozendawn.architect.reports', monkeyReports.get().asFile.absolutePath
             systemProperty 'frozendawn.architect.monkey', 'true'
             gameDirectory = monkeyRunDirectory
@@ -160,6 +214,7 @@ neoForge {
         "${mod_id}" {
             sourceSet(sourceSets.main)
             sourceSet(sourceSets.gameTest)
+            sourceSet(sourceSets.labBridge)
         }
     }
 
@@ -172,12 +227,17 @@ neoForge {
 // Puts Minecraft and NeoForge on the gameTest compile/runtime classpath. Only the main
 // source set gets these implicitly.
 neoForge.addModdingDependenciesTo(sourceSets.gameTest)
+neoForge.addModdingDependenciesTo(sourceSets.labBridge)
 
 sourceSets.main.resources { srcDir 'src/generated/resources' }
 
 configurations {
     runtimeClasspath.extendsFrom localRuntime
     testRuntimeClasspath.extendsFrom localRuntime
+    labBridgeCompileOnly.extendsFrom compileOnly
+    labBridgeImplementation.extendsFrom implementation
+    labBridgeRuntimeOnly.extendsFrom runtimeOnly
+    labBridgeRuntimeClasspath.extendsFrom localRuntime
     gameTestCompileOnly.extendsFrom compileOnly
     gameTestImplementation.extendsFrom implementation
     gameTestRuntimeOnly.extendsFrom runtimeOnly
@@ -247,7 +307,7 @@ tasks.withType(Test).configureEach {
 
 spotless {
     java {
-        target 'src/main/java/**/*.java', 'src/gameTest/java/**/*.java'
+        target 'src/main/java/**/*.java', 'src/gameTest/java/**/*.java', 'src/labBridge/java/**/*.java'
         trimTrailingWhitespace()
         endWithNewline()
         leadingTabsToSpaces(4)
@@ -283,12 +343,116 @@ tasks.named('runGameTestServer') {
     }
 }
 
+// The gates' tests run on three servers side by side. A server ticks on one thread and a gate is bound by that
+// thread, so one server leaves the rest of the machine idle. Each shard keeps whole batches, the same ones a single
+// server runs (GameTestPacing#keepShard), at the normal tick rate, and verify_architect_gate.py checks that the
+// shards together ran every test exactly once. -PfdShards=1 runs them all on one server.
+def gameTestShards = providers.gradleProperty('fdShards').map { it as int }.getOrElse(3)
+def gameTestShardDirectory = { int shard -> layout.buildDirectory.dir("gametest/shard-${shard}").get().asFile }
+def monkeyShardDirectory = { int shard -> layout.buildDirectory.dir("architect-monkey/shard-${shard}").get().asFile }
+// The shard servers run on the internal disk, a little faster than the external one, and their worlds, about
+// 450 MB each, are deleted after a passing run; a failed run leaves them until the next. Everything else in the run
+// directory, logs and evidence, is copied back to build/. -PfdShardWorlds=build runs them in build/ instead.
+def shardWorldsInBuild = providers.gradleProperty('fdShardWorlds').map { it == 'build' }.getOrElse(false)
+def shardWorldRoot = new File(System.getProperty('java.io.tmpdir'), 'frozendawn-gametest/' + projectDir.absolutePath.digest('SHA-256').take(12))
+def shardReports = { Closure<File> directory -> (0..<gameTestShards).collectMany { ['--report', new File(directory(it), 'report.xml').absolutePath] } }
+// Starts each shard's server exactly as the named run task would, with its own world, report and evidence folder.
+def registerShardedRun = { String name, String runName, Closure<File> shardDirectory, Provider<Directory> artifacts ->
+    tasks.register(name) {
+        group = 'verification'
+        description = "Runs ${runName}'s GameTests on ${gameTestShards} servers side by side, each with its own world and report."
+        def run = tasks.named(runName)
+        dependsOn { run.get().taskDependencies.getDependencies(run.get()) }
+        outputs.upToDateWhen { false }
+        doLast {
+            def server = run.get()
+            def log = logger
+            def processes = []
+            def runDirectories = []
+            def passed = false
+            try {
+                // Worlds a failed run left, with any shard count.
+                if (shardWorldRoot.isDirectory()) shardWorldRoot.listFiles().findAll { it.name.startsWith("${name}-") }.each { delete(it) }
+                (0..<gameTestShards).each { shard ->
+                    def directory = shardDirectory(shard)
+                    delete(directory)
+                    directory.mkdirs()
+                    def runDirectory = shardWorldsInBuild ? new File(directory, 'run') : new File(shardWorldRoot, "${name}-${shard}")
+                    delete(runDirectory)
+                    runDirectory.mkdirs()
+                    runDirectories << runDirectory
+                    def command = [server.javaLauncher.get().executablePath.asFile.absolutePath]
+                    command += server.allJvmArgs
+                    // After the run's own argument file, so these win.
+                    command += ["-Dfrozendawn.gametest.report=${new File(directory, 'report.xml').absolutePath}",
+                                "-Dfrozendawn.architect.reports=${new File(artifacts.get().asFile, "shard-${shard}").absolutePath}",
+                                "-Dfrozendawn.gametest.shard=${shard}/${gameTestShards}"]
+                    command += ['-cp', server.classpathProvider.asPath, server.mainClass.get()]
+                    command += server.args
+                    def builder = new ProcessBuilder(command.collect { it.toString() }).directory(runDirectory).redirectErrorStream(true)
+                    builder.environment().putAll(server.environmentProperty.get())
+                    processes << builder.start()
+                }
+                def pumps = processes.withIndex().collect { process, shard ->
+                    Thread.start { process.inputStream.eachLine { log.lifecycle("[shard ${shard}] ${it}") } }
+                }
+                def exits = processes.collect { it.waitFor() }
+                pumps*.join()
+                def failed = exits.withIndex().findAll { exit, shard -> exit != 0 }
+                if (!failed.isEmpty())
+                    throw new GradleException('GameTest servers exited with failures: ' + failed.collect { exit, shard -> "shard ${shard} exit ${exit}" }.join(', '))
+                passed = true
+            } finally {
+                // Only the servers this task started.
+                processes.findAll { it.alive }*.destroy()
+                runDirectories.eachWithIndex { runDirectory, shard ->
+                    if (shardWorldsInBuild) { if (passed) delete(new File(runDirectory, 'world')); return }
+                    // Logs, and evidence some tests write relative to the working directory.
+                    copy { from(runDirectory) { exclude 'world/**' }; into(new File(shardDirectory(shard), 'run')) }
+                    if (passed) delete(runDirectory)
+                }
+            }
+        }
+    }
+}
+registerShardedRun('runGameTestShards', 'runGameTestServer', gameTestShardDirectory, architectReports)
+registerShardedRun('runArchitectMonkeyShards', 'runArchitectMonkeyServer', monkeyShardDirectory, monkeyReports)
+
+tasks.named('runGameTestQuick') {
+    def report = quickReport
+    def runDirectory = quickRunDirectory
+    def only = providers.gradleProperty('fdTests')
+    doFirst {
+        if (!only.isPresent() || only.get().isBlank())
+            throw new GradleException('Name the tests: -PfdTests=scribe (comma-separated name fragments)')
+        report.get().asFile.with { parentFile.mkdirs(); delete() }
+        delete(runDirectory)
+    }
+}
+
+// Unlike the gate, this checks only that the selected tests ran and none failed.
+tasks.register('gameTestQuick') {
+    group = 'verification'
+    description = 'Runs only the GameTests named by -PfdTests, ticking as fast as the server can. Not a gate.'
+    dependsOn tasks.named('runGameTestQuick')
+    def report = quickReport
+    doLast {
+        def file = report.get().asFile
+        if (!file.exists()) throw new GradleException("No GameTest report at ${file}: the server never finished a test")
+        def cases = new groovy.xml.XmlSlurper().parse(file).'**'.findAll { it.name() == 'testcase' }
+        def failed = cases.findAll { !it.failure.isEmpty() || !it.error.isEmpty() }
+        if (cases.isEmpty()) throw new GradleException('The report holds no test cases')
+        if (!failed.isEmpty()) throw new GradleException("${failed.size()} of ${cases.size()} GameTests failed: " + failed.collect { it.@name.text() }.join(', '))
+        logger.lifecycle("All ${cases.size()} selected GameTests passed.")
+    }
+}
+
 tasks.register('gameTestGate', Exec) {
     group = 'verification'
     description = 'Requires every named Architect GameTest and validates its current-build report.'
-    dependsOn tasks.named('runGameTestServer')
+    dependsOn tasks.named('runGameTestShards')
     commandLine 'python3', '-B', 'tools/verify_architect_gate.py',
-            '--report', gameTestReport.get().asFile.absolutePath,
+            *shardReports(gameTestShardDirectory),
             '--required', file('config/architect-required-tests.txt').absolutePath,
             '--artifacts', architectReports.get().asFile.absolutePath,
             '--build-info', layout.buildDirectory.file('resources/main/architect-build.properties').get().asFile.absolutePath
@@ -297,7 +461,7 @@ tasks.register('gameTestGate', Exec) {
 // Fingerprint the actual source/resources, including uncommitted changes. No git commit needed.
 def architectBuildInfo = layout.buildDirectory.dir('generated/architectBuildInfo')
 tasks.register('generateArchitectBuildInfo') {
-    inputs.files(fileTree('src/main'), fileTree('src/gameTest'), fileTree('src/test'),
+    inputs.files(fileTree('src/main'), fileTree('src/gameTest'), fileTree('src/test'), fileTree('src/labBridge'),
             file('build.gradle'), file('gradle.properties'))
     outputs.dir(architectBuildInfo)
     doLast {
@@ -334,6 +498,18 @@ tasks.register('testArchitectGate', Exec) {
 }
 tasks.named('check') { dependsOn tasks.named('testArchitectGate') }
 
+// Source-of-truth §9.16a: keep the sole Maeve entry point a narrow facade.
+tasks.register('verifyMaeveFacade') {
+    group = 'verification'
+    def facade = file('src/main/java/com/frozendawn/maeve/MaeveDirector.java')
+    inputs.file(facade)
+    doLast {
+        int lines = facade.readLines('UTF-8').size()
+        if (lines > 300) throw new GradleException("MaeveDirector exceeds its 300-line facade budget: ${lines}")
+    }
+}
+tasks.named('check') { dependsOn tasks.named('verifyMaeveFacade') }
+
 // Reproducible exploratory cases. Failures remain failures and keep their traces.
 tasks.named('runArchitectMonkeyServer') {
     doFirst {
@@ -344,9 +520,9 @@ tasks.named('runArchitectMonkeyServer') {
 tasks.register('architectMonkey', Exec) {
     group = 'verification'
     description = 'Runs the Architect terrain/event stress matrix and rejects any failed or missing case.'
-    dependsOn tasks.named('runArchitectMonkeyServer')
+    dependsOn tasks.named('runArchitectMonkeyShards')
     commandLine 'python3', '-B', 'tools/verify_architect_gate.py',
-            '--report', monkeyReport.get().asFile.absolutePath,
+            *shardReports(monkeyShardDirectory),
             '--required', file('config/architect-monkey-tests.txt').absolutePath,
             '--artifacts', monkeyReports.get().asFile.absolutePath,
             '--build-info', layout.buildDirectory.file('resources/main/architect-build.properties').get().asFile.absolutePath
@@ -356,8 +532,540 @@ tasks.register('architectMonkeySummary', Exec) {
     group = 'verification'
     description = 'Preserves the gameplay XML and a per-case stress matrix, including failed runs.'
     commandLine 'python3', '-B', 'tools/summarize_architect_monkey.py',
-            '--report', monkeyReport.get().asFile.absolutePath,
+            *shardReports(monkeyShardDirectory),
             '--required', file('config/architect-monkey-tests.txt').absolutePath,
             '--artifacts', monkeyReports.get().asFile.absolutePath
 }
-tasks.named('runArchitectMonkeyServer') { finalizedBy tasks.named('architectMonkeySummary') }
+tasks.named('runArchitectMonkeyShards') { finalizedBy tasks.named('architectMonkeySummary') }
+
+// Parse the very same disposable-world functions during the mandatory GameTests.
+def maeveWorldQaResources = layout.buildDirectory.dir('generated/maeve-world-qa')
+tasks.register('generateMaeveWorldQa', Exec) {
+    inputs.file('tools/prepare_maeve_world_playtest.py')
+    outputs.dir(maeveWorldQaResources)
+    commandLine 'python3', '-B', 'tools/prepare_maeve_world_playtest.py', '--pack-only', maeveWorldQaResources.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(maeveWorldQaResources)
+
+def maeveAttentionQaResources = layout.buildDirectory.dir('generated/maeve-attention-qa')
+tasks.register('generateMaeveAttentionQa', Exec) {
+    inputs.file('tools/prepare_maeve_attention_playtest.py')
+    inputs.file('tools/prepare_maeve_attention_coop.py')
+    outputs.dir(maeveAttentionQaResources)
+    commandLine 'python3', '-B', 'tools/prepare_maeve_attention_playtest.py', '--pack-only', maeveAttentionQaResources.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(maeveAttentionQaResources)
+
+def macsReconQaResources = layout.buildDirectory.dir('generated/macs-recon-qa')
+tasks.register('generateMacsReconQa', Exec) {
+    inputs.file('tools/prepare_macs_recon_playtest.py')
+    outputs.dir(macsReconQaResources)
+    commandLine 'python3', '-B', 'tools/prepare_macs_recon_playtest.py', '--pack-only', macsReconQaResources.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(macsReconQaResources)
+tasks.named('processGameTestResources') { dependsOn tasks.named('generateMacsReconQa') }
+tasks.named('processGameTestResources') { dependsOn tasks.named('generateMaeveAttentionQa') }
+tasks.named('processGameTestResources') { dependsOn tasks.named('generateMaeveWorldQa') }
+
+// Slice 7 uses the same native functions in the disposable world and the required parser gate.
+def macsLearningQaResources = layout.buildDirectory.dir('generated/macs-learning-qa')
+tasks.register('generateMacsLearningQa', Exec) {
+    inputs.file('tools/prepare_macs_learning_playtest.py')
+    outputs.dir(macsLearningQaResources)
+    commandLine 'python3', '-B', 'tools/prepare_macs_learning_playtest.py', '--pack-only', macsLearningQaResources.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(macsLearningQaResources)
+tasks.named('processGameTestResources') { dependsOn tasks.named('generateMacsLearningQa') }
+
+// The combined camp uses native commands, including 1.21 item components.
+def macsIntegratedQaResources = layout.buildDirectory.dir('generated/macs-integrated-qa')
+tasks.register('generateMacsIntegratedQa', Exec) {
+    inputs.file('tools/prepare_macs_integrated_playtest.py')
+    outputs.dir(macsIntegratedQaResources)
+    commandLine 'python3', '-B', 'tools/prepare_macs_integrated_playtest.py', '--pack-only', macsIntegratedQaResources.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(macsIntegratedQaResources)
+tasks.named('processGameTestResources') { dependsOn tasks.named('generateMacsIntegratedQa') }
+
+// Sword training and the counterplay handoff share their exact native functions with GameTest.
+def macsShieldQaResources = layout.buildDirectory.dir('generated/macs-shield-qa')
+tasks.register('generateMacsShieldQa', Exec) {
+    inputs.file('tools/prepare_macs_shield_playtest.py')
+    inputs.file('tools/macs_guard_acceptance.py')
+    outputs.dir(macsShieldQaResources)
+    commandLine 'python3', '-B', 'tools/prepare_macs_shield_playtest.py', '--pack-only', macsShieldQaResources.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(macsShieldQaResources)
+tasks.named('processGameTestResources') { dependsOn tasks.named('generateMacsShieldQa') }
+
+// The mantlet live trial uses these same parsed native functions and hit trigger.
+def macsMantletQaResources = layout.buildDirectory.dir('generated/macs-mantlet-qa')
+tasks.register('generateMacsMantletQa', Exec) {
+    inputs.file('tools/prepare_macs_mantlet_playtest.py')
+    outputs.dir(macsMantletQaResources)
+    commandLine 'python3', '-B', 'tools/prepare_macs_mantlet_playtest.py', '--pack-only', macsMantletQaResources.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(macsMantletQaResources)
+tasks.named('processGameTestResources') { dependsOn tasks.named('generateMacsMantletQa') }
+
+// The archer live handoff uses the same parsed functions and real sword-hit reward as native QA.
+def macsArcherQaResources = layout.buildDirectory.dir('generated/macs-archer-qa')
+tasks.register('generateMacsArcherQa', Exec) {
+    inputs.files('tools/prepare_macs_archer_playtest.py', 'tools/prepare_macs_shield_playtest.py',
+            'tools/prepare_macs_integrated_playtest.py', 'tools/macs_guard_acceptance.py')
+    outputs.dir(macsArcherQaResources)
+    commandLine 'python3', '-B', 'tools/prepare_macs_archer_playtest.py', '--pack-only', macsArcherQaResources.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(macsArcherQaResources)
+tasks.named('processGameTestResources') { dependsOn tasks.named('generateMacsArcherQa') }
+
+// The live exit replay uses the same command parser as the required native gate.
+def macsExitQaResources = layout.buildDirectory.dir('generated/macsExitQa')
+tasks.register('generateMacsExitQa', Exec) {
+    inputs.file('tools/prepare_macs_exit_playtest.py')
+    outputs.dir(macsExitQaResources)
+    commandLine 'python3', '-B', 'tools/prepare_macs_exit_playtest.py', '--pack-only', macsExitQaResources.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(macsExitQaResources)
+tasks.named('processGameTestResources') { dependsOn tasks.named('generateMacsExitQa') }
+
+// Convergence replay functions are parsed at the same permission as the local client.
+def macsPawnQaResources = layout.buildDirectory.dir('generated/macsPawnQa')
+tasks.register('generateMacsPawnQa', Exec) {
+    inputs.files('tools/prepare_macs_pawn_playtest.py', 'tools/macs_base_diversion.py', 'tools/macs_base_idle.py', 'tools/macs_base_focus.py', 'tools/macs_base_return.py')
+    outputs.dir(macsPawnQaResources)
+    commandLine 'python3', '-B', 'tools/prepare_macs_pawn_playtest.py', '--pack-only', macsPawnQaResources.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(macsPawnQaResources)
+tasks.named('processGameTestResources') { dependsOn tasks.named('generateMacsPawnQa') }
+
+// Local automation must never be part of the distributed mod.
+tasks.register('verifyLabBridgePackaging') {
+    dependsOn tasks.named('jar'), tasks.named('compileLabBridgeJava')
+    doLast {
+        def labClassPaths = sourceSets.labBridge.output.classesDirs.files.collectMany { dir ->
+            fileTree(dir).matching { include '**/*.class' }.files.collect { dir.toPath().relativize(it.toPath()).toString() }
+        }.toSet()
+        def leaked = zipTree(tasks.named('jar').get().archiveFile).matching {
+            include { entry -> labClassPaths.contains(entry.path) }
+        }.files
+        if (!leaked.empty) throw new GradleException("Development command bridge leaked into release jar")
+    }
+}
+tasks.named('check') { dependsOn tasks.named('verifyLabBridgePackaging') }
+
+// Presentation-only masked replay, kept off the release resource path.
+def macsSignalQaResources = layout.buildDirectory.dir('generated/macsSignalQa')
+tasks.register('generateMacsSignalQa', Exec) {
+    inputs.file('tools/prepare_macs_signal_playtest.py')
+    outputs.dir(macsSignalQaResources)
+    commandLine 'python3', '-B', 'tools/prepare_macs_signal_playtest.py', '--pack-only', macsSignalQaResources.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(macsSignalQaResources)
+tasks.named('processGameTestResources') { dependsOn tasks.named('generateMacsSignalQa') }
+
+// Parse the disposable Blind first-view functions using the native command dispatcher.
+def blindQaResources = layout.buildDirectory.dir('generated/blind-architect-qa')
+tasks.register('generateBlindArchitectQa', Exec) {
+    inputs.file('tools/prepare_blind_architect_playtest.py')
+    outputs.dir(blindQaResources)
+    commandLine 'python3', '-B', 'tools/prepare_blind_architect_playtest.py', '--pack-only', blindQaResources.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(blindQaResources)
+tasks.named('processGameTestResources') { dependsOn tasks.named('generateBlindArchitectQa') }
+
+def blindNaturalQaResources = layout.buildDirectory.dir('generated/blind-natural-qa')
+tasks.register('generateBlindNaturalQa', Exec) {
+    inputs.files('tools/prepare_blind_architect_natural.py', 'tools/prepare_blind_architect_playtest.py')
+    inputs.files(fileTree('src/test/resources/blind-natural-stopped-wait'))
+    inputs.files(fileTree('src/test/resources/blind-natural-same-tick-arrivals'))
+    outputs.dir(blindNaturalQaResources)
+    doFirst { delete blindNaturalQaResources }
+    commandLine 'python3', '-B', 'tools/prepare_blind_architect_natural.py', '--pack-only', blindNaturalQaResources.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(blindNaturalQaResources)
+tasks.named('processGameTestResources') { dependsOn tasks.named('generateBlindNaturalQa') }
+
+def blindErasedQaResources = layout.buildDirectory.dir('generated/blind-erased-qa')
+tasks.register('generateBlindErasedQa', Exec) {
+    inputs.files('tools/prepare_blind_architect_erased.py', 'tools/prepare_blind_architect_playtest.py')
+    outputs.dir(blindErasedQaResources)
+    doFirst { delete blindErasedQaResources }
+    commandLine 'python3', '-B', 'tools/prepare_blind_architect_erased.py', '--pack-only', blindErasedQaResources.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(blindErasedQaResources)
+tasks.named('processGameTestResources') { dependsOn tasks.named('generateBlindErasedQa') }
+// The Scribe Check world uses the same parsed functions as its required native gate.
+def macsScribeQaResources = layout.buildDirectory.dir('generated/macsScribeQa')
+tasks.register('generateMacsScribeQa', Exec) {
+    inputs.file('tools/prepare_macs_scribe_playtest.py')
+    outputs.dir(macsScribeQaResources)
+    commandLine 'python3', '-B', 'tools/prepare_macs_scribe_playtest.py', '--pack-only', macsScribeQaResources.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(macsScribeQaResources)
+tasks.named('processGameTestResources') { dependsOn tasks.named('generateMacsScribeQa') }
+
+// The natural Scribe Base world is parsed by the same native gate.
+def macsScribeBaseQaResources = layout.buildDirectory.dir('generated/macsScribeBaseQa')
+tasks.register('generateMacsScribeBaseQa', Exec) {
+    inputs.file('tools/prepare_macs_scribe_base.py')
+    outputs.dir(macsScribeBaseQaResources)
+    commandLine 'python3', '-B', 'tools/prepare_macs_scribe_base.py', '--pack-only', macsScribeBaseQaResources.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(macsScribeBaseQaResources)
+tasks.named('processGameTestResources') { dependsOn tasks.named('generateMacsScribeBaseQa') }
+
+// The MACS Pyro Check world is parsed by the same native gate.
+def macsPyroQaResources = layout.buildDirectory.dir('generated/macsPyroQa')
+tasks.register('generateMacsPyroQa', Exec) {
+    inputs.file('tools/prepare_macs_pyro_playtest.py')
+    inputs.file('tools/prepare_blind_architect_playtest.py')
+    outputs.dir(macsPyroQaResources)
+    commandLine 'python3', '-B', 'tools/prepare_macs_pyro_playtest.py', '--pack-only', macsPyroQaResources.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(macsPyroQaResources)
+tasks.named('processGameTestResources') { dependsOn tasks.named('generateMacsPyroQa') }
+// Ration Warmer's disposable-world commands use the same native parser as GameTest.
+def rationWarmerQaResources = layout.buildDirectory.dir('generated/ration-warmer-qa')
+tasks.register('generateRationWarmerQa', Exec) {
+    inputs.files('tools/prepare_ration_warmer_playtest.py', 'tools/prepare_emergency_eva_playtest.py')
+    outputs.dir(rationWarmerQaResources)
+    commandLine 'python3', '-B', 'tools/prepare_ration_warmer_playtest.py', '--pack-only', rationWarmerQaResources.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(rationWarmerQaResources)
+tasks.named('processGameTestResources') { dependsOn tasks.named('generateRationWarmerQa') }
+
+// Validate the actual airlock playtest functions with Minecraft's native parser.
+def airlockQaResources = layout.buildDirectory.dir('generated/airlock-qa')
+tasks.register('generateAirlockQa', Exec) {
+    inputs.files('tools/prepare_airlock_playtest.py', 'tools/prepare_ration_warmer_playtest.py', 'tools/prepare_emergency_eva_playtest.py')
+    outputs.dir(airlockQaResources)
+    commandLine 'python3', '-B', 'tools/prepare_airlock_playtest.py', '--pack-only', airlockQaResources.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(airlockQaResources)
+tasks.named('processGameTestResources') { dependsOn tasks.named('generateAirlockQa') }
+
+// Validate the same O2/furnace replay commands used by the owner with Minecraft's parser.
+def roomOxygenQaResources = layout.buildDirectory.dir('generated/roomOxygenQa')
+tasks.register('generateRoomOxygenQa', Exec) {
+    inputs.files('tools/prepare_room_oxygen_playtest.py', 'tools/prepare_room_oxygen_storage_playtest.py', 'tools/prepare_core_split_playtest.py', 'tools/prepare_thermal_ground_playtest.py')
+    outputs.dir(roomOxygenQaResources)
+    commandLine 'python3', '-B', 'tools/prepare_room_oxygen_playtest.py', '--pack-only', roomOxygenQaResources.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(roomOxygenQaResources)
+tasks.named('processGameTestResources') { dependsOn tasks.named('generateRoomOxygenQa') }
+
+// Native parser coverage for the isolated power topology replay.
+def powerNetworkQaResources = layout.buildDirectory.dir('generated/powerNetworkQa')
+tasks.register('preparePowerNetworkQaResources', Exec) {
+    inputs.file('tools/prepare_power_network_playtest.py')
+    outputs.dir(powerNetworkQaResources)
+    commandLine 'python3', '-B', 'tools/prepare_power_network_playtest.py', '--pack-only', powerNetworkQaResources.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(powerNetworkQaResources)
+tasks.named('processGameTestResources') { dependsOn tasks.named('preparePowerNetworkQaResources') }
+
+// Native parser coverage for the Core-to-relay electrical replay.
+def powerFlowQaResources = layout.buildDirectory.dir('generated/powerFlowQa')
+tasks.register('preparePowerFlowQaResources', Exec) {
+    inputs.files('tools/prepare_power_flow_playtest.py', 'tools/prepare_power_network_playtest.py')
+    outputs.dir(powerFlowQaResources)
+    commandLine 'python3', '-B', 'tools/prepare_power_flow_playtest.py', '--pack-only', powerFlowQaResources.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(powerFlowQaResources)
+tasks.named('processGameTestResources') { dependsOn tasks.named('preparePowerFlowQaResources') }
+
+// Native parser coverage for removable power storage replay.
+def powerStorageQaResources = layout.buildDirectory.dir('generated/powerStorageQa')
+tasks.register('preparePowerStorageQaResources', Exec) {
+    inputs.files('tools/prepare_power_storage_playtest.py', 'tools/prepare_power_network_playtest.py')
+    outputs.dir(powerStorageQaResources)
+    commandLine 'python3', '-B', 'tools/prepare_power_storage_playtest.py', '--pack-only', powerStorageQaResources.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(powerStorageQaResources)
+tasks.named('processGameTestResources') { dependsOn tasks.named('preparePowerStorageQaResources') }
+
+// Native parser coverage for the isolated induction furnace replay.
+def inductionFurnaceQaResources = layout.buildDirectory.dir('generated/inductionFurnaceQa')
+tasks.register('prepareInductionFurnaceQaResources', Exec) {
+    inputs.files('tools/prepare_induction_furnace_playtest.py', 'tools/prepare_power_network_playtest.py')
+    outputs.dir(inductionFurnaceQaResources)
+    commandLine 'python3', '-B', 'tools/prepare_induction_furnace_playtest.py', '--pack-only', inductionFurnaceQaResources.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(inductionFurnaceQaResources)
+tasks.named('processGameTestResources') { dependsOn tasks.named('prepareInductionFurnaceQaResources') }
+
+// Native parser coverage for the passive power monitor replay.
+def powerMonitorQaResources = layout.buildDirectory.dir('generated/powerMonitorQa')
+tasks.register('preparePowerMonitorQaResources', Exec) {
+    inputs.files('tools/prepare_power_monitor_playtest.py', 'tools/prepare_power_network_playtest.py')
+    outputs.dir(powerMonitorQaResources)
+    commandLine 'python3', '-B', 'tools/prepare_power_monitor_playtest.py', '--pack-only', powerMonitorQaResources.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(powerMonitorQaResources)
+tasks.named('processGameTestResources') { dependsOn tasks.named('preparePowerMonitorQaResources') }
+
+// Native parser coverage for the one-time PIXIE oxygen/power replay.
+def pixieQaResources = layout.buildDirectory.dir('generated/pixieQa')
+tasks.register('preparePixieQaResources', Exec) {
+    inputs.files('tools/prepare_pixie_playtest.py', 'tools/prepare_power_network_playtest.py')
+    outputs.dir(pixieQaResources)
+    commandLine 'python3', '-B', 'tools/prepare_pixie_playtest.py', '--pack-only', pixieQaResources.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(pixieQaResources)
+tasks.named('processGameTestResources') { dependsOn tasks.named('preparePixieQaResources') }
+
+// Parse exactly the disposable RH-5 replay functions used by the owner.
+def rh5QaResources = layout.buildDirectory.dir('generated/rh5Qa')
+tasks.register('prepareRh5QaResources', Exec) {
+    inputs.files('tools/prepare_rh5_playtest.py', 'tools/prepare_power_network_playtest.py')
+    outputs.dir(rh5QaResources)
+    commandLine 'python3', '-B', 'tools/prepare_rh5_playtest.py', '--pack-only', rh5QaResources.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(rh5QaResources)
+tasks.named('processGameTestResources') { dependsOn tasks.named('prepareRh5QaResources') }
+
+// Parse the exact one-use two-base powered airlock replay pack.
+def poweredAirlockQa = layout.buildDirectory.dir('generated/poweredAirlockQa')
+tasks.register('preparePoweredAirlockQa', Exec) {
+    inputs.files('tools/prepare_powered_airlock_playtest.py', 'tools/prepare_power_network_playtest.py')
+    outputs.dir(poweredAirlockQa)
+    commandLine 'python3', '-B', 'tools/prepare_powered_airlock_playtest.py', '--pack-only', poweredAirlockQa.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(poweredAirlockQa)
+tasks.named('processGameTestResources') { dependsOn tasks.named('preparePoweredAirlockQa') }
+
+def chargedCellQa = layout.buildDirectory.dir('generated/chargedCellQa')
+tasks.register('prepareChargedCellQa', Exec) {
+    inputs.files('tools/prepare_charged_cell_playtest.py', 'tools/prepare_power_network_playtest.py')
+    outputs.dir(chargedCellQa)
+    commandLine 'python3', '-B', 'tools/prepare_charged_cell_playtest.py', '--pack-only', chargedCellQa.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(chargedCellQa)
+tasks.named('processGameTestResources') { dependsOn tasks.named('prepareChargedCellQa') }
+
+def workLampQa = layout.buildDirectory.dir('generated/workLampQa')
+tasks.register('prepareWorkLampQa', Exec) {
+    inputs.files('tools/prepare_work_lamp_playtest.py', 'tools/prepare_power_network_playtest.py',
+            'tools/prepare_blind_architect_playtest.py', 'tools/prepare_hearthstone_playtest.py')
+    outputs.dir(workLampQa)
+    commandLine 'python3', '-B', 'tools/prepare_work_lamp_playtest.py', '--pack-only', workLampQa.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(workLampQa)
+tasks.named('processGameTestResources') { dependsOn tasks.named('prepareWorkLampQa') }
+
+tasks.register('prepareWorkLampPlaytest', Exec) {
+    group = 'verification'
+    description = 'Creates the fresh Work Lamp Check world; refuses existing saves. Requires -PfdWorkLampTemplate=/path/to/closed/level.dat.'
+    doFirst {
+        def template = providers.gradleProperty('fdWorkLampTemplate').getOrNull()
+        if (!template) throw new GradleException('Supply -PfdWorkLampTemplate=/path/to/closed/level.dat')
+        commandLine 'python3', '-B', 'tools/prepare_work_lamp_playtest.py', '--source', template,
+                '--destination', file('run-lab/saves/Work Lamp Check').absolutePath
+    }
+}
+
+// Parse exactly the disposable Battery Lantern cave replay used by the owner.
+def batteryLanternQa = layout.buildDirectory.dir('generated/batteryLanternQa')
+tasks.register('prepareBatteryLanternQa', Exec) {
+    inputs.files('tools/prepare_battery_lantern_playtest.py', 'tools/prepare_power_network_playtest.py',
+            'tools/prepare_blind_architect_playtest.py')
+    outputs.dir(batteryLanternQa)
+    commandLine 'python3', '-B', 'tools/prepare_battery_lantern_playtest.py', '--pack-only', batteryLanternQa.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(batteryLanternQa)
+tasks.named('processGameTestResources') { dependsOn tasks.named('prepareBatteryLanternQa') }
+
+tasks.register('prepareBatteryLanternPlaytest', Exec) {
+    group = 'verification'
+    description = 'Creates a fresh Battery Lantern Check world; refuses existing saves. Requires -PfdBatteryLanternTemplate=/path/to/closed/level.dat.'
+    doFirst {
+        def template = providers.gradleProperty('fdBatteryLanternTemplate').getOrNull()
+        if (!template) throw new GradleException('Supply -PfdBatteryLanternTemplate=/path/to/closed/level.dat')
+        commandLine 'python3', '-B', 'tools/prepare_battery_lantern_playtest.py', '--source', template,
+                '--destination', file('run-lab/saves/Battery Lantern Check').absolutePath
+    }
+}
+
+def headlampQa = layout.buildDirectory.dir('generated/headlampQa')
+tasks.register('prepareHeadlampQa', Exec) {
+    inputs.files('tools/prepare_headlamp_playtest.py', 'tools/prepare_power_network_playtest.py',
+            'tools/prepare_blind_architect_playtest.py')
+    outputs.dir(headlampQa)
+    commandLine 'python3', '-B', 'tools/prepare_headlamp_playtest.py', '--pack-only', headlampQa.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(headlampQa)
+tasks.named('processGameTestResources') { dependsOn tasks.named('prepareHeadlampQa') }
+tasks.register('prepareHeadlampPlaytest', Exec) {
+    group = 'verification'
+    description = 'Creates fresh Headlamp Aim Check; refuses existing saves. Requires -PfdHeadlampTemplate=/path/to/closed/level.dat.'
+    doFirst {
+        def template = providers.gradleProperty('fdHeadlampTemplate').getOrNull()
+        if (!template) throw new GradleException('Supply -PfdHeadlampTemplate=/path/to/closed/level.dat')
+        commandLine 'python3', '-B', 'tools/prepare_headlamp_playtest.py', '--source', template,
+                '--destination', file('run-lab/saves/Headlamp Aim Check').absolutePath
+    }
+}
+
+tasks.register('prepareHeadlampWaterPlaytest', Exec) {
+    group = 'verification'
+    description = 'Creates a fresh phase-zero Headlamp Water Check without overwriting the original replay.'
+    doFirst {
+        def template = providers.gradleProperty('fdHeadlampTemplate').getOrNull()
+        if (!template) throw new GradleException('Supply -PfdHeadlampTemplate=/path/to/closed/level.dat')
+        commandLine 'python3', '-B', 'tools/prepare_headlamp_playtest.py', '--water-check', '--source', template,
+                '--destination', file('run-lab/saves/Headlamp Water Check').absolutePath
+    }
+}
+
+def headlampEquipmentQa = layout.buildDirectory.dir('generated/headlampEquipmentQa')
+tasks.register('prepareHeadlampEquipmentQa', Exec) {
+    inputs.files('tools/prepare_headlamp_equipment_playtest.py', 'tools/prepare_headlamp_playtest.py',
+            'tools/prepare_power_network_playtest.py', 'tools/prepare_blind_architect_playtest.py')
+    outputs.dir(headlampEquipmentQa)
+    commandLine 'python3', '-B', 'tools/prepare_headlamp_equipment_playtest.py', '--pack-only', headlampEquipmentQa.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(headlampEquipmentQa)
+tasks.named('processGameTestResources') { dependsOn tasks.named('prepareHeadlampEquipmentQa') }
+tasks.register('prepareHeadlampEquipmentPlaytest', Exec) {
+    group = 'verification'
+    description = 'Creates fresh phase-zero Headlamp Equipment Check; refuses existing saves.'
+    doFirst {
+        def template = providers.gradleProperty('fdHeadlampTemplate').getOrNull()
+        if (!template) throw new GradleException('Supply -PfdHeadlampTemplate=/path/to/closed/level.dat')
+        commandLine 'python3', '-B', 'tools/prepare_headlamp_equipment_playtest.py', '--source', template,
+                '--destination', file('run-lab/saves/Headlamp Equipment Check').absolutePath
+    }
+}
+
+// The exact owner replay also passes Minecraft's native function parser in the gate.
+def cycloneQa = layout.buildDirectory.dir('generated/cycloneQa')
+tasks.register('prepareCycloneQa', Exec) {
+    inputs.files('tools/prepare_cyclone_playtest.py', 'tools/prepare_power_network_playtest.py', 'tools/prepare_blind_architect_playtest.py')
+    outputs.dir(cycloneQa)
+    commandLine 'python3', '-B', 'tools/prepare_cyclone_playtest.py', '--pack-only', cycloneQa.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(cycloneQa)
+tasks.named('processGameTestResources') { dependsOn tasks.named('prepareCycloneQa') }
+tasks.register('prepareCyclonePlaytest', Exec) {
+    group = 'verification'
+    description = 'Creates fresh Bomb Cyclone Check; refuses existing saves. Supply -PfdCycloneTemplate=/path/to/closed/level.dat.'
+    doFirst {
+        def template = providers.gradleProperty('fdCycloneTemplate').getOrNull()
+        if (!template) throw new GradleException('Supply -PfdCycloneTemplate=/path/to/closed/level.dat')
+        commandLine 'python3', '-B', 'tools/prepare_cyclone_playtest.py', '--source', template,
+                '--destination', file('run-lab/saves/Bomb Cyclone Check').absolutePath
+    }
+}
+
+// Fresh cyclone thermal comparison, isolated from the accepted presentation save.
+def cycloneThermalQa=layout.buildDirectory.dir('generated/cycloneThermalQa')
+tasks.register('prepareCycloneThermalQa',Exec) {
+    inputs.files('tools/prepare_cyclone_thermal_playtest.py','tools/prepare_power_network_playtest.py','tools/prepare_blind_architect_playtest.py')
+    outputs.dir(cycloneThermalQa)
+    commandLine 'python3','-B','tools/prepare_cyclone_thermal_playtest.py','--pack-only',cycloneThermalQa.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(cycloneThermalQa)
+tasks.named('processGameTestResources'){dependsOn tasks.named('prepareCycloneThermalQa')}
+tasks.register('prepareCycloneThermalPlaytest',Exec) {
+    group='verification'
+    description='Creates fresh Cyclone Thermal Check from closed metadata; refuses an existing save.'
+    doFirst {
+        def template=providers.gradleProperty('fdCycloneThermalTemplate').getOrNull()
+        if(!template)throw new GradleException('Supply -PfdCycloneThermalTemplate=/path/to/closed/level.dat')
+        commandLine 'python3','-B','tools/prepare_cyclone_thermal_playtest.py','--source',template,
+                '--destination',file('run-lab/saves/Cyclone Thermal Check').absolutePath
+    }
+}
+
+// Isolated wind replay; its exact functions also pass the native parser in the gate.
+def cycloneWindQa=layout.buildDirectory.dir('generated/cycloneWindQa')
+tasks.register('prepareCycloneWindQa',Exec) {
+    inputs.files('tools/prepare_cyclone_wind_playtest.py','tools/prepare_power_network_playtest.py','tools/prepare_blind_architect_playtest.py')
+    outputs.dir(cycloneWindQa)
+    commandLine 'python3','-B','tools/prepare_cyclone_wind_playtest.py','--pack-only',cycloneWindQa.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(cycloneWindQa)
+tasks.named('processGameTestResources'){dependsOn tasks.named('prepareCycloneWindQa')}
+tasks.register('prepareCycloneWindPlaytest',Exec) {
+    group='verification'
+    description='Creates fresh Cyclone Wind Check from closed metadata; refuses existing saves.'
+    doFirst {
+        def template=providers.gradleProperty('fdCycloneWindTemplate').getOrNull()
+        if(!template)throw new GradleException('Supply -PfdCycloneWindTemplate=/path/to/closed/level.dat')
+        commandLine 'python3','-B','tools/prepare_cyclone_wind_playtest.py','--source',template,
+                '--destination',file('run-lab/saves/Cyclone Wind Check').absolutePath
+    }
+}
+
+// Bounded production drift replay; generated functions also pass the native command parser.
+def cycloneDriftQa=layout.buildDirectory.dir('generated/cycloneDriftQa')
+tasks.register('prepareCycloneDriftQa',Exec) {
+    inputs.files('tools/prepare_cyclone_drift_playtest.py','tools/prepare_power_network_playtest.py','tools/prepare_blind_architect_playtest.py')
+    outputs.dir(cycloneDriftQa)
+    commandLine 'python3','-B','tools/prepare_cyclone_drift_playtest.py','--pack-only',cycloneDriftQa.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(cycloneDriftQa)
+tasks.named('processGameTestResources'){dependsOn tasks.named('prepareCycloneDriftQa')}
+tasks.register('prepareCycloneDriftPlaytest',Exec) {
+    group='verification'
+    description='Creates fresh Cyclone Drift Check from closed metadata; refuses existing saves.'
+    doFirst {
+        def template=providers.gradleProperty('fdCycloneDriftTemplate').getOrNull()
+        if(!template)throw new GradleException('Supply -PfdCycloneDriftTemplate=/path/to/closed/level.dat')
+        commandLine 'python3','-B','tools/prepare_cyclone_drift_playtest.py','--source',template,
+                '--destination',file('run-lab/saves/Cyclone Drift Check').absolutePath
+    }
+}
+
+
+def cycloneThunderQa=layout.buildDirectory.dir('generated/cycloneThunderQa')
+tasks.register('prepareCycloneThunderQa',Exec) {
+    inputs.files('tools/prepare_cyclone_thunder_playtest.py','tools/prepare_power_network_playtest.py','tools/prepare_blind_architect_playtest.py')
+    outputs.dir(cycloneThunderQa)
+    commandLine 'python3','-B','tools/prepare_cyclone_thunder_playtest.py','--pack-only',cycloneThunderQa.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(cycloneThunderQa)
+tasks.named('processGameTestResources'){dependsOn tasks.named('prepareCycloneThunderQa')}
+tasks.register('prepareCycloneThunderPlaytest',Exec) {
+    group='verification'
+    description='Creates fresh raised Cyclone Thunder Check from closed metadata; refuses existing saves.'
+    doFirst {
+        def template=providers.gradleProperty('fdCycloneThunderTemplate').getOrNull()
+        if(!template)throw new GradleException('Supply -PfdCycloneThunderTemplate=/path/to/closed/level.dat')
+        commandLine 'python3','-B','tools/prepare_cyclone_thunder_playtest.py','--source',template,
+                '--destination',file('run-lab/saves/Cyclone Thunder Check').absolutePath
+    }
+}
+// Parse the same isolated aurora review pack used in runClientLab.
+def auroraQa = layout.buildDirectory.dir('generated/auroraQa')
+tasks.register('prepareAuroraQa', Exec) {
+    inputs.files('tools/prepare_aurora_playtest.py', 'tools/prepare_power_network_playtest.py',
+            'tools/prepare_blind_architect_playtest.py')
+    outputs.dir(auroraQa)
+    commandLine 'python3', '-B', 'tools/prepare_aurora_playtest.py', '--pack-only', auroraQa.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(auroraQa)
+tasks.named('processGameTestResources') { dependsOn tasks.named('prepareAuroraQa') }
+
+// The same controls on untouched, normally generated terrain.
+def auroraTerrainQa = layout.buildDirectory.dir('generated/auroraTerrainQa')
+tasks.register('prepareAuroraTerrainQa', Exec) {
+    inputs.files('tools/prepare_aurora_terrain_playtest.py', 'tools/prepare_aurora_playtest.py',
+            'tools/prepare_power_network_playtest.py', 'tools/prepare_blind_architect_playtest.py')
+    outputs.dir(auroraTerrainQa)
+    commandLine 'python3', '-B', 'tools/prepare_aurora_terrain_playtest.py', '--pack-only', auroraTerrainQa.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(auroraTerrainQa)
+tasks.named('processGameTestResources') { dependsOn tasks.named('prepareAuroraTerrainQa') }
+
+// Parse the exact phase 1 review functions during native verification; keep them out of release jars.
+def phaseOneQa = layout.buildDirectory.dir('generated/phaseOneQa')
+tasks.register('preparePhaseOneQa', Exec) {
+    inputs.files('tools/prepare_phase1_playtest.py', 'tools/prepare_power_network_playtest.py',
+            'tools/prepare_blind_architect_playtest.py')
+    outputs.dir(phaseOneQa)
+    commandLine 'python3', '-B', 'tools/prepare_phase1_playtest.py', '--pack-only', phaseOneQa.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(phaseOneQa)
+tasks.named('processGameTestResources') { dependsOn tasks.named('preparePhaseOneQa') }

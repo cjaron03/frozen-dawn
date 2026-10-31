@@ -1,0 +1,23 @@
+{
+  "parent": "frozendawn:phase6",
+  "display": {
+    "icon": {
+      "id": "frozendawn:orsa_emergency_light"
+    },
+    "title": {
+      "translate": "advancement.frozendawn.in_space_no_one_can_hear_you_brown_out.title"
+    },
+    "description": {
+      "translate": "advancement.frozendawn.in_space_no_one_can_hear_you_brown_out.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": true
+  },
+  "criteria": {
+    "impossible": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "type": "minecraft:block",
+  "pools": [
+    {
+      "rolls": 1,
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "frozendawn:seafood_boil",
+          "conditions": [
+            {
+              "condition": "minecraft:block_state_property",
+              "block": "frozendawn:seafood_boil",
+              "properties": {
+                "servings": "4"
+              }
+            }
+          ],
+          "functions": [
+            {
+              "function": "minecraft:copy_components",
+              "source": "block_entity",
+              "include": [
+                "frozendawn:steaming_until"
+              ]
+            }
+          ]
+        }
+      ],
+      "conditions": [
+        {
+          "condition": "minecraft:survives_explosion"
+        }
+      ]
+    }
+  ]
+}

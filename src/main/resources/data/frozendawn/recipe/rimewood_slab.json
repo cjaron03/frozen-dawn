@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "pattern": [
+    "###"
+  ],
+  "key": {
+    "#": {
+      "item": "frozendawn:rimewood_planks"
+    }
+  },
+  "result": {
+    "id": "frozendawn:rimewood_slab",
+    "count": 6
+  },
+  "group": "wooden_slab"
+}

@@ -29,7 +29,9 @@ public final class ArchitectMonkeyGameTest {
             for (long seed : seeds) for (Rotation rotation : scenario.holeCase() || scenario.expandedCase() ? Rotation.values()
                     : new Rotation[]{Rotation.NONE, Rotation.CLOCKWISE_90}) {
                 String name = "architectmonkey." + scenario.id + "_s" + seed + "_r" + rotation.ordinal();
-                cases.add(new TestFunction("defaultBatch", name, scenario.template().toString(), rotation,
+                // Native cases temporarily replace shared world state. Keep the timed
+                // stress actors in their own batches so those transactions cannot overlap.
+                cases.add(new TestFunction("architectMonkey", name, scenario.template().toString(), rotation,
                         scenario.timeout + 10, 0, true, h -> ArchitectLabGameTest.runScenario(h, scenario, seed, false)));
             }
         }

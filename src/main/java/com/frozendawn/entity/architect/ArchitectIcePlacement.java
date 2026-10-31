@@ -3,11 +3,17 @@ package com.frozendawn.entity.architect;
 import com.frozendawn.aggregate.StillpointPolicy;
 import com.frozendawn.init.ModBlocks;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.particles.BlockParticleOption;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.LevelEvent;
 import net.minecraft.world.level.block.state.BlockState;
 
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -57,7 +63,14 @@ public final class ArchitectIcePlacement {
             List<BlockPos> tacticalIce,
             int maxTacticalIce
     ) {
-        if (!canPlaceIce(level, pos)) {
+        // Check occupancy before removing vegetation or evicting an older wall.
+        // A rounded retreat offset can still overlap the builder's actual body.
+        if (!(level instanceof ServerLevel server) || !server.hasChunkAt(pos)) return false;
+        var occupants = new java.util.ArrayList<net.minecraft.world.entity.Entity>();
+        server.getEntities(net.minecraft.world.level.entity.EntityTypeTest.forClass(net.minecraft.world.entity.Entity.class),
+                new net.minecraft.world.phys.AABB(pos),
+                entity -> !entity.isRemoved() && !entity.isSpectator() && entity.blocksBuilding, occupants, 1);
+        if (!occupants.isEmpty() || !canPlaceIce(level, pos)) {
             return false;
         }
 
@@ -84,6 +97,42 @@ public final class ArchitectIcePlacement {
             }
         }
         tacticalIce.clear();
+    }
+
+    /** Every ice block the Architect placed, nearest first, for its collapse as the Architect dies. */
+    @SafeVarargs
+    public static List<BlockPos> collapseOrder(BlockPos origin, List<BlockPos>... placed) {
+        List<BlockPos> order = new ArrayList<>();
+        for (List<BlockPos> pool : placed) {
+            order.addAll(pool);
+        }
+        order.sort(Comparator.comparingDouble(pos -> pos.distSqr(origin)));
+        return order;
+    }
+
+    /**
+     * Breaks the next {@code count} ice blocks in the collapse order. Only the first each tick
+     * plays its shatter, so the death sound stays on top.
+     */
+    public static void collapseNext(ServerLevel level, List<BlockPos> order, int count) {
+        boolean shattered = false;
+        int broken = 0;
+        while (broken < count && !order.isEmpty()) {
+            BlockPos pos = order.remove(0);
+            BlockState state = level.getBlockState(pos);
+            if (!state.is(Blocks.PACKED_ICE)) {
+                continue;
+            }
+            if (shattered) {
+                level.sendParticles(new BlockParticleOption(ParticleTypes.BLOCK, state),
+                        pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 12, 0.25, 0.25, 0.25, 0.05);
+            } else {
+                level.levelEvent(LevelEvent.PARTICLES_DESTROY_BLOCK, pos, Block.getId(state));
+                shattered = true;
+            }
+            level.removeBlock(pos, false);
+            broken++;
+        }
     }
 
     private static boolean canPlaceIce(Level level, BlockPos pos) {

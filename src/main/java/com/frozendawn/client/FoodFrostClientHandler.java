@@ -27,6 +27,16 @@ public class FoodFrostClientHandler {
         ItemStack stack = event.getItemStack();
         if (!stack.has(DataComponents.FOOD)) return;
 
+        Long warmUntil = stack.get(ModDataComponents.FOOD_WARM_UNTIL);
+        if (warmUntil != null && event.getEntity() != null) {
+            long remaining = warmUntil - event.getEntity().level().getGameTime();
+            if (remaining > 0) event.getToolTip().add(Component.translatable("food.frozendawn.warm_window",
+                    (remaining + 19) / 20).withStyle(ChatFormatting.GOLD));
+        }
+        if (com.frozendawn.event.FoodFrostHandler.isFrostRuined(stack)) {
+            event.getToolTip().add(Component.translatable("food.frozendawn.permanent_damage")
+                    .withStyle(ChatFormatting.DARK_GRAY));
+        }
         Integer frostTicks = stack.get(ModDataComponents.FROST_TICKS.get());
         if (frostTicks == null || frostTicks <= 0) return;
 

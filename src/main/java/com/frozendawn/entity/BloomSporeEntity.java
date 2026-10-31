@@ -18,6 +18,10 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.DifficultyInstance;
+import net.minecraft.world.entity.MobSpawnType;
+import net.minecraft.world.entity.SpawnGroupData;
+import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
@@ -93,6 +97,22 @@ public final class BloomSporeEntity extends PathfinderMob {
         builder.define(DATA_HEADING_Z, 1.0F);
         builder.define(DATA_COLLAPSE_TICKS, -1);
         builder.define(DATA_PAUSED, false);
+    }
+
+    /** An egg's source begins where it hatches, rather than at the world's origin. */
+    @Nullable
+    @Override
+    public SpawnGroupData finalizeSpawn(
+            ServerLevelAccessor level,
+            DifficultyInstance difficulty,
+            MobSpawnType spawnType,
+            @Nullable SpawnGroupData groupData) {
+        var result = super.finalizeSpawn(level, difficulty, spawnType, groupData);
+        if (spawnType == MobSpawnType.SPAWN_EGG) {
+            bindSource(getUUID(), getUUID(), blockPosition(), 0.0D, getLookAngle());
+            setPersistenceRequired();
+        }
+        return result;
     }
 
     public void bindSource(UUID sourceId, UUID lineageId, BlockPos sourceAnchor,

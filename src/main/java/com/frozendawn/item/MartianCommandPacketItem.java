@@ -166,9 +166,7 @@ public class MartianCommandPacketItem extends Item {
             player.getAdvancements().award(holder, criterion);
         }
         PlayerEndStats.incrementOrsaDocumentsRead(player);
-        player.displayClientMessage(
-                Component.literal("\u00A77[\u00A76Frozen Dawn\u00A77] \u00A7fDocument archived in your \u00A76ORSA Field Survival Manual\u00A7f."),
-                false);
+        FieldManual.announceArchived(player, "Mars Command");
     }
 
     private static void grantAdvancement(ServerPlayer player, String name) {

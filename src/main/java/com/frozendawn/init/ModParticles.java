@@ -38,6 +38,9 @@ public final class ModParticles {
             UNTHREADING_RESIDUE = PARTICLES.register("unthreading_residue",
                     () -> new SimpleParticleType(false));
 
+    public static final DeferredHolder<ParticleType<?>, SimpleParticleType>
+            COLD_BREATH = PARTICLES.register("cold_breath", () -> new SimpleParticleType(false));
+
     private ModParticles() {
     }
 }

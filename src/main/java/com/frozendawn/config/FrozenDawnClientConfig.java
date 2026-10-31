@@ -12,6 +12,9 @@ public final class FrozenDawnClientConfig {
     public static final ModConfigSpec.BooleanValue ENABLE_STILLPOINT_AUDIO_MUFFLING;
     public static final ModConfigSpec.BooleanValue REDUCED_THAEVEN_INK_ANIMATION;
 
+    public static final ModConfigSpec.BooleanValue ENABLE_AURORAS;
+    public static final ModConfigSpec.DoubleValue AURORA_BRIGHTNESS;
+
     public static final ModConfigSpec SPEC;
 
     static {
@@ -34,6 +37,11 @@ public final class FrozenDawnClientConfig {
         REDUCED_THAEVEN_INK_ANIMATION = BUILDER
                 .comment("Resolve translator ink immediately without changing lore unlocks.")
                 .define("reducedInkAnimation", false);
+        BUILDER.pop();
+        BUILDER.push("aurora");
+        ENABLE_AURORAS = BUILDER.comment("Render occasional auroras during phases 0 through 3.").define("enabled", true);
+        AURORA_BRIGHTNESS = BUILDER.comment("Scales aurora brightness without bypassing cloud or weather visibility.")
+                .defineInRange("brightness", 1.0D, 0.0D, 2.0D);
         BUILDER.pop();
         SPEC = BUILDER.build();
     }

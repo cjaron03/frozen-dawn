@@ -48,7 +48,16 @@ public final class CargoDropStructureBuilder {
     }
 
     public static void place(ServerLevel level, BlockPos center) {
-        CargoDropStructureLayout.Plan plan = CargoDropStructureLayout.createPlan(level, center);
+        place(level, center, CargoDropStructureLayout.createPlan(level, center));
+    }
+
+    /** A drop requested over the ORSA Uplink: the same wreck, with relay resupply in the crates. */
+    /** Returns the first supply crate's position. */
+    public static BlockPos placeUplinkResupply(ServerLevel level, BlockPos center) {
+        return place(level, center, CargoDropStructureLayout.createPlan(level, center).withLoot(LootProfile.UPLINK));
+    }
+
+    private static BlockPos place(ServerLevel level, BlockPos center, CargoDropStructureLayout.Plan plan) {
         long seed = plan.seed();
         RandomSource random = RandomSource.create(seed);
         int phase = plan.phase();
@@ -62,10 +71,11 @@ public final class CargoDropStructureBuilder {
         placeSkidMarks(level, center, facing, seed);
         placeContainer(level, center, facing, preset, lootProfile);
         applyReentryScarring(level, center, facing, preset, random);
-        placeCrates(level, center, facing, preset, lootProfile, random);
+        BlockPos crate = placeCrates(level, center, facing, preset, lootProfile, random);
         placeParachute(level, center, facing, preset, phase, random);
         placeHotImpactDebris(level, center, facing, phase, seed, random);
         applyPhaseBurial(level, center, facing, phase, random);
+        return crate;
     }
 
     private static void clearSnowAndBrush(ServerLevel level, BlockPos center, Direction facing) {
@@ -303,7 +313,7 @@ public final class CargoDropStructureBuilder {
         }
     }
 
-    private static void placeCrates(ServerLevel level, BlockPos center, Direction facing, DropPreset preset,
+    private static BlockPos placeCrates(ServerLevel level, BlockPos center, Direction facing, DropPreset preset,
                                     LootProfile lootProfile, RandomSource random) {
         BlockPos firstCratePos = toWorld(center, facing, -1, preset.floorOffsets()[2] + 1, -1);
         BlockPos secondCratePos = toWorld(center, facing, 1, preset.floorOffsets()[4] + 1, 1);
@@ -317,7 +327,7 @@ public final class CargoDropStructureBuilder {
 
         List<ItemStack> firstCrateLoot = new ArrayList<>();
         List<ItemStack> secondCrateLoot = new ArrayList<>();
-        buildLoot(lootProfile, random, firstCrateLoot, secondCrateLoot);
+        buildLoot(lootProfile, random, firstCrateLoot, secondCrateLoot, level.getSeed() ^ center.asLong());
 
         ItemStack manifest = createManifest(lootProfile.manifestTitle());
 
@@ -328,10 +338,11 @@ public final class CargoDropStructureBuilder {
         if (level.getBlockEntity(secondCratePos) instanceof BarrelBlockEntity secondCrate) {
             fillSequentially(secondCrate, secondCrateLoot, 0);
         }
+        return firstCratePos;
     }
 
-    private static void buildLoot(LootProfile lootProfile, RandomSource random,
-                                  List<ItemStack> firstCrateLoot, List<ItemStack> secondCrateLoot) {
+    static void buildLoot(LootProfile lootProfile, RandomSource random,
+                                  List<ItemStack> firstCrateLoot, List<ItemStack> secondCrateLoot, long salvageSeed) {
         switch (lootProfile) {
             case JACKPOT -> {
                 firstCrateLoot.add(new ItemStack(ModItems.THERMAL_CORE.get(), 1 + random.nextInt(2)));
@@ -359,6 +370,16 @@ public final class CargoDropStructureBuilder {
                     firstCrateLoot.add(new ItemStack(ModItems.EMERGENCY_O2_CARTRIDGE.get()));
                 }
             }
+            case UPLINK -> {
+                firstCrateLoot.add(com.frozendawn.loot.SalvagedPowerCells.create(salvageSeed ^ 0x55504C494E4BL));
+                firstCrateLoot.add(new ItemStack(ModItems.EMERGENCY_O2_CARTRIDGE.get(), 2));
+                firstCrateLoot.add(new ItemStack(switch (random.nextInt(3)) {
+                    case 0 -> ModItems.SIGNAL_PROCESSOR.get();
+                    case 1 -> ModItems.FEED_HORN.get();
+                    default -> ModItems.THERMAL_CORE.get();
+                }));
+                secondCrateLoot.add(new ItemStack(ModItems.FROZEN_MEAT.get(), 3 + random.nextInt(3)));
+            }
             case BUREAUCRATIC -> {
                 firstCrateLoot.add(new ItemStack(Items.PAPER, 32 + random.nextInt(17)));
                 firstCrateLoot.add(new ItemStack(Items.BOOK, 8 + random.nextInt(9)));
@@ -384,6 +405,8 @@ public final class CargoDropStructureBuilder {
                 ));
             }
         }
+        if (lootProfile != LootProfile.BUREAUCRATIC)
+            secondCrateLoot.add(com.frozendawn.loot.SalvagedPowerCells.create(salvageSeed));
     }
 
     private static void placeParachute(ServerLevel level, BlockPos center, Direction facing,

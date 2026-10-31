@@ -1,5 +1,6 @@
 package com.frozendawn.command;
 
+import com.frozendawn.FrozenDawn;
 import com.frozendawn.config.ConfigPresets;
 import com.frozendawn.config.DifficultyPresetManager;
 import com.frozendawn.config.FrozenDawnConfig;
@@ -37,6 +38,83 @@ final class FrozenDawnWorldCommand {
     private static final SuggestionProvider<CommandSourceStack> SUBSTAGE_SUGGESTIONS = (context, builder) ->
             SharedSuggestionProvider.suggest(Arrays.asList("early", "mid", "late"), builder);
 
+    /** Builds a ruined ORSA reactor site 24 blocks ahead of the caller, for playtests. */
+    private static int placeReactorSite(CommandContext<CommandSourceStack> context) {
+        var source = context.getSource();
+        var look = net.minecraft.world.phys.Vec3.directionFromRotation(0, source.getRotation().y);
+        var at = source.getPosition().add(look.scale(24));
+        var center = com.frozendawn.world.ReactorSitePlacement.placeNow(source.getLevel(), (int) Math.floor(at.x), (int) Math.floor(at.z));
+        source.sendSuccess(() -> Component.literal("Ruined ORSA reactor site built at (" + center.getX() + ", " + center.getY() + ", " + center.getZ() + ")"), true);
+        return 1;
+    }
+
+    /** Buries a Helion site 24 blocks ahead of the caller, for playtests. */
+    private static int placeHelionSite(CommandContext<CommandSourceStack> context) {
+        var source = context.getSource();
+        var look = net.minecraft.world.phys.Vec3.directionFromRotation(0, source.getRotation().y);
+        var at = source.getPosition().add(look.scale(24));
+        var hall = com.frozendawn.world.HelionSitePlacement.placeNow(source.getLevel(), (int) Math.floor(at.x), (int) Math.floor(at.z));
+        source.sendSuccess(() -> Component.literal("Helion site buried at (" + hall.getX() + ", " + hall.getY() + ", " + hall.getZ() + ")"), true);
+        return 1;
+    }
+
+    /** Builds a complete SFR-1 that is off, 12 blocks ahead of the caller and sunk one block, for playtests. */
+    private static int placeSfrLab(CommandContext<CommandSourceStack> context) {
+        var source = context.getSource(); var level = source.getLevel();
+        var look = net.minecraft.world.phys.Vec3.directionFromRotation(0, source.getRotation().y);
+        var at = source.getPosition().add(look.scale(12));
+        int x = (int) Math.floor(at.x), z = (int) Math.floor(at.z);
+        // The bottom coil ring replaces the top ground block, so the Hatch's lower half stands at foot level.
+        var center = new net.minecraft.core.BlockPos(x, level.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z) + 1, z);
+        var lab = com.frozendawn.world.SfrLabPlacement.build(level, center);
+        if (lab.failedLinks() > 0) source.sendFailure(Component.literal(lab.failedLinks() + " SFR-1 lab link(s) failed"));
+        source.sendSuccess(() -> Component.literal("SFR-1 built, off, at (" + center.getX() + ", " + center.getY() + ", " + center.getZ() + "); Controller on the north side"), true);
+        return 1;
+    }
+
+    private static int placeIcarusLab(CommandContext<CommandSourceStack> context) {
+        var source = context.getSource(); var level = source.getLevel();
+        var look = net.minecraft.world.phys.Vec3.directionFromRotation(0, source.getRotation().y);
+        var at = source.getPosition().add(look.scale(16));
+        int x = (int) Math.floor(at.x), z = (int) Math.floor(at.z);
+        // The frame replaces the top ground block, so the support row stands at foot level; the Controller faces the player.
+        int ground = level.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z) - 1;
+        var core = new net.minecraft.core.BlockPos(x, ground - com.frozendawn.block.IcarusStructure.BOTTOM, z);
+        var facing = net.minecraft.core.Direction.fromYRot(source.getRotation().y).getOpposite();
+        var lab = com.frozendawn.world.IcarusLabPlacement.build(level, core, facing);
+        if (lab.failedLinks() > 0) source.sendFailure(Component.literal(lab.failedLinks() + " Icarus lab link(s) failed"));
+        source.sendSuccess(() -> Component.literal("AMR-1 Icarus built, cold and uncommissioned, core at (" + core.getX() + ", " + core.getY() + ", " + core.getZ() + "); Controller faces " + facing.getName()), true);
+        return 1;
+    }
+
+    /** Op playtest hook: refills the batteries near the source, such as a lab reactor's banks. */
+    private static int rechargeIcarusLab(CommandContext<CommandSourceStack> context) {
+        var source = context.getSource();
+        int banks = com.frozendawn.world.IcarusLabPlacement.recharge(source.getLevel(), net.minecraft.core.BlockPos.containing(source.getPosition()));
+        source.sendSuccess(() -> Component.literal("Recharged " + banks + " battery bank(s)"), true);
+        return banks;
+    }
+
+    private static final SuggestionProvider<CommandSourceStack> BLUEPRINTS = (context, builder) ->
+            SharedSuggestionProvider.suggest(java.util.stream.Stream.concat(java.util.stream.Stream.of("all"), com.frozendawn.data.FabricatorBlueprints.SLATES.stream()), builder);
+
+    /** Op playtest hook: learn or forget one Fabricator slate blueprint, or all of them. */
+    private static int blueprint(CommandContext<CommandSourceStack> context, boolean learn) {
+        var source = context.getSource();
+        var id = StringArgumentType.getString(context, "id");
+        var archive = com.frozendawn.data.FabricatorBlueprints.get(source.getServer());
+        var ids = id.equals("all") ? com.frozendawn.data.FabricatorBlueprints.SLATES : java.util.List.of(id);
+        if (!com.frozendawn.data.FabricatorBlueprints.SLATES.containsAll(ids)) {
+            source.sendFailure(Component.literal("Unknown blueprint: " + id));
+            return 0;
+        }
+        int changed = 0;
+        for (var each : ids) if (learn ? archive.learn(each) : archive.forget(each)) changed++;
+        int count = changed;
+        source.sendSuccess(() -> Component.literal((learn ? "Learned " : "Forgot ") + count + " blueprint(s)"), true);
+        return count;
+    }
+
     static LiteralArgumentBuilder<CommandSourceStack> worldCommands() {
         return Commands.literal("world")
                 .executes(context -> status(context, false))
@@ -44,6 +122,20 @@ final class FrozenDawnWorldCommand {
                         .executes(context -> status(context, false))
                         .then(Commands.literal("verbose")
                                 .executes(context -> status(context, true))))
+                .then(Commands.literal("rooms").executes(FrozenDawnWorldCommand::roomDiagnostics))
+                .then(Commands.literal("reactorsite").executes(FrozenDawnWorldCommand::placeReactorSite))
+                .then(Commands.literal("helionsite").executes(FrozenDawnWorldCommand::placeHelionSite))
+                .then(Commands.literal("sfrlab").executes(FrozenDawnWorldCommand::placeSfrLab))
+                .then(Commands.literal("icaruslab").executes(FrozenDawnWorldCommand::placeIcarusLab)
+                        .then(Commands.literal("recharge").executes(FrozenDawnWorldCommand::rechargeIcarusLab)))
+                .then(Commands.literal("blueprint")
+                        .then(Commands.literal("learn").then(Commands.argument("id", StringArgumentType.word()).suggests(BLUEPRINTS)
+                                .executes(context -> blueprint(context, true))))
+                        .then(Commands.literal("forget").then(Commands.argument("id", StringArgumentType.word()).suggests(BLUEPRINTS)
+                                .executes(context -> blueprint(context, false)))))
+                .then(Commands.literal("oxygen").executes(FrozenDawnWorldCommand::oxygenDiagnostics)
+                        .then(Commands.literal("here").executes(FrozenDawnWorldCommand::oxygenHere)))
+                .then(Commands.literal("thermal").executes(FrozenDawnWorldCommand::thermalDiagnostics))
                 .then(Commands.literal("catchup").executes(FrozenDawnWorldCommand::catchupStatus))
                 .then(Commands.literal("set")
                         .then(Commands.literal("day")
@@ -66,6 +158,59 @@ final class FrozenDawnWorldCommand {
                         .then(Commands.argument("name", StringArgumentType.word())
                                 .suggests(PRESET_SUGGESTIONS)
                                 .executes(FrozenDawnWorldCommand::applyPreset)));
+    }
+
+    private static int thermalDiagnostics(CommandContext<CommandSourceStack> context) {
+        var rooms=com.frozendawn.world.RoomThermalManager.snapshots(context.getSource().getLevel());
+        FrozenDawnCommandOutput.line(context.getSource(),"Room heat",rooms.size()+" loaded thermal records; air / structure model");
+        for(var room:rooms.stream().limit(16).toList()) FrozenDawnCommandOutput.detail(context.getSource(),"Room "+room.id(),
+                String.format(Locale.ROOT,"air %s | walls %.1fC | felt %.1fC | K %.2f | heater %.0f + passive %.0f | fins %d/%.2f | %s",
+                        room.airPresent()?String.format(Locale.ROOT,"%.1fC",room.airTemperature()):"depleted",room.structureTemperature(),
+                        room.feltTemperature(),room.conductance(),room.heaterPower(),room.passivePower(),room.coolingVents(),room.coolingConductance(),room.suspended()?"suspended":room.sealed()?"sealed":"open"));
+        return 1;
+    }
+
+    private static int oxygenDiagnostics(CommandContext<CommandSourceStack> context) {
+        var level=context.getSource().getLevel();var rooms=com.frozendawn.world.RoomOxygenManager.snapshots(level);
+        FrozenDawnCommandOutput.line(context.getSource(),"Room O2 accounting",rooms.size()+" cached rooms; one unit = one player's breathing rate");
+        for(var r:rooms.stream().limit(32).toList())FrozenDawnCommandOutput.detail(context.getSource(),"Room "+r.room(),String.format(Locale.ROOT,
+                "pool %d | %s | supply %.2f / demand %.2f | local %.2f | %d sources / %d rooms",r.pool(),r.mode(),r.supply(),r.demand(),r.localDemand(),r.sources(),r.rooms()));
+        if(rooms.size()>32)FrozenDawnCommandOutput.detail(context.getSource(),"Remaining",(rooms.size()-32)+" rooms omitted");return 1;
+    }
+    /** Short owner readout; retain exact cached metadata in the log for the read-only console. */
+    private static int oxygenHere(CommandContext<CommandSourceStack> context) {
+        var source=context.getSource();
+        var r=com.frozendawn.world.RoomOxygenManager.readingAt(source.getLevel(),BlockPos.containing(source.getPosition()));
+        String state=switch(r.mode()) {
+            case ON_RESERVE -> "ON RESERVE"; case SUPPLIED -> "SUPPORTED"; case LOW -> "NEAR CAPACITY";
+            case BREATHING_SHORTAGE -> "O2 SHORTAGE"; case NO_OXYGEN -> "NO O2"; case TRAPPED_AIR -> "NO SUPPLY"; case NO_AIR -> "NO AIR";
+            case NO_SEAL -> "NO SEAL"; case OPEN_AIR -> "OPEN AIR";
+            default -> r.mode().name();
+        };
+        FrozenDawnCommandOutput.line(source,"O2",String.format(Locale.ROOT,"supply %.2f / demand %.2f | %s",r.supply(),r.demand(),state));
+        FrozenDawn.LOGGER.info("[RoomO2] Room O2 accounting: {} cached rooms; current-room sample",r.room()>0?1:0);
+        if(r.room()>0)FrozenDawn.LOGGER.info(String.format(Locale.ROOT,
+                "[RoomO2]   Room %d: pool %d | %s | supply %.2f / demand %.2f | local %.2f | %d sources / %d rooms",
+                r.room(),r.pool(),r.mode(),r.supply(),r.demand(),r.localDemand(),r.sources(),r.rooms()));
+        var reserve=com.frozendawn.world.RoomOxygenManager.storageAt(source.getLevel(),BlockPos.containing(source.getPosition()));
+        if(reserve.tanks()>0){FrozenDawnCommandOutput.detail(source,"Reserve",String.format(Locale.ROOT,"%.1fs stored | output %.2f | charging %.2f",reserve.stored(),reserve.output(),reserve.charging()));FrozenDawn.LOGGER.info(String.format(Locale.ROOT,"[RoomO2] Storage pool %d | stored %.3f / %.0f player-seconds | output %.3f / charging %.3f | %d tanks | connected %s | remaining %.1fs",r.pool(),reserve.stored(),reserve.capacity(),reserve.output(),reserve.charging(),reserve.tanks(),reserve.connected(),reserve.secondsRemaining()));}
+        return 1;
+    }
+
+    private static int roomDiagnostics(CommandContext<CommandSourceStack> context) {
+        var level = context.getSource().getLevel();
+        var rooms = com.frozendawn.world.RoomAtmosphere.cachedRoomDiagnostics(level);
+        FrozenDawnCommandOutput.line(context.getSource(), "Cached rooms", rooms.size() + " records (inspection does not renew them)");
+        for (var room : rooms.stream().limit(32).toList()) {
+            var first = room.geometry().cells().stream().min(java.util.Comparator.comparingLong(BlockPos::asLong)).orElseThrow();
+            FrozenDawnCommandOutput.detail(context.getSource(), "Room " + room.id(),
+                    room.geometry().cells().size() + " cells | anchor " + first.toShortString()
+                    + " | " + (room.uncertain() ? "unknown" : room.active() ? "infrastructure-active" : "passive")
+                    + " | idle " + room.idleTicks() + "t | last query " + room.lastQueryReason()
+                    + " " + room.lastQueryAge() + "t ago");
+        }
+        if (rooms.size() > 32) FrozenDawnCommandOutput.detail(context.getSource(), "Remaining", (rooms.size()-32) + " records omitted");
+        return 1;
     }
 
     private static int status(CommandContext<CommandSourceStack> context, boolean verbose) {
@@ -107,6 +252,27 @@ final class FrozenDawnWorldCommand {
                 String.format(Locale.ROOT, "%.2f", state.getSunScale()));
         FrozenDawnCommandOutput.detail(context.getSource(), "Sky light",
                 String.format(Locale.ROOT, "%.0f%%", state.getSkyLight() * 100));
+        if (context.getSource().getEntity() instanceof net.minecraft.server.level.ServerPlayer player) {
+            var room = com.frozendawn.world.RoomAtmosphere.view(player.serverLevel(), player.blockPosition());
+            FrozenDawnCommandOutput.detail(context.getSource(), "Pressure room", room == null
+                    ? "Unsealed or unknown" : "ID " + room.id() + " | " + room.geometry().cells().size() + " air cells"
+                    + " | " + room.geometry().boundaryFaces().size() + " boundary faces");
+            var changes = com.frozendawn.world.RoomAtmosphere.changeStats(player.serverLevel());
+            FrozenDawnCommandOutput.detail(context.getSource(), "Room changes (runtime total)",
+                    "geometry " + changes.geometry() + " | material " + changes.material() + " | air " + changes.air()
+                    + " | last " + (changes.last() == null ? "none" : changes.last().name()));
+            var activity = com.frozendawn.world.RoomAtmosphere.activityStats(player.serverLevel());
+            FrozenDawnCommandOutput.detail(context.getSource(), "Room activity (runtime total)",
+                    activity.tracked() + " tracked | " + activity.active() + " infrastructure-active");
+        }
+        FrozenDawnCommandOutput.detail(context.getSource(), "Ground cold front",
+                String.format(Locale.ROOT, "diffusivity %.0f", FrozenDawnConfig.GROUND_DIFFUSIVITY.get()));
+        for (int y : new int[]{64, 32, 0, -32, -64}) {
+            FrozenDawnCommandOutput.detail(context.getSource(), "Background Y=" + y,
+                    String.format(Locale.ROOT, "%.1fC (before shelter and heat sources)",
+                            com.frozendawn.world.TemperatureManager.getBackgroundTemperature(y,
+                                    state.getCurrentDay(), state.getTotalDays())));
+        }
         if (winEnabled) {
             WinConditionState winState = WinConditionState.get(server);
             FrozenDawnCommandOutput.detail(context.getSource(), "Win state",

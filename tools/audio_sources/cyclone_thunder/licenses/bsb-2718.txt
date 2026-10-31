@@ -1,0 +1,10 @@
+Frozen Dawn individual-source license record
+Retrieved UTC: 2026-10-20T11:16:56.894588+00:00
+Source: https://bigsoundbank.com/thunder-s2718.html
+Creator: Joseph SARDIN
+Title: Thunder #1
+Individual page license: CC0 (public domain), free and royalty-free
+Canonical license: https://creativecommons.org/publicdomain/zero/1.0/
+Additional source license page: https://bigsoundbank.com/licenses.html
+Raw source page SHA-256: 038ce9d2c93cfa24ec85cafbc7d17cad15ab8a627fa1b772c2244ec2a1650d67
+Raw HTML retained only in ignored build evidence; no page scripts/tokens tracked.

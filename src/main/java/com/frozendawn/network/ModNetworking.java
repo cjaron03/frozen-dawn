@@ -40,6 +40,76 @@ public class ModNetworking {
     @SubscribeEvent
     public static void onRegisterPayloads(RegisterPayloadHandlersEvent event) {
         PayloadRegistrar registrar = event.registrar(FrozenDawn.MOD_ID);
+        registrar.playToClient(CycloneSyncPayload.TYPE, CycloneSyncPayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(() -> ClientHandlers.handleCyclone(payload)));
+
+        registrar.playToClient(AuroraStatePayload.TYPE, AuroraStatePayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(() -> ClientHandlers.handleAurora(payload)));
+
+        registrar.playToServer(IcarusSettingsPayload.TYPE, IcarusSettingsPayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(() -> {
+                    if (context.player() instanceof ServerPlayer player) IcarusSettingsPayload.handle(player, payload);
+                }));
+        registrar.playToServer(HeadlampTogglePayload.TYPE, HeadlampTogglePayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(() -> {
+                    if (context.player() instanceof ServerPlayer player) HeadlampTogglePayload.handle(player);
+                }));
+
+        registrar.playToClient(PowerBinderPayload.TYPE, PowerBinderPayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(() -> ClientHandlers.handlePowerBinder(payload)));
+        registrar.playToClient(PowerBinderNoticePayload.TYPE, PowerBinderNoticePayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(() -> ClientHandlers.handlePowerBinderNotice(payload)));
+
+        registrar.playToClient(ReactorFlashPayload.TYPE, ReactorFlashPayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(() -> ClientHandlers.handleReactorFlash(payload)));
+        registrar.playToClient(IcarusBlastPayload.TYPE, IcarusBlastPayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(() -> ClientHandlers.handleIcarusBlast(payload)));
+        registrar.playToClient(IcarusCraterSitesPayload.TYPE, IcarusCraterSitesPayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(() -> ClientHandlers.handleIcarusCraterSites(payload)));
+        registrar.playToClient(RadiationPayload.TYPE, RadiationPayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(() -> ClientHandlers.handleRadiation(payload)));
+
+        registrar.playToClient(PlumbLineReturnsPayload.TYPE, PlumbLineReturnsPayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(() -> com.frozendawn.client.PlumbLineOverlay.receive(payload)));
+
+        registrar.playToClient(SfrBlueprintPayload.TYPE, SfrBlueprintPayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(() -> ClientHandlers.handleSfrBlueprint(payload)));
+        registrar.playToClient(IcarusBlueprintPayload.TYPE, IcarusBlueprintPayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(() -> ClientHandlers.handleIcarusBlueprint(payload)));
+
+        registrar.playToClient(PowerLinksPayload.TYPE, PowerLinksPayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(() -> ClientHandlers.handlePowerLinks(payload)));
+
+        registrar.playToClient(RoomOxygenWarningPayload.TYPE, RoomOxygenWarningPayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(() -> ClientHandlers.handleRoomOxygenWarning(payload)));
+
+        registrar.playToClient(RoomPressureStatePayload.TYPE, RoomPressureStatePayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(() -> ClientHandlers.handleRoomPressureState(payload)));
+
+        registrar.playToClient(AirlockStatusPayload.TYPE, AirlockStatusPayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(() -> ClientHandlers.handleAirlockStatus(payload)));
+
+        registrar.playToClient(SuffocationStatePayload.TYPE, SuffocationStatePayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(() -> ClientHandlers.handleSuffocationState(payload)));
+
+        registrar.playToClient(RoomRecoveryPayload.TYPE, RoomRecoveryPayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(() -> ClientHandlers.handleRoomRecovery(payload)));
+
+        registrar.playToClient(AtmosphericBreachPayload.TYPE, AtmosphericBreachPayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(() -> ClientHandlers.handleAtmosphericBreach(payload)));
+
+        registrar.playToClient(EmergencyEvaPayload.TYPE, EmergencyEvaPayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(() -> ClientHandlers.handleEmergencyEva(payload)));
+
+        registrar.playToClient(ContinuityRecoveryPayload.TYPE, ContinuityRecoveryPayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(() -> ClientHandlers.handleContinuityRecovery(payload)));
+
+        registrar.playToServer(ContinuityTargetPayload.TYPE, ContinuityTargetPayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(() -> {
+                    if (context.player() instanceof ServerPlayer player) {
+                        com.frozendawn.event.ContinuityRecoveryHandler.selectTarget(player, payload.issue(), payload.shelter());
+                    }
+                }));
 
         registrar.playToClient(ArchitectDebugPayload.TYPE, ArchitectDebugPayload.STREAM_CODEC,
                 (payload, context) -> context.enqueueWork(() -> ClientHandlers.handleArchitectDebug(payload)));
@@ -235,6 +305,12 @@ public class ModNetworking {
                 OpenThaevenArchivePayload.STREAM_CODEC,
                 (payload, context) -> context.enqueueWork(
                         () -> ClientHandlers.handleOpenThaevenArchive(payload))
+        );
+        registrar.playToClient(
+                OpenScribeRecordPayload.TYPE,
+                OpenScribeRecordPayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(
+                        () -> ClientHandlers.handleOpenScribeRecord(payload))
         );
         registrar.playToClient(
                 StillpointFieldPayload.TYPE,

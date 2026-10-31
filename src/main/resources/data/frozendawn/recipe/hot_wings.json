@@ -4,9 +4,7 @@
     {
       "item": "minecraft:cooked_chicken"
     },
-    {
-      "item": "minecraft:blaze_powder"
-    }
+    { "tag": "frozendawn:igniter" }
   ],
   "result": {
     "id": "frozendawn:hot_wings",

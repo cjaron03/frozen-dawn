@@ -1,0 +1,30 @@
+{
+  "type": "frozendawn:fabricating",
+  "blueprint": "high_temperature_radiator",
+  "ingredients": [
+    {
+      "ingredient": {
+        "item": "frozendawn:reactor_radiator"
+      },
+      "count": 1
+    },
+    {
+      "ingredient": {
+        "item": "minecraft:copper_ingot"
+      },
+      "count": 4
+    },
+    {
+      "ingredient": {
+        "item": "frozendawn:refined_acheronite"
+      },
+      "count": 2
+    }
+  ],
+  "result": {
+    "id": "frozendawn:high_temperature_radiator",
+    "count": 1
+  },
+  "watts": 10000,
+  "seconds": 60
+}

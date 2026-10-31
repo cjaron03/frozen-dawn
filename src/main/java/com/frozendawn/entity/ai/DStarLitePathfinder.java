@@ -4,6 +4,7 @@ import com.frozendawn.entity.architect.BreakChoice;
 import com.frozendawn.entity.architect.ArchitectWalkGeometry;
 import com.frozendawn.entity.architect.ArchitectBlockEnvironment;
 import com.frozendawn.entity.architect.BreakReason;
+import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.tags.BlockTags;
@@ -115,6 +116,13 @@ public class DStarLitePathfinder {
 
     private final Set<Long> immuneBlocks = new HashSet<>();
 
+    // --- Edge costs priced during the current computePartial call ---
+    // updateVertex prices every edge of a cell each time the cell is updated, and a search updates the same cells
+    // many times. A price depends only on the world and on settings that change between calls, never during one,
+    // so within a call it is fixed: cache it by origin cell and neighbour slot, and drop the cache when the call ends.
+    private final Long2ObjectOpenHashMap<float[]> callEdgeCosts = new Long2ObjectOpenHashMap<>();
+    private boolean cachingEdgeCosts;
+
     // --- D* Lite state ---
     private long goalPacked;
     private long startPacked;
@@ -129,6 +137,14 @@ public class DStarLitePathfinder {
     private boolean reinitEventLogged = false;
     private boolean searchAborted = false;
     private boolean searchAbortEventLogged = false;
+    private boolean observedWalkOnly;
+    private List<BlockPos> observedDangers = List.of();
+
+    /** A short recoverable positioning route: loaded, level walking only, with observed danger costs. */
+    public void configureObservedWalk(List<BlockPos> dangers) {
+        observedWalkOnly = true;
+        observedDangers = dangers.stream().limit(8).map(BlockPos::immutable).toList();
+    }
 
     // --- Public accessors ---
     public boolean isInitialized() { return initialized; }
@@ -272,6 +288,16 @@ public class DStarLitePathfinder {
      * Returns true when search is complete.
      */
     public boolean computePartial(int maxIterations, Level level) {
+        cachingEdgeCosts = true;
+        try {
+            return searchPartial(maxIterations, level);
+        } finally {
+            cachingEdgeCosts = false;
+            callEdgeCosts.clear();
+        }
+    }
+
+    private boolean searchPartial(int maxIterations, Level level) {
         if (!initialized) return false;
 
         int iterations = 0;
@@ -781,6 +807,35 @@ public class DStarLitePathfinder {
     // ========================================
 
     private float edgeCost(long fromPacked, long toPacked, Level level) {
+        if (!cachingEdgeCosts) return priceEdge(fromPacked, toPacked, level);
+        int dx = BlockPos.getX(toPacked) - BlockPos.getX(fromPacked);
+        int dy = BlockPos.getY(toPacked) - BlockPos.getY(fromPacked);
+        int dz = BlockPos.getZ(toPacked) - BlockPos.getZ(fromPacked);
+        if (Math.abs(dx) > 1 || Math.abs(dy) > 1 || Math.abs(dz) > 1) return priceEdge(fromPacked, toPacked, level);
+        float[] costs = callEdgeCosts.get(fromPacked);
+        if (costs == null) {
+            costs = new float[27];
+            Arrays.fill(costs, Float.NaN);
+            callEdgeCosts.put(fromPacked, costs);
+        }
+        int slot = (dx + 1) * 9 + (dy + 1) * 3 + dz + 1;
+        float cost = costs[slot];
+        if (Float.isNaN(cost)) {
+            cost = priceEdge(fromPacked, toPacked, level);
+            costs[slot] = cost;
+        }
+        return cost;
+    }
+
+    private float priceEdge(long fromPacked, long toPacked, Level level) {
+        if (observedWalkOnly) {
+            BlockPos from = BlockPos.of(fromPacked), to = BlockPos.of(toPacked);
+            if (to.distSqr(goalPos) > 24 * 24
+                    || !ArchitectWalkGeometry.canObservedWalkTransition(level, from, to)) return INF;
+            float penalty = 0;
+            for (BlockPos danger : observedDangers) if (danger.distSqr(to) <= 9) penalty += 4;
+            return BASE_MOVE_COST + Math.min(16, penalty);
+        }
         int fx = BlockPos.getX(fromPacked), fy = BlockPos.getY(fromPacked), fz = BlockPos.getZ(fromPacked);
         int tx = BlockPos.getX(toPacked), ty = BlockPos.getY(toPacked), tz = BlockPos.getZ(toPacked);
         BlockPos fromPos = new BlockPos(fx, fy, fz);

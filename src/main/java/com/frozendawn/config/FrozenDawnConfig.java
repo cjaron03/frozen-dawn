@@ -5,6 +5,9 @@ import net.neoforged.neoforge.common.ModConfigSpec;
 public class FrozenDawnConfig {
     private static final ModConfigSpec.Builder BUILDER = new ModConfigSpec.Builder();
 
+    public static final ModConfigSpec.IntValue O2_RESERVOIR_CAPACITY;
+    public static final ModConfigSpec.DoubleValue O2_RESERVOIR_FILL_RATE, O2_RESERVOIR_OUTPUT_RATE;
+
     // General
     public static final ModConfigSpec.IntValue TOTAL_DAYS;
     public static final ModConfigSpec.IntValue STARTING_DAY;
@@ -13,6 +16,7 @@ public class FrozenDawnConfig {
     // Temperature
     public static final ModConfigSpec.IntValue BASE_PHASE5_TEMP;
     public static final ModConfigSpec.DoubleValue GEOTHERMAL_STRENGTH;
+    public static final ModConfigSpec.DoubleValue GROUND_DIFFUSIVITY;
     public static final ModConfigSpec.DoubleValue HEAT_SOURCE_MULTIPLIER;
 
     // Gameplay
@@ -102,8 +106,12 @@ public class FrozenDawnConfig {
     public static final ModConfigSpec.IntValue STILLPOINT_RADIUS;
     public static final ModConfigSpec.DoubleValue POST_MAEVE_AMBIENT_VOLUME_MULTIPLIER;
     public static final ModConfigSpec.BooleanValue DEBUG_FORCE_MAEVE_ERASED;
+    public static final ModConfigSpec.BooleanValue ICARUS_TERRAIN_DESTRUCTION;
 
     // Client
+    public static final ModConfigSpec.DoubleValue CYCLONE_FLASH_INTENSITY;
+    public static final ModConfigSpec.BooleanValue CYCLONE_CAMERA_SHAKE;
+    public static final ModConfigSpec.BooleanValue ICARUS_REDUCED_FLASH;
     public static final ModConfigSpec.BooleanValue ENABLE_SKY_DARKENING;
     public static final ModConfigSpec.BooleanValue ENABLE_FROST_OVERLAY;
     public static final ModConfigSpec.BooleanValue ENABLE_SKY_COLOR_SHIFT;
@@ -124,9 +132,19 @@ public class FrozenDawnConfig {
     public static final ModConfigSpec.DoubleValue POST_MAEVE_DEBRIS_DENSITY;
     public static final ModConfigSpec.BooleanValue ENABLE_SUIT_PUNCTURE_OVERLAY;
 
+    public static final ModConfigSpec.BooleanValue CYCLONES_ENABLED, CYCLONE_CATASTROPHIC_ENABLED;
+    public static final ModConfigSpec.IntValue CYCLONE_MAX_PER_PHASE;
+    public static final ModConfigSpec.DoubleValue CYCLONE_CATASTROPHIC_CHANCE, CYCLONE_PUSH_SCALE;
+    public static final ModConfigSpec.DoubleValue CYCLONE_PEAK_OFFSET_MODERATE, CYCLONE_PEAK_OFFSET_SEVERE, CYCLONE_PEAK_OFFSET_CATASTROPHIC;
+    public static final ModConfigSpec.DoubleValue CYCLONE_VISIBILITY_MODERATE, CYCLONE_VISIBILITY_SEVERE, CYCLONE_VISIBILITY_CATASTROPHIC;
     public static final ModConfigSpec SPEC;
 
     static {
+        BUILDER.push("roomOxygenStorage");
+        O2_RESERVOIR_CAPACITY=BUILDER.comment("Reservoir capacity in player-seconds (ten item units each).").defineInRange("capacity",1200,1,86400);
+        O2_RESERVOIR_FILL_RATE=BUILDER.comment("Maximum spare production stored per second, in player breathing rates.").defineInRange("fillRate",4.0,0.0,64.0);
+        O2_RESERVOIR_OUTPUT_RATE=BUILDER.comment("Maximum reservoir discharge per second, in player breathing rates.").defineInRange("outputRate",8.0,0.0,64.0);
+        BUILDER.pop();
         BUILDER.push("general");
         TOTAL_DAYS = BUILDER
                 .comment("Total in-game days until phase 6 atmospheric collapse is complete.",
@@ -151,6 +169,11 @@ public class FrozenDawnConfig {
                         "Preset-managed: overwritten by /frozendawn preset command.",
                         "Higher values = more warmth underground. Affects Geothermal Core effectiveness.")
                 .defineInRange("geothermalStrength", 1.0, 0.0, 5.0);
+        GROUND_DIFFUSIVITY = BUILDER
+                .comment("Ground cold-front diffusivity in blocks squared per unit of apocalypse progress.",
+                        "Larger values cool deep ground faster. Default/Cinematic: 8000; Brutal: 12000.",
+                        "Preset-managed: overwritten by /frozendawn preset command.")
+                .defineInRange("groundDiffusivity", 8000.0, 1.0, 100000.0);
         HEAT_SOURCE_MULTIPLIER = BUILDER
                 .comment("Multiplier for heat source warmth (campfires, furnaces, Thermal Heaters, Geothermal Core).",
                         "Preset-managed: overwritten by /frozendawn preset command.",
@@ -442,9 +465,21 @@ public class FrozenDawnConfig {
         DEBUG_FORCE_MAEVE_ERASED = BUILDER
                 .comment("DEBUG ONLY: treat Maeve as erased without changing saved world state.")
                 .define("debugForceMaeveErased", false);
+        ICARUS_TERRAIN_DESTRUCTION = BUILDER
+                .comment("Whether an Icarus detonation carves a crater and thaws the ground around it. Entity damage happens either way.")
+                .define("icarusTerrainDestruction", true);
         BUILDER.pop();
 
         BUILDER.push("client");
+        CYCLONE_FLASH_INTENSITY = BUILDER
+                .comment("Cyclone flash strength: 0 disables, values below 1 use reduced atmosphere-only flashes, 1 includes vanilla sky lighting.",
+                        "Also respects Minecraft Hide Lightning Flashes. Thunder audio is preserved.")
+                .defineInRange("cycloneFlashIntensity", 1.0D, 0.0D, 1.0D);
+        CYCLONE_CAMERA_SHAKE = BUILDER.comment("Optional exposed cyclone wind camera movement; off by default.")
+                .define("cycloneCameraShake", false);
+        ICARUS_REDUCED_FLASH = BUILDER
+                .comment("Soften an Icarus detonation's flash: at most 35% white and no strobe.")
+                .define("icarusReducedFlash", false);
         ENABLE_SKY_DARKENING = BUILDER
                 .comment("Enable progressive sky darkening and fog")
                 .define("enableSkyDarkening", true);
@@ -510,6 +545,21 @@ public class FrozenDawnConfig {
                 .define("enableSuitPunctureOverlay", true);
         BUILDER.pop();
 
+        BUILDER.push("cyclone");
+        CYCLONES_ENABLED = BUILDER.comment("Enable regional Phase 5 bomb cyclones.").define("enabled", true);
+        CYCLONE_PUSH_SCALE = BUILDER.comment("Horizontal cyclone drift multiplier; zero disables drift. Headwind resistance still applies.").defineInRange("pushScale", 1.0, 0.0, 2.0);
+        CYCLONE_MAX_PER_PHASE = BUILDER.defineInRange("maxPerPhase", 4, 0, 4);
+        CYCLONE_CATASTROPHIC_ENABLED = BUILDER.define("catastrophicEnabled", true);
+        CYCLONE_CATASTROPHIC_CHANCE = BUILDER.defineInRange("catastrophicChance", .05, 0, 1);
+        CYCLONE_PEAK_OFFSET_MODERATE = BUILDER.comment("Peak surface temperature offset in Celsius; negative values make the storm colder. Applies on the server.")
+                .defineInRange("peakOffsetModerate", -8.0, -100.0, 0.0);
+        CYCLONE_PEAK_OFFSET_SEVERE = BUILDER.defineInRange("peakOffsetSevere", -19.0, -100.0, 0.0);
+        CYCLONE_PEAK_OFFSET_CATASTROPHIC = BUILDER.defineInRange("peakOffsetCatastrophic", -30.0, -100.0, 0.0);
+        CYCLONE_VISIBILITY_MODERATE = BUILDER.comment("Peak outdoor visibility in blocks. Server values are sent to clients; goggles retain at least their normal cyclone reach.")
+                .defineInRange("visibilityModerate", 8.0, 1.0, 128.0);
+        CYCLONE_VISIBILITY_SEVERE = BUILDER.defineInRange("visibilitySevere", 4.0, 1.0, 128.0);
+        CYCLONE_VISIBILITY_CATASTROPHIC = BUILDER.defineInRange("visibilityCatastrophic", 2.0, 1.0, 128.0);
+        BUILDER.pop();
         SPEC = BUILDER.build();
     }
 }

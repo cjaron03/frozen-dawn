@@ -1,0 +1,9 @@
+Frozen Dawn individual-source license record
+Retrieved UTC: 2026-10-20T11:08:52.364525+00:00
+Source: https://freesound.org/people/loganzsound/sounds/840628/
+Creator: loganzsound
+Title: Closeup Thunder Strike 01
+Individual page license label: Creative Commons 0
+Individual page license link: https://creativecommons.org/publicdomain/zero/1.0/
+Raw source page SHA-256: db48f0328b90617e5b0b039ade3b7197caf86ea053b236a4bc4520ddf906d7f6
+Raw HTML retained only under ignored build/cyclone-evidence/thunder-recorded-mix/raw-source-pages; no page scripts/tokens tracked.

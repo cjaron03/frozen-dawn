@@ -1,5 +1,5 @@
 {
-  "name": "The Northern Star Independent",
+  "name": "The Northern Star",
   "category": "frozendawn:orsa_intel",
   "icon": "minecraft:paper",
   "sortnum": 11,
@@ -8,12 +8,20 @@
     {
       "type": "patchouli:text",
       "title": "THE NORTHERN STAR",
-      "text": "$(bold)\"The News They Won't Print\"$()$(br)$(italic)Issue #204 (Final)$()$(br2)Editor's Note:$(br2)This is the final issue of The Northern Star Independent. Our printing equipment is frozen solid. I am writing this by hand and will photocopy it at the library, assuming the library still has power."
+      "text": "$(bold)\"The News They Won't Print\"$()$(br)$(italic)Issue #204 (Final)$()$(br2)Editor's Note:$(br2)This is the final issue of The Northern Star Independent. Our printing equipment is frozen solid."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "I am writing this by hand and will photocopy it at the library, assuming the library still has power."
     },
     {
       "type": "patchouli:text",
       "title": "11 Years of Warnings",
-      "text": "For eleven years I have published warnings about solar instability and orbital drift. I published 204 issues of this newsletter.$(br2)I was called a \"dangerous crank\" by a planetary scientist on television. My hard drive was wiped during a DHS visit. My subscriber count dropped from 43 to 12.$(br2)In 2013, NASA quietly revised their orbital mechanics dataset. The revision was consistent with everything I had published since 2003."
+      "text": "For eleven years I have published warnings about solar instability and orbital drift. I published 204 issues of this newsletter.$(br2)I was called a \"dangerous crank\" by a planetary scientist on television. My hard drive was wiped during a DHS visit."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "My subscriber count dropped from 43 to 12.$(br2)In 2013, NASA quietly revised their orbital mechanics dataset. The revision was consistent with everything I had published since 2003."
     },
     {
       "type": "patchouli:text",

@@ -1,0 +1,67 @@
+{
+  "name": "Decon Shower",
+  "category": "frozendawn:radiation",
+  "icon": "frozendawn:decon_shower",
+  "sortnum": 4,
+  "pages": [
+    {
+      "type": "patchouli:spotlight",
+      "item": "frozendawn:decon_shower",
+      "text": "Washes off contamination and visor grime.",
+      "title": "Decon Shower"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Setup",
+      "text": "Hang it under a sturdy ceiling and link power with the Binder. Put a water, ice or snow block beside or above it as its tank."
+    },
+    {
+      "type": "patchouli:multiblock",
+      "name": "Shower Stall",
+      "enable_visualize": false,
+      "multiblock": {
+        "pattern": [
+          [
+            "SSS",
+            "SIS",
+            "SSS"
+          ],
+          [
+            "   ",
+            " D ",
+            "   "
+          ],
+          [
+            "   ",
+            "   ",
+            "   "
+          ],
+          [
+            "FFF",
+            "F0F",
+            "FFF"
+          ]
+        ],
+        "mapping": {
+          "S": "minecraft:stone_bricks",
+          "I": "minecraft:ice",
+          "D": "frozendawn:decon_shower",
+          "F": "minecraft:polished_andesite",
+          "0": "minecraft:polished_andesite"
+        }
+      },
+      "text": "Ice in the ceiling as its tank, shower hung below."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Use",
+      "text": "Stand within 3 blocks below it. It draws $(bold)3 kW$() only while someone is under it.$(br2)A starved shower shows by name on the $(l:power/monitor)Power Monitor$(/l)."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:decon_shower",
+      "text": "Copper, iron and a bucket.",
+      "title": "Decon Shower"
+    }
+  ]
+}

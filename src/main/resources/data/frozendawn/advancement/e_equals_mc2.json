@@ -1,0 +1,23 @@
+{
+  "parent": "frozendawn:phase6",
+  "display": {
+    "icon": {
+      "id": "frozendawn:halsey_core"
+    },
+    "title": {
+      "translate": "advancement.frozendawn.e_equals_mc2.title"
+    },
+    "description": {
+      "translate": "advancement.frozendawn.e_equals_mc2.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": true
+  },
+  "criteria": {
+    "impossible": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

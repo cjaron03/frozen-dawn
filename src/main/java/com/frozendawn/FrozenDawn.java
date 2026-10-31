@@ -10,12 +10,14 @@ import com.frozendawn.init.ModBlocks;
 import com.frozendawn.init.ModDataComponents;
 import com.frozendawn.init.ModEntities;
 import com.frozendawn.init.ModEffects;
+import com.frozendawn.init.ModFeatures;
 import com.frozendawn.init.ModFluids;
 import com.frozendawn.init.ModItems;
 import com.frozendawn.init.ModLootModifiers;
 import com.frozendawn.init.ModMenuTypes;
 import com.frozendawn.init.ModParticles;
 import com.frozendawn.init.ModRecipeSerializers;
+import com.frozendawn.init.ModRecipeTypes;
 import com.frozendawn.init.ModSounds;
 import com.mojang.logging.LogUtils;
 import net.neoforged.bus.api.IEventBus;
@@ -44,11 +46,13 @@ public class FrozenDawn {
         ModBlockEntities.BLOCK_ENTITIES.register(modEventBus);
         ModMenuTypes.MENU_TYPES.register(modEventBus);
         ModRecipeSerializers.RECIPE_SERIALIZERS.register(modEventBus);
+        ModRecipeTypes.RECIPE_TYPES.register(modEventBus);
         ModLootModifiers.LOOT_MODIFIERS.register(modEventBus);
         ModSounds.SOUNDS.register(modEventBus);
         ModParticles.PARTICLES.register(modEventBus);
         ModEntities.ENTITIES.register(modEventBus);
         ModEffects.EFFECTS.register(modEventBus);
+        ModFeatures.FEATURES.register(modEventBus);
 
         modContainer.registerConfig(ModConfig.Type.COMMON, FrozenDawnConfig.SPEC);
         modContainer.registerConfig(ModConfig.Type.CLIENT, FrozenDawnClientConfig.SPEC);

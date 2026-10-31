@@ -1,0 +1,36 @@
+{
+  "variants": {
+    "facing=north,lit=false": {
+      "model": "frozendawn:block/isotope_column",
+      "y": 0
+    },
+    "facing=north,lit=true": {
+      "model": "frozendawn:block/isotope_column_on",
+      "y": 0
+    },
+    "facing=east,lit=false": {
+      "model": "frozendawn:block/isotope_column",
+      "y": 90
+    },
+    "facing=east,lit=true": {
+      "model": "frozendawn:block/isotope_column_on",
+      "y": 90
+    },
+    "facing=south,lit=false": {
+      "model": "frozendawn:block/isotope_column",
+      "y": 180
+    },
+    "facing=south,lit=true": {
+      "model": "frozendawn:block/isotope_column_on",
+      "y": 180
+    },
+    "facing=west,lit=false": {
+      "model": "frozendawn:block/isotope_column",
+      "y": 270
+    },
+    "facing=west,lit=true": {
+      "model": "frozendawn:block/isotope_column_on",
+      "y": 270
+    }
+  }
+}
