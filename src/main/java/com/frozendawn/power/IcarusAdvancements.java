@@ -43,7 +43,8 @@ public final class IcarusAdvancements {
             var be = l.getBlockEntity(cell);
             if (be instanceof com.frozendawn.block.GeothermalCoreBlockEntity core && core.getPowerShare() > 0) geothermal = true;
             else if (be instanceof com.frozendawn.block.ReactorControllerBlockEntity cfu && cfu.powerWatts() > 0) fission = true;
-            else if (be instanceof com.frozendawn.block.SfrControllerBlockEntity sfr && sfr.readout().netKw() > 0) fusion = true;
+            // The Solstice joins a grid by its power port, not its Controller.
+            else if (be instanceof com.frozendawn.block.SfrPowerPortBlockEntity sfr && sfr.supplyWatts() > 0) fusion = true;
             if (geothermal && fission && fusion) return true;
         }
         return false;

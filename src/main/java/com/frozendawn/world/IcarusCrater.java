@@ -1,6 +1,9 @@
 package com.frozendawn.world;
 
 import com.frozendawn.FrozenDawn;
+import com.frozendawn.data.ThaevenLoreSavedData;
+import com.frozendawn.init.ModBlocks;
+import com.frozendawn.item.OrsaDocumentItem;
 import com.frozendawn.mixin.HeightmapAccessor;
 import com.frozendawn.power.IcarusBlast;
 import net.minecraft.core.BlockPos;
@@ -11,10 +14,13 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.Clearable;
+import net.minecraft.world.Container;
 import net.minecraft.world.entity.ai.village.poi.PoiTypes;
 import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.SnowLayerBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.levelgen.Heightmap;
@@ -42,6 +48,9 @@ public final class IcarusCrater {
      * obsidian, cumulatively; the rest stays as it was. Near the rim, where there is air, fires burn on the floor. */
     private static final float MAGMA_CHANCE = 0.15f, GLASS_CHANCE = 0.40f, OBSIDIAN_CHANCE = 0.58f, CRYING_CHANCE = 0.63f, FIRE_CHANCE = 0.3f;
     private static final double FIRE_FROM_EDGE = 0.8;
+    /** The ash heap round a story block: it rises to the block's own level beside it and falls this many blocks for each
+     * block further out, as far as this reach. */
+    private static final int MOUND_SLOPE = 2, MOUND_REACH = 6;
     private static final int FLAGS = Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE | Block.UPDATE_SUPPRESS_DROPS;
     private static final Heightmap.Types[] HEIGHTMAPS = {Heightmap.Types.WORLD_SURFACE, Heightmap.Types.MOTION_BLOCKING,
             Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, Heightmap.Types.OCEAN_FLOOR};
@@ -78,10 +87,11 @@ public final class IcarusCrater {
             var changes = new ArrayList<BlockChangeHooks.Change>();
             boolean[] wasEmpty = new boolean[chunk.getSectionsCount()];
             for (int i = 0; i < wasEmpty.length; i++) wasEmpty[i] = chunk.getSection(i).hasOnlyAir();
+            var story = storyBlocks(l, c);
             int column = best.columns().get(bestChunk);
             boolean spent = false;
             while (column < COLUMNS && !spent) {
-                processColumn(l, chunk, changes, best, c.getMinBlockX() + (column & 15), c.getMinBlockZ() + (column >> 4));
+                processColumn(l, chunk, changes, best, story, c.getMinBlockX() + (column & 15), c.getMinBlockZ() + (column >> 4));
                 column++; visited++;
                 spent = System.nanoTime() - start >= budgetNanos;
             }
@@ -103,7 +113,7 @@ public final class IcarusCrater {
 
     /** Carves one crater column, or thaws one melt-ring column; returns how many blocks changed. */
     private static int processColumn(ServerLevel l, LevelChunk chunk, List<BlockChangeHooks.Change> changes, IcarusCraterData.Job job,
-                                     int x, int z) {
+                                     List<BlockPos> story, int x, int z) {
         var center = job.center(); double radius = job.radius(), melt = IcarusBlast.meltRadius(radius);
         int changed = 0, bottom = l.getMinBuildHeight();
         var pos = new BlockPos.MutableBlockPos();
@@ -115,12 +125,17 @@ public final class IcarusCrater {
         if (d <= edge) {
             int floor = Math.max(bottom, Math.min(center.getY() - IcarusBlast.depth(d, radius, job.seed(), dx, dz),
                     surface - IcarusBlast.rimDepth(job.seed(), dx, dz)));
-            int top = floor;
-            for (int y = surface - 1; y > floor; y--) {
+            int mound = mound(story, x, z), top = mound > floor ? Math.max(surface - 1, mound + 1) : floor;
+            var ash = ModBlocks.VOLCANIC_ASH.get().defaultBlockState();
+            for (int y = Math.max(surface - 1, mound + 1); y > floor; y--) {
                 var state = chunk.getBlockState(pos.set(x, y, z));
                 if (state.is(Blocks.BEDROCK) && top == floor) top = y;
-                if (state.isAir() || state.is(Blocks.BEDROCK)) continue;
-                set(l, chunk, changes, pos, state, Blocks.AIR.defaultBlockState());
+                if (story.contains(pos) || state.is(Blocks.BEDROCK)) continue;
+                var next = y <= mound ? ash.setValue(SnowLayerBlock.LAYERS, SnowLayerBlock.MAX_HEIGHT)
+                        : y == mound + 1 && !story.contains(pos.below()) ? ash.setValue(SnowLayerBlock.LAYERS, 1 + Math.floorMod(x * 31 + z * 17, 3))
+                        : Blocks.AIR.defaultBlockState();
+                if (state == next || state.isAir() && next.isAir()) continue;
+                set(l, chunk, changes, pos, state, next);
                 changed++;
             }
             var ground = chunk.getBlockState(pos.set(x, floor, z));
@@ -128,14 +143,14 @@ public final class IcarusCrater {
             float roll = random.nextFloat();
             var fused = roll < MAGMA_CHANCE ? Blocks.MAGMA_BLOCK : roll < GLASS_CHANCE ? Blocks.TINTED_GLASS
                     : roll < OBSIDIAN_CHANCE ? Blocks.OBSIDIAN : roll < CRYING_CHANCE ? Blocks.CRYING_OBSIDIAN : null;
-            if (fused != null && !ground.isAir() && !ground.is(Blocks.BEDROCK)) {
+            if (fused != null && mound <= floor && !ground.isAir() && !ground.is(Blocks.BEDROCK)) {
                 set(l, chunk, changes, pos, ground, fused.defaultBlockState());
                 changed++;
             }
             // Before the fire check, which asks the heightmap whether the floor sees the sky.
             if (changed > 0) reheight(chunk, x, z, top, bottom);
             var above = pos.set(x, floor + 1, z).immutable();
-            if (d > FIRE_FROM_EDGE * edge && random.nextFloat() < FIRE_CHANCE && l.getBlockState(above).isAir()
+            if (mound <= floor && d > FIRE_FROM_EDGE * edge && random.nextFloat() < FIRE_CHANCE && l.getBlockState(above).isAir()
                     && !l.getBlockState(above.below()).isAir() && RoomAtmosphere.hasAir(l, above)) {
                 l.setBlock(above, Blocks.FIRE.defaultBlockState(), FLAGS);
                 changed++;
@@ -149,6 +164,46 @@ public final class IcarusCrater {
             }
         }
         return changed;
+    }
+
+    /** Story blocks near this chunk, which the crater leaves standing: containers still holding an ORSA document, such as the
+     * satellite's black box with the only Transponder Schematic and the Blast Pit's crate, and the recorded Thaeven carriers,
+     * such as the First Crossing memory wall. Each is generated once per world. Neighbouring chunks count too, for the
+     * ash heaped round a block near the edge; one not loaded is missed, and its heap lacks this side. */
+    static List<BlockPos> storyBlocks(ServerLevel l, ChunkPos at) {
+        var out = new ArrayList<BlockPos>();
+        for (int dx = -1; dx <= 1; dx++) for (int dz = -1; dz <= 1; dz++) {
+            var chunk = l.getChunkSource().getChunkNow(at.x + dx, at.z + dz);
+            if (chunk == null) continue;
+            for (var be : chunk.getBlockEntities().values())
+                if (be instanceof Container container && holdsDocument(container)) out.add(be.getBlockPos());
+        }
+        if (l.dimension() == Level.OVERWORLD) {
+            var lore = ThaevenLoreSavedData.get(l.getServer());
+            var carriers = new ArrayList<>(lore.velAnRelicPositions());
+            lore.firstCrossingVesselPos().ifPresent(p -> { carriers.add(p); carriers.add(p.above()); });
+            lore.unthreadingVesselPos().ifPresent(carriers::add);
+            for (var p : carriers)
+                if (Math.abs((p.getX() >> 4) - at.x) <= 1 && Math.abs((p.getZ() >> 4) - at.z) <= 1 && l.isLoaded(p) && !l.getBlockState(p).isAir())
+                    out.add(p.immutable());
+        }
+        return out;
+    }
+
+    private static boolean holdsDocument(Container container) {
+        for (int i = 0; i < container.getContainerSize(); i++) if (container.getItem(i).getItem() instanceof OrsaDocumentItem) return true;
+        return false;
+    }
+
+    /** The top of the ash heap in this column, or the lowest build height when no story block is near: right under a story
+     * block it carries it, beside one it reaches the block's own level, and further out it falls away. */
+    private static int mound(List<BlockPos> story, int x, int z) {
+        int top = Integer.MIN_VALUE;
+        for (var p : story) {
+            int r = (int) Math.round(Math.hypot(p.getX() - x, p.getZ() - z));
+            if (r <= MOUND_REACH) top = Math.max(top, r == 0 ? p.getY() - 1 : p.getY() - MOUND_SLOPE * (r - 1));
+        }
+        return top;
     }
 
     /** Writes a plain vanilla block straight into its section with no light check, heightmap update, client update,

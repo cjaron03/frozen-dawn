@@ -101,6 +101,38 @@ public final class IcarusCraterGameTest {
         });
     }
 
+    /** A container still holding an ORSA document survives the crater, here the satellite's black box with the only Transponder
+     * Schematic, standing on a heap of volcanic ash so it does not float; an ordinary chest beside it is carved away. */
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "icarus_crater", timeoutTicks = 40, skyAccess = true)
+    public static void icarusCraterBuriesStoryBlocksInAsh(GameTestHelper h) {
+        h.runAfterDelay(1, () -> {
+            var l = h.getLevel();
+            for (int x = 0; x <= 20; x++) for (int z = 0; z <= 20; z++) {
+                h.setBlock(new BlockPos(x, 1, z), Blocks.BEDROCK);
+                for (int y = 2; y <= 14; y++) h.setBlock(new BlockPos(x, y, z), Blocks.STONE);
+            }
+            var blackBox = new BlockPos(10, 12, 13); var plain = new BlockPos(7, 12, 10);
+            h.setBlock(blackBox, Blocks.CHEST); h.setBlock(plain, Blocks.CHEST);
+            ((Container) h.getBlockEntity(blackBox)).setItem(0, new ItemStack(com.frozendawn.init.ModItems.TRANSPONDER_SCHEMATIC.get()));
+            ((Container) h.getBlockEntity(plain)).setItem(0, new ItemStack(Items.DIAMOND));
+            var data = new IcarusCraterData();
+            data.queue(h.absolutePos(new BlockPos(10, 4, 10)), 8, 5L);
+            IcarusCrater.run(l, data, Long.MAX_VALUE);
+            h.assertTrue(data.jobs().isEmpty(), "The crater is carved in one unlimited run");
+            h.assertBlockPresent(Blocks.CHEST, blackBox);
+            h.assertTrue(((Container) h.getBlockEntity(blackBox)).getItem(0).is(com.frozendawn.init.ModItems.TRANSPONDER_SCHEMATIC.get()),
+                    "The black box keeps its schematic");
+            h.assertBlockPresent(Blocks.AIR, plain);
+            var ash = com.frozendawn.init.ModBlocks.VOLCANIC_ASH.get();
+            h.assertBlockPresent(ash, blackBox.below());
+            h.assertBlockPresent(ash, blackBox.below(4));
+            h.assertBlockPresent(ash, blackBox.east());
+            h.assertTrue(!l.getBlockState(h.absolutePos(blackBox.above())).isFaceSturdy(l, h.absolutePos(blackBox.above()), net.minecraft.core.Direction.DOWN),
+                    "Nothing solid lies on the black box, so it still opens");
+            h.succeed();
+        });
+    }
+
     @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "icarus_crater", timeoutTicks = 40, skyAccess = true)
     public static void icarusCraterRespectsTheBudget(GameTestHelper h) {
         h.runAfterDelay(1, () -> {
