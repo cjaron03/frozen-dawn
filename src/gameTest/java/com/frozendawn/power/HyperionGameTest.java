@@ -322,6 +322,24 @@ public final class HyperionGameTest {
         for (var port : b.ports()) h.assertTrue(l.getBlockState(port).getValue(HyperionControllerBlock.ALERT) == alert, why + ": port alert");
     }
 
+    /** The lab command's scene. Its own batch: the SFR-1 and two batteries fill the whole template. */
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "hyperion_lab", timeoutTicks = 100, skyAccess = true)
+    public static void hyperionLabPlacesAValidPairAndSfr(GameTestHelper h) {
+        var l = h.getLevel();
+        var lab = com.frozendawn.world.HyperionLabPlacement.place(l, h.absolutePos(new BlockPos(10, 1, 20)));
+        h.assertTrue(lab.failedLinks() == 0, "Every lab link is made: " + lab.failedLinks() + " failed");
+        var big = (com.frozendawn.block.HyperionControllerBlockEntity) l.getBlockEntity(lab.outdoor());
+        var small = (com.frozendawn.block.HyperionControllerBlockEntity) l.getBlockEntity(lab.heated());
+        h.assertTrue(big.shell().valid() && small.shell().valid(), "Both batteries form: " + big.shell().problem() + ", " + small.shell().problem());
+        h.assertTrue(big.portCount() == 2 && big.shell().coolers().size() == 2 && big.stored() == big.capacity() / 2, "The outdoor battery has 2 ports, 2 coolers and half its charge");
+        h.assertTrue(small.shell().coolers().size() == 1 && small.capacity() == HyperionPhysics.capacity(7) - HyperionPhysics.CELL_JOULES, "The heated one is a 3x3x3 with one cooler");
+        h.assertTrue(big.physics().stage() == HyperionPhysics.Stage.COLD, "It starts cold, ready to pay the ignition");
+        account(l);
+        h.assertTrue(PowerNetworks.component(l, lab.sfrPowerPort()).stream().anyMatch(big.shell().ports()::contains), "The SFR-1 Power Port shares the battery's network");
+        h.assertTrue(PowerNetworks.stores(l, PowerNetworks.component(l, lab.sfrPowerPort())).size() == 1, "No Battery Banks: the Hyperion is the only store");
+        h.succeed();
+    }
+
     static int quenches(ServerLevel l) { return com.frozendawn.block.HyperionControllerBlockEntity.quenchCount(l); }
 
     /** The built controller, formed by one second. */

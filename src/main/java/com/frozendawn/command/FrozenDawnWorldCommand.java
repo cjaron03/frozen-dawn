@@ -72,6 +72,16 @@ final class FrozenDawnWorldCommand {
         return 1;
     }
 
+    /** Op playtest hook: the SMS-1 Hyperion lab, laid out to the north of the caller's feet. */
+    private static int placeHyperionLab(CommandContext<CommandSourceStack> context) {
+        var source = context.getSource();
+        var lab = com.frozendawn.world.HyperionLabPlacement.place(source.getLevel(), net.minecraft.core.BlockPos.containing(source.getPosition()));
+        if (lab.failedLinks() > 0) source.sendFailure(Component.literal(lab.failedLinks() + " Hyperion lab link(s) failed"));
+        source.sendSuccess(() -> Component.literal("Hyperion lab built: outdoor battery " + lab.outdoor().toShortString() + ", heated room " + lab.heated().toShortString()
+                + ", lava spot " + lab.lava().toShortString()), true);
+        return 1;
+    }
+
     private static final SuggestionProvider<CommandSourceStack> BLUEPRINTS = (context, builder) ->
             SharedSuggestionProvider.suggest(java.util.stream.Stream.concat(java.util.stream.Stream.of("all"), com.frozendawn.data.FabricatorBlueprints.SLATES.stream()), builder);
 
@@ -103,6 +113,7 @@ final class FrozenDawnWorldCommand {
                 .then(Commands.literal("reactorsite").executes(FrozenDawnWorldCommand::placeReactorSite))
                 .then(Commands.literal("helionsite").executes(FrozenDawnWorldCommand::placeHelionSite))
                 .then(Commands.literal("sfrlab").executes(FrozenDawnWorldCommand::placeSfrLab))
+                .then(Commands.literal("hyperionlab").executes(FrozenDawnWorldCommand::placeHyperionLab))
                 .then(Commands.literal("blueprint")
                         .then(Commands.literal("learn").then(Commands.argument("id", StringArgumentType.word()).suggests(BLUEPRINTS)
                                 .executes(context -> blueprint(context, true))))
