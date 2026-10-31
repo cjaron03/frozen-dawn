@@ -94,7 +94,7 @@
     {
       "type": "patchouli:text",
       "title": "Radiators",
-      "text": "Link the Coolant Ports to High-Temperature Radiators with an outdoor face. Each sheds 30 kW against deep vacuum; about 14 carry a full burn.$(br2)CFU-7 radiators cap at 150°C and do not count."
+      "text": "Link the Coolant Ports to High-Temperature Radiators with an outdoor face. Each sheds 30 kW against deep vacuum; about 14 carry a full burn.$(br2)CFU-7 radiators do not count."
     }
   ]
 }

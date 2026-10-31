@@ -7,12 +7,12 @@
     {
       "type": "patchouli:text",
       "title": "Starting",
-      "text": "$(li)Close the hatch and let the Vacuum Port pump the channel below 5%$(li)Cooldown: 20 kW for 2 minutes, half that in vacuum$(li)Ignition: 150 kW for 10 s$(li)Then it sustains itself"
+      "text": "$(li)Close the hatch and let the Vacuum Port pump the channel below 5%$(li)Cooldown: 20 kW for 2 minutes, or 1 minute with vacuum outside$(li)Ignition: 150 kW for 10 s$(li)Then it sustains itself"
     },
     {
       "type": "patchouli:text",
       "title": "Burning",
-      "text": "Drive sets the burn. Load-follow matches your grid's demand. Above 100% drive the First Wall wears.$(br2)Keep the Vacuum Port powered: without it, helium ash smothers the plasma."
+      "text": "Drive sets the burn, up to 100%. Load-follow matches your grid's demand.$(br2)Keep the Vacuum Port on $(bold)Pump$(); using it switches to Vent. On Vent, helium ash smothers the plasma within a minute."
     },
     {
       "type": "patchouli:text",
@@ -22,7 +22,12 @@
     {
       "type": "patchouli:text",
       "title": "Disruptions",
-      "text": "Disruptions: magnet power lost, the loop over 1,100°C, no fuel, the hatch opened or the shell broken while burning.$(br2)Each adds 5% wear to every First Wall block. Replace worn blocks to repair them; above 80% it will not ignite."
+      "text": "Magnet power lost, the loop over 1,100°C, no fuel, the hatch opened, the shell broken, the channel losing vacuum, or a redstone signal.$(br2)Each adds 5% wear to every First Wall block. Replace worn blocks to repair them; above 80% it will not ignite."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Mitigation",
+      "text": "Turning disruption mitigation off unlocks drive up to 150%. The hotter loop converts more, but every second above 100% wears the First Wall.$(br2)$(danger)Without it, a loop over 1,100°C melts the whole First Wall through to magma.$()"
     }
   ]
 }

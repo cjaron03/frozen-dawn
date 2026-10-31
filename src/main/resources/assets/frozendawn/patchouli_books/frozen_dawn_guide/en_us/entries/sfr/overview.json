@@ -13,7 +13,7 @@
     {
       "type": "patchouli:text",
       "title": "Safe, Not Easy",
-      "text": "Fusion never melts down. When anything goes wrong the plasma simply ends, a $(bold)disruption$(), which wears the First Wall and needs a full restart."
+      "text": "With disruption mitigation on, as it starts, fusion never melts down. When anything goes wrong the plasma simply ends, a $(bold)disruption$(), which wears the First Wall and needs a full restart."
     },
     {
       "type": "patchouli:text",

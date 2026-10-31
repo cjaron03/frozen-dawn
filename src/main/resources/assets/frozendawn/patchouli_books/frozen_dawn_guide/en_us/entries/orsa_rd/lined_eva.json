@@ -7,7 +7,8 @@
     {
       "type": "patchouli:spotlight",
       "item": "frozendawn:lined_eva_chestplate",
-      "text": "An EVA chestplate lined with Refined Acheronite."
+      "text": "An EVA chestplate lined with Refined Acheronite.",
+      "title": "Lined EVA Suit"
     },
     {
       "type": "patchouli:text",

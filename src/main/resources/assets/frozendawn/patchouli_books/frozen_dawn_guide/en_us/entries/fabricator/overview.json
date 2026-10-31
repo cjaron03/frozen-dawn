@@ -23,7 +23,7 @@
     {
       "type": "patchouli:text",
       "title": "What It Prints",
-      "text": "Magnet Coils, the First Wall, Lithium Blankets, the High-Temperature Radiator, the Isotope Column, and the AMR-1 \"Icarus\" core parts."
+      "text": "$(li)Magnet Coils, the First Wall, Lithium Blankets, the High-Temperature Radiator and the Isotope Column$(li)The AMR-1 \"Icarus\" core parts$(li)The Rocket Hull and Rocket Engine, from the Martian Command blueprint"
     }
   ],
   "priority": true
