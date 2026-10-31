@@ -1,0 +1,7 @@
+{
+  "name": "SFR-1 \"Solstice\"",
+  "icon": "frozendawn:sfr_controller",
+  "sortnum": 4,
+  "description": "The SFR-1 fusion reactor: huge, safe and finicky. It never melts down.",
+  "parent": "frozendawn:industry"
+}

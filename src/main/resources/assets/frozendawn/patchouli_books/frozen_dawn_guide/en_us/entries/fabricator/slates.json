@@ -1,0 +1,29 @@
+{
+  "name": "Data Slates",
+  "category": "frozendawn:fabricator",
+  "icon": "frozendawn:data_slate",
+  "sortnum": 1,
+  "pages": [
+    {
+      "type": "patchouli:spotlight",
+      "item": "frozendawn:data_slate",
+      "title": "ORSA Data Slate",
+      "text": "Each holds one blueprint. Right-click the Fabricator with it to archive it."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "The Archive",
+      "text": "The archive belongs to the world, shared by everyone in it. A new slate is used up; one already known stays in your hand.$(br2)The status line says when the inputs match a blueprint you have not archived."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Where To Find Them",
+      "text": "$(li)Helion site log desks: two or three fusion slates$(li)CFU-7 site shift lockers: the radiator slate$(li)Half of Uplink supply drops: one you have not learned"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Project Icarus",
+      "text": "Project Icarus is an optional slate for the AMR-1 \"Icarus\". It does not count toward the Full Archive."
+    }
+  ]
+}

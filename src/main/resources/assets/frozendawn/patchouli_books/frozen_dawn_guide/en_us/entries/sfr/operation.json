@@ -1,0 +1,28 @@
+{
+  "name": "Running It",
+  "category": "frozendawn:sfr",
+  "icon": "frozendawn:sfr_vacuum_port",
+  "sortnum": 3,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "Starting",
+      "text": "$(li)Close the hatch and let the Vacuum Port pump the channel below 5%$(li)Cooldown: 20 kW for 2 minutes, half that in vacuum$(li)Ignition: 150 kW for 10 s$(li)Then it sustains itself"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Burning",
+      "text": "Drive sets the burn. Load-follow matches your grid's demand. Above 100% drive the First Wall wears.$(br2)Keep the Vacuum Port powered: without it, helium ash smothers the plasma."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Stopping",
+      "text": "$(bold)Stop$() closes the fuel valve and ramps the burn down over 20 s, with no wear.$(br2)$(bold)E-Stop$(), held for a second, or a redstone signal ends the plasma at once: a disruption."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Disruptions",
+      "text": "Disruptions: magnet power lost, the loop over 1,100°C, no fuel, the hatch opened or the shell broken while burning.$(br2)Each adds 5% wear to every First Wall block. Replace worn blocks to repair them; above 80% it will not ignite."
+    }
+  ]
+}

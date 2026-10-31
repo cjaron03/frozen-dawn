@@ -1,0 +1,100 @@
+{
+  "name": "Building the Torus",
+  "category": "frozendawn:sfr",
+  "icon": "frozendawn:magnet_coil",
+  "sortnum": 1,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "text": "A 9x9x5 ring: the Confinement Core in a column of Magnet Coils, a ring of First Wall, an empty channel 3 high, and an outer ring of coils and Lithium Blankets.$(br2)Place the Controller and use it for a ghost guide."
+    },
+    {
+      "type": "patchouli:multiblock",
+      "name": "SFR-1 Torus",
+      "enable_visualize": false,
+      "multiblock": {
+        "pattern": [
+          [
+            "         ",
+            " CCCCCCC ",
+            " C     C ",
+            " C     C ",
+            " C     C ",
+            " C     C ",
+            " C     C ",
+            " CCCCCCC ",
+            "         "
+          ],
+          [
+            "LCLCVCLCL",
+            "C       C",
+            "L WWWWW L",
+            "C WCCCW C",
+            "L WCCCW L",
+            "C WCCCW C",
+            "L WWWWW L",
+            "C       C",
+            "LCLCLCLCL"
+          ],
+          [
+            "CTHLKLFTC",
+            "L       L",
+            "C WWWWW C",
+            "L WCCCW L",
+            "C WC0CW C",
+            "L WCCCW L",
+            "C WWWWW C",
+            "L       L",
+            "CLCLCLCLC"
+          ],
+          [
+            "LChCLCPCL",
+            "C       C",
+            "L WWWWW L",
+            "C WCCCW C",
+            "L WCCCW L",
+            "C WCCCW C",
+            "L WWWWW L",
+            "C       C",
+            "LCLCLCLCL"
+          ],
+          [
+            "         ",
+            " CCCCCCC ",
+            " C     C ",
+            " C     C ",
+            " C     C ",
+            " C     C ",
+            " C     C ",
+            " CCCCCCC ",
+            "         "
+          ]
+        ],
+        "mapping": {
+          "C": "frozendawn:magnet_coil",
+          "W": "frozendawn:first_wall",
+          "L": "frozendawn:lithium_blanket",
+          "0": "frozendawn:confinement_core",
+          "K": "frozendawn:sfr_controller[facing=north]",
+          "T": "frozendawn:coolant_port",
+          "F": "frozendawn:sfr_fuel_port",
+          "P": "frozendawn:sfr_power_port",
+          "V": "frozendawn:sfr_vacuum_port[facing=north]",
+          "H": "frozendawn:sfr_maintenance_hatch[facing=north,half=upper]",
+          "h": "frozendawn:sfr_maintenance_hatch[facing=north,half=lower]"
+        }
+      },
+      "text": "One layout. Any non-corner outer cell can hold a port."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Ports",
+      "text": "$(li)The Controller$(li)Two Coolant Ports$(li)A Fuel Port$(li)A Power Port$(li)A Vacuum Port$(li)A Maintenance Hatch, two blocks tall"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Radiators",
+      "text": "Link the Coolant Ports to High-Temperature Radiators with an outdoor face. Each sheds 30 kW against deep vacuum; about 14 carry a full burn.$(br2)CFU-7 radiators cap at 150°C and do not count."
+    }
+  ]
+}
