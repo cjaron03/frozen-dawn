@@ -83,7 +83,12 @@
   },
   "ambient.wind_early_forest": {
     "subtitle": "subtitle.frozendawn.ambient.wind_early_forest",
-    "sounds": [{"name": "frozendawn:ambient/wind_early_forest", "stream": true}]
+    "sounds": [
+      {
+        "name": "frozendawn:ambient/wind_early_forest",
+        "stream": true
+      }
+    ]
   },
   "ambient.wind_phase_one": {
     "category": "ambient",
@@ -923,41 +928,73 @@
     "category": "hostile",
     "subtitle": "subtitle.frozendawn.entity.architect.scribe_strokes",
     "sounds": [
-      { "name": "frozendawn:entity/architect/scribe/strokes1", "volume": 0.55 },
-      { "name": "frozendawn:entity/architect/scribe/strokes2", "volume": 0.55 },
-      { "name": "frozendawn:entity/architect/scribe/strokes3", "volume": 0.55 }
+      {
+        "name": "frozendawn:entity/architect/scribe/strokes1",
+        "volume": 0.55
+      },
+      {
+        "name": "frozendawn:entity/architect/scribe/strokes2",
+        "volume": 0.55
+      },
+      {
+        "name": "frozendawn:entity/architect/scribe/strokes3",
+        "volume": 0.55
+      }
     ]
   },
   "entity.architect.scribe_slate_crack": {
     "category": "hostile",
     "subtitle": "subtitle.frozendawn.entity.architect.scribe_slate_crack",
     "sounds": [
-      { "name": "frozendawn:entity/architect/scribe/slate_crack1", "volume": 0.7 },
-      { "name": "frozendawn:entity/architect/scribe/slate_crack2", "volume": 0.7 }
+      {
+        "name": "frozendawn:entity/architect/scribe/slate_crack1",
+        "volume": 0.7
+      },
+      {
+        "name": "frozendawn:entity/architect/scribe/slate_crack2",
+        "volume": 0.7
+      }
     ]
   },
   "entity.architect.pyro_embers": {
     "category": "hostile",
     "subtitle": "subtitle.frozendawn.entity.architect.pyro_embers",
     "sounds": [
-      { "name": "frozendawn:entity/architect/pyro/embers1", "volume": 0.55 },
-      { "name": "frozendawn:entity/architect/pyro/embers2", "volume": 0.55 },
-      { "name": "frozendawn:entity/architect/pyro/embers3", "volume": 0.55 }
+      {
+        "name": "frozendawn:entity/architect/pyro/embers1",
+        "volume": 0.55
+      },
+      {
+        "name": "frozendawn:entity/architect/pyro/embers2",
+        "volume": 0.55
+      },
+      {
+        "name": "frozendawn:entity/architect/pyro/embers3",
+        "volume": 0.55
+      }
     ]
   },
   "entity.architect.pyro_hiss": {
     "category": "hostile",
     "subtitle": "subtitle.frozendawn.entity.architect.pyro_hiss",
     "sounds": [
-      { "name": "frozendawn:entity/architect/pyro/hiss1", "volume": 0.7 },
-      { "name": "frozendawn:entity/architect/pyro/hiss2", "volume": 0.7 }
+      {
+        "name": "frozendawn:entity/architect/pyro/hiss1",
+        "volume": 0.7
+      },
+      {
+        "name": "frozendawn:entity/architect/pyro/hiss2",
+        "volume": 0.7
+      }
     ]
   },
   "entity.architect.pyro_death": {
     "category": "hostile",
     "subtitle": "subtitle.frozendawn.entity.architect.pyro_death",
     "sounds": [
-      { "name": "frozendawn:entity/architect/pyro/death" }
+      {
+        "name": "frozendawn:entity/architect/pyro/death"
+      }
     ]
   },
   "entity.architect.scribe_write": {
@@ -4248,16 +4285,27 @@
     "category": "hostile",
     "subtitle": "subtitles.frozendawn.blind_architect.hurt",
     "sounds": [
-      { "name": "frozendawn:entity/blind_architect/hurt_1", "volume": 0.8 },
-      { "name": "frozendawn:entity/blind_architect/hurt_2", "volume": 0.8 },
-      { "name": "frozendawn:entity/blind_architect/hurt_3", "volume": 0.8 }
+      {
+        "name": "frozendawn:entity/blind_architect/hurt_1",
+        "volume": 0.8
+      },
+      {
+        "name": "frozendawn:entity/blind_architect/hurt_2",
+        "volume": 0.8
+      },
+      {
+        "name": "frozendawn:entity/blind_architect/hurt_3",
+        "volume": 0.8
+      }
     ]
   },
   "entity.blind_architect.death": {
     "category": "hostile",
     "subtitle": "subtitles.frozendawn.blind_architect.death",
     "sounds": [
-      { "name": "frozendawn:entity/blind_architect/death" }
+      {
+        "name": "frozendawn:entity/blind_architect/death"
+      }
     ]
   },
   "ui.suit.atmospheric_breach": {
@@ -4742,6 +4790,96 @@
       {
         "name": "frozendawn:ambient/cyclone/thunder/distant4",
         "weight": 2
+      }
+    ]
+  },
+  "blocks.hyperion_hum": {
+    "category": "blocks",
+    "subtitle": "subtitle.frozendawn.blocks.hyperion_hum",
+    "sounds": [
+      {
+        "name": "frozendawn:blocks/hyperion/hum_loop",
+        "volume": 1.0
+      }
+    ]
+  },
+  "blocks.hyperion_chirp": {
+    "category": "blocks",
+    "subtitle": "subtitle.frozendawn.blocks.hyperion_chirp",
+    "sounds": [
+      {
+        "name": "frozendawn:blocks/hyperion/chirp",
+        "volume": 1.0
+      }
+    ]
+  },
+  "blocks.hyperion_warning": {
+    "category": "blocks",
+    "subtitle": "subtitle.frozendawn.blocks.hyperion_warning",
+    "sounds": [
+      {
+        "name": "frozendawn:blocks/hyperion/warning_loop",
+        "volume": 1.0
+      }
+    ]
+  },
+  "blocks.hyperion_whine": {
+    "category": "blocks",
+    "subtitle": "subtitle.frozendawn.blocks.hyperion_whine",
+    "sounds": [
+      {
+        "name": "frozendawn:blocks/hyperion/whine",
+        "volume": 1.0
+      }
+    ]
+  },
+  "blocks.hyperion_quench": {
+    "category": "blocks",
+    "subtitle": "subtitle.frozendawn.blocks.hyperion_quench",
+    "sounds": [
+      {
+        "name": "frozendawn:blocks/hyperion/quench",
+        "volume": 1.0
+      }
+    ]
+  },
+  "blocks.hyperion_vent": {
+    "category": "blocks",
+    "subtitle": "subtitle.frozendawn.blocks.hyperion_vent",
+    "sounds": [
+      {
+        "name": "frozendawn:blocks/hyperion/vent",
+        "volume": 1.0
+      }
+    ]
+  },
+  "blocks.hyperion_aftermath": {
+    "category": "blocks",
+    "subtitle": "subtitle.frozendawn.blocks.hyperion_aftermath",
+    "sounds": [
+      {
+        "name": "frozendawn:blocks/hyperion/aftermath",
+        "volume": 1.0
+      }
+    ]
+  },
+  "blocks.hyperion_all_clear": {
+    "category": "blocks",
+    "subtitle": "subtitle.frozendawn.blocks.hyperion_all_clear",
+    "sounds": [
+      {
+        "name": "frozendawn:blocks/hyperion/all_clear",
+        "volume": 1.0
+      }
+    ]
+  },
+  "blocks.hyperion_puck_drop": {
+    "category": "blocks",
+    "subtitle": "subtitle.frozendawn.blocks.hyperion_puck_drop",
+    "sounds": [
+      {
+        "name": "frozendawn:blocks/hyperion/puck_drop",
+        "volume": 1.0
       }
     ]
   }

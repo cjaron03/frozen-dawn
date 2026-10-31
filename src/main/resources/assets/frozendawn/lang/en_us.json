@@ -1887,5 +1887,14 @@
   "screen.frozendawn.hyperion.cells": "Cells: %s (quench at %s)",
   "screen.frozendawn.hyperion.surroundings": "Surroundings: %s",
   "screen.frozendawn.hyperion.cooler": "Cryocooler draw: %s",
-  "screen.frozendawn.hyperion.quench_in": "Quench in %s"
+  "screen.frozendawn.hyperion.quench_in": "Quench in %s",
+  "subtitle.frozendawn.blocks.hyperion_hum": "Hyperion hums",
+  "subtitle.frozendawn.blocks.hyperion_chirp": "Hyperion chirps",
+  "subtitle.frozendawn.blocks.hyperion_warning": "Hyperion quench warning",
+  "subtitle.frozendawn.blocks.hyperion_whine": "Hyperion whines",
+  "subtitle.frozendawn.blocks.hyperion_quench": "Hyperion quenches",
+  "subtitle.frozendawn.blocks.hyperion_vent": "Quench Vent roars",
+  "subtitle.frozendawn.blocks.hyperion_aftermath": "Hyperion shell settles",
+  "subtitle.frozendawn.blocks.hyperion_all_clear": "Hyperion all clear",
+  "subtitle.frozendawn.blocks.hyperion_puck_drop": "Hyperion puck drops"
 }

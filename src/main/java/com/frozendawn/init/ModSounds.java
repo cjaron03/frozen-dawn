@@ -87,6 +87,15 @@ public class ModSounds {
     public static final DeferredHolder<SoundEvent, SoundEvent> DOSIMETER_ALARM = register("ui.dosimeter_alarm");
     public static final DeferredHolder<SoundEvent, SoundEvent> REACTOR_SCRAM = register("blocks.reactor_scram");
     public static final DeferredHolder<SoundEvent, SoundEvent> REACTOR_MELTDOWN_ALERT = register("blocks.reactor_meltdown_alert");
+    public static final DeferredHolder<SoundEvent, SoundEvent> HYPERION_HUM = register("blocks.hyperion_hum");
+    public static final DeferredHolder<SoundEvent, SoundEvent> HYPERION_CHIRP = register("blocks.hyperion_chirp");
+    public static final DeferredHolder<SoundEvent, SoundEvent> HYPERION_WARNING = register("blocks.hyperion_warning");
+    public static final DeferredHolder<SoundEvent, SoundEvent> HYPERION_WHINE = register("blocks.hyperion_whine");
+    public static final DeferredHolder<SoundEvent, SoundEvent> HYPERION_QUENCH = register("blocks.hyperion_quench");
+    public static final DeferredHolder<SoundEvent, SoundEvent> HYPERION_VENT = register("blocks.hyperion_vent");
+    public static final DeferredHolder<SoundEvent, SoundEvent> HYPERION_AFTERMATH = register("blocks.hyperion_aftermath");
+    public static final DeferredHolder<SoundEvent, SoundEvent> HYPERION_ALL_CLEAR = register("blocks.hyperion_all_clear");
+    public static final DeferredHolder<SoundEvent, SoundEvent> HYPERION_PUCK_DROP = register("blocks.hyperion_puck_drop");
     public static final DeferredHolder<SoundEvent, SoundEvent> SFR_CRYO = register("blocks.sfr_cryo");
     public static final DeferredHolder<SoundEvent, SoundEvent> SFR_IGNITION = register("blocks.sfr_ignition");
     public static final DeferredHolder<SoundEvent, SoundEvent> SFR_BURN = register("blocks.sfr_burn");

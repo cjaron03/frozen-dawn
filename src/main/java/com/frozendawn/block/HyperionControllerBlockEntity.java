@@ -2,7 +2,10 @@ package com.frozendawn.block;
 
 import com.frozendawn.init.ModBlockEntities;
 import com.frozendawn.power.EnergyStore;
+import com.frozendawn.init.ModSounds;
+import com.frozendawn.power.HyperionAudioCues;
 import com.frozendawn.power.HyperionPhysics;
+import net.minecraft.sounds.SoundSource;
 import com.frozendawn.power.PowerNetworks;
 import com.frozendawn.data.ApocalypseState;
 import com.frozendawn.world.TemperatureManager;
@@ -34,9 +37,10 @@ import net.minecraft.world.level.block.state.BlockState;
 public final class HyperionControllerBlockEntity extends BlockEntity implements EnergyStore, MenuProvider {
     /** What the client shows: synced once per second when anything in it changed. */
     public record Snapshot(HyperionMultiblock.Problem problem, HyperionPhysics.Stage stage, long stored, long capacity, long flowIn, long flowOut,
-                           int ports, long rateWatts, double cellC, double surroundingsC, long coolerWatts, double secondsToQuench, long lastQuenchTick) {
+                           int ports, long rateWatts, double cellC, double surroundingsC, long coolerWatts, double secondsToQuench, long lastQuenchTick,
+                           int warningSeconds) {
         public static final Snapshot EMPTY = new Snapshot(HyperionMultiblock.Problem.UNLOADED, HyperionPhysics.Stage.COLD, 0, 0, 0, 0, 0, 0,
-                HyperionPhysics.OPERATING_C, 0, 0, Double.POSITIVE_INFINITY, Long.MIN_VALUE);
+                HyperionPhysics.OPERATING_C, 0, 0, Double.POSITIVE_INFINITY, Long.MIN_VALUE, HyperionPhysics.WARN_COLD_S);
     }
     /** Per level, each formed controller's saved box, so a changed part finds its controller without a scan. */
     private static final Map<Level, Map<BlockPos, BlockPos[]>> BOXES = new WeakHashMap<>();
@@ -79,7 +83,7 @@ public final class HyperionControllerBlockEntity extends BlockEntity implements 
     private boolean stillValid(ServerLevel l) { return min != null && HyperionMultiblock.validate(l, min, max).valid(); }
     /** The box lost a part: vent any charge at once, then come apart. */
     void broken(ServerLevel l) {
-        if (stored > 0) { quench(); if (min != null) show(l, SuperconductingCellBlock.Look.SCARRED, false); }
+        if (stored > 0) { quench(); play(l, HyperionAudioCues.cues(readout(), readout(), true)); if (min != null) show(l, SuperconductingCellBlock.Look.SCARRED, false); }
         if (min != null) unform(l);
     }
     public static int quenchCount(ServerLevel l) { return QUENCHES.getOrDefault(l, 0); }
@@ -110,7 +114,7 @@ public final class HyperionControllerBlockEntity extends BlockEntity implements 
     private Snapshot current() {
         var r = readout();
         return new Snapshot(shell.problem(), r.stage(), stored, capacity(), lastCharged, lastDrawn + machineDrawn, portCount(), rateWatts(), r.cellC(),
-                lastSurroundingsC, r.coolerJoules(), r.secondsToQuench(), lastQuenchTick);
+                lastSurroundingsC, r.coolerJoules(), r.secondsToQuench(), lastQuenchTick, HyperionPhysics.warningSeconds(lastSurroundingsC, hotNeighbors));
     }
     private void sync(ServerLevel l) {
         snapshot = current(); machineDrawn = 0;
@@ -119,13 +123,24 @@ public final class HyperionControllerBlockEntity extends BlockEntity implements 
     private void step(ServerLevel l) {
         if (secondsSinceScan++ % 5 == 0) hotNeighbors = hotNeighbors(l);
         lastSurroundingsC = surroundingsC(l);
+        var before = readout;
         readout = physics.step(new HyperionPhysics.Inputs(shell.cells(), shell.coolers().size(), lastSurroundingsC, hotNeighbors, cooldownGranted), stored);
         cooldownGranted = 0;
         stored -= Math.min(stored, readout.coolerJoules());
         if (readout.quenched()) quench();
+        play(l, HyperionAudioCues.cues(before, readout, false));
         if (readout.stage() == HyperionPhysics.Stage.COLD) scarred = false;
         show(l);
         setChanged();
+    }
+    /** The one-shots. A quench sounds and jets from the vents through HyperionVentJets, which outlives this Controller. */
+    private void play(ServerLevel l, java.util.EnumSet<HyperionAudioCues.Cue> cues) {
+        for (var cue : cues) switch (cue) {
+            case CHIRP -> l.playSound(null, worldPosition, ModSounds.HYPERION_CHIRP.get(), SoundSource.BLOCKS, 1.0F, 1.0F);
+            case WHINE -> l.playSound(null, worldPosition, ModSounds.HYPERION_WHINE.get(), SoundSource.BLOCKS, 1.5F, 1.0F);
+            case QUENCH -> HyperionVentJets.start(l, worldPosition, vents);
+            case ALL_CLEAR -> l.playSound(null, worldPosition, ModSounds.HYPERION_ALL_CLEAR.get(), SoundSource.BLOCKS, 1.0F, 1.0F);
+        }
     }
     /** How the cells look for the current stage: frost, heat stress, white-hot cracks or scars. Never the charge. */
     SuperconductingCellBlock.Look look() {
@@ -163,7 +178,7 @@ public final class HyperionControllerBlockEntity extends BlockEntity implements 
     /** Vent the charge. The cells are already warm (heat) or the box is coming apart (a break). */
     public void quench() {
         stored = 0; scarred = true; lastQuenchTick = level == null ? 0 : level.getGameTime();
-        if (level instanceof ServerLevel l) { QUENCHES.merge(l, 1, Integer::sum); HyperionVentJets.start(l, vents); }
+        if (level instanceof ServerLevel l) QUENCHES.merge(l, 1, Integer::sum);
         setChanged();
     }
     /** The warmest of the six spots just outside the face centers, from the mod's own loaded-only temperature. */
@@ -264,7 +279,7 @@ public final class HyperionControllerBlockEntity extends BlockEntity implements 
         t.putInt("Problem", s.problem().ordinal()); t.putInt("Stage", s.stage().ordinal()); t.putLong("Stored", s.stored()); t.putLong("Capacity", s.capacity());
         t.putLong("In", s.flowIn()); t.putLong("Out", s.flowOut()); t.putInt("Ports", s.ports()); t.putLong("Rate", s.rateWatts());
         t.putDouble("CellC", s.cellC()); t.putDouble("AroundC", s.surroundingsC()); t.putLong("Cooler", s.coolerWatts());
-        t.putDouble("ToQuench", s.secondsToQuench()); t.putLong("LastQuench", s.lastQuenchTick());
+        t.putDouble("ToQuench", s.secondsToQuench()); t.putLong("LastQuench", s.lastQuenchTick()); t.putInt("Warn", s.warningSeconds());
         return t;
     }
     @Override public ClientboundBlockEntityDataPacket getUpdatePacket() { return ClientboundBlockEntityDataPacket.create(this); }
@@ -272,7 +287,8 @@ public final class HyperionControllerBlockEntity extends BlockEntity implements 
         var problems = HyperionMultiblock.Problem.values(); var stages = HyperionPhysics.Stage.values();
         snapshot = new Snapshot(problems[Math.clamp(t.getInt("Problem"), 0, problems.length - 1)], stages[Math.clamp(t.getInt("Stage"), 0, stages.length - 1)],
                 t.getLong("Stored"), t.getLong("Capacity"), t.getLong("In"), t.getLong("Out"), t.getInt("Ports"), t.getLong("Rate"),
-                t.getDouble("CellC"), t.getDouble("AroundC"), t.getLong("Cooler"), t.getDouble("ToQuench"), t.getLong("LastQuench"));
+                t.getDouble("CellC"), t.getDouble("AroundC"), t.getLong("Cooler"), t.getDouble("ToQuench"), t.getLong("LastQuench"),
+                Math.max(1, t.getInt("Warn")));
     }
     @Override public void onDataPacket(Connection c, ClientboundBlockEntityDataPacket p, HolderLookup.Provider r) { handleUpdateTag(p.getTag(), r); }
     @Override public Component getDisplayName() { return Component.translatable("block.frozendawn.hyperion_controller"); }

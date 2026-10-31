@@ -36,7 +36,8 @@ public final class HyperionControllerBlock extends HyperionFacingPartBlock imple
         super.onRemove(state, level, pos, next, moved);
     }
     @Override public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level l, BlockState s, BlockEntityType<T> t) {
-        return !l.isClientSide() && t == ModBlockEntities.HYPERION_CONTROLLER.get()
-                ? (w, pos, state, be) -> { if (w.getGameTime() % 20 == 0) ((HyperionControllerBlockEntity) be).second((ServerLevel) w); } : null;
+        if (t != ModBlockEntities.HYPERION_CONTROLLER.get()) return null;
+        return l.isClientSide() ? (w, pos, state, be) -> com.frozendawn.client.HyperionLoopSound.tick((HyperionControllerBlockEntity) be)
+                : (w, pos, state, be) -> { if (w.getGameTime() % 20 == 0) ((HyperionControllerBlockEntity) be).second((ServerLevel) w); };
     }
 }
