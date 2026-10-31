@@ -4,6 +4,9 @@ import com.frozendawn.init.ModBlockEntities;
 import com.frozendawn.power.EnergyStore;
 import com.frozendawn.power.HyperionPhysics;
 import com.frozendawn.power.PowerNetworks;
+import com.frozendawn.data.ApocalypseState;
+import com.frozendawn.world.TemperatureManager;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.WeakHashMap;
@@ -22,6 +25,7 @@ import net.minecraft.world.level.block.state.BlockState;
 public final class HyperionControllerBlockEntity extends BlockEntity implements EnergyStore {
     /** Per level, each formed controller's saved box, so a changed part finds its controller without a scan. */
     private static final Map<Level, Map<BlockPos, BlockPos[]>> BOXES = new WeakHashMap<>();
+    private static final Map<Level, Integer> QUENCHES = new WeakHashMap<>();
     private long stored;
     private BlockPos min, max;
     private HyperionMultiblock.Result shell = HyperionMultiblock.Result.failed(HyperionMultiblock.Problem.UNLOADED, null, null, null);
@@ -30,17 +34,32 @@ public final class HyperionControllerBlockEntity extends BlockEntity implements 
     private int lastCharged, lastDrawn;
     private Double surroundingsOverride;
     private final HyperionPhysics physics = new HyperionPhysics();
+    private HyperionPhysics.Readout readout;
+    private long cooldownGranted, lastQuenchTick = Long.MIN_VALUE;
+    private int hotNeighbors, secondsSinceScan;
 
     public HyperionControllerBlockEntity(BlockPos p, BlockState s) { super(ModBlockEntities.HYPERION_CONTROLLER.get(), p, s); }
 
+    /** A part changed: controllers near it re-check, and a charged battery that lost a part of its own box quenches now. */
     public static void partChanged(Level level, BlockPos pos) {
-        if (level.isClientSide()) return;
+        if (!(level instanceof ServerLevel l)) return;
+        var hit = new ArrayList<HyperionControllerBlockEntity>();
         for (var e : BOXES.getOrDefault(level, Map.of()).entrySet()) {
             var box = e.getValue();
-            if (inside(pos, box[0].offset(-1, -1, -1), box[1].offset(1, 1, 1)) && level.isLoaded(e.getKey())
-                    && level.getBlockEntity(e.getKey()) instanceof HyperionControllerBlockEntity c) c.dirty = true;
+            if (!inside(pos, box[0].offset(-1, -1, -1), box[1].offset(1, 1, 1)) || !level.isLoaded(e.getKey())
+                    || !(level.getBlockEntity(e.getKey()) instanceof HyperionControllerBlockEntity c)) continue;
+            c.dirty = true;
+            if (inside(pos, box[0], box[1])) hit.add(c);
         }
+        for (var c : hit) if (!(l.getBlockState(pos).getBlock() instanceof HyperionPartBlock) || !c.stillValid(l)) c.broken(l);
     }
+    private boolean stillValid(ServerLevel l) { return min != null && HyperionMultiblock.validate(l, min, max).valid(); }
+    /** The box lost a part: vent any charge at once, then come apart. */
+    void broken(ServerLevel l) {
+        if (stored > 0) quench();
+        if (min != null) unform(l);
+    }
+    public static int quenchCount(ServerLevel l) { return QUENCHES.getOrDefault(l, 0); }
     static boolean inside(BlockPos p, BlockPos lo, BlockPos hi) {
         return p.getX() >= lo.getX() && p.getX() <= hi.getX() && p.getY() >= lo.getY() && p.getY() <= hi.getY() && p.getZ() >= lo.getZ() && p.getZ() <= hi.getZ();
     }
@@ -50,13 +69,62 @@ public final class HyperionControllerBlockEntity extends BlockEntity implements 
         if (min != null) {
             shell = HyperionMultiblock.validate(l, min, max);
             if (shell.problem() == HyperionMultiblock.Problem.UNLOADED) return;
-            if (!shell.valid()) { unform(l); return; }
+            if (!shell.valid()) { broken(l); return; }
             if (!registered) register(l);
         } else if (dirty || l.getGameTime() - lastDiscover >= 200) {
             dirty = false; lastDiscover = l.getGameTime();
             shell = HyperionMultiblock.discover(l, worldPosition);
-            if (shell.valid()) { min = shell.min(); max = shell.max(); register(l); setChanged(); }
+            if (!shell.valid()) return;
+            min = shell.min(); max = shell.max(); register(l);
+            physics.reset(surroundingsC(l)); readout = null; setChanged();
+            return;
+        } else return;
+        step(l);
+    }
+    private void step(ServerLevel l) {
+        if (secondsSinceScan++ % 5 == 0) hotNeighbors = hotNeighbors(l);
+        readout = physics.step(new HyperionPhysics.Inputs(shell.cells(), shell.coolers().size(), surroundingsC(l), hotNeighbors, cooldownGranted), stored);
+        cooldownGranted = 0;
+        stored -= Math.min(stored, readout.coolerJoules());
+        if (readout.quenched()) quench();
+        setChanged();
+    }
+    /** Vent the charge. The cells are already warm (heat) or the box is coming apart (a break). */
+    public void quench() {
+        stored = 0; lastQuenchTick = level == null ? 0 : level.getGameTime();
+        if (level instanceof ServerLevel l) QUENCHES.merge(l, 1, Integer::sum);
+        setChanged();
+    }
+    /** The warmest of the six spots just outside the face centers, from the mod's own loaded-only temperature. */
+    public double surroundingsC(ServerLevel l) {
+        if (surroundingsOverride != null) return surroundingsOverride;
+        if (min == null) return TemperatureManager.getLoadedTemperatureAt(l, worldPosition, day(l), total(l));
+        int cx = (min.getX() + max.getX()) / 2, cy = (min.getY() + max.getY()) / 2, cz = (min.getZ() + max.getZ()) / 2;
+        BlockPos[] spots = {new BlockPos(min.getX() - 1, cy, cz), new BlockPos(max.getX() + 1, cy, cz), new BlockPos(cx, min.getY() - 1, cz),
+                new BlockPos(cx, max.getY() + 1, cz), new BlockPos(cx, cy, min.getZ() - 1), new BlockPos(cx, cy, max.getZ() + 1)};
+        double warmest = Double.NEGATIVE_INFINITY;
+        for (var p : spots) if (l.isLoaded(p)) warmest = Math.max(warmest, TemperatureManager.getLoadedTemperatureAt(l, p, day(l), total(l)));
+        return Double.isFinite(warmest) ? warmest : TemperatureManager.getLoadedTemperatureAt(l, worldPosition, day(l), total(l));
+    }
+    private static int day(ServerLevel l) { return ApocalypseState.get(l.getServer()).getCurrentDay(); }
+    private static int total(ServerLevel l) { return ApocalypseState.get(l.getServer()).getTotalDays(); }
+    /** Hot things touching a face (not edges or corners): hot radiators, fire-like blocks, running CFU-7 controllers. */
+    public int hotNeighbors(ServerLevel l) {
+        if (min == null) return 0;
+        int count = 0;
+        for (int x = min.getX(); x <= max.getX(); x++) for (int y = min.getY(); y <= max.getY(); y++) for (int z = min.getZ(); z <= max.getZ(); z++) {
+            boolean ex = x == min.getX() || x == max.getX(), ey = y == min.getY() || y == max.getY(), ez = z == min.getZ() || z == max.getZ();
+            if ((ex ? 1 : 0) + (ey ? 1 : 0) + (ez ? 1 : 0) != 1) continue;
+            var p = new BlockPos(ex ? (x == min.getX() ? x - 1 : x + 1) : x, ey ? (y == min.getY() ? y - 1 : y + 1) : y, ez ? (z == min.getZ() ? z - 1 : z + 1) : z);
+            if (l.isLoaded(p) && hot(l, p)) count++;
         }
+        return count;
+    }
+    private static boolean hot(ServerLevel l, BlockPos p) {
+        var state = l.getBlockState(p);
+        if (state.getBlock() instanceof ReactorRadiatorBlock && state.getValue(ReactorRadiatorBlock.HOT)) return true;
+        if (TemperatureManager.getAmbientSignatureHeat(state) > 0) return true;
+        return l.getBlockEntity(p) instanceof ReactorControllerBlockEntity reactor && reactor.powerWatts() > 0;
     }
     private void register(ServerLevel l) {
         registered = true;
@@ -78,8 +146,16 @@ public final class HyperionControllerBlockEntity extends BlockEntity implements 
     public int portCount() { return shell.valid() ? shell.ports().size() : 0; }
     public int rateWatts() { return portCount() * HyperionPhysics.PORT_WATTS; }
     public long capacity() { return shell.valid() ? HyperionPhysics.capacity(shell.cells()) : 0; }
-    public long chargeHeadroomWatts() { return acceptsCharge() ? Math.min(rateWatts(), Math.max(0, capacity() - stored)) : 0; }
+    public long chargeHeadroomWatts() {
+        if (!acceptsCharge()) return 0;
+        return warm() ? HyperionPhysics.cooldownWatts(shell.cells()) : Math.min(rateWatts(), Math.max(0, capacity() - stored));
+    }
     public HyperionPhysics physics() { return physics; }
+    public HyperionPhysics.Readout readout() {
+        return readout != null ? readout : new HyperionPhysics.Readout(physics.stage(), physics.cellC(), 0, Double.POSITIVE_INFINITY, false, false, 0);
+    }
+    public long lastQuenchTick() { return lastQuenchTick; }
+    private boolean warm() { return physics.stage() == HyperionPhysics.Stage.WARM; }
 
     private void interval() {
         long now = level == null ? 0 : level.getGameTime() / 20;
@@ -97,6 +173,11 @@ public final class HyperionControllerBlockEntity extends BlockEntity implements 
     @Override public long chargeEnergy(long offered) {
         interval();
         if (!acceptsCharge()) return 0;
+        if (warm()) {
+            // Warm cells hold nothing: what the grid sends runs the cooler down to temperature instead.
+            long grant = Math.max(0, Math.min(offered, HyperionPhysics.cooldownWatts(shell.cells()) - cooldownGranted));
+            cooldownGranted += grant; return grant;
+        }
         long amount = Math.max(0, Math.min(offered, Math.min(capacity() - stored, rateWatts() - chargedThisInterval)));
         if (amount > 0) { stored += amount; chargedThisInterval += amount; setChanged(); }
         return amount;
@@ -118,6 +199,7 @@ public final class HyperionControllerBlockEntity extends BlockEntity implements 
         t.putLong("Stored", stored);
         if (min != null) { t.put("Min", NbtUtils.writeBlockPos(min)); t.put("Max", NbtUtils.writeBlockPos(max)); }
         var p = new CompoundTag(); physics.save(p); t.put("Physics", p);
+        t.putLong("LastQuench", lastQuenchTick);
     }
     @Override protected void loadAdditional(CompoundTag t, HolderLookup.Provider r) {
         super.loadAdditional(t, r);
@@ -125,5 +207,6 @@ public final class HyperionControllerBlockEntity extends BlockEntity implements 
         min = NbtUtils.readBlockPos(t, "Min").orElse(null); max = NbtUtils.readBlockPos(t, "Max").orElse(null);
         if (min == null || max == null) min = max = null;
         physics.load(t.getCompound("Physics"));
+        lastQuenchTick = t.contains("LastQuench") ? t.getLong("LastQuench") : Long.MIN_VALUE;
     }
 }

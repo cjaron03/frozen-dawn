@@ -153,6 +153,125 @@ public final class HyperionGameTest {
         });
     }
 
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "hyperion", timeoutTicks = 100)
+    public static void hyperionHeatQuenchFollowsTheLadder(GameTestHelper h) {
+        var l = h.getLevel(); clear(h); var c = controller(h, HyperionScenes.build(h, MIN, 5, 5, 5, 1, 1));
+        c.setStoredForTest(1_000_000_000L); c.setSurroundingsForTest(20.0); int before = quenches(l);
+        for (int i = 0; i < 299; i++) c.second(l);
+        h.assertTrue(c.stored() > 0 && c.readout().stage() == HyperionPhysics.Stage.FINAL, "Still holding in the final seconds: " + c.readout().stage());
+        c.second(l);
+        h.assertTrue(c.stored() == 0 && quenches(l) == before + 1, "Quenches at five minutes in a warm room");
+        h.succeed();
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "hyperion", timeoutTicks = 100)
+    public static void hyperionEnoughCoolingHoldsAndDrainsSlowly(GameTestHelper h) {
+        var l = h.getLevel(); var c = controller(h, fresh(h, 3, 3, 3)); long full = HyperionPhysics.capacity(7);
+        c.setStoredForTest(full); c.setSurroundingsForTest(20.0); int before = quenches(l);
+        for (int i = 0; i < 3600; i++) c.second(l);
+        long lost = full - c.stored();
+        h.assertTrue(Math.abs(lost - 2_800_000) <= 28_000 && quenches(l) == before, "Loses 2% an hour in a warm room: " + lost);
+        h.succeed();
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "hyperion", timeoutTicks = 100)
+    public static void hyperionOutageNeverQuenches(GameTestHelper h) {
+        var l = h.getLevel(); var c = controller(h, fresh(h, 3, 3, 3));
+        c.setStoredForTest(1_000_000); c.setSurroundingsForTest(20.0); int before = quenches(l);
+        int guard = 0; while (c.stored() > 0 && guard++ < 5000) c.second(l);
+        for (int i = 0; i < 400; i++) c.second(l);
+        h.assertTrue(c.stored() == 0 && quenches(l) == before && c.readout().stage() == HyperionPhysics.Stage.WARM, "Drains, warms, never vents");
+        h.succeed();
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "hyperion", timeoutTicks = 100)
+    public static void hyperionWarmBuildCoolsOnGridBeforeCharging(GameTestHelper h) {
+        var l = h.getLevel(); var b = fresh(h, 3, 3, 3); var c = (com.frozendawn.block.HyperionControllerBlockEntity) l.getBlockEntity(b.controller());
+        c.setSurroundingsForTest(20.0); c.second(l);
+        h.assertTrue(c.shell().valid() && c.physics().stage() == HyperionPhysics.Stage.WARM, "A warm build forms warm");
+        long grant = c.chargeEnergy(1_000_000);
+        h.assertTrue(grant <= HyperionPhysics.cooldownWatts(7) && c.stored() == 0, "Warm cells only take cool-down power: " + grant);
+        h.assertTrue(c.chargeHeadroomWatts() == HyperionPhysics.cooldownWatts(7), "Load-follow asks for the cool-down");
+        c.second(l);
+        for (int i = 1; i < 55; i++) { c.chargeEnergy(1_000_000); c.second(l); }
+        h.assertTrue(c.physics().stage() == HyperionPhysics.Stage.COLD, "Cold within a minute of full grants: " + c.physics().cellC());
+        h.assertTrue(c.chargeEnergy(1_000_000) > 0 && c.stored() > 0, "Then it stores");
+        h.succeed();
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "hyperion", timeoutTicks = 100)
+    public static void hyperionBreakingAChargedPartQuenches(GameTestHelper h) {
+        var l = h.getLevel(); var b = fresh(h, 3, 3, 3); var c = controller(h, b); c.setStoredForTest(10_000_000); int before = quenches(l);
+        l.destroyBlock(b.min().offset(1, 1, 0), true);
+        h.assertTrue(c.stored() == 0 && quenches(l) == before + 1, "A charged battery vents the moment a part breaks");
+        h.succeed();
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "hyperion", timeoutTicks = 100)
+    public static void hyperionEmptyBatteryComesApartQuietly(GameTestHelper h) {
+        var l = h.getLevel(); var b = fresh(h, 3, 3, 3); controller(h, b); int before = quenches(l);
+        var cell = b.min().offset(1, 1, 0); l.destroyBlock(cell, true);
+        var drops = l.getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class, new net.minecraft.world.phys.AABB(cell).inflate(2));
+        h.assertTrue(quenches(l) == before && drops.stream().anyMatch(e -> e.getItem().is(com.frozendawn.init.ModItems.SUPERCONDUCTING_CELL)), "An empty battery drops its cell quietly");
+        h.succeed();
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "hyperion", timeoutTicks = 100)
+    public static void hyperionControllerRemovalQuenchesOnlyWhenCharged(GameTestHelper h) {
+        var l = h.getLevel(); var b = fresh(h, 3, 3, 3); var c = controller(h, b); c.setStoredForTest(10_000_000); int before = quenches(l);
+        l.destroyBlock(b.controller(), true);
+        h.assertTrue(quenches(l) == before + 1, "Breaking a charged Controller vents");
+        b = fresh(h, 3, 3, 3); controller(h, b); before = quenches(l);
+        l.destroyBlock(b.controller(), true);
+        var drops = l.getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class, new net.minecraft.world.phys.AABB(b.controller()).inflate(2));
+        h.assertTrue(quenches(l) == before && drops.stream().anyMatch(e -> e.getItem().is(com.frozendawn.init.ModItems.HYPERION_CONTROLLER)), "An empty Controller drops quietly");
+        h.succeed();
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "hyperion", timeoutTicks = 100)
+    public static void hyperionMultiBreakQuenchesOnce(GameTestHelper h) {
+        var l = h.getLevel(); var b = fresh(h, 3, 3, 3); var c = controller(h, b); c.setStoredForTest(10_000_000); int before = quenches(l);
+        l.destroyBlock(b.min().offset(1, 1, 0), false); l.destroyBlock(b.min().offset(0, 1, 1), false); l.destroyBlock(b.max().offset(-1, -1, 0), false);
+        h.assertTrue(quenches(l) == before + 1, "Three breaks in one tick vent once: " + (quenches(l) - before));
+        h.succeed();
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "hyperion", timeoutTicks = 100)
+    public static void hyperionNeighborBuildDoesNotQuench(GameTestHelper h) {
+        var l = h.getLevel(); var b = fresh(h, 3, 3, 3); var c = controller(h, b); c.setStoredForTest(10_000_000); int before = quenches(l);
+        HyperionScenes.build(h, MIN.offset(3, 0, 0), 3, 3, 3, 1, 1);
+        l.setBlock(b.min().offset(1, 1, -1), ModBlocks.HYPERION_FRAME.get().defaultBlockState(), 3);
+        c.second(l);
+        h.assertTrue(c.shell().valid() && c.stored() == 10_000_000 && quenches(l) == before, "Building beside a charged battery leaves it alone: " + c.shell().problem());
+        h.succeed();
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "hyperion", timeoutTicks = 100)
+    public static void hyperionHotNeighborCounts(GameTestHelper h) {
+        var l = h.getLevel(); var b = fresh(h, 3, 3, 3); var c = controller(h, b);
+        var spot = b.min().offset(1, 1, -1);
+        l.setBlock(spot, ModBlocks.REACTOR_RADIATOR.get().defaultBlockState().setValue(com.frozendawn.block.ReactorRadiatorBlock.HOT, true), 3);
+        h.assertTrue(c.hotNeighbors(l) == 1, "A hot radiator against a face counts");
+        l.setBlock(spot, ModBlocks.REACTOR_RADIATOR.get().defaultBlockState(), 3);
+        h.assertTrue(c.hotNeighbors(l) == 0, "A cold one does not");
+        h.succeed();
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "hyperion", timeoutTicks = 100)
+    public static void hyperionSaveReloadMidWarningResumes(GameTestHelper h) {
+        var l = h.getLevel(); clear(h); var b = HyperionScenes.build(h, MIN, 5, 5, 5, 1, 1); var c = controller(h, b);
+        c.setStoredForTest(1_000_000_000L); c.setSurroundingsForTest(20.0); int before = quenches(l);
+        int guard = 0; do c.second(l); while (c.readout().stage() != HyperionPhysics.Stage.WARNING && guard++ < 400);
+        var saved = c.saveWithFullMetadata(l.registryAccess());
+        var copy = new com.frozendawn.block.HyperionControllerBlockEntity(b.controller(), c.getBlockState()); copy.setLevel(l); copy.loadWithComponents(saved, l.registryAccess());
+        h.assertTrue(copy.physics().stage() == HyperionPhysics.Stage.WARNING && copy.physics().cellC() == c.physics().cellC(), "Stage and cell temperature survive");
+        copy.setSurroundingsForTest(20.0); copy.second(l);
+        h.assertTrue(copy.stored() > 0 && quenches(l) == before, "Reloading never quenches by itself");
+        h.succeed();
+    }
+
+    static int quenches(ServerLevel l) { return com.frozendawn.block.HyperionControllerBlockEntity.quenchCount(l); }
+
     /** The built controller, formed by one second. */
     static com.frozendawn.block.HyperionControllerBlockEntity controller(GameTestHelper h, HyperionScenes.Built b) {
         var c = (com.frozendawn.block.HyperionControllerBlockEntity) h.getLevel().getBlockEntity(b.controller());

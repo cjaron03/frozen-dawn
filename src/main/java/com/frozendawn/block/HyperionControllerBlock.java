@@ -14,6 +14,11 @@ import net.minecraft.world.level.block.state.BlockState;
 public final class HyperionControllerBlock extends HyperionFacingPartBlock implements EntityBlock {
     public HyperionControllerBlock(Properties p) { super(p); }
     @Override public BlockEntity newBlockEntity(BlockPos p, BlockState s) { return new HyperionControllerBlockEntity(p, s); }
+    /** Breaking a charged Controller vents before its store is gone. */
+    @Override protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState next, boolean moved) {
+        if (!state.is(next.getBlock()) && level.getBlockEntity(pos) instanceof HyperionControllerBlockEntity c && c.stored() > 0) c.quench();
+        super.onRemove(state, level, pos, next, moved);
+    }
     @Override public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level l, BlockState s, BlockEntityType<T> t) {
         return !l.isClientSide() && t == ModBlockEntities.HYPERION_CONTROLLER.get()
                 ? (w, pos, state, be) -> { if (w.getGameTime() % 20 == 0) ((HyperionControllerBlockEntity) be).second((ServerLevel) w); } : null;
