@@ -64,6 +64,8 @@ public class ModNetworking {
                 (payload, context) -> context.enqueueWork(() -> ClientHandlers.handleReactorFlash(payload)));
         registrar.playToClient(IcarusBlastPayload.TYPE, IcarusBlastPayload.STREAM_CODEC,
                 (payload, context) -> context.enqueueWork(() -> ClientHandlers.handleIcarusBlast(payload)));
+        registrar.playToClient(IcarusCraterSitesPayload.TYPE, IcarusCraterSitesPayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(() -> ClientHandlers.handleIcarusCraterSites(payload)));
         registrar.playToClient(RadiationPayload.TYPE, RadiationPayload.STREAM_CODEC,
                 (payload, context) -> context.enqueueWork(() -> ClientHandlers.handleRadiation(payload)));
 

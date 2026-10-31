@@ -511,7 +511,7 @@ public final class IcarusGameTest {
         });
     }
     private static double dose(ServerPlayer p) { return p.getData(ModAttachments.RADIATION.get()).dose; }
-    private static ServerPlayer player(GameTestHelper h, BlockPos pos, GameType mode) {
+    static ServerPlayer player(GameTestHelper h, BlockPos pos, GameType mode) {
         var level = h.getLevel(); var profile = new GameProfile(UUID.randomUUID(), "icarus_" + mode.getName());
         var player = new ServerPlayer(level.getServer(), level, profile, ClientInformation.createDefault());
         player.connection = new net.neoforged.neoforge.common.util.FakePlayer(level, profile).connection;

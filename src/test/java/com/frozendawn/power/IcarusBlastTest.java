@@ -91,4 +91,30 @@ class IcarusBlastTest {
         assertTrue(IcarusBlast.witness(200, 100));
         assertFalse(IcarusBlast.witness(301, 100));
     }
+
+    @Test void craterRadiationHalvesEachDayAndStopsAtTheRim() {
+        double fresh = IcarusBlast.craterRate(0, 0, 400);
+        assertEquals(IcarusBlast.CRATER_RATE, fresh, 1e-9);
+        assertEquals(fresh / 2, IcarusBlast.craterRate(IcarusBlast.DAY_TICKS, 0, 400), 1e-9);
+        assertTrue(IcarusBlast.craterRate(0, 380, 400) < fresh / 4, "The rim is far cooler than the centre");
+        assertEquals(0, IcarusBlast.craterRate(0, 401, 400));
+        assertEquals(0, IcarusBlast.craterRate(IcarusBlast.SITE_TICKS, 0, 400), "Gone by the time the site is forgotten");
+        assertEquals(0, IcarusBlast.craterRate(-1, 0, 400));
+    }
+
+    @Test void craterFloorBurnsForAboutEightMinutes() {
+        assertEquals(1, IcarusBlast.floorHeat(0), 1e-9);
+        assertTrue(IcarusBlast.floorHeat(7 * 60 * 20) >= IcarusBlast.FLOOR_BURNS_ABOVE, "Still burning at seven minutes");
+        assertTrue(IcarusBlast.floorHeat(9 * 60 * 20) < IcarusBlast.FLOOR_BURNS_ABOVE, "Cool enough to walk on at nine");
+        assertTrue(IcarusBlast.smokeHeat(30 * 60 * 20) > 0.05, "Smoke still rises at half an hour");
+        assertTrue(IcarusBlast.smokeHeat(IcarusBlast.SITE_TICKS) < 0.01);
+    }
+
+    @Test void ashFallsForFiveMinutesOutToTwiceTheRadius() {
+        assertEquals(1, IcarusBlast.ash(0, 0, 400), 1e-9);
+        assertTrue(IcarusBlast.ash(0, 790, 400) > 0.4, "Still thick near 2r");
+        assertEquals(0, IcarusBlast.ash(0, 801, 400));
+        assertTrue(IcarusBlast.ash(4 * 60 * 20, 0, 400) > 0);
+        assertEquals(0, IcarusBlast.ash(5 * 60 * 20, 0, 400));
+    }
 }

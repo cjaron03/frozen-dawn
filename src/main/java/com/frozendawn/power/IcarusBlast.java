@@ -62,6 +62,29 @@ public final class IcarusBlast {
         return distance >= 2 * radius ? 0 : BURST_DOSE * (1 - distance / (2 * radius));
     }
 
+    /** The crater afterwards, at the owner's request: activated ground, a hot floor, smoke and ash, all by age in ticks. */
+    public static final double DAY_TICKS = 24000, CRATER_RATE = 3, FLOOR_COOL_TICKS = 6000, FLOOR_BURNS_ABOVE = 0.2,
+            SMOKE_COOL_TICKS = 18000, ASH_TICKS = 6000;
+    /** A crater is forgotten after six days, when its radiation is below background and its smoke is gone. */
+    public static final long SITE_TICKS = 6 * 24000;
+    /** Dose rate, RU/s, in the bowl: the ground the blast activated halves every in-game day, and the rim is far cooler
+     * than the centre. Below background it is nothing. */
+    public static double craterRate(double ageTicks, double distance, double radius) {
+        if (ageTicks < 0 || distance > radius) return 0;
+        double t = distance / radius, rate = CRATER_RATE * (1 - 0.9 * t * t) * Math.pow(0.5, ageTicks / DAY_TICKS);
+        return rate < 0.05 ? 0 : rate;
+    }
+    /** How hot the floor still is: 1 at the blast, burning anything on it while at least FLOOR_BURNS_ABOVE, about eight
+     * minutes. */
+    public static double floorHeat(double ageTicks) { return ageTicks < 0 ? 0 : Math.exp(-ageTicks / FLOOR_COOL_TICKS); }
+    /** Smoke and embers rising off the floor, for most of an hour. */
+    public static double smokeHeat(double ageTicks) { return ageTicks < 0 ? 0 : Math.exp(-ageTicks / SMOKE_COOL_TICKS); }
+    /** Ash fall: thickest at the centre, still half at twice the radius, and over after five minutes. */
+    public static double ash(double ageTicks, double distance, double radius) {
+        if (ageTicks < 0 || ageTicks >= ASH_TICKS || distance > 2 * radius) return 0;
+        return (1 - ageTicks / ASH_TICKS) * (1 - 0.5 * distance / (2 * radius));
+    }
+
     /** The white flash's peak opacity: full at the centre, still 0.15 at 6r, gone by 12r. Reduced flash caps it at 0.35. */
     public static double flashStrength(double distance, double radius, boolean reduced) {
         double t = distance / (6 * radius);

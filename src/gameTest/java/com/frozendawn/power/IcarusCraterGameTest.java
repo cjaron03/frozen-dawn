@@ -4,7 +4,10 @@ import com.frozendawn.FrozenDawn;
 import com.frozendawn.gametest.GameTestReporting;
 import com.frozendawn.gametest.GameTestTemplates;
 import com.frozendawn.world.IcarusCrater;
+import com.frozendawn.radiation.RadiationField;
 import com.frozendawn.world.IcarusCraterData;
+import com.frozendawn.world.IcarusCraterHazards;
+import com.frozendawn.world.IcarusDetonation;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.*;
@@ -15,6 +18,7 @@ import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.levelgen.Heightmap;
@@ -171,6 +175,35 @@ public final class IcarusCraterGameTest {
                 h.assertBlockPresent(Blocks.AIR, new BlockPos(10, 2, 5));
                 h.assertBlockPresent(Blocks.SNOW_BLOCK, new BlockPos(18, 2, 10));
             });
+        });
+    }
+
+    /** After the blast the bowl is radioactive and its floor burns: a survival player in it takes a dose rate, a cow on
+     * the floor is hurt, an item catches fire, and a creative player or one above the rim is spared. A fresh ServerPlayer
+     * is spawn-protected, so the cow stands in for a survival player's burns. */
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "icarus_crater", timeoutTicks = 40, skyAccess = true)
+    public static void icarusCraterBowlIsRadioactiveAndItsFloorBurns(GameTestHelper h) {
+        h.runAfterDelay(1, () -> {
+            var l = h.getLevel(); var core = h.absolutePos(new BlockPos(10, 4, 10));
+            IcarusDetonation.detonate(l, core, 8, java.util.Set.of());
+            h.assertTrue(IcarusCraterData.get(l).sites().stream().anyMatch(s -> s.center().equals(core) && s.blastTick() == l.getGameTime()),
+                    "The detonation leaves a crater site stamped with its tick");
+            var inside = IcarusGameTest.player(h, h.absolutePos(new BlockPos(12, 4, 10)), GameType.SURVIVAL);
+            var creative = IcarusGameTest.player(h, h.absolutePos(new BlockPos(8, 4, 10)), GameType.CREATIVE);
+            var above = IcarusGameTest.player(h, h.absolutePos(new BlockPos(10, 14, 10)), GameType.SURVIVAL);
+            var item = new ItemEntity(l, core.getX() + 0.5, core.getY(), core.getZ() + 2.5, new ItemStack(Items.STICK));
+            l.addFreshEntity(item);
+            var cow = h.spawn(net.minecraft.world.entity.EntityType.COW, new BlockPos(10, 4, 8));
+            try {
+                h.assertTrue(RadiationField.rate(inside) > 2, "Dose rate near the centre of a fresh crater, got " + RadiationField.rate(inside));
+                h.assertTrue(RadiationField.rate(above) < 0.05, "No crater dose above the rim, got " + RadiationField.rate(above));
+                inside.setOnGround(true); creative.setOnGround(true); item.setOnGround(true); cow.setOnGround(true);
+                IcarusCraterHazards.second(l);
+                h.assertTrue(cow.getHealth() < cow.getMaxHealth() && cow.isOnFire(), "The hot floor burns a cow on it");
+                h.assertTrue(creative.getHealth() == creative.getMaxHealth() && !creative.isOnFire(), "A creative player is spared");
+                h.assertTrue(item.isOnFire(), "An item on the hot floor catches fire");
+                h.succeed();
+            } finally { inside.discard(); creative.discard(); above.discard(); item.discard(); cow.discard(); }
         });
     }
 }

@@ -106,6 +106,11 @@ public final class IcarusDetonation {
         }
         advancements(l, center, radius, crew);
         blast(l, center, radius);
-        if (FrozenDawnConfig.ICARUS_TERRAIN_DESTRUCTION.get()) IcarusCraterData.get(l).queue(core, radius, l.getSeed() ^ core.asLong() ^ l.getGameTime());
+        if (FrozenDawnConfig.ICARUS_TERRAIN_DESTRUCTION.get()) {
+            var data = IcarusCraterData.get(l);
+            data.queue(core, radius, l.getSeed() ^ core.asLong() ^ l.getGameTime());
+            data.addSite(core, radius, l.getGameTime());
+            IcarusCraterHazards.sync(l);
+        }
     }
 }

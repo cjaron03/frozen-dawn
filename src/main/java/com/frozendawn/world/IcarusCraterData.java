@@ -22,15 +22,19 @@ import net.minecraft.util.datafix.DataFixTypes;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.saveddata.SavedData;
 
-/** Icarus craters still being carved in one level. A job keeps the chunks it has not reached yet, so a crater left
- * half-done by a save or an unloaded chunk resumes where it stopped. */
+/** Icarus craters in one level: jobs still being carved, and sites still hot. A job keeps the chunks it has not reached
+ * yet, so a crater left half-done by a save or an unloaded chunk resumes where it stopped. A site is the crater's
+ * afterlife: radiation, a burning floor, smoke and ash, all fading with the ticks since its blast. */
 public final class IcarusCraterData extends SavedData {
     /** pending holds the chunk longs within meltRadius that are not carved yet; columns holds, for a part-carved pending
      * chunk, the index of its next column. Carving a column again would cut deeper from the lowered surface. */
     public record Job(BlockPos center, double radius, long seed, LongSet pending, Long2IntMap columns) {}
 
+    public record Site(BlockPos center, double radius, long blastTick) {}
+
     private static final String DATA_NAME = FrozenDawn.MOD_ID + "_icarus_craters";
     private final List<Job> jobs = new ArrayList<>();
+    private final List<Site> sites = new ArrayList<>();
 
     public static IcarusCraterData get(ServerLevel l) {
         return l.getDataStorage().computeIfAbsent(new Factory<>(IcarusCraterData::new, IcarusCraterData::load, DataFixTypes.LEVEL), DATA_NAME);
@@ -52,6 +56,20 @@ public final class IcarusCraterData extends SavedData {
     }
 
     public List<Job> jobs() { return Collections.unmodifiableList(jobs); }
+
+    public void addSite(BlockPos center, double radius, long blastTick) {
+        sites.add(new Site(center.immutable(), radius, blastTick));
+        setDirty();
+    }
+
+    public List<Site> sites() { return Collections.unmodifiableList(sites); }
+
+    /** Forgets sites older than IcarusBlast.SITE_TICKS; returns whether any went. */
+    public boolean prune(long now) {
+        boolean removed = sites.removeIf(s -> now - s.blastTick() >= IcarusBlast.SITE_TICKS);
+        if (removed) setDirty();
+        return removed;
+    }
 
     /** Records that chunk of job is carved up to, not including, column. */
     public void progress(Job job, long chunk, int column) {
@@ -78,6 +96,10 @@ public final class IcarusCraterData extends SavedData {
             for (int i = 0; i < Math.min(partial.length, next.length); i++) columns.put(partial[i], next[i]);
             data.jobs.add(new Job(center, job.getDouble("Radius"), job.getLong("Seed"), new LongOpenHashSet(job.getLongArray("Pending")), columns));
         }
+        for (Tag t : tag.getList("Sites", Tag.TAG_COMPOUND)) {
+            var site = (CompoundTag) t;
+            NbtUtils.readBlockPos(site, "Center").ifPresent(c -> data.sites.add(new Site(c, site.getDouble("Radius"), site.getLong("BlastTick"))));
+        }
         return data;
     }
 
@@ -96,6 +118,15 @@ public final class IcarusCraterData extends SavedData {
             list.add(t);
         }
         tag.put("Jobs", list);
+        var siteList = new ListTag();
+        for (var site : sites) {
+            var t = new CompoundTag();
+            t.put("Center", NbtUtils.writeBlockPos(site.center()));
+            t.putDouble("Radius", site.radius());
+            t.putLong("BlastTick", site.blastTick());
+            siteList.add(t);
+        }
+        tag.put("Sites", siteList);
         return tag;
     }
 }

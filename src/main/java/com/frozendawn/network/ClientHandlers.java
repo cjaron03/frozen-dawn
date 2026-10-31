@@ -65,6 +65,7 @@ public final class ClientHandlers {
     public static void handleRadiation(RadiationPayload payload) { com.frozendawn.client.RadiationClient.receive(payload); }
     public static void handleReactorFlash(ReactorFlashPayload payload) { com.frozendawn.client.RadiationClient.flash(payload); }
     public static void handleIcarusBlast(IcarusBlastPayload payload) { com.frozendawn.client.IcarusBlastEffects.receive(payload); }
+    public static void handleIcarusCraterSites(IcarusCraterSitesPayload payload) { com.frozendawn.client.IcarusCraterAmbience.receive(payload.sites()); }
 
     public static void handleArchitectDebug(ArchitectDebugPayload payload) {
         com.frozendawn.client.ArchitectDebugRenderer.receive(payload.view());

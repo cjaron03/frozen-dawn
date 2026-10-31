@@ -150,6 +150,7 @@ Size scales with antimatter inside: radius = 400 x cube root(capsules / 64). A f
 - The crater is deep at the centre and shallower toward a ragged edge, at least several blocks deep even at the rim. Exact profile is the builder's, roughly radius / 5 deep at the centre.
 - No block drops.
 - Snow and ice melt in a wider ring beyond the crater, about 1.5x the radius. The crater floor stays hot for a while.
+- Added at the owner's request: the bowl stays radioactive (3 RU/s at the centre of a fresh crater, much less at the rim, halving every in-game day, lead lining cuts it as usual); for about eight minutes the floor burns living things and items on it (creative and spectator players are spared); smoke columns, embers and popping lava rise off the floor for most of an hour; and for the first five minutes grey ash falls out to twice the radius while the fog closes in grey. A crater is forgotten after six in-game days.
 - Added at the owner's request: the floor is fused in places (magma, tinted glass, obsidian, a little crying obsidian), and where there is air, fires burn on the floor near the rim.
 - A short radiation burst through the existing radiation system, with no lingering fallout.
 - Process the destruction across ticks with a work budget. It must survive save and reload and resume. Unloaded chunks are processed when they load.
