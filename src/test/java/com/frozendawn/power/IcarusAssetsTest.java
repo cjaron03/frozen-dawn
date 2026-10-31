@@ -30,7 +30,7 @@ class IcarusAssetsTest {
     private static final Set<String> SOUNDS = Set.of("blocks.icarus_frame_hum", "blocks.icarus_stabilizer_spinup", "blocks.icarus_stabilizer_whine",
             "blocks.icarus_shield_hum", "blocks.icarus_core_roar", "blocks.icarus_injector_feed", "blocks.icarus_capsule_dock",
             "blocks.icarus_ignition", "blocks.icarus_clip_slam", "blocks.icarus_cole_complete", "blocks.icarus_alarm_caution",
-            "blocks.icarus_alarm_warning", "blocks.icarus_alarm_critical", "blocks.icarus_boom", "blocks.icarus_ringing", "blocks.icarus_rumble",
+            "blocks.icarus_alarm_warning", "blocks.icarus_alarm_critical", "blocks.icarus_boom", "blocks.icarus_ringing", "blocks.icarus_rumble", "blocks.icarus_running",
             "blocks.icarus_vacuum_thud", "blocks.icarus_power_on", "blocks.icarus_shield_form", "blocks.icarus_core_song", "blocks.icarus_wind_down", "blocks.icarus_core_collapse", "blocks.icarus_shield_hit", "blocks.icarus_stabilizer_sputter", "blocks.icarus_klaxon", "blocks.icarus_strain", "blocks.icarus_core_thump", "blocks.icarus_ui_confirm", "blocks.icarus_clip_arm", "blocks.icarus_ignition_whump",
             "ui.suit.icarus_caution", "ui.suit.icarus_warning", "ui.suit.icarus_critical", "ui.suit.icarus_radiation");
 

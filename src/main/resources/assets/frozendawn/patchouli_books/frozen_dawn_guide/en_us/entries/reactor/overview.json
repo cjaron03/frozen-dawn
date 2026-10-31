@@ -1,5 +1,5 @@
 {
-  "name": "CFU-7 Hearthstone",
+  "name": "CFU-7 \"Hearthstone\"",
   "category": "frozendawn:reactor",
   "icon": "frozendawn:reactor_controller",
   "sortnum": 0,
@@ -7,7 +7,7 @@
     {
       "type": "patchouli:spotlight",
       "item": "frozendawn:reactor_controller",
-      "title": "CFU-7 Hearthstone",
+      "title": "CFU-7 \"Hearthstone\"",
       "text": "ORSA's fission reactor. Fuel rods make heat; radiators turn it into power."
     },
     {

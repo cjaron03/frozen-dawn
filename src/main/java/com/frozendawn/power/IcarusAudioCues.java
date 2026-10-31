@@ -7,7 +7,7 @@ import org.jetbrains.annotations.Nullable;
 /** Which AMR-1 Icarus one-shots a second plays. Pure: the Controller plays the cues at the core and relays the alarm
  * tiers to sealed suits. */
 public final class IcarusAudioCues {
-    public enum Cue { FRAME_HUM_ON, STABILIZER_SPINUP, SHIELD_FORM, CAPSULE_DOCK, INJECTOR_FEED, IGNITION, CLIP_SLAM, WIND_DOWN, CORE_COLLAPSE, COLE_COMPLETE,
+    public enum Cue { FRAME_HUM_ON, STABILIZER_SPINUP, SHIELD_FORM, CAPSULE_DOCK, INJECTOR_FEED, IGNITION, RUNNING_CHIME, CLIP_SLAM, WIND_DOWN, CORE_COLLAPSE, COLE_COMPLETE,
         ALARM_CAUTION, ALARM_WARNING, ALARM_CRITICAL }
     /** The suit repeats the critical line this often while the alarm stays critical. */
     public static final int CRITICAL_REPEAT_S = 60;
@@ -26,6 +26,7 @@ public final class IcarusAudioCues {
         if (to == State.INJECTION && after.injected() > 0) cues.add(Cue.CAPSULE_DOCK);
         if (entered(from, to, State.PRIMING)) cues.add(Cue.INJECTOR_FEED);
         if (entered(from, to, State.IGNITION)) cues.add(Cue.IGNITION);
+        if (entered(from, to, State.RUNNING)) cues.add(Cue.RUNNING_CHIME);
         if (entered(from, to, State.CLIPPED)) cues.add(Cue.CLIP_SLAM);
         // The Cole Protocol's audible arc: the roar spools down, then the plasma collapses back to a speck.
         if (entered(from, to, State.COLE_RAMP_DOWN)) cues.add(Cue.WIND_DOWN);

@@ -4404,6 +4404,26 @@
       }
     ]
   },
+  "blocks.reactor_startup": {
+    "category": "blocks",
+    "subtitle": "subtitle.frozendawn.blocks.reactor_startup",
+    "sounds": [
+      {
+        "name": "frozendawn:blocks/reactor/startup",
+        "volume": 1.0
+      }
+    ]
+  },
+  "blocks.reactor_shutdown": {
+    "category": "blocks",
+    "subtitle": "subtitle.frozendawn.blocks.reactor_shutdown",
+    "sounds": [
+      {
+        "name": "frozendawn:blocks/reactor/shutdown",
+        "volume": 1.0
+      }
+    ]
+  },
   "blocks.reactor_meltdown_alert": {
     "category": "blocks",
     "subtitle": "subtitle.frozendawn.blocks.reactor_meltdown_alert",
@@ -4954,6 +4974,26 @@
       {
         "name": "frozendawn:blocks/icarus/clip_slam",
         "stream": false
+      }
+    ]
+  },
+  "blocks.icarus_running": {
+    "category": "blocks",
+    "subtitle": "subtitle.frozendawn.blocks.icarus_running",
+    "sounds": [
+      {
+        "name": "frozendawn:blocks/icarus/running",
+        "stream": false
+      }
+    ]
+  },
+  "blocks.reactor_running": {
+    "category": "blocks",
+    "subtitle": "subtitle.frozendawn.blocks.reactor_running",
+    "sounds": [
+      {
+        "name": "frozendawn:blocks/reactor/running",
+        "volume": 1.0
       }
     ]
   },

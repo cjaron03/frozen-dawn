@@ -167,6 +167,12 @@ render cole_complete \
   -f lavfi -i "aevalsrc='0.4*(sin(2*PI*587.33*t)*exp(-2.6*t) + if(gte(t\,0.35)\, sin(2*PI*440*(t-0.35))*exp(-2.4*(t-0.35))) + if(gte(t\,0.7)\, sin(2*PI*293.66*(t-0.7))*exp(-1.8*(t-0.7)) + 0.25*sin(2*PI*587.33*(t-0.7))*exp(-4*(t-0.7))))':s=44100:d=2.2" \
   -filter_complex "[0:a]afade=t=in:st=0:d=0.005,afade=t=out:st=1.9:d=0.3,alimiter=limit=0.7:level=0[out]"
 
+# Running, 2.6 s: the reactor at power. The Cole chime turned upward and brighter, D4, A4, D5 and a ringing F#5 with its
+# octave.
+render running \
+  -f lavfi -i "aevalsrc='0.32*(sin(2*PI*293.66*t)*exp(-2.2*t) + if(gte(t\,0.18)\, sin(2*PI*440*(t-0.18))*exp(-2.2*(t-0.18))) + if(gte(t\,0.36)\, sin(2*PI*587.33*(t-0.36))*exp(-2*(t-0.36))) + if(gte(t\,0.54)\, (sin(2*PI*739.99*(t-0.54)) + 0.3*sin(2*PI*1479.98*(t-0.54)))*exp(-1.5*(t-0.54))))':s=44100:d=2.6" \
+  -filter_complex "[0:a]afade=t=in:st=0:d=0.005,afade=t=out:st=2.2:d=0.4,alimiter=limit=0.7:level=0[out]"
+
 # Caution, 1 s: two soft equal beeps at 880 Hz.
 render alarm_caution \
   -f lavfi -i "aevalsrc='0.3*sin(2*PI*880*t)*(between(t\,0.02\,0.22)+between(t\,0.4\,0.6))':s=44100:d=1" \

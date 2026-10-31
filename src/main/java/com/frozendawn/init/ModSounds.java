@@ -86,6 +86,8 @@ public class ModSounds {
     public static final DeferredHolder<SoundEvent, SoundEvent> DOSIMETER_CHIRP = register("ui.dosimeter_chirp");
     public static final DeferredHolder<SoundEvent, SoundEvent> DOSIMETER_ALARM = register("ui.dosimeter_alarm");
     public static final DeferredHolder<SoundEvent, SoundEvent> REACTOR_SCRAM = register("blocks.reactor_scram");
+    public static final DeferredHolder<SoundEvent, SoundEvent> REACTOR_STARTUP = register("blocks.reactor_startup");
+    public static final DeferredHolder<SoundEvent, SoundEvent> REACTOR_SHUTDOWN = register("blocks.reactor_shutdown");
     public static final DeferredHolder<SoundEvent, SoundEvent> REACTOR_MELTDOWN_ALERT = register("blocks.reactor_meltdown_alert");
     public static final DeferredHolder<SoundEvent, SoundEvent> SFR_CRYO = register("blocks.sfr_cryo");
     public static final DeferredHolder<SoundEvent, SoundEvent> SFR_IGNITION = register("blocks.sfr_ignition");
@@ -119,6 +121,8 @@ public class ModSounds {
     public static final DeferredHolder<SoundEvent, SoundEvent> ICARUS_IGNITION = register("blocks.icarus_ignition");
     public static final DeferredHolder<SoundEvent, SoundEvent> ICARUS_CLIP_SLAM = register("blocks.icarus_clip_slam");
     public static final DeferredHolder<SoundEvent, SoundEvent> ICARUS_COLE_COMPLETE = register("blocks.icarus_cole_complete");
+    public static final DeferredHolder<SoundEvent, SoundEvent> ICARUS_RUNNING = register("blocks.icarus_running");
+    public static final DeferredHolder<SoundEvent, SoundEvent> REACTOR_RUNNING = register("blocks.reactor_running");
     public static final DeferredHolder<SoundEvent, SoundEvent> ICARUS_ALARM_CAUTION = register("blocks.icarus_alarm_caution");
     public static final DeferredHolder<SoundEvent, SoundEvent> ICARUS_ALARM_WARNING = register("blocks.icarus_alarm_warning");
     public static final DeferredHolder<SoundEvent, SoundEvent> ICARUS_ALARM_CRITICAL = register("blocks.icarus_alarm_critical");

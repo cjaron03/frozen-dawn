@@ -24,6 +24,7 @@ class IcarusAudioCuesTest {
         assertEquals(EnumSet.of(Cue.CAPSULE_DOCK), IcarusAudioCues.cues(r(INJECTION), r(INJECTION, Alarm.NONE, 2 * IcarusPhysics.CAPSULE)));
         assertEquals(EnumSet.of(Cue.INJECTOR_FEED), IcarusAudioCues.cues(r(INJECTION), r(PRIMING)));
         assertEquals(EnumSet.of(Cue.IGNITION), IcarusAudioCues.cues(r(PRIMING), r(IGNITION)));
+        assertEquals(EnumSet.of(Cue.RUNNING_CHIME), IcarusAudioCues.cues(r(RAMP), r(RUNNING)));
         assertEquals(EnumSet.of(Cue.CLIP_SLAM), IcarusAudioCues.cues(r(RUNNING), r(CLIPPED)));
         assertEquals(EnumSet.of(Cue.COLE_COMPLETE), IcarusAudioCues.cues(r(COLE_DISCHARGE), r(COLD)));
         assertEquals(EnumSet.of(Cue.WIND_DOWN), IcarusAudioCues.cues(r(RUNNING), r(COLE_RAMP_DOWN)));
