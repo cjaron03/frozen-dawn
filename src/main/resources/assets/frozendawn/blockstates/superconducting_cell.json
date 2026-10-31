@@ -1,7 +1,19 @@
 {
   "variants": {
-    "": {
+    "look=frosted": {
       "model": "frozendawn:block/superconducting_cell"
+    },
+    "look=plain": {
+      "model": "frozendawn:block/superconducting_cell_plain"
+    },
+    "look=stressed": {
+      "model": "frozendawn:block/superconducting_cell_stressed"
+    },
+    "look=critical": {
+      "model": "frozendawn:block/superconducting_cell_critical"
+    },
+    "look=scarred": {
+      "model": "frozendawn:block/superconducting_cell_scarred"
     }
   }
 }

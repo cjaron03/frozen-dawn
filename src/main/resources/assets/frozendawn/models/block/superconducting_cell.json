@@ -1,6 +1,8 @@
 {
-  "parent": "minecraft:block/cube_all",
+  "parent": "minecraft:block/cube_bottom_top",
   "textures": {
-    "all": "frozendawn:block/superconducting_cell"
+    "side": "frozendawn:block/superconducting_cell_frosted",
+    "top": "frozendawn:block/superconducting_cell_frosted_top",
+    "bottom": "frozendawn:block/superconducting_cell_plain"
   }
 }

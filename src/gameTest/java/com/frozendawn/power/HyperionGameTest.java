@@ -1,7 +1,10 @@
 package com.frozendawn.power;
 
 import com.frozendawn.FrozenDawn;
+import com.frozendawn.block.HyperionControllerBlock;
 import com.frozendawn.block.HyperionMultiblock;
+import com.frozendawn.block.SuperconductingCellBlock;
+import com.frozendawn.block.SuperconductingCellBlock.Look;
 import com.frozendawn.block.HyperionMultiblock.Problem;
 import com.frozendawn.gametest.*;
 import com.frozendawn.init.ModBlocks;
@@ -221,6 +224,9 @@ public final class HyperionGameTest {
         var l = h.getLevel(); var b = fresh(h, 3, 3, 3); var c = controller(h, b); c.setStoredForTest(10_000_000); int before = quenches(l);
         l.destroyBlock(b.controller(), true);
         h.assertTrue(quenches(l) == before + 1, "Breaking a charged Controller vents");
+        h.assertTrue(com.frozendawn.block.HyperionVentJets.venting(l, b.vents().get(0)), "The vents jet even with the Controller gone");
+        var scar = b.min().offset(1, 1, 0);
+        h.assertTrue(l.getBlockState(scar).getValue(SuperconductingCellBlock.LOOK) == Look.SCARRED, "The cells it leaves behind are scarred");
         b = fresh(h, 3, 3, 3); controller(h, b); before = quenches(l);
         l.destroyBlock(b.controller(), true);
         var drops = l.getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class, new net.minecraft.world.phys.AABB(b.controller()).inflate(2));
@@ -277,6 +283,43 @@ public final class HyperionGameTest {
         var c = (com.frozendawn.block.HyperionControllerBlockEntity) l.getBlockEntity(b.controller()); c.second(l);
         h.assertTrue("hyperion.frozendawn.problem.vents".equals(c.problemKey()), "Explains the missing vent: " + c.problemKey());
         h.succeed();
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "hyperion", timeoutTicks = 100)
+    public static void hyperionCellsShowTheStage(GameTestHelper h) {
+        // One cooler just holds 81 charged cells at 5C and loses at 20C; an empty battery cannot pay its cooler at all.
+        var l = h.getLevel(); clear(h); var b = HyperionScenes.build(h, MIN, 5, 5, 5, 1, 1); var c = controller(h, b);
+        c.second(l);
+        expectLook(h, b, Look.FROSTED, false, "Deep cold frosts every cell");
+        c.setStoredForTest(1_000_000_000L); c.setSurroundingsForTest(5.0); c.second(l);
+        expectLook(h, b, Look.PLAIN, false, "Cold cells in a room above 0C lose the frost");
+        c.setSurroundingsForTest(20.0); c.second(l);
+        h.assertTrue(c.readout().stage() == HyperionPhysics.Stage.CHIRP, "Chirps first: " + c.readout().stage());
+        expectLook(h, b, Look.STRESSED, true, "Heat stress cracks the cells and lights the alert");
+        int guard = 0; do c.second(l); while (c.readout().stage() != HyperionPhysics.Stage.FINAL && guard++ < 400);
+        expectLook(h, b, Look.CRITICAL, true, "The final seconds glow white-hot");
+        guard = 0; do c.second(l); while (c.stored() > 0 && guard++ < 100);
+        expectLook(h, b, Look.SCARRED, false, "A quench leaves scars while the cells are warm");
+        c.setSurroundingsForTest(-250.0);
+        guard = 0; do { c.chargeEnergy(1_000_000_000L); c.second(l); } while (c.readout().stage() != HyperionPhysics.Stage.COLD && guard++ < 400);
+        expectLook(h, b, Look.FROSTED, false, "Cold again, the scars frost over");
+
+        var small = fresh(h, 3, 3, 3); var d = controller(h, small);
+        d.setStoredForTest(1_000_000); d.setSurroundingsForTest(20.0);
+        guard = 0; do d.second(l); while (d.readout().stage() != HyperionPhysics.Stage.WARM && guard++ < 5000);
+        expectLook(h, small, Look.PLAIN, false, "A battery that drained and warmed without venting stays plain");
+        h.succeed();
+    }
+    private static void expectLook(GameTestHelper h, HyperionScenes.Built b, Look look, boolean alert, String why) {
+        var l = h.getLevel(); var seen = new java.util.HashSet<Look>();
+        for (var p : BlockPos.betweenClosed(b.min(), b.max())) {
+            var s = l.getBlockState(p);
+            if (s.hasProperty(SuperconductingCellBlock.LOOK)) seen.add(s.getValue(SuperconductingCellBlock.LOOK));
+        }
+        h.assertTrue(seen.equals(java.util.Set.of(look)), why + ": " + seen);
+        boolean controllerAlert = l.getBlockState(b.controller()).getValue(HyperionControllerBlock.ALERT);
+        h.assertTrue(controllerAlert == alert, why + ": controller alert " + controllerAlert);
+        for (var port : b.ports()) h.assertTrue(l.getBlockState(port).getValue(HyperionControllerBlock.ALERT) == alert, why + ": port alert");
     }
 
     static int quenches(ServerLevel l) { return com.frozendawn.block.HyperionControllerBlockEntity.quenchCount(l); }

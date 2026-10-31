@@ -123,7 +123,7 @@ public class ModBlocks {
     public static final DeferredBlock<com.frozendawn.block.QuenchVentBlock> QUENCH_VENT = BLOCKS.register("quench_vent",
             () -> new com.frozendawn.block.QuenchVentBlock(sfrShell()));
     public static final DeferredBlock<com.frozendawn.block.HyperionControllerBlock> HYPERION_CONTROLLER = BLOCKS.register("hyperion_controller",
-            () -> new com.frozendawn.block.HyperionControllerBlock(sfrShell()));
+            () -> new com.frozendawn.block.HyperionControllerBlock(sfrShell().noOcclusion()));
     private static BlockBehaviour.Properties sfrShell() {
         return BlockBehaviour.Properties.of().strength(6f, 12f).requiresCorrectToolForDrops().sound(SoundType.METAL).pushReaction(PushReaction.BLOCK);
     }

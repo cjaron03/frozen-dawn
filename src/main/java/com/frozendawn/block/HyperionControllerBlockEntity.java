@@ -8,6 +8,7 @@ import com.frozendawn.data.ApocalypseState;
 import com.frozendawn.world.TemperatureManager;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
 import net.minecraft.core.BlockPos;
@@ -54,6 +55,11 @@ public final class HyperionControllerBlockEntity extends BlockEntity implements 
     private double lastSurroundingsC;
     private long machineDrawn;
     private Snapshot snapshot = Snapshot.EMPTY, sent;
+    /** Set by a quench, cleared once the cells are cold again: until then they show scars. */
+    private boolean scarred;
+    private SuperconductingCellBlock.Look shownLook;
+    private Boolean shownAlert;
+    private List<BlockPos> vents = List.of();
 
     public HyperionControllerBlockEntity(BlockPos p, BlockState s) { super(ModBlockEntities.HYPERION_CONTROLLER.get(), p, s); }
 
@@ -73,7 +79,7 @@ public final class HyperionControllerBlockEntity extends BlockEntity implements 
     private boolean stillValid(ServerLevel l) { return min != null && HyperionMultiblock.validate(l, min, max).valid(); }
     /** The box lost a part: vent any charge at once, then come apart. */
     void broken(ServerLevel l) {
-        if (stored > 0) quench();
+        if (stored > 0) { quench(); if (min != null) show(l, SuperconductingCellBlock.Look.SCARRED, false); }
         if (min != null) unform(l);
     }
     public static int quenchCount(ServerLevel l) { return QUENCHES.getOrDefault(l, 0); }
@@ -93,7 +99,8 @@ public final class HyperionControllerBlockEntity extends BlockEntity implements 
             shell = HyperionMultiblock.discover(l, worldPosition);
             if (!shell.valid()) return;
             min = shell.min(); max = shell.max(); register(l);
-            physics.reset(surroundingsC(l)); readout = null; setChanged();
+            lastSurroundingsC = surroundingsC(l); physics.reset(lastSurroundingsC); readout = null; setChanged();
+            show(l); sync(l);
             return;
         } else { sync(l); return; }
         step(l);
@@ -116,12 +123,47 @@ public final class HyperionControllerBlockEntity extends BlockEntity implements 
         cooldownGranted = 0;
         stored -= Math.min(stored, readout.coolerJoules());
         if (readout.quenched()) quench();
+        if (readout.stage() == HyperionPhysics.Stage.COLD) scarred = false;
+        show(l);
         setChanged();
+    }
+    /** How the cells look for the current stage: frost, heat stress, white-hot cracks or scars. Never the charge. */
+    SuperconductingCellBlock.Look look() {
+        return switch (physics.stage()) {
+            case COLD -> lastSurroundingsC < 0 ? SuperconductingCellBlock.Look.FROSTED : SuperconductingCellBlock.Look.PLAIN;
+            case CHIRP, WARNING -> SuperconductingCellBlock.Look.STRESSED;
+            case FINAL -> SuperconductingCellBlock.Look.CRITICAL;
+            case WARM -> scarred ? SuperconductingCellBlock.Look.SCARRED : SuperconductingCellBlock.Look.PLAIN;
+        };
+    }
+    private void show(ServerLevel l) {
+        var stage = physics.stage();
+        show(l, look(), stage == HyperionPhysics.Stage.CHIRP || stage == HyperionPhysics.Stage.WARNING || stage == HyperionPhysics.Stage.FINAL);
+    }
+    /** Repaint only on a change: cells, then the alert lamps on this Controller and its Ports. Client updates only. */
+    private void show(ServerLevel l, SuperconductingCellBlock.Look look, boolean alert) {
+        if (look != shownLook) {
+            shownLook = look;
+            for (var p : BlockPos.betweenClosed(min, max)) {
+                var s = l.getBlockState(p);
+                if (s.getBlock() instanceof SuperconductingCellBlock && s.getValue(SuperconductingCellBlock.LOOK) != look)
+                    l.setBlock(p, s.setValue(SuperconductingCellBlock.LOOK, look), Block.UPDATE_CLIENTS);
+            }
+        }
+        if (shownAlert == null || shownAlert != alert) {
+            shownAlert = alert;
+            var lamps = new ArrayList<BlockPos>(shell.ports()); lamps.add(worldPosition);
+            for (var p : lamps) {
+                var s = l.getBlockState(p);
+                if (s.hasProperty(HyperionControllerBlock.ALERT) && s.getValue(HyperionControllerBlock.ALERT) != alert)
+                    l.setBlock(p, s.setValue(HyperionControllerBlock.ALERT, alert), Block.UPDATE_CLIENTS);
+            }
+        }
     }
     /** Vent the charge. The cells are already warm (heat) or the box is coming apart (a break). */
     public void quench() {
-        stored = 0; lastQuenchTick = level == null ? 0 : level.getGameTime();
-        if (level instanceof ServerLevel l) QUENCHES.merge(l, 1, Integer::sum);
+        stored = 0; scarred = true; lastQuenchTick = level == null ? 0 : level.getGameTime();
+        if (level instanceof ServerLevel l) { QUENCHES.merge(l, 1, Integer::sum); HyperionVentJets.start(l, vents); }
         setChanged();
     }
     /** The warmest of the six spots just outside the face centers, from the mod's own loaded-only temperature. */
@@ -156,7 +198,7 @@ public final class HyperionControllerBlockEntity extends BlockEntity implements 
         return l.getBlockEntity(p) instanceof ReactorControllerBlockEntity reactor && reactor.powerWatts() > 0;
     }
     private void register(ServerLevel l) {
-        registered = true;
+        registered = true; vents = shell.vents(); shownLook = null; shownAlert = null;
         BOXES.computeIfAbsent(l, k -> new HashMap<>()).put(worldPosition, new BlockPos[]{min, max});
         for (var port : shell.ports()) if (l.getBlockEntity(port) instanceof HyperionPortBlockEntity p) p.setController(worldPosition);
         PowerNetworks.hyperionFormed(l, worldPosition, shell.ports());
@@ -248,6 +290,7 @@ public final class HyperionControllerBlockEntity extends BlockEntity implements 
         if (min != null) { t.put("Min", NbtUtils.writeBlockPos(min)); t.put("Max", NbtUtils.writeBlockPos(max)); }
         var p = new CompoundTag(); physics.save(p); t.put("Physics", p);
         t.putLong("LastQuench", lastQuenchTick);
+        t.putBoolean("Scarred", scarred);
     }
     @Override protected void loadAdditional(CompoundTag t, HolderLookup.Provider r) {
         super.loadAdditional(t, r);
@@ -256,5 +299,6 @@ public final class HyperionControllerBlockEntity extends BlockEntity implements 
         if (min == null || max == null) min = max = null;
         physics.load(t.getCompound("Physics"));
         lastQuenchTick = t.contains("LastQuench") ? t.getLong("LastQuench") : Long.MIN_VALUE;
+        scarred = t.getBoolean("Scarred");
     }
 }
