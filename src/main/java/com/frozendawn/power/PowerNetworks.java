@@ -213,6 +213,37 @@ public final class PowerNetworks {
                     ||!protectedRoom(rooms,path)&&near(link,pos);
         },null);
     }
+    /** blockChanged for a batch, such as one tick's carve of a crater chunk: one invalidation covers every change.
+     * Nearness is tested against the batch's bounding box, which can only refresh a few more links. */
+    public static void blocksChanged(ServerLevel level, List<com.frozendawn.world.BlockChangeHooks.Change> changes) {
+        var rt=LEVELS.get(level);boolean any=false;
+        // With no links there is nothing to suspend; skip the per-block geometry tests.
+        boolean linked=rt!=null&&!PowerNetworkSavedData.get(level).links().isEmpty();
+        var moved=new HashSet<BlockPos>();int minX=Integer.MAX_VALUE,minY=Integer.MAX_VALUE,minZ=Integer.MAX_VALUE,maxX=Integer.MIN_VALUE,maxY=Integer.MIN_VALUE,maxZ=Integer.MIN_VALUE;
+        for(var c:changes){var pos=c.pos();var before=c.before();var after=c.after();
+            boolean node=before.getBlock()!=after.getBlock()&&(PowerLinkRules.range(before)>0||PowerLinkRules.range(after)>0);
+            if(before.getBlock()!=after.getBlock()&&PowerLinkRules.range(before)>0)clear(level,pos);
+            if(!linked)continue;
+            boolean passage=com.frozendawn.world.RoomAtmosphere.isPassage(level,pos,before)!=com.frozendawn.world.RoomAtmosphere.isPassage(level,pos,after);
+            boolean port=before.getBlock()!=after.getBlock()&&(isFeedthrough(before)||isFeedthrough(after));
+            if(!node&&!passage&&!port)continue;
+            any=true;moved.add(pos);
+            minX=Math.min(minX,pos.getX());minY=Math.min(minY,pos.getY());minZ=Math.min(minZ,pos.getZ());
+            maxX=Math.max(maxX,pos.getX());maxY=Math.max(maxY,pos.getY());maxZ=Math.max(maxZ,pos.getZ());
+        }
+        if(rt!=null&&!linked){rt.geometryRevision++;return;}
+        if(!any)return;
+        var rooms=com.frozendawn.world.RoomAtmosphere.cachedRoomViews(level).stream().map(com.frozendawn.world.RoomAtmosphere.RoomView::geometry).toList();
+        var touched=rooms.stream().filter(g->moved.stream().anyMatch(p->g.cells().contains(p)||g.walls().contains(p))).toList();
+        var box=new net.minecraft.world.phys.AABB(minX-80,minY-48,minZ-80,maxX+80,maxY+48,maxZ+80);
+        invalidate(level,rt,link->{var path=PowerLinkRules.path(link.a(),link.b());
+            return path.stream().anyMatch(moved::contains)||touched.stream().anyMatch(g->touches(g,path))
+                    ||!protectedRoom(rooms,path)&&(inside(box,link.a())||inside(box,link.b()));
+        },null);
+    }
+    private static boolean inside(net.minecraft.world.phys.AABB box,BlockPos p){
+        return p.getX()>=box.minX&&p.getX()<=box.maxX&&p.getY()>=box.minY&&p.getY()<=box.maxY&&p.getZ()>=box.minZ&&p.getZ()<=box.maxZ;
+    }
     private static boolean isFeedthrough(BlockState s){return s.getBlock() instanceof com.frozendawn.block.PowerRelayBlock relay&&relay.isFeedthrough();}
     private static boolean near(PowerLink link,BlockPos p){return near(link.a(),p)||near(link.b(),p);}
     private static boolean near(BlockPos a,BlockPos b){return Math.abs(a.getX()-b.getX())<=80&&Math.abs(a.getZ()-b.getZ())<=80&&Math.abs(a.getY()-b.getY())<=48;}
@@ -322,6 +353,7 @@ public final class PowerNetworks {
         if (!level.isLoaded(pos)) return 0;
         if (level.getBlockEntity(pos) instanceof com.frozendawn.block.ReactorControllerBlockEntity reactor) return reactor.powerWatts();
         if (level.getBlockEntity(pos) instanceof com.frozendawn.block.SfrPowerPortBlockEntity sfr) return sfr.supplyWatts();
+        if (level.getBlockEntity(pos) instanceof com.frozendawn.block.IcarusPowerPortBlockEntity icarus) return icarus.supplyWatts();
         return level.getBlockEntity(pos) instanceof com.frozendawn.block.GeothermalCoreBlockEntity core
                 ? core.getPowerShare() * 200 : 0;
     }

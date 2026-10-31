@@ -37,7 +37,7 @@
     {
       "type": "patchouli:text",
       "title": "The Way Out",
-      "text": "$(li)$(l:reactor/overview)Hearthstone Reactor$(/l)$(li)$(l:radiation/basics)Radiation$(/l)$(li)$(l:signals/uplink)ORSA Uplink$(/l)$(li)$(l:advanced/transponder)ORSA Transponder$(/l)"
+      "text": "$(li)$(l:reactor/overview)CFU-7 \"Hearthstone\"$(/l)$(li)$(l:radiation/basics)Radiation$(/l)$(li)$(l:signals/uplink)ORSA Uplink$(/l)$(li)$(l:advanced/transponder)ORSA Transponder$(/l)"
     }
   ],
   "priority": true

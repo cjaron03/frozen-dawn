@@ -1,0 +1,36 @@
+{
+  "type": "frozendawn:fabricating",
+  "blueprint": "icarus",
+  "ingredients": [
+    {
+      "ingredient": {
+        "item": "frozendawn:magnet_coil"
+      },
+      "count": 4
+    },
+    {
+      "ingredient": {
+        "item": "frozendawn:isotope_column"
+      },
+      "count": 2
+    },
+    {
+      "ingredient": {
+        "item": "frozendawn:helium_canister"
+      },
+      "count": 2
+    },
+    {
+      "ingredient": {
+        "item": "frozendawn:refined_acheronite"
+      },
+      "count": 4
+    }
+  ],
+  "result": {
+    "id": "frozendawn:antiparticle_foundry",
+    "count": 1
+  },
+  "watts": 60000,
+  "seconds": 300
+}

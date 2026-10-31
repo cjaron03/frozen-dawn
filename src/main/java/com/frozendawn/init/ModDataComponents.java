@@ -19,6 +19,8 @@ public class ModDataComponents {
     // A prepaid half-joule travels with the lantern across switches, cell swaps and pickup.
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<Integer>> LANTERN_CREDIT = DATA_COMPONENTS.register("lantern_credit", () -> DataComponentType.<Integer>builder().persistent(Codec.intRange(0,1)).networkSynchronized(ByteBufCodecs.VAR_INT).build());
 
+    /** Antimatter in a sealed capsule, in micro-capsules ({@link com.frozendawn.power.IcarusPhysics#CAPSULE} is one full capsule). */
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<Long>> ANTIMATTER = DATA_COMPONENTS.register("antimatter", () -> DataComponentType.<Long>builder().persistent(Codec.LONG).networkSynchronized(ByteBufCodecs.VAR_LONG).build());
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<Long>> PIXIE_WATER = DATA_COMPONENTS.register("pixie_water", () -> DataComponentType.<Long>builder().persistent(Codec.LONG).networkSynchronized(ByteBufCodecs.VAR_LONG).build());
 
     /** A printed Plumb Line Survey Sheet's pulse; synced so the holder's client can draw it. */

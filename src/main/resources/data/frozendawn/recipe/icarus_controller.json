@@ -1,0 +1,30 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "FDF",
+    "SAS",
+    "FBF"
+  ],
+  "key": {
+    "F": {
+      "item": "frozendawn:icarus_frame"
+    },
+    "D": {
+      "item": "minecraft:diamond"
+    },
+    "S": {
+      "item": "frozendawn:signal_processor"
+    },
+    "A": {
+      "item": "frozendawn:refined_acheronite"
+    },
+    "B": {
+      "item": "minecraft:redstone_block"
+    }
+  },
+  "result": {
+    "id": "frozendawn:icarus_controller",
+    "count": 1
+  }
+}

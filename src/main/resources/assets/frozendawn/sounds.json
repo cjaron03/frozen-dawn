@@ -4404,6 +4404,26 @@
       }
     ]
   },
+  "blocks.reactor_startup": {
+    "category": "blocks",
+    "subtitle": "subtitle.frozendawn.blocks.reactor_startup",
+    "sounds": [
+      {
+        "name": "frozendawn:blocks/reactor/startup",
+        "volume": 1.0
+      }
+    ]
+  },
+  "blocks.reactor_shutdown": {
+    "category": "blocks",
+    "subtitle": "subtitle.frozendawn.blocks.reactor_shutdown",
+    "sounds": [
+      {
+        "name": "frozendawn:blocks/reactor/shutdown",
+        "volume": 1.0
+      }
+    ]
+  },
   "blocks.reactor_meltdown_alert": {
     "category": "blocks",
     "subtitle": "subtitle.frozendawn.blocks.reactor_meltdown_alert",
@@ -4742,6 +4762,354 @@
       {
         "name": "frozendawn:ambient/cyclone/thunder/distant4",
         "weight": 2
+      }
+    ]
+  },
+  "blocks.icarus_frame_hum": {
+    "category": "blocks",
+    "subtitle": "subtitle.frozendawn.blocks.icarus_frame_hum",
+    "sounds": [
+      {
+        "name": "frozendawn:blocks/icarus/frame_hum",
+        "stream": true
+      }
+    ]
+  },
+  "blocks.icarus_power_on": {
+    "category": "blocks",
+    "subtitle": "subtitle.frozendawn.blocks.icarus_power_on",
+    "sounds": [
+      {
+        "name": "frozendawn:blocks/icarus/power_on",
+        "stream": false
+      }
+    ]
+  },
+  "blocks.icarus_stabilizer_spinup": {
+    "category": "blocks",
+    "subtitle": "subtitle.frozendawn.blocks.icarus_stabilizer_spinup",
+    "sounds": [
+      {
+        "name": "frozendawn:blocks/icarus/stabilizer_spinup",
+        "stream": false
+      }
+    ]
+  },
+  "blocks.icarus_stabilizer_whine": {
+    "category": "blocks",
+    "subtitle": "subtitle.frozendawn.blocks.icarus_stabilizer_whine",
+    "sounds": [
+      {
+        "name": "frozendawn:blocks/icarus/stabilizer_whine",
+        "stream": true
+      }
+    ]
+  },
+  "blocks.icarus_shield_form": {
+    "category": "blocks",
+    "subtitle": "subtitle.frozendawn.blocks.icarus_shield_form",
+    "sounds": [
+      {
+        "name": "frozendawn:blocks/icarus/shield_form",
+        "stream": false
+      }
+    ]
+  },
+  "blocks.icarus_shield_hum": {
+    "category": "blocks",
+    "subtitle": "subtitle.frozendawn.blocks.icarus_shield_hum",
+    "sounds": [
+      {
+        "name": "frozendawn:blocks/icarus/shield_hum",
+        "stream": true
+      }
+    ]
+  },
+  "blocks.icarus_core_roar": {
+    "category": "blocks",
+    "subtitle": "subtitle.frozendawn.blocks.icarus_core_roar",
+    "sounds": [
+      {
+        "name": "frozendawn:blocks/icarus/core_roar",
+        "stream": true
+      }
+    ]
+  },
+  "blocks.icarus_core_song": {
+    "category": "blocks",
+    "subtitle": "subtitle.frozendawn.blocks.icarus_core_song",
+    "sounds": [
+      {
+        "name": "frozendawn:blocks/icarus/core_song",
+        "stream": true
+      }
+    ]
+  },
+  "blocks.icarus_wind_down": {
+    "category": "blocks",
+    "subtitle": "subtitle.frozendawn.blocks.icarus_wind_down",
+    "sounds": [
+      {
+        "name": "frozendawn:blocks/icarus/wind_down"
+      }
+    ]
+  },
+  "blocks.icarus_core_collapse": {
+    "category": "blocks",
+    "subtitle": "subtitle.frozendawn.blocks.icarus_core_collapse",
+    "sounds": [
+      {
+        "name": "frozendawn:blocks/icarus/core_collapse"
+      }
+    ]
+  },
+  "blocks.icarus_shield_hit": {
+    "category": "blocks",
+    "subtitle": "subtitle.frozendawn.blocks.icarus_shield_hit",
+    "sounds": [
+      {
+        "name": "frozendawn:blocks/icarus/shield_hit"
+      }
+    ]
+  },
+  "blocks.icarus_stabilizer_sputter": {
+    "category": "blocks",
+    "subtitle": "subtitle.frozendawn.blocks.icarus_stabilizer_sputter",
+    "sounds": [
+      {
+        "name": "frozendawn:blocks/icarus/stabilizer_sputter"
+      }
+    ]
+  },
+  "blocks.icarus_klaxon": {
+    "category": "blocks",
+    "subtitle": "subtitle.frozendawn.blocks.icarus_klaxon",
+    "sounds": [
+      {
+        "name": "frozendawn:blocks/icarus/klaxon",
+        "stream": true
+      }
+    ]
+  },
+  "blocks.icarus_strain": {
+    "category": "blocks",
+    "subtitle": "subtitle.frozendawn.blocks.icarus_strain",
+    "sounds": [
+      {
+        "name": "frozendawn:blocks/icarus/strain",
+        "stream": true
+      }
+    ]
+  },
+  "blocks.icarus_core_thump": {
+    "category": "blocks",
+    "subtitle": "subtitle.frozendawn.blocks.icarus_core_thump",
+    "sounds": [
+      {
+        "name": "frozendawn:blocks/icarus/core_thump"
+      }
+    ]
+  },
+  "blocks.icarus_ui_confirm": {
+    "category": "blocks",
+    "subtitle": "subtitle.frozendawn.blocks.icarus_ui_confirm",
+    "sounds": [
+      {
+        "name": "frozendawn:blocks/icarus/ui_confirm"
+      }
+    ]
+  },
+  "blocks.icarus_clip_arm": {
+    "category": "blocks",
+    "subtitle": "subtitle.frozendawn.blocks.icarus_clip_arm",
+    "sounds": [
+      {
+        "name": "frozendawn:blocks/icarus/clip_arm"
+      }
+    ]
+  },
+  "blocks.icarus_ignition_whump": {
+    "category": "blocks",
+    "subtitle": "subtitle.frozendawn.blocks.icarus_ignition_whump",
+    "sounds": [
+      {
+        "name": "frozendawn:blocks/icarus/ignition_whump"
+      }
+    ]
+  },
+  "blocks.icarus_injector_feed": {
+    "category": "blocks",
+    "subtitle": "subtitle.frozendawn.blocks.icarus_injector_feed",
+    "sounds": [
+      {
+        "name": "frozendawn:blocks/icarus/injector_feed",
+        "stream": false
+      }
+    ]
+  },
+  "blocks.icarus_capsule_dock": {
+    "category": "blocks",
+    "subtitle": "subtitle.frozendawn.blocks.icarus_capsule_dock",
+    "sounds": [
+      {
+        "name": "frozendawn:blocks/icarus/capsule_dock",
+        "stream": false
+      }
+    ]
+  },
+  "blocks.icarus_ignition": {
+    "category": "blocks",
+    "subtitle": "subtitle.frozendawn.blocks.icarus_ignition",
+    "sounds": [
+      {
+        "name": "frozendawn:blocks/icarus/ignition",
+        "stream": false
+      }
+    ]
+  },
+  "blocks.icarus_clip_slam": {
+    "category": "blocks",
+    "subtitle": "subtitle.frozendawn.blocks.icarus_clip_slam",
+    "sounds": [
+      {
+        "name": "frozendawn:blocks/icarus/clip_slam",
+        "stream": false
+      }
+    ]
+  },
+  "blocks.icarus_running": {
+    "category": "blocks",
+    "subtitle": "subtitle.frozendawn.blocks.icarus_running",
+    "sounds": [
+      {
+        "name": "frozendawn:blocks/icarus/running",
+        "stream": false
+      }
+    ]
+  },
+  "blocks.reactor_running": {
+    "category": "blocks",
+    "subtitle": "subtitle.frozendawn.blocks.reactor_running",
+    "sounds": [
+      {
+        "name": "frozendawn:blocks/reactor/running",
+        "volume": 1.0
+      }
+    ]
+  },
+  "blocks.icarus_cole_complete": {
+    "category": "blocks",
+    "subtitle": "subtitle.frozendawn.blocks.icarus_cole_complete",
+    "sounds": [
+      {
+        "name": "frozendawn:blocks/icarus/cole_complete",
+        "stream": false
+      }
+    ]
+  },
+  "blocks.icarus_alarm_caution": {
+    "category": "blocks",
+    "subtitle": "subtitle.frozendawn.blocks.icarus_alarm_caution",
+    "sounds": [
+      {
+        "name": "frozendawn:blocks/icarus/alarm_caution",
+        "stream": false
+      }
+    ]
+  },
+  "blocks.icarus_alarm_warning": {
+    "category": "blocks",
+    "subtitle": "subtitle.frozendawn.blocks.icarus_alarm_warning",
+    "sounds": [
+      {
+        "name": "frozendawn:blocks/icarus/alarm_warning",
+        "stream": false
+      }
+    ]
+  },
+  "blocks.icarus_alarm_critical": {
+    "category": "blocks",
+    "subtitle": "subtitle.frozendawn.blocks.icarus_alarm_critical",
+    "sounds": [
+      {
+        "name": "frozendawn:blocks/icarus/alarm_critical",
+        "stream": false
+      }
+    ]
+  },
+  "blocks.icarus_boom": {
+    "category": "blocks",
+    "subtitle": "subtitle.frozendawn.blocks.icarus_boom",
+    "sounds": [
+      {
+        "name": "frozendawn:blocks/icarus/boom",
+        "stream": false
+      }
+    ]
+  },
+  "blocks.icarus_rumble": {
+    "category": "blocks",
+    "subtitle": "subtitle.frozendawn.blocks.icarus_rumble",
+    "sounds": [
+      {
+        "name": "frozendawn:blocks/icarus/rumble",
+        "stream": false
+      }
+    ]
+  },
+  "blocks.icarus_ringing": {
+    "category": "blocks",
+    "subtitle": "subtitle.frozendawn.blocks.icarus_ringing",
+    "sounds": [
+      {
+        "name": "frozendawn:blocks/icarus/ringing",
+        "stream": false
+      }
+    ]
+  },
+  "blocks.icarus_vacuum_thud": {
+    "category": "blocks",
+    "subtitle": "subtitle.frozendawn.blocks.icarus_vacuum_thud",
+    "sounds": [
+      {
+        "name": "frozendawn:blocks/icarus/vacuum_thud",
+        "stream": false
+      }
+    ]
+  },
+  "ui.suit.icarus_caution": {
+    "subtitle": "subtitle.frozendawn.ui.suit.icarus_caution",
+    "sounds": [
+      {
+        "name": "frozendawn:ui/suit/icarus_caution",
+        "stream": false
+      }
+    ]
+  },
+  "ui.suit.icarus_warning": {
+    "subtitle": "subtitle.frozendawn.ui.suit.icarus_warning",
+    "sounds": [
+      {
+        "name": "frozendawn:ui/suit/icarus_warning",
+        "stream": false
+      }
+    ]
+  },
+  "ui.suit.icarus_critical": {
+    "subtitle": "subtitle.frozendawn.ui.suit.icarus_critical",
+    "sounds": [
+      {
+        "name": "frozendawn:ui/suit/icarus_critical",
+        "stream": false
+      }
+    ]
+  },
+  "ui.suit.icarus_radiation": {
+    "subtitle": "subtitle.frozendawn.ui.suit.icarus_radiation",
+    "sounds": [
+      {
+        "name": "frozendawn:ui/suit/icarus_radiation",
+        "stream": false
       }
     ]
   }

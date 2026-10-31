@@ -1,0 +1,22 @@
+{
+  "name": "Starting Up",
+  "category": "frozendawn:icarus",
+  "icon": "frozendawn:icarus_stabilizer",
+  "sortnum": 3,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "text": "Press Start. The reactor runs every step itself and holds with a reason if something is short.$(br2)A cold start takes about $(bold)2 minutes$(); the very first adds a 1-minute commissioning."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Steps",
+      "text": "$(li)Power check, 10 s$(li)Reserve bank charge, 20 s$(li)Stabilizer spin-up, 30 s$(li)Antimatter injection, 20 s$(li)Matter priming, 15 s$(li)Ignition, 5 s$(li)Ramp, 20 s"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Startup Power",
+      "text": "The reserve charge and spin-up draw about $(bold)1 MW$() from the grid. Have an SFR-1 \"Solstice\" and full batteries ready before you press Start."
+    }
+  ]
+}

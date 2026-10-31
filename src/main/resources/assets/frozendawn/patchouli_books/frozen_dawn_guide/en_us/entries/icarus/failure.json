@@ -1,0 +1,27 @@
+{
+  "name": "Failure",
+  "category": "frozendawn:icarus",
+  "icon": "minecraft:tnt",
+  "sortnum": 6,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "text": "$(danger)Icarus detonates instantly$() if the shield reaches 0, or if any part is broken while the core holds antimatter. There is no countdown."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "The Blast",
+      "text": "The radius grows with the core charge: about 125 blocks for 2 capsules, 400 for a full 64.$(br2)Everything inside dies. Outside, damage and knockback fade with distance."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Aftermath",
+      "text": "A deep crater with no drops. The floor burns for minutes and stays radioactive for days, and a soot pall darkens the sky over the region.$(br2)Servers can turn terrain destruction off."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Staying Alive",
+      "text": "Keep the shield above the drain, watch the predictions, and use CLIP the moment the core runs away.$(br2)$(flavor)ORSA would like you to do better than they did.$()"
+    }
+  ]
+}

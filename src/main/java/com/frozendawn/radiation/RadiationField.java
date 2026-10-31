@@ -85,7 +85,8 @@ public final class RadiationField {
             rate += i < MAX_RAYS ? RadiationMath.rate(s.strength(), d, shielding(level, s.pos(), eye, s.block(), at))
                     : RadiationMath.rate(s.strength(), d, 0.5); // beyond the ray budget: assume one wall
         }
-        return (rate + oreRate(player)) * com.frozendawn.item.LeadLiningModuleItem.rateMultiplier(player);
+        return (rate + oreRate(player) + com.frozendawn.world.IcarusCraterHazards.radiation(player))
+                * com.frozendawn.item.LeadLiningModuleItem.rateMultiplier(player);
     }
 
     /** Product of per-block factors between source and eye, excluding the source's own block and the eye cell. */

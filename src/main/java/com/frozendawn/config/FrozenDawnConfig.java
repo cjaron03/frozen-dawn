@@ -106,10 +106,12 @@ public class FrozenDawnConfig {
     public static final ModConfigSpec.IntValue STILLPOINT_RADIUS;
     public static final ModConfigSpec.DoubleValue POST_MAEVE_AMBIENT_VOLUME_MULTIPLIER;
     public static final ModConfigSpec.BooleanValue DEBUG_FORCE_MAEVE_ERASED;
+    public static final ModConfigSpec.BooleanValue ICARUS_TERRAIN_DESTRUCTION;
 
     // Client
     public static final ModConfigSpec.DoubleValue CYCLONE_FLASH_INTENSITY;
     public static final ModConfigSpec.BooleanValue CYCLONE_CAMERA_SHAKE;
+    public static final ModConfigSpec.BooleanValue ICARUS_REDUCED_FLASH;
     public static final ModConfigSpec.BooleanValue ENABLE_SKY_DARKENING;
     public static final ModConfigSpec.BooleanValue ENABLE_FROST_OVERLAY;
     public static final ModConfigSpec.BooleanValue ENABLE_SKY_COLOR_SHIFT;
@@ -463,6 +465,9 @@ public class FrozenDawnConfig {
         DEBUG_FORCE_MAEVE_ERASED = BUILDER
                 .comment("DEBUG ONLY: treat Maeve as erased without changing saved world state.")
                 .define("debugForceMaeveErased", false);
+        ICARUS_TERRAIN_DESTRUCTION = BUILDER
+                .comment("Whether an Icarus detonation carves a crater and thaws the ground around it. Entity damage happens either way.")
+                .define("icarusTerrainDestruction", true);
         BUILDER.pop();
 
         BUILDER.push("client");
@@ -472,6 +477,9 @@ public class FrozenDawnConfig {
                 .defineInRange("cycloneFlashIntensity", 1.0D, 0.0D, 1.0D);
         CYCLONE_CAMERA_SHAKE = BUILDER.comment("Optional exposed cyclone wind camera movement; off by default.")
                 .define("cycloneCameraShake", false);
+        ICARUS_REDUCED_FLASH = BUILDER
+                .comment("Soften an Icarus detonation's flash: at most 35% white and no strobe.")
+                .define("icarusReducedFlash", false);
         ENABLE_SKY_DARKENING = BUILDER
                 .comment("Enable progressive sky darkening and fog")
                 .define("enableSkyDarkening", true);

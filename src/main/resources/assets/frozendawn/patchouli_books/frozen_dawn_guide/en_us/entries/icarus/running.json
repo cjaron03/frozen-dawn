@@ -1,0 +1,32 @@
+{
+  "name": "Running It",
+  "category": "frozendawn:icarus",
+  "icon": "frozendawn:halsey_core",
+  "sortnum": 4,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "text": "Three settings: output, shield strength and matter feed. The default is the minimum, 1 MW gross."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "The Loop",
+      "text": "More output heats the core. A hotter core drains the shield faster, and a stronger shield costs more power. Above the red line the drain climbs steeply."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Drift",
+      "text": "As antimatter is used the core grows more reactive and runs hotter at the same settings. Come back now and then and retune it.$(br2)The Controller predicts time to shield failure, to red heat, and to an empty reserve."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Efficiency",
+      "text": "At minimum a capsule lasts about 2 hours. At full output it lasts about 30 minutes and returns much less energy per capsule."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Safety Net",
+      "text": "The reserve bank holds the shield for about 10 minutes if the grid fails. While the reactor is loaded, a sealed EVA suit relays its alarms.$(br2)When its chunks unload, everything pauses."
+    }
+  ]
+}

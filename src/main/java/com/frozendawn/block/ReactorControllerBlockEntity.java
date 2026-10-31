@@ -54,6 +54,9 @@ public final class ReactorControllerBlockEntity extends BlockEntity implements M
     private int alarm;
     /** Last SCRAM state heard, so each trip sounds once (button, redstone or automatic). */
     private boolean scramHeard;
+    /** Fission was running last second: its start and a normal stop each play once. A SCRAM has its own cue. atPower:
+     * this run has already chimed on first making power, once the core is hot enough for the coolant to flow. */
+    private boolean fissioning, atPower;
 
     public ReactorControllerBlockEntity(BlockPos p, BlockState s) { super(ModBlockEntities.REACTOR_CONTROLLER.get(), p, s); }
     public NonNullList<ItemStack> items() { return items; }
@@ -103,6 +106,7 @@ public final class ReactorControllerBlockEntity extends BlockEntity implements M
         boolean wasMelted = core.meltdown(), wasFrozen = core.frozen();
         readout = core.step(new ReactorPhysics.Inputs(rods, sinks, roomC(l, facing), l.hasNeighborSignal(worldPosition), target));
         announceScram(l);
+        announceFission(l, readout.burn() > 0, readout.powerKw() > 0);
         burn(readout.burn());
         ejectSpent();
         // Coolant circulates through every linked radiator, buried or not: warm coolant heats them all.
@@ -228,6 +232,12 @@ public final class ReactorControllerBlockEntity extends BlockEntity implements M
         if (core.scrammed() && !scramHeard && !core.meltdown()) l.playSound(null, worldPosition, ModSounds.REACTOR_SCRAM.get(), SoundSource.BLOCKS, 2f, 1f);
         scramHeard = core.scrammed();
     }
+    private void announceFission(ServerLevel l, boolean now, boolean power) {
+        if (now && !fissioning) l.playSound(null, worldPosition, ModSounds.REACTOR_STARTUP.get(), SoundSource.BLOCKS, 1.5f, 1f);
+        else if (!now && fissioning && !core.scrammed() && !core.meltdown()) l.playSound(null, worldPosition, ModSounds.REACTOR_SHUTDOWN.get(), SoundSource.BLOCKS, 1.5f, 1f);
+        if (now && power && !atPower) l.playSound(null, worldPosition, ModSounds.REACTOR_RUNNING.get(), SoundSource.BLOCKS, 1.5f, 1f);
+        fissioning = now; atPower = now && (atPower || power);
+    }
     public boolean reset() { boolean ok = level != null && core.reset(level.hasNeighborSignal(worldPosition)); setChanged(); return ok; }
     public void toggleLoadFollow() { if (!core.meltdown()) { core.setLoadFollow(!core.loadFollow()); setChanged(); } }
     public void cycleReserve() { if (!core.meltdown()) { core.cycleReserve(); setChanged(); } }
@@ -280,11 +290,12 @@ public final class ReactorControllerBlockEntity extends BlockEntity implements M
         super.saveAdditional(tag, r); ContainerHelper.saveAllItems(tag, items, r);
         var physics = new CompoundTag(); core.save(physics); tag.put("Core", physics);
         tag.putDouble("BurnDebt", burnDebt); tag.putString("ScramLog", scramLog);
+        tag.putBoolean("Fissioning", fissioning); tag.putBoolean("AtPower", atPower);
     }
     @Override protected void loadAdditional(CompoundTag tag, HolderLookup.Provider r) {
         super.loadAdditional(tag, r); items.clear(); ContainerHelper.loadAllItems(tag, items, r);
         core.load(tag.getCompound("Core")); burnDebt = Math.clamp(tag.getDouble("BurnDebt"), 0, 1); scramLog = tag.getString("ScramLog");
-        readout = IDLE; hum = tag.getFloat("Hum"); alarm = tag.getInt("Alarm"); scramHeard = core.scrammed();
+        readout = IDLE; hum = tag.getFloat("Hum"); alarm = tag.getInt("Alarm"); scramHeard = core.scrammed(); fissioning = tag.getBoolean("Fissioning"); atPower = tag.getBoolean("AtPower");
     }
     @Override public CompoundTag getUpdateTag(HolderLookup.Provider r) { var tag = new CompoundTag(); tag.putFloat("Hum", hum); tag.putInt("Alarm", alarm); return tag; }
     @Override public net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket getUpdatePacket() { return net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket.create(this); }

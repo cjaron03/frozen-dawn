@@ -46,6 +46,10 @@ public class ModNetworking {
         registrar.playToClient(AuroraStatePayload.TYPE, AuroraStatePayload.STREAM_CODEC,
                 (payload, context) -> context.enqueueWork(() -> ClientHandlers.handleAurora(payload)));
 
+        registrar.playToServer(IcarusSettingsPayload.TYPE, IcarusSettingsPayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(() -> {
+                    if (context.player() instanceof ServerPlayer player) IcarusSettingsPayload.handle(player, payload);
+                }));
         registrar.playToServer(HeadlampTogglePayload.TYPE, HeadlampTogglePayload.STREAM_CODEC,
                 (payload, context) -> context.enqueueWork(() -> {
                     if (context.player() instanceof ServerPlayer player) HeadlampTogglePayload.handle(player);
@@ -58,6 +62,10 @@ public class ModNetworking {
 
         registrar.playToClient(ReactorFlashPayload.TYPE, ReactorFlashPayload.STREAM_CODEC,
                 (payload, context) -> context.enqueueWork(() -> ClientHandlers.handleReactorFlash(payload)));
+        registrar.playToClient(IcarusBlastPayload.TYPE, IcarusBlastPayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(() -> ClientHandlers.handleIcarusBlast(payload)));
+        registrar.playToClient(IcarusCraterSitesPayload.TYPE, IcarusCraterSitesPayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(() -> ClientHandlers.handleIcarusCraterSites(payload)));
         registrar.playToClient(RadiationPayload.TYPE, RadiationPayload.STREAM_CODEC,
                 (payload, context) -> context.enqueueWork(() -> ClientHandlers.handleRadiation(payload)));
 
@@ -66,6 +74,8 @@ public class ModNetworking {
 
         registrar.playToClient(SfrBlueprintPayload.TYPE, SfrBlueprintPayload.STREAM_CODEC,
                 (payload, context) -> context.enqueueWork(() -> ClientHandlers.handleSfrBlueprint(payload)));
+        registrar.playToClient(IcarusBlueprintPayload.TYPE, IcarusBlueprintPayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(() -> ClientHandlers.handleIcarusBlueprint(payload)));
 
         registrar.playToClient(PowerLinksPayload.TYPE, PowerLinksPayload.STREAM_CODEC,
                 (payload, context) -> context.enqueueWork(() -> ClientHandlers.handlePowerLinks(payload)));

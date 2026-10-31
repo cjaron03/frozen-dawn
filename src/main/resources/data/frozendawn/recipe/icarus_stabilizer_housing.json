@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "FRF",
+    "R R",
+    "FRF"
+  ],
+  "key": {
+    "F": {
+      "item": "frozendawn:icarus_frame"
+    },
+    "R": {
+      "item": "minecraft:redstone"
+    }
+  },
+  "result": {
+    "id": "frozendawn:icarus_stabilizer_housing",
+    "count": 4
+  }
+}

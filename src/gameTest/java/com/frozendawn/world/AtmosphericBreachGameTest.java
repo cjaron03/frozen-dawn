@@ -90,7 +90,11 @@ public final class AtmosphericBreachGameTest {
         com.frozendawn.gametest.GameTestReporting.installReporter(level);
     }
 
-    @GameTest(template=GameTestTemplates.EMPTY_LARGE, batch="atmospheric_recovery", timeoutTicks=160)
+    private static String describe(RoomAtmosphere.Geometry g){return g.seal()+", "+g.cells().size()+" cells"+(g.exceededBounds()?", exceeded bounds":"")+(g.scanning()?", scanning":"");}
+
+    // Whatever surrounds the test plot can push the room scan past MAX_CELLS into the background scan, which only
+    // advances once per server tick; the breach is confirmed when it finishes, so the test waits for real ticks.
+    @GameTest(template=GameTestTemplates.EMPTY_LARGE, batch="atmospheric_recovery", timeoutTicks=400)
     public static void atmosphericBreachNeedsRecoveryAndPersistsDepletion(GameTestHelper h) {
         var level=h.getLevel();var apocalypse=ApocalypseState.get(level.getServer());long previous=apocalypse.getApocalypseTicks();
         phase(h);RoomAtmosphere.reset();AtmosphericBreach.reset();
@@ -98,26 +102,36 @@ public final class AtmosphericBreachGameTest {
         h.assertTrue(TemperatureManager.hasBreathableAir(level,center),"Sealed starting room retains air");
         level.setBlock(hole,Blocks.AIR.defaultBlockState(),3);
         RoomAtmosphere.tickLevel(level);
-        h.assertTrue(AtmosphericBreach.activeBursts(level)==1,"One real sealed-to-open transition emits one burst");
-        level.setBlock(hole.above(),Blocks.AIR.defaultBlockState(),3);RoomAtmosphere.tickLevel(level);
-        h.assertTrue(AtmosphericBreach.activeBursts(level)==1,"More broken blocks in evacuated room do not repeat burst");
-        level.setBlock(hole,Blocks.GLASS.defaultBlockState(),3);level.setBlock(hole.above(),Blocks.GLASS.defaultBlockState(),3);
-        RoomAtmosphere.reset(); // Models dropping transient caches; persistent SavedData remains.
-        h.assertFalse(TemperatureManager.hasBreathableAir(level,center),"Replacing wall or dropping cache cannot recreate air");
-        var geometry=RoomAtmosphere.inspect(level,center);
-        var persisted=RoomAirState.get(level).save(new net.minecraft.nbt.CompoundTag(),level.registryAccess());
-        var restored=RoomAirState.load(persisted,level.registryAccess());
-        h.assertTrue(restored.isDepleted(geometry.cells()),"Real SavedData codec retains depleted room across reload");
-        var core=center.west();level.setBlock(core,ModBlocks.GEOTHERMAL_CORE.get().defaultBlockState(),2);level.getBlockEntity(core).onLoad();
-        h.assertFalse(TemperatureManager.hasBreathableAir(level,center),"Oxygen generator cannot restore room instantly");
-        h.runAfterDelay(105,()->{
-            try {
-                h.assertTrue(TemperatureManager.hasBreathableAir(level,center),"Five loaded seconds of sealed core support recover air");
-                level.setBlock(hole,Blocks.AIR.defaultBlockState(),3);RoomAtmosphere.tickLevel(level);
-                h.assertTrue(AtmosphericBreach.activeBursts(level)==1,"Recovered room can produce a new event; old event expired");
-                h.succeed();
-            } finally {apocalypse.setApocalypseTicks(previous,level.getServer());RoomAtmosphere.reset();AtmosphericBreach.reset();}
-        });
+        h.startSequence()
+                .thenWaitUntil(()->h.assertTrue(AtmosphericBreach.activeBursts(level)>0,"Breach waits for its room scan; room "
+                        +describe(RoomAtmosphere.inspect(level,center))))
+                .thenExecute(()->{
+                    h.assertTrue(AtmosphericBreach.activeBursts(level)==1,"One real sealed-to-open transition emits one burst, got "+AtmosphericBreach.activeBursts(level));
+                    level.setBlock(hole.above(),Blocks.AIR.defaultBlockState(),3);RoomAtmosphere.tickLevel(level);
+                    h.assertTrue(AtmosphericBreach.activeBursts(level)==1,"More broken blocks in evacuated room do not repeat burst");
+                    level.setBlock(hole,Blocks.GLASS.defaultBlockState(),3);level.setBlock(hole.above(),Blocks.GLASS.defaultBlockState(),3);
+                    RoomAtmosphere.reset(); // Models dropping transient caches; persistent SavedData remains.
+                    h.assertFalse(TemperatureManager.hasBreathableAir(level,center),"Replacing wall or dropping cache cannot recreate air");
+                    var geometry=RoomAtmosphere.inspect(level,center);
+                    var persisted=RoomAirState.get(level).save(new net.minecraft.nbt.CompoundTag(),level.registryAccess());
+                    var restored=RoomAirState.load(persisted,level.registryAccess());
+                    h.assertTrue(restored.isDepleted(geometry.cells()),"Real SavedData codec retains depleted room across reload");
+                    var core=center.west();level.setBlock(core,ModBlocks.GEOTHERMAL_CORE.get().defaultBlockState(),2);level.getBlockEntity(core).onLoad();
+                    h.assertFalse(TemperatureManager.hasBreathableAir(level,center),"Oxygen generator cannot restore room instantly");
+                })
+                .thenExecuteAfter(105,()->{
+                    h.assertTrue(AtmosphericBreach.activeBursts(level)==0,"The first event expired");
+                    h.assertTrue(TemperatureManager.hasBreathableAir(level,center),"Five loaded seconds of sealed core support recover air");
+                    level.setBlock(hole,Blocks.AIR.defaultBlockState(),3);RoomAtmosphere.tickLevel(level);
+                })
+                .thenWaitUntil(()->h.assertTrue(AtmosphericBreach.activeBursts(level)>0,"Recovered room waits for its room scan; room "
+                        +describe(RoomAtmosphere.inspect(level,center))))
+                .thenExecute(()->{
+                    try {
+                        h.assertTrue(AtmosphericBreach.activeBursts(level)==1,"Recovered room can produce a new event; old event expired");
+                    } finally {apocalypse.setApocalypseTicks(previous,level.getServer());RoomAtmosphere.reset();AtmosphericBreach.reset();}
+                })
+                .thenSucceed();
     }
 
     @GameTest(template=GameTestTemplates.EMPTY_LARGE, batch="atmospheric_breach_motion", timeoutTicks=100)

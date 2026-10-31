@@ -1,0 +1,120 @@
+package com.frozendawn.world;
+
+import com.frozendawn.block.IcarusControllerBlock;
+import com.frozendawn.block.IcarusControllerBlockEntity;
+import com.frozendawn.block.IcarusStructure;
+import com.frozendawn.config.FrozenDawnConfig;
+import com.frozendawn.event.SuitIntegrityHandler;
+import com.frozendawn.init.ModAttachments;
+import com.frozendawn.init.ModDamageTypes;
+import com.frozendawn.init.ModSounds;
+import com.frozendawn.network.IcarusBlastPayload;
+import com.frozendawn.power.IcarusAdvancements;
+import com.frozendawn.power.IcarusBlast;
+import com.frozendawn.radiation.RadiationHandler;
+import com.frozendawn.radiation.ReactorAdvancements;
+import java.util.ArrayList;
+import java.util.Set;
+import java.util.UUID;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.ExperienceOrb;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
+import net.neoforged.neoforge.network.PacketDistributor;
+
+/** Decides what removing an AMR-1 Icarus part does, and applies a detonation's immediate effects. */
+public final class IcarusDetonation {
+    /** How far a part can sit from its Controller on each axis; the scan covers every chunk this reaches. */
+    private static final int REACH = 2 * IcarusStructure.HALF + 1;
+
+    private IcarusDetonation() {}
+
+    /** Called from IcarusPartBlock.onRemove when the block actually changes. The owning Controller is found from the
+     * block entities loaded around pos, not a static map, so this works straight after a reload. */
+    public static void partRemoved(ServerLevel l, BlockPos pos) {
+        // Collected first: a detonation must not run while the chunk's block entity map is being walked.
+        for (var c : owners(l, pos)) c.partRemoved(l);
+    }
+
+    /** Whether breaking the block at pos would detonate a loaded reactor: it belongs to one whose core holds antimatter. */
+    public static boolean armed(ServerLevel l, BlockPos pos) {
+        return owners(l, pos).stream().anyMatch(c -> c.physics().coreCharge() > 0);
+    }
+
+    private static ArrayList<IcarusControllerBlockEntity> owners(ServerLevel l, BlockPos pos) {
+        var owners = new ArrayList<IcarusControllerBlockEntity>();
+        for (int cx = (pos.getX() - REACH) >> 4; cx <= (pos.getX() + REACH) >> 4; cx++)
+            for (int cz = (pos.getZ() - REACH) >> 4; cz <= (pos.getZ() + REACH) >> 4; cz++) {
+                var chunk = l.getChunkSource().getChunkNow(cx, cz);
+                if (chunk == null) continue;
+                for (var be : chunk.getBlockEntities().values())
+                    if (be instanceof IcarusControllerBlockEntity c && !c.isRemoved()
+                            && IcarusStructure.contains(c.getBlockPos(), c.getBlockState().getValue(IcarusControllerBlock.FACING), pos)) owners.add(c);
+            }
+        return owners;
+    }
+
+    /** Every player close enough to see it gets the flash, sound and shake, told whether they stand in air. Those within
+     * 2r who are not immune take a one-off radiation dose, and a sealed suit warns of the spike. No fallout is placed. */
+    private static void blast(ServerLevel l, Vec3 center, double radius) {
+        for (var p : l.players()) {
+            double distance = p.position().distanceTo(center);
+            if (IcarusBlast.flashStrength(distance, radius, false) <= 0) continue;
+            PacketDistributor.sendToPlayer(p, new IcarusBlastPayload(center, radius, !RoomAtmosphere.hasAir(l, p.blockPosition()), distance));
+            double dose = IcarusBlast.burstDose(distance, radius);
+            if (dose <= 0 || !p.isAlive() || RadiationHandler.immune(p)) continue;
+            p.getData(ModAttachments.RADIATION.get()).dose += dose;
+            if (SuitIntegrityHandler.isWearingSealedSuit(p)) p.playNotifySound(ModSounds.SUIT_ICARUS_RADIATION.get(), SoundSource.PLAYERS, 1, 1);
+        }
+    }
+
+    /** The Fall of Icarus to its crew wherever they are online; Don't Look Up to anyone alive who watched from outside the blast. */
+    private static void advancements(ServerLevel l, Vec3 center, double radius, Set<UUID> crew) {
+        for (var level : l.getServer().getAllLevels())
+            for (var p : level.players()) if (crew.contains(p.getUUID())) ReactorAdvancements.grant(p, IcarusAdvancements.FALL);
+        for (var p : l.players())
+            if (p.isAlive() && !p.isSpectator() && IcarusBlast.witness(p.position().distanceTo(center), radius)) ReactorAdvancements.grant(p, IcarusAdvancements.DONT_LOOK_UP);
+    }
+
+    /** Everything inside radius dies, items and experience vanish, and out to twice the radius damage and knockback
+     * fade with distance; creative and spectator players are untouched. Then the crater is queued. */
+    public static void detonate(ServerLevel l, BlockPos core, double radius, Set<UUID> crew) {
+        detonate(l, core, radius, crew, FrozenDawnConfig.ICARUS_TERRAIN_DESTRUCTION.get());
+    }
+
+    public static void detonate(ServerLevel l, BlockPos core, double radius, Set<UUID> crew, boolean destroysTerrain) {
+        var center = core.getCenter();
+        var source = new DamageSource(l.registryAccess().lookupOrThrow(Registries.DAMAGE_TYPE).getOrThrow(ModDamageTypes.ICARUS_DETONATION), center);
+        double reach = 2 * radius;
+        for (var e : l.getEntities((Entity) null, new AABB(center, center).inflate(reach),
+                e -> e.isAlive() && e.position().distanceToSqr(center) < reach * reach)) {
+            if (e instanceof Player p && (p.isCreative() || p.isSpectator())) continue;
+            double distance = e.position().distanceTo(center);
+            if (distance <= radius && (e instanceof ItemEntity || e instanceof ExperienceOrb)) { e.discard(); continue; }
+            e.hurt(source, IcarusBlast.damage(distance, radius));
+            double push = IcarusBlast.knockback(distance, radius);
+            if (push > 0 && e.isAlive()) {
+                var away = e.position().subtract(center);
+                var direction = away.lengthSqr() < 1e-6 ? new Vec3(0, 1, 0) : away.normalize();
+                e.push(direction.x * push, direction.y * push + 0.2 * push, direction.z * push);
+                e.hurtMarked = true;
+            }
+        }
+        advancements(l, center, radius, crew);
+        blast(l, center, radius);
+        if (destroysTerrain) {
+            var data = IcarusCraterData.get(l);
+            data.queue(core, radius, l.getSeed() ^ core.asLong() ^ l.getGameTime());
+            data.addSite(core, radius, l.getGameTime());
+            IcarusCraterHazards.sync(l);
+        }
+    }
+}

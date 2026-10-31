@@ -1,0 +1,30 @@
+{
+  "name": "AMR-1 \"Icarus\"",
+  "category": "frozendawn:icarus",
+  "icon": "frozendawn:icarus_controller",
+  "sortnum": 0,
+  "pages": [
+    {
+      "type": "patchouli:spotlight",
+      "item": "frozendawn:icarus_controller",
+      "title": "AMR-1 \"Icarus\"",
+      "text": "ORSA's antimatter reactor. A trickle of antimatter sets off the Halsey Cascade through ordinary matter."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "History",
+      "text": "Dr. Helena Halsey's last ORSA project. It was never switched on.$(br2)$(flavor)ORSA's notes call it 'the sun on a leash'.$()"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "How It Works",
+      "text": "$(li)A Halsey Core holds the sphere in a shield$(li)Four stabilizers feed the shield$(li)An injector feeds ordinary matter$(li)Net output 0.6 to 1.7 MW"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Before You Build",
+      "text": "$(danger)Breaking any part while the core holds antimatter detonates it instantly.$() An empty reactor is safe to build, change and take down."
+    }
+  ],
+  "priority": true
+}
