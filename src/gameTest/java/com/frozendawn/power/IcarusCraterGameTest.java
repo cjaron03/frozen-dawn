@@ -15,7 +15,9 @@ import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.AABB;
 import net.neoforged.neoforge.gametest.*;
 
@@ -67,6 +69,31 @@ public final class IcarusCraterGameTest {
                 h.assertTrue(glassed, "The crater floor is fused to glass in places");
                 h.assertTrue(l.getEntitiesOfClass(ItemEntity.class, new AABB(h.absolutePos(BlockPos.ZERO)).inflate(30)).isEmpty(), "Nothing dropped");
             });
+        });
+    }
+
+    /** The carve writes chunk sections directly and catches each chunk up afterwards: a deep crater's heightmap sits on
+     * its floor and sky light reaches the floor. */
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "icarus_crater", timeoutTicks = 200, skyAccess = true)
+    public static void icarusCraterLeavesHeightmapAndSkyLightOnTheFloor(GameTestHelper h) {
+        h.runAfterDelay(1, () -> {
+            var l = h.getLevel();
+            for (int x = 0; x <= 20; x++) for (int z = 0; z <= 20; z++) {
+                h.setBlock(new BlockPos(x, 1, z), Blocks.BEDROCK);
+                for (int y = 2; y <= 14; y++) h.setBlock(new BlockPos(x, y, z), Blocks.STONE);
+            }
+            var data = new IcarusCraterData();
+            data.queue(h.absolutePos(new BlockPos(10, 4, 10)), 8, 5L);
+            IcarusCrater.run(l, data, Long.MAX_VALUE);
+            h.assertTrue(data.jobs().isEmpty(), "The crater is carved in one unlimited run");
+            int y = 14;
+            while (y > 2 && l.getBlockState(h.absolutePos(new BlockPos(10, y - 1, 10))).isAir()) y--;
+            h.assertTrue(y < 12, "The centre column is cut deep, lowest air at y " + y);
+            var floor = h.absolutePos(new BlockPos(10, y, 10));
+            for (var type : new Heightmap.Types[] {Heightmap.Types.WORLD_SURFACE, Heightmap.Types.MOTION_BLOCKING,
+                    Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, Heightmap.Types.OCEAN_FLOOR})
+                h.assertValueEqual(l.getHeight(type, floor.getX(), floor.getZ()), floor.getY(), type + " height at the centre");
+            h.succeedWhen(() -> h.assertValueEqual(l.getBrightness(LightLayer.SKY, floor), 15, "sky light just above the crater floor"));
         });
     }
 

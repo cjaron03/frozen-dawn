@@ -505,6 +505,33 @@ public final class RoomAtmosphere {
         }
     }
 
+    /** blockChanged for a batch, such as one tick's carve of a crater chunk: the scan caches are cleared once. */
+    public static void blocksChanged(ServerLevel level, List<BlockChangeHooks.Change> changes) {
+        var index = LEVELS.get(level); if (index == null) return;
+        boolean cleared = false;
+        for (var c : changes) {
+            var pos = c.pos(); var before = c.before(); var after = c.after();
+            if (before == after) continue;
+            // Once the caches are cleared, a block that is no room's wall or cell has nothing left to change.
+            if (cleared && !index.walls.containsKey(pos) && !index.cells.containsKey(pos)) continue;
+            boolean beforePassage = isPassage(level, pos, before), afterPassage = isPassage(level, pos, after);
+            var impacted = new HashSet<Room>(index.walls.getOrDefault(pos, Set.of()));
+            if (beforePassage != afterPassage) {
+                if (!cleared) {
+                    index.scans.clear();index.boundaryOpenings.clear();
+                    index.negative.clear();
+                    for (var activity : index.activity.values()) activity.retryAt = 0;
+                    CombustionAtmosphere.reset();
+                    cleared = true;
+                }
+                var inside = index.cells.get(pos); if (inside != null) impacted.add(inside);
+                for (var room : impacted) if (room.changed == null) room.changed = pos.immutable();
+            } else if (!beforePassage && before.getBlock() != after.getBlock() && !impacted.isEmpty()) {
+                publish(level, new RoomChangeEvent.WallMaterialChange(pos, before, after, snapshots(impacted)));
+            }
+        }
+    }
+
     /**
      * Renewable loaded-block-entity lease. Lit heaters and future thermostats call every 20 ticks.
      * No permanent registration: removal, fuel exhaustion and chunk unload stop renewal automatically.

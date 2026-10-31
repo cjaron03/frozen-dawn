@@ -216,11 +216,16 @@ One 64-capsule detonation (radius 400, 4596 chunks in reach) at the origin of a 
 | 2 | carve only chunks in block-ticking range | 707 | 3831 | 177 ms | not measured | 2711 MB |
 | 3 | crater phase timed on its own | 665 | 3831 | 190 ms | 181 ms | 2802 MB |
 | 4 | carve a column at a time | 1198 | 3831 | 762 ms | 44 ms | 1472 MB |
+| 5 | write chunk sections directly, catch each chunk up once | 311 | 3734 | 194 ms | 184 ms | 1802 MB |
+| 6 | (same code, profiled with JFR; not comparable) | 531 | 3831 | 830 ms | 66 ms | 1539 MB |
+| 7 | heightmaps per column, Frozen Dawn notices batched per chunk, chunks ordered once a tick | 289 | 3831 | 39 ms | 28 ms | 1288 MB |
+| 8 | skip notices nothing listens for; budget 25 ms | 115 | 3831 | 224 ms | 47 ms | 1324 MB |
 
 - Run 1: a chunk can still be cached while the server unloads it. Reading it blocked the tick until it loaded again (16.5 s). Fix: `IcarusCrater.carvable` also requires the block-ticking range.
 - Run 3: the budget was checked only between chunks, and one deep chunk near the centre took about 180 ms. Fix: carving is per column, with the budget checked after each one. A part-carved chunk keeps a saved column cursor, because carving a column twice would cut deeper from the lowered surface.
 - Run 4: the crater phase peaked at 44 ms, under the 50 ms limit. That figure is an upper bound, since it brackets every normal-priority level post-tick handler. The slow whole ticks happened outside the crater phase. Stack samples put them in existing code waiting on fresh-terrain chunk loads (`FrozenTownRuntime` town scans, `RocketLaunchManager.diagnosePad`, block entity ticks). Ticks of 600 ms or more also appeared before any blast in run 2.
 - `detonate()` itself took 15 to 44 ms.
+- Runs 5 to 8, at the owner's request after a playtest ("REALLY REALLY REALLY SLOW"; "pretty much instant almost"): plain vanilla blocks are written straight into the chunk sections. Each column's heightmaps are set in one pass; each chunk then gets its sky light sources, section emptiness and light propagation once, and is resent whole to the players who can see it. Block entities, points of interest, mod blocks (so a second reactor's part still chains), fire and thawed ice still go through Level.setBlock. Frozen Dawn's block-change notices (rooms, room heat, flames, airlocks, power links) go out once per chunk as a batch. Run 6's profile put 40% of the carve in per-block heightmap updates. Run 8's slow whole ticks again sat in existing code (`RocketLaunchManager.diagnosePad` waiting on chunk loads). Evidence: `build/icarus-evidence/perf-run5` to `perf-run8`.
 
 ### Open check result
 

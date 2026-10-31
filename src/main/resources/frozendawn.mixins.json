@@ -8,6 +8,7 @@
     "BlockDisplayAccessor",
     "ChunkMapAccessor",
     "DisplayAccessor",
+    "HeightmapAccessor",
     "IceBlockMixin",
     "FishingHookMixin",
     "LivingEntityMixin",
