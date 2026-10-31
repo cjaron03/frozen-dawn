@@ -96,7 +96,7 @@ public final class IcarusCrater {
                 spent = System.nanoTime() - start >= budgetNanos;
             }
             BlockChangeHooks.changed(l, changes);
-            settle(l, chunk, wasEmpty);
+            settle(l, chunk, wasEmpty, changes);
             if (column == COLUMNS) data.carved(best, bestChunk); else data.progress(best, bestChunk, column);
             if (spent) return visited;
         }
@@ -241,8 +241,9 @@ public final class IcarusCrater {
     }
 
     /** Catches a chunk up after its sections were written directly: sky light sources, emptied sections and light, then
-     * the whole chunk is resent to the players who can see it. Light reaches them as it is computed. */
-    private static void settle(ServerLevel l, LevelChunk chunk, boolean[] wasEmpty) {
+     * the whole chunk is resent to the players who can see it. Light reaches them as it is computed. Propagating the
+     * sources only adds light, so each carved emitter, such as lava or a lamp, is checked to take its light away. */
+    private static void settle(ServerLevel l, LevelChunk chunk, boolean[] wasEmpty, List<BlockChangeHooks.Change> changes) {
         chunk.initializeLightSources();
         var light = l.getChunkSource().getLightEngine();
         var at = chunk.getPos();
@@ -250,6 +251,7 @@ public final class IcarusCrater {
             boolean empty = chunk.getSection(i).hasOnlyAir();
             if (empty != wasEmpty[i]) light.updateSectionStatus(SectionPos.of(at, chunk.getSectionYFromSectionIndex(i)), empty);
         }
+        for (var change : changes) if (change.before().getLightEmission() > 0) light.checkBlock(change.pos());
         light.propagateLightSources(at);
         chunk.setUnsaved(true);
         var players = l.getChunkSource().chunkMap.getPlayers(at, false);

@@ -530,6 +530,23 @@ public final class IcarusGameTest {
         });
     }
 
+    /** With terrain destruction off a blast still ends the reactor: its own parts go, with their contents, so no glowing
+     * reactor is left stuck in DETONATED; the ground and a block beside it stay, and no crater is queued. */
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "icarus_detonation", timeoutTicks = 100)
+    public static void icarusBlastWithoutTerrainDestructionRemovesOnlyTheReactor(GameTestHelper h) {
+        scene(h, () -> {
+            var l = h.getLevel(); var c = running(h);
+            var controller = c.getBlockPos(); var bystander = h.absolutePos(new BlockPos(1, 2, 1));
+            l.setBlock(bystander, Blocks.STONE.defaultBlockState(), 3);
+            var jobs = com.frozendawn.world.IcarusCraterData.get(l).jobs().size();
+            c.explode(l, false);
+            h.assertTrue(l.getBlockState(controller).isAir(), "The Controller goes with its reactor");
+            h.assertTrue(l.getBlockState(h.absolutePos(CENTER)).isAir(), "The Halsey Core goes too");
+            h.assertTrue(l.getBlockState(bystander).is(Blocks.STONE), "A block beside the reactor stays");
+            h.assertValueEqual(com.frozendawn.world.IcarusCraterData.get(l).jobs().size(), jobs, "crater jobs queued");
+        });
+    }
+
     private static boolean earned(ServerPlayer p, String name) {
         var holder = p.getServer().getAdvancements().get(ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, name));
         return holder != null && p.getAdvancements().getOrStartProgress(holder).isDone();

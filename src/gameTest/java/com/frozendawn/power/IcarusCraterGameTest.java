@@ -133,6 +133,29 @@ public final class IcarusCraterGameTest {
         });
     }
 
+    /** Carving away a light source takes its light with it: the sections are written directly, so the light engine must be
+     * told, or the crater keeps glowing where a lava pool or a lamp used to be. */
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "icarus_crater", timeoutTicks = 100, skyAccess = true)
+    public static void icarusCraterTakesCarvedLightAway(GameTestHelper h) {
+        var l = h.getLevel(); var lamp = new BlockPos(10, 13, 10);
+        var data = new IcarusCraterData();
+        h.startSequence().thenExecute(() -> {
+            for (int x = 0; x <= 20; x++) for (int z = 0; z <= 20; z++) {
+                h.setBlock(new BlockPos(x, 1, z), Blocks.BEDROCK);
+                for (int y = 2; y <= 14; y++) h.setBlock(new BlockPos(x, y, z), Blocks.STONE);
+            }
+            h.setBlock(lamp, Blocks.GLOWSTONE); h.setBlock(lamp.below(), Blocks.AIR);
+        }).thenWaitUntil(() -> h.assertTrue(l.getBrightness(LightLayer.BLOCK, h.absolutePos(lamp.below())) >= 13, "The glowstone lights the pocket under it first"))
+        .thenExecute(() -> {
+            data.queue(h.absolutePos(new BlockPos(10, 4, 10)), 8, 5L);
+            IcarusCrater.run(l, data, Long.MAX_VALUE);
+            h.assertBlockPresent(Blocks.AIR, lamp);
+        }).thenWaitUntil(() -> {
+            h.assertValueEqual(l.getBrightness(LightLayer.BLOCK, h.absolutePos(lamp)), 0, "block light where the glowstone was");
+            h.assertValueEqual(l.getBrightness(LightLayer.BLOCK, h.absolutePos(lamp.below())), 0, "block light in the pocket under it");
+        }).thenSucceed();
+    }
+
     @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "icarus_crater", timeoutTicks = 40, skyAccess = true)
     public static void icarusCraterRespectsTheBudget(GameTestHelper h) {
         h.runAfterDelay(1, () -> {

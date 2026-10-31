@@ -1,5 +1,6 @@
 package com.frozendawn.block;
 
+import com.frozendawn.config.FrozenDawnConfig;
 import com.frozendawn.event.SuitIntegrityHandler;
 import com.frozendawn.init.ModBlockEntities;
 import com.frozendawn.init.ModSounds;
@@ -211,14 +212,20 @@ public final class IcarusControllerBlockEntity extends BlockEntity implements Me
     /** One of this reactor's parts was removed by any means. A charged core goes up; an empty one is only invalid. */
     public void partRemoved(ServerLevel l) { if (physics.coreCharge() > 0) detonate(l); }
 
-    /** The charge is cleared before the blast, so the reactor's own parts falling to it never set it off again. */
-    private void detonate(ServerLevel l) {
+    private void detonate(ServerLevel l) { explode(l, FrozenDawnConfig.ICARUS_TERRAIN_DESTRUCTION.get()); }
+
+    /** The charge is cleared before the blast, so the reactor's own parts falling to it never set it off again. Public for
+     * GameTests, which choose terrain destruction without touching the server config. */
+    public void explode(ServerLevel l, boolean destroysTerrain) {
         double radius = IcarusBlast.radius(physics.coreCharge());
         physics.detonated();
         coleDone = false;
         if (publishedPort != null) release(l);
         setChanged();
-        IcarusDetonation.detonate(l, IcarusStructure.core(worldPosition, getBlockState().getValue(IcarusControllerBlock.FACING)), radius, Set.copyOf(crew));
+        var facing = getBlockState().getValue(IcarusControllerBlock.FACING);
+        IcarusDetonation.detonate(l, IcarusStructure.core(worldPosition, facing), radius, Set.copyOf(crew), destroysTerrain);
+        // With no crater to take it, the reactor would stand on, spent and stuck in DETONATED; the blast still ends it.
+        if (!destroysTerrain) IcarusStructure.clear(l, worldPosition, facing);
     }
 
     private void release(ServerLevel l) {

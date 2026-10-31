@@ -131,6 +131,18 @@ public final class IcarusStructure {
         return new Result(Problem.OK, null, core, power, matter, dock, reserve, List.copyOf(parts), List.copyOf(envelope));
     }
 
+    /** Removes every part still in place, with its contents and without drops: what a blast does to its own reactor when
+     * the server keeps terrain destruction off. */
+    public static void clear(Level l, BlockPos controller, Direction facing) {
+        var core = core(controller, facing);
+        for (var part : PARTS) {
+            var pos = at(core, facing, part.x, part.y, part.z);
+            if (!l.getBlockState(pos).is(part.block.get())) continue;
+            net.minecraft.world.Clearable.tryClear(l.getBlockEntity(pos));
+            l.setBlock(pos, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
+        }
+    }
+
     /** Whether pos is one of the reactor's part cells (not an envelope cell). */
     public static boolean contains(BlockPos controller, Direction facing, BlockPos pos) {
         var d = pos.subtract(core(controller, facing)); var across = facing.getCounterClockWise();

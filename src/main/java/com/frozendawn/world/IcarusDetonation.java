@@ -87,6 +87,10 @@ public final class IcarusDetonation {
     /** Everything inside radius dies, items and experience vanish, and out to twice the radius damage and knockback
      * fade with distance; creative and spectator players are untouched. Then the crater is queued. */
     public static void detonate(ServerLevel l, BlockPos core, double radius, Set<UUID> crew) {
+        detonate(l, core, radius, crew, FrozenDawnConfig.ICARUS_TERRAIN_DESTRUCTION.get());
+    }
+
+    public static void detonate(ServerLevel l, BlockPos core, double radius, Set<UUID> crew, boolean destroysTerrain) {
         var center = core.getCenter();
         var source = new DamageSource(l.registryAccess().lookupOrThrow(Registries.DAMAGE_TYPE).getOrThrow(ModDamageTypes.ICARUS_DETONATION), center);
         double reach = 2 * radius;
@@ -106,7 +110,7 @@ public final class IcarusDetonation {
         }
         advancements(l, center, radius, crew);
         blast(l, center, radius);
-        if (FrozenDawnConfig.ICARUS_TERRAIN_DESTRUCTION.get()) {
+        if (destroysTerrain) {
             var data = IcarusCraterData.get(l);
             data.queue(core, radius, l.getSeed() ^ core.asLong() ^ l.getGameTime());
             data.addSite(core, radius, l.getGameTime());
