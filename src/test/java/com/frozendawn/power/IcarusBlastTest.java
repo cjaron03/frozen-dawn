@@ -117,4 +117,15 @@ class IcarusBlastTest {
         assertTrue(IcarusBlast.ash(4 * 60 * 20, 0, 400) > 0);
         assertEquals(0, IcarusBlast.ash(5 * 60 * 20, 0, 400));
     }
+
+    @Test void sootPallSpreadsCoversTheSkyThenThinsOverADayAndAHalf() {
+        assertEquals(0, IcarusBlast.pall(20, 2000, 400), "Not out at 2000 blocks a second after the blast");
+        double minute = 60 * 20, full = IcarusBlast.PALL_FORM_TICKS;
+        assertTrue(IcarusBlast.pall(full, 0, 400) > 0.99, "Full over the crater once formed");
+        assertTrue(IcarusBlast.pall(10 * minute, 2000, 400) > 0.5, "Out past 2000 blocks by ten minutes");
+        assertEquals(0, IcarusBlast.pall(10 * minute, IcarusBlast.PALL_REACH * 400 + 1, 400), "Never past its reach");
+        assertTrue(IcarusBlast.pall(IcarusBlast.DAY_TICKS, 0, 400) > 0.2, "Still overhead after a day");
+        assertEquals(0, IcarusBlast.pall(IcarusBlast.PALL_TICKS, 0, 400), "Gone after a day and a half");
+        assertTrue(IcarusBlast.PALL_TICKS < IcarusBlast.SITE_TICKS);
+    }
 }

@@ -85,6 +85,19 @@ public final class IcarusBlast {
         return (1 - ageTicks / ASH_TICKS) * (1 - 0.5 * distance / (2 * radius));
     }
 
+    /** The soot pall, at the owner's request in air and vacuum alike: a ceiling of soot spreading out from the crater at
+     * PALL_SPREAD blocks a second, up to PALL_REACH radii, thick once formed, then thinning from half a day until it is
+     * gone at a day and a half. Returns how thickly it covers the sky at that distance, 0 to 1, with a soft edge. */
+    public static final double PALL_REACH = 8, PALL_SPREAD = 8, PALL_FORM_TICKS = 1200, PALL_TICKS = 36000;
+    public static double pall(double ageTicks, double distance, double radius) {
+        if (ageTicks < 0 || ageTicks >= PALL_TICKS) return 0;
+        double reach = Math.min(PALL_REACH * radius, radius + PALL_SPREAD * ageTicks / 20);
+        if (distance >= reach) return 0;
+        double edge = Math.min(1, (reach - distance) / (0.15 * reach)), form = Math.min(1, ageTicks / PALL_FORM_TICKS);
+        double thin = ageTicks < PALL_TICKS / 3 ? 1 : 1 - (ageTicks - PALL_TICKS / 3) / (PALL_TICKS * 2 / 3);
+        return form * thin * edge;
+    }
+
     /** The white flash's peak opacity: full at the centre, still 0.15 at 6r, gone by 12r. Reduced flash caps it at 0.35. */
     public static double flashStrength(double distance, double radius, boolean reduced) {
         double t = distance / (6 * radius);
