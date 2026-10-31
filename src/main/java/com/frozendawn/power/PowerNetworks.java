@@ -138,8 +138,13 @@ public final class PowerNetworks {
      * capacity, minus what other generators already supply. Unlinked reactors are asked for nothing. */
     public static int loadFollowTargetWatts(ServerLevel l,BlockPos p,int ownWatts){
         var m=runtime(l).monitorReadings.get(p);if(m==null||!m.connected())return 0;
-        long charge=m.storedJoules()<m.capacityJoules()?com.frozendawn.block.ReactorControllerBlockEntity.CHARGE_MARGIN_WATTS:0;
+        long charge=(m.storedJoules()<m.capacityJoules()?com.frozendawn.block.ReactorControllerBlockEntity.CHARGE_MARGIN_WATTS:0)+hyperionHeadroomWatts(l,p);
         return (int)Math.max(0,Math.min(Integer.MAX_VALUE,m.demandWatts()+charge+scheduledWatts(l,p)-Math.max(0,m.generationWatts()-ownWatts)));
+    }
+    /** What the Hyperions on this node's network can still take this second: load-follow fills them as fast as their ports allow. */
+    public static long hyperionHeadroomWatts(ServerLevel l,BlockPos p){
+        long sum=0;for(var store:stores(l,component(l,p)))if(store instanceof com.frozendawn.block.HyperionControllerBlockEntity c)sum+=c.chargeHeadroomWatts();
+        return sum;
     }
     /** Scheduled load: an armed Uplink announces its transmit draw so load-follow ramps before it starts. Nothing is served. */
     static long scheduledWatts(ServerLevel l,BlockPos p){

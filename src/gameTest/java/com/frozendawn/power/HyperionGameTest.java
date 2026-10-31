@@ -131,6 +131,28 @@ public final class HyperionGameTest {
         h.succeed();
     }
 
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "hyperion", timeoutTicks = 100)
+    public static void hyperionLoadFollowAsksForPortHeadroom(GameTestHelper h) {
+        var l = h.getLevel();
+        var empty = controller(h, HyperionScenes.build(h, MIN, 3, 3, 3, 1, 1));
+        var fullBox = HyperionScenes.build(h, new BlockPos(7, 2, 11), 3, 3, 3, 2, 1); var full = controller(h, fullBox);
+        var relay = place(h, new BlockPos(1, 2, 1), ModBlocks.POWER_RELAY.get());
+        var bankPos = place(h, new BlockPos(1, 2, 8), ModBlocks.BATTERY_BANK.get());
+        var bank = (com.frozendawn.block.PowerStorageBlockEntity) l.getBlockEntity(bankPos); bank.setItem(0, com.frozendawn.item.PowerCellItem.charged(0));
+        full.setStoredForTest(HyperionPhysics.capacity(7));
+        link(h, relay, empty.shell().ports().getFirst()); link(h, relay, fullBox.ports().getFirst()); link(h, relay, bankPos);
+        account(l);
+        long target = PowerNetworks.loadFollowTargetWatts(l, relay, 0);
+        h.assertTrue(target == 5_000 + 500_000, "Asks for the empty Hyperion's one port plus the bank margin, got " + target);
+        empty.setStoredForTest(HyperionPhysics.capacity(7)); for (int i = 0; i < 4; i++) bank.setItem(i, com.frozendawn.item.PowerCellItem.charged(500_000));
+        h.runAfterDelay(20, () -> {
+            account(l);
+            long after = PowerNetworks.loadFollowTargetWatts(l, relay, 0);
+            h.assertTrue(after == 0, "Everything full asks for nothing, got " + after);
+            h.succeed();
+        });
+    }
+
     /** The built controller, formed by one second. */
     static com.frozendawn.block.HyperionControllerBlockEntity controller(GameTestHelper h, HyperionScenes.Built b) {
         var c = (com.frozendawn.block.HyperionControllerBlockEntity) h.getLevel().getBlockEntity(b.controller());
