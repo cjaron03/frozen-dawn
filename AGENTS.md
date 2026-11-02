@@ -4,9 +4,21 @@ Use Conventional Commit messages (`feat:`, `fix:`, `docs:`). Do not create branc
 
 Before working, identify the owning checkout, branch, HEAD and current changes. Preserve unrelated work, saved worlds and replay evidence. Run the applicable existing verification gates; distinguish headless checks from a human visual pass.
 
+## Workflow
+
+1. Each feature gets its own branch and worktree, cut from `feat/maeve-director` unless the owner names another base.
+2. The agent implements and verifies headlessly: tests first, then the full `architectVerify`.
+3. The owner does the visual pass. The agent prepares the feature's playtest world, launches the lab client (below) and reads the logs; the owner plays and reports what they see.
+4. Fix what the pass finds, then offer a PR. The owner approves every merge; a passing gate or replay is not approval.
+5. After the PR merges, ask whether to remove the branch's worktree and its build output. Never remove a worktree that has uncommitted changes, untracked files or unpushed commits.
+
+Keep every change tightly scoped so it leaves no clutter. Tests cover behavior the change adds or could break, not its implementation line by line; skip tests that only mirror a small, reversible change. Playtest scripts, lab-bridge functions and debug commands belong to one feature: one `tools/prepare_<feature>_playtest.py`, functions under that feature's own namespace, and no edits to other features' fixtures. Remove scaffolding the feature no longer uses.
+
 ## Gradle lab client and commands
 
 For local Minecraft iteration, always launch through Gradle from the owning checkout inside the agent's terminal, using Java 21. The owner's default is `./gradlew runClient --console=plain`. For a replay that requires the local lab command bridge, read [docs/lab-command-bridge.md](docs/lab-command-bridge.md) and use the Gradle `runClientLab` variant with `tools/lab_client.py` for authorized diagnostics, reloads and approved test functions. The normal `runClient` does not enable that bridge. The Gradle terminal itself is not an in-game console. Do not launch the normal Minecraft Launcher or an external Terminal app as a substitute.
+
+For a feature's visual pass, prepare its save with `python3 tools/prepare_<feature>_playtest.py`, then open it directly with `./gradlew runClientLab -PfdLabWorld='<save name>' --console=plain`. Run the client in the background so the session can keep reading its log while the owner plays.
 
 While iterating on GameTests, `./gradlew gameTestQuick -PfdTests=<fragment,...>` runs only the tests whose names contain a fragment, on a sprinted server. It is a fast loop, not a gate: before handing work back, run the full `architectVerify`, which runs every test at the normal tick rate.
 
@@ -20,8 +32,8 @@ The owner authorized agents to collect Maeve/Architect dumps and diagnostic stat
 
 Generated playtest worlds must suppress advancement popups and chat awards, and preselect the agreed test difficulty before the first player joins so the difficulty picker does not interrupt the view. Keep these settings inside the generated test save and its datapack; do not change ordinary worlds or global client preferences. The Blind world generator uses a world-local advancement filter and fresh default-difficulty state with the choice locked. Its filter pack must follow NeoForge's combined `mod_data` pack in the selected order; verify the actual loader-selected stack, since listing individual mod IDs can put mod data above the filter. Preserve existing saves when preparing a revised fixture.
 
-## Current MACS work
+## Checkpoints
 
-Read the latest sections of [docs/macs-pawn-checkpoint.md](docs/macs-pawn-checkpoint.md) before resuming Pawn Convergence. They identify the owning worktree, active save, actor UUIDs, evidence, remaining acceptance and branch/PR status. The checkpoint is historical evidence: verify current files and runtime before using it. Do not infer merge approval from a successful replay.
+Before resuming a feature, read the latest sections of its checkpoint in `docs/*-checkpoint.md` (for example [power-network-checkpoint.md](docs/power-network-checkpoint.md) for power and the Hyperion, [macs-pawn-checkpoint.md](docs/macs-pawn-checkpoint.md) for MACS and the Architects). They identify the owning worktree, active save, evidence, remaining acceptance and branch/PR status. A checkpoint is historical evidence: verify current files and runtime before using it. Do not infer merge approval from a successful replay.
 
 Update the repository checkpoint when handing work back or changing the active replay. Keep personal memory separate from the tracked handoff; do not depend on chat history alone.
