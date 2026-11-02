@@ -18,10 +18,10 @@ GONE = ["superconducting_cell_plain", "superconducting_cell_scarred", "supercond
         "superconducting_cell_stressed", "superconducting_cell_critical", "hyperion_controller_window", "hyperion_controller_inner",
         "hyperion_frame"]
 
-CHARCOAL = (22, 24, 28)
+CHARCOAL = (30, 32, 37)
 CELL_LIGHT = (52, 56, 62)
 CELL_DARK = (8, 9, 11)
-SCRATCH = (40, 43, 49)
+SCRATCH = (52, 56, 63)
 SCORCH = [(10, 8, 7), (34, 22, 16), (58, 34, 20)]
 METAL = (38, 40, 46)
 METAL_LIGHT = (62, 66, 74)
@@ -66,14 +66,19 @@ def strip(frames):
 
 
 def formed(seed=11):
-    """Charcoal noise with no edge, so neighbouring formed cells join without a seam."""
+    """Brushed charcoal: a soft vertical grain (each column a shade off) under a slow swell down the face, with no edge,
+    so neighbouring formed cells join without a seam. The outer columns borrow inner columns' shades, so no border
+    stands out of the face's own range."""
     rng = random.Random(seed)
+    shade = [rng.choice((-3, -2, -1, 0, 0, 1, 2, 3)) for _ in range(16)]
+    shade[0], shade[1], shade[14], shade[15] = shade[6], shade[9], shade[4], shade[11]
     im = Image.new("RGBA", (16, 16))
     for y in range(16):
+        swell = round(1.5 * math.sin(2 * math.pi * y / 16))
         for x in range(16):
-            c = tuple(round(v + rng.uniform(-4, 4)) for v in CHARCOAL)
-            if (x, y) in SCRATCHES:
-                c = mix(c, SCRATCH, 0.5)
+            c = tuple(v + shade[x] + swell for v in CHARCOAL)
+            if x in (5, 10):
+                c = mix(c, SCRATCH, 0.35)
             im.putpixel((x, y), c + (255,))
     return im
 
@@ -124,18 +129,13 @@ def port(on):
 
 
 def controller_front(on):
-    """The bottom of the window: a dark 6 px opening up the middle, which the renderer fills, above a 2 px sill."""
+    """The bottom of the window: a dark opening 14 px wide, which the renderer fills, above a 2 px sill with its lamp."""
     im = formed(61)
     for y in range(16):
-        for x in range(4, 12):
-            if y >= 14:
-                c = mix(SILL, METAL_DARK, 0.6 if y == 15 else 0)
-            elif x in (4, 11):
-                c = METAL
-            else:
-                c = OPENING
+        for x in range(1, 15):
+            c = mix(SILL, METAL_DARK, 0.6 if y == 15 else 0) if y >= 14 else OPENING
             im.putpixel((x, y), c + (255,))
-    lamp(im, 13, 13, on)
+    lamp(im, 12, 14, on)
     return im
 
 
