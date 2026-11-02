@@ -1,0 +1,23 @@
+{
+  "parent": "frozendawn:phase6",
+  "display": {
+    "icon": {
+      "id": "frozendawn:antimatter_capsule"
+    },
+    "title": {
+      "translate": "advancement.frozendawn.wake_me_when_you_need_me.title"
+    },
+    "description": {
+      "translate": "advancement.frozendawn.wake_me_when_you_need_me.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": true
+  },
+  "criteria": {
+    "impossible": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

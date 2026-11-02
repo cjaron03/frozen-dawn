@@ -47,10 +47,25 @@ public final class ClientHandlers {
     public static void handleAurora(AuroraStatePayload payload) { com.frozendawn.client.AuroraRenderer.receive(payload); }
     public static void handlePowerBinder(PowerBinderPayload payload) { com.frozendawn.client.PowerBinderHud.receive(payload); }
     public static void handlePowerBinderNotice(PowerBinderNoticePayload payload) { com.frozendawn.client.PowerBinderHud.receive(payload); }
-    public static void handleSfrBlueprint(SfrBlueprintPayload payload) { com.frozendawn.client.SfrBlueprintRenderer.receive(payload); }
+    public static void handleSfrBlueprint(SfrBlueprintPayload payload) {
+        var pos = payload.controller();
+        if (!payload.show()) { com.frozendawn.client.GhostBlueprintRenderer.hide(pos); return; }
+        com.frozendawn.client.GhostBlueprintRenderer.show(pos, l -> l.getBlockState(pos).getBlock() instanceof com.frozendawn.block.SfrControllerBlock
+                ? com.frozendawn.block.SfrMultiblock.wrongCells(l, pos, l.getBlockState(pos).getValue(com.frozendawn.block.SfrControllerBlock.FACING), com.frozendawn.client.GhostBlueprintRenderer.LIMIT)
+                : java.util.List.of());
+    }
+    public static void handleIcarusBlueprint(IcarusBlueprintPayload payload) {
+        var pos = payload.controller();
+        if (!payload.show()) { com.frozendawn.client.GhostBlueprintRenderer.hide(pos); return; }
+        com.frozendawn.client.GhostBlueprintRenderer.show(pos, l -> l.getBlockState(pos).getBlock() instanceof com.frozendawn.block.IcarusControllerBlock
+                ? com.frozendawn.block.IcarusStructure.wrongCells(l, pos, l.getBlockState(pos).getValue(com.frozendawn.block.IcarusControllerBlock.FACING), com.frozendawn.client.GhostBlueprintRenderer.LIMIT)
+                : java.util.List.of());
+    }
     public static void handlePowerLinks(PowerLinksPayload payload) { com.frozendawn.client.PowerLinkRenderer.receive(payload); }
     public static void handleRadiation(RadiationPayload payload) { com.frozendawn.client.RadiationClient.receive(payload); }
     public static void handleReactorFlash(ReactorFlashPayload payload) { com.frozendawn.client.RadiationClient.flash(payload); }
+    public static void handleIcarusBlast(IcarusBlastPayload payload) { com.frozendawn.client.IcarusBlastEffects.receive(payload); }
+    public static void handleIcarusCraterSites(IcarusCraterSitesPayload payload) { com.frozendawn.client.IcarusCraterAmbience.receive(payload.sites()); }
 
     public static void handleArchitectDebug(ArchitectDebugPayload payload) {
         com.frozendawn.client.ArchitectDebugRenderer.receive(payload.view());

@@ -8,7 +8,6 @@ import com.frozendawn.recipe.FabricatorRecipe;
 import com.frozendawn.world.*;
 import java.util.*;
 import net.minecraft.core.*;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -84,7 +83,7 @@ public final class FabricatorBlockEntity extends BlockEntity implements WorldlyC
     public static void insertSlate(ServerLevel level,Player player,ItemStack stack){
         var id=stack.get(ModDataComponents.BLUEPRINT.get());
         if(id==null||!FabricatorBlueprints.SLATES.contains(id)){player.displayClientMessage(Component.translatable("block.frozendawn.fabricator.slate_unreadable"),true);return;}
-        var part=BuiltInRegistries.ITEM.get(ResourceLocation.fromNamespaceAndPath(com.frozendawn.FrozenDawn.MOD_ID,id)).getDescription();
+        var part=FabricatorBlueprints.title(id);
         var archive=FabricatorBlueprints.get(level.getServer());
         if(!archive.learn(id)){player.displayClientMessage(Component.translatable("block.frozendawn.fabricator.slate_known",part),true);return;}
         stack.consume(1,player);

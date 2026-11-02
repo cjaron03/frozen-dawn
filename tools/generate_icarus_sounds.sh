@@ -1,0 +1,240 @@
+#!/usr/bin/env bash
+# AMR-1 Icarus sounds: ffmpeg lavfi synthesis only, fixed noise seeds, mono 44.1 kHz Vorbis through oggenc -q 5 (mono so
+# Minecraft attenuates them by distance). Loops follow tools/generate_sfr_sounds.sh: every tone and modulation rate is a
+# whole multiple of 1/duration, and each loop renders 1.5 s long so the seam helper can warm the filters and crossfade the
+# tail over the head.
+# The suit lines are not made here: they are Piper lines in tools/audio_sources/generated_voice/polly_manifest.tsv,
+# rendered by tools/generate_local_voice_assets.sh like every other shipped voice.
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+OUT="$ROOT/src/main/resources/assets/frozendawn/sounds/blocks/icarus"
+WORK="$(mktemp -d)"
+TMP="$WORK/render.wav"
+mkdir -p "$OUT"
+trap 'rm -rf "$WORK"' EXIT
+
+render() { # name, then ffmpeg inputs and filter args ending in [out]
+  local name="$1"; shift
+  ffmpeg -hide_banner -loglevel error -y "$@" -map "[out]" -ac 1 -ar 44100 -map_metadata -1 -fflags +bitexact -flags:a +bitexact -c:a pcm_s16le "$TMP"
+  oggenc -Q -q 5 -s 61000 -o "$OUT/$name.ogg" "$TMP"
+}
+seam() { echo "[$2]atrim=1:$(echo "$1 + 1.5" | bc),asetpts=PTS-STARTPTS,asplit[$3h][$3b];[$3b]atrim=0.5:$(echo "$1 + 0.5" | bc),asetpts=PTS-STARTPTS[$3body];[$3h]atrim=0:0.5,asetpts=PTS-STARTPTS[$3head];[$3body][$3head]acrossfade=d=0.5:c1=tri:c2=tri[$3]"; }
+
+# Frame hum, 4 s loop: the energized frame. A 60 Hz transformer buzz with odd harmonics over faint brown noise.
+render frame_hum \
+  -f lavfi -i "aevalsrc=0.16*sin(2*PI*60*t)+0.08*sin(2*PI*180*t)+0.04*sin(2*PI*300*t)+0.02*sin(2*PI*420*t)+0.015*sin(2*PI*120.25*t):s=44100:d=5.5" \
+  -f lavfi -i "anoisesrc=color=brown:duration=5.5:sample_rate=44100:seed=61001" \
+  -filter_complex "[1:a]lowpass=f=250,volume=0.25[bed];[0:a][bed]amix=inputs=2:normalize=0,tremolo=f=0.5:d=0.1,alimiter=limit=0.4:level=0[mix];$(seam 4 mix out)"
+
+# Power on, 2 s: a contactor clack, then the frame hum rising from nothing.
+render power_on \
+  -f lavfi -i "aevalsrc='0.8*exp(-40*t)*sin(2*PI*(90*t-20*t*t)) + min(1\, t/1.5)*(0.16*sin(2*PI*60*t)+0.08*sin(2*PI*180*t)+0.04*sin(2*PI*300*t))':s=44100:d=2" \
+  -f lavfi -i "anoisesrc=color=white:duration=2:sample_rate=44100:seed=61002" \
+  -f lavfi -i "aevalsrc='exp(-90*t)':s=44100:d=2" \
+  -filter_complex "[1:a]bandpass=f=2400:width_type=q:w=1.2[c];[c][2:a]amultiply,volume=1.4[clack];[0:a][clack]amix=inputs=2:normalize=0,afade=t=out:st=1.7:d=0.3,alimiter=limit=0.8:level=0[out]"
+
+# Stabilizer spin-up, 8 s: the four rings accelerating, a motor whine sweeping 120 to 1800 Hz with a rotor chop.
+render stabilizer_spinup \
+  -f lavfi -i "aevalsrc='(0.16+0.10*t/8)*sin(2*PI*(120*t+1680*t*t*t/192)) + 0.06*(t/8)*sin(4*PI*(120*t+1680*t*t*t/192))':s=44100:d=8" \
+  -f lavfi -i "anoisesrc=color=pink:duration=8:sample_rate=44100:seed=61003" \
+  -filter_complex "[1:a]bandpass=f=700:width_type=q:w=0.9,volume=0.35,afade=t=in:st=0:d=3[air];[0:a][air]amix=inputs=2:normalize=0,afade=t=in:st=0:d=0.5,afade=t=out:st=7.4:d=0.6,alimiter=limit=0.7:level=0[out]"
+
+# Stabilizer whine, 4 s loop: rings at speed. 1800 Hz against 1800.5 Hz for a slow beat, a 450 Hz motor body and
+# rushing air chopped at 12 Hz.
+render stabilizer_whine \
+  -f lavfi -i "aevalsrc=0.05*sin(2*PI*1800*t)+0.05*sin(2*PI*1800.5*t)+0.09*sin(2*PI*450*t)+0.04*sin(2*PI*900*t):s=44100:d=5.5" \
+  -f lavfi -i "anoisesrc=color=pink:duration=5.5:sample_rate=44100:seed=61004" \
+  -filter_complex "[1:a]bandpass=f=900:width_type=q:w=1.0,tremolo=f=12:d=0.5,volume=0.3[air];[0:a][air]amix=inputs=2:normalize=0,alimiter=limit=0.4:level=0[mix];$(seam 4 mix out)"
+
+# Shield form, 3 s: the confinement closing. A rising shimmer sweep into a held D minor-ninth drone.
+render shield_form \
+  -f lavfi -i "aevalsrc='0.20*sin(2*PI*(200*t+300*t*t/3))*exp(-0.6*t) + min(1\, t/1.2)*0.08*(sin(2*PI*73.42*t)+sin(2*PI*146.83*t)+0.7*sin(2*PI*174.61*t)+0.5*sin(2*PI*329.63*t))':s=44100:d=3" \
+  -f lavfi -i "anoisesrc=color=white:duration=3:sample_rate=44100:seed=61005" \
+  -f lavfi -i "aevalsrc='min(1\, t/1.0)*exp(-1.4*t)':s=44100:d=3" \
+  -filter_complex "[1:a]highpass=f=5000,volume=0.6[h];[h][2:a]amultiply[shimmer];[0:a]chorus=0.6:0.9:40|60:0.4|0.3:0.25|0.375:2|1.3[tone];[tone][shimmer]amix=inputs=2:normalize=0,afade=t=in:st=0:d=0.05,afade=t=out:st=2.4:d=0.6,alimiter=limit=0.75:level=0[out]"
+
+# Shield hum, 6 s loop: the magnetic shell. A 36.67 Hz sub, a detuned D2/D3 drone and a slow 1/3 Hz shimmer of
+# band-passed noise. Runtime pitch rises with strain.
+render shield_hum \
+  -f lavfi -i "aevalsrc=0.15*sin(2*PI*36.6667*t)+0.07*(sin(2*PI*73.3333*t)+sin(2*PI*73.5*t))+0.04*(sin(2*PI*146.6667*t)+sin(2*PI*147*t)):s=44100:d=7.5" \
+  -f lavfi -i "anoisesrc=color=pink:duration=7.5:sample_rate=44100:seed=61006" \
+  -filter_complex "[1:a]bandpass=f=1400:width_type=q:w=1.4,tremolo=f=0.3333:d=0.7,volume=0.18[ripple];[0:a][ripple]amix=inputs=2:normalize=0,alimiter=limit=0.45:level=0[mix];$(seam 6 mix out)"
+
+# Core roar, 8 s loop: annihilation. A 27.5 Hz sub beating against 27.625 Hz with its octave pair, a deep turbulent body
+# of brown noise breathing at 1/4 Hz, a band-passed roar breathing against it at 3/8 Hz, sparse crackle and a faint
+# gamma sizzle, all throbbing gently at 2 Hz. Runtime pitch follows the plasma's glow and core temperature.
+render core_roar \
+  -f lavfi -i "aevalsrc=0.20*sin(2*PI*27.5*t)+0.20*sin(2*PI*27.625*t)+0.10*sin(2*PI*55*t)+0.07*sin(2*PI*55.25*t)+0.04*sin(2*PI*82.5*t):s=44100:d=9.5" \
+  -f lavfi -i "anoisesrc=color=brown:duration=9.5:sample_rate=44100:seed=61007" \
+  -f lavfi -i "anoisesrc=color=pink:duration=9.5:sample_rate=44100:seed=61018" \
+  -f lavfi -i "anoisesrc=color=white:duration=9.5:sample_rate=44100:seed=61008" \
+  -f lavfi -i "anoisesrc=color=white:duration=9.5:sample_rate=44100:seed=61009" \
+  -f lavfi -i "aevalsrc='pow(abs(sin(2*PI*3.375*t)*sin(2*PI*5.125*t))\,12)':s=44100:d=9.5" \
+  -filter_complex "[1:a]lowpass=f=320,lowpass=f=320,volume=2.2,tremolo=f=0.25:d=0.45[body];[2:a]bandpass=f=150:width_type=q:w=0.6,volume=0.7,tremolo=f=0.375:d=0.5[roar];[3:a]highpass=f=6500,volume=0.03[sizzle];[4:a]bandpass=f=1900:width_type=q:w=1.3[c];[c][5:a]amultiply,volume=0.9[crackle];[0:a][body][roar][sizzle][crackle]amix=inputs=5:normalize=0,tremolo=f=2:d=0.08,alimiter=limit=0.6:level=0[mix];$(seam 8 mix out)"
+
+# Core song, 8 s loop: the plasma's tone under the roar. Partials of a 55 Hz A, each swelling on its own slow LFO so the
+# timbre turns over without repeating inside the loop, close pairs beating at 1/4 Hz, a breathy 3 kHz shimmer and a
+# short room echo. Every rate is a multiple of 1/8 Hz. Runtime volume and pitch follow the plasma's glow.
+render core_song \
+  -f lavfi -i "aevalsrc='0.10*sin(2*PI*110*t)*(0.6+0.4*sin(2*PI*0.125*t)) + 0.08*sin(2*PI*165*t)*(0.5+0.5*sin(2*PI*0.25*t+1)) + 0.05*(sin(2*PI*220*t)+sin(2*PI*220.25*t))*(0.5+0.5*sin(2*PI*0.125*t+2)) + 0.05*sin(2*PI*330*t)*(0.5+0.5*sin(2*PI*0.375*t+3)) + 0.03*(sin(2*PI*440*t)+sin(2*PI*440.25*t))*(0.5+0.5*sin(2*PI*0.25*t+4)) + 0.03*sin(2*PI*660*t)*(0.5+0.5*sin(2*PI*0.5*t+5)) + 0.02*sin(2*PI*880.5*t)*(0.5+0.5*sin(2*PI*0.125*t+0.5)) + 0.012*sin(2*PI*1320*t)*(0.5+0.5*sin(2*PI*0.375*t+2.5))':s=44100:d=9.5" \
+  -f lavfi -i "anoisesrc=color=pink:duration=9.5:sample_rate=44100:seed=61019" \
+  -filter_complex "[1:a]bandpass=f=3000:width_type=q:w=3,tremolo=f=0.375:d=0.6,volume=0.12[air];[0:a][air]amix=inputs=2:normalize=0,aecho=0.8:0.6:70|131:0.25|0.15,volume=4,alimiter=limit=0.5:level=0[mix];$(seam 8 mix out)"
+
+# Wind down, 6 s: the Cole ramp-down taking the roar away. A tone and its octave falling exponentially from 220 Hz to 40 Hz,
+# a fading turbulent body under it and a high whoop dropping from 1600 Hz to 200 Hz.
+render wind_down \
+  -f lavfi -i "aevalsrc='exp(-0.3*t)*(0.22*sin(2*PI*220*(5/log(5.5))*(1-exp(-log(5.5)*t/5))) + 0.10*sin(4*PI*220*(5/log(5.5))*(1-exp(-log(5.5)*t/5)))) + 0.08*exp(-0.9*t)*sin(2*PI*1600*(3/log(8))*(1-exp(-log(8)*t/3)))':s=44100:d=6" \
+  -f lavfi -i "anoisesrc=color=brown:duration=6:sample_rate=44100:seed=61020" \
+  -f lavfi -i "aevalsrc='exp(-0.55*t)':s=44100:d=6" \
+  -filter_complex "[1:a]lowpass=f=260,volume=2.0[n];[n][2:a]amultiply[body];[0:a][body]amix=inputs=2:normalize=0,afade=t=in:st=0:d=0.3,afade=t=out:st=4.8:d=1.2,alimiter=limit=0.75:level=0[out]"
+
+# Core collapse, 2.5 s: the plasma falling back to a speck. An inward rush of noise swelling for 1.2 s, then a soft deep
+# thump and a thin glassy ring.
+render core_collapse \
+  -f lavfi -i "aevalsrc='if(gte(t\,1.2)\, 0.9*exp(-6*(t-1.2))*sin(2*PI*(48*(t-1.2)-6*(t-1.2)*(t-1.2))) + 0.08*exp(-2.5*(t-1.2))*(sin(2*PI*1975.5*(t-1.2))+0.6*sin(2*PI*2963*(t-1.2)))\, 0)':s=44100:d=2.5" \
+  -f lavfi -i "anoisesrc=color=pink:duration=2.5:sample_rate=44100:seed=61021" \
+  -f lavfi -i "aevalsrc='if(lt(t\,1.2)\, pow(t/1.2\,3)\, exp(-30*(t-1.2)))':s=44100:d=2.5" \
+  -filter_complex "[1:a]bandpass=f=900:width_type=q:w=0.7,volume=1.1[n];[n][2:a]amultiply[rush];[0:a][rush]amix=inputs=2:normalize=0,afade=t=out:st=2.1:d=0.4,alimiter=limit=0.85:level=0[out]"
+
+# Shield hit, 0.5 s: a stray annihilation striking the shield. A crisp band-passed crack, a glassy ping falling from
+# 2400 Hz to 1500 Hz and a small thump under it. The client varies its pitch per hit.
+render shield_hit \
+  -f lavfi -i "aevalsrc='0.35*exp(-10*t)*sin(2*PI*2400*(0.5/log(1.6))*(1-exp(-log(1.6)*t/0.5))) + 0.12*exp(-8*t)*sin(2*PI*3610*t) + 0.5*exp(-30*t)*sin(2*PI*(72*t-20*t*t))':s=44100:d=0.5" \
+  -f lavfi -i "anoisesrc=color=white:duration=0.5:sample_rate=44100:seed=61022" \
+  -f lavfi -i "aevalsrc='exp(-45*t)':s=44100:d=0.5" \
+  -filter_complex "[1:a]bandpass=f=3200:width_type=q:w=0.9,volume=1.4[n];[n][2:a]amultiply[crack];[0:a][crack]amix=inputs=2:normalize=0,afade=t=in:st=0:d=0.002,afade=t=out:st=0.38:d=0.12,alimiter=limit=0.8:level=0[out]"
+
+# Stabilizer sputter, 0.7 s: the failing stabilizer cutting out. A burst of irregular electrical crackle, a motor whine
+# dropping from 1800 Hz to 500 Hz as the beam dies, and a dull pop.
+render stabilizer_sputter \
+  -f lavfi -i "aevalsrc='0.16*exp(-3*t)*sin(2*PI*1800*(0.7/log(3.6))*(1-exp(-log(3.6)*t/0.7))) + 0.5*exp(-22*t)*sin(2*PI*(95*t-30*t*t))':s=44100:d=0.7" \
+  -f lavfi -i "anoisesrc=color=white:duration=0.7:sample_rate=44100:seed=61023" \
+  -f lavfi -i "aevalsrc='gt(sin(2*PI*37*t)*sin(2*PI*23*t+1)*sin(2*PI*61*t+2)\,0.05)*exp(-4*t)':s=44100:d=0.7" \
+  -filter_complex "[1:a]bandpass=f=1500:width_type=q:w=0.8,volume=1.6[n];[n][2:a]amultiply[crackle];[0:a][crackle]amix=inputs=2:normalize=0,afade=t=in:st=0:d=0.003,afade=t=out:st=0.55:d=0.15,alimiter=limit=0.8:level=0[out]"
+
+# Klaxon, 2 s loop: the critical siren that runs for as long as the reactor stays critical. A harsh hi-lo two-tone,
+# 960 and 770 Hz with their third harmonics, switching every half second through a soft gate so it never clicks.
+render klaxon \
+  -f lavfi -i "aevalsrc='(0.5+0.5*tanh(25*sin(2*PI*0.5*t)))*(0.26*sin(2*PI*960*t)+0.09*sin(2*PI*2880*t)) + (0.5-0.5*tanh(25*sin(2*PI*0.5*t)))*(0.26*sin(2*PI*770*t)+0.09*sin(2*PI*2310*t))':s=44100:d=3.5" \
+  -filter_complex "[0:a]lowpass=f=5500,volume=2.2,alimiter=limit=0.7:level=0[mix];$(seam 2 mix out)"
+
+# Strain, 6 s loop: the frame groaning under the load near the end. A resonant metal groan bending around 55 Hz, a band of
+# rumbling brown noise swelling at 1/3 Hz and dry creaks at 700 Hz, every rate a multiple of 1/6 Hz.
+render strain \
+  -f lavfi -i "aevalsrc='0.22*sin(2*PI*55*t + 9*sin(2*PI*t/6))*(0.6+0.4*sin(2*PI*t/3)) + 0.08*sin(2*PI*110*t + 18*sin(2*PI*t/6+1))':s=44100:d=7.5" \
+  -f lavfi -i "anoisesrc=color=brown:duration=7.5:sample_rate=44100:seed=61024" \
+  -f lavfi -i "anoisesrc=color=white:duration=7.5:sample_rate=44100:seed=61025" \
+  -f lavfi -i "aevalsrc='pow(abs(sin(2*PI*1.5*t)*sin(2*PI*0.8333333*t+0.7))\,10)':s=44100:d=7.5" \
+  -filter_complex "[1:a]bandpass=f=120:width_type=q:w=3,volume=3.5,tremolo=f=0.3333333:d=0.6[groan];[2:a]bandpass=f=700:width_type=q:w=2.5[c];[c][3:a]amultiply,volume=1.2[creak];[0:a][groan][creak]amix=inputs=3:normalize=0,alimiter=limit=0.6:level=0[mix];$(seam 6 mix out)"
+
+# Core thump, 0.7 s: the unstable core's heartbeat, a double sub-bass thump felt more than heard.
+render core_thump \
+  -f lavfi -i "aevalsrc='0.95*exp(-14*t)*sin(2*PI*(50*t-12*t*t)) + if(gte(t\,0.2)\, 0.65*exp(-14*(t-0.2))*sin(2*PI*(46*(t-0.2)-10*(t-0.2)*(t-0.2)))\, 0)':s=44100:d=0.7" \
+  -filter_complex "[0:a]lowpass=f=200,afade=t=in:st=0:d=0.004,afade=t=out:st=0.55:d=0.15,alimiter=limit=0.9:level=0[out]"
+
+# Injector feed, 3 s: magnetic gates clocking the antimatter down the line, a 14 Hz train of falling blips over a
+# cold vapor hiss.
+render injector_feed \
+  -f lavfi -i "aevalsrc='0.22*exp(-30*mod(t\,0.0714))*sin(2*PI*(1600*mod(t\,0.0714)-6000*mod(t\,0.0714)*mod(t\,0.0714)))*min(1\, t/0.3)':s=44100:d=3" \
+  -f lavfi -i "anoisesrc=color=white:duration=3:sample_rate=44100:seed=61010" \
+  -filter_complex "[1:a]highpass=f=3000,lowpass=f=9000,volume=0.25,afade=t=in:st=0:d=0.4[hiss];[0:a][hiss]amix=inputs=2:normalize=0,afade=t=out:st=2.4:d=0.6,alimiter=limit=0.7:level=0[out]"
+
+# Capsule dock, 1.2 s: a capsule seated in its cradle. A heavy clunk, a latch click a beat later and a short seal hiss.
+render capsule_dock \
+  -f lavfi -i "aevalsrc='0.9*exp(-14*t)*sin(2*PI*(75*t-18*t*t)) + if(gte(t\,0.18)\, 0.35*exp(-60*(t-0.18))*(sin(2*PI*2200*(t-0.18))+0.5*sin(2*PI*3310*(t-0.18)))\, 0)':s=44100:d=1.2" \
+  -f lavfi -i "anoisesrc=color=white:duration=1.2:sample_rate=44100:seed=61011" \
+  -f lavfi -i "aevalsrc='if(gte(t\,0.3)\, min(1\, (t-0.3)/0.03)*exp(-7*(t-0.3))\, 0)':s=44100:d=1.2" \
+  -filter_complex "[1:a]highpass=f=4000,volume=0.5[n];[n][2:a]amultiply[seal];[0:a][seal]amix=inputs=2:normalize=0,afade=t=in:st=0:d=0.003,afade=t=out:st=1.0:d=0.2,alimiter=limit=0.85:level=0[out]"
+
+# Ignition, 6 s: the first annihilation. A 1.5 s rising charge, a deep concussive bloom and a long high ring as the
+# roar takes over.
+render ignition \
+  -f lavfi -i "aevalsrc='if(lt(t\,1.5)\, (0.1+0.2*t/1.5)*sin(2*PI*(300*t+500*t*t))\, 0) + if(gte(t\,1.5)\, 1.0*exp(-1.8*(t-1.5))*sin(2*PI*(38*(t-1.5)-3*(t-1.5)*(t-1.5))) + 0.12*exp(-0.7*(t-1.5))*sin(2*PI*1975.5*(t-1.5))\, 0)':s=44100:d=6" \
+  -f lavfi -i "anoisesrc=color=pink:duration=6:sample_rate=44100:seed=61012" \
+  -f lavfi -i "aevalsrc='if(gte(t\,1.5)\, exp(-1.2*(t-1.5))\, 0)':s=44100:d=6" \
+  -filter_complex "[1:a]lowpass=f=600,volume=1.3[n];[n][2:a]amultiply[bloom];[0:a][bloom]amix=inputs=2:normalize=0,afade=t=out:st=5.2:d=0.8,alimiter=limit=0.85:level=0[out]"
+
+# Clip slam, 1.5 s: the safety clip dumping power. A hard magnetic slam, a falling zap and a ringing frame.
+render clip_slam \
+  -f lavfi -i "aevalsrc='1.0*exp(-11*t)*sin(2*PI*(55*t-10*t*t)) + 0.3*exp(-6*t)*sin(2*PI*1200*(1.5/log(12))*(1-exp(-log(12)*t/1.5))) + 0.12*exp(-3*t)*(sin(2*PI*523*t)+0.7*sin(2*PI*1367*t))':s=44100:d=1.5" \
+  -f lavfi -i "anoisesrc=color=white:duration=1.5:sample_rate=44100:seed=61013" \
+  -f lavfi -i "aevalsrc='exp(-50*t)':s=44100:d=1.5" \
+  -filter_complex "[1:a]bandpass=f=1500:width_type=q:w=0.8[c];[c][2:a]amultiply,volume=1.5[crack];[0:a][crack]amix=inputs=2:normalize=0,afade=t=in:st=0:d=0.002,afade=t=out:st=1.2:d=0.3,alimiter=limit=0.9:level=0[out]"
+
+# COLE complete, 2.2 s: the controlled shutdown's clean end. A slow three-note descent, D5, A4, D4.
+render cole_complete \
+  -f lavfi -i "aevalsrc='0.4*(sin(2*PI*587.33*t)*exp(-2.6*t) + if(gte(t\,0.35)\, sin(2*PI*440*(t-0.35))*exp(-2.4*(t-0.35))) + if(gte(t\,0.7)\, sin(2*PI*293.66*(t-0.7))*exp(-1.8*(t-0.7)) + 0.25*sin(2*PI*587.33*(t-0.7))*exp(-4*(t-0.7))))':s=44100:d=2.2" \
+  -filter_complex "[0:a]afade=t=in:st=0:d=0.005,afade=t=out:st=1.9:d=0.3,alimiter=limit=0.7:level=0[out]"
+
+# Running, 2.6 s: the reactor at power. The Cole chime turned upward and brighter, D4, A4, D5 and a ringing F#5 with its
+# octave.
+render running \
+  -f lavfi -i "aevalsrc='0.32*(sin(2*PI*293.66*t)*exp(-2.2*t) + if(gte(t\,0.18)\, sin(2*PI*440*(t-0.18))*exp(-2.2*(t-0.18))) + if(gte(t\,0.36)\, sin(2*PI*587.33*(t-0.36))*exp(-2*(t-0.36))) + if(gte(t\,0.54)\, (sin(2*PI*739.99*(t-0.54)) + 0.3*sin(2*PI*1479.98*(t-0.54)))*exp(-1.5*(t-0.54))))':s=44100:d=2.6" \
+  -filter_complex "[0:a]afade=t=in:st=0:d=0.005,afade=t=out:st=2.2:d=0.4,alimiter=limit=0.7:level=0[out]"
+
+# Caution, 1 s: two soft equal beeps at 880 Hz.
+render alarm_caution \
+  -f lavfi -i "aevalsrc='0.3*sin(2*PI*880*t)*(between(t\,0.02\,0.22)+between(t\,0.4\,0.6))':s=44100:d=1" \
+  -filter_complex "[0:a]lowpass=f=4000,afade=t=out:st=0.8:d=0.2,alimiter=limit=0.7:level=0[out]"
+
+# Warning, 1.5 s: three rising square-edged tones, 660, 880 and 1175 Hz.
+render alarm_warning \
+  -f lavfi -i "aevalsrc='0.24*(sin(2*PI*660*t)+0.3*sin(6*PI*660*t))*between(t\,0.02\,0.32) + 0.24*(sin(2*PI*880*t)+0.3*sin(6*PI*880*t))*between(t\,0.45\,0.75) + 0.24*(sin(2*PI*1175*t)+0.3*sin(6*PI*1175*t))*between(t\,0.88\,1.25)':s=44100:d=1.5" \
+  -filter_complex "[0:a]lowpass=f=6000,afade=t=out:st=1.3:d=0.2,alimiter=limit=0.75:level=0[out]"
+
+# Critical, 2 s: a fast pulsed klaxon, 8 Hz on a 1500 Hz to 900 Hz warble.
+render alarm_critical \
+  -f lavfi -i "aevalsrc='0.3*(sin(2*PI*(1200*t+150*sin(2*PI*4*t)/(2*PI*4)*2*PI))+0.35*sin(6*PI*1200*t))*gt(sin(2*PI*8*t)\,0)':s=44100:d=2" \
+  -filter_complex "[0:a]lowpass=f=7000,afade=t=in:st=0:d=0.01,afade=t=out:st=1.8:d=0.2,alimiter=limit=0.8:level=0[out]"
+
+# Boom, 7 s: the detonation in air. A white-hot crack, a 28 Hz pressure wave and a long rolling body.
+render boom \
+  -f lavfi -i "aevalsrc='1.0*exp(-1.6*t)*sin(2*PI*(28*t-1.5*t*t))':s=44100:d=7" \
+  -f lavfi -i "anoisesrc=color=white:duration=7:sample_rate=44100:seed=61014" \
+  -f lavfi -i "anoisesrc=color=brown:duration=7:sample_rate=44100:seed=61015" \
+  -f lavfi -i "aevalsrc='exp(-30*t)':s=44100:d=7" \
+  -f lavfi -i "aevalsrc='min(1\, t/0.05)*exp(-0.55*t)':s=44100:d=7" \
+  -filter_complex "[1:a]lowpass=f=6000[w];[w][3:a]amultiply,volume=1.6[crack];[2:a]lowpass=f=300,volume=2.6[b];[b][4:a]amultiply[body];[0:a][crack][body]amix=inputs=3:normalize=0,afade=t=out:st=6.0:d=1.0,alimiter=limit=0.95:level=0[out]"
+
+# Rumble, 8 s: the long low after-roll, brown noise below 90 Hz swelling and fading.
+render rumble \
+  -f lavfi -i "anoisesrc=color=brown:duration=8:sample_rate=44100:seed=61016" \
+  -f lavfi -i "aevalsrc='min(1\, t/1.2)*exp(-0.35*t)*(0.8+0.2*sin(2*PI*0.7*t))':s=44100:d=8" \
+  -filter_complex "[0:a]lowpass=f=90,lowpass=f=90,volume=4.5[r];[r][1:a]amultiply,afade=t=out:st=7:d=1,alimiter=limit=0.85:level=0[out]"
+
+# Ringing, 8 s: the ears after the boom in air. A 4186 Hz tone beating against 4189 Hz, a faint 6.3 kHz overtone and a
+# thin high hiss, at full strength at once and fading slowly. The client starts it as the boom lands.
+render ringing \
+  -f lavfi -i "aevalsrc='(0.16*sin(2*PI*4186*t)+0.12*sin(2*PI*4189*t)+0.03*sin(2*PI*6279*t))*min(1\, t/0.08)*exp(-0.42*t)':s=44100:d=8" \
+  -f lavfi -i "anoisesrc=color=white:duration=8:sample_rate=44100:seed=61030" \
+  -f lavfi -i "aevalsrc='min(1\, t/0.08)*exp(-0.5*t)':s=44100:d=8" \
+  -filter_complex "[1:a]highpass=f=7000,volume=0.05[h];[h][2:a]amultiply[hiss];[0:a][hiss]amix=inputs=2:normalize=0,afade=t=out:st=7:d=1,alimiter=limit=0.5:level=0[out]"
+
+# Vacuum thud, 1.5 s: the ground shock through the boots. A dull 34 Hz thump with no air above 200 Hz.
+render vacuum_thud \
+  -f lavfi -i "aevalsrc='1.0*exp(-4.5*t)*sin(2*PI*(34*t-4*t*t)) + 0.3*exp(-8*t)*sin(2*PI*68*t)':s=44100:d=1.5" \
+  -f lavfi -i "anoisesrc=color=brown:duration=1.5:sample_rate=44100:seed=61017" \
+  -f lavfi -i "aevalsrc='exp(-5*t)':s=44100:d=1.5" \
+  -filter_complex "[1:a]lowpass=f=150,volume=1.5[n];[n][2:a]amultiply[body];[0:a][body]amix=inputs=2:normalize=0,lowpass=f=200,afade=t=in:st=0:d=0.01,afade=t=out:st=1.2:d=0.3,alimiter=limit=0.9:level=0[out]"
+
+
+# UI confirm, 0.3 s: the Controller accepting a command or setting. Two clean blips, A5 then E6.
+render ui_confirm \
+  -f lavfi -i "aevalsrc='0.35*exp(-30*t)*sin(2*PI*880*t)*lt(t\,0.12) + if(gte(t\,0.09)\, 0.35*exp(-22*(t-0.09))*sin(2*PI*1318.5*(t-0.09))\, 0)':s=44100:d=0.3" \
+  -filter_complex "[0:a]afade=t=in:st=0:d=0.003,afade=t=out:st=0.24:d=0.06,alimiter=limit=0.8:level=0[out]"
+
+# CLIP arm, 1 s: the hold-to-clip charge, matching the one-second hold. A pulsed tone climbing 400 to 1600 Hz, its
+# pulse rate rising from 8 to 20 Hz.
+render clip_arm \
+  -f lavfi -i "aevalsrc='(0.18+0.14*t)*sin(2*PI*(400*t+600*t*t))*(0.55+0.45*sin(2*PI*(8*t+6*t*t)))':s=44100:d=1" \
+  -f lavfi -i "anoisesrc=color=pink:duration=1:sample_rate=44100:seed=61090" \
+  -filter_complex "[1:a]highpass=f=1500,volume=0.08[n];[0:a][n]amix=inputs=2:normalize=0,afade=t=in:st=0:d=0.02,afade=t=out:st=0.94:d=0.06,alimiter=limit=0.8:level=0[out]"
+
+# Ignition whump, 2.5 s: the shove of air as the first annihilation lights. A falling sub-bass punch under a pink
+# pressure rush that swells and dies away.
+render ignition_whump \
+  -f lavfi -i "aevalsrc='1.0*exp(-3.2*t)*sin(2*PI*(44*t-9*t*t)) + 0.4*exp(-6*t)*sin(2*PI*(88*t-18*t*t))':s=44100:d=2.5" \
+  -f lavfi -i "anoisesrc=color=pink:duration=2.5:sample_rate=44100:seed=61091" \
+  -f lavfi -i "aevalsrc='min(1\, t/0.04)*exp(-2.4*t)':s=44100:d=2.5" \
+  -filter_complex "[1:a]lowpass=f=420,volume=1.6[n];[n][2:a]amultiply[rush];[0:a][rush]amix=inputs=2:normalize=0,afade=t=in:st=0:d=0.004,afade=t=out:st=2.0:d=0.5,alimiter=limit=0.9:level=0[out]"

@@ -1,0 +1,30 @@
+{
+  "name": "ORSA Fabricator",
+  "category": "frozendawn:fabricator",
+  "icon": "frozendawn:fabricator",
+  "sortnum": 0,
+  "pages": [
+    {
+      "type": "patchouli:spotlight",
+      "item": "frozendawn:fabricator",
+      "title": "ORSA Fabricator",
+      "text": "Six inputs, one output. It prints parts from blueprints this world has archived."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Building",
+      "text": "Crafted from iron, copper, a crafting table, an $(l:power/induction_furnace)Induction Furnace$(/l) and a redstone block. Link it to your grid with the $(l:power/binder)Conduit Binder$(/l)."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Printing",
+      "text": "A job draws 5 to 60 kW, depending on the part, and sheds a quarter of that as room heat.$(br2)Losing power pauses the job. Ingredients are spent only when it finishes. Hoppers can feed it."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "What It Prints",
+      "text": "$(li)Magnet Coils, the First Wall, Lithium Blankets, the High-Temperature Radiator and the Isotope Column$(li)The AMR-1 \"Icarus\" core parts$(li)The Rocket Hull and Rocket Engine, from the Martian Command blueprint"
+    }
+  ],
+  "priority": true
+}

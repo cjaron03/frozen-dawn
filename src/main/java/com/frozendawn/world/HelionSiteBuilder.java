@@ -96,6 +96,7 @@ public final class HelionSiteBuilder {
         }
         for (int dy = 1; dy < CEILING; dy++) if (r.nextFloat() < .5f) set(l, c, HALF - 1, dy, -HALF + 1, Blocks.ICE.defaultBlockState());
     }
+    public static final float CAPSULE_CHANCE = 0.1f;
     private static void desk(ServerLevel l, BlockPos c, RandomSource r) {
         for (int dx = -3; dx <= 3; dx++) set(l, c, dx, 0, -HALF + 1, Blocks.POLISHED_ANDESITE.defaultBlockState());
         for (var p : List.of(COIL_STORE, LOG_DESK, WALL_SPARES)) set(l, c, p.getX(), p.getY(), p.getZ(), Blocks.BARREL.defaultBlockState());
@@ -105,6 +106,8 @@ public final class HelionSiteBuilder {
         var ids = new java.util.ArrayList<>(FabricatorBlueprints.SLATES); net.minecraft.Util.shuffle(ids, r);
         var desk = new java.util.ArrayList<ItemStack>(List.of(sealedLog()));
         for (var id : ids.subList(0, 2 + r.nextInt(2))) desk.add(FabricatorBlueprints.slate(id));
+        // Now and then a sealed pre-collapse antimatter capsule was left in the desk. It is a lucky find, never a requirement.
+        if (r.nextFloat() < CAPSULE_CHANCE) desk.add(com.frozendawn.item.AntimatterCapsuleItem.sealed(com.frozendawn.power.IcarusPhysics.CAPSULE));
         fill(l, c.offset(LOG_DESK), desk.toArray(ItemStack[]::new));
     }
     /** Ladder from the hall floor up through the ceiling and ice, plugged below a hatch at the surface. */

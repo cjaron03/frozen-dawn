@@ -1,9 +1,7 @@
 package com.frozendawn.client;
 
 import com.frozendawn.FrozenDawn;
-import com.frozendawn.block.SfrControllerBlock;
-import com.frozendawn.block.SfrMultiblock;
-import com.frozendawn.network.SfrBlueprintPayload;
+import com.frozendawn.block.GhostCell;
 import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import java.util.ArrayList;
@@ -11,6 +9,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.LightTexture;
@@ -18,6 +17,7 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -26,12 +26,16 @@ import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 import net.neoforged.neoforge.client.model.data.ModelData;
 
-/** SFR-1 build guide: a translucent ghost of the expected block in every empty torus cell, and a red box on every cell
- * holding the wrong block or filling the plasma channel, wrapped in a ghost of what belongs there. Cells are read from the client's own world, so placing a block
- * updates the guide without a packet; it hides itself once the torus has nothing left to show. */
+/** Multiblock build guide shared by the SFR-1 and the AMR-1 Icarus: a translucent ghost of the expected block in every empty
+ * cell, and a red box on every cell holding the wrong block or one that must be clear, wrapped in a ghost of what belongs
+ * there. Each shown controller brings the function that lists its cells; they are read from the client's own world, so
+ * placing a block updates the guide without a packet, and a controller hides itself once it has nothing left to show. */
 @EventBusSubscriber(modid = FrozenDawn.MOD_ID, value = Dist.CLIENT)
-public final class SfrBlueprintRenderer {
-    private static final Map<BlockPos, List<SfrMultiblock.Wrong>> SHOWN = new HashMap<>();
+public final class GhostBlueprintRenderer {
+    /** Cells read per controller per scan; every cell, as the guide has always drawn. */
+    public static final int LIMIT = Integer.MAX_VALUE;
+    private record Shown(Function<Level, List<GhostCell>> source, List<GhostCell> cells) {}
+    private static final Map<BlockPos, Shown> SHOWN = new HashMap<>();
     private static String dimension = "";
     private static long scannedAt;
     /** Set when a controller is added, so the next frame reads its cells instead of waiting out RESCAN_TICKS. */
@@ -39,27 +43,26 @@ public final class SfrBlueprintRenderer {
     private static final MultiBufferSource.BufferSource BUFFERS = MultiBufferSource.immediate(new ByteBufferBuilder(1 << 16));
     private static final double RANGE = 64, SCALE = 0.875, OVER = 1.02;
     private static final int RESCAN_TICKS = 10;
-    private SfrBlueprintRenderer() {}
+    private GhostBlueprintRenderer() {}
 
-    public static void receive(SfrBlueprintPayload payload) {
+    /** Shows a controller's guide; cells returns nothing once the controller is gone or the structure is finished. */
+    public static void show(BlockPos controller, Function<Level, List<GhostCell>> cells) {
         var level = Minecraft.getInstance().level;
         if (level == null) return;
         var here = level.dimension().location().toString();
         if (!here.equals(dimension)) { SHOWN.clear(); dimension = here; }
-        if (payload.show()) { SHOWN.put(payload.controller().immutable(), List.of()); stale = true; }
-        else SHOWN.remove(payload.controller());
+        SHOWN.put(controller.immutable(), new Shown(cells, List.of())); stale = true;
     }
+    public static void hide(BlockPos controller) { SHOWN.remove(controller); }
     @SubscribeEvent public static void logout(ClientPlayerNetworkEvent.LoggingOut event) { SHOWN.clear(); dimension = ""; }
 
     private static void rescan() {
         var level = Minecraft.getInstance().level;
         for (var it = SHOWN.entrySet().iterator(); it.hasNext(); ) {
-            var e = it.next(); var pos = e.getKey();
-            if (!level.hasChunkAt(pos)) continue;
-            var state = level.getBlockState(pos);
-            if (!(state.getBlock() instanceof SfrControllerBlock)) { it.remove(); continue; }
-            var cells = SfrMultiblock.wrongCells(level, pos, state.getValue(SfrControllerBlock.FACING), Integer.MAX_VALUE);
-            if (cells.isEmpty()) it.remove(); else e.setValue(cells);
+            var e = it.next();
+            if (!level.hasChunkAt(e.getKey())) continue;
+            var cells = e.getValue().source().apply(level);
+            if (cells.isEmpty()) it.remove(); else e.setValue(new Shown(e.getValue().source(), cells));
         }
     }
 
@@ -70,17 +73,17 @@ public final class SfrBlueprintRenderer {
         long now = mc.level.getGameTime();
         if (stale || now - scannedAt >= RESCAN_TICKS || now < scannedAt) { rescan(); scannedAt = now; stale = false; }
         var camera = event.getCamera().getPosition(); var poses = event.getPoseStack();
-        var ghosts = new ArrayList<SfrMultiblock.Wrong>(); var boxes = new ArrayList<BlockPos>();
+        var ghosts = new ArrayList<GhostCell>(); var boxes = new ArrayList<BlockPos>();
         for (var e : SHOWN.entrySet()) {
             if (e.getKey().distToCenterSqr(mc.player.position()) > RANGE * RANGE) continue;
-            for (var w : e.getValue()) {
+            for (var w : e.getValue().cells()) {
                 if (w.ghost() != null) ghosts.add(w);
                 if (w.ghost() == null || !mc.level.getBlockState(w.pos()).isAir()) boxes.add(w.pos());
             }
         }
         if (ghosts.isEmpty() && boxes.isEmpty()) return;
         // Far to near, so nearer ghosts blend over farther ones instead of hiding them through the depth buffer.
-        ghosts.sort(Comparator.comparingDouble((SfrMultiblock.Wrong w) -> w.pos().distToCenterSqr(camera)).reversed());
+        ghosts.sort(Comparator.comparingDouble((GhostCell w) -> w.pos().distToCenterSqr(camera)).reversed());
         float time = (now % 40 + event.getPartialTick().getGameTimeDeltaPartialTick(false)) / 40F;
         float alpha = 0.4F + 0.15F * (float) Math.sin(time * Math.PI * 2);
         var blocks = mc.getBlockRenderer();

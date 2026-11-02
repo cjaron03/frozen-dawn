@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "FPF",
+    "PBP",
+    "FPF"
+  ],
+  "key": {
+    "F": {
+      "item": "frozendawn:icarus_frame"
+    },
+    "P": {
+      "item": "frozendawn:power_cell"
+    },
+    "B": {
+      "item": "frozendawn:battery_bank"
+    }
+  },
+  "result": {
+    "id": "frozendawn:icarus_reserve_bank",
+    "count": 1
+  }
+}

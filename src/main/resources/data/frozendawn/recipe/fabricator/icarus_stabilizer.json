@@ -1,0 +1,30 @@
+{
+  "type": "frozendawn:fabricating",
+  "blueprint": "icarus",
+  "ingredients": [
+    {
+      "ingredient": {
+        "item": "frozendawn:magnet_coil"
+      },
+      "count": 4
+    },
+    {
+      "ingredient": {
+        "item": "frozendawn:high_temperature_radiator"
+      },
+      "count": 2
+    },
+    {
+      "ingredient": {
+        "item": "frozendawn:refined_acheronite"
+      },
+      "count": 2
+    }
+  ],
+  "result": {
+    "id": "frozendawn:icarus_stabilizer",
+    "count": 1
+  },
+  "watts": 40000,
+  "seconds": 180
+}

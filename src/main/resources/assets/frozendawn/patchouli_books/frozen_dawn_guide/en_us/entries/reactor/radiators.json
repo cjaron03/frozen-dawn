@@ -7,7 +7,8 @@
     {
       "type": "patchouli:spotlight",
       "item": "frozendawn:reactor_radiator",
-      "text": "Sheds core heat outdoors. The heat it sheds becomes power."
+      "text": "Sheds core heat outdoors. The heat it sheds becomes power.",
+      "title": "CFU-7 Radiator"
     },
     {
       "type": "patchouli:text",
@@ -31,7 +32,8 @@
     {
       "type": "patchouli:crafting",
       "recipe": "frozendawn:reactor_radiator",
-      "text": "Iron bars, copper blocks and a Coolant Port."
+      "text": "Iron bars, copper blocks and a Coolant Port.",
+      "title": "CFU-7 Radiator"
     }
   ]
 }

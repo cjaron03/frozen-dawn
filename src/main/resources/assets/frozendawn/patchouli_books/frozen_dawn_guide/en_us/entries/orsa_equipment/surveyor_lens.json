@@ -6,7 +6,7 @@
   "pages": [
     {
       "type": "patchouli:text",
-      "title": "ORSA Thermal Survey Optic",
+      "title": "Thermal Survey Optic",
       "text": "$(bold)Recovered designation:$() Surveyor Lens.$(br2)The Returned Architect carried optics tuned to infrastructure instead of faces."
     },
     {

@@ -11,7 +11,7 @@
     {
       "type": "patchouli:text",
       "title": "Sources",
-      "text": "$(li)$(l:advanced/core_upgrades)Geothermal Core$(/l) power share: up to $(bold)20 kW$()$(li)$(l:reactor/overview)Hearthstone Reactor$(/l)$(li)Charged $(l:power/storage)Power Cells$(/l)"
+      "text": "$(li)$(l:advanced/core_upgrades)Geothermal Core$(/l) power share: up to $(bold)20 kW$()$(li)$(l:reactor/overview)CFU-7 \"Hearthstone\"$(/l)$(li)Charged $(l:power/storage)Power Cells$(/l)"
     },
     {
       "type": "patchouli:text",

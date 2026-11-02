@@ -27,4 +27,8 @@ public class ModDamageTypes {
     public static final ResourceKey<DamageType> THAE_IVEN =
             ResourceKey.create(Registries.DAMAGE_TYPE,
                     ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "thae_iven"));
+
+    public static final ResourceKey<DamageType> ICARUS_DETONATION =
+            ResourceKey.create(Registries.DAMAGE_TYPE,
+                    ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "icarus_detonation"));
 }

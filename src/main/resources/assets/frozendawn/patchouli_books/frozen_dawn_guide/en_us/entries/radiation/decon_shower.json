@@ -7,7 +7,8 @@
     {
       "type": "patchouli:spotlight",
       "item": "frozendawn:decon_shower",
-      "text": "Washes off contamination and visor grime."
+      "text": "Washes off contamination and visor grime.",
+      "title": "Decon Shower"
     },
     {
       "type": "patchouli:text",
@@ -59,7 +60,8 @@
     {
       "type": "patchouli:crafting",
       "recipe": "frozendawn:decon_shower",
-      "text": "Copper, iron and a bucket."
+      "text": "Copper, iron and a bucket.",
+      "title": "Decon Shower"
     }
   ]
 }

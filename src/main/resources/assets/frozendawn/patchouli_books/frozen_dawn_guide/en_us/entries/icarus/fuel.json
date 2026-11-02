@@ -1,0 +1,29 @@
+{
+  "name": "Fuel",
+  "category": "frozendawn:icarus",
+  "icon": "frozendawn:antimatter_capsule",
+  "sortnum": 2,
+  "pages": [
+    {
+      "type": "patchouli:spotlight",
+      "item": "frozendawn:antimatter_capsule",
+      "title": "Antimatter",
+      "text": "The spark. Sealed capsules go in the Capsule Dock. Startup needs at least $(bold)2$(); the core holds up to 64."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Antiparticle Foundry",
+      "text": "Fills one empty capsule an hour, drawing $(bold)400 kW$() the whole time. More foundries fill faster if the grid can feed them.$(br2)Helion sites sometimes hold a sealed capsule."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Ordinary Matter",
+      "text": "The bulk fuel: cobblestone, dirt, any plain block, through the Matter Port. Hoppers can feed it.$(br2)If the matter runs out, output falls to nothing but no antimatter is lost."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Core Charge",
+      "text": "Capsules only count once they are injected into the core. Sealed capsules in the dock are inert and safe to carry.$(br2)The Controller shows the blast radius for the charge in the core."
+    }
+  ]
+}

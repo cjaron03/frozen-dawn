@@ -1,5 +1,7 @@
 package com.frozendawn.power;
 
+import com.frozendawn.block.SfrPowerPortBlockEntity;
+import com.frozendawn.block.GeothermalCoreBlockEntity;
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.block.*;
 import com.frozendawn.gametest.GameTestReporting;
@@ -49,6 +51,29 @@ public final class ReactorGameTest {
             var scorched = ModBlocks.REACTOR_CASING.get().defaultBlockState().setValue(ReactorCasingBlock.SCORCHED, true);
             h.setBlock(new BlockPos(CX - 1, CY + 1, CZ - 1), scorched);
             h.assertTrue(ReactorMultiblock.validate(level, controller, facing).valid(), "Scorched casing still counts as shell");
+        });
+    }
+
+    /** Continuity Beyond sees each plant where it joins the grid: the Hearthstone by its Controller, the Solstice by its power
+     * port and a Geothermal Core giving the grid a share. */
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "reactor", timeoutTicks = 100, skyAccess = true)
+    public static void continuityBeyondSeesEachPlantOnTheGrid(GameTestHelper h) {
+        scene(h, () -> {
+            var level = h.getLevel(); var controller = build(h); var be = controller(h, controller);
+            var port = h.absolutePos(new BlockPos(CX + 1, CY, CZ));
+            for (var r : radiators(h, 6)) link(h, port, r);
+            be.physics().setCoreC(300); be.second(level);
+            var relay = place(h, 12, 1, 10, ModBlocks.POWER_RELAY.get());
+            var core = place(h, 14, 1, 10, ModBlocks.GEOTHERMAL_CORE.get());
+            var sfr = place(h, 16, 1, 10, ModBlocks.SFR_POWER_PORT.get());
+            for (var node : List.of(controller, core, sfr)) link(h, relay, node);
+            ((GeothermalCoreBlockEntity) level.getBlockEntity(core)).setPowerShare(40);
+            allocate(level);
+            h.assertTrue(!IcarusAdvancements.continuity(level, relay), "A Solstice port that supplies nothing is no fusion plant");
+            ((SfrPowerPortBlockEntity) level.getBlockEntity(sfr)).publish(0, 300_000);
+            allocate(level);
+            h.assertTrue(be.powerWatts() > 0, "The Hearthstone produces: " + be.powerWatts());
+            h.assertTrue(IcarusAdvancements.continuity(level, relay), "Geothermal, Hearthstone and Solstice all supply this grid");
         });
     }
 

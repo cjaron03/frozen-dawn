@@ -192,7 +192,7 @@ public final class SfrControllerBlockEntity extends BlockEntity implements MenuP
     /** Loop temperature against the disruption limit, 0-15. */
     public int comparator() { return Math.clamp(Math.round(physics.loopC() / FusionPhysics.DISRUPT_C * 15), 0, 15); }
     /** Every wrong cell of the torus; empty when every cell is right, though a port may still be missing. */
-    public List<SfrMultiblock.Wrong> blueprint(net.minecraft.world.level.Level l) {
+    public List<GhostCell> blueprint(net.minecraft.world.level.Level l) {
         return SfrMultiblock.wrongCells(l, worldPosition, getBlockState().getValue(SfrControllerBlock.FACING), Integer.MAX_VALUE);
     }
     /** Shows or hides the blueprint for one player; returns whether it is now shown. */

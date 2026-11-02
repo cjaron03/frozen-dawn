@@ -1,0 +1,28 @@
+{
+  "name": "Stopping It",
+  "category": "frozendawn:icarus",
+  "icon": "frozendawn:icarus_controller",
+  "sortnum": 5,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "Cole Protocol",
+      "text": "$(bold)Cole Protocol$(): the safe shutdown, about 3 minutes. It ramps down, cools, pulls the antimatter back into capsules in the dock, then drops the shield.$(br2)It needs empty capsule space in the dock, and holds until there is some."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Safe To Dismantle",
+      "text": "When it finishes the Controller reads $(bold)SAFE TO DISMANTLE$(). Only then can you break parts without consequence."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "CLIP",
+      "text": "$(bold)CLIP$(): hold the button, or give the Controller a redstone signal. The matter stream is cut and output drops to zero at once.$(br2)The shield stays up and still needs power. Each CLIP loses about a tenth of a capsule."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Restart",
+      "text": "Press Start after a CLIP to restart from injection, about 40 seconds."
+    }
+  ]
+}

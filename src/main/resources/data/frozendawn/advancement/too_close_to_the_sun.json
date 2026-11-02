@@ -1,0 +1,23 @@
+{
+  "parent": "frozendawn:phase6",
+  "display": {
+    "icon": {
+      "id": "frozendawn:icarus_controller"
+    },
+    "title": {
+      "translate": "advancement.frozendawn.too_close_to_the_sun.title"
+    },
+    "description": {
+      "translate": "advancement.frozendawn.too_close_to_the_sun.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": true
+  },
+  "criteria": {
+    "impossible": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

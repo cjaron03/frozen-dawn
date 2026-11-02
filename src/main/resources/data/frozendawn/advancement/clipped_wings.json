@@ -1,0 +1,23 @@
+{
+  "parent": "frozendawn:phase6",
+  "display": {
+    "icon": {
+      "id": "frozendawn:icarus_injector"
+    },
+    "title": {
+      "translate": "advancement.frozendawn.clipped_wings.title"
+    },
+    "description": {
+      "translate": "advancement.frozendawn.clipped_wings.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": true
+  },
+  "criteria": {
+    "impossible": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

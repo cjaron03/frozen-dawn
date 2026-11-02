@@ -1,6 +1,6 @@
 {
   "name": "Industry",
-  "description": "The reactor, the radiation it makes, and the signals it powers.",
+  "description": "The reactors, the radiation they make, the Fabricator that prints their parts, and the signals they power.",
   "icon": "frozendawn:reactor_controller",
   "sortnum": 3
 }

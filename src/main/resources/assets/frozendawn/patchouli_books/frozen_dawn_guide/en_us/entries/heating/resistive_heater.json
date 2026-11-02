@@ -37,7 +37,8 @@
     {
       "type": "patchouli:crafting",
       "recipe": "frozendawn:resistive_heater",
-      "text": "Iron, copper, glass and a redstone block. Link it with the Binder."
+      "text": "Iron, copper, glass and a redstone block. Link it with the Binder.",
+      "title": "RH-5 Heater"
     }
   ]
 }

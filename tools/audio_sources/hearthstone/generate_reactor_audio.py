@@ -54,16 +54,78 @@ def overheat_warning():
     return buf
 
 
-def scram():
-    """Three falling beeps, then the rods drop: decaying 55/82 Hz thud with a short noise rattle."""
-    rnd = random.Random(3); buf = []
-    for f in (880, 660, 440): buf += tone(lambda t, f=f: f, .16, ((1, 1), (2, .3))) + silence(.06)
-    thud = []
-    for i in range(int(RATE * .9)):
+def mix(*layers):
+    """Sums (start seconds, samples) layers into one buffer."""
+    n = max(int(RATE * start) + len(buf) for start, buf in layers); out = [0.0] * n
+    for start, buf in layers:
+        o = int(RATE * start)
+        for i, v in enumerate(buf): out[o + i] += v
+    return out
+
+
+def noise(seed, seconds, cutoff):
+    """Low-passed white noise: a one-pole filter at roughly cutoff Hz."""
+    rnd = random.Random(seed); a = 1 - math.exp(-2 * math.pi * cutoff / RATE); y = 0.0; out = []
+    for _ in range(int(RATE * seconds)):
+        y += a * ((rnd.random() * 2 - 1) - y); out.append(y)
+    return out
+
+
+def clank(freq, seconds=.7, decay=6.0):
+    """A heavy steel impact: inharmonic ringing partials over a short low thump."""
+    out = []
+    for i in range(int(RATE * seconds)):
         t = i / RATE
-        thud.append(math.exp(-t * 7) * (math.sin(2 * math.pi * 55 * t) + .5 * math.sin(2 * math.pi * 82 * t))
-                    + math.exp(-t * 25) * .35 * (rnd.random() * 2 - 1))
-    return buf + silence(.08) + thud
+        ring = sum(a * math.sin(2 * math.pi * freq * k * t) for k, a in ((1, 1), (2.76, .5), (5.4, .25), (8.93, .12)))
+        out.append(math.exp(-t * decay) * .45 * ring + math.exp(-t * 30) * math.sin(2 * math.pi * 48 * t))
+    return out
+
+
+def pump(f0, f1, seconds, fade_in, fade_out):
+    """Coolant pumps changing speed: a whine gliding f0 to f1 Hz over a 55 Hz motor bed and a breathing water rush."""
+    whine = tone(lambda t: f0 + (f1 - f0) * t / seconds, seconds, ((1, .5), (2, .25), (3, .1)), attack=fade_in, release=fade_out)
+    bed = tone(lambda t: 55 * (f0 + (f1 - f0) * t / seconds) / max(f0, f1), seconds, ((1, 1), (2, .4)), attack=fade_in, release=fade_out)
+    rush = noise(17, seconds, 500)
+    return [w + .6 * b + .5 * n * min(1, i / RATE / fade_in, (seconds - i / RATE) / fade_out) for i, (w, b, n) in enumerate(zip(whine, bed, rush))]
+
+
+def startup():
+    """About 4.5 s: a breaker clunk, the coolant pumps spinning up from 40 to 220 Hz, and three rising chimes as the
+    core goes critical, before it hands over to the running hum."""
+    chimes = []
+    for k, f in enumerate((523.25, 659.25, 783.99)): chimes.append((2.4 + .28 * k, tone(lambda t, f=f: f, .5, ((1, 1), (2, .2)), release=.4)))
+    return mix((0, clank(90, .5, 9)), (.15, pump(40, 220, 4.2, .6, .9)), *[(s, [.35 * v for v in b]) for s, b in chimes])
+
+
+def shutdown():
+    """About 4.5 s: two falling chimes as the rods settle, then the pumps winding down from 220 to 30 Hz into silence
+    and a last soft relay click."""
+    chimes = [(0, tone(lambda t: 659.25, .5, ((1, 1), (2, .2)), release=.4)), (.3, tone(lambda t: 440, .7, ((1, 1), (2, .2)), release=.6))]
+    return mix(*[(s, [.35 * v for v in b]) for s, b in chimes], (.5, pump(220, 30, 3.8, .2, 2.4)), (4.3, [.4 * v for v in clank(140, .25, 18)]))
+
+
+def bell(freq, seconds, decay):
+    """A soft struck bell: a few slightly inharmonic partials."""
+    return [math.exp(-i / RATE * decay) * sum(a * math.sin(2 * math.pi * freq * k * i / RATE) for k, a in ((1, 1), (2.01, .45), (3.02, .2), (4.18, .1)))
+            for i in range(int(RATE * seconds))]
+
+
+def running():
+    """About 2.5 s: the core at power. Two low bell strokes, G4 then C5, ringing out over a soft 110 Hz swell: rounder
+    and slower than the startup's quick chimes."""
+    swell = [.18 * math.sin(2 * math.pi * 110 * i / RATE) * math.sin(math.pi * i / (RATE * 2.4)) for i in range(int(RATE * 2.4))]
+    return mix((0, bell(392, 2.2, 2.4)), (.45, bell(523.25, 2.0, 2.0)), (0, swell))
+
+
+def scram():
+    """About 3 s: a harsh two-tone trip horn, then the rods slamming home, four quick steel clanks, and the
+    hydraulic accumulators venting in a long hiss."""
+    horn = []
+    for f in (950, 700, 950):
+        horn += tone(lambda t, f=f: f, .14, ((1, 1), (2, .5), (3, .4), (4, .3), (5, .2)), attack=.003, release=.01)
+    clanks = [(.5 + .07 * k, [(1 - .15 * k) * v for v in clank(70 + 9 * k)]) for k in range(4)]
+    hiss = [v * math.exp(-i / RATE * 1.4) * min(1, i / RATE / .05) for i, v in enumerate(noise(31, 2.4, 3000))]
+    return mix((0, [.6 * v for v in horn]), *clanks, (.62, [1.2 * v for v in hiss]))
 
 
 def meltdown_alert():
@@ -99,7 +161,8 @@ def dosimeter_alarm():
 
 
 if __name__ == "__main__":
-    for name, make in (("hum", hum), ("overheat_warning", overheat_warning), ("scram", scram), ("meltdown_alert", meltdown_alert)):
+    for name, make in (("hum", hum), ("overheat_warning", overheat_warning), ("scram", scram), ("meltdown_alert", meltdown_alert),
+                       ("startup", startup), ("shutdown", shutdown), ("running", running)):
         save(name, make())
         print(OUT / f"{name}.ogg")
     # Geiger clicks and the dense loop are cut from a real CC0 recording by extract_geiger.py.

@@ -1,6 +1,6 @@
 # CFU-7 Hearthstone Reactor audio
 
-All four files under `assets/frozendawn/sounds/blocks/reactor/` are original Frozen Dawn procedural audio, authored
+The synthesized files under `assets/frozendawn/sounds/blocks/reactor/` are original Frozen Dawn procedural audio, authored
 October 15, 2026, and chosen by the owner from rendered concepts. No external recording, sample or voice is used.
 Generate with `python3 tools/audio_sources/hearthstone/generate_reactor_audio.py` (pure-Python synthesis, oggenc
 quality 5, 44.1 kHz mono).
@@ -8,7 +8,12 @@ quality 5, 44.1 kHz mono).
 - `hum.ogg`: 4 s seamless loop. 55 Hz and 55.5 Hz tones beat at 0.5 Hz over a 110/165 Hz overtone and a low rumble
   bed of 40 whole-cycle partials. The Controller loops it while running; gain and pitch rise with fission heat.
 - `overheat_warning.ogg`: two-tone klaxon (440/330 Hz, odd harmonics), 2 s, repeated from 350C.
-- `scram.ogg`: three falling beeps then the rods dropping (decaying 55/82 Hz thud and short noise rattle). Once per trip.
+- `scram.ogg`: a harsh 950/700 Hz trip horn, four quick steel clanks as the rods slam home, and a long hydraulic hiss. Once
+  per trip. Replaced the original beeps-and-thud cue at the owner's request on October 30, 2026.
+- `startup.ogg`: a breaker clunk, the coolant pumps spinning up from 40 to 220 Hz, and three rising chimes as fission starts.
+- `running.ogg`: two low bell strokes, G4 then C5, over a soft 110 Hz swell, when a run first makes power.
+- `shutdown.ogg`: two falling chimes, the pumps winding down from 220 to 30 Hz, and a last relay click, when fission stops
+  without a SCRAM.
 - `meltdown_alert.ogg`: rising 600-1100 Hz siren, two whoops per second, repeated from 700C (loss of coolant).
 - `geiger_1..5.ogg` and `geiger_dense.ogg`: cut from a real recording, Freesound 555934 "Geiger Counter Hotspot
   (Sweeping)" by cookies+policy, CC0 1.0 public domain (https://freesound.org/people/cookies+policy/sounds/555934/),

@@ -1,0 +1,30 @@
+{
+  "name": "SFR-1 \"Solstice\"",
+  "category": "frozendawn:sfr",
+  "icon": "frozendawn:sfr_controller",
+  "sortnum": 0,
+  "pages": [
+    {
+      "type": "patchouli:spotlight",
+      "item": "frozendawn:sfr_controller",
+      "title": "SFR-1 \"Solstice\"",
+      "text": "ORSA's fusion reactor: 400 kW of heat from a deuterium and tritium plasma."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Safe, Not Easy",
+      "text": "With disruption mitigation on, as it starts, fusion never melts down. When anything goes wrong the plasma simply ends, a $(bold)disruption$(), which wears the First Wall and needs a full restart."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "How It Works",
+      "text": "$(li)A 9x9x5 torus around a Confinement Core$(li)A vacuum channel inside it$(li)High-Temperature Radiators shed the heat$(li)A 40 kW house load comes out of its own output"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Before You Build",
+      "text": "$(li)The Confinement Core, found only at Helion sites$(li)Printed coils, wall and blankets from the $(l:fabricator/overview)Fabricator$(/l)$(li)Deuterium and tritium$(li)A grid that can pay a 150 kW ignition pulse"
+    }
+  ],
+  "priority": true
+}

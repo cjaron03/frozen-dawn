@@ -57,3 +57,7 @@ radio/voice_no_lock.ogg	radio	no lock
 radio/martian_command_message.ogg	radio	Whoa, wait. I'm getting something here. Hello? Um... crap. Stick to the script. Martian Command to unidentified surface respondent. Never mind. That sounds too stupid. Whoever is still out there, we never expected anyone to even still be alive. If you are, I am sending over blueprints for a rocket. You'll need to use the ORSA blast pit. Good luck, and godspeed.
 ui/suit/emergency_eva_service_critical.ogg	orsa	Emergency service power critical. Thermal support expires in one minute or less.
 ui/suit/atmospheric_breach.ogg	orsa	Warning. Atmospheric breach detected.
+ui/suit/icarus_caution.ogg	orsa	Icarus caution. Check the reactor.
+ui/suit/icarus_warning.ogg	orsa	Icarus warning. Shield margin falling.
+ui/suit/icarus_critical.ogg	orsa	Icarus critical. Shield failure imminent.
+ui/suit/icarus_radiation.ogg	orsa	Radiation spike detected.
