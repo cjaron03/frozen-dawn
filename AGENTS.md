@@ -10,7 +10,7 @@ Before working, identify the owning checkout, branch, HEAD and current changes. 
 2. The agent implements and verifies headlessly: tests first, then the full `architectVerify`.
 3. The owner does the visual pass. The agent prepares the feature's playtest world, launches the lab client (below) and reads the logs; the owner plays and reports what they see.
 4. Fix what the pass finds, then offer a PR. The owner approves every merge; a passing gate or replay is not approval.
-5. After the PR merges, ask whether to remove the branch's worktree and its build output. Never remove a worktree that has uncommitted changes, untracked files or unpushed commits.
+5. After the PR merges, ask whether to remove the branch's worktree and its build output, and separately whether to delete or keep its playtest worlds (they are git-ignored, so removal loses them). Never remove a worktree that has uncommitted changes, untracked files or unpushed commits unless the owner says that work can go.
 
 Keep every change tightly scoped so it leaves no clutter. Tests cover behavior the change adds or could break, not its implementation line by line; skip tests that only mirror a small, reversible change. Playtest scripts, lab-bridge functions and debug commands belong to one feature: one `tools/prepare_<feature>_playtest.py`, functions under that feature's own namespace, and no edits to other features' fixtures. Remove scaffolding the feature no longer uses.
 
