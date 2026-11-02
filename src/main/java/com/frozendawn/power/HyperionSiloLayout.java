@@ -18,6 +18,14 @@ public final class HyperionSiloLayout {
     /** Ring k resting: stacked on the base, the lowest 2 px up. */
     public static double ringRestY(int k) { return (2 + 2 * k) / 16.0; }
 
+    /** Each cooler's pipe: 6 px square, centred PIPE_Y above the cooler's floor, out to an elbow whose outer edge is PIPE_OUT_PX
+     * from the face (inside the resting rings), then down. */
+    public static final int PIPE_PX = 6, PIPE_OUT_PX = 10, MAX_PIPE_AIR = 2;
+    public static final double PIPE_Y = 5 / 16.0;
+    /** How far the pipe runs down from the elbow, given the air blocks under the elbow before the first solid one (-1 for
+     * none): flush with that floor, or, with no floor near enough to keep the pipe within 3 blocks, one block to a flange. */
+    public static double pipeDrop(int solidBelow) { return solidBelow < 0 || solidBelow > MAX_PIPE_AIR ? 1.0 : solidBelow + PIPE_Y; }
+
     /** {minX, minY, minZ, maxX, maxY, maxZ} for a Controller at (cx, cy, cz) whose front steps (frontX, frontZ). */
     public static double[] renderBox(int cx, int cy, int cz, int frontX, int frontZ, int height) {
         double ax = cx - frontX + 0.5, az = cz - frontZ + 0.5;

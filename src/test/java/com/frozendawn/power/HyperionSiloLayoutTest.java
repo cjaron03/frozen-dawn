@@ -48,4 +48,12 @@ class HyperionSiloLayoutTest {
         }
         for (int k = 0; k < 4; k++) assertTrue(ringRestY(k) < 0.75, "Resting ring " + k + " stays on the base");
     }
+
+    /** Review focus: a silo on a ledge or floating must not run its pipes down forever. */
+    @Test void pipeDropIsClamped() {
+        assertEquals(5 / 16.0, pipeDrop(0), 1e-9, "On the ground, the pipe ends flush with the floor");
+        assertEquals(2 + 5 / 16.0, pipeDrop(2), 1e-9, "Two air blocks down to the floor");
+        assertEquals(1.0, pipeDrop(-1), 1e-9, "No floor within 3: one block and a flange");
+        assertEquals(1.0, pipeDrop(5), 1e-9, "Deeper than 3 counts as none");
+    }
 }

@@ -37,7 +37,8 @@ public final class HyperionControllerBlock extends HyperionFacingPartBlock imple
     }
     @Override public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level l, BlockState s, BlockEntityType<T> t) {
         if (t != ModBlockEntities.HYPERION_CONTROLLER.get()) return null;
-        return l.isClientSide() ? (w, pos, state, be) -> com.frozendawn.client.HyperionLoopSound.tick((HyperionControllerBlockEntity) be)
+        return l.isClientSide() ? (w, pos, state, be) -> { com.frozendawn.client.HyperionLoopSound.tick((HyperionControllerBlockEntity) be);
+                    com.frozendawn.client.HyperionSiloEffects.tick((HyperionControllerBlockEntity) be); }
                 : (w, pos, state, be) -> { if (w.getGameTime() % 20 == 0) ((HyperionControllerBlockEntity) be).second((ServerLevel) w); };
     }
 }

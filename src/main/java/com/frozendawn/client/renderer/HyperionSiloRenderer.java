@@ -3,11 +3,14 @@ package com.frozendawn.client.renderer;
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.block.HyperionControllerBlock;
 import com.frozendawn.block.HyperionControllerBlockEntity;
-import com.frozendawn.block.HyperionMultiblock;
+import com.frozendawn.block.CryocoolerBlock;
+import com.frozendawn.block.HyperionFacingPartBlock;
+import com.frozendawn.client.HyperionSiloEffects;
 import com.frozendawn.power.HyperionGauge;
 import com.frozendawn.power.HyperionGauge.Colour;
 import com.frozendawn.power.HyperionGauge.Lamps;
 import com.frozendawn.power.HyperionGauge.Motion;
+import com.frozendawn.power.HyperionGauge.Pipes;
 import com.frozendawn.power.HyperionGauge.Rings;
 import com.frozendawn.power.HyperionSiloLayout;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -29,7 +32,8 @@ import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.phys.AABB;
 
 /** Everything the formed silo shows beyond its blocks, from the Controller: the window of stacked bars over a rising
- * charge column, a dark trim on the silo's outer edges, the status lamps round the base, and the thin dark rings that
+ * charge column, a dark trim on the silo's outer edges, the status lamps round the base, the frosted pipes out of each
+ * Cryocooler into the floor, and the thin dark rings that
  * float round the silo with a glowing inner edge, spin with the flow, wobble when hot and drop on a quench. What each shows comes
  * from HyperionGauge. Model space faces north with the Controller's block at the origin, so the silo spans x -1..2,
  * z 0..3 and its axis is (0.5, 1.5). Glowing parts are emissive; the rest takes the light in front of the Controller. */
@@ -37,6 +41,8 @@ public final class HyperionSiloRenderer implements BlockEntityRenderer<HyperionC
     static final ResourceLocation WHITE = ResourceLocation.withDefaultNamespace("textures/misc/white.png");
     static final ResourceLocation SWIRL = ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "block/hyperion_window_swirl");
     static final ResourceLocation RING = ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "block/hyperion_ring");
+    static final ResourceLocation PIPE_FROST = ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "block/hyperion_pipe_frost");
+    static final ResourceLocation PIPE_BARE = ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "block/hyperion_pipe_bare");
     static final float PX = 1 / 16f, AXIS_X = 0.5f, AXIS_Z = 1.5f;
     /** The window: 6 px wide on the gauge column, from the Controller's sill to the top. Bars are 4 px tall, centred per block. */
     private static final float WIN_X0 = 5 * PX, WIN_X1 = 11 * PX, SILL = 2 * PX, BAR_Y0 = 6 * PX, BAR_Y1 = 10 * PX;
@@ -63,13 +69,12 @@ public final class HyperionSiloRenderer implements BlockEntityRenderer<HyperionC
         if (level == null) return;
         var s = be.snapshot();
         var facing = be.getBlockState().getValue(HyperionControllerBlock.FACING);
-        if (s.problem() != HyperionMultiblock.Problem.NONE || s.height() <= 0 || !facing.getAxis().isHorizontal()) return;
         long now = level.getGameTime(); float time = now + partial;
-        long since = s.lastQuenchTick() == Long.MIN_VALUE ? Long.MAX_VALUE : Math.max(0, now - s.lastQuenchTick());
-        var g = HyperionGauge.of(new HyperionGauge.Inputs(s.stage(), true, s.stored(), s.capacity(), s.flowIn(), s.flowOut(), s.rateWatts(),
-                s.height(), s.scarred(), since));
+        var g = HyperionSiloEffects.gauge(be, now);
+        if (g == null || !facing.getAxis().isHorizontal()) return;
         int lit = LevelRenderer.getLightColor(level, be.getBlockPos().relative(facing));
         long seed = be.getBlockPos().asLong();
+        pipes(pose, buffers, be, g, time);
 
         pose.pushPose();
         pose.translate(0.5, 0, 0.5);
@@ -80,6 +85,65 @@ public final class HyperionSiloRenderer implements BlockEntityRenderer<HyperionC
         lamps(pose, buffers, g.lamps(), now, lit);
         rings(pose, buffers, motions.computeIfAbsent(be, k -> new RingMotion()), g, s.height(), s.lastQuenchTick(), time, lit);
         pose.popPose();
+    }
+
+    /** Per cooler, a 6 px pipe from its outward face to an elbow, then down to the floor (or a flange), frosted or bare,
+     * with glowing dashes running in or out with the flow. Drawn in world-aligned space from the Controller's block. */
+    private static void pipes(PoseStack pose, MultiBufferSource buffers, HyperionControllerBlockEntity be, HyperionGauge.State g, float time) {
+        var level = be.getLevel(); var origin = be.getBlockPos();
+        var sprite = sprite(g.pipes() == Pipes.BARE ? PIPE_BARE : PIPE_FROST);
+        var metal = buffers.getBuffer(RenderType.entityCutoutNoCull(InventoryMenu.BLOCK_ATLAS)); var glow = buffers.getBuffer(RenderType.entityTranslucentEmissive(WHITE));
+        float half = HyperionSiloLayout.PIPE_PX / 2f * PX, outer = 0.5f + HyperionSiloLayout.PIPE_OUT_PX * PX, inner = outer - HyperionSiloLayout.PIPE_PX * PX;
+        float centreY = (float) HyperionSiloLayout.PIPE_Y, top = centreY + half;
+        int dash = colour(g.colour() == Colour.AMBER || g.colour() == Colour.RED ? g.colour() : Colour.BLUE);
+        for (var cooler : be.snapshot().coolers()) {
+            var state = level.getBlockState(cooler);
+            if (!(state.getBlock() instanceof CryocoolerBlock)) continue;
+            var d = state.getValue(HyperionFacingPartBlock.FACING);
+            if (!d.getAxis().isHorizontal()) continue;
+            int air = HyperionSiloEffects.solidBelow(level, cooler, d);
+            float drop = (float) HyperionSiloLayout.pipeDrop(air), bottom = centreY - drop;
+            int lit = LevelRenderer.getLightColor(level, cooler.relative(d));
+            pose.pushPose();
+            pose.translate(cooler.getX() - origin.getX() + 0.5, cooler.getY() - origin.getY(), cooler.getZ() - origin.getZ() + 0.5);
+            pose.mulPose(Axis.YP.rotationDegrees(switch (d) { case EAST -> -90; case SOUTH -> 180; case WEST -> 90; default -> 0; }));
+            var p = pose.last();
+            box(metal, p, -half, centreY - half, -outer, half, top, -0.5f, sprite, lit);
+            box(metal, p, -half, bottom, -outer, half, centreY - half, -inner, sprite, lit);
+            // A collar where the pipe meets the floor, or a flange where it stops short of one.
+            box(metal, p, -half - PX, bottom, -outer - PX, half + PX, bottom + (air >= 0 && air <= HyperionSiloLayout.MAX_PIPE_AIR ? PX : 2 * PX), -inner + PX, sprite, lit);
+            if (g.flow() != HyperionGauge.Flow.NONE) {
+                // Path length s runs from the face (0) along the run (to the elbow) and down; dashes move 0.5 blocks a second.
+                float run = outer - half - 0.5f, length = run + (centreY - bottom), spacing = 6 * PX;
+                float shift = (time / 20 * 0.5f) % spacing; if (g.flow() == HyperionGauge.Flow.IN) shift = spacing - shift;
+                for (float at = shift; at < length; at += spacing) {
+                    float e = 0.002f;
+                    if (at < run) { float z = -0.5f - at; box(glow, p, -half - e, centreY - half - e, z - PX, half + e, top + e, z + PX, null, dash); }
+                    else { float y = centreY - (at - run); box(glow, p, -half - e, y - PX, -outer - e, half + e, y + PX, -inner + e, null, dash); }
+                }
+            }
+            pose.popPose();
+        }
+    }
+    /** An axis-aligned box. With a sprite, its faces take it lit by `value`; without, every face glows in colour `value`. */
+    private static void box(VertexConsumer vc, PoseStack.Pose p, float x0, float y0, float z0, float x1, float y1, float z1, TextureAtlasSprite sprite, int value) {
+        int argb = sprite == null ? value : -1, light = sprite == null ? LightTexture.FULL_BRIGHT : value;
+        float u0 = sprite == null ? 0 : sprite.getU0(), v0 = sprite == null ? 0 : sprite.getV0();
+        float u1 = sprite == null ? 1 : sprite.getU0() + (sprite.getU1() - sprite.getU0()) * HyperionSiloLayout.PIPE_PX / 16f;
+        float v1 = sprite == null ? 1 : sprite.getV1();
+        // -z, +z, -x, +x, -y, +y
+        vertex(vc, p, x0, y0, z0, u0, v1, argb, light, 0, 0, -1); vertex(vc, p, x0, y1, z0, u0, v0, argb, light, 0, 0, -1);
+        vertex(vc, p, x1, y1, z0, u1, v0, argb, light, 0, 0, -1); vertex(vc, p, x1, y0, z0, u1, v1, argb, light, 0, 0, -1);
+        vertex(vc, p, x1, y0, z1, u0, v1, argb, light, 0, 0, 1); vertex(vc, p, x1, y1, z1, u0, v0, argb, light, 0, 0, 1);
+        vertex(vc, p, x0, y1, z1, u1, v0, argb, light, 0, 0, 1); vertex(vc, p, x0, y0, z1, u1, v1, argb, light, 0, 0, 1);
+        vertex(vc, p, x0, y0, z1, u0, v1, argb, light, -1, 0, 0); vertex(vc, p, x0, y1, z1, u0, v0, argb, light, -1, 0, 0);
+        vertex(vc, p, x0, y1, z0, u1, v0, argb, light, -1, 0, 0); vertex(vc, p, x0, y0, z0, u1, v1, argb, light, -1, 0, 0);
+        vertex(vc, p, x1, y0, z0, u0, v1, argb, light, 1, 0, 0); vertex(vc, p, x1, y1, z0, u0, v0, argb, light, 1, 0, 0);
+        vertex(vc, p, x1, y1, z1, u1, v0, argb, light, 1, 0, 0); vertex(vc, p, x1, y0, z1, u1, v1, argb, light, 1, 0, 0);
+        vertex(vc, p, x0, y0, z0, u0, v1, argb, light, 0, -1, 0); vertex(vc, p, x1, y0, z0, u1, v1, argb, light, 0, -1, 0);
+        vertex(vc, p, x1, y0, z1, u1, v0, argb, light, 0, -1, 0); vertex(vc, p, x0, y0, z1, u0, v0, argb, light, 0, -1, 0);
+        vertex(vc, p, x0, y1, z0, u0, v1, argb, light, 0, 1, 0); vertex(vc, p, x0, y1, z1, u0, v0, argb, light, 0, 1, 0);
+        vertex(vc, p, x1, y1, z1, u1, v0, argb, light, 0, 1, 0); vertex(vc, p, x1, y1, z0, u1, v1, argb, light, 0, 1, 0);
     }
 
     /** Moves each ring toward where the gauge wants it (or along its quench drop), then draws it with its own phase. */
