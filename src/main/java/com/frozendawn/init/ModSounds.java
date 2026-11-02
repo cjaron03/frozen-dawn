@@ -95,7 +95,7 @@ public class ModSounds {
     public static final DeferredHolder<SoundEvent, SoundEvent> HYPERION_VENT = register("blocks.hyperion_vent");
     public static final DeferredHolder<SoundEvent, SoundEvent> HYPERION_AFTERMATH = register("blocks.hyperion_aftermath");
     public static final DeferredHolder<SoundEvent, SoundEvent> HYPERION_ALL_CLEAR = register("blocks.hyperion_all_clear");
-    public static final DeferredHolder<SoundEvent, SoundEvent> HYPERION_PUCK_DROP = register("blocks.hyperion_puck_drop");
+    public static final DeferredHolder<SoundEvent, SoundEvent> HYPERION_RING_CLANG = register("blocks.hyperion_ring_clang");
     public static final DeferredHolder<SoundEvent, SoundEvent> SFR_CRYO = register("blocks.sfr_cryo");
     public static final DeferredHolder<SoundEvent, SoundEvent> SFR_IGNITION = register("blocks.sfr_ignition");
     public static final DeferredHolder<SoundEvent, SoundEvent> SFR_BURN = register("blocks.sfr_burn");

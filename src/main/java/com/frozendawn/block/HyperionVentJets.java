@@ -14,7 +14,7 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.tick.LevelTickEvent;
 
-/** A quench: the thump and puck drop at the Controller, a roar and jets of cloud out of each Quench Vent's face for
+/** A quench: the thump and the rings' clang at the Controller, a roar and jets of cloud out of each Quench Vent's face for
  * JET_TICKS, then the shell settling. Kept per level rather than on the Controller, so it all still runs when the
  * Controller itself was the part that broke. */
 @EventBusSubscriber(modid = FrozenDawn.MOD_ID)
@@ -26,7 +26,7 @@ public final class HyperionVentJets {
 
     static void start(ServerLevel l, BlockPos controller, List<BlockPos> vents) {
         l.playSound(null, controller, ModSounds.HYPERION_QUENCH.get(), SoundSource.BLOCKS, 4.0F, 1.0F);
-        l.playSound(null, controller, ModSounds.HYPERION_PUCK_DROP.get(), SoundSource.BLOCKS, 1.0F, 1.0F);
+        l.playSound(null, controller, ModSounds.HYPERION_RING_CLANG.get(), SoundSource.BLOCKS, 1.5F, 1.0F);
         for (var v : vents) l.playSound(null, v, ModSounds.HYPERION_VENT.get(), SoundSource.BLOCKS, 3.0F, 1.0F);
         JETS.computeIfAbsent(l, k -> new ArrayList<>()).add(new Jet(controller.immutable(), List.copyOf(vents), l.getGameTime() + JET_TICKS));
     }

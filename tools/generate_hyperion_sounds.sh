@@ -80,9 +80,16 @@ render all_clear \
   -f lavfi -i "aevalsrc='0.3*(min(1\, t/0.01)*exp(-9*t)*sin(2*PI*1320*t)+gte(t\,0.28)*min(1\, (t-0.28)/0.01)*exp(-9*(t-0.28))*sin(2*PI*990*(t-0.28))+gte(t\,0.56)*min(1\, (t-0.56)/0.01)*exp(-9*(t-0.56))*sin(2*PI*660*(t-0.56)))':s=44100:d=1.3" \
   -filter_complex "[0:a]afade=t=out:st=1.1:d=0.2,alimiter=limit=0.7:level=0[out]"
 
-# Puck drop, 0.5 s: the puck landing on its magnets. A short low clunk that sags in pitch, with a small dull ring.
-render puck_drop \
-  -f lavfi -i "aevalsrc='0.8*exp(-14*t)*sin(2*PI*(140*t-60*t*t)) + 0.12*exp(-25*t)*(sin(2*PI*610*t)+0.5*sin(2*PI*1680*t))':s=44100:d=0.5" \
-  -f lavfi -i "anoisesrc=color=pink:duration=0.5:sample_rate=44100:seed=52007" \
-  -f lavfi -i "aevalsrc='exp(-50*t)':s=44100:d=0.5" \
-  -filter_complex "[1:a]bandpass=f=900:width_type=q:w=1.2[k];[k][2:a]amultiply,volume=0.8[knock];[0:a][knock]amix=inputs=2:normalize=0,afade=t=in:st=0:d=0.002,afade=t=out:st=0.4:d=0.1,alimiter=limit=0.85:level=0[out]"
+# Ring clang, 1.2 s: the floating rings landing on the base after a quench. Three heavy metal strikes 0.06 s apart,
+# one per falling ring, each a thump gliding 70 to 40 Hz with inharmonic partials at 220 x (1 : 2.76 : 5.4) dying at
+# 3, 5 and 9 per second, over a short band-passed knock. No sweep above 300 Hz, nothing voice-like.
+strike() { # time, level
+  printf '+%s*gte(t\\,%s)*(0.7*exp(-12*(t-%s))*sin(2*PI*(40*(t-%s)+4.5*(1-exp(-(t-%s)/0.15))))+0.25*exp(-3*(t-%s))*sin(2*PI*220*(t-%s))+0.15*exp(-5*(t-%s))*sin(2*PI*607.2*(t-%s))+0.08*exp(-9*(t-%s))*sin(2*PI*1188*(t-%s)))' \
+    "$2" "$1" "$1" "$1" "$1" "$1" "$1" "$1" "$1" "$1" "$1"
+}
+knock() { printf '+%s*gte(t\\,%s)*exp(-60*(t-%s))' "$2" "$1" "$1"; }
+render ring_clang \
+  -f lavfi -i "aevalsrc='0$(strike 0 1)$(strike 0.06 0.85)$(strike 0.12 0.7)':s=44100:d=1.2" \
+  -f lavfi -i "anoisesrc=color=pink:duration=1.2:sample_rate=44100:seed=52008" \
+  -f lavfi -i "aevalsrc='0$(knock 0 1)$(knock 0.06 0.85)$(knock 0.12 0.7)':s=44100:d=1.2" \
+  -filter_complex "[1:a]bandpass=f=1200:width_type=q:w=1.2[k];[k][2:a]amultiply,volume=0.6[knock];[0:a][knock]amix=inputs=2:normalize=0,afade=t=in:st=0:d=0.002,afade=t=out:st=1.0:d=0.2,alimiter=limit=0.85:level=0[out]"

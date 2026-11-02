@@ -6,7 +6,8 @@ the ladder in `docs/art/hyperion-storage/audio-ladder-sketch.html` (and asked th
 creaks); the shipped files re-create it with ffmpeg lavfi oscillators and seeded noise.
 
 Reproduce with `tools/generate_hyperion_sounds.sh` (ffmpeg and oggenc). Every file is mono 44.1 kHz Vorbis, `oggenc -q 5`,
-fixed noise seeds 52001 to 52007; the two loops are seamless.
+fixed noise seeds 52001 to 52008; the two loops are seamless. The puck drop became the ring clang with the silo
+redesign (2026-11-02), when the levitating puck gave way to floating rings.
 
 | File | Event | Character |
 | --- | --- | --- |
@@ -18,6 +19,6 @@ fixed noise seeds 52001 to 52007; the two loops are seamless.
 | `sounds/blocks/hyperion/vent.ogg` | `blocks.hyperion_vent` | 8.5 s band-passed steam roar over a low rumble |
 | `sounds/blocks/hyperion/aftermath.ogg` | `blocks.hyperion_aftermath` | 10 s: thinning ticks, inharmonic pings (1 : 2.76 : 5.4), fading hiss |
 | `sounds/blocks/hyperion/all_clear.ogg` | `blocks.hyperion_all_clear` | falling 1320, 990, 660 Hz bell tones |
-| `sounds/blocks/hyperion/puck_drop.ogg` | `blocks.hyperion_puck_drop` | short low clunk with a small dull ring |
+| `sounds/blocks/hyperion/ring_clang.ogg` | `blocks.hyperion_ring_clang` | 1.2 s: three heavy strikes 0.06 s apart, 70 to 40 Hz thump, partials 220 x (1 : 2.76 : 5.4) |
 
 Hashes are in `docs/audio/SHIPPED_AUDIO_INVENTORY.tsv`.

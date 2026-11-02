@@ -14,7 +14,7 @@ class HyperionSoundAssetsTest {
     private static final String ASSETS = "/assets/frozendawn/";
     private static final Set<String> EVENTS = Set.of("blocks.hyperion_hum", "blocks.hyperion_chirp", "blocks.hyperion_warning",
             "blocks.hyperion_whine", "blocks.hyperion_quench", "blocks.hyperion_vent", "blocks.hyperion_aftermath", "blocks.hyperion_all_clear",
-            "blocks.hyperion_puck_drop");
+            "blocks.hyperion_ring_clang");
 
     @Test void everyHyperionSoundExistsAndIsMono() throws IOException {
         JsonObject sounds = JsonParser.parseString(new String(read("sounds.json"), StandardCharsets.UTF_8)).getAsJsonObject();
@@ -29,6 +29,7 @@ class HyperionSoundAssetsTest {
             }
         }
         assertEquals(new TreeSet<>(EVENTS), found);
+        assertNull(HyperionSoundAssetsTest.class.getResource(ASSETS + "sounds/blocks/hyperion/puck_drop.ogg"), "The puck drop is gone with the puck");
     }
 
     private static byte[] read(String path) throws IOException {

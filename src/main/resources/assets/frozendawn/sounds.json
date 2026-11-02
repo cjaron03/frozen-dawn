@@ -4873,12 +4873,12 @@
       }
     ]
   },
-  "blocks.hyperion_puck_drop": {
+  "blocks.hyperion_ring_clang": {
     "category": "blocks",
-    "subtitle": "subtitle.frozendawn.blocks.hyperion_puck_drop",
+    "subtitle": "subtitle.frozendawn.blocks.hyperion_ring_clang",
     "sounds": [
       {
-        "name": "frozendawn:blocks/hyperion/puck_drop",
+        "name": "frozendawn:blocks/hyperion/ring_clang",
         "volume": 1.0
       }
     ]
