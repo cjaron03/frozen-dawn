@@ -11,7 +11,7 @@ public final class HyperionPhysics {
     public static final int PORT_WATTS = 500_000;
     public static final double QUENCH_C = -180, OPERATING_C = -200;
     /** Cell-degrees above QUENCH_C one Cryocooler removes. */
-    public static final double COOLER_CAPACITY = 15_000, HOT_NEIGHBOR_LOAD = 60_000;
+    public static final double COOLER_CAPACITY = 12_500, HOT_NEIGHBOR_LOAD = 60_000;
     public static final int WARN_COLD_S = 900, WARN_ROOM_S = 300, WARN_HOT_S = 90, FINAL_S = 25;
     public static final double RECOVER_C_PER_S = 1.0, COOLDOWN_C_PER_S = 4.0;
     public static final int COOLDOWN_WATTS_PER_CELL = 1000;

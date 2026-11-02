@@ -25,10 +25,10 @@ class HyperionPhysicsTest {
     }
 
     @Test void coolerSizingMatchesTheSpec() {
-        assertTrue(heatLoad(7, 20, 0) <= COOLER_CAPACITY, "One cooler holds a 3x3x3 in a warm room");
-        assertTrue(heatLoad(275, 20, 0) > 3 * COOLER_CAPACITY && heatLoad(275, 20, 0) <= 4 * COOLER_CAPACITY, "A 7x7x7 in a warm room needs four");
-        assertTrue(heatLoad(81, 0, 0) <= COOLER_CAPACITY, "One cooler covers a 5x5x5 outdoors below 0C");
-        assertTrue(heatLoad(7, 20, 1) > 4 * COOLER_CAPACITY, "A running heat source overwhelms a normal cooler count");
+        assertTrue(heatLoad(32, 20, 0) <= COOLER_CAPACITY, "One cooler holds a 3x3x4 in a warm room");
+        assertTrue(heatLoad(67, 20, 0) > COOLER_CAPACITY && heatLoad(67, 20, 0) <= 2 * COOLER_CAPACITY, "A 3x3x8 in a warm room needs two");
+        assertTrue(heatLoad(68, 0, 0) <= COOLER_CAPACITY, "One cooler holds any height outdoors below 0C");
+        assertTrue(heatLoad(32, 20, 1) > 4 * COOLER_CAPACITY, "A running heat source overwhelms a normal cooler count");
     }
 
     @Test void heatQuenchTakesTheWarningTime() {
@@ -56,11 +56,11 @@ class HyperionPhysicsTest {
 
     @Test void recoveryPlaysAllClearOnce() {
         var p = new HyperionPhysics(); int clears = 0;
-        for (int i = 0; i < 100; i++) if (p.step(in(275, 1, 20, 0), 1_000_000_000L).allClear()) clears++;
+        for (int i = 0; i < 100; i++) if (p.step(in(67, 1, 20, 0), 1_000_000_000L).allClear()) clears++;
         double last = p.cellC();
         HyperionPhysics.Readout r = null;
         for (int i = 0; i < 20; i++) {
-            r = p.step(in(275, 4, 20, 0), 1_000_000_000L);
+            r = p.step(in(67, 2, 20, 0), 1_000_000_000L);
             if (r.allClear()) clears++;
             assertEquals(Math.max(OPERATING_C, last - RECOVER_C_PER_S), r.cellC(), 1e-9, "Cools 1C per second");
             last = r.cellC();
