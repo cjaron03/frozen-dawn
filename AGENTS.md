@@ -14,6 +14,12 @@ Before working, identify the owning checkout, branch, HEAD and current changes. 
 
 Keep every change tightly scoped so it leaves no clutter. Tests cover behavior the change adds or could break, not its implementation line by line; skip tests that only mirror a small, reversible change. Playtest scripts, lab-bridge functions and debug commands belong to one feature: one `tools/prepare_<feature>_playtest.py`, functions under that feature's own namespace, and no edits to other features' fixtures. Remove scaffolding the feature no longer uses.
 
+Anything judged by look or feel gets a mockup the owner approves before it is built, drawn at Minecraft scale (16 pixels per block, blocky geometry), not smooth vector art. Smooth sketches misjudge how a model reads in game.
+
+The main checkout `/Volumes/SSD/Work/frozen-dawn` holds the owner's work in progress: agents never edit, stage or switch branches in it. Each agent's worktree goes on the SSD at `/Volumes/SSD/Work/frozen-dawn-<feature>`, never on the internal drive, and is removed after its merge as in step 5.
+
+New content starts creative-only: its first slice is creative tab and `/give` only, with no recipes, loot or world generation, so the owner can playtest and iterate. Recipes and progression come in a later slice.
+
 ## Gradle lab client and commands
 
 For local Minecraft iteration, always launch through Gradle from the owning checkout inside the agent's terminal, using Java 21. The owner's default is `./gradlew runClient --console=plain`. For a replay that requires the local lab command bridge, read [docs/lab-command-bridge.md](docs/lab-command-bridge.md) and use the Gradle `runClientLab` variant with `tools/lab_client.py` for authorized diagnostics, reloads and approved test functions. The normal `runClient` does not enable that bridge. The Gradle terminal itself is not an in-game console. Do not launch the normal Minecraft Launcher or an external Terminal app as a substitute.
