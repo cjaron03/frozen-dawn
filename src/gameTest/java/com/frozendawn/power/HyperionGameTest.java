@@ -245,6 +245,16 @@ public final class HyperionGameTest {
         h.succeed();
     }
 
+    /** Review finding: a broken silo kept showing its window and rings for a second or two. */
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "hyperion", timeoutTicks = 100)
+    public static void hyperionBrokenSiloStopsShowingAtOnce(GameTestHelper h) {
+        var l = h.getLevel(); var b = fresh(h, 4); var c = controller(h, b);
+        h.assertTrue(c.snapshot().height() == 4, "Formed, the client sees a 4-tall: " + c.snapshot().height());
+        l.destroyBlock(b.min().offset(1, 1, 0), false);
+        h.assertTrue(c.snapshot().height() == 0 && c.snapshot().problem() != Problem.NONE, "Broken, it stops showing the same tick: " + c.snapshot());
+        h.succeed();
+    }
+
     @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "hyperion", timeoutTicks = 100)
     public static void hyperionEmptyBatteryComesApartQuietly(GameTestHelper h) {
         var l = h.getLevel(); var b = fresh(h, 4); controller(h, b); int before = quenches(l);

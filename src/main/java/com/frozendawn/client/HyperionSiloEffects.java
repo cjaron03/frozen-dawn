@@ -43,7 +43,7 @@ public final class HyperionSiloEffects {
             if (!(state.getBlock() instanceof CryocoolerBlock)) continue;
             var d = state.getValue(HyperionFacingPartBlock.FACING);
             if (!d.getAxis().isHorizontal()) continue;
-            double out = 0.5 + (HyperionSiloLayout.PIPE_OUT_PX - HyperionSiloLayout.PIPE_PX / 2.0) / 16;
+            double out = 0.5 + (HyperionSiloLayout.pipeOutPx(lateralPx(be.getBlockPos(), front, cooler, d)) - HyperionSiloLayout.PIPE_PX / 2.0) / 16;
             double x = cooler.getX() + 0.5 + d.getStepX() * out, y = cooler.getY() + HyperionSiloLayout.PIPE_Y, z = cooler.getZ() + 0.5 + d.getStepZ() * out;
             if (g.pipes() == HyperionGauge.Pipes.FROSTED && r.nextInt(4) == 0)
                 level.addParticle(ModParticles.COLD_VAPOUR.get(), x + (r.nextDouble() - 0.5) * 0.3, y + r.nextDouble() * 0.2, z + (r.nextDouble() - 0.5) * 0.3,
@@ -68,6 +68,12 @@ public final class HyperionSiloEffects {
     }
     private static void wisp(Level level, double x, double y, double z, double a, double b) {
         level.addParticle(ParticleTypes.WHITE_SMOKE, x + (a - 0.5) * 0.5, y, z + (b - 0.5) * 0.5, 0, 0.03 + 0.03 * a, 0);
+    }
+    /** How far a cooler's centre sits to the side of the silo axis, across its outward direction, in pixels: 0 at the
+     * centre of a side, 16 at a corner. */
+    public static int lateralPx(BlockPos controller, Direction front, BlockPos cooler, Direction out) {
+        int ax = controller.getX() - front.getStepX(), az = controller.getZ() - front.getStepZ();
+        return 16 * Math.abs(out.getAxis() == Direction.Axis.X ? cooler.getZ() - az : cooler.getX() - ax);
     }
     /** Air blocks under a cooler's elbow before the first solid one, looking no deeper than the pipe may run; -1 for none. */
     public static int solidBelow(Level level, BlockPos cooler, Direction out) {

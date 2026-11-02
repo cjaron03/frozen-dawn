@@ -14,7 +14,6 @@ import com.frozendawn.power.HyperionGauge.Pipes;
 import com.frozendawn.power.HyperionGauge.Rings;
 import com.frozendawn.power.HyperionSiloLayout;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 import java.util.Map;
 import java.util.WeakHashMap;
@@ -25,7 +24,6 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
-import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.inventory.InventoryMenu;
@@ -36,7 +34,8 @@ import net.minecraft.world.phys.AABB;
  * Cryocooler into the floor, and the thin dark rings that
  * float round the silo with a glowing inner edge, spin with the flow, wobble when hot and drop on a quench. What each shows comes
  * from HyperionGauge. Model space faces north with the Controller's block at the origin, so the silo spans x -1..2,
- * z 0..3 and its axis is (0.5, 1.5). Glowing parts are emissive; the rest takes the light in front of the Controller. */
+ * z 0..3 and its axis is (0.5, 1.5). Glowing parts are emissive; the rest takes the light in front of the Controller.
+ * Everything is queued per layer and written one layer at a time at the end, never two layers interleaved. */
 public final class HyperionSiloRenderer implements BlockEntityRenderer<HyperionControllerBlockEntity> {
     static final ResourceLocation WHITE = ResourceLocation.withDefaultNamespace("textures/misc/white.png");
     static final ResourceLocation SWIRL = ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "block/hyperion_window_swirl");
@@ -61,6 +60,22 @@ public final class HyperionSiloRenderer implements BlockEntityRenderer<HyperionC
         long seenQuench;
     }
     private final Map<HyperionControllerBlockEntity, RingMotion> motions = new WeakHashMap<>();
+    private final HyperionQuadBatches<RenderType> batches = new HyperionQuadBatches<>();
+    /** One layer of this frame's batches. */
+    record Out(HyperionQuadBatches<RenderType> q, RenderType type) {
+        void vertex(PoseStack.Pose p, float x, float y, float z, float u, float v, int argb, int light, float nx, float ny, float nz) {
+            q.vertex(type, p, x, y, z, u, v, argb, light, nx, ny, nz);
+        }
+    }
+    /** Flat colour lit by the world, textured metal lit by the world, flat glow, and the charge column's glow. */
+    record Layers(Out flat, Out metal, Out glow, Out charge) {
+        static Layers of(HyperionQuadBatches<RenderType> q) {
+            return new Layers(new Out(q, RenderType.entityCutoutNoCull(WHITE)), new Out(q, RenderType.entityCutoutNoCull(InventoryMenu.BLOCK_ATLAS)),
+                    new Out(q, RenderType.entityTranslucentEmissive(WHITE)), new Out(q, RenderType.entityTranslucentEmissive(InventoryMenu.BLOCK_ATLAS)));
+        }
+    }
+    /** Layer offsets over a face, in multiples of HyperionSiloLayout.OVERLAY_STEP. */
+    private static final float STEP = (float) HyperionSiloLayout.OVERLAY_STEP;
 
     public HyperionSiloRenderer(BlockEntityRendererProvider.Context context) {}
 
@@ -74,26 +89,28 @@ public final class HyperionSiloRenderer implements BlockEntityRenderer<HyperionC
         if (g == null || !facing.getAxis().isHorizontal()) return;
         int lit = LevelRenderer.getLightColor(level, be.getBlockPos().relative(facing));
         long seed = be.getBlockPos().asLong();
-        pipes(pose, buffers, be, g, time);
+        var out = Layers.of(batches);
+        pipes(pose, out, be, facing, g, time);
 
         pose.pushPose();
         pose.translate(0.5, 0, 0.5);
         pose.mulPose(Axis.YP.rotationDegrees(switch (facing) { case EAST -> -90; case SOUTH -> 180; case WEST -> 90; default -> 0; }));
         pose.translate(-0.5, 0, -0.5);
-        window(pose, buffers, g, s.height(), time, now, seed, lit);
-        trims(pose, buffers, s.height(), lit);
-        lamps(pose, buffers, g.lamps(), now, lit);
-        rings(pose, buffers, motions.computeIfAbsent(be, k -> new RingMotion()), g, s.height(), s.lastQuenchTick(), time, lit);
+        window(pose, out, g, s.height(), time, now, seed, lit);
+        trims(pose, out, s.height(), lit);
+        lamps(pose, out, g.lamps(), now, lit);
+        rings(pose, out, motions.computeIfAbsent(be, k -> new RingMotion()), g, s.height(), s.lastQuenchTick(), time, lit);
         pose.popPose();
+        batches.flush(buffers::getBuffer);
     }
 
     /** Per cooler, a 6 px pipe from its outward face to an elbow, then down to the floor (or a flange), frosted or bare,
      * with glowing dashes running in or out with the flow. Drawn in world-aligned space from the Controller's block. */
-    private static void pipes(PoseStack pose, MultiBufferSource buffers, HyperionControllerBlockEntity be, HyperionGauge.State g, float time) {
+    private static void pipes(PoseStack pose, Layers out, HyperionControllerBlockEntity be, net.minecraft.core.Direction front, HyperionGauge.State g, float time) {
         var level = be.getLevel(); var origin = be.getBlockPos();
         var sprite = sprite(g.pipes() == Pipes.BARE ? PIPE_BARE : PIPE_FROST);
-        var metal = buffers.getBuffer(RenderType.entityCutoutNoCull(InventoryMenu.BLOCK_ATLAS)); var glow = buffers.getBuffer(RenderType.entityTranslucentEmissive(WHITE));
-        float half = HyperionSiloLayout.PIPE_PX / 2f * PX, outer = 0.5f + HyperionSiloLayout.PIPE_OUT_PX * PX, inner = outer - HyperionSiloLayout.PIPE_PX * PX;
+        var metal = out.metal(); var glow = out.glow();
+        float half = HyperionSiloLayout.PIPE_PX / 2f * PX;
         float centreY = (float) HyperionSiloLayout.PIPE_Y, top = centreY + half;
         int dash = colour(g.colour() == Colour.AMBER || g.colour() == Colour.RED ? g.colour() : Colour.BLUE);
         for (var cooler : be.snapshot().coolers()) {
@@ -101,6 +118,9 @@ public final class HyperionSiloRenderer implements BlockEntityRenderer<HyperionC
             if (!(state.getBlock() instanceof CryocoolerBlock)) continue;
             var d = state.getValue(HyperionFacingPartBlock.FACING);
             if (!d.getAxis().isHorizontal()) continue;
+            // A corner cooler's pipe runs shorter, so it stays inside the resting rings.
+            float outer = 0.5f + HyperionSiloLayout.pipeOutPx(HyperionSiloEffects.lateralPx(origin, front, cooler, d)) * PX;
+            float inner = Math.max(0.5f, outer - HyperionSiloLayout.PIPE_PX * PX);
             int air = HyperionSiloEffects.solidBelow(level, cooler, d);
             float drop = (float) HyperionSiloLayout.pipeDrop(air), bottom = centreY - drop;
             int lit = LevelRenderer.getLightColor(level, cooler.relative(d));
@@ -111,13 +131,13 @@ public final class HyperionSiloRenderer implements BlockEntityRenderer<HyperionC
             box(metal, p, -half, centreY - half, -outer, half, top, -0.5f, sprite, lit);
             box(metal, p, -half, bottom, -outer, half, centreY - half, -inner, sprite, lit);
             // A collar where the pipe meets the floor, or a flange where it stops short of one.
-            box(metal, p, -half - PX, bottom, -outer - PX, half + PX, bottom + (air >= 0 && air <= HyperionSiloLayout.MAX_PIPE_AIR ? PX : 2 * PX), -inner + PX, sprite, lit);
+            box(metal, p, -half - PX, bottom, -outer - PX, half + PX, bottom + (air >= 0 && air <= HyperionSiloLayout.MAX_PIPE_AIR ? PX : 2 * PX), Math.min(-0.5f, -inner + PX), sprite, lit);
             if (g.flow() != HyperionGauge.Flow.NONE) {
                 // Path length s runs from the face (0) along the run (to the elbow) and down; dashes move 0.5 blocks a second.
                 float run = outer - half - 0.5f, length = run + (centreY - bottom), spacing = 6 * PX;
                 float shift = (time / 20 * 0.5f) % spacing; if (g.flow() == HyperionGauge.Flow.IN) shift = spacing - shift;
                 for (float at = shift; at < length; at += spacing) {
-                    float e = 0.002f;
+                    float e = STEP;
                     if (at < run) { float z = -0.5f - at; box(glow, p, -half - e, centreY - half - e, z - PX, half + e, top + e, z + PX, null, dash); }
                     else { float y = centreY - (at - run); box(glow, p, -half - e, y - PX, -outer - e, half + e, y + PX, -inner + e, null, dash); }
                 }
@@ -126,7 +146,7 @@ public final class HyperionSiloRenderer implements BlockEntityRenderer<HyperionC
         }
     }
     /** An axis-aligned box. With a sprite, its faces take it lit by `value`; without, every face glows in colour `value`. */
-    private static void box(VertexConsumer vc, PoseStack.Pose p, float x0, float y0, float z0, float x1, float y1, float z1, TextureAtlasSprite sprite, int value) {
+    private static void box(Out vc, PoseStack.Pose p, float x0, float y0, float z0, float x1, float y1, float z1, TextureAtlasSprite sprite, int value) {
         int argb = sprite == null ? value : -1, light = sprite == null ? LightTexture.FULL_BRIGHT : value;
         float u0 = sprite == null ? 0 : sprite.getU0(), v0 = sprite == null ? 0 : sprite.getV0();
         float u1 = sprite == null ? 1 : sprite.getU0() + (sprite.getU1() - sprite.getU0()) * HyperionSiloLayout.PIPE_PX / 16f;
@@ -147,7 +167,7 @@ public final class HyperionSiloRenderer implements BlockEntityRenderer<HyperionC
     }
 
     /** Moves each ring toward where the gauge wants it (or along its quench drop), then draws it with its own phase. */
-    private static void rings(PoseStack pose, MultiBufferSource buffers, RingMotion m, HyperionGauge.State g, int height, long lastQuench, float time, int lit) {
+    private static void rings(PoseStack pose, Layers out, RingMotion m, HyperionGauge.State g, int height, long lastQuench, float time, int lit) {
         int n = HyperionSiloLayout.ringCount(height);
         boolean floating = g.rings() == Rings.FLOATING;
         if (m.y.length != n) {
@@ -170,8 +190,7 @@ public final class HyperionSiloRenderer implements BlockEntityRenderer<HyperionC
             }
         }
 
-        var sprite = sprite(RING); var metal = buffers.getBuffer(RenderType.entityCutoutNoCull(InventoryMenu.BLOCK_ATLAS));
-        var glow = buffers.getBuffer(RenderType.entityTranslucentEmissive(WHITE));
+        var sprite = sprite(RING); var metal = out.metal(); var glow = out.glow();
         boolean live = g.colour() == Colour.BLUE || g.colour() == Colour.AMBER || g.colour() == Colour.RED;
         float flow = (float) ((g.spin() - HyperionGauge.IDLE_SPIN) / HyperionGauge.FLOW_SPIN);
         int edge = !live ? shade(RING_DIM, 0.35f) : shade(colour(g.colour()), floating ? 0.55f + 0.45f * flow : 0.3f);
@@ -193,8 +212,9 @@ public final class HyperionSiloRenderer implements BlockEntityRenderer<HyperionC
         }
     }
 
-    /** One ring about the current origin: dark segments with a 1 px glowing line round the inside of their faces. */
-    private static void ring(PoseStack pose, VertexConsumer metal, VertexConsumer glow, TextureAtlasSprite sprite, int edge, int lit) {
+    /** One ring about the current origin: dark segments with a 1 px glowing line round the inside of their faces; every
+     * marker segment glows brighter and taller, so the turn shows. */
+    private static void ring(PoseStack pose, Out metal, Out glow, TextureAtlasSprite sprite, int edge, int lit) {
         float x0 = -SEGMENT / 2, x1 = SEGMENT / 2, zIn = -RING_R, zOut = -RING_R - RING_W, uSpan = SEGMENT * 16;
         float u0 = sprite.getU0(), u1 = u0 + (sprite.getU1() - u0) * Math.min(1, uSpan / 16), dv = (sprite.getV1() - sprite.getV0()) / 16;
         float v = sprite.getV0();
@@ -211,40 +231,41 @@ public final class HyperionSiloRenderer implements BlockEntityRenderer<HyperionC
             vertex(metal, p, x1, 0, zOut, u1, v + 16 * dv, -1, lit, 0, -1, 0); vertex(metal, p, x1, 0, zIn, u1, v + 14 * dv, -1, lit, 0, -1, 0);
             vertex(metal, p, x0, 0, zIn, u0, v + 12 * dv, -1, lit, 0, 0, 1); vertex(metal, p, x1, 0, zIn, u1, v + 12 * dv, -1, lit, 0, 0, 1);
             vertex(metal, p, x1, RING_T, zIn, u1, v + 10 * dv, -1, lit, 0, 0, 1); vertex(metal, p, x0, RING_T, zIn, u0, v + 10 * dv, -1, lit, 0, 0, 1);
-            int full = LightTexture.FULL_BRIGHT; float e = 0.001f, mid = RING_T / 2;
-            vertex(glow, p, x0, mid - PX / 2, zIn + e, 0, 1, edge, full, 0, 0, 1); vertex(glow, p, x1, mid - PX / 2, zIn + e, 1, 1, edge, full, 0, 0, 1);
-            vertex(glow, p, x1, mid + PX / 2, zIn + e, 1, 0, edge, full, 0, 0, 1); vertex(glow, p, x0, mid + PX / 2, zIn + e, 0, 0, edge, full, 0, 0, 1);
+            int full = LightTexture.FULL_BRIGHT; float e = STEP, mid = RING_T / 2;
+            boolean marker = HyperionSiloLayout.ringMarker(j); float band = marker ? RING_T / 2 : PX / 2; int c = marker ? lighten(edge) : edge;
+            vertex(glow, p, x0, mid - band, zIn + e, 0, 1, c, full, 0, 0, 1); vertex(glow, p, x1, mid - band, zIn + e, 1, 1, c, full, 0, 0, 1);
+            vertex(glow, p, x1, mid + band, zIn + e, 1, 0, c, full, 0, 0, 1); vertex(glow, p, x0, mid + band, zIn + e, 0, 0, c, full, 0, 0, 1);
             for (float y : new float[]{RING_T + e, -e}) {
                 float ny = y > 0 ? 1 : -1;
-                vertex(glow, p, x0, y, zIn - PX, 0, 0, edge, full, 0, ny, 0); vertex(glow, p, x0, y, zIn, 0, 1, edge, full, 0, ny, 0);
-                vertex(glow, p, x1, y, zIn, 1, 1, edge, full, 0, ny, 0); vertex(glow, p, x1, y, zIn - PX, 1, 0, edge, full, 0, ny, 0);
+                vertex(glow, p, x0, y, zIn - PX, 0, 0, c, full, 0, ny, 0); vertex(glow, p, x0, y, zIn, 0, 1, c, full, 0, ny, 0);
+                vertex(glow, p, x1, y, zIn, 1, 1, c, full, 0, ny, 0); vertex(glow, p, x1, y, zIn - PX, 1, 0, c, full, 0, ny, 0);
             }
             pose.popPose();
         }
     }
-    static void vertex(VertexConsumer vc, PoseStack.Pose p, float x, float y, float z, float u, float v, int argb, int light, float nx, float ny, float nz) {
-        vc.addVertex(p, x, y, z).setColor(argb).setUv(u, v).setOverlay(OverlayTexture.NO_OVERLAY).setLight(light).setNormal(p, nx, ny, nz);
+    static void vertex(Out vc, PoseStack.Pose p, float x, float y, float z, float u, float v, int argb, int light, float nx, float ny, float nz) {
+        vc.vertex(p, x, y, z, u, v, argb, light, nx, ny, nz);
     }
 
     /** The dark window, the charge column up to the fill, a rung between blocks, then one bar per block. */
-    private static void window(PoseStack pose, MultiBufferSource buffers, HyperionGauge.State g, int height, float time, long now, long seed, int lit) {
-        var p = pose.last(); var flat = buffers.getBuffer(RenderType.entityCutoutNoCull(WHITE));
-        front(flat, p, WIN_X0, SILL, WIN_X1, height, 0.0005f, BACKDROP, lit);
+    private static void window(PoseStack pose, Layers out, HyperionGauge.State g, int height, float time, long now, long seed, int lit) {
+        var p = pose.last(); var flat = out.flat();
+        front(flat, p, WIN_X0, SILL, WIN_X1, height, STEP, BACKDROP, lit);
         double top = g.collapseShown() >= 0 ? 0 : Math.min(height, g.lit());
         if (top > SILL && g.colour() != Colour.OFF && g.colour() != Colour.DEAD) {
-            var sprite = sprite(SWIRL); var glow = buffers.getBuffer(RenderType.entityTranslucentEmissive(InventoryMenu.BLOCK_ATLAS));
+            var sprite = sprite(SWIRL); var glow = out.charge();
             for (int i = 0; i < height && i < top; i++) {
                 float y0 = Math.max(i, SILL), y1 = (float) Math.min(i + 1, top);
                 float v0 = sprite.getV1() - (y1 - i) * (sprite.getV1() - sprite.getV0()), v1 = sprite.getV1() - (y0 - i) * (sprite.getV1() - sprite.getV0());
-                quad(glow, p, WIN_X0, y0, WIN_X1, y1, -0.001f, sprite.getU0(), v0, sprite.getU1(), v1, 0xFFFFFFFF, LightTexture.FULL_BRIGHT);
+                quad(glow, p, WIN_X0, y0, WIN_X1, y1, -2 * STEP, sprite.getU0(), v0, sprite.getU1(), v1, 0xFFFFFFFF, LightTexture.FULL_BRIGHT);
             }
         }
-        for (int i = 1; i < height; i++) front(flat, p, WIN_X0, i - 0.5f * PX, WIN_X1, i + 0.5f * PX, 0.0015f, RUNG, lit);
-        var glow = buffers.getBuffer(RenderType.entityTranslucentEmissive(WHITE));
+        for (int i = 1; i < height; i++) front(flat, p, WIN_X0, i - 0.5f * PX, WIN_X1, i + 0.5f * PX, 3 * STEP, RUNG, lit);
+        var glow = out.glow();
         for (int i = 0; i < g.bars(); i++) {
             float y0 = i + BAR_Y0, y1 = i + BAR_Y1;
-            front(flat, p, WIN_X0, y0, WIN_X1, y1, 0.002f, g.colour() == Colour.DEAD ? DEAD : GLASS, lit);
-            if (g.colour() == Colour.DEAD) { if (i == 0 && g.ember()) front(glow, p, WIN_X0, y0, WIN_X1, y1, 0.0025f, shade(EMBER, 0.6f + 0.25f * (float) Math.sin(time * 0.08)), LightTexture.FULL_BRIGHT); continue; }
+            front(flat, p, WIN_X0, y0, WIN_X1, y1, 4 * STEP, g.colour() == Colour.DEAD ? DEAD : GLASS, lit);
+            if (g.colour() == Colour.DEAD) { if (i == 0 && g.ember()) front(glow, p, WIN_X0, y0, WIN_X1, y1, 5 * STEP, shade(EMBER, 0.6f + 0.25f * (float) Math.sin(time * 0.08)), LightTexture.FULL_BRIGHT); continue; }
             if (g.colour() == Colour.OFF) continue;
             float fill, bright;
             if (g.collapseShown() >= 0) { fill = i < g.collapseShown() ? 1 : 0; bright = 1; }
@@ -258,40 +279,38 @@ public final class HyperionSiloRenderer implements BlockEntityRenderer<HyperionC
                 if (i == g.flickering()) bright *= 0.3f + 0.7f * noise(seed, now / 3 + i);
             }
             int colour = colour(g.colour());
-            if (fill > 0) front(glow, p, WIN_X0, y0, WIN_X0 + fill * (WIN_X1 - WIN_X0), y1, 0.0025f, shade(colour, bright), LightTexture.FULL_BRIGHT);
-            if (i == g.breathing()) front(glow, p, WIN_X0, y0, WIN_X1, y1, 0.003f, shade(colour, 0.15f + 0.6f * (0.5f + 0.5f * (float) Math.sin(time * 2 * Math.PI / 20))),
+            if (fill > 0) front(glow, p, WIN_X0, y0, WIN_X0 + fill * (WIN_X1 - WIN_X0), y1, 5 * STEP, shade(colour, bright), LightTexture.FULL_BRIGHT);
+            if (i == g.breathing()) front(glow, p, WIN_X0, y0, WIN_X1, y1, 6 * STEP, shade(colour, 0.15f + 0.6f * (0.5f + 0.5f * (float) Math.sin(time * 2 * Math.PI / 20))),
                     LightTexture.FULL_BRIGHT);
         }
     }
 
     /** A 1 px dark line on each side face along its four edges, and round the top. */
-    private static void trims(PoseStack pose, MultiBufferSource buffers, int height, int lit) {
-        var flat = buffers.getBuffer(RenderType.entityCutoutNoCull(WHITE));
+    private static void trims(PoseStack pose, Layers out, int height, int lit) {
+        var flat = out.flat();
         for (int side = 0; side < 4; side++) {
             pose.pushPose(); onSide(pose, side); var p = pose.last();
-            front(flat, p, -1, 0, -1 + PX, height, 0.002f, TRIM, lit);
-            front(flat, p, 2 - PX, 0, 2, height, 0.002f, TRIM, lit);
-            front(flat, p, -1, 0, 2, PX, 0.002f, TRIM, lit);
-            front(flat, p, -1, height - PX, 2, height, 0.002f, TRIM, lit);
-            flat.addVertex(p, -1, height + 0.002f, 0).setColor(TRIM).setUv(0, 0).setOverlay(OverlayTexture.NO_OVERLAY).setLight(lit).setNormal(p, 0, 1, 0);
-            flat.addVertex(p, -1, height + 0.002f, PX).setColor(TRIM).setUv(0, 1).setOverlay(OverlayTexture.NO_OVERLAY).setLight(lit).setNormal(p, 0, 1, 0);
-            flat.addVertex(p, 2, height + 0.002f, PX).setColor(TRIM).setUv(1, 1).setOverlay(OverlayTexture.NO_OVERLAY).setLight(lit).setNormal(p, 0, 1, 0);
-            flat.addVertex(p, 2, height + 0.002f, 0).setColor(TRIM).setUv(1, 0).setOverlay(OverlayTexture.NO_OVERLAY).setLight(lit).setNormal(p, 0, 1, 0);
+            front(flat, p, -1, 0, -1 + PX, height, STEP, TRIM, lit);
+            front(flat, p, 2 - PX, 0, 2, height, STEP, TRIM, lit);
+            front(flat, p, -1, 0, 2, PX, STEP, TRIM, lit);
+            front(flat, p, -1, height - PX, 2, height, STEP, TRIM, lit);
+            vertex(flat, p, -1, height + STEP, 0, 0, 0, TRIM, lit, 0, 1, 0); vertex(flat, p, -1, height + STEP, PX, 0, 1, TRIM, lit, 0, 1, 0);
+            vertex(flat, p, 2, height + STEP, PX, 1, 1, TRIM, lit, 0, 1, 0); vertex(flat, p, 2, height + STEP, 0, 1, 0, TRIM, lit, 0, 1, 0);
             pose.popPose();
         }
     }
 
     /** Four 2 px lamps in the bottom row: on the two front corner blocks and on the middle of each side. */
-    private static void lamps(PoseStack pose, MultiBufferSource buffers, Lamps lamps, long now, int lit) {
-        var glow = buffers.getBuffer(RenderType.entityTranslucentEmissive(WHITE)); var flat = buffers.getBuffer(RenderType.entityCutoutNoCull(WHITE));
+    private static void lamps(PoseStack pose, Layers out, Lamps lamps, long now, int lit) {
+        var glow = out.glow(); var flat = out.flat();
         float bright = switch (lamps) { case AMBER -> blink(now, 16); case RED -> blink(now, 6); default -> 1; };
         int colour = switch (lamps) { case BLUE -> colour(Colour.BLUE); case AMBER -> colour(Colour.AMBER); case RED -> colour(Colour.RED); case OFF -> LAMP_OFF; };
         float[][] spots = {{0, -0.5f}, {0, 1.5f}, {1, 0.5f}, {3, 0.5f}};
         for (var spot : spots) {
             pose.pushPose(); onSide(pose, (int) spot[0]); var p = pose.last();
             float x0 = spot[1] - PX, y0 = 12 * PX;
-            if (lamps == Lamps.OFF) front(flat, p, x0, y0, x0 + 2 * PX, y0 + 2 * PX, 0.002f, colour, lit);
-            else front(glow, p, x0, y0, x0 + 2 * PX, y0 + 2 * PX, 0.002f, shade(colour, bright), LightTexture.FULL_BRIGHT);
+            if (lamps == Lamps.OFF) front(flat, p, x0, y0, x0 + 2 * PX, y0 + 2 * PX, STEP, colour, lit);
+            else front(glow, p, x0, y0, x0 + 2 * PX, y0 + 2 * PX, STEP, shade(colour, bright), LightTexture.FULL_BRIGHT);
             pose.popPose();
         }
     }
@@ -306,17 +325,19 @@ public final class HyperionSiloRenderer implements BlockEntityRenderer<HyperionC
 
     static TextureAtlasSprite sprite(ResourceLocation id) { return Minecraft.getInstance().getTextureAtlas(InventoryMenu.BLOCK_ATLAS).apply(id); }
     /** A flat rect on the front plane, out by `out` blocks. */
-    static void front(VertexConsumer vc, PoseStack.Pose p, float x0, float y0, float x1, float y1, float out, int argb, int light) {
+    static void front(Out vc, PoseStack.Pose p, float x0, float y0, float x1, float y1, float out, int argb, int light) {
         quad(vc, p, x0, y0, x1, y1, -out, 0, 0, 1, 1, argb, light);
     }
-    static void quad(VertexConsumer vc, PoseStack.Pose p, float x0, float y0, float x1, float y1, float z, float u0, float v0, float u1, float v1, int argb, int light) {
-        vc.addVertex(p, x0, y0, z).setColor(argb).setUv(u0, v1).setOverlay(OverlayTexture.NO_OVERLAY).setLight(light).setNormal(p, 0, 0, -1);
-        vc.addVertex(p, x0, y1, z).setColor(argb).setUv(u0, v0).setOverlay(OverlayTexture.NO_OVERLAY).setLight(light).setNormal(p, 0, 0, -1);
-        vc.addVertex(p, x1, y1, z).setColor(argb).setUv(u1, v0).setOverlay(OverlayTexture.NO_OVERLAY).setLight(light).setNormal(p, 0, 0, -1);
-        vc.addVertex(p, x1, y0, z).setColor(argb).setUv(u1, v1).setOverlay(OverlayTexture.NO_OVERLAY).setLight(light).setNormal(p, 0, 0, -1);
+    static void quad(Out vc, PoseStack.Pose p, float x0, float y0, float x1, float y1, float z, float u0, float v0, float u1, float v1, int argb, int light) {
+        vc.vertex(p, x0, y0, z, u0, v1, argb, light, 0, 0, -1); vc.vertex(p, x0, y1, z, u0, v0, argb, light, 0, 0, -1);
+        vc.vertex(p, x1, y1, z, u1, v0, argb, light, 0, 0, -1); vc.vertex(p, x1, y0, z, u1, v1, argb, light, 0, 0, -1);
     }
     static int colour(Colour c) {
         return switch (c) { case BLUE -> 0xFF46AAFF; case AMBER -> 0xFFFFAA28; case RED -> 0xFFFF3228; case DEAD -> DEAD; case OFF -> GLASS; };
+    }
+    /** A third of the way to white. */
+    static int lighten(int argb) {
+        return argb & 0xFF000000 | (((argb >> 16) & 255) * 2 + 255) / 3 << 16 | (((argb >> 8) & 255) * 2 + 255) / 3 << 8 | ((argb & 255) * 2 + 255) / 3;
     }
     static int shade(int argb, float k) {
         k = Math.max(0, Math.min(1, k));

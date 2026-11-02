@@ -82,10 +82,14 @@ public final class HyperionControllerBlockEntity extends BlockEntity implements 
         for (var c : hit) if (!(l.getBlockState(pos).getBlock() instanceof HyperionPartBlock) || !c.stillValid(l)) c.broken(l);
     }
     private boolean stillValid(ServerLevel l) { return min != null && HyperionMultiblock.validate(l, min, max).valid(); }
-    /** The silo lost a part: vent any charge at once, then come apart into loose cells with the lamps out. */
+    /** The silo lost a part: vent any charge at once, then come apart into loose cells with the lamps out, and tell the
+     * client now, so its window and rings go with it. */
     void broken(ServerLevel l) {
         if (stored > 0) { quench(); play(l, HyperionAudioCues.cues(readout(), readout(), true)); }
-        if (min != null) { show(l, SuperconductingCellBlock.Look.LOOSE, false); unform(l); }
+        if (min == null) return;
+        show(l, SuperconductingCellBlock.Look.LOOSE, false); unform(l);
+        shell = HyperionMultiblock.discover(l, worldPosition);
+        if (l.getBlockState(worldPosition).getBlock() instanceof HyperionControllerBlock) sync(l);
     }
     public static int quenchCount(ServerLevel l) { return QUENCHES.getOrDefault(l, 0); }
     static boolean inside(BlockPos p, BlockPos lo, BlockPos hi) {

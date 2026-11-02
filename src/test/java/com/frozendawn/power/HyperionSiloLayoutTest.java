@@ -56,4 +56,29 @@ class HyperionSiloLayoutTest {
         assertEquals(1.0, pipeDrop(-1), 1e-9, "No floor within 3: one block and a flange");
         assertEquals(1.0, pipeDrop(5), 1e-9, "Deeper than 3 counts as none");
     }
+
+    /** Review finding: a back-corner cooler's pipe pierced the resting rings. Side pipes keep their 10 px run. */
+    @Test void pipesClearTheRestingRings() {
+        assertEquals(PIPE_OUT_PX, pipeOutPx(0), "A side-centre cooler's pipe runs the full 10 px");
+        for (int lateral : new int[]{0, 16}) {
+            int out = pipeOutPx(lateral);
+            double far = Math.hypot(24 + out, lateral + PIPE_PX / 2.0);
+            assertTrue(far < RING_INNER_PX, "A pipe " + lateral + " px off the axis reaches " + far + " px, inside the rings' " + RING_INNER_PX);
+            assertTrue(out >= PIPE_PX / 2, "It still stands clear of the wall: " + out + " px");
+        }
+    }
+
+    /** Review finding: window layers 0.0005 blocks apart z-fight at range. Each must hold its depth across a base, 48 blocks
+     * off, with the game's 0.05 near plane and a 24-bit depth buffer. */
+    @Test void overlaysHoldTheirDepthAcrossTheBase() {
+        assertTrue(OVERLAY_STEP >= 48.0 * 48 / (0.05 * (1 << 24)), "Overlay step " + OVERLAY_STEP);
+        assertTrue(6 * OVERLAY_STEP <= 1 / 32.0, "Six layers stay within half a pixel of the face");
+    }
+
+    /** Review finding: identical segments make the spin invisible. */
+    @Test void ringsShowTheirSpin() {
+        int markers = 0;
+        for (int j = 0; j < RING_SEGMENTS; j++) if (ringMarker(j)) markers++;
+        assertTrue(markers >= 2 && markers <= RING_SEGMENTS / 4, "A few marked segments show the turn: " + markers);
+    }
 }

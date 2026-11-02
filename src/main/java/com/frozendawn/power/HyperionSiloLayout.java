@@ -25,6 +25,19 @@ public final class HyperionSiloLayout {
     /** How far the pipe runs down from the elbow, given the air blocks under the elbow before the first solid one (-1 for
      * none): flush with that floor, or, with no floor near enough to keep the pipe within 3 blocks, one block to a flange. */
     public static double pipeDrop(int solidBelow) { return solidBelow < 0 || solidBelow > MAX_PIPE_AIR ? 1.0 : solidBelow + PIPE_Y; }
+    /** How far a pipe runs out from its face, given how far its centre sits to the side of the axis (0 at a side's centre,
+     * 16 at a corner): the full PIPE_OUT_PX, shortened until its outer corner stays a pixel inside the resting rings. */
+    public static int pipeOutPx(int lateralPx) {
+        int out = PIPE_OUT_PX;
+        while (out > 0 && Math.hypot(24 + out, lateralPx + PIPE_PX / 2.0) >= RING_INNER_PX - 1) out--;
+        return out;
+    }
+
+    /** Depth between the flat layers drawn over a face (window, rungs, bars, glow): enough that each holds its depth at 48
+     * blocks with a 24-bit depth buffer, and six together still under half a pixel. */
+    public static final double OVERLAY_STEP = 0.005;
+    /** Every eighth ring segment glows brighter, so a ring's turn can be seen. */
+    public static boolean ringMarker(int segment) { return segment % 8 == 0; }
 
     /** {minX, minY, minZ, maxX, maxY, maxZ} for a Controller at (cx, cy, cz) whose front steps (frontX, frontZ). */
     public static double[] renderBox(int cx, int cy, int cz, int frontX, int frontZ, int height) {
