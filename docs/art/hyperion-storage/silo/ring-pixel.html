@@ -1,0 +1,31 @@
+<h2>Why the last rings looked off, and a fix</h2>
+<p class="subtitle">They were too wide, too thick and too bright: big pale steel plates around a black block tower, drawn smooth instead of in pixels. These are drawn at Minecraft's 16 pixels per block, slimmer, closer to the silo, and mostly lit by their glow.</p>
+
+<style>
+  .px img { image-rendering: pixelated; width: 240px; display:block; margin:8px auto 0; border-radius:4px; }
+</style>
+
+<div class="options px">
+  <div class="option" data-choice="collars" onclick="toggleSelect(this)">
+    <div class="letter">1</div>
+    <div class="content">
+      <h3>Square collars</h3>
+      <p>Thin square bands in the same black material, hugging the silo a few pixels out, with one glowing line. Follows the silo's square shape.</p>
+    </div>
+  </div>
+  <div class="option" data-choice="halos" onclick="toggleSelect(this)">
+    <div class="letter">2</div>
+    <div class="content">
+      <h3>Light halos</h3>
+      <p>No metal at all: floating rings of pure blue light, pulsing out of step. Lightest touch; reads as energy, not machinery.</p>
+    </div>
+  </div>
+  <div class="option" data-choice="thin-round" onclick="toggleSelect(this)">
+    <div class="letter">3</div>
+    <div class="content">
+      <h3>Thin dark rings</h3>
+      <p>Slim round rings in black metal with a glowing inner edge. Still physical, so they can fall and clang on quench.</p>
+      <img src="ring-px-round.gif" alt="thin dark rings">
+    </div>
+  </div>
+</div>

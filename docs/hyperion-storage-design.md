@@ -2,6 +2,8 @@
 
 Status: approved by the owner, 2026-10-30. Branch `feat/hyperion-storage`, cut from `origin/feat/maeve-director` at 72f6a574. No code yet. The next step after approval is an implementation plan.
 
+Update 2026-11-02: the Structure and Look sections are superseded by [hyperion-silo-design.md](hyperion-silo-design.md) (a 3x3 silo, 4 to 8 tall). The rest of this design stands.
+
 ## Why
 
 Storage is far out of scale with the reactors. A Battery Bank holds 2 MJ (4 Power Cells of 500 kJ). Output runs from the Geothermal Core (20 kW) and the CFU-7 "Hearthstone" (~120 kW) up to the SFR-1 "Solstice" (~330 kW net) and the AMR-1 "Icarus" (0.6 to 1.7 MW net). The Icarus startup draws about 1 MW through its reserve-charge and stabilizer steps (about 50 s, so roughly 50 to 70 MJ). Booting it today takes a wall of 25 to 35 Battery Banks.
