@@ -360,6 +360,7 @@ public class ClientEvents {
         event.registerBlockEntityRenderer(ModBlockEntities.UPLINK_DISH.get(), com.frozendawn.client.renderer.UplinkDishRenderer::new);
         event.registerBlockEntityRenderer(ModBlockEntities.OXYGEN_RESERVOIR.get(),com.frozendawn.client.renderer.OxygenReservoirRenderer::new);
         event.registerBlockEntityRenderer(ModBlockEntities.OXYGEN_GAUGE.get(), com.frozendawn.client.renderer.OxygenGaugeRenderer::new);
+        event.registerBlockEntityRenderer(ModBlockEntities.HYPERION_CONTROLLER.get(), com.frozendawn.client.renderer.HyperionSiloRenderer::new);
     }
 
     @SubscribeEvent

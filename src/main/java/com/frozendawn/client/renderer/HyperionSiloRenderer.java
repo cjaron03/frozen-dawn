@@ -1,0 +1,177 @@
+package com.frozendawn.client.renderer;
+
+import com.frozendawn.FrozenDawn;
+import com.frozendawn.block.HyperionControllerBlock;
+import com.frozendawn.block.HyperionControllerBlockEntity;
+import com.frozendawn.block.HyperionMultiblock;
+import com.frozendawn.power.HyperionGauge;
+import com.frozendawn.power.HyperionGauge.Colour;
+import com.frozendawn.power.HyperionGauge.Lamps;
+import com.frozendawn.power.HyperionSiloLayout;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
+import com.mojang.math.Axis;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.LevelRenderer;
+import net.minecraft.client.renderer.LightTexture;
+import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
+import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
+import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.client.renderer.texture.TextureAtlasSprite;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.inventory.InventoryMenu;
+import net.minecraft.world.phys.AABB;
+
+/** Everything the formed silo shows beyond its blocks, from the Controller: the window of stacked bars over a rising
+ * charge column, a dark trim on the silo's outer edges, and the status lamps round the base. What each shows comes
+ * from HyperionGauge. Model space faces north with the Controller's block at the origin, so the silo spans x -1..2,
+ * z 0..3 and its axis is (0.5, 1.5). Glowing parts are emissive; the rest takes the light in front of the Controller. */
+public final class HyperionSiloRenderer implements BlockEntityRenderer<HyperionControllerBlockEntity> {
+    static final ResourceLocation WHITE = ResourceLocation.withDefaultNamespace("textures/misc/white.png");
+    static final ResourceLocation SWIRL = ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "block/hyperion_window_swirl");
+    static final float PX = 1 / 16f, AXIS_X = 0.5f, AXIS_Z = 1.5f;
+    /** The window: 6 px wide on the gauge column, from the Controller's sill to the top. Bars are 4 px tall, centred per block. */
+    private static final float WIN_X0 = 5 * PX, WIN_X1 = 11 * PX, SILL = 2 * PX, BAR_Y0 = 6 * PX, BAR_Y1 = 10 * PX;
+    private static final int GLASS = 0xFF181C22, BACKDROP = 0xFF07080B, RUNG = 0xFF0B0C0F, TRIM = 0xFF050607, DEAD = 0xFF5A5C62, EMBER = 0xFF8A2614,
+            LAMP_OFF = 0xFF2A2018;
+
+    public HyperionSiloRenderer(BlockEntityRendererProvider.Context context) {}
+
+    @Override public void render(HyperionControllerBlockEntity be, float partial, PoseStack pose, MultiBufferSource buffers, int light, int overlay) {
+        var level = be.getLevel();
+        if (level == null) return;
+        var s = be.snapshot();
+        var facing = be.getBlockState().getValue(HyperionControllerBlock.FACING);
+        if (s.problem() != HyperionMultiblock.Problem.NONE || s.height() <= 0 || !facing.getAxis().isHorizontal()) return;
+        long now = level.getGameTime(); float time = now + partial;
+        long since = s.lastQuenchTick() == Long.MIN_VALUE ? Long.MAX_VALUE : Math.max(0, now - s.lastQuenchTick());
+        var g = HyperionGauge.of(new HyperionGauge.Inputs(s.stage(), true, s.stored(), s.capacity(), s.flowIn(), s.flowOut(), s.rateWatts(),
+                s.height(), s.scarred(), since));
+        int lit = LevelRenderer.getLightColor(level, be.getBlockPos().relative(facing));
+        long seed = be.getBlockPos().asLong();
+
+        pose.pushPose();
+        pose.translate(0.5, 0, 0.5);
+        pose.mulPose(Axis.YP.rotationDegrees(switch (facing) { case EAST -> -90; case SOUTH -> 180; case WEST -> 90; default -> 0; }));
+        pose.translate(-0.5, 0, -0.5);
+        window(pose, buffers, g, s.height(), time, now, seed, lit);
+        trims(pose, buffers, s.height(), lit);
+        lamps(pose, buffers, g.lamps(), now, lit);
+        pose.popPose();
+    }
+
+    /** The dark window, the charge column up to the fill, a rung between blocks, then one bar per block. */
+    private static void window(PoseStack pose, MultiBufferSource buffers, HyperionGauge.State g, int height, float time, long now, long seed, int lit) {
+        var p = pose.last(); var flat = buffers.getBuffer(RenderType.entityCutoutNoCull(WHITE));
+        front(flat, p, WIN_X0, SILL, WIN_X1, height, 0.0005f, BACKDROP, lit);
+        double top = g.collapseShown() >= 0 ? 0 : Math.min(height, g.lit());
+        if (top > SILL && g.colour() != Colour.OFF && g.colour() != Colour.DEAD) {
+            var sprite = sprite(SWIRL); var glow = buffers.getBuffer(RenderType.entityTranslucentEmissive(InventoryMenu.BLOCK_ATLAS));
+            for (int i = 0; i < height && i < top; i++) {
+                float y0 = Math.max(i, SILL), y1 = (float) Math.min(i + 1, top);
+                float v0 = sprite.getV1() - (y1 - i) * (sprite.getV1() - sprite.getV0()), v1 = sprite.getV1() - (y0 - i) * (sprite.getV1() - sprite.getV0());
+                quad(glow, p, WIN_X0, y0, WIN_X1, y1, -0.001f, sprite.getU0(), v0, sprite.getU1(), v1, 0xFFFFFFFF, LightTexture.FULL_BRIGHT);
+            }
+        }
+        for (int i = 1; i < height; i++) front(flat, p, WIN_X0, i - 0.5f * PX, WIN_X1, i + 0.5f * PX, 0.0015f, RUNG, lit);
+        var glow = buffers.getBuffer(RenderType.entityTranslucentEmissive(WHITE));
+        for (int i = 0; i < g.bars(); i++) {
+            float y0 = i + BAR_Y0, y1 = i + BAR_Y1;
+            front(flat, p, WIN_X0, y0, WIN_X1, y1, 0.002f, g.colour() == Colour.DEAD ? DEAD : GLASS, lit);
+            if (g.colour() == Colour.DEAD) { if (i == 0 && g.ember()) front(glow, p, WIN_X0, y0, WIN_X1, y1, 0.0025f, shade(EMBER, 0.6f + 0.25f * (float) Math.sin(time * 0.08)), LightTexture.FULL_BRIGHT); continue; }
+            if (g.colour() == Colour.OFF) continue;
+            float fill, bright;
+            if (g.collapseShown() >= 0) { fill = i < g.collapseShown() ? 1 : 0; bright = 1; }
+            else {
+                fill = (float) Math.max(0, Math.min(1, g.lit() - i));
+                bright = switch (g.colour()) {
+                    case AMBER -> blink(now, 16);
+                    case RED -> blink(now, 6);
+                    default -> 0.85f + 0.15f * (float) Math.sin(time * 0.05 + i * 0.9);
+                };
+                if (i == g.flickering()) bright *= 0.3f + 0.7f * noise(seed, now / 3 + i);
+            }
+            int colour = colour(g.colour());
+            if (fill > 0) front(glow, p, WIN_X0, y0, WIN_X0 + fill * (WIN_X1 - WIN_X0), y1, 0.0025f, shade(colour, bright), LightTexture.FULL_BRIGHT);
+            if (i == g.breathing()) front(glow, p, WIN_X0, y0, WIN_X1, y1, 0.003f, shade(colour, 0.15f + 0.6f * (0.5f + 0.5f * (float) Math.sin(time * 2 * Math.PI / 20))),
+                    LightTexture.FULL_BRIGHT);
+        }
+    }
+
+    /** A 1 px dark line on each side face along its four edges, and round the top. */
+    private static void trims(PoseStack pose, MultiBufferSource buffers, int height, int lit) {
+        var flat = buffers.getBuffer(RenderType.entityCutoutNoCull(WHITE));
+        for (int side = 0; side < 4; side++) {
+            pose.pushPose(); onSide(pose, side); var p = pose.last();
+            front(flat, p, -1, 0, -1 + PX, height, 0.002f, TRIM, lit);
+            front(flat, p, 2 - PX, 0, 2, height, 0.002f, TRIM, lit);
+            front(flat, p, -1, 0, 2, PX, 0.002f, TRIM, lit);
+            front(flat, p, -1, height - PX, 2, height, 0.002f, TRIM, lit);
+            flat.addVertex(p, -1, height + 0.002f, 0).setColor(TRIM).setUv(0, 0).setOverlay(OverlayTexture.NO_OVERLAY).setLight(lit).setNormal(p, 0, 1, 0);
+            flat.addVertex(p, -1, height + 0.002f, PX).setColor(TRIM).setUv(0, 1).setOverlay(OverlayTexture.NO_OVERLAY).setLight(lit).setNormal(p, 0, 1, 0);
+            flat.addVertex(p, 2, height + 0.002f, PX).setColor(TRIM).setUv(1, 1).setOverlay(OverlayTexture.NO_OVERLAY).setLight(lit).setNormal(p, 0, 1, 0);
+            flat.addVertex(p, 2, height + 0.002f, 0).setColor(TRIM).setUv(1, 0).setOverlay(OverlayTexture.NO_OVERLAY).setLight(lit).setNormal(p, 0, 1, 0);
+            pose.popPose();
+        }
+    }
+
+    /** Four 2 px lamps in the bottom row: on the two front corner blocks and on the middle of each side. */
+    private static void lamps(PoseStack pose, MultiBufferSource buffers, Lamps lamps, long now, int lit) {
+        var glow = buffers.getBuffer(RenderType.entityTranslucentEmissive(WHITE)); var flat = buffers.getBuffer(RenderType.entityCutoutNoCull(WHITE));
+        float bright = switch (lamps) { case AMBER -> blink(now, 16); case RED -> blink(now, 6); default -> 1; };
+        int colour = switch (lamps) { case BLUE -> colour(Colour.BLUE); case AMBER -> colour(Colour.AMBER); case RED -> colour(Colour.RED); case OFF -> LAMP_OFF; };
+        float[][] spots = {{0, -0.5f}, {0, 1.5f}, {1, 0.5f}, {3, 0.5f}};
+        for (var spot : spots) {
+            pose.pushPose(); onSide(pose, (int) spot[0]); var p = pose.last();
+            float x0 = spot[1] - PX, y0 = 12 * PX;
+            if (lamps == Lamps.OFF) front(flat, p, x0, y0, x0 + 2 * PX, y0 + 2 * PX, 0.002f, colour, lit);
+            else front(glow, p, x0, y0, x0 + 2 * PX, y0 + 2 * PX, 0.002f, shade(colour, bright), LightTexture.FULL_BRIGHT);
+            pose.popPose();
+        }
+    }
+
+    /** Turns the pose so side k (0 front, 1 east, 2 back, 3 west, as model space faces north) lies on the front plane z = 0, spanning x -1..2. */
+    static void onSide(PoseStack pose, int side) {
+        if (side == 0) return;
+        pose.translate(AXIS_X, 0, AXIS_Z);
+        pose.mulPose(Axis.YP.rotationDegrees(-90 * side));
+        pose.translate(-AXIS_X, 0, -AXIS_Z);
+    }
+
+    static TextureAtlasSprite sprite(ResourceLocation id) { return Minecraft.getInstance().getTextureAtlas(InventoryMenu.BLOCK_ATLAS).apply(id); }
+    /** A flat rect on the front plane, out by `out` blocks. */
+    static void front(VertexConsumer vc, PoseStack.Pose p, float x0, float y0, float x1, float y1, float out, int argb, int light) {
+        quad(vc, p, x0, y0, x1, y1, -out, 0, 0, 1, 1, argb, light);
+    }
+    static void quad(VertexConsumer vc, PoseStack.Pose p, float x0, float y0, float x1, float y1, float z, float u0, float v0, float u1, float v1, int argb, int light) {
+        vc.addVertex(p, x0, y0, z).setColor(argb).setUv(u0, v1).setOverlay(OverlayTexture.NO_OVERLAY).setLight(light).setNormal(p, 0, 0, -1);
+        vc.addVertex(p, x0, y1, z).setColor(argb).setUv(u0, v0).setOverlay(OverlayTexture.NO_OVERLAY).setLight(light).setNormal(p, 0, 0, -1);
+        vc.addVertex(p, x1, y1, z).setColor(argb).setUv(u1, v0).setOverlay(OverlayTexture.NO_OVERLAY).setLight(light).setNormal(p, 0, 0, -1);
+        vc.addVertex(p, x1, y0, z).setColor(argb).setUv(u1, v1).setOverlay(OverlayTexture.NO_OVERLAY).setLight(light).setNormal(p, 0, 0, -1);
+    }
+    static int colour(Colour c) {
+        return switch (c) { case BLUE -> 0xFF46AAFF; case AMBER -> 0xFFFFAA28; case RED -> 0xFFFF3228; case DEAD -> DEAD; case OFF -> GLASS; };
+    }
+    static int shade(int argb, float k) {
+        k = Math.max(0, Math.min(1, k));
+        return argb & 0xFF000000 | Math.round(((argb >> 16) & 255) * k) << 16 | Math.round(((argb >> 8) & 255) * k) << 8 | Math.round((argb & 255) * k);
+    }
+    /** On for the first half of each period, dim for the second. */
+    static float blink(long now, int period) { return now % period < period / 2 ? 1 : 0.3f; }
+    /** A repeatable 0..1 value per silo and step. */
+    static float noise(long seed, long step) {
+        long h = seed * 0x9E3779B97F4A7C15L + step * 0xC2B2AE3D27D4EB4FL; h ^= h >>> 31; h *= 0x94D049BB133111EBL; h ^= h >>> 29;
+        return (h & 0xFFFF) / 65535f;
+    }
+
+    @Override public AABB getRenderBoundingBox(HyperionControllerBlockEntity be) {
+        var pos = be.getBlockPos(); var facing = be.getBlockState().getValue(HyperionControllerBlock.FACING); int height = be.snapshot().height();
+        if (height <= 0 || !facing.getAxis().isHorizontal()) return new AABB(pos);
+        var b = HyperionSiloLayout.renderBox(pos.getX(), pos.getY(), pos.getZ(), facing.getStepX(), facing.getStepZ(), height);
+        return new AABB(b[0], b[1], b[2], b[3], b[4], b[5]);
+    }
+    @Override public boolean shouldRenderOffScreen(HyperionControllerBlockEntity be) { return true; }
+    @Override public int getViewDistance() { return 96; }
+}
