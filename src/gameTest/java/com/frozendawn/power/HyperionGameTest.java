@@ -311,6 +311,21 @@ public final class HyperionGameTest {
         h.succeed();
     }
 
+    /** Review focus: after a reload the client must still see the scorch and resting rings, not a fresh silo. */
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "hyperion", timeoutTicks = 100)
+    public static void hyperionSnapshotRoundTripsSiloFacts(GameTestHelper h) {
+        var l = h.getLevel(); clear(h); var b = HyperionScenes.silo(h, MIN, 6, 1, 2); var c = controller(h, b);
+        c.setStoredForTest(100_000_000L); c.setSurroundingsForTest(-10.0); int before = quenches(l);
+        l.setBlock(b.min().offset(-1, 2, 1), Blocks.LAVA.defaultBlockState(), 3);
+        int guard = 0; do c.second(l); while (quenches(l) == before && guard++ < 200);
+        h.assertTrue(quenches(l) == before + 1, "Lava against the side quenches it");
+        var copy = new com.frozendawn.block.HyperionControllerBlockEntity(b.controller(), c.getBlockState());
+        copy.handleUpdateTag(c.getUpdateTag(l.registryAccess()), l.registryAccess());
+        var s = copy.snapshot();
+        h.assertTrue(s.height() == 6 && s.scarred() && s.coolers().equals(b.coolers()), "The client sees the silo's facts: " + s.height() + ", " + s.scarred() + ", " + s.coolers());
+        h.succeed();
+    }
+
     @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "hyperion", timeoutTicks = 100)
     public static void hyperionControllerExplainsAnIncompleteShell(GameTestHelper h) {
         var l = h.getLevel(); var b = fresh(h, 4);

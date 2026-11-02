@@ -35,12 +35,13 @@ import net.minecraft.world.level.block.state.BlockState;
  * only its own saved box, so nothing built beside it can break it. Ports reach it as one EnergyStore, rate-capped per
  * one-second interval at PORT_WATTS per port in each direction. */
 public final class HyperionControllerBlockEntity extends BlockEntity implements EnergyStore, MenuProvider {
-    /** What the client shows: synced once per second when anything in it changed. */
+    /** What the client shows: synced once per second when anything in it changed. height is 0 unless formed; coolers
+     * are absolute positions, for the pipes. */
     public record Snapshot(HyperionMultiblock.Problem problem, HyperionPhysics.Stage stage, long stored, long capacity, long flowIn, long flowOut,
                            int ports, long rateWatts, double cellC, double surroundingsC, long coolerWatts, double secondsToQuench, long lastQuenchTick,
-                           int warningSeconds) {
+                           int warningSeconds, int height, boolean scarred, List<BlockPos> coolers) {
         public static final Snapshot EMPTY = new Snapshot(HyperionMultiblock.Problem.UNLOADED, HyperionPhysics.Stage.COLD, 0, 0, 0, 0, 0, 0,
-                HyperionPhysics.OPERATING_C, 0, 0, Double.POSITIVE_INFINITY, Long.MIN_VALUE, HyperionPhysics.WARN_COLD_S);
+                HyperionPhysics.OPERATING_C, 0, 0, Double.POSITIVE_INFINITY, Long.MIN_VALUE, HyperionPhysics.WARN_COLD_S, 0, false, List.of());
     }
     /** Per level, each formed controller's saved box, so a changed part finds its controller without a scan. */
     private static final Map<Level, Map<BlockPos, BlockPos[]>> BOXES = new WeakHashMap<>();
@@ -114,7 +115,8 @@ public final class HyperionControllerBlockEntity extends BlockEntity implements 
     private Snapshot current() {
         var r = readout();
         return new Snapshot(shell.problem(), r.stage(), stored, capacity(), lastCharged, lastDrawn + machineDrawn, portCount(), rateWatts(), r.cellC(),
-                lastSurroundingsC, r.coolerJoules(), r.secondsToQuench(), lastQuenchTick, HyperionPhysics.warningSeconds(lastSurroundingsC, hotNeighbors));
+                lastSurroundingsC, r.coolerJoules(), r.secondsToQuench(), lastQuenchTick, HyperionPhysics.warningSeconds(lastSurroundingsC, hotNeighbors),
+                shell.valid() ? shell.height() : 0, scarred, shell.coolers());
     }
     private void sync(ServerLevel l) {
         snapshot = current(); machineDrawn = 0;
@@ -273,6 +275,7 @@ public final class HyperionControllerBlockEntity extends BlockEntity implements 
         t.putLong("In", s.flowIn()); t.putLong("Out", s.flowOut()); t.putInt("Ports", s.ports()); t.putLong("Rate", s.rateWatts());
         t.putDouble("CellC", s.cellC()); t.putDouble("AroundC", s.surroundingsC()); t.putLong("Cooler", s.coolerWatts());
         t.putDouble("ToQuench", s.secondsToQuench()); t.putLong("LastQuench", s.lastQuenchTick()); t.putInt("Warn", s.warningSeconds());
+        t.putInt("Height", s.height()); t.putBoolean("Scarred", s.scarred()); t.putLongArray("Coolers", s.coolers().stream().mapToLong(BlockPos::asLong).toArray());
         return t;
     }
     @Override public ClientboundBlockEntityDataPacket getUpdatePacket() { return ClientboundBlockEntityDataPacket.create(this); }
@@ -281,7 +284,8 @@ public final class HyperionControllerBlockEntity extends BlockEntity implements 
         snapshot = new Snapshot(problems[Math.clamp(t.getInt("Problem"), 0, problems.length - 1)], stages[Math.clamp(t.getInt("Stage"), 0, stages.length - 1)],
                 t.getLong("Stored"), t.getLong("Capacity"), t.getLong("In"), t.getLong("Out"), t.getInt("Ports"), t.getLong("Rate"),
                 t.getDouble("CellC"), t.getDouble("AroundC"), t.getLong("Cooler"), t.getDouble("ToQuench"), t.getLong("LastQuench"),
-                Math.max(1, t.getInt("Warn")));
+                Math.max(1, t.getInt("Warn")), Math.clamp(t.getInt("Height"), 0, HyperionMultiblock.MAX_HEIGHT), t.getBoolean("Scarred"),
+                java.util.Arrays.stream(t.getLongArray("Coolers")).limit(HyperionMultiblock.MAX_PARTS).mapToObj(BlockPos::of).toList());
     }
     @Override public void onDataPacket(Connection c, ClientboundBlockEntityDataPacket p, HolderLookup.Provider r) { handleUpdateTag(p.getTag(), r); }
     @Override public Component getDisplayName() { return Component.translatable("block.frozendawn.hyperion_controller"); }
