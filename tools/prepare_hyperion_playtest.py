@@ -54,7 +54,7 @@ SCRIPTS = {
         'clear @s',
         'item replace entity @s hotbar.0 with frozendawn:conduit_binder',
         'item replace entity @s hotbar.1 with frozendawn:superconducting_cell 64',
-        'item replace entity @s hotbar.2 with frozendawn:hyperion_frame 64',
+        'item replace entity @s hotbar.2 with frozendawn:superconducting_cell 64',
         'item replace entity @s hotbar.3 with frozendawn:hyperion_controller',
         'item replace entity @s hotbar.4 with frozendawn:hyperion_port 4',
         'item replace entity @s hotbar.5 with frozendawn:cryocooler 4',

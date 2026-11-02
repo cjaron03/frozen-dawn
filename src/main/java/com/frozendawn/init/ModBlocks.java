@@ -112,8 +112,6 @@ public class ModBlocks {
     public static final DeferredBlock<com.frozendawn.block.HighTemperatureRadiatorBlock> HIGH_TEMPERATURE_RADIATOR = BLOCKS.register("high_temperature_radiator",
             () -> new com.frozendawn.block.HighTemperatureRadiatorBlock(BlockBehaviour.Properties.of().strength(4f, 8f).requiresCorrectToolForDrops().sound(SoundType.COPPER).pushReaction(PushReaction.BLOCK)
                     .lightLevel(state -> state.getValue(com.frozendawn.block.ReactorRadiatorBlock.HOT) ? 12 : 0).emissiveRendering((state, level, pos) -> state.getValue(com.frozendawn.block.ReactorRadiatorBlock.HOT))));
-    public static final DeferredBlock<com.frozendawn.block.HyperionFrameBlock> HYPERION_FRAME = BLOCKS.register("hyperion_frame",
-            () -> new com.frozendawn.block.HyperionFrameBlock(sfrShell()));
     public static final DeferredBlock<com.frozendawn.block.SuperconductingCellBlock> SUPERCONDUCTING_CELL = BLOCKS.register("superconducting_cell",
             () -> new com.frozendawn.block.SuperconductingCellBlock(sfrShell().sound(SoundType.DEEPSLATE_TILES)));
     public static final DeferredBlock<com.frozendawn.block.HyperionPortBlock> HYPERION_PORT = BLOCKS.register("hyperion_port",

@@ -357,7 +357,6 @@ public class ClientEvents {
         event.registerBlockEntityRenderer(ModBlockEntities.ORSA_FLAG.get(), OrsaFlagRenderer::new);
         event.registerBlockEntityRenderer(ModBlockEntities.ALARM_BEACON.get(), AlarmBeaconRenderer::new);
         event.registerBlockEntityRenderer(ModBlockEntities.PHASE_BAROMETER.get(), PhaseBarometerRenderer::new);
-        event.registerBlockEntityRenderer(ModBlockEntities.HYPERION_CONTROLLER.get(), com.frozendawn.client.renderer.HyperionControllerRenderer::new);
         event.registerBlockEntityRenderer(ModBlockEntities.UPLINK_DISH.get(), com.frozendawn.client.renderer.UplinkDishRenderer::new);
         event.registerBlockEntityRenderer(ModBlockEntities.OXYGEN_RESERVOIR.get(),com.frozendawn.client.renderer.OxygenReservoirRenderer::new);
         event.registerBlockEntityRenderer(ModBlockEntities.OXYGEN_GAUGE.get(), com.frozendawn.client.renderer.OxygenGaugeRenderer::new);

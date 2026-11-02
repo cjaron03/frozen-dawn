@@ -59,7 +59,7 @@ public final class HyperionControllerBlockEntity extends BlockEntity implements 
     private double lastSurroundingsC;
     private long machineDrawn;
     private Snapshot snapshot = Snapshot.EMPTY, sent;
-    /** Set by a quench, cleared once the cells are cold again: until then they show scars. */
+    /** Set by a quench, cleared once the cells are cold again: until then they show scorch. */
     private boolean scarred;
     private SuperconductingCellBlock.Look shownLook;
     private Boolean shownAlert;
@@ -81,12 +81,10 @@ public final class HyperionControllerBlockEntity extends BlockEntity implements 
         for (var c : hit) if (!(l.getBlockState(pos).getBlock() instanceof HyperionPartBlock) || !c.stillValid(l)) c.broken(l);
     }
     private boolean stillValid(ServerLevel l) { return min != null && HyperionMultiblock.validate(l, min, max).valid(); }
-    /** The box lost a part: vent any charge at once, then come apart, leaving scarred cells after a quench and plain
-     * ones otherwise, with the lamps out. */
+    /** The silo lost a part: vent any charge at once, then come apart into loose cells with the lamps out. */
     void broken(ServerLevel l) {
-        boolean charged = stored > 0;
-        if (charged) { quench(); play(l, HyperionAudioCues.cues(readout(), readout(), true)); }
-        if (min != null) { show(l, charged ? SuperconductingCellBlock.Look.SCARRED : SuperconductingCellBlock.Look.PLAIN, false); unform(l); }
+        if (stored > 0) { quench(); play(l, HyperionAudioCues.cues(readout(), readout(), true)); }
+        if (min != null) { show(l, SuperconductingCellBlock.Look.LOOSE, false); unform(l); }
     }
     public static int quenchCount(ServerLevel l) { return QUENCHES.getOrDefault(l, 0); }
     static boolean inside(BlockPos p, BlockPos lo, BlockPos hi) {
@@ -144,15 +142,8 @@ public final class HyperionControllerBlockEntity extends BlockEntity implements 
             case ALL_CLEAR -> l.playSound(null, worldPosition, ModSounds.HYPERION_ALL_CLEAR.get(), SoundSource.BLOCKS, 1.0F, 1.0F);
         }
     }
-    /** How the cells look for the current stage: frost, heat stress, white-hot cracks or scars. Never the charge. */
-    SuperconductingCellBlock.Look look() {
-        return switch (physics.stage()) {
-            case COLD -> lastSurroundingsC < 0 ? SuperconductingCellBlock.Look.FROSTED : SuperconductingCellBlock.Look.PLAIN;
-            case CHIRP, WARNING -> SuperconductingCellBlock.Look.STRESSED;
-            case FINAL -> SuperconductingCellBlock.Look.CRITICAL;
-            case WARM -> scarred ? SuperconductingCellBlock.Look.SCARRED : SuperconductingCellBlock.Look.PLAIN;
-        };
-    }
+    /** Formed cells join seamlessly; after a quench they stay scorched until the cells are cold again. */
+    SuperconductingCellBlock.Look look() { return scarred ? SuperconductingCellBlock.Look.SCORCHED : SuperconductingCellBlock.Look.FORMED; }
     private void show(ServerLevel l) {
         var stage = physics.stage();
         show(l, look(), stage == HyperionPhysics.Stage.CHIRP || stage == HyperionPhysics.Stage.WARNING || stage == HyperionPhysics.Stage.FINAL);

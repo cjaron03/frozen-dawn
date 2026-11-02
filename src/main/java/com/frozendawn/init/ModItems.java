@@ -76,7 +76,6 @@ public class ModItems {
     public static final DeferredItem<net.minecraft.world.item.DoubleHighBlockItem> SFR_MAINTENANCE_HATCH = ITEMS.register("sfr_maintenance_hatch",
             () -> new net.minecraft.world.item.DoubleHighBlockItem(ModBlocks.SFR_MAINTENANCE_HATCH.get(), new Item.Properties()));
     public static final DeferredItem<BlockItem> MAGNET_COIL = ITEMS.registerSimpleBlockItem("magnet_coil", ModBlocks.MAGNET_COIL);
-    public static final DeferredItem<BlockItem> HYPERION_FRAME = ITEMS.registerSimpleBlockItem("hyperion_frame", ModBlocks.HYPERION_FRAME);
     public static final DeferredItem<BlockItem> SUPERCONDUCTING_CELL = ITEMS.registerSimpleBlockItem("superconducting_cell", ModBlocks.SUPERCONDUCTING_CELL);
     public static final DeferredItem<BlockItem> HYPERION_PORT = ITEMS.registerSimpleBlockItem("hyperion_port", ModBlocks.HYPERION_PORT);
     public static final DeferredItem<BlockItem> CRYOCOOLER = ITEMS.registerSimpleBlockItem("cryocooler", ModBlocks.CRYOCOOLER);
@@ -767,7 +766,6 @@ public class ModItems {
                         output.accept(SFR_FUEL_PORT.get());
                         output.accept(SFR_POWER_PORT.get());
                         output.accept(HYPERION_CONTROLLER.get());
-                        output.accept(HYPERION_FRAME.get());
                         output.accept(SUPERCONDUCTING_CELL.get());
                         output.accept(HYPERION_PORT.get());
                         output.accept(CRYOCOOLER.get());

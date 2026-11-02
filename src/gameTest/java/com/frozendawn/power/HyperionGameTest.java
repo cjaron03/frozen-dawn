@@ -88,7 +88,7 @@ public final class HyperionGameTest {
 
     @GameTest(template = GameTestTemplates.EMPTY, batch = "hyperion", timeoutTicks = 20)
     public static void hyperionPartsRefusePistons(GameTestHelper h) {
-        for (var b : List.of(ModBlocks.HYPERION_FRAME, ModBlocks.SUPERCONDUCTING_CELL, ModBlocks.HYPERION_PORT, ModBlocks.CRYOCOOLER,
+        for (var b : List.of(ModBlocks.SUPERCONDUCTING_CELL, ModBlocks.HYPERION_PORT, ModBlocks.CRYOCOOLER,
                 ModBlocks.QUENCH_VENT, ModBlocks.HYPERION_CONTROLLER))
             h.assertTrue(b.get().defaultBlockState().getPistonPushReaction() == PushReaction.BLOCK, b.getId() + " refuses pistons");
         h.succeed();
@@ -236,11 +236,11 @@ public final class HyperionGameTest {
         h.assertTrue(c.readout().stage() == HyperionPhysics.Stage.CHIRP && c.stored() == 0, "An empty battery in a warm room warns: " + c.readout().stage());
         l.destroyBlock(b.min().offset(1, 1, 0), false);
         var cell = b.min().offset(1, 1, 2);
-        h.assertTrue(l.getBlockState(cell).getValue(SuperconductingCellBlock.LOOK) == Look.PLAIN, "The cells left behind go plain: " + l.getBlockState(cell));
+        h.assertTrue(l.getBlockState(cell).getValue(SuperconductingCellBlock.LOOK) == Look.LOOSE, "The cells left behind go loose: " + l.getBlockState(cell));
         h.assertTrue(!l.getBlockState(b.ports().get(0)).getValue(HyperionControllerBlock.ALERT) && !l.getBlockState(b.controller()).getValue(HyperionControllerBlock.ALERT), "Its lamps go out");
         b = fresh(h, 4); c = controller(h, b); c.setSurroundingsForTest(20.0); c.second(l);
         l.destroyBlock(b.controller(), false);
-        h.assertTrue(l.getBlockState(cell).getValue(SuperconductingCellBlock.LOOK) == Look.PLAIN && !l.getBlockState(b.ports().get(0)).getValue(HyperionControllerBlock.ALERT),
+        h.assertTrue(l.getBlockState(cell).getValue(SuperconductingCellBlock.LOOK) == Look.LOOSE && !l.getBlockState(b.ports().get(0)).getValue(HyperionControllerBlock.ALERT),
                 "Breaking the Controller of a warning empty battery does the same");
         h.succeed();
     }
@@ -261,7 +261,7 @@ public final class HyperionGameTest {
         h.assertTrue(quenches(l) == before + 1, "Breaking a charged Controller vents");
         h.assertTrue(com.frozendawn.block.HyperionVentJets.venting(l, b.vents().get(0)), "The vents jet even with the Controller gone");
         var scar = b.min().offset(1, 1, 0);
-        h.assertTrue(l.getBlockState(scar).getValue(SuperconductingCellBlock.LOOK) == Look.SCARRED, "The cells it leaves behind are scarred");
+        h.assertTrue(l.getBlockState(scar).getValue(SuperconductingCellBlock.LOOK) == Look.LOOSE, "A broken silo is no longer a silo: its cells go loose");
         b = fresh(h, 4); controller(h, b); before = quenches(l);
         l.destroyBlock(b.controller(), true);
         var drops = l.getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class, new net.minecraft.world.phys.AABB(b.controller()).inflate(2));
@@ -321,28 +321,23 @@ public final class HyperionGameTest {
     }
 
     @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "hyperion", timeoutTicks = 100)
-    public static void hyperionCellsShowTheStage(GameTestHelper h) {
-        // One cooler just holds 68 charged cells at 0C and loses at 20C; an empty battery cannot pay its cooler at all.
-        var l = h.getLevel(); clear(h); var b = HyperionScenes.silo(h, MIN, 8, 1, 1); var c = controller(h, b);
-        c.second(l);
-        expectLook(h, b, Look.FROSTED, false, "Deep cold frosts every cell");
-        c.setStoredForTest(1_000_000_000L); c.setSurroundingsForTest(0.0); c.second(l);
-        expectLook(h, b, Look.PLAIN, false, "Cold cells in a room at 0C lose the frost");
-        c.setSurroundingsForTest(20.0); c.second(l);
+    public static void hyperionCellsShowFormedAndScorched(GameTestHelper h) {
+        // One cooler loses 68 charged cells at 20C.
+        var l = h.getLevel(); clear(h); var b = HyperionScenes.silo(h, MIN, 8, 1, 1);
+        expectLook(h, b, Look.LOOSE, false, "Built but not yet formed, every cell is loose");
+        var c = controller(h, b);
+        expectLook(h, b, Look.FORMED, false, "Formed in deep cold, every cell joins the silo");
+        c.setStoredForTest(1_000_000_000L); c.setSurroundingsForTest(20.0); c.second(l);
         h.assertTrue(c.readout().stage() == HyperionPhysics.Stage.CHIRP, "Chirps first: " + c.readout().stage());
-        expectLook(h, b, Look.STRESSED, true, "Heat stress cracks the cells and lights the alert");
-        int guard = 0; do c.second(l); while (c.readout().stage() != HyperionPhysics.Stage.FINAL && guard++ < 400);
-        expectLook(h, b, Look.CRITICAL, true, "The final seconds glow white-hot");
-        guard = 0; do c.second(l); while (c.stored() > 0 && guard++ < 100);
-        expectLook(h, b, Look.SCARRED, false, "A quench leaves scars while the cells are warm");
+        expectLook(h, b, Look.FORMED, true, "Heat lights the alert but leaves the cells formed");
+        int guard = 0; do c.second(l); while (c.stored() > 0 && guard++ < 400);
+        expectLook(h, b, Look.SCORCHED, false, "A quench scorches the cells while they are warm");
         c.setSurroundingsForTest(-250.0);
         guard = 0; do { c.chargeEnergy(1_000_000_000L); c.second(l); } while (c.readout().stage() != HyperionPhysics.Stage.COLD && guard++ < 400);
-        expectLook(h, b, Look.FROSTED, false, "Cold again, the scars frost over");
-
-        var small = fresh(h, 4); var d = controller(h, small);
-        d.setStoredForTest(1_000_000); d.setSurroundingsForTest(20.0);
-        guard = 0; do d.second(l); while (d.readout().stage() != HyperionPhysics.Stage.WARM && guard++ < 5000);
-        expectLook(h, small, Look.PLAIN, false, "A battery that drained and warmed without venting stays plain");
+        expectLook(h, b, Look.FORMED, false, "Cold again, the scorch clears");
+        var small = fresh(h, 4); controller(h, small);
+        l.destroyBlock(small.min().offset(1, 1, 0), false);
+        expectLook(h, small, Look.LOOSE, false, "Breaking an empty silo leaves loose cells");
         h.succeed();
     }
     private static void expectLook(GameTestHelper h, HyperionScenes.Built b, Look look, boolean alert, String why) {
@@ -379,7 +374,7 @@ public final class HyperionGameTest {
     /** Every state of every Hyperion block has a blockstate variant, and every variant names only real properties. */
     @GameTest(template = GameTestTemplates.EMPTY, batch = "hyperion", timeoutTicks = 20)
     public static void hyperionBlockstatesNameRealProperties(GameTestHelper h) {
-        for (var block : List.of(ModBlocks.HYPERION_FRAME.get(), ModBlocks.SUPERCONDUCTING_CELL.get(), ModBlocks.HYPERION_PORT.get(),
+        for (var block : List.of(ModBlocks.SUPERCONDUCTING_CELL.get(), ModBlocks.HYPERION_PORT.get(),
                 ModBlocks.CRYOCOOLER.get(), ModBlocks.QUENCH_VENT.get(), ModBlocks.HYPERION_CONTROLLER.get())) {
             var id = net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(block).getPath();
             com.google.gson.JsonObject variants;
