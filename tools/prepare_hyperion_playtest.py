@@ -3,8 +3,8 @@
 
 The first player to join stands at (0, -60, 0) facing north, and the Hyperion
 lab is built ahead of them: an off, fuelled SFR-1 with no Battery Banks whose
-Power Port is linked to a half-charged 5x5x5 Hyperion outdoors, and a
-half-charged 3x3x3 Hyperion in a campfire-warmed stone room with a glass cup
+Power Port is linked to a half-charged 3x3x6 Hyperion silo outdoors, and a
+half-charged 3x3x4 silo in a campfire-warmed stone room with a glass cup
 against its east face. The world starts at phase 0. A clickable chat menu
 gives the kit, day and night, phase steps, a lava source in the cup to start a
 heat warning (and one to clear it), and game modes.
@@ -58,7 +58,7 @@ SCRIPTS = {
         'item replace entity @s hotbar.3 with frozendawn:hyperion_controller',
         'item replace entity @s hotbar.4 with frozendawn:hyperion_port 4',
         'item replace entity @s hotbar.5 with frozendawn:cryocooler 4',
-        'item replace entity @s hotbar.6 with frozendawn:quench_vent 2',
+        'item replace entity @s hotbar.6 with frozendawn:quench_vent',
         'item replace entity @s hotbar.7 with frozendawn:power_monitor',
         'item replace entity @s hotbar.8 with frozendawn:deuterium_canister 8',
         f'function {NS}:menu',

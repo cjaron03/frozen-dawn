@@ -18,10 +18,10 @@ import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
 /** The SMS-1 Hyperion playtest scene, all north of origin (the player's feet), within 10 blocks east or west and 20
  * north so it fits one GameTest template:
  * - an off, fuelled SFR-1 with no Battery Banks, its Power Port linked to the outdoor battery, which pays the ignition;
- * - a 5x5x5 outdoor battery with 2 Ports and 2 Cryocoolers, precooled and half charged, its Controller facing south;
- * - a 3x3x3 battery with 1 Cryocooler in a closed stone room warmed by a campfire, half charged, for the warm look and
- *   sound, with a glass cup against its east face where one lava source starts a heat warning.
- * Facing fittings face out of their box: the Controller and Ports south toward the player, the Vents up. */
+ * - a 3x3x6 outdoor silo with 2 Ports and 2 Cryocoolers, precooled and half charged;
+ * - a 3x3x4 silo with 1 Port and 1 Cryocooler in a closed stone room warmed by a campfire, half charged, for the warm
+ *   look and sound, with a glass cup against its east face where one lava source starts a heat warning.
+ * Both Controllers face south toward the player; Ports and Cryocoolers face out of their sides, the Vents up. */
 public final class HyperionLabPlacement {
     public record Lab(BlockPos outdoor, BlockPos heated, BlockPos sfrPowerPort, BlockPos lava, int failedLinks) {}
     private HyperionLabPlacement() {}
@@ -32,16 +32,12 @@ public final class HyperionLabPlacement {
         var sfrPowerPort = origin.offset(-5, 1, -8).offset(2, 0, -4);
 
         var bigMin = origin.offset(1, 0, -15);
-        shell(level, bigMin, 5);
-        var outdoor = bigMin.offset(2, 1, 4);
-        fit(level, outdoor, ModBlocks.HYPERION_CONTROLLER.get(), Direction.SOUTH);
-        var port = bigMin.offset(1, 0, 4);
-        fit(level, port, ModBlocks.HYPERION_PORT.get(), Direction.SOUTH);
-        fit(level, bigMin.offset(3, 0, 4), ModBlocks.HYPERION_PORT.get(), Direction.SOUTH);
-        fit(level, bigMin.offset(1, 4, 4), ModBlocks.CRYOCOOLER.get(), Direction.UP);
-        fit(level, bigMin.offset(3, 4, 4), ModBlocks.CRYOCOOLER.get(), Direction.UP);
-        fit(level, bigMin.offset(0, 4, 2), ModBlocks.QUENCH_VENT.get(), Direction.UP);
-        fit(level, bigMin.offset(4, 4, 2), ModBlocks.QUENCH_VENT.get(), Direction.UP);
+        var outdoor = silo(level, bigMin, 6);
+        var port = bigMin.offset(0, 2, 1);
+        fit(level, port, ModBlocks.HYPERION_PORT.get(), Direction.WEST);
+        fit(level, bigMin.offset(2, 2, 1), ModBlocks.HYPERION_PORT.get(), Direction.EAST);
+        fit(level, bigMin.offset(0, 0, 1), ModBlocks.CRYOCOOLER.get(), Direction.WEST);
+        fit(level, bigMin.offset(2, 0, 1), ModBlocks.CRYOCOOLER.get(), Direction.EAST);
 
         // The heated room: stone brick walls and roof around a 5x5x6 inside, an iron door with buttons, glass to look in.
         var room = origin.offset(4, 0, -8);
@@ -59,14 +55,10 @@ public final class HyperionLabPlacement {
         level.setBlock(room.offset(1, 0, 1), Blocks.CAMPFIRE.defaultBlockState(), Block.UPDATE_CLIENTS);
 
         var smallMin = room.offset(2, 0, 2);
-        shell(level, smallMin, 3);
-        var heated = smallMin.offset(1, 1, 2);
-        fit(level, heated, ModBlocks.HYPERION_CONTROLLER.get(), Direction.SOUTH);
-        fit(level, smallMin.offset(1, 0, 2), ModBlocks.HYPERION_PORT.get(), Direction.SOUTH);
-        fit(level, smallMin.offset(1, 2, 2), ModBlocks.CRYOCOOLER.get(), Direction.UP);
-        fit(level, smallMin.offset(0, 2, 1), ModBlocks.QUENCH_VENT.get(), Direction.UP);
-        fit(level, smallMin.offset(2, 2, 1), ModBlocks.QUENCH_VENT.get(), Direction.UP);
-        // The lava cup: east of the east face's center cell, walled so a source there stays put.
+        var heated = silo(level, smallMin, 4);
+        fit(level, smallMin.offset(0, 1, 1), ModBlocks.HYPERION_PORT.get(), Direction.WEST);
+        fit(level, smallMin.offset(0, 0, 1), ModBlocks.CRYOCOOLER.get(), Direction.WEST);
+        // The lava cup: east of the east face's cell at y 1, walled so a source there stays put.
         var lava = smallMin.offset(3, 1, 1);
         for (var p : new BlockPos[]{lava.below(), lava.north(), lava.south()}) level.setBlock(p, Blocks.GLASS.defaultBlockState(), Block.UPDATE_CLIENTS);
 
@@ -76,13 +68,14 @@ public final class HyperionLabPlacement {
         return new Lab(outdoor, heated, sfrPowerPort, lava, failed);
     }
 
-    /** A box of side size: Frame on edges and corners, cells elsewhere; fittings replace some after. */
-    private static void shell(ServerLevel level, BlockPos min, int size) {
-        for (var p : BlockPos.betweenClosed(min, min.offset(size - 1, size - 1, size - 1))) {
-            int x = p.getX() - min.getX(), y = p.getY() - min.getY(), z = p.getZ() - min.getZ(), n = size - 1;
-            int extremes = (x == 0 || x == n ? 1 : 0) + (y == 0 || y == n ? 1 : 0) + (z == 0 || z == n ? 1 : 0);
-            level.setBlock(p, (extremes >= 2 ? ModBlocks.HYPERION_FRAME : ModBlocks.SUPERCONDUCTING_CELL).get().defaultBlockState(), Block.UPDATE_ALL);
-        }
+    /** A 3x3 silo of cells with its Controller at the bottom of the south-centre column and its Vent at top centre;
+     * Ports and Cryocoolers replace cells after. Returns the Controller. */
+    private static BlockPos silo(ServerLevel level, BlockPos min, int height) {
+        for (var p : BlockPos.betweenClosed(min, min.offset(2, height - 1, 2))) level.setBlock(p, ModBlocks.SUPERCONDUCTING_CELL.get().defaultBlockState(), Block.UPDATE_ALL);
+        var controller = min.offset(1, 0, 2);
+        fit(level, controller, ModBlocks.HYPERION_CONTROLLER.get(), Direction.SOUTH);
+        fit(level, min.offset(1, height - 1, 1), ModBlocks.QUENCH_VENT.get(), Direction.UP);
+        return controller;
     }
     private static void fit(ServerLevel level, BlockPos pos, Block block, Direction facing) {
         BlockState state = block.defaultBlockState();

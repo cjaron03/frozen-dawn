@@ -7,54 +7,39 @@ import java.util.List;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 
-/** Builds complete SMS-1 Hyperion boxes for GameTests. Fittings go on non-corner edge cells in a fixed order
- * (Controller, Ports, Cryocoolers, two Vents), so every face stays cells. */
+/** Builds complete SMS-1 Hyperion silos for GameTests, front to the north (low z): the Controller at the bottom of the
+ * front-centre column, the Vent at top centre, Ports up the back-centre column from the bottom, Cryocoolers in the
+ * bottom row (west, east, back centre, then the back corners, skipping any slot a Port took), cells everywhere else. */
 public final class HyperionScenes {
     public record Built(BlockPos controller, List<BlockPos> ports, List<BlockPos> coolers, List<BlockPos> vents, BlockPos min, BlockPos max) {}
+    private record Slot(int x, int z, Direction facing) {}
+    private static final Slot[] COOLERS = {new Slot(0, 1, Direction.WEST), new Slot(2, 1, Direction.EAST), new Slot(1, 2, Direction.SOUTH),
+            new Slot(0, 2, Direction.WEST), new Slot(2, 2, Direction.EAST)};
     private HyperionScenes() {}
 
     /** min is relative to the test; returned positions are absolute. */
-    public static Built build(GameTestHelper h, BlockPos min, int sx, int sy, int sz, int ports, int coolers) {
-        var lo = h.absolutePos(min); var hi = lo.offset(sx - 1, sy - 1, sz - 1); var level = h.getLevel();
-        for (var p : BlockPos.betweenClosed(lo, hi)) {
-            int extremes = extremes(p, lo, hi);
-            level.setBlock(p, (extremes >= 2 ? ModBlocks.HYPERION_FRAME : ModBlocks.SUPERCONDUCTING_CELL).get().defaultBlockState(), 3);
+    public static Built silo(GameTestHelper h, BlockPos min, int height, int ports, int coolers) {
+        var lo = h.absolutePos(min); var hi = lo.offset(2, height - 1, 2); var level = h.getLevel();
+        for (var p : BlockPos.betweenClosed(lo, hi)) level.setBlock(p, ModBlocks.SUPERCONDUCTING_CELL.get().defaultBlockState(), 3);
+        var controller = lo.offset(1, 0, 0); place(h, controller, ModBlocks.HYPERION_CONTROLLER.get(), Direction.NORTH);
+        var vent = lo.offset(1, height - 1, 1); place(h, vent, ModBlocks.QUENCH_VENT.get(), Direction.UP);
+        var portList = new ArrayList<BlockPos>(); var coolerList = new ArrayList<BlockPos>();
+        for (int y = 0; y < ports; y++) { var p = lo.offset(1, y, 2); place(h, p, ModBlocks.HYPERION_PORT.get(), Direction.SOUTH); portList.add(p); }
+        for (int i = 0; coolerList.size() < coolers; i++) {
+            var s = COOLERS[i]; var p = lo.offset(s.x(), 0, s.z());
+            if (portList.contains(p)) continue;
+            place(h, p, ModBlocks.CRYOCOOLER.get(), s.facing()); coolerList.add(p);
         }
-        var edges = edges(lo, hi); int i = 0;
-        var controller = edges.get(i++); place(h, controller, ModBlocks.HYPERION_CONTROLLER.get().defaultBlockState(), lo, hi);
-        var portList = new ArrayList<BlockPos>(); var coolerList = new ArrayList<BlockPos>(); var ventList = new ArrayList<BlockPos>();
-        for (int k = 0; k < ports; k++) { var p = edges.get(i++); place(h, p, ModBlocks.HYPERION_PORT.get().defaultBlockState(), lo, hi); portList.add(p); }
-        for (int k = 0; k < coolers; k++) { var p = edges.get(i++); place(h, p, ModBlocks.CRYOCOOLER.get().defaultBlockState(), lo, hi); coolerList.add(p); }
-        for (int k = 0; k < 2; k++) { var p = edges.get(i++); place(h, p, ModBlocks.QUENCH_VENT.get().defaultBlockState(), lo, hi); ventList.add(p); }
         // Deep cold by default, so storage tests never wait on a cool-down; thermal tests set their own surroundings.
         if (level.getBlockEntity(controller) instanceof HyperionControllerBlockEntity c) c.setSurroundingsForTest(-250.0);
-        return new Built(controller, List.copyOf(portList), List.copyOf(coolerList), List.copyOf(ventList), lo, hi);
+        return new Built(controller, List.copyOf(portList), List.copyOf(coolerList), List.of(vent), lo, hi);
     }
-    public static int extremes(BlockPos p, BlockPos lo, BlockPos hi) {
-        return (p.getX() == lo.getX() || p.getX() == hi.getX() ? 1 : 0) + (p.getY() == lo.getY() || p.getY() == hi.getY() ? 1 : 0)
-                + (p.getZ() == lo.getZ() || p.getZ() == hi.getZ() ? 1 : 0);
-    }
-    /** Non-corner edge cells, bottom edges first, then top, then the vertical ones. */
-    static List<BlockPos> edges(BlockPos lo, BlockPos hi) {
-        var out = new ArrayList<BlockPos>();
-        for (int y : new int[]{lo.getY(), hi.getY()}) {
-            for (int x = lo.getX() + 1; x < hi.getX(); x++) { out.add(new BlockPos(x, y, lo.getZ())); out.add(new BlockPos(x, y, hi.getZ())); }
-            for (int z = lo.getZ() + 1; z < hi.getZ(); z++) { out.add(new BlockPos(lo.getX(), y, z)); out.add(new BlockPos(hi.getX(), y, z)); }
-        }
-        for (int y = lo.getY() + 1; y < hi.getY(); y++) for (int x : new int[]{lo.getX(), hi.getX()}) for (int z : new int[]{lo.getZ(), hi.getZ()}) out.add(new BlockPos(x, y, z));
-        return out;
-    }
-    /** An outward direction for a shell cell: y first, then x, then z. */
-    public static Direction outward(BlockPos p, BlockPos lo, BlockPos hi) {
-        if (p.getY() == lo.getY()) return Direction.DOWN; if (p.getY() == hi.getY()) return Direction.UP;
-        if (p.getX() == lo.getX()) return Direction.WEST; if (p.getX() == hi.getX()) return Direction.EAST;
-        return p.getZ() == lo.getZ() ? Direction.NORTH : Direction.SOUTH;
-    }
-    private static void place(GameTestHelper h, BlockPos p, BlockState state, BlockPos lo, BlockPos hi) {
-        if (state.hasProperty(BlockStateProperties.FACING)) state = state.setValue(BlockStateProperties.FACING, outward(p, lo, hi));
+    static void place(GameTestHelper h, BlockPos p, Block block, Direction facing) {
+        BlockState state = block.defaultBlockState();
+        if (state.hasProperty(HyperionFacingPartBlock.FACING)) state = state.setValue(HyperionFacingPartBlock.FACING, facing);
         h.getLevel().setBlock(p, state, 3);
     }
 }
