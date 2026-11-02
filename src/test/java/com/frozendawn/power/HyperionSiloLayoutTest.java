@@ -30,4 +30,22 @@ class HyperionSiloLayoutTest {
             assertTrue(contains(box, ax + pipe[0], 61, az + pipe[1]), "A side cooler's pipe end 3 blocks down, front " + q);
         }
     }
+
+    /** Review focus: a round ring around a square silo must clear its corner edges, 24 px out on the diagonal. */
+    @Test void ringsClearTheCorners() {
+        assertTrue(RING_INNER_PX - 24 * Math.sqrt(2) >= 2, "Ring inner radius " + RING_INNER_PX + " px clears the corner by 2 px");
+    }
+
+    @Test void ringsSpreadUpTheSilo() {
+        assertEquals(2, ringCount(4)); assertEquals(4, ringCount(8));
+        for (int height = 4; height <= 8; height++) {
+            int n = ringCount(height);
+            for (int k = 0; k < n; k++) {
+                double y = ringFloatY(k, n, height);
+                assertTrue(y > 0.5 && y < height - 0.5, "Ring " + k + " of a " + height + "-tall floats inside the silo: " + y);
+                if (k > 0) assertTrue(y - ringFloatY(k - 1, n, height) >= 1.3, "Rings " + (k - 1) + " and " + k + " of a " + height + "-tall sit apart");
+            }
+        }
+        for (int k = 0; k < 4; k++) assertTrue(ringRestY(k) < 0.75, "Resting ring " + k + " stays on the base");
+    }
 }
