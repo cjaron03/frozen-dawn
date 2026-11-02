@@ -68,7 +68,7 @@ Reference mockups: `silo-states.html` (the five moments), `silo-extras.html` (he
 - **Rings as a charge cue (agent's call):** an empty silo's rings rest on the base; they lift into place once it holds charge, like the puck did.
 - **Idle cold breath (owner kept):** every few seconds while cold and healthy, a small frosty puff curls out of the vent.
 - **Scorched after a quench (owner kept):** burnt streaks run down from the vent and the window, the bars sit dead grey with a faint ember on the bottom one, and the pipes stay bare, until the silo is cold again.
-- **Dropped (owner):** frost spreading on the floor; the levitating puck and its window; the cube.
+- **Dropped (owner):** frost spreading on the floor; the levitating puck and its window; the cube; the swirling charge column in the window (owner pass 2, 2026-11-02: it read as a busy checker behind the bars).
 
 ### What each state shows
 

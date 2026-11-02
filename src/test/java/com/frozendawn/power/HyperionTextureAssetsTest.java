@@ -17,14 +17,13 @@ class HyperionTextureAssetsTest {
     private static final String ASSETS = "/assets/frozendawn/";
     private static final List<String> BLOCKS = List.of("superconducting_cell", "hyperion_controller", "hyperion_port", "cryocooler", "quench_vent");
     /** Drawn by the silo renderer rather than a block model. */
-    private static final List<String> RENDERED = List.of("hyperion_ring", "hyperion_pipe_frost", "hyperion_pipe_bare", "hyperion_window_swirl");
+    private static final List<String> RENDERED = List.of("hyperion_ring", "hyperion_pipe_frost", "hyperion_pipe_bare");
 
     @Test void everyHyperionTextureExistsAt16Wide() throws IOException {
         var textures = new TreeSet<String>(RENDERED);
         for (var block : BLOCKS) for (var variant : json("blockstates/" + block + ".json").getAsJsonObject("variants").entrySet())
             collect(variant.getValue().getAsJsonObject().get("model").getAsString(), textures);
         for (var name : textures) assertEquals(16, image(name).getWidth(), name + " is 16 px wide");
-        assertEquals(64, image("hyperion_window_swirl").getHeight(), "The swirl is four 16 px frames");
     }
 
     @Test void formedCellsHaveNoEdge() throws IOException {

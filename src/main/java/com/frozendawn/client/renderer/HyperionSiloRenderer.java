@@ -30,7 +30,7 @@ import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.phys.AABB;
 
 /** Everything the formed silo shows beyond its blocks, from the Controller: the window of stacked bars over a rising
- * faint charge column, a plinth, edge trims and a cap round the vent, the status lamps round the base, the frosted pipes out of each
+ * a plinth, edge trims and a cap round the vent, the status lamps round the base, the frosted pipes out of each
  * Cryocooler into the floor, and the thin dark rings that
  * float round the silo with a glowing inner edge, spin with the flow, wobble when hot and drop on a quench. What each shows comes
  * from HyperionGauge. Model space faces north with the Controller's block at the origin, so the silo spans x -1..2,
@@ -38,7 +38,6 @@ import net.minecraft.world.phys.AABB;
  * Everything is queued per layer and written one layer at a time at the end, never two layers interleaved. */
 public final class HyperionSiloRenderer implements BlockEntityRenderer<HyperionControllerBlockEntity> {
     static final ResourceLocation WHITE = ResourceLocation.withDefaultNamespace("textures/misc/white.png");
-    static final ResourceLocation SWIRL = ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "block/hyperion_window_swirl");
     static final ResourceLocation RING = ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "block/hyperion_ring");
     static final ResourceLocation PIPE_FROST = ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "block/hyperion_pipe_frost");
     static final ResourceLocation PIPE_BARE = ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "block/hyperion_pipe_bare");
@@ -49,9 +48,7 @@ public final class HyperionSiloRenderer implements BlockEntityRenderer<HyperionC
             BAR_X0 = 2 * PX, BAR_X1 = 14 * PX, BAR_Y0 = 5 * PX, BAR_Y1 = 11 * PX;
     /** The cap round the top vent: a rim CAP_PX thick and CAP_TALL_PX tall on the vent block's edges. */
     private static final float CAP = 2 * PX, CAP_TALL = 3 * PX;
-    /** The swirl glows this bright behind the bars, so it reads as a faint charge and not as a blue slab. */
-    private static final float SWIRL_BRIGHT = 0.3f;
-    private static final int SLOT = 0xFF161C25, BACKDROP = 0xFF08090B, TRIM = 0xFF0B0C0E, EDGE_LIGHT = 0xFF3A3E45, PLINTH_C = 0xFF2B2E34,
+    private static final int OFF_BAR = 0xFF161C25, BACKDROP = 0xFF08090B, TRIM = 0xFF0B0C0E, EDGE_LIGHT = 0xFF3A3E45, PLINTH_C = 0xFF2B2E34,
             CAP_C = 0xFF4A5059, DEAD = 0xFF5A5C62, EMBER = 0xFF8A2614, LAMP_OFF = 0xFF2A2018, RING_DIM = 0xFF3C5A78;
     /** A quench drops each ring in DROP_TICKS, easing in, each DROP_STAGGER after the one above; they lift back over LIFT_TICKS. */
     private static final float DROP_TICKS = 8, DROP_STAGGER = 2, LIFT_TICKS = 40, BOB_TICKS = 60;
@@ -73,11 +70,11 @@ public final class HyperionSiloRenderer implements BlockEntityRenderer<HyperionC
             q.vertex(type, p, x, y, z, u, v, argb, light, nx, ny, nz);
         }
     }
-    /** Flat colour lit by the world, textured metal lit by the world, flat glow, and the charge column's glow. */
-    record Layers(Out flat, Out metal, Out glow, Out charge) {
+    /** Flat colour lit by the world, textured metal lit by the world, and flat glow. */
+    record Layers(Out flat, Out metal, Out glow) {
         static Layers of(HyperionQuadBatches<RenderType> q) {
             return new Layers(new Out(q, RenderType.entityCutoutNoCull(WHITE)), new Out(q, RenderType.entityCutoutNoCull(InventoryMenu.BLOCK_ATLAS)),
-                    new Out(q, RenderType.entityTranslucentEmissive(WHITE)), new Out(q, RenderType.entityTranslucentEmissive(InventoryMenu.BLOCK_ATLAS)));
+                    new Out(q, RenderType.entityTranslucentEmissive(WHITE)));
         }
     }
     /** Layer offsets over a face, in multiples of HyperionSiloLayout.OVERLAY_STEP. */
@@ -253,26 +250,21 @@ public final class HyperionSiloRenderer implements BlockEntityRenderer<HyperionC
         vc.vertex(p, x, y, z, u, v, argb, light, nx, ny, nz);
     }
 
-    /** The dark window, the faint charge column up to the fill, then one bar per block: an empty slot, or a gradient
-     * bar from dark to light across its width, filled from the left. */
+    /** The dark window, then one glowing bar per block, shading dark to light left to right as seen from the front and
+     * filling from the left. Model x runs right to left for a viewer facing the front, so bars grow from BAR_X1. An
+     * unlit bar is not drawn; dead bars show grey. */
     private static void window(PoseStack pose, Layers out, HyperionGauge.State g, int height, float time, long now, long seed, int lit) {
         var p = pose.last(); var flat = out.flat();
         float winTop = height - WIN_TOP_GAP;
         front(flat, p, WIN_X0, PLINTH, WIN_X1, winTop, STEP, BACKDROP, lit);
-        double top = g.collapseShown() >= 0 ? 0 : Math.min(winTop, g.lit());
-        if (top > PLINTH && g.colour() != Colour.OFF && g.colour() != Colour.DEAD) {
-            var sprite = sprite(SWIRL); var glow = out.charge(); int faint = shade(0xFFFFFFFF, SWIRL_BRIGHT);
-            for (int i = 0; i < height && i < top; i++) {
-                float y0 = Math.max(i, PLINTH), y1 = (float) Math.min(i + 1, top);
-                float v0 = sprite.getV1() - (y1 - i) * (sprite.getV1() - sprite.getV0()), v1 = sprite.getV1() - (y0 - i) * (sprite.getV1() - sprite.getV0());
-                quad(glow, p, WIN_X0, y0, WIN_X1, y1, -2 * STEP, sprite.getU0(), v0, sprite.getU1(), v1, faint, LightTexture.FULL_BRIGHT);
-            }
-        }
         var glow = out.glow();
         for (int i = 0; i < g.bars(); i++) {
             float y0 = i + BAR_Y0, y1 = i + BAR_Y1;
-            front(flat, p, BAR_X0, y0, BAR_X1, y1, 3 * STEP, g.colour() == Colour.DEAD ? DEAD : SLOT, lit);
-            if (g.colour() == Colour.DEAD) { if (i == 0 && g.ember()) front(glow, p, BAR_X0, y0, BAR_X1, y1, 4 * STEP, shade(EMBER, 0.6f + 0.25f * (float) Math.sin(time * 0.08)), LightTexture.FULL_BRIGHT); continue; }
+            if (g.colour() == Colour.DEAD) {
+                front(flat, p, BAR_X0, y0, BAR_X1, y1, 3 * STEP, DEAD, lit);
+                if (i == 0 && g.ember()) front(glow, p, BAR_X0, y0, BAR_X1, y1, 4 * STEP, shade(EMBER, 0.6f + 0.25f * (float) Math.sin(time * 0.08)), LightTexture.FULL_BRIGHT);
+                continue;
+            }
             if (g.colour() == Colour.OFF) continue;
             float fill, bright;
             if (g.collapseShown() >= 0) { fill = i < g.collapseShown() ? 1 : 0; bright = 1; }
@@ -286,10 +278,10 @@ public final class HyperionSiloRenderer implements BlockEntityRenderer<HyperionC
                 if (i == g.flickering()) bright *= 0.3f + 0.7f * noise(seed, now / 3 + i);
             }
             int lo = gradientLow(g.colour()), hi = colour(g.colour());
-            if (fill > 0) gradient(glow, p, BAR_X0, y0, BAR_X0 + fill * (BAR_X1 - BAR_X0), y1, 4 * STEP, shade(lo, bright), shade(mix(lo, hi, fill), bright), LightTexture.FULL_BRIGHT);
+            if (fill > 0) gradient(glow, p, BAR_X1 - fill * (BAR_X1 - BAR_X0), y0, BAR_X1, y1, 4 * STEP, shade(mix(lo, hi, fill), bright), shade(lo, bright), LightTexture.FULL_BRIGHT);
             if (i == g.breathing()) {
                 float k = 0.15f + 0.6f * (0.5f + 0.5f * (float) Math.sin(time * 2 * Math.PI / 20));
-                gradient(glow, p, BAR_X0, y0, BAR_X1, y1, 5 * STEP, shade(lo, k), shade(hi, k), LightTexture.FULL_BRIGHT);
+                gradient(glow, p, BAR_X0, y0, BAR_X1, y1, 5 * STEP, shade(hi, k), shade(lo, k), LightTexture.FULL_BRIGHT);
             }
         }
     }
@@ -349,17 +341,17 @@ public final class HyperionSiloRenderer implements BlockEntityRenderer<HyperionC
     static void front(Out vc, PoseStack.Pose p, float x0, float y0, float x1, float y1, float out, int argb, int light) {
         quad(vc, p, x0, y0, x1, y1, -out, 0, 0, 1, 1, argb, light);
     }
-    /** A front rect shading from argbLeft at x0 to argbRight at x1. */
-    static void gradient(Out vc, PoseStack.Pose p, float x0, float y0, float x1, float y1, float out, int argbLeft, int argbRight, int light) {
-        vc.vertex(p, x0, y0, -out, 0, 1, argbLeft, light, 0, 0, -1); vc.vertex(p, x0, y1, -out, 0, 0, argbLeft, light, 0, 0, -1);
-        vc.vertex(p, x1, y1, -out, 1, 0, argbRight, light, 0, 0, -1); vc.vertex(p, x1, y0, -out, 1, 1, argbRight, light, 0, 0, -1);
+    /** A front rect shading from argbAtX0 at x0 to argbAtX1 at x1. */
+    static void gradient(Out vc, PoseStack.Pose p, float x0, float y0, float x1, float y1, float out, int argbAtX0, int argbAtX1, int light) {
+        vc.vertex(p, x0, y0, -out, 0, 1, argbAtX0, light, 0, 0, -1); vc.vertex(p, x0, y1, -out, 0, 0, argbAtX0, light, 0, 0, -1);
+        vc.vertex(p, x1, y1, -out, 1, 0, argbAtX1, light, 0, 0, -1); vc.vertex(p, x1, y0, -out, 1, 1, argbAtX1, light, 0, 0, -1);
     }
     static void quad(Out vc, PoseStack.Pose p, float x0, float y0, float x1, float y1, float z, float u0, float v0, float u1, float v1, int argb, int light) {
         vc.vertex(p, x0, y0, z, u0, v1, argb, light, 0, 0, -1); vc.vertex(p, x0, y1, z, u0, v0, argb, light, 0, 0, -1);
         vc.vertex(p, x1, y1, z, u1, v0, argb, light, 0, 0, -1); vc.vertex(p, x1, y0, z, u1, v1, argb, light, 0, 0, -1);
     }
     static int colour(Colour c) {
-        return switch (c) { case BLUE -> 0xFF5FD0FF; case AMBER -> 0xFFFFB048; case RED -> 0xFFFF5A3C; case DEAD -> DEAD; case OFF -> SLOT; };
+        return switch (c) { case BLUE -> 0xFF5FD0FF; case AMBER -> 0xFFFFB048; case RED -> 0xFFFF5A3C; case DEAD -> DEAD; case OFF -> OFF_BAR; };
     }
     /** The dark end of a bar's gradient; colour(c) is the light end. */
     static int gradientLow(Colour c) {

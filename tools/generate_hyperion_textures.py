@@ -16,7 +16,7 @@ from PIL import Image
 OUT = Path(__file__).resolve().parent.parent / "src/main/resources/assets/frozendawn/textures/block"
 GONE = ["superconducting_cell_plain", "superconducting_cell_scarred", "superconducting_cell_frosted", "superconducting_cell_frosted_top",
         "superconducting_cell_stressed", "superconducting_cell_critical", "hyperion_controller_window", "hyperion_controller_inner",
-        "hyperion_frame"]
+        "hyperion_frame", "hyperion_window_swirl"]
 
 CHARCOAL = (30, 32, 37)
 CELL_LIGHT = (52, 56, 62)
@@ -36,9 +36,6 @@ LAMP_OFF = (86, 52, 26)
 LAMP_ON = (255, 176, 72)
 COPPER = (184, 108, 62)
 HAZARD = (214, 170, 52)
-CHARGE_DEEP = (14, 44, 120)
-CHARGE = (40, 120, 230)
-CHARGE_LIGHT = (150, 215, 255)
 SCRATCHES = [(3, 9), (4, 8), (5, 8), (11, 12), (12, 12), (9, 4), (10, 4)]
 
 
@@ -191,22 +188,6 @@ def pipe(frost):
     return im
 
 
-def swirl():
-    """Four frames of blue charge with diagonal light streaks, each 4 px further up, so the loop rises and tiles."""
-    frames = []
-    for k in range(4):
-        im = Image.new("RGBA", (16, 16))
-        for y in range(16):
-            for x in range(16):
-                v = y + 4 * k
-                streak = 0.5 + 0.5 * math.sin(2 * math.pi * (x + v) / 8)
-                eddy = 0.5 + 0.5 * math.sin(2 * math.pi * (v / 16 + x / 16) + 2 * math.sin(2 * math.pi * x / 16))
-                base = mix(CHARGE_DEEP, CHARGE, 0.35 + 0.5 * eddy)
-                im.putpixel((x, y), mix(base, CHARGE_LIGHT, max(0.0, streak - 0.7) / 0.3 * 0.8) + (255,))
-        frames.append(im)
-    return strip(frames)
-
-
 def main():
     OUT.mkdir(parents=True, exist_ok=True)
     for name in GONE:
@@ -225,7 +206,6 @@ def main():
     save(ring(), "hyperion_ring")
     save(pipe(True), "hyperion_pipe_frost")
     save(pipe(False), "hyperion_pipe_bare")
-    save(swirl(), "hyperion_window_swirl", frametime=2, interpolate=True)
 
 
 if __name__ == "__main__":
