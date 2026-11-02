@@ -1,6 +1,6 @@
 {
   "parent": "frozendawn:block/hyperion_controller",
   "textures": {
-    "front": "frozendawn:block/hyperion_controller_alert"
+    "north": "frozendawn:block/hyperion_controller_alert"
   }
 }

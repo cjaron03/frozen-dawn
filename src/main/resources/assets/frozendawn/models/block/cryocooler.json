@@ -2,11 +2,11 @@
   "parent": "minecraft:block/cube",
   "textures": {
     "north": "frozendawn:block/cryocooler",
-    "south": "frozendawn:block/hyperion_frame",
-    "east": "frozendawn:block/hyperion_frame",
-    "west": "frozendawn:block/hyperion_frame",
-    "up": "frozendawn:block/hyperion_frame",
-    "down": "frozendawn:block/hyperion_frame",
-    "particle": "frozendawn:block/hyperion_frame"
+    "south": "frozendawn:block/superconducting_cell_formed",
+    "east": "frozendawn:block/superconducting_cell_formed",
+    "west": "frozendawn:block/superconducting_cell_formed",
+    "up": "frozendawn:block/superconducting_cell_formed",
+    "down": "frozendawn:block/superconducting_cell_formed",
+    "particle": "frozendawn:block/superconducting_cell_formed"
   }
 }
