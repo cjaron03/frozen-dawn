@@ -2,7 +2,9 @@
 """Prepare a fresh Terminus test range from generator metadata only; never overwrite a save.
 
 Every station fires south (+Z) from its marked spot. The player starts in Survival, so the hearts show what each
-discharge costs; advancements are filtered as in every generated playtest world, so Deathwand is checked by GameTest.
+discharge costs. Advancements are filtered as in every generated playtest world, except the Terminus's own two, which
+the owner asked to see: this world's pack carries copies of them, rooted in a tab of their own since their parents are
+filtered out.
 """
 import argparse
 import fcntl
@@ -130,7 +132,7 @@ def scripts():
         'drops': (150, ['Three zombies, each holding a sword that always drops on an ordinary death.',
                         'Before the Heart: they stand still, grey, and crumble away from the head down. Nothing drops, no experience. Hover the wand: Transfers logged.',
                         'Click AFTER, respawn targets, discharge again: they crumble the same way, but drop their swords and experience, and the wand reads Terminations logged with the same count.',
-                        'Stopping all three at once earns the hidden Reduced to Atoms; this world filters advancements, so GameTest checks it.']),
+                        'Stopping all three at once earns the hidden Reduced to Atoms; watch for its toast, and Deathwand\'s on your first discharge.']),
         'interrupt': (180, ['Magma underfoot hurts you every half second in Survival. Start a wind-up here: the hit cancels it, and the discharge is spent anyway.',
                             'Letting go early anywhere else costs nothing. Interrupted, you lose no max health.']),
         'windup': (210, ['Open ground. Walk while winding up to feel the 40% slow; let go before two seconds to keep the discharge.',
@@ -147,10 +149,27 @@ def scripts():
     return result
 
 
+ROOT = Path(__file__).resolve().parent.parent
+ADVANCEMENTS = ROOT/'src/main/resources/data/frozendawn/advancement'
+
+
+def terminus_advancements(pack):
+    """Deathwand and Reduced to Atoms, as the mod defines them, but Deathwand a root: the filter drops its parent."""
+    out = pack/'data/frozendawn/advancement'
+    out.mkdir(parents=True, exist_ok=True)
+    for name in ('deathwand', 'reduced_to_atoms'):
+        advancement = json.loads((ADVANCEMENTS/f'{name}.json').read_text())
+        if name == 'deathwand':
+            del advancement['parent']
+            advancement['display']['background'] = 'minecraft:textures/block/smooth_stone.png'
+        (out/f'{name}.json').write_text(json.dumps(advancement, indent=2)+'\n')
+
+
 def prepare_world(source, destination, title=TITLE):
     with (source.parent/'session.lock').open('rb') as lock:
         fcntl.lockf(lock, fcntl.LOCK_SH | fcntl.LOCK_NB)
         prepare(source,destination,title=title,namespace=NS,pack=PACK,build_scripts=scripts,surface=64,structures=False)
+    terminus_advancements(destination/'datapacks'/PACK)
     # Lock the difficulty the shared lab chose, and give the save the empty dragon fight the client logs as missing.
     level=destination/'level.dat';stream=io.BytesIO(gzip.decompress(level.read_bytes()))
     assert stream.read(1)==b'\x0a';nbt.string(stream);root=nbt.read(stream,10)

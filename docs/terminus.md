@@ -191,7 +191,9 @@ cone (edge and reach husks), walls (obsidian), the untouched table, a frozen Wit
 side-on, sword zombies with before and after the Heart buttons (`fd terminus turned`), a magma interrupt pad and open
 ground for the wind-up. `fd terminus status | restore | due | turned <bool>` reads and resets the playtest state;
 `due` brings the next half heart back at once. In play the turn never reverses. The frozen Wither's boss bar does not
-move (vanilla updates it from the Wither's AI), so its station has a [Wither health] button. Advancements are filtered as in every generated world.
+move (vanilla updates it from the Wither's AI), so its station has a [Wither health] button. Advancements are filtered as in every generated world except the
+Terminus's two, which the owner asked to see: the world's pack carries copies, Deathwand made a root since its parent
+is filtered.
 
 ### Verification
 - JUnit: `TerminusConeTest`, `TerminusLedgerTest`, `TerminusTextTest`, `TerminusDischargePayloadTest`,
@@ -248,3 +250,8 @@ advancemnt if you like 3 or more mobs, you get a hidden advancemnet "Gone, reduc
 Response: the Wither does take the 40% (`terminusTakesFortyPercentFromBossesAndNeverKills`), but the station's Wither is
 frozen with NoAI and vanilla updates a Wither's boss bar only from its AI, so the bar stayed full. The station now has
 a [Wither health] button reading its health. The reach is now 24 blocks and Reduced to Atoms is built (rulings above).
+
+## Owner request, 2026-11-03 (Terminus Check 4, branch head b77e3c92)
+
+"ah enable advancemnets please, and i wanna fix the sounds. i want it to have a better chargeup sound, and maybe
+sometihng when it first, or is that not realistic"
