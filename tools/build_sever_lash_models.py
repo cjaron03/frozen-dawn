@@ -56,11 +56,12 @@ STATES = {
 }
 
 # Display transforms. In the hand's frame, with the arm hanging, +x is forward, +y across the body and +z up the arm
-# (read off the owner's playtest 6 screenshot, which showed an earlier guess pointing across the body). Held, the
+# (read off the owner's playtest 6 screenshots, which showed earlier guesses pointing across the body, then outward;
+# together they show the display rotation turns about x first, then y, then z). Held, the
 # barrel points forward from the fist; firing, the arm is raised along the aim, so the barrel runs along the arm and
 # the top faces what was forward. First person sits low right with the lens toward the crosshair.
 DISPLAY = {
-    'thirdperson_righthand': {'rotation': [0, -90, -90], 'translation': [4.4, -1.6, 4.5], 'scale': [.8, .8, .8]},
+    'thirdperson_righthand': {'rotation': [90, 0, -90], 'translation': [4.4, -1.6, 4.5], 'scale': [.8, .8, .8]},
     'firstperson_righthand': {'rotation': [5, 5, 0], 'translation': [-1, 3, 0], 'scale': [.6, .6, .6]},
     'gui': {'rotation': [30, 225, 0], 'translation': [0, 0, 0], 'scale': [.8, .8, .8]},
     'ground': {'rotation': [0, 0, 0], 'translation': [0, 2, 0], 'scale': [.5, .5, .5]},
