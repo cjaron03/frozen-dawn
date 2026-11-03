@@ -19,6 +19,7 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.neoforge.client.event.InputEvent;
 import net.neoforged.neoforge.client.event.MovementInputUpdateEvent;
 import net.neoforged.neoforge.client.event.RenderFrameEvent;
 
@@ -35,6 +36,7 @@ public final class TerminusClient {
     /** Ticks a speck takes to reach the emitter. */
     public static final int SPECK_TICKS = 14;
     private static int greyFrames;
+    private static boolean wasWinding, mustRelease;
     private static boolean greyShown;
 
     public static void receive(TerminusDischargePayload payload) {
@@ -85,6 +87,27 @@ public final class TerminusClient {
                 .add(player.getLookAngle().scale(1.2 * player.getScale()));
     }
 
+    /**
+     * Once a wind-up ends, however it ends, the use key has to come up before another can start: held down, vanilla
+     * would retry use every four ticks and wind straight into the next discharge once the cooldown ran out.
+     */
+    @SubscribeEvent public static void releaseGate(ClientTickEvent.Post event) {
+        var mc = Minecraft.getInstance();
+        var player = mc.player;
+        boolean winding = player != null && player.isUsingItem() && TerminusItem.winding(player, player.getUseItem());
+        if (wasWinding && !winding) mustRelease = true;
+        if (!mc.options.keyUse.isDown()) mustRelease = false;
+        wasWinding = winding;
+    }
+
+    @SubscribeEvent public static void gateUse(InputEvent.InteractionKeyMappingTriggered event) {
+        var player = Minecraft.getInstance().player;
+        if (mustRelease && event.isUseItem() && player != null && player.getItemInHand(event.getHand()).getItem() instanceof TerminusItem) {
+            event.setSwingHand(false);
+            event.setCanceled(true);
+        }
+    }
+
     /** Using an item already slows the walk to a fifth; winding the Terminus asks for 40%. */
     @SubscribeEvent public static void slow(MovementInputUpdateEvent event) {
         var player = event.getEntity();
@@ -113,6 +136,7 @@ public final class TerminusClient {
     @SubscribeEvent public static void forget(ClientPlayerNetworkEvent.LoggingOut event) {
         TerminusLedger.forgetClient();
         greyFrames = 0;
+        wasWinding = mustRelease = false;
     }
 
     private TerminusClient() { }

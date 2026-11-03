@@ -33,7 +33,15 @@ import net.neoforged.neoforge.gametest.*;
 public final class TerminusGameTest {
     private static final double EYE_X = 10.5, FEET_Y = 4, EYE_Z = 4.5;
 
-    @BeforeBatch(batch="terminus") public static void report(ServerLevel level) {GameTestReporting.installReporter(level);}
+    private static boolean ledgerBefore;
+
+    /** These tests run before the Heart falls: pin the world's log there, whatever an earlier batch left. */
+    @BeforeBatch(batch="terminus") public static void report(ServerLevel level) {
+        GameTestReporting.installReporter(level);
+        ledgerBefore=TerminusLedger.turned(level.getServer());
+        TerminusLedger.setForTest(level.getServer(),false);
+    }
+    @AfterBatch(batch="terminus") public static void restore(ServerLevel level) {TerminusLedger.setForTest(level.getServer(),ledgerBefore);}
     @BeforeBatch(batch="terminus_terminal") public static void reportTerminal(ServerLevel level) {GameTestReporting.installReporter(level);}
 
     @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="terminus",timeoutTicks=100)
@@ -70,9 +78,9 @@ public final class TerminusGameTest {
         var wide=target(h,EntityType.HUSK,22,6);
         var far=target(h,EntityType.HUSK,0,13.5);
         Terminus.discharge(op,wand,InteractionHand.MAIN_HAND);
-        h.assertTrue(ahead.isRemoved()&&edge.isRemoved(),"Minds inside 12 blocks and 15 degrees are stopped");
-        h.assertTrue(full(wide)&&!wide.isRemoved(),"Outside 30 degrees is untouched");
-        h.assertTrue(full(far)&&!far.isRemoved(),"Beyond 12 blocks is untouched");
+        h.assertTrue(ahead.isDeadOrDying()&&edge.isDeadOrDying(),"Minds inside 12 blocks and 15 degrees are stopped");
+        h.assertTrue(full(wide)&&wide.isAlive(),"Outside 30 degrees is untouched");
+        h.assertTrue(full(far)&&far.isAlive(),"Beyond 12 blocks is untouched");
         var log=wand.get(ModDataComponents.TERMINUS_LOG.get());
         h.assertTrue(log.discharges()==2&&log.logged()==3,"One discharge spent, two transfers added: "+log);
         h.succeed();
@@ -84,7 +92,7 @@ public final class TerminusGameTest {
         for(int y=3;y<=8;y++)for(int x=8;x<=13;x++)h.setBlock(new BlockPos(x,y,8),Blocks.OBSIDIAN);
         var hidden=target(h,EntityType.ZOMBIE,0,8);
         Terminus.discharge(op,op.getMainHandItem(),InteractionHand.MAIN_HAND);
-        h.assertTrue(hidden.isRemoved(),"No line of sight needed: obsidian stops nothing");
+        h.assertTrue(hidden.isDeadOrDying(),"No line of sight needed: obsidian stops nothing");
         h.succeed();
     }
 
@@ -112,6 +120,9 @@ public final class TerminusGameTest {
                 "Animals, Frostmites and post-Maeve life are untouched");
         var log=op.getMainHandItem().get(ModDataComponents.TERMINUS_LOG.get());
         h.assertTrue(log.logged()==1,"Nothing was logged: "+log);
+        var held=target(h,EntityType.HUSK,0,8);held.setInvulnerable(true);op.setGameMode(GameType.CREATIVE);
+        Terminus.discharge(op,op.getMainHandItem(),InteractionHand.MAIN_HAND);
+        h.assertTrue(held.isAlive(),"An invulnerable mob is spared, even by a creative operator");
         h.succeed();
     }
 
@@ -204,6 +215,13 @@ public final class TerminusGameTest {
         reborn.setPos(op.position());GameTestPlayers.join(h,reborn);
         h.assertTrue(reborn.getMaxHealth()==12,"The loss survives death and respawn: "+reborn.getMaxHealth());
         h.assertTrue(reborn.getData(ModAttachments.TERMINUS_TOLL.get())==2,"Two discharges on record");
+        // Back through the End portal, as PlayerList does it: a fresh player that keeps everything.
+        var returned=new ServerPlayer(op.server,h.getLevel(),op.getGameProfile(),ClientInformation.createDefault());
+        returned.connection=op.connection;
+        h.getLevel().removePlayerImmediately(reborn,Entity.RemovalReason.CHANGED_DIMENSION);
+        returned.restoreFrom(reborn,true);
+        returned.setPos(reborn.position());GameTestPlayers.join(h,returned);
+        h.assertTrue(returned.getMaxHealth()==12,"And the End portal's return: "+returned.getMaxHealth());
         h.succeed();
     }
 
@@ -216,7 +234,9 @@ public final class TerminusGameTest {
         wand.use(h.getLevel(),op,InteractionHand.MAIN_HAND);
         h.assertTrue(op.isUsingItem(),"Holding use winds it up");
         wand.finishUsingItem(h.getLevel(),op);
-        h.assertTrue(husk.isRemoved(),"At the end of the wind-up it discharges");
+        h.assertTrue(husk.isDeadOrDying(),"At the end of the wind-up it discharges");
+        // Use held down is retried every four ticks; a cooldown keeps it from winding straight into another discharge.
+        h.assertTrue(op.getCooldowns().isOnCooldown(ModItems.TERMINUS.get()),"A discharge leaves it on cooldown");
         h.succeed();
     }
 
@@ -229,9 +249,10 @@ public final class TerminusGameTest {
         op.startUsingItem(InteractionHand.MAIN_HAND);
         op.hurt(h.getLevel().damageSources().generic(),1);
         h.assertTrue(!op.isUsingItem(),"A hit cancels the wind-up");
+        h.assertTrue(op.getCooldowns().isOnCooldown(ModItems.TERMINUS.get()),"And leaves it on cooldown, so held use cannot burn the rest");
         var log=wand.get(ModDataComponents.TERMINUS_LOG.get());
         h.assertTrue(log.discharges()==2&&log.logged()==1,"The discharge is still spent: "+log);
-        h.assertTrue(!husk.isRemoved()&&op.getMaxHealth()==20,"Nothing fired and nothing more was taken from the operator");
+        h.assertTrue(husk.isAlive()&&op.getMaxHealth()==20,"Nothing fired and nothing more was taken from the operator");
         h.succeed();
     }
 
@@ -243,7 +264,7 @@ public final class TerminusGameTest {
         var result=wand.use(h.getLevel(),op,InteractionHand.MAIN_HAND);
         h.assertTrue(!result.getResult().consumesAction()&&!op.isUsingItem(),"It will not wind up");
         Terminus.discharge(op,wand,InteractionHand.MAIN_HAND);
-        h.assertTrue(!husk.isRemoved()&&op.getMaxHealth()==20,"And nothing happens");
+        h.assertTrue(husk.isAlive()&&op.getMaxHealth()==20,"And nothing happens");
         h.succeed();
     }
 
@@ -260,13 +281,16 @@ public final class TerminusGameTest {
             NeoForge.EVENT_BUS.addListener(net.neoforged.bus.api.EventPriority.NORMAL,false,LivingDeathEvent.class,seen);
             try {Terminus.discharge(op,op.getMainHandItem(),InteractionHand.MAIN_HAND);}
             finally {NeoForge.EVENT_BUS.unregister(seen);}
-            h.assertTrue(zombie.isRemoved(),"Gone where it stood");
+            // Its own die() runs, so whatever keeps a roll of the living (Hearth residents, villager beds, Maeve's
+            // roster) hears of it; it drops where it stands and is gone with the ordinary death clock.
+            h.assertTrue(zombie.isDeadOrDying()&&!zombie.isRemoved(),"It dies where it stands");
+            h.assertTrue(deaths.stream().filter(e->e.getEntity()==zombie&&e.getSource().getEntity()==op).count()==1,"One death event, naming the operator");
             h.assertTrue(around(h,ExperienceOrb.class).isEmpty(),"No experience");
-            h.assertTrue(deaths.stream().anyMatch(e->e.getEntity()==zombie&&e.getSource().getEntity()==op),"Its death event names the operator");
+            h.assertTrue(op.getStats().getValue(Stats.ENTITY_KILLED.get(EntityType.ZOMBIE))==1,"The operator answers for it");
             h.runAfterDelay(25,()->{
+                h.assertTrue(zombie.isRemoved(),"Then it is gone");
                 h.assertTrue(around(h,ItemEntity.class).isEmpty(),"No drops, not even guaranteed equipment");
                 h.assertTrue(around(h,ExperienceOrb.class).isEmpty()&&op.totalExperience==0,"Still no experience");
-                h.assertTrue(op.getStats().getValue(Stats.ENTITY_KILLED.get(EntityType.ZOMBIE))==0,"Not a kill");
                 h.succeed();
             });
         });
@@ -277,8 +301,10 @@ public final class TerminusGameTest {
         var server=h.getLevel().getServer();
         h.assertTrue(!com.frozendawn.homo.PostMaeveWorldState.isErased(server),"The test server's Maeve stands");
         var dying=player(h,"terminus_dying",new Vec3(EYE_X,FEET_Y,EYE_Z));
-        dying.hurt(h.getLevel().damageSources().genericKill(),Float.MAX_VALUE);
-        h.assertTrue(dying.isDeadOrDying()&&!TerminusLedger.turned(server),"A death before the Heart falls changes nothing");
+        try {
+            dying.hurt(h.getLevel().damageSources().genericKill(),Float.MAX_VALUE);
+            h.assertTrue(dying.isDeadOrDying()&&!TerminusLedger.turned(server),"A death before the Heart falls changes nothing");
+        } finally {TerminusLedger.setForTest(server,false);}
         h.succeed();
     }
 

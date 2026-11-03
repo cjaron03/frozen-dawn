@@ -6,10 +6,13 @@ discharge costs; advancements are filtered as in every generated playtest world,
 """
 import argparse
 import fcntl
+import gzip
+import io
 import json
 import math
 from pathlib import Path
 
+import prepare_blind_architect_playtest as nbt
 from prepare_power_network_playtest import prepare, pack_only
 
 TITLE = 'Terminus Check'
@@ -142,6 +145,11 @@ def prepare_world(source, destination, title=TITLE):
     with (source.parent/'session.lock').open('rb') as lock:
         fcntl.lockf(lock, fcntl.LOCK_SH | fcntl.LOCK_NB)
         prepare(source,destination,title=title,namespace=NS,pack=PACK,build_scripts=scripts,surface=64,structures=False)
+    # Lock the difficulty the shared lab chose, and give the save the empty dragon fight the client logs as missing.
+    level=destination/'level.dat';stream=io.BytesIO(gzip.decompress(level.read_bytes()))
+    assert stream.read(1)==b'\x0a';nbt.string(stream);root=nbt.read(stream,10)
+    root['Data'][1].update({'DifficultyLocked':(1,1),'DragonFight':(10,{})})
+    level.write_bytes(gzip.compress(b'\x0a'+nbt.utf('')+nbt.write(10,root)))
     report=destination/'preparation.json';info=json.loads(report.read_text())
     info.update({'mode':'Survival, so the hearts show the toll; buttons switch to Creative',
                  'fixtures':'cone range with edge and reach husks; obsidian wall with a zombie and villager behind; untouched table '

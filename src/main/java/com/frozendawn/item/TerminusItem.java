@@ -45,9 +45,12 @@ public final class TerminusItem extends Item {
             Terminus.discharge(operator, stack, operator.getUsedItemHand());
         return stack;
     }
-    /** Letting go before the end of the wind-up costs nothing; only a hit spends the discharge. */
-    @Override public void releaseUsing(ItemStack stack, Level level, LivingEntity entity, int remaining) {
-        if (entity instanceof ServerPlayer operator) Terminus.silence(operator);
+    /**
+     * However the wind-up ends short (let go, hit, a slot change, death), its tone stops with it. Letting go costs
+     * nothing; only a hit spends the discharge.
+     */
+    @Override public void onStopUsing(ItemStack stack, LivingEntity entity, int remaining) {
+        if (remaining > 0 && entity instanceof ServerPlayer operator) Terminus.silence(operator);
     }
     @Override public boolean canBeHurtBy(ItemStack stack, DamageSource source) { return false; }
     @Override public int getEntityLifespan(ItemStack stack, Level level) { return Integer.MAX_VALUE; }

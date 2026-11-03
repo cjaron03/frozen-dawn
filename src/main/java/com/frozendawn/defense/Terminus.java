@@ -27,9 +27,10 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.common.CommonHooks;
 import net.neoforged.neoforge.common.Tags;
 import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
+import net.neoforged.neoforge.event.entity.living.LivingDropsEvent;
+import net.neoforged.neoforge.event.entity.living.LivingExperienceDropEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
 import org.joml.Vector3f;
@@ -41,6 +42,10 @@ import org.joml.Vector3f;
 @EventBusSubscriber(modid = FrozenDawn.MOD_ID)
 public final class Terminus {
     public static final int WINDUP_TICKS = 40, TOLL_PER_DISCHARGE = 4, BACKLASH_TICKS = 200, GAZE_TICKS = 60;
+    /** After a discharge or an interrupted wind-up, so a held use key cannot wind straight into the next one. */
+    public static final int COOLDOWN_TICKS = 20;
+    /** Marks a mind taken before the CH-18 trigger: it dies, but leaves nothing behind. */
+    private static final String TAKEN = FrozenDawn.MOD_ID + ".terminus_taken";
     /** What a boss loses to a discharge, as a share of its maximum; it is never brought below 1. */
     public static final float BOSS_SHARE = .4f;
     public static final TagKey<EntityType<?>> SUSCEPTIBLE = tag("terminus_susceptible"), IMMUNE = tag("terminus_immune");
@@ -78,12 +83,15 @@ public final class Terminus {
         op.addEffect(new MobEffectInstance(MobEffects.DARKNESS, BACKLASH_TICKS));
         op.addEffect(new MobEffectInstance(MobEffects.CONFUSION, BACKLASH_TICKS));
         ReactorAdvancements.grant(op, "deathwand");
+        op.getCooldowns().addCooldown(stack.getItem(), COOLDOWN_TICKS);
         PacketDistributor.sendToPlayersTrackingEntityAndSelf(op, TerminusDischargePayload.of(op.getId(), minds));
     }
 
     private static Response response(LivingEntity target, DamageSource source, ServerPlayer op) {
         if (target instanceof ArchitectEntity architect && architect.isMasterArchitectVisual()) return Response.GAZE;
-        if (target.getType().is(IMMUNE) || target.isInvulnerableTo(source) || target.isSpectator()) return Response.NONE;
+        // isInvulnerableTo lets a creative player's damage through /data-invulnerable mobs; the Terminus does not.
+        if (target.getType().is(IMMUNE) || target.isInvulnerable() || target.isInvulnerableTo(source) || target.isSpectator())
+            return Response.NONE;
         // Creative players, a server with PvP off, and teammates where friendly fire is off are spared.
         if (target instanceof Player player && (player.getAbilities().invulnerable || !op.canHarmPlayer(player)))
             return Response.NONE;
@@ -92,20 +100,29 @@ public final class Terminus {
     }
 
     /**
-     * Before the CH-18 trigger a mind is taken: its death event fires, naming the operator, and it is removed with no
-     * drops or experience. Players always die the ordinary way, since they come back. After it, everything does.
+     * Every mind dies the ordinary way, credited to the operator, so whatever keeps a roll of the living hears of it.
+     * Before the CH-18 trigger it is taken: nothing drops and no experience is left. Players always drop, since they
+     * come back. Returns whether it died; a mind with its own way of dying may put that off.
      */
     private static boolean stop(LivingEntity target, DamageSource source, ServerPlayer op, boolean turned) {
-        if (turned || target instanceof Player) {
-            target.setLastHurtByPlayer(op);
-            target.getCombatTracker().recordDamage(source, target.getHealth());
-            target.setHealth(0);
-            target.die(source);
-            return target.isDeadOrDying();
-        }
-        if (CommonHooks.onLivingDeath(target, source)) return false;
-        target.remove(Entity.RemovalReason.KILLED);
-        return true;
+        boolean taken = !turned && !(target instanceof Player);
+        if (taken) target.addTag(TAKEN);
+        target.setLastHurtByPlayer(op);
+        target.getCombatTracker().recordDamage(source, target.getHealth());
+        target.setHealth(0);
+        target.die(source);
+        if (!target.isDeadOrDying()) target.removeTag(TAKEN);
+        return target.isDeadOrDying();
+    }
+
+    @SubscribeEvent
+    public static void onDrops(LivingDropsEvent event) {
+        if (event.getEntity().getTags().contains(TAKEN)) event.setCanceled(true);
+    }
+
+    @SubscribeEvent
+    public static void onExperience(LivingExperienceDropEvent event) {
+        if (event.getEntity().getTags().contains(TAKEN)) event.setCanceled(true);
     }
 
     /** Where the wand is in the operator's hand, roughly: forward of the eyes, below them, to the holding side. */
@@ -135,11 +152,14 @@ public final class Terminus {
         if (!(stack.getItem() instanceof TerminusItem)) return;
         stack.set(ModDataComponents.TERMINUS_LOG.get(),
                 stack.getOrDefault(ModDataComponents.TERMINUS_LOG.get(), TerminusLog.FOUND).spend());
+        player.getCooldowns().addCooldown(stack.getItem(), COOLDOWN_TICKS);
         player.stopUsingItem();
-        silence(player);
     }
 
-    /** Stops the wind-up tone for everyone who could hear it. */
+    /**
+     * Stops the wind-up tone for everyone who could hear it. The packet stops the sound by name, so another operator
+     * winding up within earshot is cut off too.
+     */
     public static void silence(ServerPlayer player) {
         var packet = new ClientboundStopSoundPacket(ModSounds.TERMINUS_WINDUP.getId(), SoundSource.PLAYERS);
         for (var listener : player.serverLevel().players())

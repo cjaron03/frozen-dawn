@@ -35,7 +35,8 @@ public final class TerminusGaze {
 
     @SubscribeEvent
     public static void onTick(EntityTickEvent.Post event) {
-        if (GAZES.isEmpty() || !(event.getEntity() instanceof ArchitectEntity master) || master.level().isClientSide()) return;
+        // The client runs this tick too, on its own thread; the map is the server's alone.
+        if (event.getEntity().level().isClientSide() || GAZES.isEmpty() || !(event.getEntity() instanceof ArchitectEntity master)) return;
         var gaze = GAZES.get(master);
         if (gaze == null) return;
         if (!watching(master) || master.isRemoved()) {
