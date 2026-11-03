@@ -59,16 +59,17 @@ STATES = {
 # (read off the owner's playtest 6 screenshots, which showed earlier guesses pointing across the body, then outward;
 # together they show the display rotation turns about x first, then y, then z). Held, the
 # barrel points forward from the fist; firing, the arm is raised along the aim, so the barrel runs along the arm and
-# the top faces what was forward, the body above the fist. First person sits low right with the lens toward the
-# crosshair, small and far enough out that its back end does not fill the corner.
+# the top faces what was forward, the body above the fist. Both sit in the fist rather than beside it (+y moves the
+# Lash across toward the body). First person sits big and low right with the lens toward the crosshair, as the owner
+# liked it.
 DISPLAY = {
-    'thirdperson_righthand': {'rotation': [90, 0, -90], 'translation': [4.4, -1.6, 4.5], 'scale': [.8, .8, .8]},
-    'firstperson_righthand': {'rotation': [5, 5, 0], 'translation': [0, 3, -3], 'scale': [.45, .45, .45]},
+    'thirdperson_righthand': {'rotation': [90, 0, -90], 'translation': [4.4, 2.4, 4.5], 'scale': [.8, .8, .8]},
+    'firstperson_righthand': {'rotation': [5, 5, 0], 'translation': [-1, 3, 0], 'scale': [.6, .6, .6]},
     'gui': {'rotation': [30, 225, 0], 'translation': [0, 0, 0], 'scale': [.8, .8, .8]},
     'ground': {'rotation': [0, 0, 0], 'translation': [0, 2, 0], 'scale': [.5, .5, .5]},
     'fixed': {'rotation': [0, -90, 0], 'translation': [0, 0, 0], 'scale': [.75, .75, .75]},
 }
-FIRING = {'rotation': [0, 0, -90], 'translation': [7, -1.6, -3.1], 'scale': [.8, .8, .8]}
+FIRING = {'rotation': [0, 0, -90], 'translation': [7, 2.4, -3.1], 'scale': [.8, .8, .8]}
 
 
 def elements(state):
