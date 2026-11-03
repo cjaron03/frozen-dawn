@@ -93,6 +93,53 @@ before handing back. Verify every hook below against current code first; these a
      test-first.
    - Run `architectVerify`, update this doc, and push. Do not merge.
 
+## 3D model spec (slice 2, draft 2026-11-03, awaiting owner approval)
+
+Mockup: `docs/art/sever-lash/model-mockup.png`, drawn by `make_model_mockup.py` at Minecraft scale (one model unit
+a pixel, 16 to the block). Nothing here is built until the owner approves the mockup.
+
+- **Shape.** One block long, about ten elements, all axis-aligned except the fins. From the back:
+  - a Power Cell port with copper contacts;
+  - a 9x3x3 gunmetal body with a dark underside;
+  - a lead pistol grip, raked back, behind a lead hand guard (the recipe's lead ingot);
+  - two copper coil rings, 5x5, round the front of the body;
+  - a 2x2 barrel ending in the Acheronite lens;
+  - three cooling fins on top.
+  The lens and any hot part render fullbright (NeoForge element `neoforge_data` light 15).
+- **Heat states.** These are item model overrides on two client predicates: `frozendawn:heat` (0 to 1, heat over
+  the overheat limit, settled from the stack's `LashHeat` and client game time) and `frozendawn:vent` (0, 0.5 or 1,
+  how far the lockout has run). Slice 1's overheat glow uses the same predicates on the flat sprite, so the 3D model
+  only swaps the models behind them.
+  - Cool: steel fins, cyan lens.
+  - Warm (from half heat): the fin tips and the barrel near the lens dull red.
+  - Hot (from 80%): the fins and barrel orange and fullbright, the lens white-cyan.
+  - Overheat: the lockout starts and the fins vent.
+- **Overheat animation.** Vanilla element rotation only allows steps of 22.5 degrees, so the vent is three stepped
+  poses rather than a smooth tween.
+  - The fins lean back 22.5 degrees, then 45, over the first 4 ticks.
+  - The slots under them glow white, behind a two-frame animated texture that flickers.
+  - Over the lockout the fins cool from white through orange to red, then fold shut in the last 4 ticks.
+  - In air, the client puts small grey smoke puffs above the vents every few ticks. In vacuum there is no smoke,
+    only the glow, which matches the beam's rules.
+  - The hiss stays the placeholder until the sound slice.
+  - Fallback, only if the steps read as choppy: a custom item renderer (`BlockEntityWithoutLevelRenderer`) that
+    tweens the fin angle. It costs more code and is not data-driven.
+- **Holding.**
+  - Third person, idle: carried one-handed at the hip, pointing forward.
+  - Third person, firing: a custom arm pose (`IClientItemExtensions.getArmPose`). The main arm is raised level to
+    the eye line along the look direction, and the off hand braces under the coils when it is empty. Other players
+    see where the beam points.
+  - First person: held low right, lens toward the crosshair. While firing it lifts slightly with a sub-pixel jitter
+    and no recoil kick, since it is a beam. During lockout it dips and tilts away about 10 degrees, as if being
+    aired out, and comes back when the lockout ends.
+  - The GUI shows a three-quarter view, like the Master Architect staff.
+- **Re-equip bob.** The server rewrites the held stack every firing tick, which would make a 3D model bob.
+  `shouldCauseReequipAnimation` returns false when only `LashHeat` changed.
+- **Open for the owner:**
+  - Is the off-hand brace wanted, or one-handed only?
+  - Is the smoke wanted in air?
+  - Should the cell port show charge?
+
 ## Deferred to slice 2
 
 - Heat Sink, Long Focus and Wide Aperture modules. Per the Notion Fabricator page they are Fabricator recipes
