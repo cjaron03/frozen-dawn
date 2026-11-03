@@ -96,9 +96,11 @@ def scripts():
         'read': '\n'.join([GUARD,
             'execute if entity @s[advancements={frozendawn:hellwhip=true}] run '+tell('Hellwhip: earned'),
             'execute unless entity @s[advancements={frozendawn:hellwhip=true}] run '+tell('Hellwhip: not yet'),
-            'data get entity @s SelectedItem.components."frozendawn:lash_heat"',
-            'execute as @e[tag=slash_target] run data get entity @s Health',
-            'fd world oxygen', 'return 1'])}
+            # Command feedback is off in this world, so diagnostics print through tellraw, not data get.
+            'tellraw @s '+json.dumps([{'text':'Held Lash heat: ','color':'aqua'},{'entity':'@s','nbt':'SelectedItem.components."frozendawn:lash_heat"','color':'white'}]),
+            'execute as @e[tag=slash_target] run tellraw @p '+json.dumps([{'selector':'@s','color':'aqua'},{'text':' at ','color':'aqua'},
+                {'entity':'@s','nbt':'Pos','color':'gray'},{'text':' health ','color':'aqua'},{'entity':'@s','nbt':'Health','color':'white'}]),
+            'return 1'])}
     views = {
         'range': ((.5,65,.5), ['Three husks at six blocks: cut all three in one continuous beam, without letting go (Hellwhip).',
                                'Pigs over the white line (12, inside reach) and the red line (15, beyond). The pig left of the stone wall should be safe from straight shots.',
