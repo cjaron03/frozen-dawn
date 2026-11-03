@@ -44,26 +44,7 @@ public final class SuitHeadlamp {
         if(!player.isAlive()||player.isSpectator()||!compatibleHelmet(player)||!enabled(module))return false;
         int credit=Math.clamp(module.getOrDefault(ModDataComponents.HEADLAMP_CREDIT.get(),0),0,1);
         int needed=(5-credit+1)/2;
-        var cells=new ArrayList<ItemStack>();
-        int available=0;
-        // Inventory.items is slots 0..35: hotbar first, then main inventory. Do not traverse containers.
-        for(var stack:player.getInventory().items) {
-            if(stack.is(ModItems.POWER_CELL)&&stack.getCount()==1&&PowerCellItem.energy(stack)>0) {
-                cells.add(stack);available+=PowerCellItem.energy(stack);
-                if(available>=needed)break;
-            }
-        }
-        if(available<needed) {
-            var off=player.getOffhandItem();
-            if(off.is(ModItems.POWER_CELL)&&off.getCount()==1) {cells.add(off);available+=PowerCellItem.energy(off);}
-        }
-        if(available<needed)return false;
-        int remaining=needed;
-        for(var cell:cells) {
-            int debit=Math.min(remaining,PowerCellItem.energy(cell));
-            PowerCellItem.setEnergy(cell,PowerCellItem.energy(cell)-debit);remaining-=debit;
-            if(remaining==0)break;
-        }
+        if(!PowerCellItem.pay(player,needed))return false;
         module.set(ModDataComponents.HEADLAMP_CREDIT.get(),credit+needed*2-5);
         player.getInventory().setChanged();return true;
     }
