@@ -356,6 +356,39 @@ def monkeyShardDirectory = { int shard -> layout.buildDirectory.dir("architect-m
 def shardWorldsInBuild = providers.gradleProperty('fdShardWorlds').map { it == 'build' }.getOrElse(false)
 def shardWorldRoot = new File(System.getProperty('java.io.tmpdir'), 'frozendawn-gametest/' + projectDir.absolutePath.digest('SHA-256').take(12))
 def shardReports = { Closure<File> directory -> (0..<gameTestShards).collectMany { ['--report', new File(directory(it), 'report.xml').absolutePath] } }
+// Left alone, each shard's JVM may grow its heap to a quarter of the machine's memory and runs a garbage collector
+// thread per core, so the shards, and any other checkout's gate running beside them, crowd each other out. Each
+// shard gets a capped heap and its share of the cores. Its gc.log is copied back with the rest of its run directory.
+def gameTestShardHeap = providers.gradleProperty('fdShardHeap').getOrElse('3g')
+def gameTestShardGcThreads = Math.max(1, Runtime.runtime.availableProcessors().intdiv(gameTestShards))
+// One gate's servers at a time on this machine, whichever checkout runs it: two gates side by side each ran about half
+// as fast. A second gate waits here and says whose gate it waits for. The lock lives in the shared Gradle home, and the
+// operating system drops it if its holder dies. Never read the file from the holding JVM: closing any other handle on
+// it would release the lock.
+def gateLockFile = new File(gradle.gradleUserHomeDir, 'frozendawn/gate.lock')
+def holdGateLock = { String name, log ->
+    gateLockFile.parentFile.mkdirs()
+    def channel = java.nio.channels.FileChannel.open(gateLockFile.toPath(), java.nio.file.StandardOpenOption.CREATE,
+            java.nio.file.StandardOpenOption.READ, java.nio.file.StandardOpenOption.WRITE)
+    try {
+        def lock = channel.tryLock()
+        long told = 0
+        while (lock == null) {
+            if (System.currentTimeMillis() - told >= 60_000) {
+                log.lifecycle("Waiting for another gate to finish: ${gateLockFile.text.trim() ?: 'holder unknown'}")
+                told = System.currentTimeMillis()
+            }
+            Thread.sleep(5_000)
+            lock = channel.tryLock()
+        }
+        channel.truncate(0)
+        channel.write(java.nio.ByteBuffer.wrap("${projectDir.name} ${name}, started ${java.time.LocalTime.now().withNano(0)}\n".getBytes('UTF-8')), 0)
+        return channel
+    } catch (Throwable failure) {
+        channel.close()
+        throw failure
+    }
+}
 // Starts each shard's server exactly as the named run task would, with its own world, report and evidence folder.
 def registerShardedRun = { String name, String runName, Closure<File> shardDirectory, Provider<Directory> artifacts ->
     tasks.register(name) {
@@ -370,6 +403,7 @@ def registerShardedRun = { String name, String runName, Closure<File> shardDirec
             def processes = []
             def runDirectories = []
             def passed = false
+            def gate = holdGateLock(name, log)
             try {
                 // Worlds a failed run left, with any shard count.
                 if (shardWorldRoot.isDirectory()) shardWorldRoot.listFiles().findAll { it.name.startsWith("${name}-") }.each { delete(it) }
@@ -386,7 +420,9 @@ def registerShardedRun = { String name, String runName, Closure<File> shardDirec
                     // After the run's own argument file, so these win.
                     command += ["-Dfrozendawn.gametest.report=${new File(directory, 'report.xml').absolutePath}",
                                 "-Dfrozendawn.architect.reports=${new File(artifacts.get().asFile, "shard-${shard}").absolutePath}",
-                                "-Dfrozendawn.gametest.shard=${shard}/${gameTestShards}"]
+                                "-Dfrozendawn.gametest.shard=${shard}/${gameTestShards}",
+                                "-Xmx${gameTestShardHeap}", "-XX:ParallelGCThreads=${gameTestShardGcThreads}", '-XX:ConcGCThreads=1',
+                                '-Xlog:gc:file=gc.log']
                     command += ['-cp', server.classpathProvider.asPath, server.mainClass.get()]
                     command += server.args
                     def builder = new ProcessBuilder(command.collect { it.toString() }).directory(runDirectory).redirectErrorStream(true)
@@ -403,13 +439,27 @@ def registerShardedRun = { String name, String runName, Closure<File> shardDirec
                     throw new GradleException('GameTest servers exited with failures: ' + failed.collect { exit, shard -> "shard ${shard} exit ${exit}" }.join(', '))
                 passed = true
             } finally {
-                // Only the servers this task started.
-                processes.findAll { it.alive }*.destroy()
-                runDirectories.eachWithIndex { runDirectory, shard ->
-                    if (shardWorldsInBuild) { if (passed) delete(new File(runDirectory, 'world')); return }
-                    // Logs, and evidence some tests write relative to the working directory.
-                    copy { from(runDirectory) { exclude 'world/**' }; into(new File(shardDirectory(shard), 'run')) }
-                    if (passed) delete(runDirectory)
+                try {
+                    // Only the servers this task started. They save their worlds on the way out, so the lock stays held
+                    // until they have exited, even when a cancel interrupted this thread.
+                    def stopping = processes.findAll { it.alive }
+                    stopping*.destroy()
+                    boolean interrupted = Thread.interrupted()
+                    stopping.each {
+                        if (!it.waitFor(30, java.util.concurrent.TimeUnit.SECONDS)) {
+                            it.destroyForcibly()
+                            it.waitFor(10, java.util.concurrent.TimeUnit.SECONDS)
+                        }
+                    }
+                    if (interrupted) Thread.currentThread().interrupt()
+                    runDirectories.eachWithIndex { runDirectory, shard ->
+                        if (shardWorldsInBuild) { if (passed) delete(new File(runDirectory, 'world')); return }
+                        // Logs, and evidence some tests write relative to the working directory.
+                        copy { from(runDirectory) { exclude 'world/**' }; into(new File(shardDirectory(shard), 'run')) }
+                        if (passed) delete(runDirectory)
+                    }
+                } finally {
+                    gate.close()
                 }
             }
         }
