@@ -81,15 +81,31 @@ public final class LashWorldEffects {
         return state.isFlammable(level, pos, face) && BaseFireBlock.canBePlacedAt(level, flame, facing);
     }
 
-    /** Lights a campfire or candle in place, or sets fire in the cell the beam crossed. Either counts as the player
-     * placing a block there: the place event can refuse it, as for flint and steel. */
+    /** Lights a campfire or candle in place, or sets fire in the cell the beam crossed. Like flint and steel, the
+     * player must be allowed at the struck block, and it counts as placing a block where the change goes: the write is
+     * captured as NeoForge does for item placement, so a refused place event reverts it before any neighbour hears. */
     private static void ignite(ServerLevel level, ServerPlayer player, BlockPos pos, BlockState state, BlockPos flame, Direction face) {
         boolean lights = state.hasProperty(BlockStateProperties.LIT) && !state.getValue(BlockStateProperties.LIT);
         var at = lights ? pos : flame;
-        if (!level.mayInteract(player, at) || player.blockActionRestricted(level, at, player.gameMode.getGameModeForPlayer())) return;
-        var before = BlockSnapshot.create(level.dimension(), level, at);
-        level.setBlock(at, lights ? state.setValue(BlockStateProperties.LIT, true) : BaseFireBlock.getState(level, flame), Block.UPDATE_ALL_IMMEDIATE);
-        if (EventHooks.onBlockPlace(player, before, face)) before.restore(Block.UPDATE_ALL_IMMEDIATE);
+        var mode = player.gameMode.getGameModeForPlayer();
+        if (!level.mayInteract(player, pos) || !level.mayInteract(player, at) || player.blockActionRestricted(level, at, mode)) return;
+        var placed = lights ? state.setValue(BlockStateProperties.LIT, true) : BaseFireBlock.getState(level, flame);
+        level.captureBlockSnapshots = true;
+        level.setBlock(at, placed, Block.UPDATE_ALL_IMMEDIATE);
+        level.captureBlockSnapshots = false;
+        var captured = List.copyOf(level.capturedBlockSnapshots);
+        level.capturedBlockSnapshots.clear();
+        if (captured.isEmpty()) return;
+        var before = captured.get(0);
+        if (EventHooks.onBlockPlace(player, before, face)) {
+            level.restoringBlockSnapshots = true;
+            before.restore(before.getFlags() | Block.UPDATE_CLIENTS);
+            level.restoringBlockSnapshots = false;
+            return;
+        }
+        var now = level.getBlockState(at);
+        now.onPlace(level, at, before.getState(), false);
+        level.markAndNotifyBlock(at, level.getChunkAt(at), before.getState(), now, before.getFlags(), 512);
     }
 
     private static void puff(ServerLevel level, BlockPos at, net.minecraft.core.particles.SimpleParticleType type) {
