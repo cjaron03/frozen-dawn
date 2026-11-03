@@ -277,6 +277,21 @@ public final class SeverLashGameTest {
         h.succeed();
     }
 
+    @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="sever_lash",timeoutTicks=100)
+    public static void severLashIgnitionRespectsPlacementProtection(GameTestHelper h) {
+        var p=shooter(h,500000);var lash=p.getMainHandItem();var flame=h.absolutePos(STRUCK.north());
+        h.setBlock(STRUCK,Blocks.OAK_PLANKS);
+        // A claim that covers only the cell the fire would go in, not the wood.
+        java.util.function.Consumer<net.neoforged.neoforge.event.level.BlockEvent.EntityPlaceEvent> claim=e->{if(e.getPos().equals(flame))e.setCanceled(true);};
+        net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(claim);
+        try {SeverLash.fire(p,lash,1000);}
+        finally {net.neoforged.neoforge.common.NeoForge.EVENT_BUS.unregister(claim);}
+        h.assertTrue(h.getBlockState(STRUCK.north()).isAir(),"No fire goes where placing it is refused: "+h.getBlockState(STRUCK.north()));
+        p.setGameMode(GameType.ADVENTURE);SeverLash.fire(p,lash,1001);
+        h.assertTrue(h.getBlockState(STRUCK.north()).isAir(),"Nor for an adventure player");
+        h.succeed();
+    }
+
     @BeforeBatch(batch="sever_lash_vacuum") public static void vacuum(ServerLevel level) {
         GameTestReporting.installReporter(level);var a=com.frozendawn.data.ApocalypseState.get(level.getServer());phaseBefore=a.getApocalypseTicks();
         a.setApocalypseTicks((long)(a.getTotalDays()*24000L*.90),level.getServer());com.frozendawn.world.RoomAtmosphere.reset();com.frozendawn.world.CombustionAtmosphere.reset();

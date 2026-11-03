@@ -15,6 +15,8 @@ import net.minecraft.world.level.block.*;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.neoforged.neoforge.common.CommonHooks;
+import net.neoforged.neoforge.common.util.BlockSnapshot;
+import net.neoforged.neoforge.event.EventHooks;
 
 /**
  * What the beam does to the blocks it lands on, server only. Snow and plain ice flash to steam at once, leaving no
@@ -51,10 +53,10 @@ public final class LashWorldEffects {
                 if (!BlockHeat.gives(held, dwell)) { heat.put(pos.immutable(), new Heat(held, now)); continue; }
                 heat.remove(pos);
             }
+            if (fuel) { ignite(level, player, pos, state, flame, face); continue; }
             if (!level.mayInteract(player, pos) || CommonHooks.fireBlockBreak(level, player.gameMode.getGameModeForPlayer(), player, pos, state).isCanceled()) continue;
-            boolean air = !fuel && CombustionAtmosphere.canBurnAt(level, flame);
-            if (fuel) ignite(level, pos, state, flame);
-            else if (state.is(SCORCHES)) {
+            boolean air = CombustionAtmosphere.canBurnAt(level, flame);
+            if (state.is(SCORCHES)) {
                 level.setBlock(pos, ModBlocks.SCORCHED_GROUND.get().defaultBlockState(), Block.UPDATE_ALL);
                 if (air) puff(level, flame, ParticleTypes.SMOKE);
             } else {
@@ -79,10 +81,15 @@ public final class LashWorldEffects {
         return state.isFlammable(level, pos, face) && BaseFireBlock.canBePlacedAt(level, flame, facing);
     }
 
-    private static void ignite(ServerLevel level, BlockPos pos, BlockState state, BlockPos flame) {
-        if (state.hasProperty(BlockStateProperties.LIT) && !state.getValue(BlockStateProperties.LIT))
-            level.setBlock(pos, state.setValue(BlockStateProperties.LIT, true), Block.UPDATE_ALL_IMMEDIATE);
-        else level.setBlock(flame, BaseFireBlock.getState(level, flame), Block.UPDATE_ALL_IMMEDIATE);
+    /** Lights a campfire or candle in place, or sets fire in the cell the beam crossed. Either counts as the player
+     * placing a block there: the place event can refuse it, as for flint and steel. */
+    private static void ignite(ServerLevel level, ServerPlayer player, BlockPos pos, BlockState state, BlockPos flame, Direction face) {
+        boolean lights = state.hasProperty(BlockStateProperties.LIT) && !state.getValue(BlockStateProperties.LIT);
+        var at = lights ? pos : flame;
+        if (!level.mayInteract(player, at) || player.blockActionRestricted(level, at, player.gameMode.getGameModeForPlayer())) return;
+        var before = BlockSnapshot.create(level.dimension(), level, at);
+        level.setBlock(at, lights ? state.setValue(BlockStateProperties.LIT, true) : BaseFireBlock.getState(level, flame), Block.UPDATE_ALL_IMMEDIATE);
+        if (EventHooks.onBlockPlace(player, before, face)) before.restore(Block.UPDATE_ALL_IMMEDIATE);
     }
 
     private static void puff(ServerLevel level, BlockPos at, net.minecraft.core.particles.SimpleParticleType type) {
