@@ -356,6 +356,11 @@ def monkeyShardDirectory = { int shard -> layout.buildDirectory.dir("architect-m
 def shardWorldsInBuild = providers.gradleProperty('fdShardWorlds').map { it == 'build' }.getOrElse(false)
 def shardWorldRoot = new File(System.getProperty('java.io.tmpdir'), 'frozendawn-gametest/' + projectDir.absolutePath.digest('SHA-256').take(12))
 def shardReports = { Closure<File> directory -> (0..<gameTestShards).collectMany { ['--report', new File(directory(it), 'report.xml').absolutePath] } }
+// Left alone, each shard's JVM may grow its heap to a quarter of the machine's memory and runs a garbage collector
+// thread per core, so the shards, and any other checkout's gate running beside them, crowd each other out. Each
+// shard gets a fixed heap and its share of the cores. Its gc.log is copied back with the rest of its run directory.
+def gameTestShardHeap = providers.gradleProperty('fdShardHeap').getOrElse('3g')
+def gameTestShardGcThreads = Math.max(1, Runtime.runtime.availableProcessors().intdiv(gameTestShards))
 // Starts each shard's server exactly as the named run task would, with its own world, report and evidence folder.
 def registerShardedRun = { String name, String runName, Closure<File> shardDirectory, Provider<Directory> artifacts ->
     tasks.register(name) {
@@ -386,7 +391,9 @@ def registerShardedRun = { String name, String runName, Closure<File> shardDirec
                     // After the run's own argument file, so these win.
                     command += ["-Dfrozendawn.gametest.report=${new File(directory, 'report.xml').absolutePath}",
                                 "-Dfrozendawn.architect.reports=${new File(artifacts.get().asFile, "shard-${shard}").absolutePath}",
-                                "-Dfrozendawn.gametest.shard=${shard}/${gameTestShards}"]
+                                "-Dfrozendawn.gametest.shard=${shard}/${gameTestShards}",
+                                "-Xmx${gameTestShardHeap}", "-XX:ParallelGCThreads=${gameTestShardGcThreads}", '-XX:ConcGCThreads=1',
+                                '-Xlog:gc:file=gc.log']
                     command += ['-cp', server.classpathProvider.asPath, server.mainClass.get()]
                     command += server.args
                     def builder = new ProcessBuilder(command.collect { it.toString() }).directory(runDirectory).redirectErrorStream(true)
