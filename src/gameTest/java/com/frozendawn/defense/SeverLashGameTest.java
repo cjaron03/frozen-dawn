@@ -15,6 +15,8 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.item.*;
+import net.minecraft.world.item.crafting.*;
+import net.minecraft.world.level.block.entity.BarrelBlockEntity;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.Vec3;
@@ -196,6 +198,59 @@ public final class SeverLashGameTest {
         double seared=pig.getAttributeValue(Attributes.MOVEMENT_SPEED);
         h.assertTrue(Math.abs(seared-base*(1-3*Sear.SLOW_PER_LEVEL))<1e-6,"Seared III slows by three steps: "+seared+" of "+base);
         h.succeed();
+    }
+
+    @GameTest(template=GameTestTemplates.EMPTY,batch="sever_lash",timeoutTicks=100)
+    public static void severLashCraftsCoolFromItsEmitter(GameTestHelper h) {
+        var level=h.getLevel();
+        var grid=List.of(new ItemStack(Items.IRON_INGOT),new ItemStack(ModItems.LASH_EMITTER.get()),new ItemStack(ModItems.ACHERONITE_SHARD.get()),
+                new ItemStack(ModItems.LEAD_INGOT.get()),PowerCellItem.charged(PowerCellItem.CAPACITY_JOULES),new ItemStack(Items.IRON_INGOT));
+        var input=CraftingInput.of(3,2,grid);
+        var recipe=level.getRecipeManager().getRecipeFor(RecipeType.CRAFTING,input,level);
+        h.assertTrue(recipe.isPresent(),"Emitter, lens, cell, two iron and a lead ingot make a Lash");
+        var lash=recipe.get().value().assemble(input,level.registryAccess());
+        h.assertTrue(lash.is(ModItems.SEVER_LASH.get())&&lash.getCount()==1,"The grid makes one Sever Lash: "+lash);
+        h.assertTrue(!lash.has(ModDataComponents.LASH_HEAT.get()),"A crafted Lash starts cool");
+        h.succeed();
+    }
+
+    /** Own batch: the site and its ice jacket reach well past the template. */
+    @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="helion_site",timeoutTicks=100)
+    public static void helionDiagnosticsBenchHoldsOneOrTwoLashEmitters(GameTestHelper h) {
+        h.runAfterDelay(1,()->{
+            var level=h.getLevel();
+            var hall=h.absolutePos(new BlockPos(10,2,10));
+            com.frozendawn.world.HelionSiteBuilder.place(level,hall,hall.getY()+com.frozendawn.world.HelionSitePlacement.DEPTH);
+            int half=com.frozendawn.world.HelionSiteBuilder.HALF,emitters=0;
+            for(var p:BlockPos.betweenClosed(hall.offset(-half,-1,-half),hall.offset(half,com.frozendawn.world.HelionSiteBuilder.CEILING,half)))
+                if(level.getBlockEntity(p) instanceof BarrelBlockEntity barrel)for(int i=0;i<barrel.getContainerSize();i++)
+                    if(barrel.getItem(i).is(ModItems.LASH_EMITTER.get()))emitters+=barrel.getItem(i).getCount();
+            var bench=(BarrelBlockEntity)level.getBlockEntity(hall.offset(com.frozendawn.world.HelionSiteBuilder.DIAGNOSTICS));
+            int expected=LashSalvage.helionEmitters(level.getSeed(),hall.asLong());
+            h.assertTrue(emitters==expected&&emitters>=1&&emitters<=2,"One or two emitters, as the site rolled: "+emitters+" of "+expected);
+            h.assertTrue(bench.hasAnyMatching(s->s.is(ModItems.LASH_EMITTER.get())),"The emitters sit on the diagnostics bench");
+            h.succeed();
+        });
+    }
+
+    /** Own batch: the site grades and contaminates well past this structure. */
+    @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="reactor_site",timeoutTicks=100)
+    public static void reactorMaintenanceBayHoldsTheLuckyEmitter(GameTestHelper h) {
+        h.runAfterDelay(1,()->{
+            var level=h.getLevel();
+            BlockPos site=null;
+            for(int i=0;i<49&&site==null;i++){var at=h.absolutePos(new BlockPos(7+i%7,10,7+i/7));if(LashSalvage.reactorBayEmitter(level.getSeed(),at.asLong()))site=at;}
+            h.assertTrue(site!=null,"Some nearby site rolls the emitter");
+            com.frozendawn.world.ReactorSiteBuilder.place(level,site);
+            int emitters=0;
+            for(var p:BlockPos.betweenClosed(site.offset(-13,-10,-13),site.offset(13,10,13)))
+                if(level.getBlockEntity(p) instanceof BarrelBlockEntity barrel)for(int i=0;i<barrel.getContainerSize();i++)
+                    if(barrel.getItem(i).is(ModItems.LASH_EMITTER.get()))emitters+=barrel.getItem(i).getCount();
+            var bay=level.getBlockEntity(site.offset(com.frozendawn.world.ReactorSiteBuilder.MAINTENANCE));
+            h.assertTrue(bay instanceof BarrelBlockEntity b&&b.hasAnyMatching(s->s.is(ModItems.LASH_EMITTER.get())),"The maintenance bay holds the emitter");
+            h.assertTrue(emitters==1,"One emitter in the whole site: "+emitters);
+            h.succeed();
+        });
     }
 
     /** A real survival player in the template, Lash in hand, one charged cell in slot 1. */

@@ -4,7 +4,8 @@ Original pixel art authored in code for Frozen Dawn on 2026-11-02. No third-part
 A gunmetal diagnostic emitter held diagonally like a tool: lead-grey grip, copper coil, acheronite lens and a
 red-orange emitter tip. Seared (2026-11-03): a tapered diagonal burn, white-hot at the core and cooling to
 deep red at the edges, with two embers lifting off it; the ember sprites are white so the particle tints them as
-they cool. Run from anywhere: python3 docs/art/sever-lash/make_textures.py
+they cool. Lash Emitter (2026-11-03): the bare salvaged emitter, a short gunmetal tube in two copper coils with the
+dead lens at one end and torn leads at the other. Run from anywhere: python3 docs/art/sever-lash/make_textures.py
 """
 from pathlib import Path
 from PIL import Image
@@ -59,6 +60,29 @@ def ember(radius):
     return im
 
 
+def emitter():
+    """16x16: the tube lies level, lens to the right, leads trailing off the back."""
+    im = Image.new('RGBA', (16, 16), (0, 0, 0, 0))
+    for x in range(3, 13):
+        for y in range(6, 10):
+            im.putpixel((x, y), P['light' if y == 6 else 'dark' if y == 9 else 'steel'])
+    for x in (6, 9):
+        for y in range(5, 11):
+            im.putpixel((x, y), P['copper2' if y < 8 else 'copper'])
+    for y in (7, 8):
+        im.putpixel((13, y), P['lens2' if y == 7 else 'lens'])
+    for x, y, c in ((2, 7, 'copper'), (1, 6, 'copper2'), (2, 9, 'tip'), (1, 10, 'tip')):
+        im.putpixel((x, y), P[c])
+    out = Image.new('RGBA', (16, 16), (0, 0, 0, 0))
+    for y in range(16):
+        for x in range(16):
+            if im.getpixel((x, y))[3] == 0 and any(0 <= x + dx < 16 and 0 <= y + dy < 16 and im.getpixel((x + dx, y + dy))[3]
+                                                   for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1))):
+                out.putpixel((x, y), P['outline'])
+    out.alpha_composite(im)
+    return out
+
+
 def save(im, path):
     path.parent.mkdir(parents=True, exist_ok=True)
     im.save(path)
@@ -78,6 +102,7 @@ def main():
     im.putpixel((14, 1), P['tip2'])
     im.putpixel((5, 12), P['pale'])  # trigger
     save(im, OUT)
+    save(emitter(), TEXTURES / 'item/lash_emitter.png')
     save(seared_icon(), TEXTURES / 'mob_effect/seared.png')
     save(ember(3.6), TEXTURES / 'particle/sear_ember_0.png')
     save(ember(2.6), TEXTURES / 'particle/sear_ember_1.png')

@@ -93,10 +93,12 @@ before handing back. Verify every hook below against current code first; these a
      test-first.
    - Run `architectVerify`, update this doc, and push. Do not merge.
 
-## 3D model spec (slice 2, draft 2026-11-03, awaiting owner approval)
+## 3D model spec (slice 2, owner liked the mockup 2026-11-03)
 
 Mockup: `docs/art/sever-lash/model-mockup.png`, drawn by `make_model_mockup.py` at Minecraft scale (one model unit
-a pixel, 16 to the block). Nothing here is built until the owner approves the mockup.
+a pixel, 16 to the block). The owner's response was "i like it". The geometry is what the model will be. The real
+texture adds surface detail, the display transforms are tuned in game, and the hold figures are sketches. It is built
+in slice 2.
 
 - **Shape.** One block long, about ten elements, all axis-aligned except the fins. From the back:
   - a Power Cell port with copper contacts;
