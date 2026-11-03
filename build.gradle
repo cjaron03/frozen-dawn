@@ -440,8 +440,18 @@ def registerShardedRun = { String name, String runName, Closure<File> shardDirec
                 passed = true
             } finally {
                 try {
-                    // Only the servers this task started.
-                    processes.findAll { it.alive }*.destroy()
+                    // Only the servers this task started. They save their worlds on the way out, so the lock stays held
+                    // until they have exited, even when a cancel interrupted this thread.
+                    def stopping = processes.findAll { it.alive }
+                    stopping*.destroy()
+                    boolean interrupted = Thread.interrupted()
+                    stopping.each {
+                        if (!it.waitFor(30, java.util.concurrent.TimeUnit.SECONDS)) {
+                            it.destroyForcibly()
+                            it.waitFor(10, java.util.concurrent.TimeUnit.SECONDS)
+                        }
+                    }
+                    if (interrupted) Thread.currentThread().interrupt()
                     runDirectories.eachWithIndex { runDirectory, shard ->
                         if (shardWorldsInBuild) { if (passed) delete(new File(runDirectory, 'world')); return }
                         // Logs, and evidence some tests write relative to the working directory.
