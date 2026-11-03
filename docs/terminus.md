@@ -50,4 +50,13 @@ As the spec, sections 5, 5a, 6, 8 and 9. Open: the tale logs (count and voices).
 
 ## Owner rulings
 
-(none yet on this branch)
+- 2026-11-03, texture: the owner asked for a really unique texture and picked **C, Reliquary** from
+  `docs/art/terminus/texture-directions.png` (`make_texture_directions.py`): a caged glass shaft holding one pale mote
+  per discharge left, drifting; the glass frosts on wind-up; spent is empty glass. Black knurled grip, steel collar and
+  rim, a flat pale emitter face, no lens. The geometry is the one drawn there, at 16 units to the block.
+- 2026-11-03, animation: the owner asked for really unique, cool animations, briefly for a beam, then withdrew the
+  beam ("nvm"). The discharge keeps the spec: no beam, no impact sound, one grey frame. Approved as drawn in
+  `docs/art/terminus/discharge-mockup.png` (`make_discharge_mockup.py`): during the wind-up the wand's motes slide to
+  the emitter, the glass frosts, and pale specks are drawn in toward the emitter from inside the cone, thickest along
+  its edge; on discharge the view goes grey for a frame; each stopped target lets a pale mote lift from its head, hang,
+  and wink out.
