@@ -287,8 +287,22 @@ public final class SeverLashGameTest {
         try {SeverLash.fire(p,lash,1000);}
         finally {net.neoforged.neoforge.common.NeoForge.EVENT_BUS.unregister(claim);}
         h.assertTrue(h.getBlockState(STRUCK.north()).isAir(),"No fire goes where placing it is refused: "+h.getBlockState(STRUCK.north()));
-        p.setGameMode(GameType.ADVENTURE);SeverLash.fire(p,lash,1001);
+        // Past the one-second refusal memory, so the adventure check itself runs.
+        p.setGameMode(GameType.ADVENTURE);SeverLash.fire(p,lash,1100);
         h.assertTrue(h.getBlockState(STRUCK.north()).isAir(),"Nor for an adventure player");
+        h.succeed();
+    }
+
+    @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="sever_lash",timeoutTicks=100)
+    public static void severLashAsksProtectionOnceASecondNotEveryTick(GameTestHelper h) {
+        var p=shooter(h,500000);var lash=p.getMainHandItem();var struck=h.absolutePos(STRUCK);
+        h.setBlock(STRUCK,Blocks.ICE);int[] asked={0};
+        java.util.function.Consumer<net.neoforged.neoforge.event.level.BlockEvent.BreakEvent> claim=e->{if(e.getPos().equals(struck)){asked[0]++;e.setCanceled(true);}};
+        net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(claim);
+        try {for(int t=0;t<40;t++)SeverLash.fire(p,lash,1000+t);}
+        finally {net.neoforged.neoforge.common.NeoForge.EVENT_BUS.unregister(claim);}
+        h.assertTrue(h.getBlockState(STRUCK).is(Blocks.ICE),"Refused ice stays");
+        h.assertTrue(asked[0]==2,"A held beam on a refused block asks again once a second, not every tick: "+asked[0]);
         h.succeed();
     }
 

@@ -22,19 +22,23 @@ import net.neoforged.neoforge.event.EventHooks;
  * What the beam does to the blocks it lands on, server only. Snow and plain ice flash to steam at once, leaving no
  * meltwater to flood a room; packed and blue ice melt, and stone scorches, only under a held beam ({@link BlockHeat}).
  * Where there is oxygen it sets wood and other fuel alight; in vacuum nothing burns. The Master Architect's Last Wall
- * stands, and every change must pass the protection a player's block break does.
+ * stands, and every change must pass the protection a player's block break does. A refused block is not asked again
+ * for a second, so a beam resting on protected ground does not post an event every tick.
  */
 public final class LashWorldEffects {
     public static final TagKey<Block> SCORCHES = BlockTags.create(ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "sever_lash_scorches"));
-    private static final int INSTANT = 0, UNAFFECTED = -1, MAX_TRACKED = 4096;
+    private static final int INSTANT = 0, UNAFFECTED = -1, MAX_TRACKED = 4096, REFUSAL_TICKS = 20;
     private record Heat(int heat, long last) {}
     private static final Map<ServerLevel, Map<BlockPos, Heat>> HEAT = new WeakHashMap<>();
+    /** When each refused block may be asked again. */
+    private static final Map<ServerLevel, Map<BlockPos, Long>> REFUSED = new WeakHashMap<>();
     private LashWorldEffects() {}
 
     /** {@code hits}: each block a ray landed on this tick, with the face it struck. */
     static void land(ServerLevel level, ServerPlayer player, Map<BlockPos, Direction> hits, long now) {
         if (hits.isEmpty()) return;
         var heat = HEAT.computeIfAbsent(level, k -> new HashMap<>());
+        var refused = REFUSED.computeIfAbsent(level, k -> new HashMap<>());
         List<ArchitectEntity> masters = null;
         for (var hit : hits.entrySet()) {
             var pos = hit.getKey(); var face = hit.getValue(); var state = level.getBlockState(pos);
@@ -42,6 +46,8 @@ public final class LashWorldEffects {
             var flame = pos.relative(face);
             boolean fuel = dwell == UNAFFECTED && CombustionAtmosphere.canBurnAt(level, flame) && catches(level, pos, state, face, flame, player.getDirection());
             if (dwell == UNAFFECTED && !fuel) continue;
+            var until = refused.get(pos);
+            if (until != null && now < until && until - now <= REFUSAL_TICKS) continue;
             if (state.is(Blocks.ICE) || state.is(Blocks.PACKED_ICE)) {
                 if (masters == null) masters = level.getEntitiesOfClass(ArchitectEntity.class, player.getBoundingBox().inflate(SeverLash.REACH + 32),
                         ArchitectEntity::isHearthMasterArchitect);
@@ -53,8 +59,10 @@ public final class LashWorldEffects {
                 if (!BlockHeat.gives(held, dwell)) { heat.put(pos.immutable(), new Heat(held, now)); continue; }
                 heat.remove(pos);
             }
-            if (fuel) { ignite(level, player, pos, state, flame, face); continue; }
-            if (!level.mayInteract(player, pos) || CommonHooks.fireBlockBreak(level, player.gameMode.getGameModeForPlayer(), player, pos, state).isCanceled()) continue;
+            if (fuel) { if (!ignite(level, player, pos, state, flame, face)) refused.put(pos.immutable(), now + REFUSAL_TICKS); continue; }
+            if (!level.mayInteract(player, pos) || CommonHooks.fireBlockBreak(level, player.gameMode.getGameModeForPlayer(), player, pos, state).isCanceled()) {
+                refused.put(pos.immutable(), now + REFUSAL_TICKS); continue;
+            }
             boolean air = CombustionAtmosphere.canBurnAt(level, flame);
             if (state.is(SCORCHES)) {
                 level.setBlock(pos, ModBlocks.SCORCHED_GROUND.get().defaultBlockState(), Block.UPDATE_ALL);
@@ -65,6 +73,7 @@ public final class LashWorldEffects {
             }
         }
         if (heat.size() > MAX_TRACKED) heat.values().removeIf(h -> BlockHeat.cold(h.heat(), h.last(), now));
+        if (refused.size() > MAX_TRACKED) refused.values().removeIf(until -> now >= until || until - now > REFUSAL_TICKS);
     }
 
     /** Ticks of held beam before the block gives way, {@code INSTANT}, or {@code UNAFFECTED}. */
@@ -84,28 +93,30 @@ public final class LashWorldEffects {
     /** Lights a campfire or candle in place, or sets fire in the cell the beam crossed. Like flint and steel, the
      * player must be allowed at the struck block, and it counts as placing a block where the change goes: the write is
      * captured as NeoForge does for item placement, so a refused place event reverts it before any neighbour hears. */
-    private static void ignite(ServerLevel level, ServerPlayer player, BlockPos pos, BlockState state, BlockPos flame, Direction face) {
+    /** @return false when protection refused it. */
+    private static boolean ignite(ServerLevel level, ServerPlayer player, BlockPos pos, BlockState state, BlockPos flame, Direction face) {
         boolean lights = state.hasProperty(BlockStateProperties.LIT) && !state.getValue(BlockStateProperties.LIT);
         var at = lights ? pos : flame;
         var mode = player.gameMode.getGameModeForPlayer();
-        if (!level.mayInteract(player, pos) || !level.mayInteract(player, at) || player.blockActionRestricted(level, at, mode)) return;
+        if (!level.mayInteract(player, pos) || !level.mayInteract(player, at) || player.blockActionRestricted(level, at, mode)) return false;
         var placed = lights ? state.setValue(BlockStateProperties.LIT, true) : BaseFireBlock.getState(level, flame);
         level.captureBlockSnapshots = true;
         level.setBlock(at, placed, Block.UPDATE_ALL_IMMEDIATE);
         level.captureBlockSnapshots = false;
         var captured = List.copyOf(level.capturedBlockSnapshots);
         level.capturedBlockSnapshots.clear();
-        if (captured.isEmpty()) return;
+        if (captured.isEmpty()) return true;
         var before = captured.get(0);
         if (EventHooks.onBlockPlace(player, before, face)) {
             level.restoringBlockSnapshots = true;
             before.restore(before.getFlags() | Block.UPDATE_CLIENTS);
             level.restoringBlockSnapshots = false;
-            return;
+            return false;
         }
         var now = level.getBlockState(at);
         now.onPlace(level, at, before.getState(), false);
         level.markAndNotifyBlock(at, level.getChunkAt(at), before.getState(), now, before.getFlags(), 512);
+        return true;
     }
 
     private static void puff(ServerLevel level, BlockPos at, net.minecraft.core.particles.SimpleParticleType type) {
