@@ -341,6 +341,11 @@ Holds, from screenshots: the third-person Lash was "being held on the side of my
 my fist you know? then when you fire it, you like. hold it in both hands". The owner kept the large first-person view
 ("i liked how big it was"). After the solved transforms and the two-handed pose: "there we go".
 
+Helion station (save "Sever Lash Helion", branch head 6235daad): "found it". The owner then asked whether the Icarus
+loot belongs there too. It does, in the log desk on the north wall, but only as a chance: the desk draws two or three of
+six slates. The field manual's slate page read as if Project Icarus were always among them; f155af61 corrects it to
+about two sites in five. The sound pass waits for the owner's headphones.
+
 ## Verification
 
 - JUnit:
