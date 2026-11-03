@@ -109,7 +109,12 @@ public final class LashBeamClient {
                 mc.level.addParticle(ModParticles.SEAR_EMBER.get(), tip.x, tip.y, tip.z,
                         (r.nextDouble() - .5) * .12, r.nextDouble() * .08, (r.nextDouble() - .5) * .12);
             }
-            if (beam.hum == null || !mc.getSoundManager().isActive(beam.hum)) { beam.hum = new Hum(shooter); mc.getSoundManager().play(beam.hum); }
+            // The hum counts as playing while the sound engine still ticks it. It cannot be looked up in the engine: the
+            // SoundMuffler swaps it for a muffled wrapper, so the engine holds the wrapper, not this instance.
+            if (beam.hum == null || beam.hum.idle++ > GRACE_TICKS) {
+                silence(beam);
+                beam.hum = new Hum(shooter); mc.getSoundManager().play(beam.hum);
+            }
             beam.hum.heat = beam.heat;
         }
         VACUUM.keySet().removeIf(id -> mc.level.getEntity(id) == null);
@@ -259,6 +264,8 @@ public final class LashBeamClient {
         private final LivingEntity shooter;
         float heat;
         boolean released;
+        /** Client ticks since the sound engine last ticked this hum, directly or through a muffled wrapper. */
+        int idle;
 
         Hum(LivingEntity shooter) {
             super(ModSounds.SEVER_LASH_HUM.get(), SoundSource.PLAYERS, SoundInstance.createUnseededRandom());
@@ -271,6 +278,7 @@ public final class LashBeamClient {
         static float pitch(float heat) { return .75F + .65F * Mth.clamp(heat, 0, 1); }
 
         @Override public void tick() {
+            idle = 0;
             if (shooter.isRemoved()) { stop(); return; }
             x = shooter.getX(); y = shooter.getEyeY(); z = shooter.getZ();
             pitch = pitch(heat);

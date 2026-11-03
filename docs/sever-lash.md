@@ -246,7 +246,8 @@ where one could be written:
 - An observer's whip stepped every client tick, so a tick with no new payload read as the sweep stopping: a false
   snap, and a crack if bent. It now steps only on ticks that bring a new aim. Client only, no test; it needs a
   second client to see.
-- A hum the sound engine dropped was not restarted; it now checks the engine.
+- A hum the sound engine dropped was not restarted; it now checks the engine. That check broke in the cold (see the
+  sound pass below): the hum is restarted when the engine stops ticking it instead.
 
 Set aside: a released or overheated beam lingers up to three client ticks plus latency, and the shooter's own beam
 keeps following their view meanwhile. Judge it in the visual pass.
@@ -351,6 +352,12 @@ about two sites in five. After a relaunch on 876d0ef9 with the field manual page
 Sound pass, unprompted: "dont really like the sound, i want it to sound more dangerous ish". Three hum auditions
 followed (arc welder, plasma roar, overload, each at the cool, warm and hot pitch); the owner picked the plasma roar, and
 the start-up, crack, sizzle and vent were rebuilt on it.
+
+Next, unprompted: the hum "doesnt stoop when you stop firing or when it overheats". Cause: below -15 C the
+`SoundMuffler` swaps a playing sound for a muffled wrapper, so the engine never held the Lash's own hum and the
+review fix's `isActive` check read false every tick. A new hum started every tick, and only the newest was faded at
+release; the rest looped on. The hum now counts as playing while the engine ticks it, through the wrapper or not. Client
+sound only, no test; it needs the owner's ears.
 
 ## Verification
 
