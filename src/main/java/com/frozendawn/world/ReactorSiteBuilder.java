@@ -24,11 +24,13 @@ import net.minecraft.world.level.levelgen.Heightmap;
  * Concrete hall 15x15 with the roof blown open over a torn, scorched CFU-7 shell. The core melted through the floor
  * into a sealed basement and cooled into an elephant's foot of Corium, visible through the melt hole. A frozen
  * spent-fuel pool holds the prize: a rack of partly burned rods beside two spent ones, shielded by the ice. Heavy
- * fallout inside and in a ring outside, thrown Reactor Debris, dead ground. Coordinates are relative to the centre
+ * fallout inside and in a ring outside, thrown Reactor Debris, dead ground. The maintenance bay in the hall's west corner
+ * keeps spares, and at about one site in four a Lash Emitter. Coordinates are relative to the centre
  * of the hall at the surface: floor at y-1, basement interior y-8 to y-3, pool y-5 to y-1, roof y+6. */
 public final class ReactorSiteBuilder {
     public static final int HALF = 7, ROOF = 6, BASEMENT_HALF = 3, BASEMENT_FLOOR = -9, POOL_BOTTOM = -6;
-    public static final BlockPos RACK = new BlockPos(5, -5, -5), LOCKER = new BlockPos(-6, 0, 6), MEDICAL = new BlockPos(6, 0, 6);
+    public static final BlockPos RACK = new BlockPos(5, -5, -5), LOCKER = new BlockPos(-6, 0, 6), MEDICAL = new BlockPos(6, 0, 6),
+            MAINTENANCE = new BlockPos(-6, 0, -6);
     public static final List<BlockPos> CORIUM = List.of(new BlockPos(0, -8, 0), new BlockPos(1, -8, 0));
     private ReactorSiteBuilder() {}
 
@@ -149,6 +151,11 @@ public final class ReactorSiteBuilder {
         }
         rack[rods] = new ItemStack(ModItems.SPENT_FUEL_ROD.get(), 2);
         fill(l, c.offset(RACK), rack);
+        set(l, c, MAINTENANCE.getX(), MAINTENANCE.getY(), MAINTENANCE.getZ(), Blocks.BARREL.defaultBlockState());
+        var bay = new java.util.ArrayList<>(List.of(new ItemStack(net.minecraft.world.item.Items.IRON_INGOT, 2 + r.nextInt(3)),
+                new ItemStack(net.minecraft.world.item.Items.COPPER_INGOT, 3)));
+        if (com.frozendawn.defense.LashSalvage.reactorBayEmitter(l.getSeed(), c.asLong())) bay.add(new ItemStack(ModItems.LASH_EMITTER.get()));
+        fill(l, c.offset(MAINTENANCE), bay.toArray(ItemStack[]::new));
     }
     private static void fill(ServerLevel l, BlockPos pos, ItemStack... items) {
         if (!(l.getBlockEntity(pos) instanceof BarrelBlockEntity barrel)) return;

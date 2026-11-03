@@ -41,6 +41,11 @@ public class ModDataComponents {
             DATA_COMPONENTS.register("cell_joules", () -> DataComponentType.<Integer>builder()
                     .persistent(Codec.intRange(0, 500_000)).networkSynchronized(ByteBufCodecs.VAR_INT).build());
 
+    /** Sever Lash emitter heat; synced so the holder's client refuses to fire while it vents. */
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<com.frozendawn.defense.LashHeat>> LASH_HEAT =
+            DATA_COMPONENTS.register("lash_heat", () -> DataComponentType.<com.frozendawn.defense.LashHeat>builder()
+                    .persistent(com.frozendawn.defense.LashHeat.CODEC).networkSynchronized(com.frozendawn.defense.LashHeat.STREAM_CODEC).build());
+
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<net.minecraft.core.GlobalPos>> CONDUIT_ANCHOR =
             DATA_COMPONENTS.register("conduit_anchor", () -> DataComponentType.<net.minecraft.core.GlobalPos>builder()
                     .persistent(net.minecraft.core.GlobalPos.CODEC).networkSynchronized(net.minecraft.core.GlobalPos.STREAM_CODEC).build());

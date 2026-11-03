@@ -71,6 +71,8 @@ public class ModNetworking {
 
         registrar.playToClient(PlumbLineReturnsPayload.TYPE, PlumbLineReturnsPayload.STREAM_CODEC,
                 (payload, context) -> context.enqueueWork(() -> com.frozendawn.client.PlumbLineOverlay.receive(payload)));
+        registrar.playToClient(LashBeamPayload.TYPE, LashBeamPayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(() -> com.frozendawn.client.LashBeamClient.receive(payload)));
 
         registrar.playToClient(SfrBlueprintPayload.TYPE, SfrBlueprintPayload.STREAM_CODEC,
                 (payload, context) -> context.enqueueWork(() -> ClientHandlers.handleSfrBlueprint(payload)));

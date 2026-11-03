@@ -1,0 +1,23 @@
+{
+  "parent": "frozendawn:first_shard",
+  "display": {
+    "icon": {
+      "id": "frozendawn:sever_lash"
+    },
+    "title": {
+      "translate": "advancement.frozendawn.hellwhip.title"
+    },
+    "description": {
+      "translate": "advancement.frozendawn.hellwhip.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "impossible": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

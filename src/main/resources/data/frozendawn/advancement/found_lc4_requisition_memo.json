@@ -1,0 +1,23 @@
+{
+  "parent": "frozendawn:classified_information",
+  "display": {
+    "icon": {
+      "id": "frozendawn:lash_emitter"
+    },
+    "title": {
+      "translate": "advancement.frozendawn.found_lc4_requisition_memo.title"
+    },
+    "description": {
+      "translate": "advancement.frozendawn.found_lc4_requisition_memo.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": true
+  },
+  "criteria": {
+    "impossible": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

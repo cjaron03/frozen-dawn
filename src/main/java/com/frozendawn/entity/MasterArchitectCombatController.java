@@ -1568,6 +1568,10 @@ final class MasterArchitectCombatController {
         }
     }
 
+    boolean holdsLastWall(BlockPos pos) {
+        return placedWallBlocks.contains(pos);
+    }
+
     private void removeWall(ServerLevel level) {
         List<BlockPos> unloaded = new ArrayList<>();
         for (BlockPos pos : placedWallBlocks) {

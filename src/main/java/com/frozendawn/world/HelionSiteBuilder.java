@@ -23,12 +23,14 @@ import net.minecraft.world.level.block.state.BlockState;
  * A buried concrete hall 17x17, sealed in a packed-ice jacket, around a cracked dead tokamak laid out like the
  * SFR-1 torus: copper solenoid round the Confinement Core, tungsten First Wall, a plasma channel frozen solid, a
  * pale blanket ring banded with field coils. A crack runs from the outer wall to the core, so the prize shows.
- * The control desk holds the salvage and the sealed log. An ice-plugged ladder shaft rises to a hatch at the
+ * The control desk holds the salvage and the sealed log; the diagnostics bench across the hall keeps the plasma
+ * diagnostic emitters ORSA later field-converted into the LC-4 Sever Lash. An ice-plugged ladder shaft rises to a hatch at the
  * surface. Coordinates are relative to the hall floor centre: floor at y-1, ceiling at y+CEILING. */
 public final class HelionSiteBuilder {
     public static final int HALF = 8, CEILING = 7, PLUG = 2, TORUS = 4;
     public static final BlockPos CORE = new BlockPos(0, 2, 0), SHAFT = new BlockPos(-6, 0, HALF - 1),
-            COIL_STORE = new BlockPos(-5, 0, -HALF + 1), LOG_DESK = new BlockPos(0, 0, -HALF + 1), WALL_SPARES = new BlockPos(5, 0, -HALF + 1);
+            COIL_STORE = new BlockPos(-5, 0, -HALF + 1), LOG_DESK = new BlockPos(0, 0, -HALF + 1), WALL_SPARES = new BlockPos(5, 0, -HALF + 1),
+            DIAGNOSTICS = new BlockPos(5, 0, HALF - 1);
     /** The crack through the solenoid, First Wall, channel and blanket, on the line from the core towards +x. */
     public static final List<BlockPos> BREACH = List.of(new BlockPos(1, 2, 0), new BlockPos(2, 2, 0), new BlockPos(3, 2, 0),
             new BlockPos(4, 2, 0), new BlockPos(2, 3, 0), new BlockPos(3, 3, 0), new BlockPos(4, 1, 0));
@@ -42,6 +44,7 @@ public final class HelionSiteBuilder {
         tokamak(level, hall, random);
         frost(level, hall, random);
         desk(level, hall, random);
+        diagnostics(level, hall);
         shaft(level, hall, shaftTopY - hall.getY());
     }
 
@@ -109,6 +112,28 @@ public final class HelionSiteBuilder {
         // Now and then a sealed pre-collapse antimatter capsule was left in the desk. It is a lucky find, never a requirement.
         if (r.nextFloat() < CAPSULE_CHANCE) desk.add(com.frozendawn.item.AntimatterCapsuleItem.sealed(com.frozendawn.power.IcarusPhysics.CAPSULE));
         fill(l, c.offset(LOG_DESK), desk.toArray(ItemStack[]::new));
+    }
+    public static final String HELLWHIP_MEMO = "lc4_requisition_memo";
+    /** The diagnostics bench along the south wall. Its emitters are always there: one or two, fixed by the seed. Now and
+     * then the supervisor's memo on the LC-4 requisition was left with them. */
+    private static void diagnostics(ServerLevel l, BlockPos c) {
+        for (int dx = 4; dx <= 7; dx++) set(l, c, dx, 0, HALF - 1, Blocks.POLISHED_ANDESITE.defaultBlockState());
+        set(l, c, DIAGNOSTICS.getX(), DIAGNOSTICS.getY(), DIAGNOSTICS.getZ(), Blocks.BARREL.defaultBlockState());
+        var bench = new java.util.ArrayList<>(List.of(new ItemStack(ModItems.LASH_EMITTER.get(),
+                com.frozendawn.defense.LashSalvage.helionEmitters(l.getSeed(), c.asLong()))));
+        if (com.frozendawn.defense.LashSalvage.helionMemo(l.getSeed(), c.asLong())) bench.add(hellwhipMemo());
+        fill(l, c.offset(DIAGNOSTICS), bench.toArray(ItemStack[]::new));
+    }
+    public static ItemStack hellwhipMemo() {
+        var memo = new ItemStack(ModItems.ORSA_DOCUMENT.get());
+        memo.set(DataComponents.CUSTOM_NAME, Component.literal("Procurement Review - Req. 0447"));
+        var tag = new net.minecraft.nbt.CompoundTag(); tag.putString("doc_type", HELLWHIP_MEMO);
+        memo.set(DataComponents.CUSTOM_DATA, net.minecraft.world.item.component.CustomData.of(tag));
+        return memo;
+    }
+    public static boolean isHellwhipMemo(ItemStack stack) {
+        var data = stack.get(DataComponents.CUSTOM_DATA);
+        return stack.is(ModItems.ORSA_DOCUMENT.get()) && data != null && HELLWHIP_MEMO.equals(data.copyTag().getString("doc_type"));
     }
     /** Ladder from the hall floor up through the ceiling and ice, plugged below a hatch at the surface. */
     private static void shaft(ServerLevel l, BlockPos c, int top) {

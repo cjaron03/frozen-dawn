@@ -1,0 +1,29 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "pattern": [
+    "IEA",
+    "LPI"
+  ],
+  "key": {
+    "E": {
+      "item": "frozendawn:lash_emitter"
+    },
+    "A": {
+      "item": "frozendawn:acheronite_shard"
+    },
+    "P": {
+      "item": "frozendawn:power_cell"
+    },
+    "I": {
+      "item": "minecraft:iron_ingot"
+    },
+    "L": {
+      "item": "frozendawn:lead_ingot"
+    }
+  },
+  "result": {
+    "id": "frozendawn:sever_lash",
+    "count": 1
+  }
+}

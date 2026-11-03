@@ -64,6 +64,7 @@ public class OrsaDocumentItem extends Item {
             Map.entry("station_requisition", Doc.intel("station_requisition", "Parts Requisition")),
             Map.entry("station_maintenance_bulletin", Doc.intel("station_maintenance_bulletin", "Ingest Node Bulletin")),
             Map.entry("station_relay_diagnostics", Doc.intel("station_relay_diagnostics", "Relay Diagnostics")),
+            Map.entry("lc4_requisition_memo", Doc.intel("lc4_requisition_memo", "Procurement Review")),
             Map.entry("vehicle_transcript_abandoned", Doc.intel("vehicle_transcript_abandoned", "Audio: Cabin Mic")),
             Map.entry("vehicle_transcript_breakdown", Doc.intel("vehicle_transcript_breakdown", "Audio: Breakdown")),
             Map.entry("vehicle_transcript_failed", Doc.intel("vehicle_transcript_failed", "Audio: Whiteout")),

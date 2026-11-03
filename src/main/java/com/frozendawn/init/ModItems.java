@@ -197,6 +197,9 @@ public class ModItems {
     public static final DeferredItem<Item> EMPTY_ANTIMATTER_CAPSULE = ITEMS.registerItem("empty_antimatter_capsule", Item::new, new Item.Properties().stacksTo(16));
 
     public static final DeferredItem<com.frozendawn.item.PowerCellItem> POWER_CELL = ITEMS.register("power_cell", () -> new com.frozendawn.item.PowerCellItem(new Item.Properties()));
+    public static final DeferredItem<com.frozendawn.item.SeverLashItem> SEVER_LASH = ITEMS.register("sever_lash", () -> new com.frozendawn.item.SeverLashItem(new Item.Properties()));
+    /** The bare diagnostic emitter salvaged from Helion and CFU-7 sites; crafts into the Sever Lash. */
+    public static final DeferredItem<Item> LASH_EMITTER = ITEMS.registerSimpleItem("lash_emitter", new Item.Properties().rarity(Rarity.UNCOMMON));
     public static final DeferredItem<BlockItem> BATTERY_BANK = ITEMS.registerSimpleBlockItem("battery_bank", ModBlocks.BATTERY_BANK);
     public static final DeferredItem<BlockItem> CELL_DOCK = ITEMS.registerSimpleBlockItem("cell_dock", ModBlocks.CELL_DOCK);
 
@@ -775,6 +778,8 @@ public class ModItems {
                         output.accept(ICARUS_MATTER_PORT.get());
                         output.accept(ICARUS_CAPSULE_DOCK.get());
                         output.accept(POWER_CELL.get());
+                        output.accept(SEVER_LASH.get());
+                        output.accept(LASH_EMITTER.get());
                         output.accept(BATTERY_BANK.get());
                         output.accept(CELL_DOCK.get());
                         output.accept(CONDUIT_BINDER.get());
