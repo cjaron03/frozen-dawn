@@ -29,7 +29,8 @@ public final class PowerNetworkGameTest {
     public static void powerRelayRangesAndTransparentBlocks(GameTestHelper h) {
         scene(h, () -> {
             var a = node(h, 1, 2, 2, false); var b = node(h, 17, 2, 2, false);
-            h.assertTrue(PowerNetworks.link(h.getLevel(), a, b) == PowerLinkRules.Result.OK, "Exactly 16 blocks is allowed");
+            var exact = PowerNetworks.link(h.getLevel(), a, b);
+            h.assertTrue(exact == PowerLinkRules.Result.OK, "Exactly 16 blocks is allowed, got " + exact);
             h.assertTrue(PowerNetworks.link(h.getLevel(), b, a) == PowerLinkRules.Result.DUPLICATE, "Reverse link is the same edge");
             var far = node(h, 18, 2, 2, false);
             h.assertTrue(PowerNetworks.link(h.getLevel(), a, far) == PowerLinkRules.Result.RANGE, "17 blocks exceeds small range");
