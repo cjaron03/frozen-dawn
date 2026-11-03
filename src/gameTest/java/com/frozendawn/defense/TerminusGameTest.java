@@ -300,6 +300,23 @@ public final class TerminusGameTest {
     }
 
     /** Before the Heart falls, the stopped leave nothing behind, though the death event still fires for the Hearth. */
+    /** The mod's own minds die their own ways (a dissolve, a felled beam, a burst); stopped, they all stand to crumble. */
+    @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="terminus",timeoutTicks=100)
+    public static void terminusHoldsEveryStoppedBodyForTheCrumble(GameTestHelper h) {
+        var op=operator(h);
+        List<Mob> minds=List.of(target(h,ModEntities.FROSTBITTEN.get(),0,4),target(h,ModEntities.HOLLOW.get(),5,6),
+                target(h,ModEntities.RETURNED.get(),-5,8),target(h,ModEntities.ARCHITECT.get(),0,10));
+        h.runAfterDelay(1,()->{
+            Terminus.discharge(op,op.getMainHandItem(),InteractionHand.MAIN_HAND);
+            for(var mind:minds)h.assertTrue(mind.isDeadOrDying(),"Stopped: "+mind.getType());
+            h.runAfterDelay(25,()->{for(var mind:minds)h.assertTrue(!mind.isRemoved(),"Still standing at 25 ticks: "+mind.getType());});
+            h.runAfterDelay(Terminus.DEATH_TICKS+2,()->{
+                for(var mind:minds)h.assertTrue(mind.isRemoved(),"Gone after the crumble: "+mind.getType());
+                h.succeed();
+            });
+        });
+    }
+
     @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="terminus",timeoutTicks=100)
     public static void terminusLeavesNoDropsBeforeTheHeartFalls(GameTestHelper h) {
         var op=operator(h);

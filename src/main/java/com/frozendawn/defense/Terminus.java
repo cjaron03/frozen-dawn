@@ -60,6 +60,8 @@ public final class Terminus {
     private static final String TAKEN = FrozenDawn.MOD_ID + ".terminus_taken";
     /** Stopped bodies on the server, held for the crumble. Players keep vanilla's death clock. */
     private static final Set<LivingEntity> STOPPED = Collections.newSetFromMap(new WeakHashMap<>());
+    /** Bodies the client is crumbling (TerminusCrumble): their own death animation is held off there too. */
+    private static final Set<LivingEntity> CRUMBLING = Collections.newSetFromMap(new WeakHashMap<>());
     /** What a boss loses to a discharge, as a share of its maximum; it is never brought below 1. */
     public static final float BOSS_SHARE = .4f;
     public static final TagKey<EntityType<?>> SUSCEPTIBLE = tag("terminus_susceptible"), IMMUNE = tag("terminus_immune");
@@ -138,12 +140,19 @@ public final class Terminus {
      * poof of smoke. Returns false for every other body.
      */
     public static boolean holdDeath(LivingEntity body) {
-        if (body.level().isClientSide() || !STOPPED.contains(body)) return false;
+        if (body.level().isClientSide()) return CRUMBLING.contains(body);
+        if (!STOPPED.contains(body)) return false;
         if (++body.deathTime >= DEATH_TICKS && !body.isRemoved()) {
             STOPPED.remove(body);
             body.remove(Entity.RemovalReason.KILLED);
         }
         return true;
+    }
+
+    /** The client's side of the hold, set and cleared by TerminusCrumble. */
+    public static void crumbling(LivingEntity body, boolean crumbling) {
+        if (crumbling) CRUMBLING.add(body);
+        else CRUMBLING.remove(body);
     }
 
     @SubscribeEvent

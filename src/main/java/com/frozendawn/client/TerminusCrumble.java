@@ -66,11 +66,13 @@ public final class TerminusCrumble {
     public static void start(LivingEntity body, Entity operator) {
         float yaw = operator == null ? 0 : operator.getYRot() * Mth.DEG_TO_RAD;
         BODIES.put(body, new Body(new Vec3(-Mth.cos(yaw), 0, -Mth.sin(yaw))));
+        Terminus.crumbling(body, true);
     }
 
     @SubscribeEvent public static void tick(ClientTickEvent.Post event) {
         var mc = Minecraft.getInstance();
         if (mc.level == null) {
+            BODIES.keySet().forEach(body -> Terminus.crumbling(body, false));
             BODIES.clear();
             return;
         }
@@ -83,6 +85,7 @@ public final class TerminusCrumble {
             // Held until the server takes the body: let go any sooner and vanilla draws its fall and red flush, crumbled
             // or not. The limit is only for a body the server never removes.
             if (body.isRemoved() || body.level() != mc.level || state.age > Terminus.DEATH_TICKS + 40) {
+                Terminus.crumbling(body, false);
                 it.remove();
                 continue;
             }
@@ -138,7 +141,7 @@ public final class TerminusCrumble {
             var name = ((RenderStateShardAccessor) type).frozendawn$name();
             if (name.contains("glint")) return Nothing.INSTANCE;
             if (type instanceof CompositeRenderTypeAccessor composite
-                    && (name.startsWith("entity") || name.startsWith("armor") || name.startsWith("item_entity"))) {
+                    && (name.startsWith("entity") || name.startsWith("armor") || name.startsWith("item_entity") || name.equals("eyes"))) {
                 var textureState = ((CompositeStateAccessor) (Object) composite.frozendawn$state()).frozendawn$textureState();
                 var texture = ((TextureStateShardInvoker) textureState).frozendawn$cutoutTexture();
                 if (texture.isPresent())

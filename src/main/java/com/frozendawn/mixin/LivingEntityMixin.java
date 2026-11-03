@@ -5,6 +5,7 @@ import com.frozendawn.defense.Terminus;
 import com.frozendawn.event.IceClawsHandler;
 import com.frozendawn.event.SnowshoesHandler;
 import com.frozendawn.event.SnowshoesTuning;
+import com.llamalad7.mixinextras.injector.v2.WrapWithCondition;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
@@ -17,11 +18,11 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(LivingEntity.class)
 public abstract class LivingEntityMixin {
 
-    @Inject(method = "tickDeath", at = @At("HEAD"), cancellable = true)
-    private void frozendawn$holdTerminusDeath(CallbackInfo ci) {
-        if (Terminus.holdDeath((LivingEntity) (Object) this)) {
-            ci.cancel();
-        }
+    /** At the call, not in the method: the mod's own mobs override tickDeath without calling it. */
+    @WrapWithCondition(method = "baseTick", at = @At(value = "INVOKE",
+            target = "Lnet/minecraft/world/entity/LivingEntity;tickDeath()V"))
+    private boolean frozendawn$holdTerminusDeath(LivingEntity body) {
+        return !Terminus.holdDeath(body);
     }
 
     @Inject(method = "travel", at = @At("HEAD"), cancellable = true)

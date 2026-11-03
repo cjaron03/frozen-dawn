@@ -39,6 +39,16 @@ class TerminusTollTest {
         assertEquals(0, toll.tick(4 * HALF_HEART_TICKS).taken());
     }
 
+    /** On a server the world runs while a player is away: what came due meanwhile comes back, half a heart a tick. */
+    @Test
+    void timeAwayCountsWhenThePlayerReturns() {
+        var toll = new TerminusToll(8, HALF_HEART_TICKS);
+        long now = 3 * HALF_HEART_TICKS;
+        for (int i = 0; i < 10; i++) toll = toll.tick(now);
+        assertEquals(5, toll.taken());
+        assertEquals(4 * HALF_HEART_TICKS, toll.returnsAt());
+    }
+
     @Test
     void nothingTakenNothingReturns() {
         assertEquals(NONE, NONE.tick(1_000_000));

@@ -265,6 +265,27 @@ a [Wither health] button reading its health. The reach is now 24 blocks and Redu
 "ah enable advancemnets please, and i wanna fix the sounds. i want it to have a better chargeup sound, and maybe
 sometihng when it first, or is that not realistic"
 
+## Branch review 2, 2026-11-03 (27948f32..09b5da73)
+
+One subagent on Opus reviewed the changes since the first review with a fresh context: Opus because they change a
+player attachment's save format, the discharge payload and the shared death path (a `LivingEntity` mixin). Fixed, each
+under a test written first and seen to fail:
+- the held death clock hooked `tickDeath` itself, which Frostbitten, Hollow, Returned and Architect override without
+  calling it, so they still vanished, dissolved or fell; it now wraps the call in `baseTick`, on both sides
+  (`terminusHoldsEveryStoppedBodyForTheCrumble`);
+- the hush set the listener gain to exactly 0, at which vanilla skips new sounds outright, so loops and voice lines
+  started in the silence were lost; it now floors at 1e-4 (`TerminusHushTest`);
+- the hush touched OpenAL even when vanilla had turned sound off for want of a device; it now checks `loaded`;
+- the toll clock restarted from `now`, so time away from a running server was lost; it now steps from the due time
+  (`TerminusTollTest.timeAwayCountsWhenThePlayerReturns`);
+- an Architect's `eyes` layer floated after the crumble took its head; it now crumbles with the body.
+
+Set aside (minor): taken hearts past the rows vanilla reserved (absorption, more than ten slots, a toll over 19) draw
+over the armor row, and the half sprite ignores the low-health jiggle; translucent bodies (Mimic, Hollow, the Architect)
+turn opaque while they crumble; one crumble render type is kept per texture for the session; the playtest script borrows
+the Blind Architect script's NBT helpers; saves from before `59fd7644` drop their old `terminus_toll` and are forgiven
+it; Hollow and Frostbitten still give their own burst in `die()` when stopped.
+
 ## Owner playtest 4, 2026-11-03 (Terminus Check 5, runClient, branch head f85128a0)
 
 Unprompted report: "good." Then: "whats next? the puzzle in helion? i want the room to be very...very hidden"

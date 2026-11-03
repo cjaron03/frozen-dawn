@@ -8,8 +8,14 @@ import org.junit.jupiter.api.Test;
 class TerminusHushTest {
     @Test
     void silentThroughTheHoldThenWholeAgain() {
-        assertEquals(0f, TerminusHush.gain(0));
-        assertEquals(0f, TerminusHush.gain(TerminusHush.HOLD_TICKS));
+        assertTrue(TerminusHush.gain(0) < 1e-3f);
+        assertTrue(TerminusHush.gain(TerminusHush.HOLD_TICKS) < 1e-3f);
         assertEquals(1f, TerminusHush.gain(TerminusHush.HOLD_TICKS + TerminusHush.FADE_TICKS));
+    }
+
+    /** At a gain of exactly zero vanilla skips new sounds outright: loops and voice lines started then never come back. */
+    @Test
+    void neverQuiteZeroSoSoundsStillStart() {
+        for (int age = 0; age <= TerminusHush.HOLD_TICKS + TerminusHush.FADE_TICKS; age++) assertTrue(TerminusHush.gain(age) > 0, "age " + age);
     }
 }

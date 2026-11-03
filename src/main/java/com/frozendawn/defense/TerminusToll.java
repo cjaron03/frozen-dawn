@@ -20,9 +20,12 @@ public record TerminusToll(int taken, long returnsAt) {
         return new TerminusToll(taken + TAKEN_PER_DISCHARGE, taken > 0 ? returnsAt : now + HALF_HEART_TICKS);
     }
 
-    /** Half a heart back if one is due at {@code now}, and the next due half a day on. */
+    /**
+     * Half a heart back if one is due at {@code now}, and the next due half a day after this one was. Time a player
+     * spent away from a running server counts: each tick returns another half until the clock is past {@code now}.
+     */
     public TerminusToll tick(long now) {
         if (taken <= 0 || now < returnsAt) return this;
-        return taken == 1 ? NONE : new TerminusToll(taken - 1, now + HALF_HEART_TICKS);
+        return taken == 1 ? NONE : new TerminusToll(taken - 1, returnsAt + HALF_HEART_TICKS);
     }
 }

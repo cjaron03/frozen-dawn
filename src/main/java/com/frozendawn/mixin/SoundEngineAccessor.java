@@ -17,6 +17,9 @@ public interface SoundEngineAccessor {
     @Accessor("listener")
     Listener frozendawn$getListener();
 
+    @Accessor("loaded")
+    boolean frozendawn$isLoaded();
+
     @Invoker("calculateVolume")
     float frozendawn$calculateVolume(SoundInstance sound);
 }
