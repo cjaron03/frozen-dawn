@@ -72,4 +72,33 @@ class LashHeatTest {
         assertFalse(hot.lockedOut(5000), "No lockout lasts longer than the vacuum maximum");
         assertTrue(hot.fire(5000, false).fired());
     }
+
+    @Test
+    void theGlowFollowsHeatAndCoolsWhenIdle() {
+        assertEquals(0, LashHeat.COOL.glow(5000));
+        var half = fire(LashHeat.COOL, 1000, LashHeat.FIRE_TICKS / 2, false);
+        long last = 1000 + LashHeat.FIRE_TICKS / 2 - 1;
+        assertEquals(.5F, half.glow(last), 1e-6, "Three seconds of fire is half way to overheat");
+        assertEquals(.25F, half.glow(last + LashHeat.FIRE_TICKS / 4), 1e-6, "Idle, it sheds heat as fast as firing adds it");
+        assertEquals(0, half.glow(last + LashHeat.FIRE_TICKS), "and goes cold");
+    }
+
+    @Test
+    void anOverheatedLashGlowsFullAndVentsWhiteThenCoolsRed() {
+        var hot = fire(LashHeat.COOL, 1000, LashHeat.FIRE_TICKS, false);
+        long tripped = 1000 + LashHeat.FIRE_TICKS - 1;
+        assertEquals(1F, hot.glow(tripped + 1));
+        assertEquals(1F, hot.vent(tripped + 1), "Just tripped: vented white-hot");
+        assertEquals(.5F, hot.vent(tripped + LashHeat.LOCKOUT_TICKS / 2), "The second half of the lockout cools");
+        assertEquals(0, hot.vent(tripped + LashHeat.LOCKOUT_TICKS), "Vents shut when the lockout ends");
+        assertEquals(0, hot.glow(tripped + LashHeat.LOCKOUT_TICKS), "and the emitter is cool again");
+        var vacuum = fire(LashHeat.COOL, 1000, LashHeat.FIRE_TICKS, true);
+        assertEquals(1F, vacuum.vent(tripped + LashHeat.LOCKOUT_TICKS / 2 + 1), "In vacuum each half lasts twice as long");
+        assertEquals(.5F, vacuum.vent(tripped + LashHeat.LOCKOUT_TICKS + 1));
+    }
+
+    @Test
+    void aFiringLashNeverVents() {
+        assertEquals(0, fire(LashHeat.COOL, 1000, LashHeat.FIRE_TICKS - 1, false).vent(1000 + LashHeat.FIRE_TICKS - 2));
+    }
 }

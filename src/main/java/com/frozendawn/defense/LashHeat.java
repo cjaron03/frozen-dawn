@@ -32,6 +32,20 @@ public record LashHeat(int heat, long lockoutUntil, long lastFired) {
     /** A lockout further off than the vacuum maximum came from another world's clock and has lapsed. */
     public boolean lockedOut(long now) { return now < lockoutUntil && lockoutUntil - now <= 2L * LOCKOUT_TICKS; }
 
+    /** How hot the emitter looks, 0 to 1: full while locked out, otherwise its heat cooling as in air. The client has
+     * no vacuum reading, so in vacuum the glow fades a little early. */
+    public float glow(long now) {
+        if (lockedOut(now)) return 1;
+        if (lockoutUntil > 0) return 0;
+        return Math.max(0, heat - 2 * Math.max(0, now - lastFired)) / (float) OVERHEAT;
+    }
+
+    /** The overheat vent: 1 for the white-hot first half of a lockout, 0.5 as it cools in the second, 0 otherwise. */
+    public float vent(long now) {
+        if (!lockedOut(now)) return 0;
+        return 2 * (now - lastFired) < lockoutUntil - lastFired ? 1 : .5F;
+    }
+
     public Shot fire(long now, boolean vacuum) {
         if (lockedOut(now)) return new Shot(false, this);
         int settled = heat;

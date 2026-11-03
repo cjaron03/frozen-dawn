@@ -5,7 +5,9 @@ A gunmetal diagnostic emitter held diagonally like a tool: lead-grey grip, coppe
 red-orange emitter tip. Seared (2026-11-03): a tapered diagonal burn, white-hot at the core and cooling to
 deep red at the edges, with two embers lifting off it; the ember sprites are white so the particle tints them as
 they cool. Lash Emitter (2026-11-03): the bare salvaged emitter, a short gunmetal tube in two copper coils with the
-dead lens at one end and torn leads at the other. Run from anywhere: python3 docs/art/sever-lash/make_textures.py
+dead lens at one end and torn leads at the other. Heat glow (2026-11-03): overlays drawn over the Lash sprite as heat
+nears overheat (warm, hot) and through the lockout (vented white-hot, then cooling red); the game renders all but
+warm at full brightness. Run from anywhere: python3 docs/art/sever-lash/make_textures.py
 """
 from pathlib import Path
 from PIL import Image
@@ -83,6 +85,32 @@ def emitter():
     return out
 
 
+# Per overlay: (first body cell it covers, colour by body cell kind, colour of the shadow pixel under it).
+GLOW = {
+    'warm': (6, {'copper': 'a5523a', 'copper2': 'c0603e', 'steel': '7a2a1e', 'light': '9b3a26'}, None),
+    'hot': (6, {'copper': 'ff8a3a', 'copper2': 'ffb35a', 'steel': 'c03a26', 'light': 'e5583a', 'lens': 'ffd9b0',
+                'lens2': 'fff3d6', 'tip': 'ffb35a'}, '7a2a1e'),
+    'vented': (4, {'lead': 'ff8a3a', 'lead2': 'ffb35a', 'steel': 'ffb35a', 'light': 'fff3d6', 'copper': 'ffb35a',
+                   'copper2': 'fff3d6', 'lens': 'fff3d6', 'lens2': 'ffffff', 'tip': 'fff3d6'}, 'c03a26'),
+    'cooling': (6, {'copper': 'c03a26', 'copper2': 'e5583a', 'steel': '9b2a1e', 'light': 'c03a26', 'lens': 'e5583a',
+                    'lens2': 'ff8a3a', 'tip': 'e5583a'}, '5a1a14'),
+}
+
+
+def glow(name):
+    first, colours, shadow = GLOW[name]
+    im = Image.new('RGBA', (16, 16), (0, 0, 0, 0))
+    for i, (x, y, kind) in enumerate(BODY):
+        c = colours.get(kind) if i >= first else None
+        if c:
+            im.putpixel((x, y), tuple(bytes.fromhex(c)) + (255,))
+            if shadow and kind in ('steel', 'light', 'copper', 'copper2'):
+                im.putpixel((x + 1, y + 1), tuple(bytes.fromhex(shadow)) + (255,))
+    if name in ('hot', 'vented'):
+        im.putpixel((14, 1), tuple(bytes.fromhex('fff3d6')) + (255,))
+    return im
+
+
 def save(im, path):
     path.parent.mkdir(parents=True, exist_ok=True)
     im.save(path)
@@ -103,6 +131,8 @@ def main():
     im.putpixel((5, 12), P['pale'])  # trigger
     save(im, OUT)
     save(emitter(), TEXTURES / 'item/lash_emitter.png')
+    for name in GLOW:
+        save(glow(name), TEXTURES / f'item/sever_lash_glow_{name}.png')
     save(seared_icon(), TEXTURES / 'mob_effect/seared.png')
     save(ember(3.6), TEXTURES / 'particle/sear_ember_0.png')
     save(ember(2.6), TEXTURES / 'particle/sear_ember_1.png')

@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:item/handheld",
+  "loader": "neoforge:item_layers",
+  "textures": {
+    "layer0": "frozendawn:item/sever_lash",
+    "layer1": "frozendawn:item/sever_lash_glow_warm"
+  }
+}

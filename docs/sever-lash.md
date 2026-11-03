@@ -109,8 +109,8 @@ in slice 2.
   - three cooling fins on top.
   The lens and any hot part render fullbright (NeoForge element `neoforge_data` light 15).
 - **Heat states.** These are item model overrides on two client predicates: `frozendawn:heat` (0 to 1, heat over
-  the overheat limit, settled from the stack's `LashHeat` and client game time) and `frozendawn:vent` (0, 0.5 or 1,
-  how far the lockout has run). Slice 1's overheat glow uses the same predicates on the flat sprite, so the 3D model
+  the overheat limit, settled from the stack's `LashHeat` and client game time) and `frozendawn:vent` (1 for the
+  first half of a lockout, 0.5 for the second, 0 otherwise). Slice 1's overheat glow uses the same predicates on the flat sprite, so the 3D model
   only swaps the models behind them.
   - Cool: steel fins, cyan lens.
   - Warm (from half heat): the fin tips and the barrel near the lens dull red.

@@ -270,10 +270,23 @@ public class ClientEvents {
             );
             ItemProperties.register(ModItems.GEIGER_COUNTER.get(), ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "reading"),
                     (stack, level, entity, seed) -> entity == net.minecraft.client.Minecraft.getInstance().player ? RadiationClient.needle() : 0);
+            // The Lash glows as it nears overheat and vents through the lockout; heat settles on the client's clock.
+            ItemProperties.register(ModItems.SEVER_LASH.get(), ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "heat"),
+                    (stack, level, entity, seed) -> lashHeat(stack).glow(lashClock(level)));
+            ItemProperties.register(ModItems.SEVER_LASH.get(), ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "vent"),
+                    (stack, level, entity, seed) -> lashHeat(stack).vent(lashClock(level)));
             ItemProperties.register(ModItems.MIEL_HONEY.get(), ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "fill"),
                     (stack, level, entity, seed) -> stack.getOrDefault(ModDataComponents.MIEL_SPOONFULS, MielHoneyItem.SPOONFULS) / (float) MielHoneyItem.SPOONFULS);
             CuriosClientCompat.registerRenderers();
         });
+    }
+
+    private static com.frozendawn.defense.LashHeat lashHeat(net.minecraft.world.item.ItemStack stack) {
+        return stack.getOrDefault(ModDataComponents.LASH_HEAT.get(), com.frozendawn.defense.LashHeat.COOL);
+    }
+    private static long lashClock(@org.jetbrains.annotations.Nullable net.minecraft.client.multiplayer.ClientLevel level) {
+        var world = level != null ? level : net.minecraft.client.Minecraft.getInstance().level;
+        return world == null ? 0 : world.getGameTime();
     }
 
     @SubscribeEvent

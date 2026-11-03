@@ -2,5 +2,31 @@
   "parent": "minecraft:item/handheld",
   "textures": {
     "layer0": "frozendawn:item/sever_lash"
-  }
+  },
+  "overrides": [
+    {
+      "predicate": {
+        "frozendawn:heat": 0.5
+      },
+      "model": "frozendawn:item/sever_lash_warm"
+    },
+    {
+      "predicate": {
+        "frozendawn:heat": 0.8
+      },
+      "model": "frozendawn:item/sever_lash_hot"
+    },
+    {
+      "predicate": {
+        "frozendawn:vent": 0.5
+      },
+      "model": "frozendawn:item/sever_lash_cooling"
+    },
+    {
+      "predicate": {
+        "frozendawn:vent": 1.0
+      },
+      "model": "frozendawn:item/sever_lash_vented"
+    }
+  ]
 }
