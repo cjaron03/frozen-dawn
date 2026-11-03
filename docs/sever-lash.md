@@ -359,8 +359,8 @@ my fist you know? then when you fire it, you like. hold it in both hands". The o
     refusal memory.
   - Vacuum (batch `sever_lash_vacuum`): nothing burns, and stone still scorches.
 - `architectVerify` passed on 09572595 (864 GameTests) and on 435d74e4 (865), after the review fixes.
-- Slice 2: `architectVerify` passed on a5666787 (868 GameTests) and on 540ad5e2 (869), after the review fixes. The
-  third-person holds changed after that; the gate has not been rerun on them yet.
+- Slice 2: `architectVerify` passed on a5666787 (868 GameTests) and on 540ad5e2 (869), after the review fixes, and on
+  b1b19d00 (869) after the third-person holds. Only this line changed after that.
 - Slice 2 GameTests: one beam payload a firing tick, naming the shooter and carrying the aim, length to the wall,
   landing, air and heat; the full reach in open air; nothing while locked; vacuum flagged (batch
   `sever_lash_vacuum`); one start-up a beam; a sizzle every quarter second of contact and none into open air; one vent
