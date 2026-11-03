@@ -26,10 +26,11 @@ public final class SeverLash {
     public static final double REACH = 12;
     /** Six damage a second. */
     public static final float DAMAGE_PER_TICK = 0.3F;
-    /** Hostiles cut in one sweep for the Hellwhip advancement. */
+    /** Hostiles cut in one continuous beam for the Hellwhip advancement. */
     public static final int HELLWHIP_HOSTILES = 3;
     private static final DustParticleOptions BEAM = new DustParticleOptions(new Vector3f(1F, .22F, .12F), .6F);
-    private record Aim(Vec3 direction, long tick) {}
+    /** One continuous beam: its last aim and the hostiles it has cut so far. */
+    private record Aim(Vec3 direction, long tick, Set<UUID> hostiles) {}
     private static final Map<UUID, Aim> AIMS = new HashMap<>();
     private SeverLash() {}
 
@@ -44,8 +45,11 @@ public final class SeverLash {
         player.getInventory().setChanged();
 
         var look = player.getLookAngle();
-        var last = AIMS.put(player.getUUID(), new Aim(look, now));
-        var from = last != null && last.tick() == now - 1 ? last.direction() : null;
+        var last = AIMS.get(player.getUUID());
+        boolean continuing = last != null && last.tick() == now - 1;
+        var from = continuing ? last.direction() : null;
+        var hostiles = continuing ? last.hostiles() : new HashSet<UUID>();
+        AIMS.put(player.getUUID(), new Aim(look, now, hostiles));
         var candidates = level.getEntitiesOfClass(LivingEntity.class, player.getBoundingBox().inflate(REACH),
                 e -> e != player && e.isAlive() && !e.isSpectator() && e.isPickable());
         var cut = new LinkedHashSet<LivingEntity>();
@@ -62,9 +66,8 @@ public final class SeverLash {
         }
 
         var source = level.damageSources().source(ModDamageTypes.SEVER_LASH, player);
-        int hostiles = 0;
-        for (var e : cut) if (e.hurt(source, DAMAGE_PER_TICK) && e instanceof Enemy) hostiles++;
-        if (hostiles >= HELLWHIP_HOSTILES) ReactorAdvancements.grant(player, "hellwhip");
+        for (var e : cut) if (e.hurt(source, DAMAGE_PER_TICK) && e instanceof Enemy) hostiles.add(e.getUUID());
+        if (hostiles.size() >= HELLWHIP_HOSTILES) ReactorAdvancements.grant(player, "hellwhip");
         draw(level, eye, stop, block != null && block.getType() != HitResult.Type.MISS, vacuum);
         if (shot.heat().lockedOut(now + 1)) {
             AIMS.remove(player.getUUID());

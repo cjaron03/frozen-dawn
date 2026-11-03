@@ -108,8 +108,12 @@ public final class SeverLashGameTest {
         aim(p,-40);SeverLash.fire(p,lash,1000);aim(p,40);SeverLash.fire(p,lash,1001);
         h.assertTrue(!earned(p,"hellwhip"),"Two hostiles and a pig is not a Hellwhip");
         target(h,EntityType.HUSK,20,7);
-        aim(p,-40);SeverLash.fire(p,lash,1002);
-        h.assertTrue(earned(p,"hellwhip"),"Three hostiles cut in one sweep earns Hellwhip");
+        aim(p,20);SeverLash.fire(p,lash,1010);
+        h.assertTrue(!earned(p,"hellwhip"),"A new beam starts a new count, even with three hostiles cut across two");
+        aim(p,0);SeverLash.fire(p,lash,1011);
+        h.assertTrue(!earned(p,"hellwhip"),"Two hostiles so far in this beam");
+        aim(p,-30);SeverLash.fire(p,lash,1012);
+        h.assertTrue(earned(p,"hellwhip"),"Three hostiles cut in one continuous beam earns Hellwhip, no single tick needed");
         p.discard();h.succeed();
     }
 

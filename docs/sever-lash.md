@@ -32,7 +32,7 @@ Each slice is its own branch and PR off `feat/maeve-director`.
 - In air the beam draws a red dust line; in vacuum only the impact shows. Overheat plays a vanilla extinguish hiss
   as a placeholder.
 - Hyperion touches: serial "S/N LC-4/KSD", the "NOT FOR USE ON PERSONNEL." tooltip, the Hellwhip challenge advancement
-  (three hostiles cut in one tick's sweep), and a player death message naming the hellwhip.
+  (three hostiles cut in one continuous beam; letting go or overheating starts a new count), and a player death message naming the hellwhip.
 - For now it is in the creative tab only. Recipe and Helion/CFU-7 spawns are slice 2.
 
 ## Deferred to slice 2
@@ -43,6 +43,13 @@ Each slice is its own branch and PR off `feat/maeve-director`.
   emitter glow; a better texture.
 - The two specs disagree on the Sweep Turret's recipe: the turret page gives a crafting recipe, while the Fabricator
   page lists it as a blueprint. Settle this before slice 5.
+
+## Playtest world
+
+`python3 tools/prepare_sever_lash_playtest.py --source <any save>/level.dat --destination run/saves/'Sever Lash Check'`
+builds a flat firing range: Hellwhip husks, reach pigs at 12 and 15 blocks, a walled pig, bare and diamond husks, and
+a sealed glass room for air vs vacuum. By the owner's ruling (2026-11-02) this world keeps advancement toasts and chat
+on so Hellwhip can be seen; other generated worlds still filter them. Difficulty is Normal and locked.
 
 ## Verification
 
