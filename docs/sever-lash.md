@@ -9,7 +9,7 @@ Each slice is its own branch and PR off `feat/maeve-director`.
 
 | # | Slice | Status |
 |---|---|---|
-| 1 | Lash core, Seared, acquisition, world effects, overheat glow, hellwhip memo | This branch, `feat/sever-lash`, PR #143 open, not ready to merge |
+| 1 | Lash core, Seared, acquisition, world effects, overheat glow, hellwhip memo | This branch, `feat/sever-lash`, PR #143 open; built, awaiting the owner's playtest and merge approval |
 | 2 | Lash modules (need the ORSA Fabricator, which is not built), beam render, hum, sounds, 3D model, texture | Not started |
 | 3 | Proximity Tracker (handheld, then wall-mounted) | Not started |
 | 4 | Arc Fence | Not started |
@@ -47,51 +47,75 @@ TR-0 Terminus page (2026-11-03) is its own slice after the Sweep Turret.
   as a placeholder.
 - Hyperion touches: serial "S/N LC-4/KSD", the "NOT FOR USE ON PERSONNEL." tooltip, the Hellwhip challenge advancement
   (three hostiles cut in one continuous beam; letting go or overheating starts a new count), and a player death message naming the hellwhip.
-- For now it is in the creative tab only; see the plan below.
+- The held Lash glows as it heats (`LashHeat.glow` and `vent`, as the client item predicates `frozendawn:heat` and
+  `frozendawn:vent`, with overrides in `models/item/sever_lash*.json`).
+  - Warm from half heat.
+  - A fullbright hot glow from 80%.
+  - White-hot for the first half of a lockout and cooling red for the second.
+  - The client settles heat on its own clock and has no vacuum reading, so in vacuum the glow fades a little early.
+  - The overlays come from `make_textures.py`.
+
+### Acquisition
+
+- The Lash stays in the creative tab beside a new **Lash Emitter**, the bare salvaged diagnostic emitter.
+- Every Helion site keeps one or two emitters on a diagnostics bench, a barrel at `HelionSiteBuilder.DIAGNOSTICS`
+  on a short andesite bench by the south wall.
+- About one CFU-7 reactor site in four keeps one in its maintenance bay, a barrel at `ReactorSiteBuilder.MAINTENANCE`
+  in the hall's west corner. The bay always holds a few iron and copper ingots.
+- Both rolls come from `LashSalvage`: a hash of the world seed and the site's packed position, independent of the
+  builders' own random. A site always rolls the same, and adding the rolls changed no earlier layout. Sites built
+  before this change are not revisited.
+- Shaped recipe (`recipe/sever_lash.json`): iron, emitter and Acheronite Shard on top; lead ingot, Power Cell and
+  iron below. Any cell will do, and its charge is used up in the craft. The crafted Lash carries no heat, so it
+  starts cool.
+
+### Hellwhip memo
+
+- On about one Helion bench in four (`LashSalvage.helionMemo`), an ORSA document "Procurement Review - Req. 0447"
+  (doc type `lc4_requisition_memo`).
+- The plasma diagnostics supervisor denies, for the third time, a technician's requisition for six field-converted
+  LC-4s. The form is fine; the technician keeps writing "hellwhip", after an old book, instead of the catalogue name.
+  There are no book quotes.
+- Reading it archives it: Field Manual entry "Procurement Review" and the hidden advancement "Denied on the Name".
+- Reusable voice for the TR-0 deathwand memo: an ORSA PROCUREMENT REVIEW header, then From, Re and Req. lines, a
+  dry account of the nickname problem, and a one-word italic Disposition with a short, deadpan note for the file.
+
+### World effects (`LashWorldEffects`, `BlockHeat`)
+
+These act on each block a ray lands on, once per tick however many rays hit it.
+- **Snow and ice.** Snow (layers, block, powder) and plain or frosted ice flash to steam at once and leave air.
+  Ruling (agent, 2026-11-03, for the owner to confirm): no meltwater. A water source would flow into a sealed room's
+  air cells and reshape it. Air goes through the same block-change hooks as mining, so `RoomAtmosphere` sees an
+  ordinary block removal.
+- **Packed ice, blue ice and stone** give way only under a held beam.
+  - The dwell is 1 s for packed ice, 2 s for blue ice, and 0.5 s for stone, which scorches into Scorched Ground.
+    Stone is the tag `frozendawn:sever_lash_scorches`: overworld base stone, cobblestone and cobbled deepslate.
+  - Each tick of contact adds two units of heat per block, and each idle tick sheds one, so a sweep past leaves them.
+  - Heat is kept per level and position in memory, pruned once it passes 4,096 blocks. It is not saved.
+  - Ruling (agent): stone needs a dwell, so one sweep cannot scorch a whole room.
+- **Fire.** Where the cell the beam crossed has oxygen (`CombustionAtmosphere.canBurnAt`), flammable blocks catch:
+  fire goes in that cell. Unlit campfires and candles light. In vacuum nothing burns, though heat still scorches and
+  melts.
+- **The Last Wall.** The Master Architect's Last Wall (`ArchitectEntity.holdsLastWall`, from the combat
+  controller's placed wall blocks) neither melts nor heats. Its other constructions are not exempt.
+- **Protection** is the same as a player's.
+  - Melting and scorching need `level.mayInteract` and an uncancelled NeoForge block break event. That covers
+    spawn protection, adventure mode and claim mods.
+  - Ignition needs the player allowed at both the struck block and the fire cell. It writes through captured block
+    snapshots and the place event, as item placement does, so a refused placement reverts before neighbours hear.
+  - A refused block is not asked again for a second. Otherwise a beam resting on protected ground posts an event
+    every tick, and the mod's own break listeners react to each one.
 
 ## Plan: finishing slice 1 on this branch (owner, 2026-11-03)
 
-After checking the Notion spec, the owner held PR #143 until the Lash can be had and used in survival. Build these
-on `feat/sever-lash`, each test-first, with `gameTestQuick -PfdTests=...` while iterating and `architectVerify`
-before handing back. Verify every hook below against current code first; these are starting points, not facts.
-
-1. **Acquisition (spec section 6).**
-   - New Lash Emitter item.
-   - Helion sites: 1 to 2 in the research labs, guaranteed. Start from `HelionSiteBuilder` and
-     `HelionSitePlacement`.
-   - CFU-7 reactor sites: about 1 in 4 get one in the maintenance bay, deterministic from the world seed. Start from
-     `ReactorSiteBuilder` and `ReactorSitePlacement`.
-   - Shaped crafting recipe: Lash Emitter, Acheronite Shard (lens), Power Cell, 2 iron ingots, 1 lead ingot
-     (`ModItems.LEAD_INGOT`, `ACHERONITE_SHARD`, `POWER_CELL`). The crafted Lash should start cool.
-   - Keep the Lash in the creative tab.
-2. **Hellwhip memo (spec section 9).**
-   - A rare ORSA document at a Helion site: a supervisor complains that a technician keeps calling the LC-4 a
-     hellwhip, after some old book. The requisition is denied on the name.
-   - Use the existing `OrsaDocumentItem`, and no book quotes.
-   - The TR-0 Terminus page plans a matching "deathwand" memo, so keep the voice reusable.
-3. **World effects (spec section 5).** These act where the beam lands each tick.
-   - Snow and ice melt instantly. Packed and blue ice take longer: store heat per block, and let it cool.
-   - Stone scorches into `ModBlocks.SCORCHED_GROUND`.
-   - Where there is oxygen (`CombustionAtmosphere.canBurnAt` at the hit), fuel and wood ignite. In vacuum nothing
-     burns.
-   - The Master Architect's Last Wall (placed ice and packed ice) is exempt. Find how
-     `MasterArchitectConstructionController` records its blocks.
-   - The beam is player-fired, so respect protection and spawn rules the way player block breaking does.
-   - Ice melting into water must not flood a sealed room's atmosphere bookkeeping unexpectedly. Check
-     `RoomAtmosphere`.
-4. **Overheat glow (spec section 4).**
-   - The held Lash glows red-hot as heat nears overheat and while it is locked out, using an item model override
-     on heat.
-   - The extinguish hiss stays as a placeholder until the sound slice.
-   - This needs the owner's visual check.
-5. **Playtest world.**
-   - Add stations to `tools/prepare_sever_lash_playtest.py`: a melt, scorch and ignite wall in air and in vacuum, a
-     Last Wall sample, the recipe ingredients, and the emitter.
-   - Deliver them as a new save or with `--pack-only`, and never overwrite an existing save.
-6. **Close.**
-   - Run one fresh branch review (Opus, because it changes world generation and loot), then fix its findings
-     test-first.
-   - Run `architectVerify`, update this doc, and push. Do not merge.
+Done on 2026-11-03. The behavior is under "Slice 1 behavior" above, and the checks under "Verification". The
+owner's plan covered six steps:
+1. acquisition;
+2. the hellwhip memo;
+3. world effects;
+4. the overheat glow;
+5. playtest stations;
+6. a branch review and `architectVerify`.
 
 ## 3D model spec (slice 2, owner liked the mockup 2026-11-03)
 
@@ -152,9 +176,18 @@ in slice 2.
 
 ## Playtest world
 
-`python3 tools/prepare_sever_lash_playtest.py --source <any save>/level.dat --destination run/saves/'Sever Lash Check'`
+`python3 tools/prepare_sever_lash_playtest.py --source <any save>/level.dat --destination run/saves/<new name> --title <new name>`
 builds a flat firing range: Hellwhip husks, reach pigs at 12 and 15 blocks, a walled pig, bare and diamond husks, and
-a sealed glass room for air vs vacuum. By the owner's ruling (2026-11-02) this world keeps advancement toasts and chat
+a sealed glass room for air vs vacuum. Slice 1 (2026-11-03, save "Sever Lash Slice 1") adds four stations:
+- **World effects** at x 90: snow, ice, packed ice, blue ice, stone, planks and a log, plus an unlit campfire and
+  candle. Fire tick is off, so fire does not spread.
+- **A twin wall** of ice, planks, stone and packed ice inside the sealed room, for after the vacuum button.
+- **The Last Wall** at x 120: held by a NoAI, invulnerable Master Architect in glass, seeded with
+  `MasterWallBlocks`, beside a plain twin. A NoAI Master runs no wall upkeep, so breaking its seam by hand does not
+  drop the wall here.
+- **A crafting bench** at x 105, with ingredient and memo buttons.
+
+A rebuild button restores every wall, and merges the wall back into the Master without killing it. By the owner's ruling (2026-11-02) this world keeps advancement toasts and chat
 on so Hellwhip can be seen; other generated worlds still filter them. Difficulty is Normal and locked.
 
 ## Deferred from the slice 1 branch review
@@ -165,6 +198,17 @@ on so Hellwhip can be seen; other generated worlds still filter them. Difficulty
 - The held stack is rewritten every firing tick; check for a hand re-equip bob in the visual pass.
 - `use()` checks only the lockout, so a trigger with no cells flickers the use animation.
 - A player who logs out mid-beam leaves one stale entry in the aim map. It is harmless.
+
+## Deferred from the slice 1 finish review (Opus, 2026-11-03)
+
+- A scorch posts a block break, so a player-placed stone block loses that status in `PlayerPlacedBlockTracker` when
+  it becomes Scorched Ground. Check this if Architect or shelter logic depends on it.
+- The glow of a Lash carried from a world with a later clock shows its stored heat until it next fires. The server
+  settles it the same way, and the lockout already guards against this.
+- The reactor maintenance bay's iron count draws on the builder's shared random, which shifts dead ground, fallout
+  and debris for sites built from now on. This is harmless.
+- Block heat follows the position, not the block, for up to about 40 ticks after a block is replaced.
+- The recipe consumes the Power Cell whatever its charge, so a full cell's energy is lost.
 
 ## Owner playtest, 2026-11-02 (Sever Lash Check, runClient, commit 48c503b7)
 
@@ -191,11 +235,30 @@ First pass with Seared. Unprompted report: "i like it".
 
 ## Verification
 
-- JUnit: `LashHeatTest`, `BeamSweepTest`.
-- JUnit `SearTest`: Seared build-up, cap and levels.
-- GameTests (`-PfdTests=severLash,seared`): power draw, arc-only cutting, cooldown, knockback and stale-aim reset,
-  armor bypass, no player armor wear, overheat, Hellwhip, Seared application and build-up, the burn after the beam
-  leaves (through armor, no shove), and the slowdown.
-- Not covered by a test: the shield half-block (needs a player blocking for 5+ ticks), the ember particles and icon,
-  and anything else visual or audible.
-  These need the owner's visual pass.
+- JUnit:
+  - `LashHeatTest`, including glow and vent.
+  - `BeamSweepTest`.
+  - `SearTest`: Seared build-up, cap and levels.
+  - `BlockHeatTest`: dwell, sweep, same-tick rays and cooling.
+  - `LashSalvageTest`: 1 to 2 Helion emitters, about 1 in 4 reactor bays, about 1 in 4 memos, and determinism.
+  - `SeverLashRecipeTest`: ingredients, a cool result, and a unique grid.
+  - `SeverLashModelTest`: every glow state has its model and textures, and the vent overrides come last.
+- GameTests (`-PfdTests=severLash,seared,helionDiagnostics,helionBench,reactorMaintenance`):
+  - Slice 1 core: power draw, arc-only cutting, cooldown, knockback, stale-aim reset, armor bypass, no player armor
+    wear, overheat, Hellwhip, and Seared application, build-up, burn and slowdown.
+  - Acquisition: crafting through the recipe manager; Helion bench emitters; the memo, which archives with its
+    advancement; the reactor maintenance-bay emitter.
+  - World effects: snow and ice to steam; packed and blue ice dwell; stone scorch; wood ignition; the Last Wall
+    exemption; adventure-mode refusal; ignition refused by a place-event claim on the fire cell; the once-a-second
+    refusal memory.
+  - Vacuum (batch `sever_lash_vacuum`): nothing burns, and stone still scorches.
+- `architectVerify` passed on 09572595 (864 GameTests), and again on the final head, recorded in the commit that
+  pushes this doc.
+- Not covered by a test, so these need the owner's visual pass:
+  - the shield half-block, which needs a player blocking for 5+ ticks;
+  - the ember particles and icon;
+  - the glow sprites in hand, and whether the fullbright layers read as hot;
+  - the steam and smoke puffs;
+  - the Lash Emitter icon;
+  - the Field Manual page;
+  - the playtest Master Architect, which is NoAI and has only been checked in a GameTest.
