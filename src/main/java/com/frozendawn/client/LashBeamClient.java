@@ -182,8 +182,9 @@ public final class LashBeamClient {
     }
 
     /**
-     * Where the beam leaves the emitter. In first person the Lash sits low right of the view; seen from outside, it is
-     * at the end of an arm raised along the aim.
+     * Where the beam leaves the emitter. In first person the Lash sits low right of the view; seen from outside, the
+     * lens is ahead of the raised fists, a little above the shoulder line and in toward the body (from the firing model
+     * on the third-person arm chain: 1.16 forward, .25 up, .1 in from the shoulder pivot).
      */
     private static Vec3 muzzle(Minecraft mc, LivingEntity shooter, Vec3 aim, float partial) {
         int side = arm(shooter) == HumanoidArm.RIGHT ? 1 : -1;
@@ -195,9 +196,14 @@ public final class LashBeamClient {
         }
         float yaw = Mth.lerp(partial, shooter.yBodyRotO, shooter.yBodyRot) * Mth.DEG_TO_RAD;
         var right = new Vec3(-Mth.cos(yaw), 0, -Mth.sin(yaw));
-        var shoulder = shooter.getPosition(partial).add(0, shooter.getBbHeight() * .72, 0).add(right.scale(.3 * side * shooter.getScale()));
-        return shoulder.add(aim.scale(1.15 * shooter.getScale())).add(0, .12, 0);
+        float scale = shooter.getScale();
+        var shoulder = shooter.getPosition(partial).add(0, shooter.getBbHeight() * .765, 0).add(right.scale(.31 * side * scale));
+        var lift = unit(new Vec3(0, 1, 0).subtract(aim.scale(aim.y)));
+        var across = unit(new Vec3(-aim.z, 0, aim.x));
+        return shoulder.add(aim.scale(1.16 * scale)).add(lift.scale(.25 * scale)).add(across.scale(-.1 * side * scale));
     }
+
+    private static Vec3 unit(Vec3 v) { return v.lengthSqr() < 1e-6 ? Vec3.ZERO : v.normalize(); }
 
     private static HumanoidArm arm(LivingEntity shooter) {
         var hand = shooter.isUsingItem() ? shooter.getUsedItemHand() : InteractionHand.MAIN_HAND;

@@ -26,8 +26,8 @@ import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.extensions.common.IClientItemExtensions;
 
 /**
- * How the Lash is held. Firing, the arm comes up level along the aim and a free off hand braces under the coils, so
- * others see where it points; in first person it lifts a little and trembles without a kick. Through a lockout it dips
+ * How the Lash is held. Held, it sits in the fist; firing, both arms come up along the aim with the fists together on
+ * the grip, so others see where it points; in first person it lifts a little and trembles without a kick. Through a lockout it dips
  * and tilts away to air out, and in air the vents smoke.
  */
 @EventBusSubscriber(modid = FrozenDawn.MOD_ID, value = Dist.CLIENT)
@@ -37,24 +37,22 @@ public final class SeverLashHold implements IClientItemExtensions {
             new EnumProxy<>(HumanoidModel.ArmPose.class, false, (IArmPoseTransformer) SeverLashHold::raise);
     /** Where vanilla puts a held item in first person, before its own transforms. */
     private static final float HAND_X = .56F, HAND_Y = -.52F, HAND_Z = -.72F;
+    /** How far each arm turns in while firing; the firing model turns back by GRIP_TURN to point along the aim. */
+    private static final float GRIP_TURN = .3F, BRACE_TURN = .6F;
 
     @Override public HumanoidModel.ArmPose getArmPose(LivingEntity entity, InteractionHand hand, ItemStack stack) {
         return entity.isUsingItem() && entity.getUsedItemHand() == hand ? FIRING_POSE.getValue() : null;
     }
 
+    /** Both arms come up along the aim and turn in, as for a crossbow, so the fists meet side by side on the grip. */
     private static void raise(HumanoidModel<?> model, LivingEntity entity, HumanoidArm arm) {
         boolean right = arm == HumanoidArm.RIGHT;
         var main = right ? model.rightArm : model.leftArm;
         var off = right ? model.leftArm : model.rightArm;
-        main.xRot = -Mth.HALF_PI + model.head.xRot;
-        main.yRot = model.head.yRot + (right ? -.1F : .1F);
-        main.zRot = 0;
-        var other = entity.getUsedItemHand() == InteractionHand.MAIN_HAND ? InteractionHand.OFF_HAND : InteractionHand.MAIN_HAND;
-        if (entity.getItemInHand(other).isEmpty()) {
-            off.xRot = -Mth.HALF_PI + model.head.xRot + .25F;
-            off.yRot = model.head.yRot + (right ? .55F : -.55F);
-            off.zRot = 0;
-        }
+        main.xRot = off.xRot = -Mth.HALF_PI + model.head.xRot;
+        main.yRot = model.head.yRot + (right ? -GRIP_TURN : GRIP_TURN);
+        off.yRot = model.head.yRot + (right ? BRACE_TURN : -BRACE_TURN);
+        main.zRot = off.zRot = 0;
     }
 
     @Override public boolean applyForgeHandTransform(PoseStack pose, LocalPlayer player, HumanoidArm arm, ItemStack stack,

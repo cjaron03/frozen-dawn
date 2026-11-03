@@ -55,21 +55,20 @@ STATES = {
     'vent_6': ('fin_dull', 'fin_red', 'fin_dull', 'lens', None, 0, True),
 }
 
-# Display transforms. In the hand's frame, with the arm hanging, +x is forward, +y across the body and +z up the arm
-# (read off the owner's playtest 6 screenshots, which showed earlier guesses pointing across the body, then outward;
-# together they show the display rotation turns about x first, then y, then z). Held, the
-# barrel points forward from the fist; firing, the arm is raised along the aim, so the barrel runs along the arm and
-# the top faces what was forward, the body above the fist. Both sit in the fist rather than beside it (+y moves the
-# Lash across toward the body). First person sits big and low right with the lens toward the crosshair, as the owner
-# liked it.
+# Display transforms, solved from the third-person chain (ItemInHandLayer, then the arm's ModelPart rotation, then
+# this transform) rather than read off screenshots. Held, the vanilla item pose tilts the arm 18 degrees up, so the
+# Lash turns 72 degrees about x to sit level and upright with its grip in the fist, the body just above the hand and
+# the lens forward. Firing, the arm points along the aim but is yawed 0.3 rad in toward the off hand (SeverLashHold),
+# so the Lash turns back by that much to point where the player looks. First person sits big and low right with the
+# lens toward the crosshair, as the owner liked it.
 DISPLAY = {
-    'thirdperson_righthand': {'rotation': [90, 0, -90], 'translation': [4.4, 2.4, 4.5], 'scale': [.8, .8, .8]},
+    'thirdperson_righthand': {'rotation': [72, 0, 0], 'translation': [-.4, 2.4, 2.9], 'scale': [.8, .8, .8]},
     'firstperson_righthand': {'rotation': [5, 5, 0], 'translation': [-1, 3, 0], 'scale': [.6, .6, .6]},
     'gui': {'rotation': [30, 225, 0], 'translation': [0, 0, 0], 'scale': [.8, .8, .8]},
     'ground': {'rotation': [0, 0, 0], 'translation': [0, 2, 0], 'scale': [.5, .5, .5]},
     'fixed': {'rotation': [0, -90, 0], 'translation': [0, 0, 0], 'scale': [.75, .75, .75]},
 }
-FIRING = {'rotation': [0, 0, -90], 'translation': [7, 2.4, -3.1], 'scale': [.8, .8, .8]}
+FIRING = {'rotation': [0, -17.2, 0], 'translation': [.7, 1.2, -2.6], 'scale': [.8, .8, .8]}
 
 
 def elements(state):

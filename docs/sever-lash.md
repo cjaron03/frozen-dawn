@@ -147,9 +147,9 @@ in slice 2.
   - Fallback, only if the steps read as choppy: a custom item renderer (`BlockEntityWithoutLevelRenderer`) that
     tweens the fin angle. It costs more code and is not data-driven.
 - **Holding.**
-  - Third person, idle: carried one-handed at the hip, pointing forward.
-  - Third person, firing: a custom arm pose (`IClientItemExtensions.getArmPose`). The main arm is raised level to
-    the eye line along the look direction, and the off hand braces under the coils when it is empty. Other players
+  - Third person, idle: gripped one-handed in the fist, pointing forward.
+  - Third person, firing: a custom arm pose (`IClientItemExtensions.getArmPose`). Both arms come up along the
+    look direction with the fists together on the grip (owner ruling, playtest 6). Other players
     see where the beam points.
   - First person: held low right, lens toward the crosshair. While firing it lifts slightly with a sub-pixel jitter
     and no recoil kick, since it is a beam. During lockout it dips and tilts away about 10 degrees, as if being
@@ -158,7 +158,6 @@ in slice 2.
 - **Re-equip bob.** The server rewrites the held stack every firing tick, which would make a 3D model bob.
   `shouldCauseReequipAnimation` returns false when only `LashHeat` changed.
 - **Open for the owner:**
-  - Is the off-hand brace wanted, or one-handed only?
   - Is the smoke wanted in air?
   - Should the cell port show charge?
 
@@ -215,20 +214,23 @@ Mockup: `docs/art/sever-lash/beam-mockup.png` (`make_beam_mockup.py`). The owner
 - Fullbright (`neoforge_data` light 15, unshaded): the lens always, the vent slots, and the fins and barrel tip when
   hot and through the whole vent. Ruling (agent): the red cooling fins stay fullbright too, as slice 1's cooling glow did.
 - Holding (`SeverLashHold`):
-  - third person idle: carried at the hip, barrel forward;
+  - third person idle: gripped in the fist, the body just above the hand, upright and level, lens forward;
   - third person firing: a custom arm pose (`FROZENDAWN_SEVER_LASH`, added through `META-INF/enumextensions.json`).
-    The arm is raised level along the look, and an empty off hand braces under the coils;
+    Both arms come up along the look and turn in, as for a crossbow (main 0.3 rad, off 0.6 rad), so the fists meet
+    side by side on the grip whatever the off hand holds. The firing model turns back 0.3 rad to point along the aim,
+    and the third-person beam leaves its lens (1.16 forward, .25 up, .1 in from the shoulder pivot);
   - first person: low right, lens toward the crosshair. Firing lifts it slightly with a sub-pixel tremble and no
     kick; through a lockout it dips and tilts 10 degrees away, easing over four ticks at each end;
   - GUI: three-quarter view.
-  - The display transforms are first estimates, to be tuned in game. Playtest 6's screenshot showed the third-person
-    hold pointing across the body; both third-person holds were turned 90 degrees to point forward, keeping the grip
-    where it sat in the hand.
+  - The third-person display transforms are solved from the render chain (`ItemInHandLayer`, the arm's `ModelPart`
+    rotation, then the display transform), checked against a vanilla sword landing in the fist. Guesses from
+    playtest 6's screenshots had left the Lash on its side beside the hand. The solver's reasoning is in the comment
+    in `tools/build_sever_lash_models.py`.
 - In air the vents put out grey smoke puffs every three ticks through the lockout. The client takes air or vacuum
   from that player's last beam.
 - Re-equip bob: `SeverLashItem.shouldCauseReequipAnimation` ignores a change to `LashHeat` alone.
-- Open for the owner, from the model spec: is the off-hand brace wanted, is the smoke wanted in air, and should the
-  cell port show charge? The brace and smoke are built; the cell port shows no charge.
+- Open for the owner, from the model spec: is the smoke wanted in air, and should the cell port show charge? The smoke
+  is built; the cell port shows no charge. The owner asked for the two-handed firing hold in playtest 6.
 
 ### Slice 2 branch review (Opus, 2026-11-03)
 
@@ -328,6 +330,10 @@ for slice 2: the 3D model and sounds, and a beam that "screams hellwhip" instead
 
 First pass on slice 2. Unprompted report: "god it looks so good".
 
+Holds, from screenshots: the third-person Lash was "being held on the side of my hand", and "it should be like held in
+my fist you know? then when you fire it, you like. hold it in both hands". The owner kept the large first-person view
+("i liked how big it was"). After the solved transforms and the two-handed pose: "there we go".
+
 ## Verification
 
 - JUnit:
@@ -353,8 +359,8 @@ First pass on slice 2. Unprompted report: "god it looks so good".
     refusal memory.
   - Vacuum (batch `sever_lash_vacuum`): nothing burns, and stone still scorches.
 - `architectVerify` passed on 09572595 (864 GameTests) and on 435d74e4 (865), after the review fixes.
-- Slice 2: `architectVerify` passed on a5666787 (868 GameTests) and on 540ad5e2 (869), after the review fixes. Only
-  this line changed after that.
+- Slice 2: `architectVerify` passed on a5666787 (868 GameTests) and on 540ad5e2 (869), after the review fixes. The
+  third-person holds changed after that; the gate has not been rerun on them yet.
 - Slice 2 GameTests: one beam payload a firing tick, naming the shooter and carrying the aim, length to the wall,
   landing, air and heat; the full reach in open air; nothing while locked; vacuum flagged (batch
   `sever_lash_vacuum`); one start-up a beam; a sizzle every quarter second of contact and none into open air; one vent
