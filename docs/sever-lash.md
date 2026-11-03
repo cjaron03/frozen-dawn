@@ -221,7 +221,9 @@ Mockup: `docs/art/sever-lash/beam-mockup.png` (`make_beam_mockup.py`). The owner
   - first person: low right, lens toward the crosshair. Firing lifts it slightly with a sub-pixel tremble and no
     kick; through a lockout it dips and tilts 10 degrees away, easing over four ticks at each end;
   - GUI: three-quarter view.
-  - The display transforms are first estimates, to be tuned in game.
+  - The display transforms are first estimates, to be tuned in game. Playtest 6's screenshot showed the third-person
+    hold pointing across the body; both third-person holds were turned 90 degrees to point forward, keeping the grip
+    where it sat in the hand.
 - In air the vents put out grey smoke puffs every three ticks through the lockout. The client takes air or vacuum
   from that player's last beam.
 - Re-equip bob: `SeverLashItem.shouldCauseReequipAnimation` ignores a change to `LashHeat` alone.

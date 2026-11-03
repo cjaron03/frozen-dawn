@@ -55,16 +55,18 @@ STATES = {
     'vent_6': ('fin_dull', 'fin_red', 'fin_dull', 'lens', None, 0, True),
 }
 
-# Display transforms. Held, the barrel points forward from the fist; firing, the arm is raised along the aim, so the
-# barrel turns to run along the arm. First person sits low right with the lens toward the crosshair.
+# Display transforms. In the hand's frame, with the arm hanging, +x is forward, +y across the body and +z up the arm
+# (read off the owner's playtest 6 screenshot, which showed an earlier guess pointing across the body). Held, the
+# barrel points forward from the fist; firing, the arm is raised along the aim, so the barrel runs along the arm and
+# the top faces what was forward. First person sits low right with the lens toward the crosshair.
 DISPLAY = {
-    'thirdperson_righthand': {'rotation': [90, 0, 0], 'translation': [0, 2, 4.5], 'scale': [.8, .8, .8]},
+    'thirdperson_righthand': {'rotation': [0, -90, -90], 'translation': [4.4, -1.6, 4.5], 'scale': [.8, .8, .8]},
     'firstperson_righthand': {'rotation': [5, 5, 0], 'translation': [-1, 3, 0], 'scale': [.6, .6, .6]},
     'gui': {'rotation': [30, 225, 0], 'translation': [0, 0, 0], 'scale': [.8, .8, .8]},
     'ground': {'rotation': [0, 0, 0], 'translation': [0, 2, 0], 'scale': [.5, .5, .5]},
     'fixed': {'rotation': [0, -90, 0], 'translation': [0, 0, 0], 'scale': [.75, .75, .75]},
 }
-FIRING = {'rotation': [0, 0, 0], 'translation': [0, 1.6, -3], 'scale': [.8, .8, .8]}
+FIRING = {'rotation': [0, 0, -90], 'translation': [4, -1.6, -3.1], 'scale': [.8, .8, .8]}
 
 
 def elements(state):
