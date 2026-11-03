@@ -347,6 +347,8 @@ for slice 2: the 3D model and sounds, and a beam that "screams hellwhip" instead
     refusal memory.
   - Vacuum (batch `sever_lash_vacuum`): nothing burns, and stone still scorches.
 - `architectVerify` passed on 09572595 (864 GameTests) and on 435d74e4 (865), after the review fixes.
+- Slice 2: `architectVerify` passed on a5666787 (868 GameTests) and on 540ad5e2 (869), after the review fixes. Only
+  this line changed after that.
 - Slice 2 GameTests: one beam payload a firing tick, naming the shooter and carrying the aim, length to the wall,
   landing, air and heat; the full reach in open air; nothing while locked; vacuum flagged (batch
   `sever_lash_vacuum`); one start-up a beam; a sizzle every quarter second of contact and none into open air; one vent
