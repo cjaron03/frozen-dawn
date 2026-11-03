@@ -47,6 +47,14 @@ public final class ModParticles {
     public static final DeferredHolder<ParticleType<?>, SimpleParticleType>
             SEAR_EMBER = PARTICLES.register("sear_ember", () -> new SimpleParticleType(false));
 
+    /** A pale speck drawn in toward a winding Terminus; its speed is the way to the emitter, covered in its lifetime. */
+    public static final DeferredHolder<ParticleType<?>, SimpleParticleType>
+            TERMINUS_SPECK = PARTICLES.register("terminus_speck", () -> new SimpleParticleType(true));
+
+    /** The pale mote that lifts from a mind the Terminus stops, hangs, and winks out. */
+    public static final DeferredHolder<ParticleType<?>, SimpleParticleType>
+            TERMINUS_MOTE = PARTICLES.register("terminus_mote", () -> new SimpleParticleType(true));
+
     private ModParticles() {
     }
 }

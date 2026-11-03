@@ -14,7 +14,7 @@ import java.util.Locale;
 /** Composes the operator surface without duplicating any gameplay authority. */
 final class FrozenDawnDebugCommand {
     static final List<String> HELP_CATEGORIES = List.of(
-            "world", "hearth", "heart", "postmaeve", "aggregate", "architect", "maeve", "uplink", "suit", "lore");
+            "world", "hearth", "heart", "postmaeve", "aggregate", "architect", "maeve", "uplink", "suit", "lore", "terminus");
 
     private static final List<String> HEARTH_CHILDREN = List.of(
             "status", "list", "locate", "force-select", "reconcile", "watcher",
@@ -49,6 +49,7 @@ final class FrozenDawnDebugCommand {
                 .then(UplinkDebugCommand.commands())
                 .then(CycloneDebugCommand.commands())
                 .then(FrozenDawnSuitCommand.suitCommands())
+                .then(TerminusDebugCommand.commands())
                 .then(requiredChild(legacyHearth, "lore"));
         // Development builds only: force natural Cold Flora spawn tries and report why they fail.
         if (!net.neoforged.fml.loading.FMLEnvironment.production) debug.then(FloraDebugCommand.commands());
@@ -98,6 +99,9 @@ final class FrozenDawnDebugCommand {
                     "Read-only tactical beliefs, observed evidence, commitment decisions and cooldowns.");
             case "uplink" -> List.of(
                     "/fd uplink dump (archive progress, cooldown, signal sites, pressure and supply drops)");
+            case "terminus" -> List.of(
+                    "/fd terminus status | restore (clears your toll) | turned <true|false> (the world's log)",
+                    "Playtest only: in play the toll and the turn never reverse.");
             case "suit" -> List.of(
                     "/fd suit status [verbose] | punctures <0-2>",
                     "/fd suit hearthrot status [verbose] | infect | set-stage ...");

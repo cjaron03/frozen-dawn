@@ -355,6 +355,7 @@ assets/frozendawn/sounds/item/sever_lash/sizzle.ogg	79c9fdfd940eaf29467937b1aa6f
 assets/frozendawn/sounds/item/sever_lash/start.ogg	84f7a55c3c59f06f01c3e8f77bbd886742ef54c8796add4c6b48278ac662d559	sever_lash_procedural	tools/audio_sources/sever_lash/SOURCES.md	Frozen Dawn original
 assets/frozendawn/sounds/item/sever_lash/vent.ogg	48b244c4c72558cab6f5d98b987fcd68c6cf17c14c08ee7d8207d7f487642067	sever_lash_procedural	tools/audio_sources/sever_lash/SOURCES.md	Frozen Dawn original
 assets/frozendawn/sounds/item/surveyor_lens_tick.ogg	7db9ce0217a17622134aaf7ff02bbf80676b5e0468e9008f85caea3a36bdd1b6	interface_owner_audio	ASSETS.md	Frozen Dawn original
+assets/frozendawn/sounds/item/terminus/windup.ogg	56c1d7cdf53f869fa7bcf43230b1be533111a279fb5e5118d3584e5ab1025912	terminus_procedural	tools/audio_sources/terminus/SOURCES.md	Frozen Dawn original
 assets/frozendawn/sounds/music/bloom/hollow.ogg	fa47a75d05aa4cb5490428c0de92f6140cf1e7b1ff06c3a3bd8e6b249ea9889c	bloom_mixed	tools/audio_sources/bloom/SOURCES.md	Inherited source terms and original
 assets/frozendawn/sounds/music/bloom/pale.ogg	14d3f944183f39e54525a1aa91151e2919de67c8de8f6b89d0b1acc48a41b008	bloom_mixed	tools/audio_sources/bloom/SOURCES.md	Inherited source terms and original
 assets/frozendawn/sounds/music/bloom/roots.ogg	a50ae96865580c175f0aae744dadfe196ad78f48209f4a7ac451a7b9bf00f056	bloom_mixed	tools/audio_sources/bloom/SOURCES.md	Inherited source terms and original

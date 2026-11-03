@@ -2215,6 +2215,13 @@
       "frozendawn:item/sever_lash/vent"
     ]
   },
+  "item.terminus.windup": {
+    "category": "player",
+    "subtitle": "subtitle.frozendawn.item.terminus.windup",
+    "sounds": [
+      "frozendawn:item/terminus/windup"
+    ]
+  },
   "radio.martian_command_message": {
     "category": "record",
     "subtitle": "subtitle.frozendawn.radio.martian_command",

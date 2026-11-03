@@ -119,6 +119,10 @@ public class ClientEvents {
                 com.frozendawn.client.particle.ColdVapourParticle.Provider::new);
         event.registerSpriteSet(ModParticles.SEAR_EMBER.get(),
                 com.frozendawn.client.particle.SearEmberParticle.Provider::new);
+        event.registerSpriteSet(ModParticles.TERMINUS_SPECK.get(),
+                com.frozendawn.client.particle.TerminusSpeckParticle.Provider::new);
+        event.registerSpriteSet(ModParticles.TERMINUS_MOTE.get(),
+                com.frozendawn.client.particle.TerminusMoteParticle.Provider::new);
     }
 
     @SubscribeEvent
@@ -278,6 +282,13 @@ public class ClientEvents {
             // Firing swaps in models held along the raised arm (SeverLashHold); other players see it through the synced use.
             ItemProperties.register(ModItems.SEVER_LASH.get(), ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "firing"),
                     (stack, level, entity, seed) -> entity != null && com.frozendawn.item.SeverLashItem.firing(entity, stack) ? 1 : 0);
+            // The Terminus shows one mote in its glass per discharge left, and winds up in four stages (TerminusHold).
+            ItemProperties.register(ModItems.TERMINUS.get(), ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "motes"),
+                    (stack, level, entity, seed) -> Math.min(3, stack.getOrDefault(ModDataComponents.TERMINUS_LOG.get(),
+                            com.frozendawn.defense.TerminusLog.FOUND).discharges()));
+            ItemProperties.register(ModItems.TERMINUS.get(), ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "windup"),
+                    (stack, level, entity, seed) -> entity != null && com.frozendawn.item.TerminusItem.winding(entity, stack)
+                            ? 1 + Math.min(3, entity.getTicksUsingItem() * 4 / com.frozendawn.defense.Terminus.WINDUP_TICKS) : 0);
             ItemProperties.register(ModItems.MIEL_HONEY.get(), ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "fill"),
                     (stack, level, entity, seed) -> stack.getOrDefault(ModDataComponents.MIEL_SPOONFULS, MielHoneyItem.SPOONFULS) / (float) MielHoneyItem.SPOONFULS);
             CuriosClientCompat.registerRenderers();
@@ -295,6 +306,7 @@ public class ClientEvents {
     @SubscribeEvent
     public static void onRegisterClientExtensions(RegisterClientExtensionsEvent event) {
         event.registerItem(new com.frozendawn.client.SeverLashHold(), ModItems.SEVER_LASH.get());
+        event.registerItem(new com.frozendawn.client.TerminusHold(), ModItems.TERMINUS.get());
         event.registerFluidType(new IClientFluidTypeExtensions() {
             @Override
             public ResourceLocation getStillTexture() {

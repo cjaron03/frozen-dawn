@@ -46,6 +46,11 @@ public class ModDataComponents {
             DATA_COMPONENTS.register("lash_heat", () -> DataComponentType.<com.frozendawn.defense.LashHeat>builder()
                     .persistent(com.frozendawn.defense.LashHeat.CODEC).networkSynchronized(com.frozendawn.defense.LashHeat.STREAM_CODEC).build());
 
+    /** A Terminus's discharges left and minds logged. */
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<com.frozendawn.defense.TerminusLog>> TERMINUS_LOG =
+            DATA_COMPONENTS.register("terminus_log", () -> DataComponentType.<com.frozendawn.defense.TerminusLog>builder()
+                    .persistent(com.frozendawn.defense.TerminusLog.CODEC).networkSynchronized(com.frozendawn.defense.TerminusLog.STREAM_CODEC).build());
+
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<net.minecraft.core.GlobalPos>> CONDUIT_ANCHOR =
             DATA_COMPONENTS.register("conduit_anchor", () -> DataComponentType.<net.minecraft.core.GlobalPos>builder()
                     .persistent(net.minecraft.core.GlobalPos.CODEC).networkSynchronized(net.minecraft.core.GlobalPos.STREAM_CODEC).build());

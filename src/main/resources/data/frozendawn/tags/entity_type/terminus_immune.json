@@ -1,0 +1,14 @@
+{
+  "replace": false,
+  "values": [
+    "frozendawn:thae_iven_heart",
+    "frozendawn:heart_successor",
+    "frozendawn:aggregate",
+    "frozendawn:aggregate_fragment",
+    "frozendawn:undone",
+    "frozendawn:bloombound_undone",
+    "frozendawn:rimebound",
+    "frozendawn:resonant",
+    "frozendawn:remnant"
+  ]
+}
