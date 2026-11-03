@@ -214,3 +214,6 @@ Set aside: a stop that turns the ledger mid-discharge still uses the old value f
 
 Unprompted report: "looks good, but i noticed that when the mob disingirates, after it flashes and i can see the normal
 death animatioin (it falls down etc) for like a split second"
+
+Recheck after `8c41a4df` (the body held hidden until the server removes it): "that fixed it." Then: "idk a permant
+helath loss is pretty steep for this, especially if it carries over from deaths dont you tihnk"
