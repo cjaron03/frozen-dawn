@@ -274,6 +274,13 @@ pillars on a ten-block arc, 100 degrees wide, to sweep across slowly and fast. I
 afterimage, the crack and the sounds. It is in air until VACUUM is clicked, and the Room station keeps air for a
 side-by-side. The Effects station's guide now describes the 3D model's heat and vent states.
 
+Save "Sever Lash Helion" (2026-11-03) adds a **Helion** station: setup buries a real Helion site through
+`fd world helionsite`, hall centre (45, 14), hatch at (39, 21). Down the ladder, the diagnostics bench barrel holds the
+seed's one or two Lash Emitters, and the memo only when the seed rolls it; the Craft station's memo button covers the
+rest. The ORSA Field Manual gains an "LC-4 Sever Lash" entry under ORSA Equipment: firing, Seared, heat, collateral,
+salvage and the recipe. The Procurement Review memo's first page was shortened to clear the page mark that
+`tools/ManualLint.java` flagged.
+
 A rebuild button restores every wall, and merges the wall back into the Master without killing it. By the owner's ruling (2026-11-02) this world keeps advancement toasts and chat
 on so Hellwhip can be seen; other generated worlds still filter them. Difficulty is Normal and locked.
 

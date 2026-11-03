@@ -113,6 +113,9 @@ def scripts():
              *BEAM_ARC,
              # Crafting bench for the Lash recipe.
              'setblock 105 65 4 minecraft:crafting_table',
+             # A real Helion site buried 24 blocks south of (45, -10): hall centre (45, 14), hatch at (39, 21), the
+             # diagnostics bench barrel at (50, 21) on the hall floor.
+             'execute positioned 45 65 -10 rotated 0 0 run fd world helionsite',
              'fd world set phase 6 mid', 'fd world pause',
              'clear @s',
              'item replace entity @s hotbar.0 with frozendawn:sever_lash',
@@ -133,7 +136,7 @@ def scripts():
             tell('[Beam: slow vs fast sweeps, air vs vacuum]', 'beam'),
             tell('[Range: sweep, reach, wall, Hellwhip]', 'range'), tell('[Armor: bare vs diamond]', 'armor'),
             tell('[Room: air vs vacuum]', 'room'), tell('[World effects: melt, scorch, ignite]', 'effects'),
-            tell('[Last Wall]', 'lastwall'), tell('[Craft a Lash]', 'craft'),
+            tell('[Last Wall]', 'lastwall'), tell('[Helion site: salvage an emitter]', 'helion'), tell('[Craft a Lash]', 'craft'),
             tell('[Low cell: 2 s of beam]', 'low'), tell('[Full cell]', 'full'), tell('[Rebuild walls]', 'walls'),
             tell('[Advance this world to VACUUM (one way)]', 'vacuum'), tell('[Respawn targets]', 'respawn'), tell('[Read diagnostics]', 'read'), 'return 1']),
         'respawn': '\n'.join([GUARD, *targets(), tell('Targets respawned at full health.'), 'return 1']),
@@ -177,11 +180,15 @@ def scripts():
         'lastwall': ((120.5,65,.5), ['Left: a Last Wall held by a frozen Master Architect (NoAI, invulnerable, in glass). It should not melt.',
                                      'Right: the same packed ice and ice with no Master. It melts like any other.',
                                      'The frozen Master runs no AI, so breaking the seam by hand does not drop its wall here; that is checked in a live fight.']),
+        'helion': ((39.5,65,17.5), ['A buried Helion site: the iron hatch by the bent antenna, just ahead. Open it and climb down the ladder.',
+                                     'In the hall, the diagnostics bench is on the south wall, a few steps east of the ladder. Its barrel holds one or two Lash Emitters, and at about one site in four the Hellwhip memo.',
+                                     'Take an emitter to the Craft station and build the Lash. The field manual has an LC-4 Sever Lash page under ORSA Equipment.']),
         'craft': ((105.5,65,.5), ['Crafting table ahead. Take the ingredients, craft the Lash: it should come out cool and carry no charge.']),
     }
     for name, (position, lines) in views.items():
         extra = {'room': [tell('[Open roof]', 'breach'), tell('[Seal roof]', 'seal')],
-                 'craft': [tell('[Ingredients]', 'ingredients'), tell('[Hellwhip memo]', 'memo')]}.get(name, [])
+                 'craft': [tell('[Ingredients]', 'ingredients'), tell('[Hellwhip memo]', 'memo')],
+                 'helion': [tell('[Craft a Lash]', 'craft')]}.get(name, [])
         result[name] = '\n'.join([GUARD, 'tp @s '+' '.join(map(str,position))+' 0 0',
                                   *(tell(line) for line in lines), *extra, tell('[Lab menu]', 'controls'), 'return 1'])
     return result
@@ -205,7 +212,7 @@ def prepare_world(source, destination, title=TITLE):
     info.update({'advancements':'visible with toasts and chat in this world only (owner ruling 2026-11-02)',
                  'phase':'mid phase 6 (air), paused; a one-way button advances to late phase 6 vacuum',
                  'fixtures':'beam arc of six pillars for slow and fast sweeps; firing range with Hellwhip husks, 12/15 reach pigs and a walled pig; bare vs diamond husks; sealed glass room with an openable roof and an effects wall; '
-                             'melt/scorch/ignite wall outdoors; Last Wall held by a NoAI Master Architect beside a plain twin; crafting bench with ingredient and memo buttons'})
+                             'melt/scorch/ignite wall outdoors; a buried Helion site with its diagnostics bench; Last Wall held by a NoAI Master Architect beside a plain twin; crafting bench with ingredient and memo buttons'})
     report.write_text(json.dumps(info,indent=2)+'\n')
     print(destination.resolve())
 

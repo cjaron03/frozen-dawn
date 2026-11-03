@@ -1,0 +1,47 @@
+{
+  "name": "LC-4 Sever Lash",
+  "category": "frozendawn:orsa_equipment",
+  "icon": "frozendawn:sever_lash",
+  "sortnum": 15,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "S/N LC-4/KSD",
+      "text": "A plasma diagnostics emitter from the Helion test facility, field-converted to cut.$(br2)The plate on the side reads $(italic)NOT FOR USE ON PERSONNEL.$()$(br2)$(flavor)Second shift calls it something else. Procurement has opinions.$()"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Firing",
+      "text": "Hold use to fire a beam out to $(bold)12 blocks$(). It cuts everything it sweeps across, straight through armor. Shields stop half. Blocks stop the beam.$(br2)It draws $(bold)25 kW$() from carried $(l:power/storage)Power Cells$(/l): a full cell is 20 seconds of beam. The Lash holds no charge of its own."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Seared",
+      "text": "Every cut also $(bold)sears$(). Held contact builds it up to Seared III within a second. Seared burns through armor and slows the target.$(br2)It is heat, not fire, so it works the same in vacuum."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Heat",
+      "text": "Six seconds of continuous fire overheats it. The fins open and the Lash $(bold)locks out$(): 4 seconds in air, 8 where there is none.$(br2)Idle, it cools as fast as it heats in air, half as fast in vacuum. Watch the fins: red is close."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Collateral",
+      "text": "Where the beam lands:$(li)Snow and ice flash to steam$(li)Packed and blue ice take longer$(li)Stone scorches$(li)Wood catches, where there is air to burn$(br2)$(flavor)Nothing burns in vacuum. The stone still scorches.$()"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Salvage",
+      "text": "The $(bold)Lash Emitter$() is the bare diagnostic unit.$(li)Helion sites: one or two in the barrel on the diagnostics bench, by the south wall$(li)About one CFU-7 reactor site in four: one in the maintenance bay"
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:sever_lash",
+      "title": "Field Conversion",
+      "text": "Emitter, Acheronite Shard, lead, iron and any $(l:power/storage)Power Cell$(/l). The cell's charge goes into the craft."
+    }
+  ],
+  "extra_recipe_mappings": {
+    "frozendawn:lash_emitter": 5
+  }
+}
