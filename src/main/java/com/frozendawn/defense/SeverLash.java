@@ -2,11 +2,11 @@ package com.frozendawn.defense;
 
 import com.frozendawn.init.*;
 import com.frozendawn.item.PowerCellItem;
+import com.frozendawn.network.LashBeamPayload;
 import com.frozendawn.radiation.ReactorAdvancements;
 import com.frozendawn.world.CombustionAtmosphere;
 import java.util.*;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.server.level.*;
 import net.minecraft.sounds.*;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -15,7 +15,7 @@ import net.minecraft.world.entity.monster.Enemy;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.phys.*;
-import org.joml.Vector3f;
+import net.neoforged.neoforge.network.PacketDistributor;
 
 /**
  * The LC-4's firing tick, server only. Each tick it cuts everything between last tick's aim line and
@@ -29,9 +29,10 @@ public final class SeverLash {
     public static final float DAMAGE_PER_TICK = 0.6F;
     /** Hostiles cut in one continuous beam for the Hellwhip advancement. */
     public static final int HELLWHIP_HOSTILES = 3;
-    private static final DustParticleOptions BEAM = new DustParticleOptions(new Vector3f(1F, .22F, .12F), .6F);
-    /** One continuous beam: its last aim and the hostiles it has cut so far. */
-    private record Aim(Vec3 direction, long tick, Set<UUID> hostiles) {}
+    /** A held cut sizzles every quarter second. */
+    public static final int SIZZLE_TICKS = 5;
+    /** One continuous beam: its last aim, the hostiles it has cut so far and when it last sizzled. */
+    private record Aim(Vec3 direction, long tick, Set<UUID> hostiles, long sizzled) {}
     private static final Map<UUID, Aim> AIMS = new HashMap<>();
     private SeverLash() {}
 
@@ -50,7 +51,7 @@ public final class SeverLash {
         boolean continuing = last != null && last.tick() == now - 1;
         var from = continuing ? last.direction() : null;
         var hostiles = continuing ? last.hostiles() : new HashSet<UUID>();
-        AIMS.put(player.getUUID(), new Aim(look, now, hostiles));
+        long sizzled = continuing ? last.sizzled() : now - SIZZLE_TICKS;
         var candidates = level.getEntitiesOfClass(LivingEntity.class, player.getBoundingBox().inflate(REACH),
                 e -> e != player && e.isAlive() && !e.isSpectator() && e.isPickable());
         var cut = new LinkedHashSet<LivingEntity>();
@@ -75,10 +76,19 @@ public final class SeverLash {
         }
         if (hostiles.size() >= HELLWHIP_HOSTILES) ReactorAdvancements.grant(player, "hellwhip");
         LashWorldEffects.land(level, player, landed, now);
-        draw(level, eye, stop, block != null && block.getType() != HitResult.Type.MISS, vacuum);
+        boolean lands = block != null && block.getType() != HitResult.Type.MISS;
+        PacketDistributor.sendToPlayersTrackingEntityAndSelf(player, LashBeamPayload.of(player.getId(), look.toVector3f(),
+                (float) stop.distanceTo(eye), shot.heat().glow(now), lands, vacuum));
+        if (!continuing) level.playSound(null, player.getX(), player.getEyeY(), player.getZ(), ModSounds.SEVER_LASH_START.get(), SoundSource.PLAYERS, .9F, 1);
+        if ((lands || !cut.isEmpty()) && now - sizzled >= SIZZLE_TICKS) {
+            var at = cut.isEmpty() ? stop : cut.iterator().next().getBoundingBox().getCenter();
+            level.playSound(null, at.x, at.y, at.z, ModSounds.SEVER_LASH_SIZZLE.get(), SoundSource.PLAYERS, .7F, .9F + level.random.nextFloat() * .2F);
+            sizzled = now;
+        }
+        AIMS.put(player.getUUID(), new Aim(look, now, hostiles, sizzled));
         if (shot.heat().lockedOut(now + 1)) {
             AIMS.remove(player.getUUID());
-            level.playSound(null, player.getX(), player.getEyeY(), player.getZ(), SoundEvents.FIRE_EXTINGUISH, SoundSource.PLAYERS, .8F, .7F);
+            level.playSound(null, player.getX(), player.getEyeY(), player.getZ(), ModSounds.SEVER_LASH_VENT.get(), SoundSource.PLAYERS, 1, 1);
         }
         return true;
     }
@@ -88,17 +98,6 @@ public final class SeverLash {
         var held = target.getEffect(ModEffects.SEARED);
         int duration = Sear.duration(held == null ? 0 : held.getDuration());
         target.addEffect(new MobEffectInstance(ModEffects.SEARED, duration, Sear.amplifier(duration, held == null ? -1 : held.getAmplifier())));
-    }
-
-    /** In vacuum nothing scatters the beam: it shows only where it lands. */
-    private static void draw(ServerLevel level, Vec3 eye, Vec3 stop, boolean landed, boolean vacuum) {
-        var path = stop.subtract(eye);
-        double length = path.length();
-        if (!vacuum) for (double d = 1; d < length; d += .5) {
-            var at = eye.add(path.scale(d / length));
-            level.sendParticles(BEAM, at.x, at.y, at.z, 1, 0, 0, 0, 0);
-        }
-        if (landed) level.sendParticles(BEAM, stop.x, stop.y, stop.z, 3, .05, .05, .05, 0);
     }
 
     public static void forget(UUID player) { AIMS.remove(player); }

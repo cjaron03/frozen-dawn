@@ -2180,6 +2180,41 @@
       "frozendawn:item/surveyor_lens_tick"
     ]
   },
+  "item.sever_lash.start": {
+    "category": "player",
+    "subtitle": "subtitle.frozendawn.item.sever_lash.start",
+    "sounds": [
+      "frozendawn:item/sever_lash/start"
+    ]
+  },
+  "item.sever_lash.hum": {
+    "category": "player",
+    "subtitle": "subtitle.frozendawn.item.sever_lash.hum",
+    "sounds": [
+      "frozendawn:item/sever_lash/hum_loop"
+    ]
+  },
+  "item.sever_lash.crack": {
+    "category": "player",
+    "subtitle": "subtitle.frozendawn.item.sever_lash.crack",
+    "sounds": [
+      "frozendawn:item/sever_lash/crack"
+    ]
+  },
+  "item.sever_lash.sizzle": {
+    "category": "player",
+    "subtitle": "subtitle.frozendawn.item.sever_lash.sizzle",
+    "sounds": [
+      "frozendawn:item/sever_lash/sizzle"
+    ]
+  },
+  "item.sever_lash.vent": {
+    "category": "player",
+    "subtitle": "subtitle.frozendawn.item.sever_lash.vent",
+    "sounds": [
+      "frozendawn:item/sever_lash/vent"
+    ]
+  },
   "radio.martian_command_message": {
     "category": "record",
     "subtitle": "subtitle.frozendawn.radio.martian_command",

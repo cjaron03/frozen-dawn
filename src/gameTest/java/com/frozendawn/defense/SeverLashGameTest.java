@@ -122,6 +122,66 @@ public final class SeverLashGameTest {
         h.succeed();
     }
 
+    /** Everyone in view is told where the beam runs each tick, so they can draw it; the cut stays on the server. */
+    @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="sever_lash",timeoutTicks=100)
+    public static void severLashSendsItsBeamToWatchers(GameTestHelper h) {
+        var p=shooter(h,500000);var lash=p.getMainHandItem();var sent=watch(p);
+        for(int y=4;y<=7;y++)h.setBlock(new BlockPos(10,y,10),Blocks.STONE);
+        aim(p,0);SeverLash.fire(p,lash,1000);
+        var beams=beams(sent);
+        h.assertTrue(beams.size()==1,"One beam update per firing tick: "+beams.size());
+        var b=beams.getFirst();
+        h.assertTrue(b.shooter()==p.getId(),"It names the shooter");
+        h.assertTrue(new Vec3(b.direction()).distanceTo(p.getLookAngle())<1e-4,"It runs along the aim");
+        h.assertTrue(Math.abs(b.length()-5.5)<1e-3&&b.landed(),"It stops on the wall it lands on: "+b.length());
+        h.assertTrue(!b.vacuum()&&Math.abs(b.heat()-(float)LashHeat.FIRE_HEAT/LashHeat.OVERHEAT)<1e-6,"In air, carrying the emitter's heat for the hum");
+        // The template is walled and roofed in barrier: only along +z is there twelve blocks of open air.
+        for(int y=4;y<=7;y++)h.setBlock(new BlockPos(10,y,10),Blocks.AIR);
+        sent.clear();SeverLash.fire(p,lash,1001);
+        b=beams(sent).getFirst();
+        h.assertTrue(Math.abs(b.length()-SeverLash.REACH)<1e-3&&!b.landed(),"In open air it runs the full reach and lands nowhere");
+        sent.clear();lash.set(ModDataComponents.LASH_HEAT.get(),new LashHeat(LashHeat.OVERHEAT,1100,1050));
+        SeverLash.fire(p,lash,1060);
+        h.assertTrue(beams(sent).isEmpty(),"A locked trigger draws nothing");
+        h.succeed();
+    }
+
+    @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="sever_lash",timeoutTicks=100)
+    public static void severLashStartsSizzlesAndVents(GameTestHelper h) {
+        var p=shooter(h,500000);var lash=p.getMainHandItem();var husk=target(h,EntityType.HUSK,0,5);
+        var heard=new ArrayList<net.minecraft.sounds.SoundEvent>();
+        java.util.function.Consumer<net.neoforged.neoforge.event.PlayLevelSoundEvent.AtPosition> ear=e->{
+            if(e.getLevel()==h.getLevel()&&e.getSound()!=null&&e.getPosition().distanceTo(p.position())<16)heard.add(e.getSound().value());};
+        net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(ear);
+        try {
+            aim(p,0);for(int t=0;t<20;t++)SeverLash.fire(p,lash,1000+t);
+            h.assertTrue(count(heard,ModSounds.SEVER_LASH_START)==1,"One start-up for one beam");
+            h.assertTrue(count(heard,ModSounds.SEVER_LASH_SIZZLE)==20/SeverLash.SIZZLE_TICKS,"A held cut sizzles every quarter second: "+count(heard,ModSounds.SEVER_LASH_SIZZLE));
+            SeverLash.fire(p,lash,1030);
+            h.assertTrue(count(heard,ModSounds.SEVER_LASH_START)==2,"Letting go and firing again starts up again");
+            p.setItemInHand(InteractionHand.MAIN_HAND,new ItemStack(ModItems.SEVER_LASH.get()));lash=p.getMainHandItem();
+            husk.discard();heard.clear();
+            for(int t=0;t<LashHeat.FIRE_TICKS;t++)SeverLash.fire(p,lash,2000+t);
+            h.assertTrue(count(heard,ModSounds.SEVER_LASH_VENT)==1,"Overheating vents once");
+            h.assertTrue(count(heard,ModSounds.SEVER_LASH_SIZZLE)==0,"A beam into open air touches nothing and does not sizzle");
+            h.assertTrue(!heard.contains(net.minecraft.sounds.SoundEvents.FIRE_EXTINGUISH),"The placeholder hiss is gone");
+        } finally {net.neoforged.neoforge.common.NeoForge.EVENT_BUS.unregister(ear);}
+        h.succeed();
+    }
+
+    /** The server rewrites the held Lash every firing tick; heat alone must not bob the 3D model in hand. */
+    @GameTest(template=GameTestTemplates.EMPTY,batch="sever_lash",timeoutTicks=20)
+    public static void severLashHeatAloneDoesNotReequip(GameTestHelper h) {
+        var cool=new ItemStack(ModItems.SEVER_LASH.get());var item=cool.getItem();
+        var warm=cool.copy();warm.set(ModDataComponents.LASH_HEAT.get(),new LashHeat(100,0,1000));
+        h.assertTrue(!item.shouldCauseReequipAnimation(cool,warm,false),"Heating up does not re-equip");
+        h.assertTrue(item.shouldCauseReequipAnimation(cool,warm,true),"Changing hotbar slot still does");
+        var named=warm.copy();named.set(net.minecraft.core.component.DataComponents.CUSTOM_NAME,net.minecraft.network.chat.Component.literal("Kassad"));
+        h.assertTrue(item.shouldCauseReequipAnimation(warm,named,false),"Any other change still does");
+        h.assertTrue(item.shouldCauseReequipAnimation(cool,new ItemStack(ModItems.LASH_EMITTER.get()),false),"So does another item");
+        h.succeed();
+    }
+
     @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="sever_lash",timeoutTicks=100)
     public static void severLashHellwhipNeedsThreeHostilesInOneSweep(GameTestHelper h) {
         var p=shooter(h,500000);var lash=p.getMainHandItem();
@@ -320,7 +380,8 @@ public final class SeverLashGameTest {
     public static void severLashBurnsNothingInVacuumButStillScorches(GameTestHelper h) {
         var p=shooter(h,500000);var lash=p.getMainHandItem();
         h.assertTrue(!com.frozendawn.world.CombustionAtmosphere.canBurnAt(h.getLevel(),h.absolutePos(STRUCK.north())),"The range is in vacuum");
-        h.setBlock(STRUCK,Blocks.OAK_PLANKS);SeverLash.fire(p,lash,1000);
+        h.setBlock(STRUCK,Blocks.OAK_PLANKS);var sent=watch(p);SeverLash.fire(p,lash,1000);
+        h.assertTrue(beams(sent).getFirst().vacuum(),"Watchers are told the beam is in vacuum, so they draw only its core");
         h.assertTrue(h.getBlockState(STRUCK.north()).isAir()&&h.getBlockState(STRUCK).is(Blocks.OAK_PLANKS),"Nothing burns in vacuum");
         h.setBlock(STRUCK,Blocks.STONE);
         for(int t=0;t<BlockHeat.STONE_TICKS;t++)SeverLash.fire(p,lash,1100+t);
@@ -409,6 +470,26 @@ public final class SeverLashGameTest {
         player.setItemInHand(InteractionHand.MAIN_HAND,new ItemStack(ModItems.SEVER_LASH.get()));
         if(joules>0)player.getInventory().setItem(1,PowerCellItem.charged(joules));
         aim(player,0);return player;
+    }
+    /** Replaces the shooter's connection with one that keeps every packet sent to it. */
+    private static List<net.minecraft.network.protocol.Packet<?>> watch(ServerPlayer p) {
+        var sent=new ArrayList<net.minecraft.network.protocol.Packet<?>>();
+        new net.minecraft.server.network.ServerGamePacketListenerImpl(p.getServer(),
+                new net.minecraft.network.Connection(net.minecraft.network.protocol.PacketFlow.SERVERBOUND),p,
+                net.minecraft.server.network.CommonListenerCookie.createInitial(p.getGameProfile(),false)) {
+            @Override public void send(net.minecraft.network.protocol.Packet<?> packet) {sent.add(packet);}
+            @Override public void send(net.minecraft.network.protocol.Packet<?> packet,net.minecraft.network.PacketSendListener listener) {sent.add(packet);}
+        };
+        return sent;
+    }
+    private static List<com.frozendawn.network.LashBeamPayload> beams(List<net.minecraft.network.protocol.Packet<?>> sent) {
+        var beams=new ArrayList<com.frozendawn.network.LashBeamPayload>();
+        for(var packet:sent)if(packet instanceof net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket custom
+                &&custom.payload() instanceof com.frozendawn.network.LashBeamPayload beam)beams.add(beam);
+        return beams;
+    }
+    private static int count(List<net.minecraft.sounds.SoundEvent> heard,net.neoforged.neoforge.registries.DeferredHolder<net.minecraft.sounds.SoundEvent,net.minecraft.sounds.SoundEvent> sound) {
+        return (int)heard.stream().filter(s->s==sound.get()).count();
     }
     private static void aim(ServerPlayer p,double yaw) {p.setYRot((float)yaw);p.setYHeadRot((float)yaw);p.setXRot(0);}
     /** A still, floating target centred on the shooter's eye line, {@code distance} blocks out at {@code yaw}. */

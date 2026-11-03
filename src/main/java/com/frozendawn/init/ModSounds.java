@@ -894,6 +894,11 @@ public class ModSounds {
     public static final DeferredHolder<SoundEvent, SoundEvent> PLUMB_LINE_ABORT = register("block.plumb_line.abort");
     public static final DeferredHolder<SoundEvent, SoundEvent> RADIO_SIGNAL_LOCK = register("radio.signal_lock");
     public static final DeferredHolder<SoundEvent, SoundEvent> SURVEYOR_LENS_TICK = register("item.surveyor_lens.tick");
+    public static final DeferredHolder<SoundEvent, SoundEvent> SEVER_LASH_START = register("item.sever_lash.start");
+    public static final DeferredHolder<SoundEvent, SoundEvent> SEVER_LASH_HUM = register("item.sever_lash.hum");
+    public static final DeferredHolder<SoundEvent, SoundEvent> SEVER_LASH_CRACK = register("item.sever_lash.crack");
+    public static final DeferredHolder<SoundEvent, SoundEvent> SEVER_LASH_SIZZLE = register("item.sever_lash.sizzle");
+    public static final DeferredHolder<SoundEvent, SoundEvent> SEVER_LASH_VENT = register("item.sever_lash.vent");
     public static final DeferredHolder<SoundEvent, SoundEvent> RADIO_MARTIAN_COMMAND_MESSAGE = register("radio.martian_command_message");
     public static final DeferredHolder<SoundEvent, SoundEvent> RADIO_CUTOFF = register("radio.cutoff");
     public static final DeferredHolder<SoundEvent, SoundEvent> RADIO_VOICE_TOWER = register("radio.voice.tower");

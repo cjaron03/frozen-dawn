@@ -31,6 +31,15 @@ public final class SeverLashItem extends Item {
     @Override public void releaseUsing(ItemStack stack, Level level, LivingEntity entity, int remaining) {
         SeverLash.forget(entity.getUUID());
     }
+    /** The server rewrites the held stack every firing tick as it heats; only a change beyond heat re-equips. */
+    @Override public boolean shouldCauseReequipAnimation(ItemStack from, ItemStack to, boolean slotChanged) {
+        return slotChanged || !ItemStack.isSameItemSameComponents(withoutHeat(from), withoutHeat(to));
+    }
+    private static ItemStack withoutHeat(ItemStack stack) {
+        var copy = stack.copy();
+        copy.remove(ModDataComponents.LASH_HEAT.get());
+        return copy;
+    }
     @Override public void appendHoverText(ItemStack s, TooltipContext c, List<Component> text, TooltipFlag flag) {
         text.add(Component.translatable("item.frozendawn.sever_lash.serial").withStyle(ChatFormatting.DARK_GRAY));
         text.add(Component.translatable("item.frozendawn.sever_lash.label").withStyle(ChatFormatting.GRAY));
