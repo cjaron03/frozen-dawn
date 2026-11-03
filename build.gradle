@@ -361,6 +361,34 @@ def shardReports = { Closure<File> directory -> (0..<gameTestShards).collectMany
 // shard gets a capped heap and its share of the cores. Its gc.log is copied back with the rest of its run directory.
 def gameTestShardHeap = providers.gradleProperty('fdShardHeap').getOrElse('3g')
 def gameTestShardGcThreads = Math.max(1, Runtime.runtime.availableProcessors().intdiv(gameTestShards))
+// One gate's servers at a time on this machine, whichever checkout runs it: two gates side by side each ran about half
+// as fast. A second gate waits here and says whose gate it waits for. The lock lives in the shared Gradle home, and the
+// operating system drops it if its holder dies. Never read the file from the holding JVM: closing any other handle on
+// it would release the lock.
+def gateLockFile = new File(gradle.gradleUserHomeDir, 'frozendawn/gate.lock')
+def holdGateLock = { String name, log ->
+    gateLockFile.parentFile.mkdirs()
+    def channel = java.nio.channels.FileChannel.open(gateLockFile.toPath(), java.nio.file.StandardOpenOption.CREATE,
+            java.nio.file.StandardOpenOption.READ, java.nio.file.StandardOpenOption.WRITE)
+    try {
+        def lock = channel.tryLock()
+        long told = 0
+        while (lock == null) {
+            if (System.currentTimeMillis() - told >= 60_000) {
+                log.lifecycle("Waiting for another gate to finish: ${gateLockFile.text.trim() ?: 'holder unknown'}")
+                told = System.currentTimeMillis()
+            }
+            Thread.sleep(5_000)
+            lock = channel.tryLock()
+        }
+        channel.truncate(0)
+        channel.write(java.nio.ByteBuffer.wrap("${projectDir.name} ${name}, started ${java.time.LocalTime.now().withNano(0)}\n".getBytes('UTF-8')), 0)
+        return channel
+    } catch (Throwable failure) {
+        channel.close()
+        throw failure
+    }
+}
 // Starts each shard's server exactly as the named run task would, with its own world, report and evidence folder.
 def registerShardedRun = { String name, String runName, Closure<File> shardDirectory, Provider<Directory> artifacts ->
     tasks.register(name) {
@@ -375,6 +403,7 @@ def registerShardedRun = { String name, String runName, Closure<File> shardDirec
             def processes = []
             def runDirectories = []
             def passed = false
+            def gate = holdGateLock(name, log)
             try {
                 // Worlds a failed run left, with any shard count.
                 if (shardWorldRoot.isDirectory()) shardWorldRoot.listFiles().findAll { it.name.startsWith("${name}-") }.each { delete(it) }
@@ -410,13 +439,17 @@ def registerShardedRun = { String name, String runName, Closure<File> shardDirec
                     throw new GradleException('GameTest servers exited with failures: ' + failed.collect { exit, shard -> "shard ${shard} exit ${exit}" }.join(', '))
                 passed = true
             } finally {
-                // Only the servers this task started.
-                processes.findAll { it.alive }*.destroy()
-                runDirectories.eachWithIndex { runDirectory, shard ->
-                    if (shardWorldsInBuild) { if (passed) delete(new File(runDirectory, 'world')); return }
-                    // Logs, and evidence some tests write relative to the working directory.
-                    copy { from(runDirectory) { exclude 'world/**' }; into(new File(shardDirectory(shard), 'run')) }
-                    if (passed) delete(runDirectory)
+                try {
+                    // Only the servers this task started.
+                    processes.findAll { it.alive }*.destroy()
+                    runDirectories.eachWithIndex { runDirectory, shard ->
+                        if (shardWorldsInBuild) { if (passed) delete(new File(runDirectory, 'world')); return }
+                        // Logs, and evidence some tests write relative to the working directory.
+                        copy { from(runDirectory) { exclude 'world/**' }; into(new File(shardDirectory(shard), 'run')) }
+                        if (passed) delete(runDirectory)
+                    }
+                } finally {
+                    gate.close()
                 }
             }
         }
