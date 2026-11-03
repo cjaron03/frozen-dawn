@@ -109,7 +109,7 @@ public final class HyperionSiloRenderer implements BlockEntityRenderer<HyperionC
     }
 
     /** Per cooler, a 6 px pipe from its outward face to an elbow, then down to the floor (or a flange), frosted or bare,
-     * with glowing dashes running in or out with the flow. Drawn in world-aligned space from the Controller's block. */
+     * with glowing dashes running in or out along the outward run with the flow. Drawn in world-aligned space from the Controller's block. */
     private static void pipes(PoseStack pose, Layers out, HyperionControllerBlockEntity be, net.minecraft.core.Direction front, HyperionGauge.State g, float time) {
         var level = be.getLevel(); var origin = be.getBlockPos();
         var sprite = sprite(g.pipes() == Pipes.BARE ? PIPE_BARE : PIPE_FROST);
@@ -137,13 +137,14 @@ public final class HyperionSiloRenderer implements BlockEntityRenderer<HyperionC
             // A collar where the pipe meets the floor, or a flange where it stops short of one.
             box(metal, p, -half - PX, bottom, -outer - PX, half + PX, bottom + (air >= 0 && air <= HyperionSiloLayout.MAX_PIPE_AIR ? PX : 2 * PX), Math.min(-0.5f, -inner + PX), sprite, -1, lit);
             if (g.flow() != HyperionGauge.Flow.NONE) {
-                // Path length s runs from the face (0) along the run (to the elbow) and down; dashes move 0.5 blocks a second.
-                float run = outer - half - 0.5f, length = run + (centreY - bottom), spacing = 6 * PX;
+                // Dashes ride the outward run only, 0.5 blocks a second, fading in at the face and out at the elbow so none pops.
+                float run = outer - half - 0.5f, spacing = 6 * PX, fade = 3 * PX, e = STEP;
                 float shift = (time / 20 * 0.5f) % spacing; if (g.flow() == HyperionGauge.Flow.IN) shift = spacing - shift;
-                for (float at = shift; at < length; at += spacing) {
-                    float e = STEP;
-                    if (at < run) { float z = -0.5f - at; box(glow, p, -half - e, centreY - half - e, z - PX, half + e, top + e, z + PX, null, dash, LightTexture.FULL_BRIGHT); }
-                    else { float y = centreY - (at - run); box(glow, p, -half - e, y - PX, -outer - e, half + e, y + PX, -inner + e, null, dash, LightTexture.FULL_BRIGHT); }
+                for (float at = shift; at < run; at += spacing) {
+                    float a = Math.min(1, Math.min(at, run - at) / fade);
+                    if (a <= 0) continue;
+                    float z = -0.5f - at, z0 = Math.max(z - PX, -0.5f - run), z1 = Math.min(z + PX, -0.5f);
+                    box(glow, p, -half - e, centreY - half - e, z0, half + e, top + e, z1, null, Math.round(a * 255) << 24 | dash & 0xFFFFFF, LightTexture.FULL_BRIGHT);
                 }
             }
             pose.popPose();
