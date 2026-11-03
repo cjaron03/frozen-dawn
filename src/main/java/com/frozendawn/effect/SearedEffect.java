@@ -21,10 +21,11 @@ public final class SearedEffect extends MobEffect {
                 -Sear.SLOW_PER_LEVEL, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL);
     }
 
-    @Override public boolean shouldApplyEffectTickThisTick(int duration, int amplifier) { return duration % 20 == 0; }
+    @Override public boolean shouldApplyEffectTickThisTick(int duration, int amplifier) { return true; }
 
+    /** Paced by the target's own clock: every cut tops up the duration, so it cannot keep time. */
     @Override public boolean applyEffectTick(LivingEntity entity, int amplifier) {
-        entity.hurt(entity.damageSources().source(ModDamageTypes.SEARED), Sear.PULSE_DAMAGE * (amplifier + 1));
+        if (entity.tickCount % 20 == 0) entity.hurt(entity.damageSources().source(ModDamageTypes.SEARED), Sear.PULSE_DAMAGE * (amplifier + 1));
         return true;
     }
 

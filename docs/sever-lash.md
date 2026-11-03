@@ -31,7 +31,7 @@ Each slice is its own branch and PR off `feat/maeve-director`.
 - Seared (owner's call after playtest 3, 2026-11-03, to make the power draw pay off): every cut also sears
   (`Sear`, `SearedEffect`). A first cut sears for 2 s; each further tick of contact adds 3 ticks, so a held beam
   nets 2 ticks a tick, up to 5 s. About half a second of contact is Seared II and a second is Seared III; a fading
-  burn keeps its level when cut again. Each level burns 1 a second (`frozendawn:seared`, which also bypasses armor,
+  burn keeps its level when cut again. Each level burns 1 a second, on the target's own clock so a held beam cannot speed it up (`frozendawn:seared`, which also bypasses armor,
   the hurt cooldown and knockback) and slows by 15%. It is heat, not fire, so it works the same in vacuum.
   Custom ember particles cool from white through orange to red; the icon and embers come from
   `docs/art/sever-lash/make_textures.py`.

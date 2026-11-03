@@ -152,6 +152,25 @@ public final class SeverLashGameTest {
         h.succeed();
     }
 
+    @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="sever_lash",timeoutTicks=200)
+    public static void searedPulsesOnceASecondUnderAHeldBeam(GameTestHelper h) {
+        var p=shooter(h,500000);var lash=p.getMainHandItem();
+        // An iron golem outlasts three seconds of beam.
+        var golem=target(h,EntityType.IRON_GOLEM,0,5);aim(p,0);
+        int[] tick={0};float[] last={golem.getHealth()};List<Integer> pulses=new ArrayList<>();
+        h.onEachTick(()->{
+            if(tick[0]>=60)return;
+            SeverLash.fire(p,lash,h.getLevel().getGameTime());
+            float lost=last[0]-golem.getHealth();last[0]=golem.getHealth();
+            if(tick[0]>0&&lost>SeverLash.DAMAGE_PER_TICK+1e-3)pulses.add(tick[0]);
+            if(++tick[0]==60){
+                h.assertTrue(pulses.size()<=3,"Seared pulses at most once a second under a held beam: pulses at ticks "+pulses);
+                h.assertTrue(golem.getEffect(ModEffects.SEARED).getDuration()>=Sear.MAX_TICKS-1,"Three seconds of beam holds the sear at its cap: "+golem.getEffect(ModEffects.SEARED));
+                h.succeed();
+            }
+        });
+    }
+
     @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="sever_lash",timeoutTicks=100)
     public static void searedBurnsOnThroughArmorAfterTheBeamLeaves(GameTestHelper h) {
         var husk=target(h,EntityType.HUSK,0,5);
