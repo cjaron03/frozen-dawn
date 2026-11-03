@@ -13,6 +13,8 @@ public final class HyperionPhysics {
     /** Cell-degrees above QUENCH_C one Cryocooler removes. */
     public static final double COOLER_CAPACITY = 12_500, HOT_NEIGHBOR_LOAD = 60_000;
     public static final int WARN_COLD_S = 900, WARN_ROOM_S = 300, WARN_HOT_S = 90, FINAL_S = 25;
+    /** The warning alarm sounds for at least this long before the final seconds, however short the warning time. */
+    public static final int MIN_WARNING_S = 20;
     public static final double RECOVER_C_PER_S = 1.0, COOLDOWN_C_PER_S = 4.0;
     public static final int COOLDOWN_WATTS_PER_CELL = 1000;
     private static final double EPS = 1e-9;
@@ -44,6 +46,8 @@ public final class HyperionPhysics {
         if (surroundingsC >= 20) return WARN_ROOM_S;
         return (int) Math.round(WARN_COLD_S + (WARN_ROOM_S - WARN_COLD_S) * surroundingsC / 20);
     }
+    /** Seconds before the quench that the warning begins: a third of the warning time, but never under MIN_WARNING_S before the final seconds. */
+    public static double warningStartS(int warningSeconds) { return Math.max(warningSeconds / 3.0, FINAL_S + MIN_WARNING_S); }
     public static long cooldownWatts(int cells) { return (long) cells * COOLDOWN_WATTS_PER_CELL; }
 
     public double cellC() { return cellC; }
@@ -72,7 +76,7 @@ public final class HyperionPhysics {
             } else if (overloaded) {
                 toQuench = (QUENCH_C - cellC) / rate;
                 int warn = warningSeconds(in.surroundingsC(), in.hotNeighbors());
-                stage = toQuench <= FINAL_S + EPS ? Stage.FINAL : toQuench <= warn / 3.0 + EPS ? Stage.WARNING : Stage.CHIRP;
+                stage = toQuench <= FINAL_S + EPS ? Stage.FINAL : toQuench <= warningStartS(warn) + EPS ? Stage.WARNING : Stage.CHIRP;
             } else stage = Stage.COLD;
         } else {
             double share = in.surroundingsC() <= QUENCH_C ? 1 : Math.min(1, in.cooldownJoules() / (double) cooldownWatts(in.cells()));

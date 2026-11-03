@@ -54,6 +54,13 @@ class HyperionPhysicsTest {
         assertTrue(warned && finals, "Ladder reached warning and final");
     }
 
+    @Test void hotWarningStillLastsItsFloor() {
+        // A third of the hot warning time is only 5 s before the final seconds; the alarm gets MIN_WARNING_S instead.
+        var p = new HyperionPhysics(); var input = in(275, 1, -10, 1); int warning = 0;
+        for (int i = 0; i < WARN_HOT_S; i++) if (p.step(input, 1_000_000_000L).stage() == Stage.WARNING) warning++;
+        assertEquals(MIN_WARNING_S, warning, "Seconds of warning beside a heat source");
+    }
+
     @Test void recoveryPlaysAllClearOnce() {
         var p = new HyperionPhysics(); int clears = 0;
         for (int i = 0; i < 100; i++) if (p.step(in(67, 1, 20, 0), 1_000_000_000L).allClear()) clears++;

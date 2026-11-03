@@ -29,7 +29,8 @@ public final class HyperionLoopSound extends AbstractTickableSoundInstance {
     private static final float FADE = 0.05F;
     private final HyperionControllerBlockEntity controller;
     private final Kind kind;
-    private long heartbeat = Long.MIN_VALUE / 2;
+    private long heartbeat = Long.MIN_VALUE / 2, seenAt;
+    private double seenToQuench = Double.NaN;
 
     private HyperionLoopSound(HyperionControllerBlockEntity controller, Kind kind) {
         super(kind == Kind.HUM ? ModSounds.HYPERION_HUM.get() : ModSounds.HYPERION_WARNING.get(), SoundSource.BLOCKS, SoundInstance.createUnseededRandom());
@@ -76,13 +77,20 @@ public final class HyperionLoopSound extends AbstractTickableSoundInstance {
         if (controller.isRemoved() || !wanted(kind, s)) return 0;
         return kind == Kind.HUM ? (float) (0.6 * Math.clamp((s.surroundingsC() + 270) / 290, 0.02, 1)) : 1.2F;
     }
-    /** The warning rises from 1.0 when it begins, a third of the warning time out, to 1.6 as the final stage starts. */
+    /** The warning rises from 1.0 when it begins to 1.6 as the final stage starts. */
     private float pitch() {
         if (kind != Kind.WARNING) return 1F;
         var s = controller.snapshot();
-        double start = s.warningSeconds() / 3.0, span = start - HyperionPhysics.FINAL_S;
+        double start = HyperionPhysics.warningStartS(s.warningSeconds()), span = start - HyperionPhysics.FINAL_S;
         if (span <= 0 || !Double.isFinite(s.secondsToQuench())) return 1F;
-        return (float) (1.0 + 0.6 * Math.clamp((start - s.secondsToQuench()) / span, 0, 1));
+        return (float) (1.0 + 0.6 * Math.clamp((start - toQuench(s.secondsToQuench())) / span, 0, 1));
+    }
+    /** The time to the quench is synced once a second; counting it down between syncs (never past a second) makes the
+     * pitch glide instead of stepping. */
+    private double toQuench(double synced) {
+        long now = controller.getLevel() == null ? 0 : controller.getLevel().getGameTime();
+        if (synced != seenToQuench) { seenToQuench = synced; seenAt = now; }
+        return synced - Math.min(1.0, (now - seenAt) / 20.0);
     }
 
     @Override public boolean canStartSilent() { return true; }
