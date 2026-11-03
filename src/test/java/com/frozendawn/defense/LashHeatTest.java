@@ -64,4 +64,12 @@ class LashHeatTest {
         var warm = fire(LashHeat.COOL, 1000, 10, false);
         assertEquals(LashHeat.FIRE_HEAT, warm.fire(100_000, false).heat().heat());
     }
+
+    @Test
+    void aLockoutFromALaterClockDoesNotStick() {
+        // Carried from a world whose game time is far ahead, the stored lockout lies in this world's distant future.
+        var hot = fire(LashHeat.COOL, 1_000_000, LashHeat.FIRE_TICKS, false);
+        assertFalse(hot.lockedOut(5000), "No lockout lasts longer than the vacuum maximum");
+        assertTrue(hot.fire(5000, false).fired());
+    }
 }

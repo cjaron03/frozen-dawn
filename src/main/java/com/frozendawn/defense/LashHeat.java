@@ -29,7 +29,8 @@ public record LashHeat(int heat, long lockoutUntil, long lastFired) {
 
     public record Shot(boolean fired, LashHeat heat) {}
 
-    public boolean lockedOut(long now) { return now < lockoutUntil; }
+    /** A lockout further off than the vacuum maximum came from another world's clock and has lapsed. */
+    public boolean lockedOut(long now) { return now < lockoutUntil && lockoutUntil - now <= 2L * LOCKOUT_TICKS; }
 
     public Shot fire(long now, boolean vacuum) {
         if (lockedOut(now)) return new Shot(false, this);

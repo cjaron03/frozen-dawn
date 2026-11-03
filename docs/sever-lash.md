@@ -21,12 +21,16 @@ Each slice is its own branch and PR off `feat/maeve-director`.
 - Hold use to fire. Each tick pays 1250 J (25 kW) from carried Power Cells through `PowerCellItem.pay`, the same
   hotbar, main inventory, then offhand order as the Suit Headlamp. A full cell is 20 s of beam. The Lash holds no
   charge of its own; you recharge the cells at a Cell Dock.
-- Reach 12. Each tick cuts every living thing between last tick's aim and this tick's (`BeamSweep`: rays at most a
-  quarter block apart at full reach, at most 64 a tick). A broken or stale sweep restarts as a single ray. Blocks stop
-  the beam.
+- Reach 12. Each tick cuts every living thing between last tick's aim and this tick's (`BeamSweep`). Rays are at most
+  a quarter block apart at full reach for turns up to about 75 degrees in one tick; past that, the 64-ray cap spreads
+  them wider. A broken or stale sweep restarts as a single ray. Blocks stop the beam.
 - 0.3 damage a tick (6 a second). `frozendawn:sever_lash` bypasses the hurt cooldown and deals no knockback.
-  Armor and shields stop half of what they normally would (`SeverLashDamageHandler`).
-- Heat (`LashHeat`, on the stack, settled from game time): 6 s of continuous fire overheats it. The lockout is 4 s
+- Owner ruling, 2026-11-02: the Lash bypasses armor entirely (`bypasses_armor`), so armor stops none of the cut and
+  never wears from it. This replaces the spec's "armor blocks less than usual". Shields still stop half of what they
+  would (`SeverLashDamageHandler`).
+- Heat (`LashHeat`, on the stack, settled from game time): 6 s of continuous fire overheats it. A stored lockout
+  further off than the vacuum maximum, which comes from carrying the Lash out of a world with a later clock, counts as
+  lapsed. The lockout is 4 s
   in air and 8 s where the eye has no air (`CombustionAtmosphere.canBurnAt`). Idle ticks cool it as fast as firing
   heats it in air, and at half that rate in vacuum. A locked or unpowered trigger costs nothing.
 - In air the beam draws a red dust line; in vacuum only the impact shows. Overheat plays a vanilla extinguish hiss
@@ -51,6 +55,15 @@ builds a flat firing range: Hellwhip husks, reach pigs at 12 and 15 blocks, a wa
 a sealed glass room for air vs vacuum. By the owner's ruling (2026-11-02) this world keeps advancement toasts and chat
 on so Hellwhip can be seen; other generated worlds still filter them. Difficulty is Normal and locked.
 
+## Deferred from the slice 1 branch review
+
+- Hurt flash and hurt sound replay on every tick a target is cut, because the cooldown is bypassed. Judge by ear in
+  the sound slice.
+- The Lash cuts anything living except the shooter: its own mount, tamed pets, villagers. This is a design call.
+- The held stack is rewritten every firing tick; check for a hand re-equip bob in the visual pass.
+- `use()` checks only the lockout, so a trigger with no cells flickers the use animation.
+- A player who logs out mid-beam leaves one stale entry in the aim map. It is harmless.
+
 ## Owner playtest, 2026-11-02 (Sever Lash Check, runClient, commit 48c503b7)
 
 Unprompted report: "i like it", "no sounds though", and "it mowed down the husks and the pig". Asked which pig, the
@@ -61,6 +74,7 @@ placeholder overheat hiss. Next step proposed: procedural Lash sounds and a 3D i
 ## Verification
 
 - JUnit: `LashHeatTest`, `BeamSweepTest`.
-- GameTests (`-PfdTests=severLash`): power draw, arc-only cutting, cooldown and knockback, armor, overheat, Hellwhip.
+- GameTests (`-PfdTests=severLash`): power draw, arc-only cutting, cooldown, knockback and stale-aim reset, armor
+  bypass, no player armor wear, overheat, Hellwhip.
 - Not covered by a test: the shield half-block (needs a player blocking for 5+ ticks) and anything visual or audible.
   These need the owner's visual pass.

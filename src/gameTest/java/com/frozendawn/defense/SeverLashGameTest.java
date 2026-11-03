@@ -11,9 +11,7 @@ import net.minecraft.gametest.framework.*;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.*;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.damagesource.CombatRules;
 import net.minecraft.world.entity.*;
-import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.item.*;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Blocks;
@@ -65,13 +63,14 @@ public final class SeverLashGameTest {
         for(int t=0;t<5;t++)SeverLash.fire(p,lash,1000+t);
         h.assertTrue(Math.abs(pig.getHealth()-(pig.getMaxHealth()-5*SeverLash.DAMAGE_PER_TICK))<1e-4,"Every tick of contact lands: six damage a second");
         h.assertTrue(pig.getDeltaMovement().horizontalDistance()<1e-6,"A cutter does not shove");
-        aim(p,0);var gap=SeverLash.fire(p,lash,1010);
-        h.assertTrue(gap&&Math.abs(pig.getHealth()-(pig.getMaxHealth()-6*SeverLash.DAMAGE_PER_TICK))<1e-4,"A broken sweep resumes as a single ray, not an arc from stale aim");
+        var stale=target(h,EntityType.PIG,30,5);
+        aim(p,60);h.assertTrue(SeverLash.fire(p,lash,1010),"Fires again after a gap");
+        h.assertTrue(full(stale),"A broken sweep resumes as a single ray, not an arc from the stale aim");
         p.discard();h.succeed();
     }
 
     @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="sever_lash",timeoutTicks=100)
-    public static void severLashArmorBlocksHalfAsMuch(GameTestHelper h) {
+    public static void severLashCutsThroughArmor(GameTestHelper h) {
         var p=shooter(h,500000);var lash=p.getMainHandItem();
         var husk=target(h,EntityType.HUSK,0,5);
         husk.setItemSlot(EquipmentSlot.HEAD,new ItemStack(Items.DIAMOND_HELMET));
@@ -80,15 +79,33 @@ public final class SeverLashGameTest {
         husk.setItemSlot(EquipmentSlot.FEET,new ItemStack(Items.DIAMOND_BOOTS));
         // Worn armor becomes attributes on the husk's next tick.
         h.runAfterDelay(2,()->{
-            var source=h.getLevel().damageSources().source(ModDamageTypes.SEVER_LASH,p);
-            float vanilla=CombatRules.getDamageAfterAbsorb(husk,SeverLash.DAMAGE_PER_TICK,source,
-                    husk.getArmorValue(),(float)husk.getAttributeValue(Attributes.ARMOR_TOUGHNESS));
-            float expected=SeverLash.DAMAGE_PER_TICK-(SeverLash.DAMAGE_PER_TICK-vanilla)/2;
+            h.assertTrue(husk.getArmorValue()>=20,"Full diamond is on: "+husk.getArmorValue());
             float before=husk.getHealth();aim(p,0);SeverLash.fire(p,lash,1000);
-            h.assertTrue(vanilla<SeverLash.DAMAGE_PER_TICK*0.5f,"Full diamond normally stops most of a tick");
-            h.assertTrue(Math.abs((before-husk.getHealth())-expected)<1e-4,"The cutter keeps half of what armor would have stopped");
+            h.assertTrue(Math.abs((before-husk.getHealth())-SeverLash.DAMAGE_PER_TICK)<1e-4,"Full diamond stops none of the cut");
             p.discard();h.succeed();
         });
+    }
+
+    @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="sever_lash",timeoutTicks=100)
+    public static void severLashLeavesPlayerArmorUnworn(GameTestHelper h) {
+        var server=h.getLevel().getServer();boolean pvp=server.isPvpAllowed();
+        // The GameTest server runs with PvP off; ordinary worlds allow it.
+        server.setPvpAllowed(true);
+        var p=shooter(h,500000);var lash=p.getMainHandItem();
+        var level=h.getLevel();var profile=new GameProfile(UUID.randomUUID(),"sever_lash_target");
+        var victim=new ServerPlayer(server,level,profile,ClientInformation.createDefault());
+        victim.connection=new net.neoforged.neoforge.common.util.FakePlayer(level,profile).connection;
+        victim.setPos(h.absoluteVec(new Vec3(EYE_X,FEET_Y,EYE_Z+5)));victim.setGameMode(GameType.SURVIVAL);level.addNewPlayer(victim);
+        try {var field=ServerPlayer.class.getDeclaredField("spawnInvulnerableTime");field.setAccessible(true);field.setInt(victim,0);}
+        catch(ReflectiveOperationException e) {throw new IllegalStateException("The target player must lose spawn protection",e);}
+        var helmet=new ItemStack(Items.IRON_HELMET);victim.setItemSlot(EquipmentSlot.HEAD,helmet);
+        try {
+            aim(p,0);p.setXRot(10);
+            for(int t=0;t<40;t++)SeverLash.fire(p,lash,1000+t);
+            h.assertTrue(victim.getHealth()<victim.getMaxHealth(),"The beam reached the armored player");
+            h.assertTrue(helmet.getDamageValue()==0,"Two seconds of beam leave the helmet unworn: "+helmet.getDamageValue());
+        } finally {server.setPvpAllowed(pvp);victim.discard();p.discard();}
+        h.succeed();
     }
 
     @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="sever_lash",timeoutTicks=100)
