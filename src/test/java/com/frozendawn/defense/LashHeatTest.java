@@ -84,17 +84,24 @@ class LashHeatTest {
     }
 
     @Test
-    void anOverheatedLashGlowsFullAndVentsWhiteThenCoolsRed() {
+    void anOverheatedLashVentsThroughItsStages() {
         var hot = fire(LashHeat.COOL, 1000, LashHeat.FIRE_TICKS, false);
-        long tripped = 1000 + LashHeat.FIRE_TICKS - 1;
+        long tripped = 1000 + LashHeat.FIRE_TICKS - 1, end = tripped + LashHeat.LOCKOUT_TICKS;
         assertEquals(1F, hot.glow(tripped + 1));
-        assertEquals(1F, hot.vent(tripped + 1), "Just tripped: vented white-hot");
-        assertEquals(.5F, hot.vent(tripped + LashHeat.LOCKOUT_TICKS / 2), "The second half of the lockout cools");
-        assertEquals(0, hot.vent(tripped + LashHeat.LOCKOUT_TICKS), "Vents shut when the lockout ends");
-        assertEquals(0, hot.glow(tripped + LashHeat.LOCKOUT_TICKS), "and the emitter is cool again");
+        assertEquals(LashHeat.VENT_OPENING, hot.ventStage(tripped + 1), "The fins lift at once");
+        assertEquals(LashHeat.VENT_OPEN, hot.ventStage(tripped + 2), "and lie back within four ticks");
+        assertEquals(LashHeat.VENT_OPEN, hot.ventStage(tripped + LashHeat.LOCKOUT_TICKS / 2 - 1), "white-hot through the first half");
+        assertEquals(LashHeat.VENT_COOLING, hot.ventStage(tripped + LashHeat.LOCKOUT_TICKS / 2), "orange through the third quarter");
+        assertEquals(LashHeat.VENT_COOLED, hot.ventStage(tripped + LashHeat.LOCKOUT_TICKS * 3 / 4), "red through the last");
+        assertEquals(LashHeat.VENT_CLOSING, hot.ventStage(end - 4), "folding in the last four ticks");
+        assertEquals(LashHeat.VENT_SHUT, hot.ventStage(end - 2));
+        assertEquals(0, hot.ventStage(end), "Vents shut when the lockout ends");
+        assertEquals(0, hot.glow(end), "and the emitter is cool again");
+        assertEquals(LashHeat.VENT_OPENING / 8F, hot.vent(tripped + 1), "The model predicate is the stage in eighths");
         var vacuum = fire(LashHeat.COOL, 1000, LashHeat.FIRE_TICKS, true);
-        assertEquals(1F, vacuum.vent(tripped + LashHeat.LOCKOUT_TICKS / 2 + 1), "In vacuum each half lasts twice as long");
-        assertEquals(.5F, vacuum.vent(tripped + LashHeat.LOCKOUT_TICKS + 1));
+        assertEquals(LashHeat.VENT_OPEN, vacuum.ventStage(tripped + LashHeat.LOCKOUT_TICKS - 1), "In vacuum each stage lasts twice as long");
+        assertEquals(LashHeat.VENT_COOLING, vacuum.ventStage(tripped + LashHeat.LOCKOUT_TICKS));
+        assertEquals(LashHeat.VENT_CLOSING, vacuum.ventStage(tripped + 2 * LashHeat.LOCKOUT_TICKS - 4), "but the fins still fold in four ticks");
     }
 
     @Test

@@ -270,11 +270,14 @@ public class ClientEvents {
             );
             ItemProperties.register(ModItems.GEIGER_COUNTER.get(), ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "reading"),
                     (stack, level, entity, seed) -> entity == net.minecraft.client.Minecraft.getInstance().player ? RadiationClient.needle() : 0);
-            // The Lash glows as it nears overheat and vents through the lockout; heat settles on the client's clock.
+            // The Lash glows as it nears overheat and vents through the lockout in stages; heat settles on the client's clock.
             ItemProperties.register(ModItems.SEVER_LASH.get(), ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "heat"),
                     (stack, level, entity, seed) -> lashHeat(stack).glow(lashClock(level)));
             ItemProperties.register(ModItems.SEVER_LASH.get(), ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "vent"),
                     (stack, level, entity, seed) -> lashHeat(stack).vent(lashClock(level)));
+            // Firing swaps in models held along the raised arm (SeverLashHold); other players see it through the synced use.
+            ItemProperties.register(ModItems.SEVER_LASH.get(), ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "firing"),
+                    (stack, level, entity, seed) -> entity != null && entity.isUsingItem() && entity.getUseItem() == stack ? 1 : 0);
             ItemProperties.register(ModItems.MIEL_HONEY.get(), ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "fill"),
                     (stack, level, entity, seed) -> stack.getOrDefault(ModDataComponents.MIEL_SPOONFULS, MielHoneyItem.SPOONFULS) / (float) MielHoneyItem.SPOONFULS);
             CuriosClientCompat.registerRenderers();
@@ -291,6 +294,7 @@ public class ClientEvents {
 
     @SubscribeEvent
     public static void onRegisterClientExtensions(RegisterClientExtensionsEvent event) {
+        event.registerItem(new com.frozendawn.client.SeverLashHold(), ModItems.SEVER_LASH.get());
         event.registerFluidType(new IClientFluidTypeExtensions() {
             @Override
             public ResourceLocation getStillTexture() {

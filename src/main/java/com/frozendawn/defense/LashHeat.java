@@ -40,11 +40,25 @@ public record LashHeat(int heat, long lockoutUntil, long lastFired) {
         return Math.max(0, heat - 2 * Math.max(0, now - lastFired)) / (float) OVERHEAT;
     }
 
-    /** The overheat vent: 1 for the white-hot first half of a lockout, 0.5 as it cools in the second, 0 otherwise. */
-    public float vent(long now) {
+    /** Overheat vent stages, in order through a lockout; 0 when not locked out. */
+    public static final int VENT_OPENING = 1, VENT_OPEN = 2, VENT_COOLING = 3, VENT_COOLED = 4, VENT_CLOSING = 5, VENT_SHUT = 6;
+
+    /**
+     * Where the vent is in its lockout. The fins lift for two ticks and lie back, white-hot through the first half,
+     * orange through the third quarter and red after; in the last four ticks they fold, two ticks a step.
+     */
+    public int ventStage(long now) {
         if (!lockedOut(now)) return 0;
-        return 2 * (now - lastFired) < lockoutUntil - lastFired ? 1 : .5F;
+        long elapsed = now - lastFired, span = lockoutUntil - lastFired, left = lockoutUntil - now;
+        if (elapsed < 2) return VENT_OPENING;
+        if (2 * elapsed < span) return VENT_OPEN;
+        if (4 * elapsed < 3 * span) return VENT_COOLING;
+        if (left > 4) return VENT_COOLED;
+        return left > 2 ? VENT_CLOSING : VENT_SHUT;
     }
+
+    /** The vent stage in eighths, for the item model predicate {@code frozendawn:vent}, which is clamped to 0 to 1. */
+    public float vent(long now) { return ventStage(now) / 8F; }
 
     public Shot fire(long now, boolean vacuum) {
         if (lockedOut(now)) return new Shot(false, this);

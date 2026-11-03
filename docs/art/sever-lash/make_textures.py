@@ -1,4 +1,4 @@
-"""Draw the ORSA LC-4 Sever Lash item texture, the Seared effect icon and its ember particle.
+"""Draw the ORSA LC-4 Sever Lash model textures, the Lash Emitter, the Seared effect icon and its ember particle.
 
 Original pixel art authored in code for Frozen Dawn on 2026-11-02. No third-party textures or source images.
 A gunmetal diagnostic emitter held diagonally like a tool: lead-grey grip, copper coil, acheronite lens and a
@@ -7,7 +7,11 @@ deep red at the edges, with two embers lifting off it; the ember sprites are whi
 they cool. Lash Emitter (2026-11-03): the bare salvaged emitter, a short gunmetal tube in two copper coils with the
 dead lens at one end and torn leads at the other. Heat glow (2026-11-03): overlays drawn over the Lash sprite as heat
 nears overheat (warm, hot) and through the lockout (vented white-hot, then cooling red); the game renders all but
-warm at full brightness. Run from anywhere: python3 docs/art/sever-lash/make_textures.py
+warm at full brightness. 3D model (slice 2, 2026-11-03): the flat sprite and its overlays gave way to 16x16 material
+tiles under item/sever_lash/, one texel a model unit, for the model in tools/build_sever_lash_models.py. Gunmetal with
+a top-edge highlight, a dark lower row, panel seams and rivets; ribbed lead grip; copper windings; the cell port's
+copper contacts; one tile per fin and barrel colour from cool steel to white-hot; the lens; and the vent slots, two
+flickering frames each in white, orange and red. Run from anywhere: python3 docs/art/sever-lash/make_textures.py
 """
 from pathlib import Path
 from PIL import Image
@@ -15,18 +19,12 @@ from PIL import Image
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[2]
 TEXTURES = ROOT / 'src/main/resources/assets/frozendawn/textures'
-OUT = TEXTURES / 'item/sever_lash.png'
+MODEL = TEXTURES / 'item/sever_lash'
 
 P = {k: tuple(bytes.fromhex(v)) + (255,) for k, v in dict(
     outline='0b0f12', dark='171c21', steel='414950', light='667077', pale='8c969c',
     lead='3a3d4a', lead2='545869', copper='976344', copper2='c18054',
     lens='5ad1e0', lens2='a8f0f5', tip='e5583a', tip2='ffb08a').items()}
-
-# Grip at the bottom left, emitter at the top right; one pixel per body cell along the diagonal.
-BODY = [(2, 13, 'lead'), (3, 12, 'lead2'), (4, 11, 'lead'), (5, 10, 'steel'), (6, 9, 'light'),
-        (7, 8, 'copper'), (8, 7, 'copper2'), (9, 6, 'steel'), (10, 5, 'light'), (11, 4, 'lens'),
-        (12, 3, 'lens2'), (13, 2, 'tip')]
-
 
 SEAR = [(d, tuple(bytes.fromhex(v)) + (255,)) for d, v in (
     (.55, 'fff3d6'), (1.15, 'ffb35a'), (1.75, 'e5502a'), (2.3, '7a1d14'), (2.85, '24100e'))]
@@ -85,30 +83,89 @@ def emitter():
     return out
 
 
-# Per overlay: (first body cell it covers, colour by body cell kind, colour of the shadow pixel under it).
-GLOW = {
-    'warm': (6, {'copper': 'a5523a', 'copper2': 'c0603e', 'steel': '7a2a1e', 'light': '9b3a26'}, None),
-    'hot': (6, {'copper': 'ff8a3a', 'copper2': 'ffb35a', 'steel': 'c03a26', 'light': 'e5583a', 'lens': 'ffd9b0',
-                'lens2': 'fff3d6', 'tip': 'ffb35a'}, '7a2a1e'),
-    'vented': (4, {'lead': 'ff8a3a', 'lead2': 'ffb35a', 'steel': 'ffb35a', 'light': 'fff3d6', 'copper': 'ffb35a',
-                   'copper2': 'fff3d6', 'lens': 'fff3d6', 'lens2': 'ffffff', 'tip': 'fff3d6'}, 'c03a26'),
-    'cooling': (6, {'copper': 'c03a26', 'copper2': 'e5583a', 'steel': '9b2a1e', 'light': 'c03a26', 'lens': 'e5583a',
-                    'lens2': 'ff8a3a', 'tip': 'e5583a'}, '5a1a14'),
-}
+def hexc(v):
+    return tuple(bytes.fromhex(v)) + (255,)
 
 
-def glow(name):
-    first, colours, shadow = GLOW[name]
-    im = Image.new('RGBA', (16, 16), (0, 0, 0, 0))
-    for i, (x, y, kind) in enumerate(BODY):
-        c = colours.get(kind) if i >= first else None
-        if c:
-            im.putpixel((x, y), tuple(bytes.fromhex(c)) + (255,))
-            if shadow and kind in ('steel', 'light', 'copper', 'copper2'):
-                im.putpixel((x + 1, y + 1), tuple(bytes.fromhex(shadow)) + (255,))
-    if name in ('hot', 'vented'):
-        im.putpixel((14, 1), tuple(bytes.fromhex('fff3d6')) + (255,))
+def tile(base, top=None, bottom=None, speckle=None, seed=0):
+    """16x16 material: a base colour with a lighter top row, a darker bottom row and a fixed scatter of speckles."""
+    im = Image.new('RGBA', (16, 16), hexc(base))
+    for x in range(16):
+        if top: im.putpixel((x, 0), hexc(top))
+        if bottom: im.putpixel((x, 2), hexc(bottom))
+    if speckle:
+        state = seed * 7919 + 17
+        for _ in range(14):
+            state = (state * 1103515245 + 12345) % 2 ** 31
+            x, y = state % 16, (state >> 8) % 16
+            if y not in (0, 2) or not (top or bottom): im.putpixel((x, y), hexc(speckle))
     return im
+
+
+def steel():
+    """Gunmetal: highlight along the top edge, dark underside row, a panel seam every five texels, two rivets."""
+    im = tile('414950', top='667077', bottom='171c21', speckle='4a535a', seed=1)
+    for y in range(16):
+        for x in (4, 9, 14):
+            if y != 0: im.putpixel((x, y), hexc('2c3238'))
+    for x in (1, 7):
+        im.putpixel((x, 1), hexc('8c969c'))
+    return im
+
+
+def lead(base, rib):
+    im = tile(base, speckle=rib, seed=2)
+    for y in range(1, 16, 2):
+        for x in range(16):
+            im.putpixel((x, y), hexc(rib))
+    return im
+
+
+def copper():
+    """Windings: alternating bright and dark copper rows, a shadow on every fourth."""
+    im = Image.new('RGBA', (16, 16))
+    for y in range(16):
+        c = 'c18054' if y % 2 else '976344'
+        for x in range(16):
+            im.putpixel((x, y), hexc('6e4630' if y % 4 == 3 and x % 3 == 0 else c))
+    return im
+
+
+def cap():
+    im = tile('545869', top='6a6e80', speckle='3a3d4a', seed=3)
+    for x, y in ((1, 1), (1, 4), (1, 5)):
+        im.putpixel((x, y), hexc('c18054'))
+    return im
+
+
+def lens(base, glint):
+    im = tile(base, speckle=glint, seed=4)
+    im.putpixel((0, 0), hexc('ffffff'))
+    return im
+
+
+FIN_COLOURS = dict(steel=('667077', '8c969c'), pale=('8c969c', 'b4bcc0'), dull=('7a2a1e', '9b3a26'),
+                   red=('c03a26', 'e5583a'), orange=('ff8a3a', 'ffb35a'), amber=('ffb35a', 'ffd9a0'),
+                   white=('fff3d6', 'ffffff'))
+
+
+def slot(a, b):
+    """Two frames, 16x32, for the flickering vent slot."""
+    im = Image.new('RGBA', (16, 32))
+    im.paste(tile(a, speckle=b, seed=5), (0, 0))
+    im.paste(tile(b, speckle=a, seed=6), (0, 16))
+    return im
+
+
+def model_textures():
+    out = dict(steel=steel(), underside=tile('171c21', speckle='0b0f12', seed=7), lead=lead('3a3d4a', '30333e'),
+               guard=lead('545869', '4a4e5e'), copper=copper(), cap=cap(), lens=lens('5ad1e0', 'a8f0f5'),
+               lens_hot=lens('a8f0f5', 'fff3d6'), lens_white=lens('fff3d6', 'ffffff'))
+    for name, (base, top) in FIN_COLOURS.items():
+        out['fin_' + name] = tile(base, top=top, speckle=top, seed=8)
+    for name, (a, b) in dict(white=('fff3d6', 'ffb35a'), orange=('ff8a3a', 'ffd9a0'), red=('c03a26', 'ff6a3a')).items():
+        out['slot_' + name] = slot(a, b)
+    return out
 
 
 def save(im, path):
@@ -118,21 +175,11 @@ def save(im, path):
 
 
 def main():
-    im = Image.new('RGBA', (16, 16), (0, 0, 0, 0))
-    for x, y, color in BODY:
-        for dx, dy in ((-1, 0), (0, 1), (-1, 1), (1, 0), (0, -1), (1, -1)):
-            if im.getpixel((x + dx, y + dy))[3] == 0:
-                im.putpixel((x + dx, y + dy), P['outline'])
-    for x, y, color in BODY:
-        im.putpixel((x, y), P[color])
-        if color in ('steel', 'light', 'copper', 'copper2'):
-            im.putpixel((x + 1, y + 1), P['dark'] if color != 'copper2' else P['copper'])
-    im.putpixel((14, 1), P['tip2'])
-    im.putpixel((5, 12), P['pale'])  # trigger
-    save(im, OUT)
+    for name, im in model_textures().items():
+        save(im, MODEL / f'{name}.png')
+        if name.startswith('slot_'):
+            (MODEL / f'{name}.png.mcmeta').write_text('{"animation": {"frametime": 2}}\n')
     save(emitter(), TEXTURES / 'item/lash_emitter.png')
-    for name in GLOW:
-        save(glow(name), TEXTURES / f'item/sever_lash_glow_{name}.png')
     save(seared_icon(), TEXTURES / 'mob_effect/seared.png')
     save(ember(3.6), TEXTURES / 'particle/sear_ember_0.png')
     save(ember(2.6), TEXTURES / 'particle/sear_ember_1.png')
