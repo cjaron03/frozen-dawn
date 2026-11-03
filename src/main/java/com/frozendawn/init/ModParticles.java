@@ -55,6 +55,10 @@ public final class ModParticles {
     public static final DeferredHolder<ParticleType<?>, SimpleParticleType>
             TERMINUS_MOTE = PARTICLES.register("terminus_mote", () -> new SimpleParticleType(true));
 
+    /** A grey flake of a body the Terminus stopped, crumbling away; its speed is its drift. */
+    public static final DeferredHolder<ParticleType<?>, SimpleParticleType>
+            TERMINUS_FLAKE = PARTICLES.register("terminus_flake", () -> new SimpleParticleType(true));
+
     private ModParticles() {
     }
 }

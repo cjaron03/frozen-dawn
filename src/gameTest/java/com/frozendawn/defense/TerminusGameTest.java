@@ -287,7 +287,9 @@ public final class TerminusGameTest {
             h.assertTrue(deaths.stream().filter(e->e.getEntity()==zombie&&e.getSource().getEntity()==op).count()==1,"One death event, naming the operator");
             h.assertTrue(around(h,ExperienceOrb.class).isEmpty(),"No experience");
             h.assertTrue(op.getStats().getValue(Stats.ENTITY_KILLED.get(EntityType.ZOMBIE))==1,"The operator answers for it");
-            h.runAfterDelay(25,()->{
+            // Vanilla takes a body away at 20 ticks; a stopped one stands for the crumble, then goes without a poof.
+            h.runAfterDelay(25,()->h.assertTrue(!zombie.isRemoved(),"It stands while it crumbles"));
+            h.runAfterDelay(Terminus.DEATH_TICKS+2,()->{
                 h.assertTrue(zombie.isRemoved(),"Then it is gone");
                 h.assertTrue(around(h,ItemEntity.class).isEmpty(),"No drops, not even guaranteed equipment");
                 h.assertTrue(around(h,ExperienceOrb.class).isEmpty()&&op.totalExperience==0,"Still no experience");
@@ -322,7 +324,9 @@ public final class TerminusGameTest {
             finally {TerminusLedger.setForTest(server,was);}
             h.assertTrue(zombie.isDeadOrDying()&&!zombie.isRemoved(),"It dies the ordinary way");
             h.assertTrue(!around(h,ExperienceOrb.class).isEmpty(),"Its experience drops");
-            h.runAfterDelay(25,()->{
+            h.runAfterDelay(25,()->h.assertTrue(!zombie.isRemoved(),"After the Heart it crumbles too"));
+            h.runAfterDelay(Terminus.DEATH_TICKS+2,()->{
+                h.assertTrue(zombie.isRemoved(),"Then it is gone");
                 h.assertTrue(around(h,ItemEntity.class).stream().anyMatch(i->i.getItem().is(Items.IRON_SWORD)),"Its drops fall");
                 h.assertTrue(op.getStats().getValue(Stats.ENTITY_KILLED.get(EntityType.ZOMBIE))==1,"The kill is the operator's");
                 h.succeed();

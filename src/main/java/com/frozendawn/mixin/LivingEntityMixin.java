@@ -1,6 +1,7 @@
 package com.frozendawn.mixin;
 
 import com.frozendawn.compat.curios.CuriosCompat;
+import com.frozendawn.defense.Terminus;
 import com.frozendawn.event.IceClawsHandler;
 import com.frozendawn.event.SnowshoesHandler;
 import com.frozendawn.event.SnowshoesTuning;
@@ -15,6 +16,13 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(LivingEntity.class)
 public abstract class LivingEntityMixin {
+
+    @Inject(method = "tickDeath", at = @At("HEAD"), cancellable = true)
+    private void frozendawn$holdTerminusDeath(CallbackInfo ci) {
+        if (Terminus.holdDeath((LivingEntity) (Object) this)) {
+            ci.cancel();
+        }
+    }
 
     @Inject(method = "travel", at = @At("HEAD"), cancellable = true)
     private void frozendawn$handleIceClawTravel(Vec3 travelVector, CallbackInfo ci) {

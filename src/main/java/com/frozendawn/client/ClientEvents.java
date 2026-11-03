@@ -123,6 +123,8 @@ public class ClientEvents {
                 com.frozendawn.client.particle.TerminusSpeckParticle.Provider::new);
         event.registerSpriteSet(ModParticles.TERMINUS_MOTE.get(),
                 com.frozendawn.client.particle.TerminusMoteParticle.Provider::new);
+        event.registerSpriteSet(ModParticles.TERMINUS_FLAKE.get(),
+                com.frozendawn.client.particle.TerminusFlakeParticle.Provider::new);
     }
 
     @SubscribeEvent
@@ -147,6 +149,9 @@ public class ClientEvents {
                                 FrozenDawn.MOD_ID, "stillpoint_field"),
                         DefaultVertexFormat.POSITION),
                 StillpointFieldRenderer::setShader);
+        event.registerShader(new ShaderInstance(event.getResourceProvider(),
+                        ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "terminus_crumble"),
+                        DefaultVertexFormat.NEW_ENTITY), TerminusCrumble::setShader);
     }
 
     @SubscribeEvent

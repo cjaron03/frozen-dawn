@@ -12,6 +12,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.HumanoidArm;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
@@ -43,8 +44,13 @@ public final class TerminusClient {
         var mc = Minecraft.getInstance();
         if (mc.level == null) return;
         if (mc.player != null && mc.player.getId() == payload.operator()) greyFrames = GREY_FRAMES;
-        for (var head : payload.minds())
+        var operator = mc.level.getEntity(payload.operator());
+        for (int id : payload.minds()) {
+            if (!(mc.level.getEntity(id) instanceof LivingEntity mind)) continue;
+            var head = mind.getEyePosition();
             mc.level.addParticle(ModParticles.TERMINUS_MOTE.get(), head.x, head.y + .2, head.z, 0, 0, 0);
+            TerminusCrumble.start(mind, operator);
+        }
     }
 
     @SubscribeEvent public static void specks(ClientTickEvent.Post event) {

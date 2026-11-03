@@ -7,6 +7,9 @@ import com.frozendawn.item.TerminusItem;
 import com.frozendawn.network.TerminusDischargePayload;
 import com.frozendawn.radiation.ReactorAdvancements;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Set;
+import java.util.WeakHashMap;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.protocol.game.ClientboundStopSoundPacket;
 import net.minecraft.resources.ResourceLocation;
@@ -33,7 +36,6 @@ import net.neoforged.neoforge.event.entity.living.LivingDropsEvent;
 import net.neoforged.neoforge.event.entity.living.LivingExperienceDropEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
-import org.joml.Vector3f;
 
 /**
  * ORSA TR-0 Terminus: after a two-second wind-up, one discharge stops every susceptible mind in a 12-block, 30-degree
@@ -44,8 +46,15 @@ public final class Terminus {
     public static final int WINDUP_TICKS = 40, TOLL_PER_DISCHARGE = 4, BACKLASH_TICKS = 200, GAZE_TICKS = 60;
     /** After a discharge or an interrupted wind-up, so a held use key cannot wind straight into the next one. */
     public static final int COOLDOWN_TICKS = 20;
+    /**
+     * How long a stopped body stands before it is gone: still and greying for half a second, then a second crumbling
+     * from the head down (see TerminusCrumble). Vanilla takes a body at 20 ticks.
+     */
+    public static final int DEATH_TICKS = 32;
     /** Marks a mind taken before the CH-18 trigger: it dies, but leaves nothing behind. */
     private static final String TAKEN = FrozenDawn.MOD_ID + ".terminus_taken";
+    /** Stopped bodies on the server, held for the crumble. Players keep vanilla's death clock. */
+    private static final Set<LivingEntity> STOPPED = Collections.newSetFromMap(new WeakHashMap<>());
     /** What a boss loses to a discharge, as a share of its maximum; it is never brought below 1. */
     public static final float BOSS_SHARE = .4f;
     public static final TagKey<EntityType<?>> SUSCEPTIBLE = tag("terminus_susceptible"), IMMUNE = tag("terminus_immune");
@@ -62,7 +71,7 @@ public final class Terminus {
         var source = new DamageSource(level.registryAccess().registryOrThrow(Registries.DAMAGE_TYPE)
                 .getHolderOrThrow(ModDamageTypes.TERMINUS), op);
         boolean turned = TerminusLedger.turned(op.getServer());
-        var minds = new ArrayList<Vector3f>();
+        var minds = new ArrayList<Integer>();
         for (var target : level.getEntitiesOfClass(LivingEntity.class, new AABB(eye, eye).inflate(TerminusCone.REACH),
                 e -> e != op && e.isAlive())) {
             if (!TerminusCone.contains(eye, look, target.getBoundingBox().getCenter())
@@ -71,8 +80,7 @@ public final class Terminus {
                 case GAZE -> TerminusGaze.start((ArchitectEntity) target, op, hand);
                 case WOUND -> target.setHealth(Math.max(1f, target.getHealth() - BOSS_SHARE * target.getMaxHealth()));
                 case STOP -> {
-                    var head = target.getEyePosition();
-                    if (stop(target, source, op, turned)) minds.add(head.toVector3f());
+                    if (stop(target, source, op, turned)) minds.add(target.getId());
                 }
                 case NONE -> { }
             }
@@ -107,12 +115,29 @@ public final class Terminus {
     private static boolean stop(LivingEntity target, DamageSource source, ServerPlayer op, boolean turned) {
         boolean taken = !turned && !(target instanceof Player);
         if (taken) target.addTag(TAKEN);
+        if (!(target instanceof Player)) STOPPED.add(target);
         target.setLastHurtByPlayer(op);
         target.getCombatTracker().recordDamage(source, target.getHealth());
         target.setHealth(0);
         target.die(source);
-        if (!target.isDeadOrDying()) target.removeTag(TAKEN);
+        if (!target.isDeadOrDying()) {
+            target.removeTag(TAKEN);
+            STOPPED.remove(target);
+        }
         return target.isDeadOrDying();
+    }
+
+    /**
+     * In place of vanilla's death clock for a stopped body: it stands until the crumble is done, then is gone with no
+     * poof of smoke. Returns false for every other body.
+     */
+    public static boolean holdDeath(LivingEntity body) {
+        if (body.level().isClientSide() || !STOPPED.contains(body)) return false;
+        if (++body.deathTime >= DEATH_TICKS && !body.isRemoved()) {
+            STOPPED.remove(body);
+            body.remove(Entity.RemovalReason.KILLED);
+        }
+        return true;
     }
 
     @SubscribeEvent
