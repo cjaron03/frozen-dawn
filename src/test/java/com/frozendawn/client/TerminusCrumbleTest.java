@@ -17,4 +17,10 @@ class TerminusCrumbleTest {
     void theCrumbleEndsBeforeTheServerTakesTheBody() {
         assertTrue(TerminusCrumble.crumbled(Terminus.DEATH_TICKS - 1) >= 1 + TerminusCrumble.RAGGED);
     }
+
+    /** The body is held until the server removes it; drawn past the crumble's end it must stay gone, not wrap back. */
+    @Test
+    void theCrumbleStaysCompleteWhileTheBodyIsHeld() {
+        assertEquals(1 + TerminusCrumble.RAGGED, TerminusCrumble.crumbled(Terminus.DEATH_TICKS + 40));
+    }
 }

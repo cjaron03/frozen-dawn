@@ -209,3 +209,8 @@ saved world data and a player attachment, and hooks the shared death path. Fixed
 
 Set aside: a stop that turns the ledger mid-discharge still uses the old value for the rest of that discharge
 (negligible); no GameTest drives the wind-up through real ticks or the gaze against a live look control.
+
+## Owner playtest 2, 2026-11-03 (Terminus Check 2, runClient, branch head 37443066)
+
+Unprompted report: "looks good, but i noticed that when the mob disingirates, after it flashes and i can see the normal
+death animatioin (it falls down etc) for like a split second"

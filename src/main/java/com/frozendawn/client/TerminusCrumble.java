@@ -58,7 +58,10 @@ public final class TerminusCrumble {
     public static float grey(float age) { return Mth.clamp(age / GREY_TICKS, 0, 1); }
 
     /** How far the crumble has come, 0 to 1 + RAGGED: a texel at height {@code h} from the top, with noise n, goes once h + n * RAGGED is below it. */
-    public static float crumbled(float age) { return Math.max(0, age - CRUMBLE_START) / CRUMBLE_TICKS * (1 + RAGGED); }
+    public static float crumbled(float age) {
+        // Capped: it goes to the shader as a byte, and past its top it would wrap round and bring the body back.
+        return Mth.clamp((age - CRUMBLE_START) / CRUMBLE_TICKS, 0, 1) * (1 + RAGGED);
+    }
 
     public static void start(LivingEntity body, Entity operator) {
         float yaw = operator == null ? 0 : operator.getYRot() * Mth.DEG_TO_RAD;
@@ -77,7 +80,9 @@ public final class TerminusCrumble {
             var entry = it.next();
             var body = entry.getKey();
             var state = entry.getValue();
-            if (body.isRemoved() || body.level() != mc.level || crumbled(state.age) > 1 + RAGGED) {
+            // Held until the server takes the body: let go any sooner and vanilla draws its fall and red flush, crumbled
+            // or not. The limit is only for a body the server never removes.
+            if (body.isRemoved() || body.level() != mc.level || state.age > Terminus.DEATH_TICKS + 40) {
                 it.remove();
                 continue;
             }
