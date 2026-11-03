@@ -274,12 +274,18 @@ public final class HyperionSiloRenderer implements BlockEntityRenderer<HyperionC
                 bright = switch (g.colour()) {
                     case AMBER -> blink(now, 16);
                     case RED -> blink(now, 6);
-                    default -> 0.85f + 0.15f * (float) Math.sin(time * 0.05 + i * 0.9);
+                    default -> 0.95f + 0.05f * (float) Math.sin(time * 0.05 + i * 0.9);
                 };
                 if (i == g.flickering()) bright *= 0.3f + 0.7f * noise(seed, now / 3 + i);
             }
             int lo = gradientLow(g.colour()), hi = colour(g.colour());
-            if (fill > 0) gradient(glow, p, BAR_X1 - fill * (BAR_X1 - BAR_X0), y0, BAR_X1, y1, 4 * STEP, shade(mix(lo, hi, fill), bright), shade(lo, bright), LightTexture.FULL_BRIGHT);
+            if (fill > 0) {
+                float x0 = BAR_X1 - fill * (BAR_X1 - BAR_X0);
+                // A faint halo a pixel round the lit part, the bar, then a pale core along its top edge.
+                front(glow, p, x0 - PX, y0 - PX, BAR_X1 + PX, y1 + PX, 3 * STEP, 0x38000000 | shade(hi, bright) & 0xFFFFFF, LightTexture.FULL_BRIGHT);
+                gradient(glow, p, x0, y0, BAR_X1, y1, 4 * STEP, shade(mix(lo, hi, fill), bright), shade(lo, bright), LightTexture.FULL_BRIGHT);
+                front(glow, p, x0, y1 - PX, BAR_X1, y1, 6 * STEP, 0x99000000 | shade(mix(hi, 0xFFFFFFFF, 0.6f), bright) & 0xFFFFFF, LightTexture.FULL_BRIGHT);
+            }
             if (i == g.breathing()) {
                 float k = 0.15f + 0.6f * (0.5f + 0.5f * (float) Math.sin(time * 2 * Math.PI / 20));
                 gradient(glow, p, BAR_X0, y0, BAR_X1, y1, 5 * STEP, shade(hi, k), shade(lo, k), LightTexture.FULL_BRIGHT);
@@ -352,11 +358,11 @@ public final class HyperionSiloRenderer implements BlockEntityRenderer<HyperionC
         vc.vertex(p, x1, y1, z, u1, v0, argb, light, 0, 0, -1); vc.vertex(p, x1, y0, z, u1, v1, argb, light, 0, 0, -1);
     }
     static int colour(Colour c) {
-        return switch (c) { case BLUE -> 0xFF5FD0FF; case AMBER -> 0xFFFFB048; case RED -> 0xFFFF5A3C; case DEAD -> DEAD; case OFF -> OFF_BAR; };
+        return switch (c) { case BLUE -> 0xFF8AE8FF; case AMBER -> 0xFFFFB048; case RED -> 0xFFFF5A3C; case DEAD -> DEAD; case OFF -> OFF_BAR; };
     }
     /** The dark end of a bar's gradient; colour(c) is the light end. */
     static int gradientLow(Colour c) {
-        return switch (c) { case BLUE -> 0xFF1F6FD1; case AMBER -> 0xFFC46A12; case RED -> 0xFFA01C12; default -> colour(c); };
+        return switch (c) { case BLUE -> 0xFF2F86F0; case AMBER -> 0xFFD9801A; case RED -> 0xFFC02818; default -> colour(c); };
     }
     static int mix(int a, int b, float t) {
         t = Math.max(0, Math.min(1, t));
