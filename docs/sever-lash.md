@@ -166,6 +166,17 @@ in slice 2.
   - Is the smoke wanted in air?
   - Should the cell port show charge?
 
+## Beam (slice 2, owner ruling 2026-11-03)
+
+Mockup: `docs/art/sever-lash/beam-mockup.png` (`make_beam_mockup.py`). The owner picked **A, the whip**.
+- A rendered beam, not particles: a white-hot core in an orange sheath with a violet halo, about a third of a block
+  across.
+- The near end follows the aim at once and the far end trails it, so a fast sweep bends into a curve. It snaps
+  straight, with a crack, when the sweep stops.
+- A faint red afterimage of the last few ticks' beams fades behind it.
+- In vacuum only the core and the impact show.
+- The bend is visual only: cutting still follows `BeamSweep`.
+
 ## Deferred to slice 2
 
 - Heat Sink, Long Focus and Wide Aperture modules. Per the Notion Fabricator page they are Fabricator recipes
