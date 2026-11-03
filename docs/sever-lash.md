@@ -90,6 +90,10 @@ effect". Overheat needs visuals; the owner deferred those to the texture pass. T
 spawned at a village. The only kill was a Cartographer villager, "cut apart by a diagnostic emitter", a second
 before quitting.
 
+## Owner playtest 4, 2026-11-03 (runClient, PR head a6976673)
+
+First pass with Seared. Unprompted report: "i like it".
+
 ## Verification
 
 - JUnit: `LashHeatTest`, `BeamSweepTest`.
