@@ -20,10 +20,10 @@ import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 /** SMS-1 Hyperion loops, one instance per Controller and kind, read from the synced snapshot, with the SFR-1 loops'
  * lifecycle: a heartbeat shows the engine still ticks them, and a muted start is retried every two seconds. The hum
  * plays while the battery holds charge or is being cooled, quieter the colder it sits; the warning loop rises in pitch
- * as the quench nears. */
+ * as the quench nears. The final whine plays once per final stage and fades out if the cells recover first. */
 @EventBusSubscriber(modid = com.frozendawn.FrozenDawn.MOD_ID, value = Dist.CLIENT)
 public final class HyperionLoopSound extends AbstractTickableSoundInstance {
-    public enum Kind { HUM, WARNING }
+    public enum Kind { HUM, WARNING, WHINE }
     private static final Map<HyperionControllerBlockEntity, EnumMap<Kind, HyperionLoopSound>> PLAYING = new WeakHashMap<>();
     private static final Map<HyperionControllerBlockEntity, EnumMap<Kind, Long>> RETRY = new WeakHashMap<>();
     private static final float FADE = 0.05F;
@@ -33,18 +33,19 @@ public final class HyperionLoopSound extends AbstractTickableSoundInstance {
     private double seenToQuench = Double.NaN;
 
     private HyperionLoopSound(HyperionControllerBlockEntity controller, Kind kind) {
-        super(kind == Kind.HUM ? ModSounds.HYPERION_HUM.get() : ModSounds.HYPERION_WARNING.get(), SoundSource.BLOCKS, SoundInstance.createUnseededRandom());
+        super(switch (kind) { case HUM -> ModSounds.HYPERION_HUM.get(); case WARNING -> ModSounds.HYPERION_WARNING.get(); case WHINE -> ModSounds.HYPERION_WHINE.get(); }, SoundSource.BLOCKS, SoundInstance.createUnseededRandom());
         this.controller = controller; this.kind = kind;
         var at = controller.getBlockPos();
         x = at.getX() + .5; y = at.getY() + .5; z = at.getZ() + .5;
-        looping = true; delay = 0; attenuation = Attenuation.LINEAR;
-        volume = kind == Kind.WARNING ? target() : 0; pitch = pitch();
+        looping = kind != Kind.WHINE; delay = 0; attenuation = Attenuation.LINEAR;
+        volume = kind == Kind.HUM ? 0 : target(); pitch = pitch();
     }
     private static boolean wanted(Kind kind, HyperionControllerBlockEntity.Snapshot s) {
         if (s.problem() != HyperionMultiblock.Problem.NONE) return false;
         return switch (kind) {
             case HUM -> s.stage() == Stage.WARM ? s.flowIn() > 0 : s.stored() > 0;
             case WARNING -> s.stage() == Stage.WARNING;
+            case WHINE -> s.stage() == Stage.FINAL;
         };
     }
 
@@ -60,8 +61,13 @@ public final class HyperionLoopSound extends AbstractTickableSoundInstance {
         var retry = RETRY.computeIfAbsent(controller, k -> new EnumMap<>(Kind.class));
         long now = controller.getLevel() == null ? 0 : controller.getLevel().getGameTime();
         for (var kind : Kind.values()) {
-            if (!wanted(kind, s)) continue; // a playing loop fades itself out
             var sound = playing.get(kind);
+            if (!wanted(kind, s)) {
+                // A playing sound fades itself out; a whine that already ran to its end is forgotten, so the next final stage whines.
+                if (kind == Kind.WHINE && sound != null && now - sound.heartbeat >= 40) playing.remove(kind);
+                continue;
+            }
+            if (kind == Kind.WHINE && sound != null) continue; // once per final stage, never restarted
             if (sound != null && !sound.isStopped() && now - sound.heartbeat < 40) continue;
             if (sound != null && !sound.isStopped() && now - retry.getOrDefault(kind, Long.MIN_VALUE / 2) < 40) continue;
             if (sound != null) { sound.stop(); manager.stop(sound); }
@@ -75,7 +81,7 @@ public final class HyperionLoopSound extends AbstractTickableSoundInstance {
     private float target() {
         var s = controller.snapshot();
         if (controller.isRemoved() || !wanted(kind, s)) return 0;
-        return kind == Kind.HUM ? (float) (0.6 * Math.clamp((s.surroundingsC() + 270) / 290, 0.02, 1)) : 1.2F;
+        return switch (kind) { case HUM -> (float) (0.6 * Math.clamp((s.surroundingsC() + 270) / 290, 0.02, 1)); case WARNING -> 1.2F; case WHINE -> 1.5F; };
     }
     /** The warning rises from 1.0 when it begins to 1.6 as the final stage starts. */
     private float pitch() {
@@ -97,7 +103,7 @@ public final class HyperionLoopSound extends AbstractTickableSoundInstance {
     @Override public void tick() {
         if (controller.getLevel() != null) heartbeat = controller.getLevel().getGameTime();
         float target = target();
-        // The warning switches; the hum fades in and out.
+        // The warning switches; the hum fades in and out, the whine out.
         volume = kind == Kind.WARNING ? target : volume < target ? Math.min(target, volume + FADE) : Math.max(target, volume - FADE);
         pitch = pitch();
         if (volume <= 0.001F && target <= 0) { stop(); var map = PLAYING.get(controller); if (map != null && map.get(kind) == this) map.remove(kind); }

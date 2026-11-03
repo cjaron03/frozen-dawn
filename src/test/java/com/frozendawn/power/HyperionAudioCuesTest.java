@@ -16,8 +16,9 @@ class HyperionAudioCuesTest {
         assertEquals(EnumSet.noneOf(Cue.class), HyperionAudioCues.cues(at(Stage.CHIRP, 4), at(Stage.CHIRP, 5), false));
         assertEquals(EnumSet.noneOf(Cue.class), HyperionAudioCues.cues(at(Stage.WARNING, 9), at(Stage.WARNING, 10), false), "the warning has its own loop");
     }
-    @Test void whineOnceOnFinal() {
-        assertEquals(EnumSet.of(Cue.WHINE), HyperionAudioCues.cues(at(Stage.WARNING, 40), at(Stage.FINAL, 0), false));
+    @Test void finalLeavesTheWhineToTheClient() {
+        // A one-shot whine could not be stopped when the cells recover; the client plays it while the stage is FINAL.
+        assertEquals(EnumSet.noneOf(Cue.class), HyperionAudioCues.cues(at(Stage.WARNING, 40), at(Stage.FINAL, 0), false));
         assertEquals(EnumSet.noneOf(Cue.class), HyperionAudioCues.cues(at(Stage.FINAL, 0), at(Stage.FINAL, 1), false));
     }
     @Test void quenchOnQuenchOrBreak() {

@@ -143,7 +143,6 @@ public final class HyperionControllerBlockEntity extends BlockEntity implements 
     private void play(ServerLevel l, java.util.EnumSet<HyperionAudioCues.Cue> cues) {
         for (var cue : cues) switch (cue) {
             case CHIRP -> l.playSound(null, worldPosition, ModSounds.HYPERION_CHIRP.get(), SoundSource.BLOCKS, 1.0F, 1.0F);
-            case WHINE -> l.playSound(null, worldPosition, ModSounds.HYPERION_WHINE.get(), SoundSource.BLOCKS, 1.5F, 1.0F);
             case QUENCH -> HyperionVentJets.start(l, worldPosition, vents);
             case ALL_CLEAR -> l.playSound(null, worldPosition, ModSounds.HYPERION_ALL_CLEAR.get(), SoundSource.BLOCKS, 1.0F, 1.0F);
         }
