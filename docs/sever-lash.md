@@ -51,6 +51,13 @@ builds a flat firing range: Hellwhip husks, reach pigs at 12 and 15 blocks, a wa
 a sealed glass room for air vs vacuum. By the owner's ruling (2026-11-02) this world keeps advancement toasts and chat
 on so Hellwhip can be seen; other generated worlds still filter them. Difficulty is Normal and locked.
 
+## Owner playtest, 2026-11-02 (Sever Lash Check, runClient, commit 48c503b7)
+
+Unprompted report: "i like it", "no sounds though", and "it mowed down the husks and the pig". Asked which pig, the
+owner said it died because they were standing too close; after respawning the targets and walking back, it was not
+hit. The log shows Hellwhip earned 16 s after joining. The missing sounds are expected: slice 1 only has the
+placeholder overheat hiss. Next step proposed: procedural Lash sounds and a 3D item model, in slice 2.
+
 ## Verification
 
 - JUnit: `LashHeatTest`, `BeamSweepTest`.
