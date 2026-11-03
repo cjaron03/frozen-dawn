@@ -60,6 +60,11 @@ As the spec, sections 5, 5a, 6, 8 and 9. Open: the tale logs (count and voices).
   the emitter, the glass frosts, and pale specks are drawn in toward the emitter from inside the cone, thickest along
   its edge; on discharge the view goes grey for a frame; each stopped target lets a pale mote lift from its head, hang,
   and wink out.
+- 2026-11-03, deaths: after playtest 1 ("the enemies just disappear") the owner picked "still, grey, then fall", then
+  asked for it to go "like how the thanos snap is". Approved as drawn ("Build it as drawn") in
+  `docs/art/terminus/stop-mockup.png` (`make_stop_mockup.py`): the body stands still and greys for half a second, then
+  crumbles from the head down along a ragged edge into one-texel grey flakes that drift up and off to the right, paling
+  as they go. No tip-over, no red flush, no poof.
 
 ## T1 as built (2026-11-03)
 
@@ -71,8 +76,12 @@ As the spec, sections 5, 5a, 6, 8 and 9. Open: the tale logs (count and voices).
 - Wind-up: `getUseDuration` 40 ticks; `finishUsingItem` discharges. On use the server plays `item.terminus.windup`
   bound to the operator, a fixed-range sound event of 24 blocks. Movement at 40%: using an item already cuts walking to
   a fifth, so `TerminusClient` doubles the input first (`MovementInputUpdateEvent`).
-- Interrupt (`Terminus.onDamaged`, `LivingDamageEvent.Post` with damage over 0): the discharge is spent, the use stops
-  and the tone is stopped for everyone within 32 blocks. Letting go early costs nothing.
+- Interrupt (`Terminus.onDamaged`, `LivingDamageEvent.Post` with damage over 0): the discharge is spent and the use
+  stops. Letting go early costs nothing. However the wind-up ends short (let go, hit, slot change, death),
+  `TerminusItem.onStopUsing` stops the tone for everyone within 32 blocks.
+- Held use: a discharge or an interrupt puts the wand on a 20-tick cooldown, and the client will not start another
+  wind-up until the use key has come up (`TerminusClient.releaseGate`), so holding the key cannot run through the
+  charges.
 - Discharge (`Terminus.discharge`): one `getEntitiesOfClass` over the 12-block box round the eyes, then each living
   thing whose box centre or eyes fall in the cone (`TerminusCone`: 12 blocks, 15 degrees off the look, round). No line
   of sight, no armor check. In order:
@@ -83,10 +92,13 @@ As the spec, sections 5, 5a, 6, 8 and 9. Open: the tale logs (count and voices).
     (`canHarmPlayer`); otherwise stopped;
   - `c:bosses`: lose 40% of maximum health, never below 1, not logged;
   - `frozendawn:terminus_susceptible`: stopped and logged.
-- Stopping, before the CH-18 trigger: `CommonHooks.onLivingDeath` fires with a `frozendawn:terminus` source naming the
-  operator; unless a listener cancels it, the target is removed (`KILLED`) with no drops and no experience. Players
-  always die the ordinary way. After the trigger every target dies the ordinary way: kill credit, loot and experience
-  are the operator's, and the death message reads "X was stopped by Y".
+- Stopping: every target dies through its own `die()` with a `frozendawn:terminus` source naming the operator, so the
+  death event fires once and anything that keeps a roll of the living hears of it; kill credit and stats are the
+  operator's, and a player's death message reads "X was stopped by Y". Before the CH-18 trigger a non-player is also
+  tagged taken: its `LivingDropsEvent` and `LivingExperienceDropEvent` are cancelled, so nothing drops. Players always
+  drop. A target whose own death defers (health left above 0) is not logged.
+- The body (non-players): `Terminus.holdDeath`, from a `LivingEntityMixin` hook on `tickDeath`, keeps it for 32 ticks
+  instead of vanilla's 20 and then removes it with no poof, so the client can crumble it.
 - Cost: `frozendawn:terminus_toll` (player attachment, copied on death) counts discharges; a permanent `MAX_HEALTH`
   modifier `frozendawn:terminus_toll` of -4 each is reapplied on clone and login, and health is held under the new
   maximum. Then 10 s of Darkness and Nausea, and the hidden advancement Deathwand ("Nothing burned.").
@@ -117,7 +129,16 @@ As the spec, sections 5, 5a, 6, 8 and 9. Open: the tale logs (count and voices).
 - Discharge (`TerminusDischargePayload`, to the operator and everyone tracking them): the operator's view goes grey for
   one frame (`shaders/post/terminus_grey.json`, vanilla `color_convolve` at saturation 0; skipped if another post
   effect holds the screen), and a `terminus_mote` lifts half a block from each stopped mind's head, hangs, flickers and
-  winks out. At most 64 motes per discharge; the rest are stopped without one.
+  winks out. At most 64 minds per discharge are sent (by entity id); the rest are stopped without a mote or a crumble.
+- The crumble (`TerminusCrumble`, owner's mockup): on the discharge payload each client takes the stopped bodies over.
+  Ticks 0 to 10 the body greys where it stands (its death clock held at 0, so it neither tips over nor flushes red);
+  ticks 10 to 30 it crumbles head first. The body is drawn again through `RenderLivingEvent.Pre` into
+  `shaders/core/terminus_crumble`, on the textures of its own model, armor and held items (read from each render type
+  through accessor mixins); glints are left off. The vertex color carries height from the top, progress and greyness;
+  the shader greys the texel and discards it once progress passes its height plus a per-texel hash of up to a quarter
+  of the body. About 140 `terminus_flake` particles for a husk leave the crumbling band, one texel across, drifting up
+  and to the operator's right, paling and fading over 11 to 17 ticks. `TerminusCrumbleTest` holds the crumble inside
+  the server's 32 ticks.
 - Sound: only the wind-up (`tools/generate_terminus_sounds.sh`, `tools/audio_sources/terminus/SOURCES.md`): a 2 s tone
   gliding 48 to 96 Hz with its octave beating against it and a thin glassy hiss, stopping dead. The discharge is silent.
 
@@ -135,6 +156,14 @@ As the spec, sections 5, 5a, 6, 8 and 9. Open: the tale logs (count and voices).
 - The gaze lasts three seconds and follows the wand.
 - Totems and protection mods do not stop a discharge; it does not pass through the damage pipeline.
 - Death message: "X stopped", or "X was stopped by Y".
+- Before the Heart falls, stops count as kills for stats and kill advancements (Monster Hunter, the Pacifist's
+  tally); only loot and experience are withheld.
+- Record Four still drops when the Heart is exposed: `ThaevenLoreAcquisitionHandler` spawns it straight from the death
+  event, apart from loot, and the Terminus leaves it alone.
+- Invulnerable mobs (`isInvulnerable`) are spared even when the operator is creative.
+- The tone is stopped by name, so another operator winding up within 32 blocks is cut off too.
+- Players crumble on the same clock, but vanilla removes a dead player's body at 20 ticks with its poof, partway
+  through the crumble.
 
 ### Playtest
 `python3 tools/prepare_terminus_playtest.py --source <a 1.21.1 save>/level.dat --destination run/saves/<new name>`
@@ -145,18 +174,38 @@ ground for the wind-up. `fd terminus status | restore | turned <bool>` reads and
 neither the toll nor the turn reverses. Advancements are filtered as in every generated world.
 
 ### Verification
-- JUnit: `TerminusConeTest`, `TerminusLedgerTest`, `TerminusTextTest`, `TerminusDischargePayloadTest`.
+- JUnit: `TerminusConeTest`, `TerminusLedgerTest`, `TerminusTextTest`, `TerminusDischargePayloadTest`,
+  `TerminusCrumbleTest`.
 - GameTests (`-PfdTests=terminus`, batches `terminus` and `terminus_terminal`): found wand and tooltip; cannot burn or
   despawn; cone hits and misses; through walls; the immunity table; bosses at 40% and never killed; the Master's look at
   the wand and its end; operator spared, other players stopped, creative, PvP and teammates spared; the toll through
   respawn, the backlash and Deathwand; the two-second wind-up and the 24-block tone; an interrupt spends the discharge
-  and letting go does not; inert at zero; no drops or experience before the Heart, with the death event naming the
-  operator; an ordinary credited kill after; no turn while Maeve stands; the Terminations label.
+  and letting go does not, each leaving the cooldown; inert at zero; before the Heart one death event naming the
+  operator, a credited kill and no drops or experience; an ordinary credited kill after; either way the body stands
+  past vanilla's 20 ticks and is gone by 34; the toll through the End portal's return; invulnerable mobs spared by a
+  creative operator; no turn while Maeve stands; the Terminations label. The ledger is pinned per batch.
 - Needs the owner's eyes and ears: the model, textures and mote drift in every view, the frost, the holds, the specks,
-  the grey frame, the target motes, the tone, and the 40% walk.
+  the grey frame, the target motes, the crumble and its flakes, the tone, the 40% walk, and the release gate.
 
 ## Owner playtest 1, 2026-11-03 (Terminus Check, runClient, branch head 27948f32)
 
 Unprompted report: "wow i like it, but the enemies just disappear." The owner asked whether they should die instead,
 perhaps with unique particles. Before the Heart falls they are removed outright, as the spec has it, so nothing is left
 to fall over; the spec's presentation line does say "Targets drop where they stand".
+
+Response: the crumble above, approved from its mockup and built in `3bcf2812`.
+
+## Branch review, 2026-11-03
+
+One subagent on Opus reviewed the branch with a fresh context: Opus because the branch adds a client/server payload,
+saved world data and a player attachment, and hooks the shared death path. Fixed, each under a test written first:
+- the pre-Heart stop removed the body directly and skipped `die()`, so rolls of the living never heard of it;
+- held use re-triggered the wind-up every four ticks and could burn every charge (cooldown and release gate);
+- the tone stopped only on release, not on a slot change or death;
+- `/data`-invulnerable mobs were stopped by a creative operator;
+- the gaze tick read its map before checking the side;
+- tests depended on the world's ledger from earlier batches; the label test did not restore it;
+- no test for the End portal's return of the toll.
+
+Set aside: a stop that turns the ledger mid-discharge still uses the old value for the rest of that discharge
+(negligible); no GameTest drives the wind-up through real ticks or the gaze against a live look control.
