@@ -9,12 +9,15 @@ Each slice is its own branch and PR off `feat/maeve-director`.
 
 | # | Slice | Status |
 |---|---|---|
-| 1 | Lash core: item, power, swept-arc damage, heat | This branch, `feat/sever-lash` |
-| 2 | Lash world effects, modules, acquisition, remaining homage | Not started |
+| 1 | Lash core, Seared, acquisition, world effects, overheat glow, hellwhip memo | This branch, `feat/sever-lash`, PR #143 open, not ready to merge |
+| 2 | Lash modules (need the ORSA Fabricator, which is not built), beam render, hum, sounds, 3D model, texture | Not started |
 | 3 | Proximity Tracker (handheld, then wall-mounted) | Not started |
 | 4 | Arc Fence | Not started |
 | 5 | Sweep Turret (needs 1 and 3) | Not started |
 | 6 | Maeve interplay for all four | Not started |
+
+The Notion Lash page also lists a Sentinel Floodlight in the defense set; no slice covers it yet. The Notion
+TR-0 Terminus page (2026-11-03) is its own slice after the Sweep Turret.
 
 ## Slice 1 behavior
 
@@ -44,14 +47,57 @@ Each slice is its own branch and PR off `feat/maeve-director`.
   as a placeholder.
 - Hyperion touches: serial "S/N LC-4/KSD", the "NOT FOR USE ON PERSONNEL." tooltip, the Hellwhip challenge advancement
   (three hostiles cut in one continuous beam; letting go or overheating starts a new count), and a player death message naming the hellwhip.
-- For now it is in the creative tab only. Recipe and Helion/CFU-7 spawns are slice 2.
+- For now it is in the creative tab only; see the plan below.
+
+## Plan: finishing slice 1 on this branch (owner, 2026-11-03)
+
+After checking the Notion spec, the owner held PR #143 until the Lash can be had and used in survival. Build these
+on `feat/sever-lash`, each test-first, with `gameTestQuick -PfdTests=...` while iterating and `architectVerify`
+before handing back. Verify every hook below against current code first; these are starting points, not facts.
+
+1. **Acquisition (spec section 6).**
+   - New Lash Emitter item.
+   - Helion sites: 1 to 2 in the research labs, guaranteed. Start from `HelionSiteBuilder` and
+     `HelionSitePlacement`.
+   - CFU-7 reactor sites: about 1 in 4 get one in the maintenance bay, deterministic from the world seed. Start from
+     `ReactorSiteBuilder` and `ReactorSitePlacement`.
+   - Shaped crafting recipe: Lash Emitter, Acheronite Shard (lens), Power Cell, 2 iron ingots, 1 lead ingot
+     (`ModItems.LEAD_INGOT`, `ACHERONITE_SHARD`, `POWER_CELL`). The crafted Lash should start cool.
+   - Keep the Lash in the creative tab.
+2. **Hellwhip memo (spec section 9).**
+   - A rare ORSA document at a Helion site: a supervisor complains that a technician keeps calling the LC-4 a
+     hellwhip, after some old book. The requisition is denied on the name.
+   - Use the existing `OrsaDocumentItem`, and no book quotes.
+   - The TR-0 Terminus page plans a matching "deathwand" memo, so keep the voice reusable.
+3. **World effects (spec section 5).** These act where the beam lands each tick.
+   - Snow and ice melt instantly. Packed and blue ice take longer: store heat per block, and let it cool.
+   - Stone scorches into `ModBlocks.SCORCHED_GROUND`.
+   - Where there is oxygen (`CombustionAtmosphere.canBurnAt` at the hit), fuel and wood ignite. In vacuum nothing
+     burns.
+   - The Master Architect's Last Wall (placed ice and packed ice) is exempt. Find how
+     `MasterArchitectConstructionController` records its blocks.
+   - The beam is player-fired, so respect protection and spawn rules the way player block breaking does.
+   - Ice melting into water must not flood a sealed room's atmosphere bookkeeping unexpectedly. Check
+     `RoomAtmosphere`.
+4. **Overheat glow (spec section 4).**
+   - The held Lash glows red-hot as heat nears overheat and while it is locked out, using an item model override
+     on heat.
+   - The extinguish hiss stays as a placeholder until the sound slice.
+   - This needs the owner's visual check.
+5. **Playtest world.**
+   - Add stations to `tools/prepare_sever_lash_playtest.py`: a melt, scorch and ignite wall in air and in vacuum, a
+     Last Wall sample, the recipe ingredients, and the emitter.
+   - Deliver them as a new save or with `--pack-only`, and never overwrite an existing save.
+6. **Close.**
+   - Run one fresh branch review (Opus, because it changes world generation and loot), then fix its findings
+     test-first.
+   - Run `architectVerify`, update this doc, and push. Do not merge.
 
 ## Deferred to slice 2
 
-- Melting, scorching and ignition. The Master Architect's Last Wall is ice and packed ice, so the melt must exempt
-  Last Wall blocks for "the Last Wall stops it" to hold.
-- Heat Sink, Long Focus and Wide Aperture modules; the ORSA requisition document; a proper beam render, hum and
-  emitter glow; a better texture.
+- Heat Sink, Long Focus and Wide Aperture modules. Per the Notion Fabricator page they are Fabricator recipes
+  (5 kW, 30 s), so they wait for the Fabricator.
+- A proper beam render, hum, procedural sounds, a 3D item model and a better texture.
 - The two specs disagree on the Sweep Turret's recipe: the turret page gives a crafting recipe, while the Fabricator
   page lists it as a blueprint. Settle this before slice 5.
 
