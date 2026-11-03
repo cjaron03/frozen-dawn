@@ -41,11 +41,11 @@ def packed(x, y, z):
 # Last Wall sample: five columns three high, the weak ice seam in the middle, as the Master Architect raises it.
 LAST_WALL = [(x, y, 6) for x in range(118, 123) for y in range(65, 68)]
 SEAM = [(120, y, 6) for y in range(65, 68)]
+WALL_NBT = ('{MasterWallExpiresAt:-1L,MasterWallBlocks:[L;'+','.join(str(packed(*b))+'L' for b in LAST_WALL)+'],'
+            'MasterWallSeams:[L;'+','.join(str(packed(*b))+'L' for b in SEAM)+']}')
 MASTER = ('summon frozendawn:architect 120.5 65 9.5 {Tags:["slash_master"],NoAI:1b,Invulnerable:1b,Silent:1b,'
           'PersistenceRequired:1b,Rotation:[180f,0f],HearthMasterArchitectId:[I;1,2,3,4],'
-          'HearthMasterArchitectHome:'+str(packed(120, 65, 9))+'L,MasterWallExpiresAt:-1L,'
-          'MasterWallBlocks:[L;'+','.join(str(packed(*b))+'L' for b in LAST_WALL)+'],'
-          'MasterWallSeams:[L;'+','.join(str(packed(*b))+'L' for b in SEAM)+']}')
+          'HearthMasterArchitectHome:'+str(packed(120, 65, 9))+'L,'+WALL_NBT[1:])
 MEMO = ('frozendawn:orsa_document[custom_name=\'"Procurement Review - Req. 0447"\','
         'custom_data={doc_type:"lc4_requisition_memo"}]')
 
@@ -57,12 +57,15 @@ def walls():
     open_wall = [column(x, 6, b) for x, b in ((84, 'snow_block'), (86, 'ice'), (88, 'packed_ice'), (90, 'blue_ice'),
                                               (92, 'stone'), (94, 'oak_planks'), (96, 'oak_log'))]
     room_wall = [column(x, 9, b) for x, b in ((56, 'ice'), (57, 'oak_planks'), (64, 'stone'), (65, 'packed_ice'))]
-    return ['kill @e[tag=slash_master]', 'fill 83 65 3 97 69 5 minecraft:air', 'fill 84 65 3 96 65 3 minecraft:snow[layers=2]',
+    return ['fill 83 65 3 97 69 5 minecraft:air', 'fill 84 65 3 96 65 3 minecraft:snow[layers=2]',
             *open_wall, 'setblock 98 65 6 minecraft:campfire[lit=false]', 'setblock 99 65 6 minecraft:candle[lit=false]',
             *room_wall,
             'fill 118 65 6 122 67 6 minecraft:packed_ice', 'fill 120 65 6 120 67 6 minecraft:ice',
             'fill 125 65 6 129 67 6 minecraft:packed_ice', 'fill 127 65 6 127 67 6 minecraft:ice',
-            'fill 118 64 8 122 68 11 minecraft:glass hollow', MASTER]
+            'fill 118 64 8 122 68 11 minecraft:glass hollow',
+            # Reset the Master's wall in place: a kill would run its full death path.
+            'execute if entity @e[tag=slash_master] run data merge entity @e[tag=slash_master,limit=1] '+WALL_NBT,
+            'execute unless entity @e[tag=slash_master] run '+MASTER]
 
 
 def target(kind, x, z, extra=''):
@@ -157,7 +160,7 @@ def scripts():
                                    'Fire continuously to watch the held Lash glow: warm from half heat, bright from 80%, white-hot when it trips, then red as it cools.']),
         'lastwall': ((120.5,65,.5), ['Left: a Last Wall held by a frozen Master Architect (NoAI, invulnerable, in glass). It should not melt.',
                                      'Right: the same packed ice and ice with no Master. It melts like any other.',
-                                     'Breaking the middle seam by hand still drops the Last Wall, as in the fight.']),
+                                     'The frozen Master runs no AI, so breaking the seam by hand does not drop its wall here; that is checked in a live fight.']),
         'craft': ((105.5,65,.5), ['Crafting table ahead. Take the ingredients, craft the Lash: it should come out cool and carry no charge.']),
     }
     for name, (position, lines) in views.items():
