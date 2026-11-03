@@ -100,7 +100,7 @@ final class FrozenDawnDebugCommand {
             case "uplink" -> List.of(
                     "/fd uplink dump (archive progress, cooldown, signal sites, pressure and supply drops)");
             case "terminus" -> List.of(
-                    "/fd terminus status | restore (clears your toll) | turned <true|false> (the world's log)",
+                    "/fd terminus status | restore (clears your toll) | due (half a heart back now) | turned <true|false> (the world's log)",
                     "Playtest only: in play the toll and the turn never reverse.");
             case "suit" -> List.of(
                     "/fd suit status [verbose] | punctures <0-2>",

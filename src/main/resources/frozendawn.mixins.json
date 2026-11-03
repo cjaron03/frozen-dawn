@@ -34,6 +34,7 @@
     "CompositeStateAccessor",
     "TextureStateShardInvoker",
     "RenderStateShardAccessor",
+    "GuiTerminusHeartsMixin",
     "TitleScreenMixin",
     "LoadingOverlayMixin",
     "LogoRendererMixin",

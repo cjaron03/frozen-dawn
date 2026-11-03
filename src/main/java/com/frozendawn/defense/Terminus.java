@@ -13,6 +13,7 @@ import java.util.WeakHashMap;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.protocol.game.ClientboundStopSoundPacket;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.TagKey;
@@ -35,15 +36,17 @@ import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDropsEvent;
 import net.neoforged.neoforge.event.entity.living.LivingExperienceDropEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.neoforged.neoforge.event.tick.LevelTickEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 /**
  * ORSA TR-0 Terminus: after a two-second wind-up, one discharge stops every susceptible mind in a 12-block, 30-degree
- * cone, through blocks and armor, and costs its operator four max health for good. No beam, nothing burned.
+ * cone, through blocks and armor, and takes two of its operator's hearts, which come back a heart a Minecraft day.
+ * No beam, nothing burned.
  */
 @EventBusSubscriber(modid = FrozenDawn.MOD_ID)
 public final class Terminus {
-    public static final int WINDUP_TICKS = 40, TOLL_PER_DISCHARGE = 4, BACKLASH_TICKS = 200, GAZE_TICKS = 60;
+    public static final int WINDUP_TICKS = 40, BACKLASH_TICKS = 200, GAZE_TICKS = 60;
     /** After a discharge or an interrupted wind-up, so a held use key cannot wind straight into the next one. */
     public static final int COOLDOWN_TICKS = 20;
     /**
@@ -86,7 +89,7 @@ public final class Terminus {
             }
         }
         stack.set(ModDataComponents.TERMINUS_LOG.get(), log.spend().log(minds.size()));
-        op.setData(ModAttachments.TERMINUS_TOLL.get(), op.getData(ModAttachments.TERMINUS_TOLL.get()) + 1);
+        op.setData(ModAttachments.TERMINUS_TAKEN.get(), op.getData(ModAttachments.TERMINUS_TAKEN.get()).discharge(now(op)));
         applyToll(op);
         op.addEffect(new MobEffectInstance(MobEffects.DARKNESS, BACKLASH_TICKS));
         op.addEffect(new MobEffectInstance(MobEffects.CONFUSION, BACKLASH_TICKS));
@@ -158,15 +161,43 @@ public final class Terminus {
         return op.getEyePosition().add(op.getLookAngle().scale(.6)).add(side).add(0, -.45, 0);
     }
 
-    /** Sets the max-health modifier from the discharges on record, and keeps health under the new maximum. */
+    /**
+     * Sets the max-health modifier from the hearts taken, and keeps health under the new maximum. The client reads the
+     * modifier to draw the taken hearts (TerminusHearts).
+     */
     public static void applyToll(ServerPlayer player) {
-        int discharges = player.getData(ModAttachments.TERMINUS_TOLL.get());
+        int taken = player.getData(ModAttachments.TERMINUS_TAKEN.get()).taken();
         var maxHealth = player.getAttribute(Attributes.MAX_HEALTH);
         if (maxHealth == null) return;
         maxHealth.removeModifier(TOLL);
-        if (discharges > 0) maxHealth.addPermanentModifier(new AttributeModifier(TOLL,
-                -TOLL_PER_DISCHARGE * discharges, AttributeModifier.Operation.ADD_VALUE));
+        if (taken > 0) maxHealth.addPermanentModifier(new AttributeModifier(TOLL, -taken, AttributeModifier.Operation.ADD_VALUE));
         if (player.getHealth() > player.getMaxHealth()) player.setHealth(player.getMaxHealth());
+    }
+
+    /** Points taken, as the operator's own client sees them: the size of the toll modifier. */
+    public static int taken(Player player) {
+        var maxHealth = player.getAttribute(Attributes.MAX_HEALTH);
+        var modifier = maxHealth == null ? null : maxHealth.getModifier(TOLL);
+        return modifier == null ? 0 : (int) -modifier.amount();
+    }
+
+    /** Taken hearts come back on the overworld's clock, which every dimension shares. */
+    private static long now(ServerPlayer player) {
+        return player.getServer().overworld().getGameTime();
+    }
+
+    /** Half a heart back when one is due. Players in every level, the GameTest's included, tick here. */
+    @SubscribeEvent
+    public static void onLevelTick(LevelTickEvent.Post event) {
+        if (!(event.getLevel() instanceof ServerLevel level)) return;
+        long now = level.getServer().overworld().getGameTime();
+        for (var player : level.players()) {
+            var toll = player.getData(ModAttachments.TERMINUS_TAKEN.get());
+            var next = toll.tick(now);
+            if (next == toll) continue;
+            player.setData(ModAttachments.TERMINUS_TAKEN.get(), next);
+            applyToll(player);
+        }
     }
 
     /** Any damage during the wind-up cancels it, and the discharge is spent anyway. */
@@ -195,7 +226,7 @@ public final class Terminus {
     @SubscribeEvent
     public static void onClone(PlayerEvent.Clone event) {
         if (!(event.getEntity() instanceof ServerPlayer reborn)) return;
-        reborn.setData(ModAttachments.TERMINUS_TOLL.get(), event.getOriginal().getData(ModAttachments.TERMINUS_TOLL.get()));
+        reborn.setData(ModAttachments.TERMINUS_TAKEN.get(), event.getOriginal().getData(ModAttachments.TERMINUS_TAKEN.get()));
         applyToll(reborn);
     }
 

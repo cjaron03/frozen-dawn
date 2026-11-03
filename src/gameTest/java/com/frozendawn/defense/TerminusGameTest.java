@@ -196,7 +196,7 @@ public final class TerminusGameTest {
     }
 
     @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="terminus",timeoutTicks=100)
-    public static void terminusCostsFourMaxHealthForGoodThroughRespawn(GameTestHelper h) {
+    public static void terminusTakesTwoHeartsThatComeBackSlowly(GameTestHelper h) {
         var op=operator(h);var wand=op.getMainHandItem();
         Terminus.discharge(op,wand,InteractionHand.MAIN_HAND);
         h.assertTrue(op.getMaxHealth()==16,"Two hearts gone: "+op.getMaxHealth());
@@ -214,7 +214,7 @@ public final class TerminusGameTest {
         reborn.restoreFrom(op,false);
         reborn.setPos(op.position());GameTestPlayers.join(h,reborn);
         h.assertTrue(reborn.getMaxHealth()==12,"The loss survives death and respawn: "+reborn.getMaxHealth());
-        h.assertTrue(reborn.getData(ModAttachments.TERMINUS_TOLL.get())==2,"Two discharges on record");
+        h.assertTrue(reborn.getData(ModAttachments.TERMINUS_TAKEN.get()).taken()==8,"Four hearts taken");
         // Back through the End portal, as PlayerList does it: a fresh player that keeps everything.
         var returned=new ServerPlayer(op.server,h.getLevel(),op.getGameProfile(),ClientInformation.createDefault());
         returned.connection=op.connection;
@@ -222,7 +222,15 @@ public final class TerminusGameTest {
         returned.restoreFrom(reborn,true);
         returned.setPos(reborn.position());GameTestPlayers.join(h,returned);
         h.assertTrue(returned.getMaxHealth()==12,"And the End portal's return: "+returned.getMaxHealth());
-        h.succeed();
+        // Due now: half a heart comes back on the next tick, and the next half is due half a day on.
+        long now=h.getLevel().getServer().overworld().getGameTime();
+        returned.setData(ModAttachments.TERMINUS_TAKEN.get(),new TerminusToll(8,now));
+        h.runAfterDelay(2,()->{
+            var toll=returned.getData(ModAttachments.TERMINUS_TAKEN.get());
+            h.assertTrue(toll.taken()==7&&returned.getMaxHealth()==13,"Half a heart back: "+toll+", "+returned.getMaxHealth());
+            h.assertTrue(toll.returnsAt()>now+TerminusToll.HALF_HEART_TICKS-5,"The next half is half a day away: "+toll);
+            h.succeed();
+        });
     }
 
     @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="terminus",timeoutTicks=100)
