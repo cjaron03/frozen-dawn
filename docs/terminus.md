@@ -154,3 +154,9 @@ neither the toll nor the turn reverses. Advancements are filtered as in every ge
   operator; an ordinary credited kill after; no turn while Maeve stands; the Terminations label.
 - Needs the owner's eyes and ears: the model, textures and mote drift in every view, the frost, the holds, the specks,
   the grey frame, the target motes, the tone, and the 40% walk.
+
+## Owner playtest 1, 2026-11-03 (Terminus Check, runClient, branch head 27948f32)
+
+Unprompted report: "wow i like it, but the enemies just disappear." The owner asked whether they should die instead,
+perhaps with unique particles. Before the Heart falls they are removed outright, as the spec has it, so nothing is left
+to fall over; the spec's presentation line does say "Targets drop where they stand".
