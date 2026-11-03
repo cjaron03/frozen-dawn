@@ -32,6 +32,23 @@ class HyperionRecipesTest {
         }
     }
 
+    @Test void noPartSharesAnotherRecipesGrid() throws Exception {
+        var dir = java.nio.file.Path.of(HyperionRecipesTest.class.getResource(RECIPES).toURI());
+        try (var files = java.nio.file.Files.walk(dir)) {
+            for (var file : files.filter(f -> f.toString().endsWith(".json")).toList()) {
+                var other = JsonParser.parseString(java.nio.file.Files.readString(file)).getAsJsonObject();
+                if (!other.has("pattern")) continue;
+                String result = other.getAsJsonObject("result").get("id").getAsString();
+                for (var part : PARTS.keySet()) {
+                    if (result.equals("frozendawn:" + part)) continue;
+                    var mine = read(part);
+                    assertFalse(mine.get("pattern").equals(other.get("pattern")) && mine.get("key").equals(other.get("key")),
+                            part + " has the same grid as " + result + ", so one of them can never be crafted");
+                }
+            }
+        }
+    }
+
     private static JsonObject read(String name) throws IOException {
         try (var in = HyperionRecipesTest.class.getResourceAsStream(RECIPES + name + ".json")) {
             assertNotNull(in, "missing recipe " + name);

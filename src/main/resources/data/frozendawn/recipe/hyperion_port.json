@@ -4,7 +4,7 @@
   "pattern": [
     "ICI",
     "CLC",
-    "ICI"
+    "IGI"
   ],
   "key": {
     "I": {
@@ -15,6 +15,9 @@
     },
     "L": {
       "item": "frozendawn:large_power_relay"
+    },
+    "G": {
+      "item": "minecraft:gold_ingot"
     }
   },
   "result": {
