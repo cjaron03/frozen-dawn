@@ -36,7 +36,7 @@ public final class SeverLashGameTest {
         p.getInventory().setItem(9,ItemStack.EMPTY);p.getInventory().setItem(2,PowerCellItem.charged(1249));
         h.assertTrue(!SeverLash.fire(p,lash,h.getLevel().getGameTime()+1)&&energy(p,2)==1249,"A cell short of one tick neither fires nor drains");
         h.assertTrue(lash.getOrDefault(ModDataComponents.LASH_HEAT.get(),LashHeat.COOL).heat()==LashHeat.FIRE_HEAT,"An unpowered trigger adds no heat");
-        p.discard();h.succeed();
+        h.succeed();
     }
 
     @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="sever_lash",timeoutTicks=100)
@@ -53,7 +53,7 @@ public final class SeverLashGameTest {
         h.assertTrue(full(outside),"A target outside the swept arc is untouched");
         h.assertTrue(full(beyond),"Twelve blocks is the reach");
         h.assertTrue(full(walled),"Stone stops the beam");
-        p.discard();h.succeed();
+        h.succeed();
     }
 
     @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="sever_lash",timeoutTicks=100)
@@ -66,7 +66,7 @@ public final class SeverLashGameTest {
         var stale=target(h,EntityType.PIG,30,5);
         aim(p,60);h.assertTrue(SeverLash.fire(p,lash,1010),"Fires again after a gap");
         h.assertTrue(full(stale),"A broken sweep resumes as a single ray, not an arc from the stale aim");
-        p.discard();h.succeed();
+        h.succeed();
     }
 
     @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="sever_lash",timeoutTicks=100)
@@ -82,7 +82,7 @@ public final class SeverLashGameTest {
             h.assertTrue(husk.getArmorValue()>=20,"Full diamond is on: "+husk.getArmorValue());
             float before=husk.getHealth();aim(p,0);SeverLash.fire(p,lash,1000);
             h.assertTrue(Math.abs((before-husk.getHealth())-SeverLash.DAMAGE_PER_TICK)<1e-4,"Full diamond stops none of the cut");
-            p.discard();h.succeed();
+            h.succeed();
         });
     }
 
@@ -95,7 +95,7 @@ public final class SeverLashGameTest {
         var level=h.getLevel();var profile=new GameProfile(UUID.randomUUID(),"sever_lash_target");
         var victim=new ServerPlayer(server,level,profile,ClientInformation.createDefault());
         victim.connection=new net.neoforged.neoforge.common.util.FakePlayer(level,profile).connection;
-        victim.setPos(h.absoluteVec(new Vec3(EYE_X,FEET_Y,EYE_Z+5)));victim.setGameMode(GameType.SURVIVAL);level.addNewPlayer(victim);
+        victim.setPos(h.absoluteVec(new Vec3(EYE_X,FEET_Y,EYE_Z+5)));victim.setGameMode(GameType.SURVIVAL);GameTestPlayers.join(h,victim);
         try {var field=ServerPlayer.class.getDeclaredField("spawnInvulnerableTime");field.setAccessible(true);field.setInt(victim,0);}
         catch(ReflectiveOperationException e) {throw new IllegalStateException("The target player must lose spawn protection",e);}
         var helmet=new ItemStack(Items.IRON_HELMET);victim.setItemSlot(EquipmentSlot.HEAD,helmet);
@@ -104,7 +104,7 @@ public final class SeverLashGameTest {
             for(int t=0;t<40;t++)SeverLash.fire(p,lash,1000+t);
             h.assertTrue(victim.getHealth()<victim.getMaxHealth(),"The beam reached the armored player");
             h.assertTrue(helmet.getDamageValue()==0,"Two seconds of beam leave the helmet unworn: "+helmet.getDamageValue());
-        } finally {server.setPvpAllowed(pvp);victim.discard();p.discard();}
+        } finally {server.setPvpAllowed(pvp);}
         h.succeed();
     }
 
@@ -115,7 +115,7 @@ public final class SeverLashGameTest {
         int charge=energy(p,1);long last=1000+LashHeat.FIRE_TICKS-1;
         h.assertTrue(!SeverLash.fire(p,lash,last+1)&&energy(p,1)==charge,"Overheated, it neither fires nor drains");
         h.assertTrue(SeverLash.fire(p,lash,last+LashHeat.LOCKOUT_TICKS)&&energy(p,1)==charge-SeverLash.JOULES_PER_TICK,"Four seconds later it cuts again");
-        p.discard();h.succeed();
+        h.succeed();
     }
 
     @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="sever_lash",timeoutTicks=100)
@@ -131,7 +131,7 @@ public final class SeverLashGameTest {
         h.assertTrue(!earned(p,"hellwhip"),"Two hostiles so far in this beam");
         aim(p,-30);SeverLash.fire(p,lash,1012);
         h.assertTrue(earned(p,"hellwhip"),"Three hostiles cut in one continuous beam earns Hellwhip, no single tick needed");
-        p.discard();h.succeed();
+        h.succeed();
     }
 
     /** A real survival player in the template, Lash in hand, one charged cell in slot 1. */
@@ -139,7 +139,7 @@ public final class SeverLashGameTest {
         var level=h.getLevel();var profile=new GameProfile(UUID.randomUUID(),"sever_lash");
         var player=new ServerPlayer(level.getServer(),level,profile,ClientInformation.createDefault());
         player.connection=new net.neoforged.neoforge.common.util.FakePlayer(level,profile).connection;
-        player.setPos(h.absoluteVec(new Vec3(EYE_X,FEET_Y,EYE_Z)));player.setGameMode(GameType.SURVIVAL);level.addNewPlayer(player);
+        player.setPos(h.absoluteVec(new Vec3(EYE_X,FEET_Y,EYE_Z)));player.setGameMode(GameType.SURVIVAL);GameTestPlayers.join(h,player);
         player.setItemInHand(InteractionHand.MAIN_HAND,new ItemStack(ModItems.SEVER_LASH.get()));
         if(joules>0)player.getInventory().setItem(1,PowerCellItem.charged(joules));
         aim(player,0);return player;
