@@ -1,0 +1,84 @@
+package com.frozendawn.power;
+
+import static com.frozendawn.power.HyperionSiloLayout.*;
+import static org.junit.jupiter.api.Assertions.*;
+
+import org.junit.jupiter.api.Test;
+
+class HyperionSiloLayoutTest {
+    /** Front steps north, east, south, west, and the matching quarter turn applied to an offset drawn for a north front. */
+    private static final int[][] FRONTS = {{0, -1}, {1, 0}, {0, 1}, {-1, 0}};
+    private static double[] turn(double dx, double dz, int quarter) {
+        for (int i = 0; i < quarter; i++) { double t = dx; dx = -dz; dz = t; }
+        return new double[]{dx, dz};
+    }
+    private static boolean contains(double[] box, double x, double y, double z) {
+        return x >= box[0] && y >= box[1] && z >= box[2] && x <= box[3] && y <= box[4] && z <= box[5];
+    }
+
+    /** Review focus: looking up at an 8-tall, its rings or its pipes must not cull the silo with the Controller off-screen. */
+    @Test void renderBoxCoversRingsPipesAndVent() {
+        for (int q = 0; q < 4; q++) {
+            int fx = FRONTS[q][0], fz = FRONTS[q][1];
+            var box = renderBox(0, 64, 0, fx, fz, 8);
+            double ax = 0.5 - fx, az = 0.5 - fz;
+            if (q == 0) { assertEquals(0.5, ax); assertEquals(1.5, az); }
+            assertTrue(contains(box, ax, 73.5, az), "Steam above the vent, front " + q);
+            for (var d : new double[][]{{2.375, 0}, {-2.375, 0}, {0, 2.375}, {0, -2.375}})
+                assertTrue(contains(box, ax + d[0], 70.4, az + d[1]), "Ring edge " + d[0] + "," + d[1] + ", front " + q);
+            var pipe = turn(-2.5, 0, q);
+            assertTrue(contains(box, ax + pipe[0], 61, az + pipe[1]), "A side cooler's pipe end 3 blocks down, front " + q);
+        }
+    }
+
+    /** Review focus: a round ring around a square silo must clear its corner edges, 24 px out on the diagonal. */
+    @Test void ringsClearTheCorners() {
+        assertTrue(RING_INNER_PX - 24 * Math.sqrt(2) >= 2, "Ring inner radius " + RING_INNER_PX + " px clears the corner by 2 px");
+    }
+
+    @Test void ringsSpreadUpTheSilo() {
+        assertEquals(2, ringCount(4)); assertEquals(4, ringCount(8));
+        for (int height = 4; height <= 8; height++) {
+            int n = ringCount(height);
+            for (int k = 0; k < n; k++) {
+                double y = ringFloatY(k, n, height);
+                assertTrue(y > 0.5 && y < height - 0.5, "Ring " + k + " of a " + height + "-tall floats inside the silo: " + y);
+                if (k > 0) assertTrue(y - ringFloatY(k - 1, n, height) >= 1.3, "Rings " + (k - 1) + " and " + k + " of a " + height + "-tall sit apart");
+            }
+        }
+        for (int k = 0; k < 4; k++) assertTrue(ringRestY(k) < 0.75, "Resting ring " + k + " stays on the base");
+    }
+
+    /** Review focus: a silo on a ledge or floating must not run its pipes down forever. */
+    @Test void pipeDropIsClamped() {
+        assertEquals(5 / 16.0, pipeDrop(0), 1e-9, "On the ground, the pipe ends flush with the floor");
+        assertEquals(2 + 5 / 16.0, pipeDrop(2), 1e-9, "Two air blocks down to the floor");
+        assertEquals(1.0, pipeDrop(-1), 1e-9, "No floor within 3: one block and a flange");
+        assertEquals(1.0, pipeDrop(5), 1e-9, "Deeper than 3 counts as none");
+    }
+
+    /** Review finding: a back-corner cooler's pipe pierced the resting rings. Side pipes keep their 10 px run. */
+    @Test void pipesClearTheRestingRings() {
+        assertEquals(PIPE_OUT_PX, pipeOutPx(0), "A side-centre cooler's pipe runs the full 10 px");
+        for (int lateral : new int[]{0, 16}) {
+            int out = pipeOutPx(lateral);
+            double far = Math.hypot(24 + out, lateral + PIPE_PX / 2.0);
+            assertTrue(far < RING_INNER_PX, "A pipe " + lateral + " px off the axis reaches " + far + " px, inside the rings' " + RING_INNER_PX);
+            assertTrue(out >= PIPE_PX / 2, "It still stands clear of the wall: " + out + " px");
+        }
+    }
+
+    /** Review finding: window layers 0.0005 blocks apart z-fight at range. Each must hold its depth across a base, 48 blocks
+     * off, with the game's 0.05 near plane and a 24-bit depth buffer. */
+    @Test void overlaysHoldTheirDepthAcrossTheBase() {
+        assertTrue(OVERLAY_STEP >= 48.0 * 48 / (0.05 * (1 << 24)), "Overlay step " + OVERLAY_STEP);
+        assertTrue(6 * OVERLAY_STEP <= 1 / 32.0, "Six layers stay within half a pixel of the face");
+    }
+
+    /** Review finding: identical segments make the spin invisible. */
+    @Test void ringsShowTheirSpin() {
+        int markers = 0;
+        for (int j = 0; j < RING_SEGMENTS; j++) if (ringMarker(j)) markers++;
+        assertTrue(markers >= 2 && markers <= RING_SEGMENTS / 4, "A few marked segments show the turn: " + markers);
+    }
+}

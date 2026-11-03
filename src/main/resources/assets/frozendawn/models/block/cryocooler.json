@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "north": "frozendawn:block/cryocooler",
+    "south": "frozendawn:block/superconducting_cell_formed",
+    "east": "frozendawn:block/superconducting_cell_formed",
+    "west": "frozendawn:block/superconducting_cell_formed",
+    "up": "frozendawn:block/superconducting_cell_formed",
+    "down": "frozendawn:block/superconducting_cell_formed",
+    "particle": "frozendawn:block/superconducting_cell_formed"
+  }
+}

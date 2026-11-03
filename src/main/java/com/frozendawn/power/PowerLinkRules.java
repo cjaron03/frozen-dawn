@@ -34,6 +34,7 @@ public final class PowerLinkRules {
                 || state.getBlock() instanceof com.frozendawn.block.PixieBlock
                 || state.getBlock() instanceof com.frozendawn.block.ReactorControllerBlock
                 || state.getBlock() instanceof com.frozendawn.block.SfrPowerPortBlock
+                || state.getBlock() instanceof com.frozendawn.block.HyperionPortBlock
                 || state.getBlock() instanceof com.frozendawn.block.IcarusPowerPortBlock
                 || state.getBlock() instanceof com.frozendawn.block.OxygenReservoirBlock ? 16 : 0;
     }

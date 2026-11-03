@@ -5112,5 +5112,95 @@
         "stream": false
       }
     ]
+  },
+  "blocks.hyperion_hum": {
+    "category": "blocks",
+    "subtitle": "subtitle.frozendawn.blocks.hyperion_hum",
+    "sounds": [
+      {
+        "name": "frozendawn:blocks/hyperion/hum_loop",
+        "volume": 1.0
+      }
+    ]
+  },
+  "blocks.hyperion_chirp": {
+    "category": "blocks",
+    "subtitle": "subtitle.frozendawn.blocks.hyperion_chirp",
+    "sounds": [
+      {
+        "name": "frozendawn:blocks/hyperion/chirp",
+        "volume": 1.0
+      }
+    ]
+  },
+  "blocks.hyperion_warning": {
+    "category": "blocks",
+    "subtitle": "subtitle.frozendawn.blocks.hyperion_warning",
+    "sounds": [
+      {
+        "name": "frozendawn:blocks/hyperion/warning_loop",
+        "volume": 1.0
+      }
+    ]
+  },
+  "blocks.hyperion_whine": {
+    "category": "blocks",
+    "subtitle": "subtitle.frozendawn.blocks.hyperion_whine",
+    "sounds": [
+      {
+        "name": "frozendawn:blocks/hyperion/whine",
+        "volume": 1.0
+      }
+    ]
+  },
+  "blocks.hyperion_quench": {
+    "category": "blocks",
+    "subtitle": "subtitle.frozendawn.blocks.hyperion_quench",
+    "sounds": [
+      {
+        "name": "frozendawn:blocks/hyperion/quench",
+        "volume": 1.0
+      }
+    ]
+  },
+  "blocks.hyperion_vent": {
+    "category": "blocks",
+    "subtitle": "subtitle.frozendawn.blocks.hyperion_vent",
+    "sounds": [
+      {
+        "name": "frozendawn:blocks/hyperion/vent",
+        "volume": 1.0
+      }
+    ]
+  },
+  "blocks.hyperion_aftermath": {
+    "category": "blocks",
+    "subtitle": "subtitle.frozendawn.blocks.hyperion_aftermath",
+    "sounds": [
+      {
+        "name": "frozendawn:blocks/hyperion/aftermath",
+        "volume": 1.0
+      }
+    ]
+  },
+  "blocks.hyperion_all_clear": {
+    "category": "blocks",
+    "subtitle": "subtitle.frozendawn.blocks.hyperion_all_clear",
+    "sounds": [
+      {
+        "name": "frozendawn:blocks/hyperion/all_clear",
+        "volume": 1.0
+      }
+    ]
+  },
+  "blocks.hyperion_ring_clang": {
+    "category": "blocks",
+    "subtitle": "subtitle.frozendawn.blocks.hyperion_ring_clang",
+    "sounds": [
+      {
+        "name": "frozendawn:blocks/hyperion/ring_clang",
+        "volume": 1.0
+      }
+    ]
   }
 }

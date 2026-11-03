@@ -1,0 +1,7 @@
+{
+  "name": "SMS-1 \"Hyperion\"",
+  "icon": "frozendawn:hyperion_controller",
+  "sortnum": 6,
+  "description": "The SMS-1 superconducting silo: bulk power storage that has to be kept colder than the planet.",
+  "parent": "frozendawn:industry"
+}

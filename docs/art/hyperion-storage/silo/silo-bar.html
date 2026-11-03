@@ -1,0 +1,95 @@
+<h2>Where does the blue bar go?</h2>
+<p class="subtitle">Same silo each time: 3 blocks wide, 6 tall, black cell material, quench vent on top. The bars cycle empty to full so you can see them move.</p>
+
+<style>
+  .silo-row { display:flex; gap:28px; justify-content:center; flex-wrap:wrap; }
+  .silo-row svg { display:block; margin:0 auto; background:#9fb4c8; border-radius:6px; }
+  @keyframes fillx { 0%{transform:scaleX(0.04)} 45%,55%{transform:scaleX(1)} 100%{transform:scaleX(0.04)} }
+  @keyframes shimmer { 0%{opacity:.55} 50%{opacity:1} 100%{opacity:.55} }
+  .fillx { transform-box: fill-box; transform-origin: left center; animation: fillx 8s ease-in-out infinite; }
+  .shim { animation: shimmer 1.6s ease-in-out infinite; }
+  @keyframes steam { 0%{transform:translateY(0);opacity:.0} 15%{opacity:.8} 100%{transform:translateY(-40px);opacity:0} }
+  .steam { animation: steam 2.4s linear infinite; transform-box: fill-box; }
+  .rung { animation: rungs 8s steps(1) infinite; }
+</style>
+
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <pattern id="cell" width="40" height="40" patternUnits="userSpaceOnUse">
+      <rect width="40" height="40" fill="#1e2025"/>
+      <rect width="40" height="2" fill="#3a3e45"/>
+      <rect width="2" height="40" fill="#3a3e45"/>
+      <rect y="38" width="40" height="2" fill="#0b0c0e"/>
+      <rect x="38" width="2" height="40" fill="#0b0c0e"/>
+      <rect x="9" y="22" width="6" height="1" fill="#4a4f57"/>
+      <rect x="24" y="10" width="5" height="1" fill="#4a4f57"/>
+    </pattern>
+    <linearGradient id="blue" x1="0" x2="1">
+      <stop offset="0" stop-color="#1f6fd1"/><stop offset="1" stop-color="#5fd0ff"/>
+    </linearGradient>
+  </defs>
+</svg>
+
+<div class="options">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>One bar across the front</h3>
+      <p>A glass slot across the middle block row, filling left to right like a progress bar.</p>
+      <svg width="200" height="330" viewBox="0 0 200 330">
+        <g class="steam"><circle cx="100" cy="40" r="7" fill="#fff" opacity=".8"/><circle cx="92" cy="30" r="5" fill="#fff" opacity=".6"/></g>
+        <rect x="80" y="50" width="40" height="20" fill="#4a5059"/><rect x="84" y="54" width="32" height="12" fill="#14161a"/>
+        <rect x="40" y="70" width="120" height="240" fill="url(#cell)"/>
+        <rect x="44" y="184" width="112" height="16" fill="#08090b"/>
+        <rect class="fillx shim" x="46" y="186" width="108" height="12" fill="url(#blue)"/>
+      </svg>
+    </div>
+  </div>
+
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>A band wrapping all the way round</h3>
+      <p>Same bar, but it runs round every side, so you can read it from any direction.</p>
+      <svg width="200" height="330" viewBox="0 0 200 330">
+        <g class="steam"><circle cx="100" cy="40" r="7" fill="#fff" opacity=".8"/><circle cx="108" cy="30" r="5" fill="#fff" opacity=".6"/></g>
+        <rect x="80" y="50" width="40" height="20" fill="#4a5059"/><rect x="84" y="54" width="32" height="12" fill="#14161a"/>
+        <rect x="40" y="70" width="120" height="240" fill="url(#cell)"/>
+        <polygon points="160,70 184,58 184,298 160,310" fill="#121317"/>
+        <polygon points="40,70 64,58 184,58 160,70" fill="#2b2e34"/>
+        <rect x="40" y="182" width="120" height="20" fill="#08090b"/>
+        <polygon points="160,182 184,170 184,190 160,202" fill="#060708"/>
+        <rect class="fillx shim" x="40" y="186" width="120" height="12" fill="url(#blue)"/>
+        <polygon class="shim" points="160,186 184,174 184,186 160,198" fill="#2a7fd6" opacity=".7"/>
+      </svg>
+    </div>
+  </div>
+
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Stacked bars, lighting bottom to top</h3>
+      <p>Short horizontal bars up the middle; each one lights as the silo fills, like a phone battery.</p>
+      <svg width="200" height="330" viewBox="0 0 200 330">
+        <style>
+          @keyframes r1 {0%,6%{opacity:.12} 7%,93%{opacity:1} 94%,100%{opacity:.12}}
+          @keyframes r2 {0%,13%{opacity:.12} 14%,86%{opacity:1} 87%,100%{opacity:.12}}
+          @keyframes r3 {0%,20%{opacity:.12} 21%,79%{opacity:1} 80%,100%{opacity:.12}}
+          @keyframes r4 {0%,27%{opacity:.12} 28%,72%{opacity:1} 73%,100%{opacity:.12}}
+          @keyframes r5 {0%,34%{opacity:.12} 35%,65%{opacity:1} 66%,100%{opacity:.12}}
+          @keyframes r6 {0%,41%{opacity:.12} 42%,58%{opacity:1} 59%,100%{opacity:.12}}
+        </style>
+        <g class="steam"><circle cx="100" cy="40" r="7" fill="#fff" opacity=".8"/><circle cx="94" cy="30" r="5" fill="#fff" opacity=".6"/></g>
+        <rect x="80" y="50" width="40" height="20" fill="#4a5059"/><rect x="84" y="54" width="32" height="12" fill="#14161a"/>
+        <rect x="40" y="70" width="120" height="240" fill="url(#cell)"/>
+        <rect x="80" y="84" width="40" height="212" fill="#08090b"/>
+        <rect x="84" y="276" width="32" height="14" fill="url(#blue)" style="animation:r1 8s infinite"/>
+        <rect x="84" y="242" width="32" height="14" fill="url(#blue)" style="animation:r2 8s infinite"/>
+        <rect x="84" y="208" width="32" height="14" fill="url(#blue)" style="animation:r3 8s infinite"/>
+        <rect x="84" y="174" width="32" height="14" fill="url(#blue)" style="animation:r4 8s infinite"/>
+        <rect x="84" y="140" width="32" height="14" fill="url(#blue)" style="animation:r5 8s infinite"/>
+        <rect x="84" y="106" width="32" height="14" fill="url(#blue)" style="animation:r6 8s infinite"/>
+      </svg>
+    </div>
+  </div>
+</div>
