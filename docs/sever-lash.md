@@ -252,8 +252,8 @@ First pass with Seared. Unprompted report: "i like it".
     exemption; adventure-mode refusal; ignition refused by a place-event claim on the fire cell; the once-a-second
     refusal memory.
   - Vacuum (batch `sever_lash_vacuum`): nothing burns, and stone still scorches.
-- `architectVerify` passed on 09572595 (864 GameTests), and again on the final head, recorded in the commit that
-  pushes this doc.
+- `architectVerify` passed on 09572595 (864 GameTests) and on 435d74e4 (865), after the review fixes. Only this
+  line changed after that.
 - Not covered by a test, so these need the owner's visual pass:
   - the shield half-block, which needs a player blocking for 5+ ticks;
   - the ember particles and icon;
