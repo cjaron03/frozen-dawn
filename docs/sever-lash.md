@@ -195,7 +195,9 @@ Mockup: `docs/art/sever-lash/beam-mockup.png` (`make_beam_mockup.py`). The owner
 ### Sounds (`tools/generate_sever_lash_sounds.sh`, sources in `tools/audio_sources/sever_lash/`)
 - Server-played, heard by everyone near: a start-up strike on the first tick of a beam; a cut sizzle every quarter
   second while the beam lands on a block or cuts something (`SeverLash.SIZZLE_TICKS`); and an overheat vent (valve
-  thump and steam hiss) that replaces the extinguish placeholder.
+  slam and steam blast) that replaces the extinguish placeholder.
+- All five share the plasma roar the owner picked in the sound pass: brown and pink noise through a phaser, driven into
+  tanh saturation, over a deep sub.
 - Client-played, on every client that sees the beam: the hum loop, following the shooter, from pitch 0.75 cool to
   1.4 at overheat; and the crack from `WhipBend`.
 
@@ -344,8 +346,11 @@ my fist you know? then when you fire it, you like. hold it in both hands". The o
 Helion station (save "Sever Lash Helion", branch head 6235daad): "found it". The owner then asked whether the Icarus
 loot belongs there too. It does, in the log desk on the north wall, but only as a chance: the desk draws two or three of
 six slates. The field manual's slate page read as if Project Icarus were always among them; f155af61 corrects it to
-about two sites in five. After a relaunch on 876d0ef9 with the field manual pages: "looks good". The sound pass
-waits for the owner's headphones.
+about two sites in five. After a relaunch on 876d0ef9 with the field manual pages: "looks good".
+
+Sound pass, unprompted: "dont really like the sound, i want it to sound more dangerous ish". Three hum auditions
+followed (arc welder, plasma roar, overload, each at the cool, warm and hot pitch); the owner picked the plasma roar, and
+the start-up, crack, sizzle and vent were rebuilt on it.
 
 ## Verification
 
