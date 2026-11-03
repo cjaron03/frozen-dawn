@@ -344,7 +344,8 @@ my fist you know? then when you fire it, you like. hold it in both hands". The o
 Helion station (save "Sever Lash Helion", branch head 6235daad): "found it". The owner then asked whether the Icarus
 loot belongs there too. It does, in the log desk on the north wall, but only as a chance: the desk draws two or three of
 six slates. The field manual's slate page read as if Project Icarus were always among them; f155af61 corrects it to
-about two sites in five. The sound pass waits for the owner's headphones.
+about two sites in five. After a relaunch on 876d0ef9 with the field manual pages: "looks good". The sound pass
+waits for the owner's headphones.
 
 ## Verification
 
