@@ -1,0 +1,28 @@
+package com.frozendawn.maeve;
+
+import com.frozendawn.entity.ArchitectEntity;
+import java.util.ArrayList;
+import java.util.List;
+
+final class SpatialCommitments {
+    private SpatialCommitments() { }
+    static List<MaeveDirector.PositionCandidate> candidates(BeliefStore store, ArchitectEntity observer, net.minecraft.server.level.ServerPlayer player,
+                                                          List<MaeveDirector.CommitmentHint> hints) {
+        if (store == null || !CommitmentCoordinator.eligible(observer, player)) return List.of();
+        var world = store.world(player.getUUID()); if (world == null) return List.of();
+        long now = observer.getServer().overworld().getGameTime();
+        var result = new ArrayList<MaeveDirector.PositionCandidate>();
+        for (var hint : hints) {
+            if (!ExitPrediction.spatial(hint.pattern()) || !ExitPrediction.meets(hint.pattern(), hint.confidence())) continue;
+            var target = world.resolve(observer.level().dimension().location().toString(), hint.pattern(), observer.blockPosition(), now);
+            if (target == null) continue;
+            result.add(new MaeveDirector.PositionCandidate(hint.pattern(), target.outside(), null,
+                    Math.sqrt(observer.blockPosition().distSqr(target.outside())), target));
+        }
+        // Reserve the existing four bearing slots: at most one best conditional candidate
+        // replaces its parent bearing, leaving room for the other counter families.
+        var policy = store.commitment(player.getUUID());
+        return ExitCandidates.bound(result, policy, now);
+
+    }
+}

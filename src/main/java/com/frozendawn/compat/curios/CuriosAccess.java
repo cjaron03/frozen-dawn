@@ -16,4 +16,6 @@ interface CuriosAccess {
     boolean isItemEquipped(Player player, Item item);
 
     boolean isItemEquipped(Player player, Predicate<ItemStack> filter);
+
+    ItemStack helmetMount(Player player);
 }

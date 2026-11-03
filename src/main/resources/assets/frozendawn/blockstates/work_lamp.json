@@ -1,0 +1,108 @@
+{
+  "variants": {
+    "facing=up,enabled=false,lit=false": {
+      "model": "frozendawn:block/work_lamp"
+    },
+    "facing=up,enabled=false,lit=true": {
+      "model": "frozendawn:block/work_lamp_on"
+    },
+    "facing=up,enabled=true,lit=false": {
+      "model": "frozendawn:block/work_lamp"
+    },
+    "facing=up,enabled=true,lit=true": {
+      "model": "frozendawn:block/work_lamp_on"
+    },
+    "facing=down,enabled=false,lit=false": {
+      "model": "frozendawn:block/work_lamp",
+      "x": 180
+    },
+    "facing=down,enabled=false,lit=true": {
+      "model": "frozendawn:block/work_lamp_on",
+      "x": 180
+    },
+    "facing=down,enabled=true,lit=false": {
+      "model": "frozendawn:block/work_lamp",
+      "x": 180
+    },
+    "facing=down,enabled=true,lit=true": {
+      "model": "frozendawn:block/work_lamp_on",
+      "x": 180
+    },
+    "facing=north,enabled=false,lit=false": {
+      "model": "frozendawn:block/work_lamp",
+      "x": 90
+    },
+    "facing=north,enabled=false,lit=true": {
+      "model": "frozendawn:block/work_lamp_on",
+      "x": 90
+    },
+    "facing=north,enabled=true,lit=false": {
+      "model": "frozendawn:block/work_lamp",
+      "x": 90
+    },
+    "facing=north,enabled=true,lit=true": {
+      "model": "frozendawn:block/work_lamp_on",
+      "x": 90
+    },
+    "facing=south,enabled=false,lit=false": {
+      "model": "frozendawn:block/work_lamp",
+      "x": 90,
+      "y": 180
+    },
+    "facing=south,enabled=false,lit=true": {
+      "model": "frozendawn:block/work_lamp_on",
+      "x": 90,
+      "y": 180
+    },
+    "facing=south,enabled=true,lit=false": {
+      "model": "frozendawn:block/work_lamp",
+      "x": 90,
+      "y": 180
+    },
+    "facing=south,enabled=true,lit=true": {
+      "model": "frozendawn:block/work_lamp_on",
+      "x": 90,
+      "y": 180
+    },
+    "facing=west,enabled=false,lit=false": {
+      "model": "frozendawn:block/work_lamp",
+      "x": 90,
+      "y": 270
+    },
+    "facing=west,enabled=false,lit=true": {
+      "model": "frozendawn:block/work_lamp_on",
+      "x": 90,
+      "y": 270
+    },
+    "facing=west,enabled=true,lit=false": {
+      "model": "frozendawn:block/work_lamp",
+      "x": 90,
+      "y": 270
+    },
+    "facing=west,enabled=true,lit=true": {
+      "model": "frozendawn:block/work_lamp_on",
+      "x": 90,
+      "y": 270
+    },
+    "facing=east,enabled=false,lit=false": {
+      "model": "frozendawn:block/work_lamp",
+      "x": 90,
+      "y": 90
+    },
+    "facing=east,enabled=false,lit=true": {
+      "model": "frozendawn:block/work_lamp_on",
+      "x": 90,
+      "y": 90
+    },
+    "facing=east,enabled=true,lit=false": {
+      "model": "frozendawn:block/work_lamp",
+      "x": 90,
+      "y": 90
+    },
+    "facing=east,enabled=true,lit=true": {
+      "model": "frozendawn:block/work_lamp_on",
+      "x": 90,
+      "y": 90
+    }
+  }
+}

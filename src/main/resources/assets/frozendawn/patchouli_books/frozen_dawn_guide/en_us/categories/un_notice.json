@@ -2,5 +2,6 @@
   "name": "UN Emergency Notice",
   "description": "Official communication from the UN Office of Planetary Abandonment regarding your... situation.",
   "icon": "minecraft:paper",
-  "sortnum": -2
+  "sortnum": 0,
+  "parent": "frozendawn:orsa_intel"
 }

@@ -1,0 +1,23 @@
+{
+  "parent": "frozendawn:phase6",
+  "display": {
+    "icon": {
+      "id": "frozendawn:sfr_controller"
+    },
+    "title": {
+      "translate": "advancement.frozendawn.a_second_sun.title"
+    },
+    "description": {
+      "translate": "advancement.frozendawn.a_second_sun.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "impossible": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

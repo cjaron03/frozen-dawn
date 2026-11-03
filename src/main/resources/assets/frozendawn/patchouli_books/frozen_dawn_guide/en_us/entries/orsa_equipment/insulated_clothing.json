@@ -1,38 +1,40 @@
 {
-  "name": "Insulated Clothing (Tier 1)",
+  "name": "Insulated Gear (T1)",
   "category": "frozendawn:orsa_equipment",
   "icon": "frozendawn:insulated_chestplate",
   "sortnum": 0,
   "pages": [
     {
-      "type": "patchouli:text",
-      "title": "ORSA Standard Issue",
-      "text": "$(bold)ORSA Mk.I Thermal Undersuit$()$(br2)Congratulations on your new insulated clothing! This wool-and-leather ensemble was designed by ORSA's finest interns and provides $(bold)cold resistance up to Phase 3$() (-25°C).$(br2)$(italic)NOTICE: This equipment is property of ORSA. Loss, damage, or unauthorized bedazzling will result in fines up to 500 credits.$()"
+      "type": "patchouli:spotlight",
+      "item": "frozendawn:insulated_chestplate",
+      "title": "Insulated Gear",
+      "text": "ORSA Mk.I Thermal Undersuit. Wool and leather, designed by ORSA's finest interns."
     },
     {
       "type": "patchouli:text",
-      "title": "Specifications",
-      "text": "$(bold)Protection:$() Each piece adds +6.25°C cold resistance. Full set provides $(bold)+25°C total$().$(br2)$(bold)Rated for:$() Phase 1-3 surface conditions$(br)$(bold)NOT rated for:$() Phase 4+, lava swimming, bear hugs$(br2)$(bold)Care instructions:$() Do not machine wash. Do not tumble dry. Do not expose to temperatures below -25°C. $(italic)We see the irony.$()"
+      "title": "Specs",
+      "text": "$(li)$(bold)+6.25°C$() cold resistance per piece$(li)Full set: $(bold)+25°C$()$(li)Rated for Phase 1-3, down to -25°C$(li)$(danger)Not rated for Phase 4+$()$(br2)$(flavor)Or lava. Or bear hugs.$()"
     },
     {
       "type": "patchouli:crafting",
       "recipe": "frozendawn:insulated_chestplate",
-      "text": "Wool and leather. Your grandmother could make this. She probably should have."
+      "text": "Wool and leather.$(br2)$(flavor)Do not machine wash. Do not expose below -25°C. We see the irony.$()"
     },
     {
       "type": "patchouli:crafting",
       "recipe": "frozendawn:insulated_helmet",
-      "text": "Keeps your ears warm and your dignity... debatable."
+      "text": "$(flavor)Keeps your ears warm. Your dignity is debatable.$()"
     },
     {
       "type": "patchouli:crafting",
       "recipe": "frozendawn:insulated_leggings",
-      "text": "Wool-lined trousers for survivors who prefer their knees unfrozen."
+      "text": "$(flavor)For survivors who prefer their knees unfrozen.$()"
     },
     {
       "type": "patchouli:crafting",
       "recipe": "frozendawn:insulated_boots",
-      "text": "Cold feet end expeditions fast. These help you keep walking."
+      "text": "$(flavor)ORSA property. Unauthorized bedazzling: fines up to 500 credits.$()"
     }
-  ]
+  ],
+  "priority": true
 }

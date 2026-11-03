@@ -1,0 +1,23 @@
+{
+  "parent": "frozendawn:phase6",
+  "display": {
+    "icon": {
+      "id": "frozendawn:corium"
+    },
+    "title": {
+      "translate": "advancement.frozendawn.elephants_foot.title"
+    },
+    "description": {
+      "translate": "advancement.frozendawn.elephants_foot.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": true
+  },
+  "criteria": {
+    "impossible": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

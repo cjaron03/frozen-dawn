@@ -1,6 +1,7 @@
 {
-  "name": "Heating & Tools",
-  "description": "Devices, materials, and diagnostic tools for staying warm and managing survival infrastructure.",
+  "name": "Heating",
+  "description": "Heaters, insulation and fuel for keeping a room warm.",
   "icon": "frozendawn:thermal_core",
-  "sortnum": 1
+  "sortnum": 0,
+  "parent": "frozendawn:base_systems"
 }

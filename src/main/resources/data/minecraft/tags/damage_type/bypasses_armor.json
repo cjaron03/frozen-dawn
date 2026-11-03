@@ -2,6 +2,8 @@
   "replace": false,
   "values": [
     "frozendawn:thermal_sever",
-    "frozendawn:thae_iven"
+    "frozendawn:thae_iven",
+    "frozendawn:radiation",
+    "frozendawn:icarus_detonation"
   ]
 }

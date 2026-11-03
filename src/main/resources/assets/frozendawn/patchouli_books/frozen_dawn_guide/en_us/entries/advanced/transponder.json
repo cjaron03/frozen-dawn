@@ -2,27 +2,80 @@
   "name": "ORSA Transponder",
   "category": "frozendawn:advanced",
   "icon": "frozendawn:transponder",
-  "sortnum": 3,
+  "sortnum": 5,
   "pages": [
     {
-      "type": "patchouli:text",
+      "type": "patchouli:spotlight",
+      "item": "frozendawn:transponder",
       "title": "ORSA Transponder",
-      "text": "The transponder is ORSA's last-resort emergency beacon. Once activated, it broadcasts a deep-space signal to surviving relay satellites.$(br2)Building one requires the $(bold)ORSA Transponder Schematic$() — a classified document found in ORSA wreckage.$(br2)$(italic)\"We hid the escape plan in a random structure on a dying planet.\" — ORSA Security$(br)\"We also hid the cafeteria key. We're not great at this.\"$()"
+      "text": "ORSA's last-resort beacon. It broadcasts to surviving relay satellites."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Schematic",
+      "text": "Building one needs the $(bold)ORSA Transponder Schematic$(), a classified document in ORSA wreckage. Archive it first.$(br2)$(flavor)\"We hid the escape plan in a random structure. Also the cafeteria key.\" ORSA Security$()"
     },
     {
       "type": "patchouli:crafting",
       "recipe": "frozendawn:transponder",
-      "text": "4 Refined Acheronite, 2 Diamond Blocks, a Thermal Core, Frozen Heart, and a Frozen Atmosphere Shard. You're building a phone call to space. Long distance rates apply."
+      "text": "4 Refined Acheronite, 2 Diamond Blocks, a Thermal Core, a Frozen Heart and an Atmosphere Shard.$(br2)$(flavor)A phone call to space. Long distance rates apply.$()"
     },
     {
       "type": "patchouli:text",
-      "title": "Activation Requirements",
-      "text": "$(li)$(bold)Depth:$() Below Y=0 for the deep relay network$(li)$(bold)Power:$() Geothermal Core within 12 blocks$(li)$(bold)Sky Access:$() Clear vertical shaft to the sky — no solid blocks. Start digging.$(li)$(bold)Schematic:$() Must be archived first$(br2)Right-click to activate. Broadcast takes ~100 minutes. We recommend a book and warm beverage. You have neither. Sorry."
+      "title": "Activation",
+      "text": "$(li)$(bold)Depth:$() below Y=0$(li)$(bold)Power:$() Geothermal Core within 12 blocks$(li)$(bold)Sky:$() an open shaft straight up, no solid blocks$(li)$(bold)Schematic:$() archived$(br2)Right-click to start."
+    },
+    {
+      "type": "patchouli:multiblock",
+      "name": "Broadcast Site",
+      "enable_visualize": false,
+      "multiblock": {
+        "pattern": [
+          [
+            "SSSSS",
+            "SS SS",
+            "SSSSS"
+          ],
+          [
+            "SSSSS",
+            "SS SS",
+            "SSSSS"
+          ],
+          [
+            "SSSSS",
+            "SS SS",
+            "SSSSS"
+          ],
+          [
+            "SSSSS",
+            "S 0GS",
+            "SSSSS"
+          ],
+          [
+            "SSSSS",
+            "SSSSS",
+            "SSSSS"
+          ]
+        ],
+        "mapping": {
+          "S": "minecraft:deepslate",
+          "0": "frozendawn:transponder",
+          "G": "frozendawn:geothermal_core"
+        }
+      },
+      "text": "Below Y=0, Core beside it, shaft open all the way to the sky."
     },
     {
       "type": "patchouli:text",
-      "title": "During Broadcast",
-      "text": "A visible beam shoots upward through the shaft. The signal can be paused and resumed from the transponder's interface.$(br2)If conditions are lost during broadcast, it automatically pauses with a warning. It resumes when conditions are restored.$(br2)Snow is automatically cleared from the shaft by the signal energy. ORSA's most practical feature — designed entirely by accident."
+      "title": "Broadcast",
+      "text": "It takes about $(bold)100 minutes$(). A beam rises through the shaft; pause and resume from the interface.$(br2)If a condition fails it pauses with a warning, and resumes once fixed."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "The signal clears snow from the shaft.$(br2)$(flavor)ORSA's most practical feature, designed by accident.$()"
     }
-  ]
+  ],
+  "extra_recipe_mappings": {
+    "frozendawn:transponder_schematic": 1
+  }
 }

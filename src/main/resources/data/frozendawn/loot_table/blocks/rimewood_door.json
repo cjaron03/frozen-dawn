@@ -1,0 +1,29 @@
+{
+  "type": "minecraft:block",
+  "random_sequence": "frozendawn:blocks/rimewood_door",
+  "pools": [
+    {
+      "rolls": 1,
+      "conditions": [
+        {
+          "condition": "minecraft:survives_explosion"
+        }
+      ],
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "frozendawn:rimewood_door",
+          "conditions": [
+            {
+              "condition": "minecraft:block_state_property",
+              "block": "frozendawn:rimewood_door",
+              "properties": {
+                "half": "lower"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

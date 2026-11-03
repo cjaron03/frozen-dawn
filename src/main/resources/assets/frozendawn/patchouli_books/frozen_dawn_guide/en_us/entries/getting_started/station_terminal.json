@@ -1,0 +1,26 @@
+{
+  "name": "Station Terminals",
+  "category": "frozendawn:getting_started",
+  "icon": "frozendawn:monitoring_station_terminal",
+  "sortnum": 9,
+  "pages": [
+    {
+      "type": "patchouli:spotlight",
+      "item": "frozendawn:monitoring_station_terminal",
+      "title": "Station Terminal",
+      "text": "Monitoring stations keep a sealed back room. The terminal opens it.$(br2)Crack the password once and the door stays open, along with the station's records.",
+      "link_recipe": true
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Cracking It",
+      "text": "The screen hides $(bold)7 words$() in junk symbols. Pick one.$(li)A wrong word shows how many letters sit in the right place$(li)$(bold)4 tries$(), then a $(danger)45 s lockout$()$(br2)Matched brackets in the junk remove a dud or restore your tries."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "ORSA IT Notice",
+      "text": "$(flavor)Station passwords rotate weekly. Staff are reminded not to leave them on sticky notes, in the logbook, or on the terminal itself.$()"
+    }
+  ],
+  "advancement": "frozendawn:found_station_upload_log"
+}

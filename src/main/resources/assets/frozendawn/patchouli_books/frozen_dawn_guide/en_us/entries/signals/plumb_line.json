@@ -1,0 +1,38 @@
+{
+  "name": "GPR-4 Plumb Line",
+  "category": "frozendawn:signals",
+  "icon": "frozendawn:plumb_line",
+  "sortnum": 3,
+  "pages": [
+    {
+      "type": "patchouli:spotlight",
+      "item": "frozendawn:plumb_line",
+      "text": "Ground radar. A pulse shows buried ore, caves, metal and ORSA sites through the rock."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Settings",
+      "text": "$(li)$(bold)Survey$(): 30 kW, 48 blocks$(li)$(bold)Deep$(): 50 kW, 80 blocks$(br2)A pulse takes 10 s, then 60 s to recharge. It draws only while pulsing."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Power",
+      "text": "Link it with the $(l:power/binder)Binder$(/l). The grid and batteries must cover the full draw.$(br2)$(danger)If power dips mid-pulse, it aborts with no scan.$()"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Target",
+      "text": "Choose before pulsing:$(li)$(bold)All$()$(li)$(bold)Metals$(): iron, copper, gold, galena$(li)$(bold)Energy$(): coal, uranium$(li)$(bold)Minerals$(): the rest"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Rock",
+      "text": "Rays cross ice, snow and frozen ground farther than stone; deepslate cuts range. $(bold)Water stops them$().$(br2)$(danger)Each pulse is loud. Architects hear it.$()"
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:plumb_line",
+      "text": "Iron, a compass, redstone blocks, an amethyst shard and an iron block.$(br2)$(flavor)Point down. Listen.$()"
+    }
+  ]
+}

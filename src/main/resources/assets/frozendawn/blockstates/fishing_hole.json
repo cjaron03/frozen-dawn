@@ -1,0 +1,16 @@
+{
+  "variants": {
+    "freeze=0": {
+      "model": "frozendawn:block/fishing_hole_0"
+    },
+    "freeze=1": {
+      "model": "frozendawn:block/fishing_hole_1"
+    },
+    "freeze=2": {
+      "model": "frozendawn:block/fishing_hole_2"
+    },
+    "freeze=3": {
+      "model": "frozendawn:block/fishing_hole_3"
+    }
+  }
+}

@@ -200,7 +200,7 @@ public final class BlockFreezer {
             state = level.getBlockState(pos);
         }
 
-        if (state.is(BlockTags.PLANKS)) {
+        if (state.is(BlockTags.PLANKS) && !state.is(ModBlocks.RIMEWOOD_PLANKS.get())) { // Rimewood stays sound in the cold
             setFrozenBlock(level, pos, ModBlocks.FROZEN_PLANKS.get().defaultBlockState());
             state = level.getBlockState(pos);
         }

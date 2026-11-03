@@ -1,0 +1,28 @@
+{
+  "name": "Suit Breaches",
+  "category": "frozendawn:orsa_equipment",
+  "icon": "frozendawn:orsa_suit_patch_kit",
+  "sortnum": 3,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "text": "In vacuum, impacts can $(danger)puncture$() a sealed EVA suit."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Venting",
+      "text": "Each breach vents carried O2; two drain twice as fast.$(br2)Cold, hunger and suffocation can't puncture the suit.$(br2)Breaches stop venting in breathable shelter, but stay until patched."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Patching",
+      "text": "$(li)$(item)Tattered Clothing Scrap$(): hold it for a slow seal that may fail later$(li)$(item)ORSA Suit Patch Kit$(): one breach, quick and permanent$(br2)Damage interrupts either."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:orsa_suit_patch_kit",
+      "title": "ORSA Suit Patch Kit",
+      "text": "A permanent pressure seal. Intact Major Hearths may also contain salvaged kits, assuming the collective permits recovery."
+    }
+  ]
+}

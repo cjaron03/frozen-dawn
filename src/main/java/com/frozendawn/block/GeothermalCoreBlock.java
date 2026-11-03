@@ -39,6 +39,16 @@ public class GeothermalCoreBlock extends Block implements EntityBlock {
     }
 
     @Override
+    protected net.minecraft.world.ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level,
+            BlockPos pos, Player player, net.minecraft.world.InteractionHand hand, BlockHitResult hit) {
+        if (stack.getItem() instanceof com.frozendawn.item.ConduitBinderItem) {
+            stack.useOn(new net.minecraft.world.item.context.UseOnContext(player, hand, hit));
+            return net.minecraft.world.ItemInteractionResult.sidedSuccess(level.isClientSide());
+        }
+        return net.minecraft.world.ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+    }
+
+    @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos,
                                                 Player player, BlockHitResult hitResult) {
         if (!level.isClientSide() && player instanceof ServerPlayer serverPlayer) {

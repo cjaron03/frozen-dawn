@@ -1,0 +1,51 @@
+{
+  "name": "Power Storage",
+  "category": "frozendawn:power",
+  "icon": "frozendawn:power_cell",
+  "sortnum": 3,
+  "pages": [
+    {
+      "type": "patchouli:spotlight",
+      "item": "frozendawn:power_cell",
+      "text": "Holds $(bold)500 kJ$(). Crafted empty."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Battery Bank",
+      "text": "Holds $(bold)4 cells$() (2,000 kJ). Spare network power charges them; when supply falls short, they pay the difference."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Cell Dock",
+      "text": "Holds $(bold)1 cell$() and powers whatever you link to it directly. No Core or relay needed.$(br2)It can't join a bigger network or recharge the cell."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Handling",
+      "text": "Open either empty-handed; shift-click cells in and out. Charge travels with the cell and shows on its bar.$(br2)Breaking the block drops the cells, charge intact."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Specs",
+      "text": "$(li)One Panel Light: about 83 min per cell$(li)RH-5 at 50 kW: 10 s per cell$(li)Comparator reads charge, 0 to 15"
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:power_cell",
+      "title": "Power Cell",
+      "text": "Iron, copper and redstone."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:battery_bank",
+      "title": "Battery Bank",
+      "text": "Iron and redstone."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:cell_dock",
+      "title": "Cell Dock",
+      "text": "Iron, copper and redstone."
+    }
+  ]
+}

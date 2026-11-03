@@ -1,0 +1,27 @@
+{
+  "name": "Contamination",
+  "category": "frozendawn:radiation",
+  "icon": "frozendawn:radioactive_ash",
+  "sortnum": 3,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "text": "Meltdowns and blasts spread $(bold)fallout$(): thin grey-black layers that drift ash. Sealed walls stop it."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Contaminated",
+      "text": "Walk through fallout without a sealed suit and you're $(danger)Contaminated$() until you wash. Milk doesn't clear it.$(br2)Swim in water or use a $(l:radiation/decon_shower)Decontamination Shower$(/l)."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Airborne",
+      "text": "Where more than 10 layers lie within 5 blocks, dust hangs in the air. It contaminates unsealed players within 3 blocks and cakes onto EVA visors until washed."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Cleanup",
+      "text": "Shovel fallout up as $(bold)Radioactive Ash$(). The ash is a source too: store it shielded.$(br2)Grass dies and leaves fall where fallout lands."
+    }
+  ]
+}

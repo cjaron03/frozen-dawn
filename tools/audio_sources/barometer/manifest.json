@@ -1,0 +1,107 @@
+{
+  "cyclone_warning": {
+    "output": "src/main/resources/assets/frozendawn/sounds/block/barometer/cyclone_warning.ogg",
+    "sha256": "a2e24fda0adec3a6e6c54c85df1b271b1d422cfee9ec9372e2d682d1b4718568",
+    "duration": 1.6,
+    "channels": 1,
+    "sampleRate": 24000,
+    "decodedPeak": 0.34195786714553833,
+    "activeRmsTarget": 0.2,
+    "recipe": [
+      {
+        "at": 0.1,
+        "duration": 0.42,
+        "startHz": 290,
+        "endHz": 290,
+        "rough": 22,
+        "drive": 1.8,
+        "style": "buzzer"
+      },
+      {
+        "at": 0.8,
+        "duration": 0.42,
+        "startHz": 430,
+        "endHz": 430,
+        "rough": 22,
+        "drive": 1.8,
+        "style": "buzzer"
+      }
+    ],
+    "provenance": "Original Frozen Dawn procedural Panel buzzer, owner selected October19 2026. No sampled recordings."
+  },
+  "cyclone_catastrophic": {
+    "output": "src/main/resources/assets/frozendawn/sounds/block/barometer/cyclone_catastrophic.ogg",
+    "sha256": "68517fc799211e96b2c6721d7de8a5792ba0530c1a9f0081e964c394dd7b862d",
+    "duration": 3.35,
+    "channels": 1,
+    "sampleRate": 24000,
+    "decodedPeak": 0.41946178674697876,
+    "activeRmsTarget": 0.24,
+    "recipe": [
+      {
+        "at": 0.1,
+        "duration": 0.31,
+        "startHz": 290,
+        "endHz": 290,
+        "rough": 28,
+        "drive": 2.2,
+        "style": "buzzer"
+      },
+      {
+        "at": 0.53,
+        "duration": 0.31,
+        "startHz": 430,
+        "endHz": 430,
+        "rough": 28,
+        "drive": 2.2,
+        "style": "buzzer"
+      },
+      {
+        "at": 0.96,
+        "duration": 0.31,
+        "startHz": 290,
+        "endHz": 290,
+        "rough": 28,
+        "drive": 2.2,
+        "style": "buzzer"
+      },
+      {
+        "at": 1.3900000000000001,
+        "duration": 0.31,
+        "startHz": 430,
+        "endHz": 430,
+        "rough": 28,
+        "drive": 2.2,
+        "style": "buzzer"
+      },
+      {
+        "at": 1.82,
+        "duration": 0.31,
+        "startHz": 290,
+        "endHz": 290,
+        "rough": 28,
+        "drive": 2.2,
+        "style": "buzzer"
+      },
+      {
+        "at": 2.25,
+        "duration": 0.31,
+        "startHz": 430,
+        "endHz": 430,
+        "rough": 28,
+        "drive": 2.2,
+        "style": "buzzer"
+      },
+      {
+        "at": 2.68,
+        "duration": 0.31,
+        "startHz": 290,
+        "endHz": 290,
+        "rough": 28,
+        "drive": 2.2,
+        "style": "buzzer"
+      }
+    ],
+    "provenance": "Original Frozen Dawn procedural Panel buzzer, owner selected October19 2026. No sampled recordings."
+  }
+}

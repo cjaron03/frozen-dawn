@@ -2,6 +2,8 @@ package com.frozendawn.client;
 
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.config.FrozenDawnConfig;
+import com.frozendawn.event.EmergencyEvaHandler;
+import com.frozendawn.init.ModItems;
 import com.frozendawn.init.ModSounds;
 import com.frozendawn.network.SuitIntegrityPayload;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -12,6 +14,7 @@ import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.Mth;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -119,7 +122,7 @@ public final class SuitIntegrityClient {
         reset();
     }
 
-    public static void render(GuiGraphics graphics, DeltaTracker deltaTracker) {
+    public static void renderVisor(GuiGraphics graphics, DeltaTracker deltaTracker) {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.player == null
                 || minecraft.options.hideGui
@@ -127,7 +130,29 @@ public final class SuitIntegrityClient {
             return;
         }
         if (punctures > 0 && FrozenDawnConfig.ENABLE_SUIT_PUNCTURE_OVERLAY.get()) {
-            renderCracks(graphics);
+            renderCracks(graphics, punctures, false);
+        }
+        if (com.frozendawn.event.EmergencyEvaHandler.isWearingIssuedPiece(minecraft.player)
+                && FrozenDawnConfig.ENABLE_SUIT_PUNCTURE_OVERLAY.get()) {
+            float remaining = com.frozendawn.event.EmergencyEvaHandler.remainingTicks(minecraft.player)
+                    / (float) com.frozendawn.data.EmergencyEvaState.SERVICE_TICKS;
+            renderCracks(graphics, 0.1F + (1.0F - remaining) * 2.5F, true);
+        }
+        if (minecraft.options.getCameraType().isFirstPerson()
+                && FrozenDawnConfig.ENABLE_SUIT_PUNCTURE_OVERLAY.get()
+                && minecraft.player.getItemBySlot(EquipmentSlot.HEAD).is(ModItems.EMERGENCY_EVA_HELMET.get())
+                && EmergencyEvaHandler.matchesIssue(minecraft.player,
+                        minecraft.player.getItemBySlot(EquipmentSlot.HEAD))) {
+            EmergencyEvaVisor.render(graphics);
+        }
+    }
+
+    public static void render(GuiGraphics graphics, DeltaTracker deltaTracker) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.player == null
+                || minecraft.options.hideGui
+                || OrsaAwakeningIntro.shouldSuppressSurvivalHud()) {
+            return;
         }
         if (patchTicks >= 0 && patchDurationTicks > 0) {
             renderPatchProgress(graphics, minecraft);
@@ -144,7 +169,7 @@ public final class SuitIntegrityClient {
                 : Mth.clamp(o2Ticks / (float) maxO2Ticks, 0.0F, 1.0F);
     }
 
-    private static void renderCracks(GuiGraphics graphics) {
+    private static void renderCracks(GuiGraphics graphics, float severity, boolean emergency) {
         int width = graphics.guiWidth();
         int height = graphics.guiHeight();
         int size = Math.min(112, Math.max(64, Math.min(width, height) / 4));
@@ -152,9 +177,9 @@ public final class SuitIntegrityClient {
                 (Minecraft.getInstance().player.tickCount
                         + Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(false))
                         * 0.18F);
-        float alpha = Math.min(0.78F, (0.28F + punctures * 0.18F) * pulse);
+        float alpha = Math.min(0.78F, (emergency ? 0.08F + severity * 0.18F : 0.28F + severity * 0.18F) * pulse);
         RenderSystem.enableBlend();
-        RenderSystem.setShaderColor(1.0F, 0.16F, 0.12F, alpha);
+        RenderSystem.setShaderColor(1.0F, emergency ? 0.62F : 0.16F, 0.12F, alpha);
         graphics.blit(CRACK_TEXTURE, 0, 0, size, size, 0.0F, 0.0F, 16, 16, 16, 16);
         graphics.blit(CRACK_TEXTURE, width - size, 0, size, size,
                 0.0F, 0.0F, 16, 16, 16, 16);

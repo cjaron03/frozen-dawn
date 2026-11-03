@@ -1,0 +1,22 @@
+{
+  "replace": false,
+  "values": [
+    "frozendawn:rimewood_log",
+    "frozendawn:rimewood_wood",
+    "frozendawn:stripped_rimewood_log",
+    "frozendawn:stripped_rimewood_wood",
+    "frozendawn:rimewood_planks",
+    "frozendawn:rimewood_stairs",
+    "frozendawn:rimewood_slab",
+    "frozendawn:rimewood_fence",
+    "frozendawn:rimewood_fence_gate",
+    "frozendawn:rimewood_door",
+    "frozendawn:rimewood_trapdoor",
+    "frozendawn:rimewood_button",
+    "frozendawn:rimewood_pressure_plate",
+    "frozendawn:rimewood_sign",
+    "frozendawn:rimewood_wall_sign",
+    "frozendawn:rimewood_hanging_sign",
+    "frozendawn:rimewood_wall_hanging_sign"
+  ]
+}

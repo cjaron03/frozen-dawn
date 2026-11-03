@@ -1,0 +1,36 @@
+{
+  "variants": {
+    "facing=north,mode=pump": {
+      "model": "frozendawn:block/sfr_vacuum_port_pump",
+      "y": 0
+    },
+    "facing=north,mode=vent": {
+      "model": "frozendawn:block/sfr_vacuum_port_vent",
+      "y": 0
+    },
+    "facing=east,mode=pump": {
+      "model": "frozendawn:block/sfr_vacuum_port_pump",
+      "y": 90
+    },
+    "facing=east,mode=vent": {
+      "model": "frozendawn:block/sfr_vacuum_port_vent",
+      "y": 90
+    },
+    "facing=south,mode=pump": {
+      "model": "frozendawn:block/sfr_vacuum_port_pump",
+      "y": 180
+    },
+    "facing=south,mode=vent": {
+      "model": "frozendawn:block/sfr_vacuum_port_vent",
+      "y": 180
+    },
+    "facing=west,mode=pump": {
+      "model": "frozendawn:block/sfr_vacuum_port_pump",
+      "y": 270
+    },
+    "facing=west,mode=vent": {
+      "model": "frozendawn:block/sfr_vacuum_port_vent",
+      "y": 270
+    }
+  }
+}

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>Warning options sketch</title>
+<style>
+body{background:#14181d;color:#dfe6ee;font:15px/1.45 system-ui,sans-serif;max-width:760px;margin:24px auto;padding:0 16px}
+h2{margin:0 0 4px}.sub{opacity:.7;margin:0 0 18px}
+.row{display:flex;align-items:center;gap:12px;padding:10px 12px;border:1px solid #2a3139;border-radius:8px;margin-bottom:8px;background:#1a1f25}
+.row b{display:inline-block;width:22px;opacity:.6}.row .t{flex:1}.row .t small{display:block;opacity:.65}
+button{background:#2b6f80;color:#fff;border:0;border-radius:6px;padding:7px 12px;font-size:14px;cursor:pointer}
+button.alt{background:#3a424c}button.stop{background:#8a3b33}
+</style></head><body>
+<h2>Hyperion warning: replacement options</h2>
+<p class="sub">Owner pass 4 (2026-11-02): the two-tone alarm is out. Each option is one steady loop at a fixed pace; the whine that follows is what escalates. "Play" runs 8 s; "In context" runs a chirp, 8 s of the option, then the start of the whine.</p>
+
+<div class="row"><b>A</b><div class="t">Facility pulse<small>A low, soft square tone, on a quarter second, then three quarters off. Ominous rather than shrill.</small></div><button onclick="play(a)">Play</button><button class="alt" onclick="ctxPlay(a)">In context</button></div>
+<div class="row"><b>B</b><div class="t">Cold ping<small>A glassy sine ping with a long decay, every 1.2 s. Sonar-like and sparse.</small></div><button onclick="play(b)">Play</button><button class="alt" onclick="ctxPlay(b)">In context</button></div>
+<div class="row"><b>C</b><div class="t">Caution pips<small>Three quick high pips, then a pause. Instrument-panel caution.</small></div><button onclick="play(c)">Play</button><button class="alt" onclick="ctxPlay(c)">In context</button></div>
+<div class="row"><b>D</b><div class="t">Slow siren<small>A soft tone sweeping up and back down once a second. Air-raid flavour, quiet.</small></div><button onclick="play(d)">Play</button><button class="alt" onclick="ctxPlay(d)">In context</button></div>
+<p><button class="stop" onclick="stopAll()">Stop everything</button></p>
+
+<script>
+let ctx, master, live=[];
+function A(){ if(!ctx){ctx=new AudioContext();const c=ctx.createDynamicsCompressor();c.threshold.value=-10;master=ctx.createGain();master.gain.value=.8;master.connect(c);c.connect(ctx.destination);} if(ctx.state==='suspended')ctx.resume(); return ctx; }
+function track(n){live.push(n);return n}
+function tone(type,freq,t,dur,peak,attack,release,filterHz){
+  const o=track(ctx.createOscillator()),g=ctx.createGain();o.type=type;o.frequency.value=freq;
+  g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(peak,t+attack);g.gain.setValueAtTime(peak,t+dur-release);g.gain.linearRampToValueAtTime(0,t+dur);
+  let out=o;if(filterHz){const f=ctx.createBiquadFilter();f.type='lowpass';f.frequency.value=filterHz;o.connect(f);out=f}
+  out.connect(g);g.connect(master);o.start(t);o.stop(t+dur+.01);return o}
+
+/* A: 1 s period, 0.25 s soft square at 330 Hz */
+function a(t,sec){for(let s=0;s<sec;s+=1)tone('square',330,t+s,.25,.1,.015,.06,1200)}
+/* B: 1.2 s period, sine ping 1320 Hz with a fifth above, exponential decay */
+function b(t,sec){for(let s=0;s<sec;s+=1.2){for(const[f,p]of[[1320,.22],[1980,.06]]){const o=track(ctx.createOscillator()),g=ctx.createGain();o.frequency.value=f;g.gain.setValueAtTime(0,t+s);g.gain.linearRampToValueAtTime(p,t+s+.004);g.gain.exponentialRampToValueAtTime(.0001,t+s+1.1);o.connect(g);g.connect(master);o.start(t+s);o.stop(t+s+1.15)}}}
+/* C: 1.6 s period, three 60 ms sine pips at 1500 Hz, 60 ms apart */
+function c(t,sec){for(let s=0;s<sec;s+=1.6)for(let i=0;i<3;i++)tone('sine',1500,t+s+i*.12,.06,.2,.005,.02)}
+/* D: 1 s period, triangle sweeping 500 to 820 Hz and back */
+function d(t,sec){const o=track(ctx.createOscillator()),g=ctx.createGain();o.type='triangle';
+  for(let s=0;s<sec;s+=1){o.frequency.setValueAtTime(500,t+s);o.frequency.linearRampToValueAtTime(820,t+s+.5);o.frequency.linearRampToValueAtTime(500,t+s+1)}
+  g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.14,t+.05);g.gain.setValueAtTime(.14,t+sec-.1);g.gain.linearRampToValueAtTime(0,t+sec);
+  o.connect(g);g.connect(master);o.start(t);o.stop(t+sec+.01)}
+
+function chirp(t){const o=track(ctx.createOscillator()),g=ctx.createGain();o.frequency.setValueAtTime(2200,t);o.frequency.exponentialRampToValueAtTime(3000,t+.07);g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.25,t+.005);g.gain.exponentialRampToValueAtTime(.0001,t+.125);o.connect(g);g.connect(master);o.start(t);o.stop(t+.2)}
+function whine(t,sec){const o=track(ctx.createOscillator()),f=ctx.createBiquadFilter(),g=ctx.createGain(),trem=track(ctx.createOscillator()),tg=ctx.createGain();
+  o.type='sawtooth';o.frequency.setValueAtTime(220,t);o.frequency.exponentialRampToValueAtTime(1800,t+25);
+  f.type='bandpass';f.Q.value=4;f.frequency.setValueAtTime(400,t);f.frequency.exponentialRampToValueAtTime(3000,t+25);
+  g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.18*sec/22.5,t+sec);g.gain.linearRampToValueAtTime(0,t+sec+.3);
+  trem.frequency.setValueAtTime(4,t);trem.frequency.linearRampToValueAtTime(14,t+25);tg.gain.value=.06;trem.connect(tg);tg.connect(g.gain);
+  o.connect(f);f.connect(g);g.connect(master);o.start(t);trem.start(t);o.stop(t+sec+.4);trem.stop(t+sec+.4)}
+
+function play(fn){A();stopAll();fn(ctx.currentTime+.05,8)}
+function ctxPlay(fn){A();stopAll();const t=ctx.currentTime+.05;chirp(t);fn(t+1.5,8);whine(t+9.5,8)}
+function stopAll(){live.forEach(n=>{try{n.stop()}catch(e){}});live=[]}
+</script>
+</body></html>

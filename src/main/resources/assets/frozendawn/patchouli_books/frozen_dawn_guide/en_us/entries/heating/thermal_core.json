@@ -5,14 +5,19 @@
   "sortnum": 0,
   "pages": [
     {
+      "type": "patchouli:spotlight",
+      "item": "frozendawn:thermal_core",
+      "text": "The heat cell inside every ORSA heating device."
+    },
+    {
       "type": "patchouli:text",
-      "title": "Thermal Core",
-      "text": "The heart of all ORSA heating devices. This compact heat cell uses blaze powder and magma cream to generate sustained warmth.$(br2)Required for crafting the Thermal Heater and Geothermal Core. Gather blaze rods from the Nether early — you won't want to go there later.$(br2)$(italic)Fun fact: The thermal core was originally designed as a hand warmer for ORSA station crew. Then someone realized it could heat an entire room. ORSA Engineering calls this \"scope creep.\" Everyone else calls it \"the only reason you're alive.\"$()"
+      "title": "Used In",
+      "text": "$(li)Thermal Heater$(li)Geothermal Core$(li)O2 Canister$(li)Acheron Forge$(li)Transponder$(br2)Without the Nether, use $(l:advanced/nether_substitutes)Sulfur Igniters and a Thermal Binder$(/l)."
     },
     {
       "type": "patchouli:crafting",
       "recipe": "frozendawn:thermal_core",
-      "text": "Surround an iron ingot with blaze powder on three sides, magma cream below. Do not taste the magma cream. Kevin tasted the magma cream."
+      "text": "Iron ingot, blaze powder or igniters on three sides, magma cream or binder below.$(br2)$(flavor)Designed as a hand warmer. Engineering calls the rest \"scope creep.\"$()"
     }
   ]
 }

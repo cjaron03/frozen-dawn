@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:campfire_cooking",
+  "category": "food",
+  "ingredient": {
+    "tag": "frozendawn:frostcaps"
+  },
+  "result": {
+    "id": "frozendawn:dried_frostcap"
+  },
+  "experience": 0.1,
+  "cookingtime": 600
+}

@@ -14,7 +14,7 @@ import java.util.Locale;
 /** Composes the operator surface without duplicating any gameplay authority. */
 final class FrozenDawnDebugCommand {
     static final List<String> HELP_CATEGORIES = List.of(
-            "world", "hearth", "heart", "postmaeve", "aggregate", "architect", "suit", "lore");
+            "world", "hearth", "heart", "postmaeve", "aggregate", "architect", "maeve", "uplink", "suit", "lore");
 
     private static final List<String> HEARTH_CHILDREN = List.of(
             "status", "list", "locate", "force-select", "reconcile", "watcher",
@@ -36,7 +36,7 @@ final class FrozenDawnDebugCommand {
             hearth.then(requiredChild(legacyHearth, child));
         }
 
-        return Commands.literal("debug")
+        LiteralArgumentBuilder<CommandSourceStack> debug = Commands.literal("debug")
                 .requires(source -> source.hasPermission(2))
                 .executes(context -> sendHelp(context.getSource(), "debug"))
                 .then(FrozenDawnWorldCommand.worldCommands())
@@ -45,8 +45,14 @@ final class FrozenDawnDebugCommand {
                 .then(postMaeve)
                 .then(AggregateCommand.commands())
                 .then(ArchitectDebugCommand.commands())
+                .then(MaeveDebugCommand.commands())
+                .then(UplinkDebugCommand.commands())
+                .then(CycloneDebugCommand.commands())
                 .then(FrozenDawnSuitCommand.suitCommands())
                 .then(requiredChild(legacyHearth, "lore"));
+        // Development builds only: force natural Cold Flora spawn tries and report why they fail.
+        if (!net.neoforged.fml.loading.FMLEnvironment.production) debug.then(FloraDebugCommand.commands());
+        return debug;
     }
 
     static int sendHelp(CommandSourceStack source, String requestedCategory) {
@@ -54,6 +60,7 @@ final class FrozenDawnDebugCommand {
         List<String> lines = switch (category) {
             case "world" -> List.of(
                     "/fd world status [verbose] | catchup | pause | preset <name>",
+                    "/fd world reactorsite (builds a ruined ORSA reactor 24 blocks ahead)",
                     "/fd world set day <day>",
                     "/fd world set phase <phase> [early|mid|late]",
                     "/fd world reset confirm");
@@ -84,6 +91,13 @@ final class FrozenDawnDebugCommand {
                     "/fd architect approach <entity> <target> (forces a live approach run)",
                     "/fd architect reset <entity> (clears planner and recovery state)",
                     "Lab worlds: /function frozendawn:lab/help");
+            case "maeve" -> List.of(
+                    "/fd maeve status",
+                    "/fd maeve dump [player-or-uuid] (yourself by default; console requires a subject)",
+                    "/fd maeve explain <pattern> [player-or-uuid] (belief, evidence, contradictions and uncertainty)",
+                    "Read-only tactical beliefs, observed evidence, commitment decisions and cooldowns.");
+            case "uplink" -> List.of(
+                    "/fd uplink dump (archive progress, cooldown, signal sites, pressure and supply drops)");
             case "suit" -> List.of(
                     "/fd suit status [verbose] | punctures <0-2>",
                     "/fd suit hearthrot status [verbose] | infect | set-stage ...");
@@ -92,6 +106,7 @@ final class FrozenDawnDebugCommand {
                     "/fd lore reset-player <player> confirm",
                     "/fd lore reset-world-semantic confirm");
             case "debug" -> List.of(
+                    "/fd cyclone status|plan|start <severity> [player] [bearing]|stage <stage>|end",
                     "/fd <world|hearth|heart|postmaeve|aggregate|architect|suit|lore> ...",
                     "Destructive reset, purge, resolve, and completion actions require 'confirm'.",
                     "Use /frozendawn help <category> for focused examples.");

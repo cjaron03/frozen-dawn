@@ -36,13 +36,10 @@ public final class PhaseManager {
     public static final float HOLLOW_PHASE6_PEAK_END = 0.70f;
 
     // Phase boundary fractions (8 entries = 7 segments, phases 0-6)
-    private static final float[] PHASE_BOUNDS = {0.0f, 0.05f, 0.12f, 0.22f, 0.34f, 0.46f, PHASE6_START, PHASE6_END};
+    private static final float[] PHASE_BOUNDS = SurfaceTemperatureCurve.phaseBounds();
 
     // Sun distance multiplier at each boundary — dramatic shrinkage in phase 1 (last time sun is visible)
     private static final float[] SUN_DISTANCE = {1.0f, 0.35f, 0.12f, 0.06f, 0.04f, 0.03f, 0.02f, 0.0f};
-
-    // Temperature offset (Celsius) at each boundary
-    private static final float[] TEMP_OFFSET = {0f, 0f, -10f, -25f, -45f, -70f, -120f, -273f};
 
     // Sun brightness at each boundary
     private static final float[] SUN_BRIGHTNESS = {1.0f, 1.0f, 0.9f, 0.7f, 0.45f, 0.2f, 0.05f, 0.0f};
@@ -131,13 +128,8 @@ public final class PhaseManager {
      * Includes false calm rebounds: +3C warmth spikes within 3% of each phase boundary.
      */
     public static float getTemperatureOffset(int currentDay, int totalDays) {
-        float baseTemp = interpolate(TEMP_OFFSET, currentDay, totalDays);
-        // Scale by config: default array assumes -120C at phase 5 end
-        float configTemp = com.frozendawn.config.FrozenDawnConfig.BASE_PHASE5_TEMP.get();
-        float scale = configTemp / -120f;
-        baseTemp *= scale;
-        float rebound = getFalseCalmRebound(currentDay, totalDays);
-        return baseTemp + rebound;
+        float scale = com.frozendawn.config.FrozenDawnConfig.BASE_PHASE5_TEMP.get() / -120f;
+        return SurfaceTemperatureCurve.temperature(getProgress(currentDay, totalDays), scale);
     }
 
     /**
@@ -145,20 +137,7 @@ public final class PhaseManager {
      * Creates "false calm" moments where the temperature briefly seems to stabilize.
      */
     public static float getFalseCalmRebound(int currentDay, int totalDays) {
-        float progress = getProgress(currentDay, totalDays);
-        float reboundRange = 0.03f; // 3% of total progression
-
-        // Check proximity to each phase boundary (skip first at 0.0)
-        for (int i = 1; i < PHASE_BOUNDS.length - 1; i++) {
-            float boundary = PHASE_BOUNDS[i];
-            float dist = Math.abs(progress - boundary);
-            if (dist < reboundRange) {
-                // Smooth spike: peaks at boundary, fades to zero at reboundRange
-                float intensity = 1.0f - (dist / reboundRange);
-                return 3.0f * intensity;
-            }
-        }
-        return 0.0f;
+        return SurfaceTemperatureCurve.rebound(getProgress(currentDay, totalDays));
     }
 
     /**

@@ -1,0 +1,50 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "frozendawn:item/miel_honey_1"
+  },
+  "overrides": [
+    {
+      "predicate": {
+        "frozendawn:fill": 0.24
+      },
+      "model": "frozendawn:item/miel_honey_2"
+    },
+    {
+      "predicate": {
+        "frozendawn:fill": 0.365
+      },
+      "model": "frozendawn:item/miel_honey_3"
+    },
+    {
+      "predicate": {
+        "frozendawn:fill": 0.49
+      },
+      "model": "frozendawn:item/miel_honey_4"
+    },
+    {
+      "predicate": {
+        "frozendawn:fill": 0.615
+      },
+      "model": "frozendawn:item/miel_honey_5"
+    },
+    {
+      "predicate": {
+        "frozendawn:fill": 0.74
+      },
+      "model": "frozendawn:item/miel_honey_6"
+    },
+    {
+      "predicate": {
+        "frozendawn:fill": 0.865
+      },
+      "model": "frozendawn:item/miel_honey_7"
+    },
+    {
+      "predicate": {
+        "frozendawn:fill": 0.99
+      },
+      "model": "frozendawn:item/miel_honey_full"
+    }
+  ]
+}

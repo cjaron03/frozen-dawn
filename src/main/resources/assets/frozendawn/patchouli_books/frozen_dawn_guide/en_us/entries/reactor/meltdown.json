@@ -1,0 +1,35 @@
+{
+  "name": "Meltdown",
+  "category": "frozendawn:reactor",
+  "icon": "frozendawn:corium",
+  "sortnum": 7,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "text": "$(danger)Only possible with automatic SCRAM off.$() Above 780°C fission runs away and covers the last 20 degrees in seconds."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Flash",
+      "text": "At 800°C everyone within 64 blocks sees a white flash.$(br2)With air, hydrogen detonates: the shell blows open and debris flies 6-18 blocks. In vacuum the casing only scorches."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Corium",
+      "text": "The core becomes Molten Corium and the rods are lost. It sinks one block every 3 s, up to 8 deep, pools, and cools to solid Corium in about 90 s.$(br2)Obsidian and bedrock stop it."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Steam",
+      "text": "Water, ice and snow it touches flash to steam. $(danger)Four or more water blocks within 2 blocks cause a steam explosion.$()$(br2)With oxygen, it ignites nearby fuel."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Fallout",
+      "text": "Heavy fallout spreads about $(bold)12 blocks$() in air, 3 in vacuum. See $(l:radiation/contamination)Contamination$(/l)."
+    }
+  ],
+  "extra_recipe_mappings": {
+    "frozendawn:corium": 2
+  }
+}

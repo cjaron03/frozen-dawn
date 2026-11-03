@@ -273,6 +273,7 @@ public final class RocketLaunchManager {
         if (shouldTriggerEnding) {
             for (var passenger : passengers) {
                 if (passenger instanceof ServerPlayer player) {
+                    PacifistAdvancement.onSuccessfulLaunch(player);
                     sendEndingPayload(level, state, player);
                     endingSent = true;
                 }

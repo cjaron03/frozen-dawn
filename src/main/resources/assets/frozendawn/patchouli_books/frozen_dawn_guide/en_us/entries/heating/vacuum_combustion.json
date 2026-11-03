@@ -1,0 +1,32 @@
+{
+  "name": "Flames in a Vacuum",
+  "icon": "minecraft:soul_torch",
+  "category": "frozendawn:life_support",
+  "sortnum": 7,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "text": "Late Phase 6 is vacuum. $(danger)Exposed flames go out.$()"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Needs Air",
+      "text": "$(li)Fire and campfires$(li)Torches and lanterns$(li)Candles$(li)MiteAway burners$(li)Fuel furnaces"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Seals",
+      "text": "Rooms seal and get oxygen by the same rules as your suit readout.$(br2)Full glass roofs seal. Open doors, open trapdoors and fences don't. Warmth is not air."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Relighting",
+      "text": "Spent torches and dark lanterns stay put and drop their normal items. Relight with flint and steel in breathable air.$(br2)Campfires and candles relight normally. Furnaces keep their fuel and resume."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Exceptions",
+      "text": "Soul fire, torches, lanterns and campfires keep burning but supply no oxygen.$(br2)Lava and powered or geothermal heat aren't flames."
+    }
+  ]
+}

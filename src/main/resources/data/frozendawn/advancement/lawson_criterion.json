@@ -1,0 +1,23 @@
+{
+  "parent": "frozendawn:phase6",
+  "display": {
+    "icon": {
+      "id": "frozendawn:first_wall"
+    },
+    "title": {
+      "translate": "advancement.frozendawn.lawson_criterion.title"
+    },
+    "description": {
+      "translate": "advancement.frozendawn.lawson_criterion.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": true
+  },
+  "criteria": {
+    "impossible": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

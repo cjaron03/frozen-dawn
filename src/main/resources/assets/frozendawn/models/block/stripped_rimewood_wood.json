@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:block/cube_column",
+  "textures": {
+    "end": "frozendawn:block/stripped_rimewood_log",
+    "side": "frozendawn:block/stripped_rimewood_log"
+  }
+}

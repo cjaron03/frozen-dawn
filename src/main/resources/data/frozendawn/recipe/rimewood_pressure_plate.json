@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "pattern": [
+    "##"
+  ],
+  "key": {
+    "#": {
+      "item": "frozendawn:rimewood_planks"
+    }
+  },
+  "result": {
+    "id": "frozendawn:rimewood_pressure_plate",
+    "count": 1
+  },
+  "group": "wooden_pressure_plate"
+}

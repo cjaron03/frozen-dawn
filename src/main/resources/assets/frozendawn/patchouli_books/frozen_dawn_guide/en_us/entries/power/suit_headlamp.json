@@ -1,0 +1,33 @@
+{
+  "name": "Suit Headlamp",
+  "category": "frozendawn:power",
+  "icon": "frozendawn:suit_headlamp",
+  "sortnum": 10,
+  "pages": [
+    {
+      "type": "patchouli:spotlight",
+      "item": "frozendawn:suit_headlamp",
+      "text": "A beam where you look, up to $(bold)16 blocks$(). $(bold)50 W$()."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Fitting",
+      "text": "Put it in the $(bold)Helmet Mount$() slot. It works only under an $(l:orsa_equipment/eva_suit)EVA Helmet$(/l) or Thermal Visor.$(br2)Goggles keep their own slot."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Power",
+      "text": "It draws from loose Power Cells: hotbar and inventory first, then offhand. Not from a lantern's cell.$(br2)Without a cell it pauses and stays switched on."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Switch",
+      "text": "Press $(bold)H$() (Toggle Headlamp) to switch it. It's crafted off.$(br2)A full cell runs it about 2 h 47 min."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:suit_headlamp",
+      "text": "Iron, glass, copper and redstone. The cell is separate."
+    }
+  ]
+}

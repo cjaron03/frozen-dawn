@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/orientable",
+  "textures": {
+    "front": "frozendawn:block/reactor_controller_2",
+    "side": "frozendawn:block/reactor_casing",
+    "top": "frozendawn:block/reactor_casing"
+  }
+}

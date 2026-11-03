@@ -1,0 +1,17 @@
+{
+  "blend": {"func": "add", "srcrgb": "srcalpha", "dstrgb": "one", "srcalpha": "zero", "dstalpha": "one"},
+  "vertex": "frozendawn:aurora",
+  "fragment": "frozendawn:aurora",
+  "attributes": ["Position", "UV0", "Color"],
+  "samplers": [{"name": "CloudSampler"}],
+  "uniforms": [
+    {"name": "SkyView", "type": "matrix4x4", "count": 16, "values": [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1]},
+    {"name": "ProjMat", "type": "matrix4x4", "count": 16, "values": [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1]},
+    {"name": "CloudOrigin", "type": "float", "count": 3, "values": [0,0,0]},
+    {"name": "CloudHeight", "type": "float", "count": 1, "values": [192]},
+    {"name": "CloudMask", "type": "float", "count": 1, "values": [1]},
+    {"name": "Intensity", "type": "float", "count": 1, "values": [0]},
+    {"name": "Time", "type": "float", "count": 1, "values": [0]},
+    {"name": "EventPhase", "type": "float", "count": 1, "values": [0]}
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "BKB",
+    "BPB",
+    " K "
+  ],
+  "key": {
+    "B": {
+      "item": "minecraft:iron_bars"
+    },
+    "K": {
+      "item": "minecraft:copper_block"
+    },
+    "P": {
+      "item": "frozendawn:coolant_port"
+    }
+  },
+  "result": {
+    "id": "frozendawn:reactor_radiator",
+    "count": 1
+  }
+}

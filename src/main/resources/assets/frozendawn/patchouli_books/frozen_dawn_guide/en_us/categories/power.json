@@ -1,0 +1,7 @@
+{
+  "name": "Power",
+  "icon": "frozendawn:conduit_binder",
+  "sortnum": 2,
+  "description": "Generators, links, storage and the machines they run.$(br2)$(flavor)The cyan beams are not a rope.$()",
+  "parent": "frozendawn:base_systems"
+}

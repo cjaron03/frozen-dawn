@@ -1,0 +1,39 @@
+{
+  "name": "Transmissions",
+  "category": "frozendawn:signals",
+  "icon": "minecraft:filled_map",
+  "sortnum": 2,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "text": "Each finished transmission prints one reward. A transmitter within 32 blocks gets it; otherwise the console holds it for whoever opens it next."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Relay Transcripts",
+      "text": "Three records, shared by the world, always first when due. Use a printed transcript to file it in the manual under $(bold)ORSA Intelligence$().$(br2)The console's Archive tab lists what's arrived."
+    },
+    {
+      "type": "patchouli:spotlight",
+      "item": "minecraft:filled_map",
+      "title": "Resupply Plot",
+      "text": "A crash site 150-300 blocks away, inside the dashed circle."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Supply Drop",
+      "text": "Crates hold Power Cells, two O2 cartridges, food and one rare part: a Signal Processor, Feed Horn or Thermal Core.$(br2)Within 30 blocks its beacon pings with distance and direction."
+    },
+    {
+      "type": "patchouli:spotlight",
+      "item": "minecraft:filled_map",
+      "title": "Signal Plot",
+      "text": "An unvisited monitoring station or reactor site 200-900 blocks away."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Reading Plots",
+      "text": "Plots show only the signal and your console, no terrain. A sector and range are printed, e.g. NE, ~300 m.$(br2)A $(l:signals/plumb_line)Plumb Line$(/l) pulse marks ORSA sites nearby."
+    }
+  ]
+}

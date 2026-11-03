@@ -1,0 +1,60 @@
+{
+  "created": "2026-10-14",
+  "creator": "built-in imagegen; Frozen Dawn native export",
+  "source": "generated-front.png",
+  "prompt": "prompt.txt",
+  "script": "export_textures.py",
+  "palette": [
+    "171c21",
+    "283039",
+    "414950",
+    "667077",
+    "976344",
+    "c18054",
+    "07141c",
+    "153843",
+    "2dd4d2",
+    "1c7584",
+    "e5a064",
+    "e58b83",
+    "72a8e0"
+  ],
+  "third_party_pixels": false,
+  "textures": [
+    {
+      "path": "src/main/resources/assets/frozendawn/textures/block/power_monitor_0.png",
+      "width": 16,
+      "height": 16,
+      "alpha": "opaque",
+      "sha256": "e2c1440bda40054a06f0fe4b204f861ba9622390e5de15d4ca219602086f3cd2"
+    },
+    {
+      "path": "src/main/resources/assets/frozendawn/textures/block/power_monitor_1.png",
+      "width": 16,
+      "height": 16,
+      "alpha": "opaque",
+      "sha256": "8214ae18a065bd8345b8a53fc94cb4e803a5a5632e72777abada586262d31fb2"
+    },
+    {
+      "path": "src/main/resources/assets/frozendawn/textures/block/power_monitor_2.png",
+      "width": 16,
+      "height": 16,
+      "alpha": "opaque",
+      "sha256": "ac686e32ce1870f388f8718146b4846d65c31c80b9fa0348d85187b8d7569ba4"
+    },
+    {
+      "path": "src/main/resources/assets/frozendawn/textures/block/power_monitor_3.png",
+      "width": 16,
+      "height": 16,
+      "alpha": "opaque",
+      "sha256": "82e23ff0bca292153049e0d66a55e4b1d22a60ff79a4c23d78b61dd82e6d72da"
+    },
+    {
+      "path": "src/main/resources/assets/frozendawn/textures/block/power_monitor_4.png",
+      "width": 16,
+      "height": 16,
+      "alpha": "opaque",
+      "sha256": "6782ca469640ee9c504aa0e95337e67030a4a79170122338ca1b0695bdd69a3d"
+    }
+  ]
+}

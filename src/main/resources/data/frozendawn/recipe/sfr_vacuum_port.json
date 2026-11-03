@@ -1,0 +1,23 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "IVI",
+    "IFI"
+  ],
+  "key": {
+    "I": {
+      "item": "minecraft:iron_ingot"
+    },
+    "V": {
+      "item": "frozendawn:manual_vent_valve"
+    },
+    "F": {
+      "item": "frozendawn:bulkhead_feedthrough"
+    }
+  },
+  "result": {
+    "id": "frozendawn:sfr_vacuum_port",
+    "count": 1
+  }
+}

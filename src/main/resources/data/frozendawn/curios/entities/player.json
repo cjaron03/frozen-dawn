@@ -4,6 +4,7 @@
   ],
   "slots": [
     "head",
+    "helmet_mount",
     "hands",
     "feet"
   ]

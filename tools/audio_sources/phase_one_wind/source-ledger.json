@@ -1,0 +1,26 @@
+{
+  "originalSourceURL": "https://freesound.org/people/BudJillett/sounds/109485/",
+  "creator": "BudJillett",
+  "sourceTitle": "Wind-Gusts-late-autumn.wav",
+  "originalListedFormat": "48 kHz 16-bit stereo WAV",
+  "downloadURL": "https://cdn.freesound.org/previews/109/109485_1213320-hq.mp3",
+  "retrievedFilename": "109485_1213320-hq.mp3",
+  "sourceFormat": "Official public HQ MP3 preview; not account-gated original WAV",
+  "license": "CC0 1.0 Universal",
+  "licenseURL": "https://creativecommons.org/publicdomain/zero/1.0/",
+  "licenseEvidence": "licenses/source-page.txt",
+  "licenseText": "licenses/cc0.txt",
+  "retrievedUTC": "2026-10-20T19:39:27.638743+00:00",
+  "originalLocalPath": "recordings/109485_1213320-hq.mp3",
+  "assetRole": "Owner-selected phase 1 rain/gust ambience",
+  "modifications": "generate_wind.py: two 57-second trims at 90/180 s; 70 Hz high-pass, 8 kHz low-pass, gentle 2:1 peak compression; RMS matching capped at 0.80 peak; five-second edge fades; mono 24 kHz Vorbis quality 5. No synthesis, pitch shift or time stretch.",
+  "requiredAttribution": "None under CC0; voluntary creator credit will be retained in SOURCES.md and AUDIO_NOTICE.md",
+  "reviewStatus": "Individual CC0 anchor/deed verified before retrieval; owner selected recording and accepted rainy mix, smoothed shelter transition, clearing fade and natural reload/window transitions",
+  "localRuntimeOutputPaths": [
+    "src/main/resources/assets/frozendawn/sounds/ambient/wind_phase_one_1.ogg",
+    "src/main/resources/assets/frozendawn/sounds/ambient/wind_phase_one_2.ogg"
+  ],
+  "sha256": "e59c680407030b7209dc14d480040afa2376d1fe57655de7f9217bd26e7aae2d",
+  "bytes": 6987744,
+  "licenseEvidenceSHA256": "15a5d879da5f0763f5ad188c279830aa8d20f2921d6308ef66a9b5c571279702"
+}

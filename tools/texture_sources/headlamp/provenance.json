@@ -1,0 +1,26 @@
+{
+  "asset": "suit_headlamp",
+  "tool": "built-in image_gen",
+  "intent": "new image generation",
+  "prompt": "Use case: stylized-concept. Asset type: production Minecraft Java inventory item texture for the Frozen Dawn mod. Generate ONE headlamp sprite on a genuinely transparent background. This is NOT concept illustration: use an EXACT 16 by 16 logical pixel grid, enlarged uniformly to fill the square canvas, every logical pixel a large flat square, no detail smaller than one grid pixel. A compact industrial helmet-mounted electric headlamp module with a SINGLE prominent pale ivory lamp lens, dark charcoal outlines, graphite/steel housing, two restrained cyan accents matching futuristic EVA equipment, and a small clearly visible mounting clip on top or behind. Slight three-quarter item view, clear chunky silhouette, roughly 12 logical pixels wide and 10 logical pixels tall, centered with transparent margins. The single circular lens is drawn as a stepped square-pixel circle, with a few pale cream highlight pixels, NOT a pair of goggles. Minimal intentional palette of about 8 colors, one-pixel logical outline, light from upper left, flat hard pixel clusters and stepped edges. No glowing aura or light beam outside the lens, no cast shadow, no helmet or human, no hands, no background, no checkerboard, no grid lines, no borders, no labels or text, no realistic rendering, no gradients, no antialiasing. The design must remain recognizable when converted to a native 16x16 PNG; prioritize bold readable shapes over detail.",
+  "style_references": "Frozen Dawn's existing EVA Helmet, ORSA Thermal Visor, Power Cell and Blizzard Goggles palette; no reference image bytes were passed to generation.",
+  "generated_source": "output/headlamp-texture/v1/generated-source.png",
+  "runtime": "src/main/resources/assets/frozendawn/textures/item/suit_headlamp.png",
+  "conversion": "FFmpeg nearest-neighbor conversion to 16x16 RGBA; preview enlarged to 512x512 with nearest-neighbor. Generated alpha preserved.",
+  "status": "Owner accepted texture, then authorized the Helmet Mount Curios slot on 2026-10-18.",
+  "runtime_sha256": "668c19b0b10f46c5283d92d6302432683b5c060bbb655bb7a791b034c5342286",
+  "generated_source_sha256": "06d2590fea277e1b145d3d8746cb14f4e43e6c5393827b43d16b076de4b72b96",
+  "dimensions": [
+    16,
+    16
+  ],
+  "alpha_values": [
+    0,
+    1,
+    249,
+    252,
+    253,
+    254,
+    255
+  ]
+}

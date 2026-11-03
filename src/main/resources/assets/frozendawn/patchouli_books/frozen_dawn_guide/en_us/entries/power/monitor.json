@@ -1,0 +1,33 @@
+{
+  "name": "Power Monitor",
+  "category": "frozendawn:power",
+  "icon": "frozendawn:power_monitor",
+  "sortnum": 5,
+  "pages": [
+    {
+      "type": "patchouli:spotlight",
+      "item": "frozendawn:power_monitor",
+      "text": "A wall screen that reads a network."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Setup",
+      "text": "Mount it on a sturdy wall and link it with the Binder. Open it empty-handed.$(br2)It has no settings and no battery."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Reading",
+      "text": "$(li)State: Normal, Battery backup, Brownout, No power, Not linked$(li)Supply and demand, kW$(li)Battery charge, kJ$(li)Machines waiting for power, by name"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Comparator",
+      "text": "Output follows battery charge: 0 when empty, up to 15 when full."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:power_monitor",
+      "text": "Iron, copper, glass panes and redstone."
+    }
+  ]
+}

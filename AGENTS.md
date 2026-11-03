@@ -1,0 +1,45 @@
+# Frozen Dawn agent handoff
+
+Use Conventional Commit messages (`feat:`, `fix:`, `docs:`). Do not create branches or PRs with a `codex/` or `claude/` prefix.
+
+Before working, identify the owning checkout, branch, HEAD and current changes. Preserve unrelated work, saved worlds and replay evidence. Run the applicable existing verification gates; distinguish headless checks from a human visual pass.
+
+## Workflow
+
+1. Each feature gets its own branch and worktree, cut from `feat/maeve-director` unless the owner names another base.
+2. The agent implements and verifies headlessly: tests first, then the full `architectVerify`.
+3. The owner does the visual pass. The agent prepares the feature's playtest world, launches the lab client (below) and reads the logs; the owner plays and reports what they see.
+4. Fix what the pass finds, then offer a PR. The owner approves every merge; a passing gate or replay is not approval.
+5. After the PR merges, ask whether to remove the branch's worktree and its build output, and separately whether to delete or keep its playtest worlds (they are git-ignored, so removal loses them). Never remove a worktree that has uncommitted changes, untracked files or unpushed commits unless the owner says that work can go.
+
+Keep every change tightly scoped so it leaves no clutter. Tests cover behavior the change adds or could break, not its implementation line by line; skip tests that only mirror a small, reversible change. Playtest scripts, lab-bridge functions and debug commands belong to one feature: one `tools/prepare_<feature>_playtest.py`, functions under that feature's own namespace, and no edits to other features' fixtures. Remove scaffolding the feature no longer uses.
+
+Anything judged by look or feel gets a mockup the owner approves before it is built, drawn at Minecraft scale (16 pixels per block, blocky geometry), not smooth vector art. Smooth sketches misjudge how a model reads in game.
+
+The main checkout `/Volumes/SSD/Work/frozen-dawn` holds the owner's work in progress: agents never edit, stage or switch branches in it. Each agent's worktree goes on the SSD at `/Volumes/SSD/Work/frozen-dawn-<feature>`, never on the internal drive, and is removed after its merge as in step 5.
+
+New content starts creative-only: its first slice is creative tab and `/give` only, with no recipes, loot or world generation, so the owner can playtest and iterate. Recipes and progression come in a later slice.
+
+## Gradle lab client and commands
+
+For local Minecraft iteration, always launch through Gradle from the owning checkout inside the agent's terminal, using Java 21. The owner's default is `./gradlew runClient --console=plain`. For a replay that requires the local lab command bridge, read [docs/lab-command-bridge.md](docs/lab-command-bridge.md) and use the Gradle `runClientLab` variant with `tools/lab_client.py` for authorized diagnostics, reloads and approved test functions. The normal `runClient` does not enable that bridge. The Gradle terminal itself is not an in-game console. Do not launch the normal Minecraft Launcher or an external Terminal app as a substitute.
+
+For a feature's visual pass, prepare its save with `python3 tools/prepare_<feature>_playtest.py`, then open it directly with `./gradlew runClientLab -PfdLabWorld='<save name>' --console=plain`. Run the client in the background so the session can keep reading its log while the owner plays.
+
+While iterating on GameTests, `./gradlew gameTestQuick -PfdTests=<fragment,...>` runs only the tests whose names contain a fragment, on a sprinted server. It is a fast loop, not a gate: before handing work back, run the full `architectVerify`, which runs every test at the normal tick rate.
+
+`architectVerify` and `architectMonkey` each run their tests on three GameTest servers side by side (`-PfdShards=N` to change the count). Each server gets a 3 GB heap (`-PfdShardHeap=<size>`), about twice the most it held after a mixed collection on the monkey gate, and its share of the cores for garbage collection; it writes a `gc.log` beside its logs. Only one gate's servers run at a time on this machine, across all checkouts that share the Gradle home: a second `architectVerify` or `architectMonkey` waits for the first, printing `Waiting for another gate to finish:` with the holder's checkout once a minute. It is waiting, not hung; do not cancel or retry it. Waiting gates are not served in order. The lock is `~/.gradle/frozendawn/gate.lock`, held by the Gradle process; the operating system releases it if that process dies, even if servers it started are still shutting down. Each server takes whole batches, the same batches a single server would run, and the gate fails unless the servers together ran every test exactly once. The servers run in a temporary folder on the internal disk; their worlds, about 450 MB each, are deleted after a passing run, and a failed run keeps them until the next one. So a test runs on a server of unknown age, after an unknown set of earlier batches, possibly as the very first batch. Write tests that hold either way: set the game clock before arming anything that measures elapsed game time, and wait until the chunks a fixture needs are loaded and scanned instead of assuming an earlier batch prepared them. Four servers expose one more such dependency, `powermonitormenuwordspagingandsecurity`.
+
+`architectVerify` may run while the owner's `runClientLab` is open in the same checkout, as long as the source has not changed since the client launched. The two do not share a game directory (`run-lab/` against a temporary folder per shard, which the gate wipes; logs and evidence are copied back to `build/gametest/shard-*/run/`), nothing in the gate writes to `run-lab/`, neither binds a fixed port, and Gradle lets the second build run beside the first without waiting on a lock; with the daemon on, it starts a second daemon. What they do share is `build/classes` and `build/resources`, which the client loads from. If you edited code or resources after the client launched, the gate recompiles them under the running client: it then mixes old and new classes as it loads them lazily, and a resource reload picks up the new files. In that case close the client first, or run the gate from a separate worktree, which has its own `build/`. The gate also competes for CPU. Its results do not change, since tests count ticks, but the client may stutter, so do not overlap it with an owner view where performance or timing is under judgement.
+
+Never run `./gradlew --stop`, and never kill Gradle or Java processes you did not start. `--stop` stops every Gradle daemon of that version on the machine, in every checkout. That includes the single-use daemon Gradle forks when the daemon is off, and the daemon that hosts the owner's `runClientLab`, so the owner's game dies with it. To leave a daemon out of a measurement, pass `--no-daemon`; to stop one, stop only the PID you started.
+
+The owner authorized agents to collect Maeve/Architect dumps and diagnostic state. The owner performs visual playtests and reports perceived behavior. Preserve their unprompted description before revealing a diagnostic explanation. Mutating test steps must match the agreed replay and active world. Never automatically retry a timed-out request, erase history, run a reset, or advance a visible encounter merely to collect evidence.
+
+Generated playtest worlds must suppress advancement popups and chat awards, and preselect the agreed test difficulty before the first player joins so the difficulty picker does not interrupt the view. Keep these settings inside the generated test save and its datapack; do not change ordinary worlds or global client preferences. The Blind world generator uses a world-local advancement filter and fresh default-difficulty state with the choice locked. Its filter pack must follow NeoForge's combined `mod_data` pack in the selected order; verify the actual loader-selected stack, since listing individual mod IDs can put mod data above the filter. Preserve existing saves when preparing a revised fixture.
+
+## Checkpoints
+
+Before resuming a feature, read the latest sections of its checkpoint in `docs/*-checkpoint.md` (for example [power-network-checkpoint.md](docs/power-network-checkpoint.md) for power and the Hyperion, [macs-pawn-checkpoint.md](docs/macs-pawn-checkpoint.md) for MACS and the Architects). They identify the owning worktree, active save, evidence, remaining acceptance and branch/PR status. A checkpoint is historical evidence: verify current files and runtime before using it. Do not infer merge approval from a successful replay.
+
+Update the repository checkpoint when handing work back or changing the active replay. Keep personal memory separate from the tracked handoff; do not depend on chat history alone.

@@ -1,0 +1,18 @@
+{
+  "type": "frozendawn:fabricating",
+  "blueprint": "first_wall",
+  "ingredients": [
+    {
+      "ingredient": {
+        "item": "frozendawn:first_wall_tile"
+      },
+      "count": 4
+    }
+  ],
+  "result": {
+    "id": "frozendawn:first_wall",
+    "count": 1
+  },
+  "watts": 5000,
+  "seconds": 20
+}

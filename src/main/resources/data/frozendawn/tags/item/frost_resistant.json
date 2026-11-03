@@ -5,6 +5,10 @@
     "minecraft:enchanted_golden_apple",
     "minecraft:dried_kelp",
     "frozendawn:frozen_meat",
-    "frozendawn:hot_wings"
+    "frozendawn:hot_wings",
+    "frozendawn:frozen_frostcap",
+    "frozendawn:thawed_frostcap",
+    "frozendawn:frostcap_mush",
+    "frozendawn:dried_frostcap"
   ]
 }

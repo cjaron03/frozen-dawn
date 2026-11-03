@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "pattern": [
+    "##",
+    "##"
+  ],
+  "key": {
+    "#": {
+      "item": "frozendawn:stripped_rimewood_log"
+    }
+  },
+  "result": {
+    "id": "frozendawn:stripped_rimewood_wood",
+    "count": 3
+  }
+}

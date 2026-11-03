@@ -36,33 +36,49 @@ final class LateThreatSpawnHelper {
     static BlockPos findHybridSpawn(ServerLevel level, ServerPlayer player, RandomSource random,
                                     int minDistance, int maxDistance, int attempts,
                                     int maxLightLevel) {
+        return findHybridSpawn(level, player, random, minDistance, maxDistance, attempts,
+                maxLightLevel, Integer.MIN_VALUE);
+    }
+
+    static BlockPos findHybridSpawn(ServerLevel level, ServerPlayer player, RandomSource random,
+                                    int minDistance, int maxDistance, int attempts,
+                                    int maxLightLevel, int minSpawnY) {
         for (int attempt = 0; attempt < attempts; attempt++) {
             BlockPos sample = randomXZAround(player, random, minDistance, maxDistance);
             BlockPos vertical = findValidVerticalSpawn(level, sample.getX(), sample.getZ(),
-                    player.getBlockY(), maxLightLevel, true);
+                    player.getBlockY(), maxLightLevel, true, minSpawnY);
             if (vertical != null) {
                 return vertical;
             }
         }
 
-        return findSurfaceSpawn(level, player, random, minDistance, maxDistance, attempts, maxLightLevel);
+        BlockPos surface = findSurfaceSpawn(level, player, random, minDistance, maxDistance, attempts, maxLightLevel);
+        return surface != null && surface.getY() >= minSpawnY ? surface : null;
     }
 
     static BlockPos findUnrestrictedHybridSpawn(
             ServerLevel level, ServerPlayer player, RandomSource random,
             int minDistance, int maxDistance, int attempts, int maxLightLevel) {
+        return findUnrestrictedHybridSpawn(level, player, random, minDistance, maxDistance,
+                attempts, maxLightLevel, Integer.MIN_VALUE);
+    }
+
+    static BlockPos findUnrestrictedHybridSpawn(
+            ServerLevel level, ServerPlayer player, RandomSource random,
+            int minDistance, int maxDistance, int attempts, int maxLightLevel, int minSpawnY) {
         for (int attempt = 0; attempt < attempts; attempt++) {
             BlockPos sample = randomXZAround(player, random, minDistance, maxDistance);
             BlockPos vertical = findValidVerticalSpawn(
                     level, sample.getX(), sample.getZ(), player.getBlockY(),
-                    maxLightLevel, false);
+                    maxLightLevel, false, minSpawnY);
             if (vertical != null) {
                 return vertical;
             }
         }
 
-        return findSurfaceSpawn(
+        BlockPos surface = findSurfaceSpawn(
                 level, player, random, minDistance, maxDistance, attempts, maxLightLevel);
+        return surface != null && surface.getY() >= minSpawnY ? surface : null;
     }
 
     static boolean isInsideHearthBoundary(ServerLevel level, BlockPos pos) {
@@ -81,9 +97,9 @@ final class LateThreatSpawnHelper {
 
     private static BlockPos findValidVerticalSpawn(
             ServerLevel level, int x, int z, int playerY,
-            int maxLightLevel, boolean requireSurfaceSky) {
+            int maxLightLevel, boolean requireSurfaceSky, int minSpawnY) {
         int topY = Math.min(level.getMaxBuildHeight() - 2, playerY + VERTICAL_SCAN_UP);
-        int bottomY = Math.max(level.getMinBuildHeight() + 1, playerY - VERTICAL_SCAN_DOWN);
+        int bottomY = Math.max(minSpawnY, Math.max(level.getMinBuildHeight() + 1, playerY - VERTICAL_SCAN_DOWN));
 
         for (int y = topY; y >= bottomY; y--) {
             BlockPos pos = new BlockPos(x, y, z);

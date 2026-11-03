@@ -1,0 +1,48 @@
+{
+  "name": "ORSA O2 Gauge",
+  "category": "frozendawn:life_support",
+  "icon": "frozendawn:oxygen_gauge",
+  "sortnum": 1,
+  "pages": [
+    {
+      "type": "patchouli:spotlight",
+      "item": "frozendawn:oxygen_gauge",
+      "title": "Room Air Monitor",
+      "text": "A wall screen for a sealed room's air. Place it inside; no menu.$(br2)Each player breathes $(bold)1 unit$(). Creative and spectator: none."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Shared Supply",
+      "text": "$(bold)SUPPLY$() and $(bold)DEMAND$() cover every connected room. $(bold)LOCAL$() is this room alone.$(br2)Sources must be inside or touching the room. Range does not pass through walls."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "A Core touching two rooms shares one 8-unit output.$(br2)Overlapping sources count once."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Screen Colors",
+      "text": "$(li)$(bold)Green$(): supported$(li)$(bold)Yellow$(): 80%+ load, overload, or no production$(li)$(bold)Red$(): $(danger)no air, no seal, or NO O2$()$(li)$(bold)Gray$(): WAITING, still indexing"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Rates, Not Percent",
+      "text": "It shows rates, not an O2 percentage. Reservoirs show stored player-seconds.$(br2)$(bold)ON RESERVE$(): storage covers a shortfall; the timer is for it.$(br)$(bold)LIMITED$(): storage can't keep up."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "What Breathes",
+      "text": "$(li)Torch, lantern, candle: 0.25$(li)Fire, campfire, MiteAway: 1$(li)Furnace, smoker, blast furnace: 3$(li)Animals: extra$(br2)Free: soul flames, heaters, Returned, Architects."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:oxygen_gauge",
+      "text": "Four iron, two copper, two redstone, one glass. Comparator: 15 no air or seal, 8 strained, 4 no supply.$(br2)$(flavor)Do not argue with the numbers.$()"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Running Short",
+      "text": "When demand beats supply, flames go out first, then people suffocate.$(br2)See $(l:heating/running_out_of_air)Running Out of Air$(/l)."
+    }
+  ]
+}

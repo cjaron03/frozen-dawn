@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:block/cube_column",
+  "textures": {
+    "end": "frozendawn:block/control_rod_drive_top",
+    "side": "frozendawn:block/control_rod_drive_side"
+  }
+}

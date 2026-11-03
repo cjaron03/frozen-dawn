@@ -1,0 +1,23 @@
+{
+  "parent": "frozendawn:phase6",
+  "display": {
+    "icon": {
+      "id": "frozendawn:halsey_core"
+    },
+    "title": {
+      "translate": "advancement.frozendawn.the_fall_of_icarus.title"
+    },
+    "description": {
+      "translate": "advancement.frozendawn.the_fall_of_icarus.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": true
+  },
+  "criteria": {
+    "impossible": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

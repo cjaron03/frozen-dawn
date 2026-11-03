@@ -1,0 +1,22 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    {
+      "tag": "frozendawn:frostcaps"
+    },
+    {
+      "tag": "frozendawn:frostcaps"
+    },
+    {
+      "tag": "frozendawn:frostcaps"
+    },
+    {
+      "item": "minecraft:bowl"
+    }
+  ],
+  "result": {
+    "id": "frozendawn:frostcap_stew",
+    "count": 1
+  }
+}

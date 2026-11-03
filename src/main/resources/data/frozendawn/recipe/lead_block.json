@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "pattern": [
+    "LLL",
+    "LLL",
+    "LLL"
+  ],
+  "key": {
+    "L": {
+      "item": "frozendawn:lead_ingot"
+    }
+  },
+  "result": {
+    "id": "frozendawn:lead_block",
+    "count": 1
+  }
+}

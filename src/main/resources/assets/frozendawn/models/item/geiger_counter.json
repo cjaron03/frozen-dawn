@@ -1,0 +1,32 @@
+{
+  "parent": "minecraft:item/handheld",
+  "textures": {
+    "layer0": "frozendawn:item/geiger_counter_0"
+  },
+  "overrides": [
+    {
+      "predicate": {
+        "frozendawn:reading": 0.24
+      },
+      "model": "frozendawn:item/geiger_counter_1"
+    },
+    {
+      "predicate": {
+        "frozendawn:reading": 0.49
+      },
+      "model": "frozendawn:item/geiger_counter_2"
+    },
+    {
+      "predicate": {
+        "frozendawn:reading": 0.74
+      },
+      "model": "frozendawn:item/geiger_counter_3"
+    },
+    {
+      "predicate": {
+        "frozendawn:reading": 0.99
+      },
+      "model": "frozendawn:item/geiger_counter_4"
+    }
+  ]
+}

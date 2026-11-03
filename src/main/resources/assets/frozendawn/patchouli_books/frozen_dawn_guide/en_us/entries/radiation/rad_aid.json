@@ -1,0 +1,20 @@
+{
+  "name": "RadAid",
+  "category": "frozendawn:radiation",
+  "icon": "frozendawn:rad_aid",
+  "sortnum": 6,
+  "pages": [
+    {
+      "type": "patchouli:spotlight",
+      "item": "frozendawn:rad_aid",
+      "title": "ORSA RadAid",
+      "text": "An IV drip that flushes $(bold)200 RU$() of dose over one minute.",
+      "link_recipe": true
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Use",
+      "text": "It takes 3 seconds to hook up.$(br2)It can't be crafted. Look for it in ORSA medical salvage."
+    }
+  ]
+}

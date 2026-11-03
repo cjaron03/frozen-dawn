@@ -1,0 +1,7 @@
+{
+  "name": "AMR-1 \"Icarus\"",
+  "icon": "frozendawn:icarus_controller",
+  "sortnum": 5,
+  "description": "The AMR-1 antimatter reactor: the most power in the mod, and the most dangerous thing in it. Optional.",
+  "parent": "frozendawn:industry"
+}

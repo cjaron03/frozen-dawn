@@ -1,0 +1,22 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    {
+      "item": "frozendawn:sulfur"
+    },
+    {
+      "item": "frozendawn:sulfur"
+    },
+    {
+      "item": "frozendawn:rimewood_resin"
+    },
+    {
+      "item": "frozendawn:rimewood_resin"
+    }
+  ],
+  "result": {
+    "id": "frozendawn:thermal_binder",
+    "count": 1
+  }
+}

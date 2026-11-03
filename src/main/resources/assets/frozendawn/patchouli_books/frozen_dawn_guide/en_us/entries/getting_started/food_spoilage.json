@@ -1,48 +1,28 @@
 {
-  "name": "A Fun Guide to Food Spoilage!",
-  "category": "frozendawn:getting_started",
+  "name": "Food Spoilage",
+  "category": "frozendawn:food",
   "icon": "minecraft:rotten_flesh",
-  "sortnum": 3,
+  "sortnum": 0,
   "pages": [
     {
       "type": "patchouli:text",
-      "title": "Your Steak is a Brick",
-      "text": "$(bold)Good news:$() You have food!$(br)$(bold)Bad news:$() It's frozen solid.$(br2)Starting in $(bold)Phase 4$(), food in your inventory accumulates $(italic)frost ticks$() when temperature drops below $(bold)-30°C$(). The colder it gets, the faster your food deteriorates.$(br2)$(italic)ORSA Nutritional Advisory: \"Food is only food if you can chew it.\"$()"
+      "text": "From $(bold)Phase 4$(), food in your inventory gains frost ticks below $(bold)-30°C$(). Colder means faster.$(br2)$(flavor)\"Food is only food if you can chew it.\" ORSA Nutrition$()"
     },
     {
       "type": "patchouli:text",
-      "title": "Stage 1: \"Chilled\"",
-      "text": "After $(bold)30 seconds$() below -30°C, your food becomes Chilled.$(br2)$(li)Tooltip shows frost status$(li)Still perfectly edible$(li)You're in denial. It's fine.$(br2)This is nature's way of telling you to eat now. You will not listen.$(br2)$(italic)ORSA Tip: If you're saving that steak \"for later,\" later is going to be very disappointing.$()"
+      "title": "Stages at -90°C",
+      "text": "$(bold)Chilled$(), ~12 s: still edible$(br)$(bold)Frozen$(), ~48 s: slow to eat, half hunger$(br)$(bold)Frost-Ruined$(), ~2 min: $(danger)inedible$()$(br2)The tooltip shows the stage. Thresholds: 600, 2,400 and 6,000 frost ticks."
     },
     {
       "type": "patchouli:text",
-      "title": "Stage 2: \"Frozen\"",
-      "text": "After $(bold)2 minutes$(), your food hits Frozen.$(br2)$(li)$(bold)Eating takes 2x longer$(li)$(bold)Restores half hunger$() — ice crystals are not nutrition$(br2)You can still eat it. You'll just hate every second. Like reheated pizza, except it's -60°C and you're crying.$(br2)$(italic)Fun fact: At this temperature, bread has the structural integrity of concrete.$()"
+      "title": "Thawing",
+      "text": "Above $(bold)10°C$() food thaws. It speeds up past 30°C.$(br2)Chilled and Frozen fully recover. $(danger)Frost-Ruined only thaws back to Frozen.$()"
     },
     {
       "type": "patchouli:text",
-      "title": "Stage 3: \"Frost-Ruined\"",
-      "text": "After $(bold)5 minutes$(), your food is Frost-Ruined.$(br2)$(li)$(bold)Completely inedible$(li)$(bold)Permanently damaged$() — thawing only recovers to Frozen$(br2)This isn't food anymore. It's a cold, crystallized monument to your failure to plan ahead.$(br2)$(italic)Staring at frost-ruined steak for more than 10 seconds may cause existential dread. This is normal.$()"
-    },
-    {
-      "type": "patchouli:text",
-      "title": "Thawing & Recovery",
-      "text": "Near heat sources (above $(bold)10°C$()), food gradually thaws:$(br2)$(li)$(bold)Mild heat$() (10-30°C): Slow recovery$(li)$(bold)Strong heat$() (30°C+): Fast recovery$(br2)Chilled and Frozen food can fully recover if thawed before Frost-Ruined. $(bold)Once Frost-Ruined, it only ever thaws back to Frozen.$(br2)$(italic)Science! It's like frostbite, but for steak.$()"
-    },
-    {
-      "type": "patchouli:text",
-      "title": "The Thermal Container",
-      "text": "The $(bold)Thermal Container$() — ORSA's patented food preservation unit!$(br2)$(li)Holds $(bold)8 food items$(li)$(bold)Fully insulates$() from frost ticks$(li)Doesn't stack (it's a lunchbox, not a pocket dimension)$(br2)$(italic)Kevin once tried to fit 9 steaks in one. The lid exploded. He still has the scar.$()"
-    },
-    {
-      "type": "patchouli:crafting",
-      "recipe": "frozendawn:thermal_container",
-      "text": "Iron for structure, leather for insulation, glass bottle for... science? Look, it works."
-    },
-    {
-      "type": "patchouli:text",
-      "title": "Frost-Resistant Foods",
-      "text": "Some foods are naturally immune to frost:$(br2)$(li)$(bold)Golden Apples$() — gold doesn't freeze (it does, but these are magical)$(li)$(bold)Enchanted Golden Apples$() — literally glowing$(li)$(bold)Dried Kelp$() — already desiccated, nothing left to ruin$(li)$(bold)Hot Wings$() — blaze powder is apparently a valid preservation method$(br2)Everything else? $(italic)Fair game.$(br2)$(bold)Reminder:$() The thermal container exists. Use it."
+      "title": "Prevention",
+      "text": "$(li)$(l:heating/thermal_container)Thermal Container$(/l): blocks frost$(li)$(l:getting_started/ration_warmer)Ration Warmer$(/l): thaws a stack in 10 s$(li)$(l:getting_started/seafood_boil)Seafood Boil$(/l): no frost while it steams$(li)Never frost: golden and enchanted golden apples, dried kelp, $(l:getting_started/hot_wings)Hot Wings$(/l)$(li)10x slower: raw $(l:getting_started/ice_fishing)late fish$(/l) and Cured Longsleeper"
     }
-  ]
+  ],
+  "priority": true
 }

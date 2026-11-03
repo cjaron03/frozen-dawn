@@ -1,0 +1,37 @@
+{
+  "name": "Conduit Binder",
+  "category": "frozendawn:power",
+  "icon": "frozendawn:conduit_binder",
+  "sortnum": 1,
+  "pages": [
+    {
+      "type": "patchouli:spotlight",
+      "item": "frozendawn:conduit_binder",
+      "text": "Links power nodes and machines."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Linking",
+      "text": "Use it on a node, then on the target. Click the first node again to cancel.$(br2)$(bold)Shift-click$() clears that node's links."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Range",
+      "text": "$(li)Core, small relay, feedthrough: $(bold)16$() blocks$(li)Large relay: $(bold)32$() blocks$(li)The shorter end decides$(li)Up to 16 links per node$(br2)Look at a node within 6 blocks to see its links and kW."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Coolant",
+      "text": "It also links a reactor's Coolant Ports to its $(l:reactor/radiators)radiators$(/l). Those links are blue and never carry power."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Links survive reloads. A blocked link waits until the path is clear; breaking a node removes its links."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:conduit_binder",
+      "text": "Copper, redstone and iron.$(br2)$(flavor)Not a magic wand. Engineering insists.$()"
+    }
+  ]
+}

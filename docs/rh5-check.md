@@ -1,0 +1,31 @@
+# ORSA RH-5 Check
+
+Source: [ORSA RH-5 Resistive Heater](https://app.notion.com/p/3f97cfaa890181a68343f28cc5e70637) and the current [Power System additions](https://app.notion.com/p/3f57cfaa89018123a786fbb637b5ecb1), fetched October 14, 2026.
+
+Each RH-5 defaults to a 5 kW limit, adjustable from 0 to 50 kW in 1 kW steps, with the existing linear conversion: 1 kJ becomes about 514 thermal energy units (1800/3.5). At 5 kW it matches the Iron heater's output. This slice retains current room capacities and fuel-heater calibration. The geothermal Core's future thermal-output migration and the reactor remain separate work.
+
+The existing room solver admits electric heat before fuel. The RH-5 uses the shared 20 C default or the room thermostat target. The power allocator serves PIXIE first, permits partial heater power, then serves ordinary devices. Battery cells pay only for heat actually delivered, with cumulative rounding bounded below one joule per heater-second. Unused reservations do not drain a cell. No prepaid electrical heat or UI readings persist. The existing topology, thermostat, cell and room state provide persistence with an additive PowerLimitWatts block-entity field; old saves default to 5 kW.
+
+In a modeled room with gas, heat enters room air; with no gas, 25% couples into the existing structure reservoir. An unsealed room retains the existing default heater target, consistent with fuel heaters. Unknown/unloaded room geometry suspends delivery. This does not force chunks, add oxygen, change the Core allocation or accumulate offline heat.
+
+The screen includes one power-limit slider and shows Heating room, Warming structure (no air), Waiting for power, At target, or Checking room, plus physical temperature, target and actual draw. Target changes use the existing thermostat. The opaque native model uses an original steel cabinet/copper-element arrangement, existing original induction-furnace casing and vanilla metal textures; active elements use native orange emission. The quiet vanilla beacon hum introduces no external audio. Existing machine vibration events apply while heating.
+
+## Owner replay
+
+Launch the owning Java 21 Gradle `runClientLab` with `-PfdLabWorld='RH-5 Check'`. The generator refuses an existing destination and imports only world-generator metadata, never prior gameplay. Default difficulty is preselected; a world-local advancement filter suppresses awards/toasts after `mod_data`.
+
+1. **Basic and target:** bind Core → Bank → Feedthrough → Relay → one heater, lamp and monitor. Keep cells and fuel empty; use 35% Core power. Observe up to 5 kW during the cold start, rising room temperature and falling draw near target. Change thermostat to 30 C then 10 C. Check the simple screen and cabinet/coil appearance. Core passive heat is isolated in the separate power bay.
+2. **Battery and fuel:** charge/insert cells, set Core power to zero, observe charge falling and continued heat. The finite 20 kJ cell gives a short depletion test. Swap a full cell without rebinding. With coal in the Iron heater, confirm electrical heat runs first when sufficient and fuel supplies a shortfall or outage. Both may contribute during a cold start.
+3. **Brownout and stacking:** link the second heater while the room is cold, remove bank cells and leave fuel empty. At full heat demand, two heaters use 10 kW (50% Core); furnace/lamp require extra headroom. 65% provides 13 kW for both heaters plus furnace and lamp. Warm-room thresholds vary as heat demand falls. Verify reduced power, unlink/rebind and meaningful monitor heater labels.
+4. **Isolated dock:** the surface room has a Cell Dock and RH-5. Bind them directly and insert a cell. Verify operation in the cold, finite depletion and full-cell swap. A continuously loaded 5 kW heater consumes a full 500 kJ cell in 100 seconds. Physical gas state determines whether the UI reports air heating or structure heating; a closed room can still contain trapped air.
+5. **Persistence:** note target, charge and temperature, then Save and Quit/reopen. Verify retained links, thermostat target and cell charge, reconstructed readings and resumed paid heat.
+
+Headless tests cover exact electrical/thermal budgets, duplicate guards, idle and throttling, fuel fallback, priority and partial supply, multiple heaters, airless coupling, depletion/swap, save reconstruction, signed menu transport, stale-menu invalidation and the real generated command parser. An ordinary-tick native case covers allocation/heat ordering without a PIXIE in the circuit. Human appearance, sound, perceived pacing and same-world persistence remain distinct acceptance checks.
+
+## Adjustable power limit (October 15, 2026)
+
+Owner requests output above the maxed Diamond heater. Diamond base80 with capacitor x1.5 gives120 heatOutput, equivalent12kW under Default settings. Fully supplied RH-5 at50kW is50/12=4.17times that output; existing kW-to-heat conversion, capacities and thermostat targets remain. Both fuel/electric retain25percent vacuum structure coupling. Default is5kW;0 disables. The per-heater limit persists; reload clears grants/draw. Supply-limited heat remains partial and oxygen/airlock priority is unchanged. Current watts use unsigned16-bit menu reconstruction so50kW never wraps negative; temperature remains signed. Server validates menu range, proximity, dimension, spectator and live entity.
+
+Reopen the original RH-5 Check through Gradle after its closed-save archive. Existing basic/brownout instructions apply at the default5kW setting. For boost, select one cold-room heater, raise limit to50kW and provide charged bank cells; Core alone supplies at most20kW. Observe faster warming, paid charge, correct high draw and Power limited after storage empties. Return limit to5kW, then0; verify lower draw/off. Thermostat still throttles to target. A full500kJcell lasts10seconds at continuous50kW, four last40seconds; actual duration increases as demand throttles. Save/reopen to verify the chosen limit and charge. Do not reset prior lab progress.
+
+Owner acceptance (October 15, 2026): slider works,50kWheats faster and0stops. Draw throttles near30Cand reaches0after target10C. Save/reopen retains17kWlimit, target and carried cell charge; heater resumes. Full gate800unit/574native/all565required remains the tested executable build.

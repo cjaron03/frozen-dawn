@@ -47,6 +47,10 @@ public final class BlastPitWarmZoneRegistry {
         return false;
     }
 
+    public static Set<BlockPos> getWarmZones(Level level) {
+        return Set.copyOf(warmZones.getOrDefault(level, Set.of()));
+    }
+
     public static int getRadius() {
         return WARM_ZONE_RADIUS;
     }

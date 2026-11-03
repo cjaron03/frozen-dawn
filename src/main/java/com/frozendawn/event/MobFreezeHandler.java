@@ -210,7 +210,7 @@ public class MobFreezeHandler {
                 total += 6.25f;   // 25°C / 4
             } else if (mat == ModArmorMaterials.REINFORCED) {
                 total += 11.25f;  // 45°C / 4
-            } else if (mat == ModArmorMaterials.EVA) {
+            } else if (mat == ModArmorMaterials.EVA || EmergencyEvaHandler.isActivePiece(player, stack)) {
                 total += 30.0f;   // 120°C / 4
             } else if (mat == ModArmorMaterials.ACHERONITE) {
                 total += 20.0f;   // 80°C / 4
@@ -258,7 +258,8 @@ public class MobFreezeHandler {
             if (stack.isEmpty()) continue;
             if (!(stack.getItem() instanceof ArmorItem armorItem)) continue;
             Holder<ArmorMaterial> mat = armorItem.getMaterial();
-            if (mat == ModArmorMaterials.INSULATED) tier1++;
+            if (EmergencyEvaHandler.isActivePiece(player, stack)) tier3++;
+            else if (mat == ModArmorMaterials.INSULATED) tier1++;
             else if (mat == ModArmorMaterials.REINFORCED) tier2++;
             else if (mat == ModArmorMaterials.EVA) tier3++;
             else if (mat == ModArmorMaterials.ACHERONITE) tierAch++;
@@ -277,12 +278,13 @@ public class MobFreezeHandler {
 
     public static boolean hasThermalVisorRig(Player player) {
         return hasThermalVisor(player)
-                && isEvaArmor(player.getItemBySlot(EquipmentSlot.CHEST))
-                && isEvaArmor(player.getItemBySlot(EquipmentSlot.LEGS))
-                && isEvaArmor(player.getItemBySlot(EquipmentSlot.FEET));
+                && isEvaArmor(player, player.getItemBySlot(EquipmentSlot.CHEST))
+                && isEvaArmor(player, player.getItemBySlot(EquipmentSlot.LEGS))
+                && isEvaArmor(player, player.getItemBySlot(EquipmentSlot.FEET));
     }
 
-    private static boolean isEvaArmor(ItemStack stack) {
+    private static boolean isEvaArmor(Player player, ItemStack stack) {
+        if (EmergencyEvaHandler.isActivePiece(player, stack)) return true;
         return stack.getItem() instanceof ArmorItem armorItem && armorItem.getMaterial() == ModArmorMaterials.EVA;
     }
 

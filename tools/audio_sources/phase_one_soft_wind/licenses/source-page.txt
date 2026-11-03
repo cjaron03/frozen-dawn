@@ -1,0 +1,7 @@
+Source: https://freesound.org/people/florianreichelt/sounds/459977/
+Creator: florianreichelt
+Title: Soft Wind
+Exact individual-page license link: https://creativecommons.org/publicdomain/zero/1.0/
+Verified before retrieval. Page SHA-256: 309bff0e48186b451012f556a3accbed121466f6ff29fe714244b2e4ea90b583
+
+Adoption recheck 2026-10-20: exact individual page still links CC0 1.0; canonical deed checked independently.

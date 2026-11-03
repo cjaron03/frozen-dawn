@@ -1,0 +1,68 @@
+{
+  "variants": {
+    "facing=north,mode=0": {
+      "model": "frozendawn:block/uplink_dish",
+      "y": 0
+    },
+    "facing=north,mode=1": {
+      "model": "frozendawn:block/uplink_dish",
+      "y": 0
+    },
+    "facing=north,mode=2": {
+      "model": "frozendawn:block/uplink_dish",
+      "y": 0
+    },
+    "facing=north,mode=3": {
+      "model": "frozendawn:block/uplink_dish",
+      "y": 0
+    },
+    "facing=east,mode=0": {
+      "model": "frozendawn:block/uplink_dish",
+      "y": 90
+    },
+    "facing=east,mode=1": {
+      "model": "frozendawn:block/uplink_dish",
+      "y": 90
+    },
+    "facing=east,mode=2": {
+      "model": "frozendawn:block/uplink_dish",
+      "y": 90
+    },
+    "facing=east,mode=3": {
+      "model": "frozendawn:block/uplink_dish",
+      "y": 90
+    },
+    "facing=south,mode=0": {
+      "model": "frozendawn:block/uplink_dish",
+      "y": 180
+    },
+    "facing=south,mode=1": {
+      "model": "frozendawn:block/uplink_dish",
+      "y": 180
+    },
+    "facing=south,mode=2": {
+      "model": "frozendawn:block/uplink_dish",
+      "y": 180
+    },
+    "facing=south,mode=3": {
+      "model": "frozendawn:block/uplink_dish",
+      "y": 180
+    },
+    "facing=west,mode=0": {
+      "model": "frozendawn:block/uplink_dish",
+      "y": 270
+    },
+    "facing=west,mode=1": {
+      "model": "frozendawn:block/uplink_dish",
+      "y": 270
+    },
+    "facing=west,mode=2": {
+      "model": "frozendawn:block/uplink_dish",
+      "y": 270
+    },
+    "facing=west,mode=3": {
+      "model": "frozendawn:block/uplink_dish",
+      "y": 270
+    }
+  }
+}

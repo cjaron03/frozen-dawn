@@ -1,0 +1,9 @@
+# Native ORSA furnace textures
+
+Owner selected the steel/copper concept on October 14, 2026. Built-in imagegen derived the original six-face atlas from that local concept; source pixels, exact prompt and manifest are preserved here. No Mekanism textures, models or images were sampled or uploaded.
+
+Run `python3 docs/art/induction-furnace-concepts/native/export_textures.py` from the owning checkout to regenerate all six exact 16x16 RGB opaque textures and both native cube models. The exporter extracts the six 512px square tiles, uses nearest sampling to 16px and maps to the documented 20-color palette. The working front copies the idle hardware pixels and changes only the chamber interior plus one indicator pixel. All other casing pixels are identical. Native-preview.png enlarges the installed textures without smoothing.
+
+Source filename: generated-atlas.png, originally generated with built-in imagegen. Creator: imagegen prompted for Frozen Dawn; native processing by Frozen Dawn. Source reference: ../01-orsa-steel-copper.png. Generated October 14, 2026; original/source format PNG; no external asset license or notice obligations introduced. The reference research and original concept provenance are in ../README.md. Prompt is in prompt.txt; output paths and exact SHA-256 are in manifest.json. No animation/dependency or gameplay change.
+
+Both facing/LIT block models now use the authored furnace faces. Existing blockstate rotations, full-block collision/seal, item parent and actual working-state activation remain. Pixel-art glow is painted color plus the existing block light, not a new emissive renderer. Java21 Gradle build passed 772 units and existing fixture/packaging checks; dimensions, opacity, model resolution, variant pixel invariants and exact jar bytes verified. Native behavioral proof is the prior 500-case/491-required furnace gate. Owner inspection of this installed artwork follows separately.

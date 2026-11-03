@@ -1,0 +1,12 @@
+{
+  "tool": "built-in image_gen",
+  "source": "approved-atlas.png",
+  "prompt": "Use case: precise-object-edit. These three reference images are the user-approved Minecraft airlock concepts. Preserve their charcoal steel, blue seams, small cyan door window, red vent wheel and controller design. Convert them into one flat texture export atlas for Minecraft. EXACT layout: two columns by four rows of equally sized SQUARE tiles, occupying the entire image with no margin, gaps, labels, background, gutters or frames outside the artwork. Tile order reading left to right, top to bottom: 1 door TOP HALF with small cyan inspection window; 2 door BOTTOM HALF; 3 controller front RED status lamp; 4 identical controller front AMBER lamp; 5 identical controller front GREEN lamp; 6 plain matching steel casing; 7 emergency vent front with red wheel and grille; 8 inventory icon of the whole two-block door on flat dark charcoal background. Each tile should read as exactly 16x16 logical Minecraft pixels, enlarged by nearest neighbor, hard square edges and a limited color palette. The first two tiles become the two halves of one door and their edges must align. Controller fronts must be identical except the lamp color. No text, no lettering, no perspective, no cube renders, no gradients or antialiasing. This is image editing to export the approved designs, not a redesign.",
+  "referenceConcepts": [
+    "airlock-door-concept.png",
+    "airlock-controller-concept.png",
+    "airlock-vent-concept.png"
+  ],
+  "approval": "Owner approved the three concept designs and requested implementation on October 9, 2026.",
+  "export": "ExportAirlockTextures.java extracts seven measured tiles and packages point-sampled 16x16 native PNGs; no downloaded artwork."
+}

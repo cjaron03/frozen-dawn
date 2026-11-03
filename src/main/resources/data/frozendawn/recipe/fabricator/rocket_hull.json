@@ -1,0 +1,30 @@
+{
+  "type": "frozendawn:fabricating",
+  "blueprint": "rocket",
+  "ingredients": [
+    {
+      "ingredient": {
+        "item": "minecraft:iron_ingot"
+      },
+      "count": 6
+    },
+    {
+      "ingredient": {
+        "item": "minecraft:copper_ingot"
+      },
+      "count": 2
+    },
+    {
+      "ingredient": {
+        "item": "frozendawn:refined_acheronite"
+      },
+      "count": 1
+    }
+  ],
+  "result": {
+    "id": "frozendawn:rocket_hull",
+    "count": 1
+  },
+  "watts": 10000,
+  "seconds": 60
+}

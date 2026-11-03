@@ -49,6 +49,11 @@ public final class CuriosCompat {
         return isItemEquipped(player, ModItems.ICE_CLAWS.get());
     }
 
+    /** Actual functional slot stack, preserving its saved switch and fractional payment. */
+    public static ItemStack helmetMount(Player player) {
+        return ACCESS.helmetMount(player);
+    }
+
     private static CuriosAccess createAccess() {
         if (!ModList.get().isLoaded("curios")) {
             return new NoOpCuriosAccess();

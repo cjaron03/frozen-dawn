@@ -63,6 +63,28 @@ final class ArchitectApproachBreakSupport {
         return true;
     }
 
+    /** Let an accepted detour run instead of dispatching the old D* breach on the next tick. */
+    static boolean continueOpenRoute(ArchitectEntity architect, ArchitectApproachState state,
+            ArchitectBlockBreaker breaker, LivingEntity target) {
+        var path = state.openRouteAfterBreak;
+        if (path == null) return false;
+        var navigation = architect.getNavigation();
+        boolean targetChanged = !target.getUUID().equals(state.openRouteSubject)
+                || !target.blockPosition().equals(path.getTarget());
+        if (breaker.hasTarget() || targetChanged || navigation.getPath() != path || !navigation.isInProgress()) {
+            state.openRouteAfterBreak = null;
+            state.openRouteSubject = null;
+            if (targetChanged) {
+                if (navigation.getPath() == path) navigation.stop();
+                state.dstar.initialize(target.blockPosition(), architect.blockPosition(), architect.level());
+                state.dstarPrecomputed = false;
+            }
+            return false;
+        }
+        architect.getLookControl().setLookAt(target, 30f, 30f);
+        return true;
+    }
+
     /** A reachable walking route can make a previously valid breach obsolete. */
     static boolean cancelBreakForOpenRoute(ArchitectEntity architect, ArchitectApproachState state,
             ArchitectBlockBreaker breaker, LivingEntity target) {
@@ -80,6 +102,7 @@ final class ArchitectApproachBreakSupport {
                 || !ArchitectApproachMovementSupport.isSafeWalkingPath(architect, path)) {
             return false;
         }
+        if (!navigation.moveTo(path, 1.0)) return false;
         architect.recordDecision("BREAK_CANCEL", breaker.getChoice(), "OPEN_ROUTE nodes=" + path.getNodeCount());
         breaker.clearTarget();
         state.ceilingBreachPos = null;
@@ -91,7 +114,8 @@ final class ArchitectApproachBreakSupport {
         state.dstar.initialize(target.blockPosition(), architect.blockPosition(), architect.level());
         state.dstarPrecomputed = false;
         architect.recordDecision("REINIT", null, "OPEN_ROUTE_AFTER_BREAK_CANCEL");
-        navigation.moveTo(path, 1.0);
+        state.openRouteAfterBreak = path;
+        state.openRouteSubject = target.getUUID();
         architect.getLookControl().setLookAt(target, 30f, 30f);
         return true;
     }

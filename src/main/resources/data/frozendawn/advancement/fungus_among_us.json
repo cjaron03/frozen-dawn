@@ -1,0 +1,28 @@
+{
+  "parent": "frozendawn:root",
+  "display": {
+    "icon": {
+      "id": "frozendawn:frostcap_mush"
+    },
+    "title": {
+      "translate": "advancement.frozendawn.fungus_among_us.title"
+    },
+    "description": {
+      "translate": "advancement.frozendawn.fungus_among_us.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": true
+  },
+  "criteria": {
+    "ate_mush": {
+      "trigger": "minecraft:consume_item",
+      "conditions": {
+        "item": {
+          "items": "frozendawn:frostcap_mush"
+        }
+      }
+    }
+  }
+}

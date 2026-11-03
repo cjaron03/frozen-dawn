@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "CC",
+    "CC"
+  ],
+  "key": {
+    "C": {
+      "item": "frozendawn:uranium_concentrate"
+    }
+  },
+  "result": {
+    "id": "frozendawn:uranium_pellet",
+    "count": 1
+  }
+}

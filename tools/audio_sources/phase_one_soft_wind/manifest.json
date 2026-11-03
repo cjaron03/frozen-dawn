@@ -1,0 +1,45 @@
+{
+  "sourceSHA256": "e1cf29f5305a79edb5e57fb658c35e307078c392fb6bb6e8e8941e1ea7f67423",
+  "runtimePath": "src/main/resources/assets/frozendawn/sounds/ambient/wind_early_forest.ogg",
+  "sha256": "ebc1890d6365ba02b37567ddb37fa5abd08abc1a931d97d7f858ed691d2e2a9b",
+  "normalizationFilter": "atrim=start=3:duration=30,asetpts=PTS-STARTPTS,aformat=channel_layouts=mono,loudnorm=I=-18:TP=-2:LRA=9:measured_I=-34.97:measured_TP=-20.34:measured_LRA=14.00:measured_thresh=-46.12:offset=-2.37:linear=true,afade=t=in:d=3,afade=t=out:st=27:d=3",
+  "originalMonoLevels": {
+    "input_i": "-34.97",
+    "input_tp": "-20.34",
+    "input_lra": "14.00",
+    "input_thresh": "-46.12",
+    "output_i": "-15.63",
+    "output_tp": "-2.00",
+    "output_lra": "5.90",
+    "output_thresh": "-25.82",
+    "normalization_type": "dynamic",
+    "target_offset": "-2.37"
+  },
+  "decodedLevels": {
+    "input_i": "-18.85",
+    "input_tp": "-2.52",
+    "input_lra": "15.80",
+    "input_thresh": "-30.28",
+    "output_i": "-16.41",
+    "output_tp": "-2.00",
+    "output_lra": "8.20",
+    "output_thresh": "-26.81",
+    "normalization_type": "dynamic",
+    "target_offset": "-1.59"
+  },
+  "media": {
+    "programs": [],
+    "stream_groups": [],
+    "streams": [
+      {
+        "sample_rate": "24000",
+        "channels": 1
+      }
+    ],
+    "format": {
+      "duration": "30.000000"
+    }
+  },
+  "ffmpeg": "ffmpeg version 8.0.1 Copyright (c) 2000-2025 the FFmpeg developers",
+  "oggenc": "oggenc from vorbis-tools 1.4.3"
+}

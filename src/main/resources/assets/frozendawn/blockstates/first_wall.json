@@ -1,0 +1,67 @@
+{
+  "variants": {
+    "wear=0": {
+      "model": "frozendawn:block/first_wall"
+    },
+    "wear=1": {
+      "model": "frozendawn:block/first_wall_worn"
+    },
+    "wear=2": {
+      "model": "frozendawn:block/first_wall_worn"
+    },
+    "wear=3": {
+      "model": "frozendawn:block/first_wall_worn"
+    },
+    "wear=4": {
+      "model": "frozendawn:block/first_wall_worn"
+    },
+    "wear=5": {
+      "model": "frozendawn:block/first_wall_worn"
+    },
+    "wear=6": {
+      "model": "frozendawn:block/first_wall_worn"
+    },
+    "wear=7": {
+      "model": "frozendawn:block/first_wall_worn"
+    },
+    "wear=8": {
+      "model": "frozendawn:block/first_wall_worn"
+    },
+    "wear=9": {
+      "model": "frozendawn:block/first_wall_worn"
+    },
+    "wear=10": {
+      "model": "frozendawn:block/first_wall_worn"
+    },
+    "wear=11": {
+      "model": "frozendawn:block/first_wall_worn"
+    },
+    "wear=12": {
+      "model": "frozendawn:block/first_wall_worn"
+    },
+    "wear=13": {
+      "model": "frozendawn:block/first_wall_worn"
+    },
+    "wear=14": {
+      "model": "frozendawn:block/first_wall_worn"
+    },
+    "wear=15": {
+      "model": "frozendawn:block/first_wall_worn"
+    },
+    "wear=16": {
+      "model": "frozendawn:block/first_wall_worn"
+    },
+    "wear=17": {
+      "model": "frozendawn:block/first_wall_worn"
+    },
+    "wear=18": {
+      "model": "frozendawn:block/first_wall_worn"
+    },
+    "wear=19": {
+      "model": "frozendawn:block/first_wall_worn"
+    },
+    "wear=20": {
+      "model": "frozendawn:block/first_wall_worn"
+    }
+  }
+}

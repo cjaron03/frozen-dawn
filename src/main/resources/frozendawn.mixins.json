@@ -7,14 +7,27 @@
     "BiomeMixin",
     "BlockDisplayAccessor",
     "ChunkMapAccessor",
+    "ChunkUnloadTypeCacheMixin",
     "DisplayAccessor",
+    "HeightmapAccessor",
     "IceBlockMixin",
-    "LivingEntityMixin"
+    "FishingHookMixin",
+    "LivingEntityMixin",
+    "ServerPlayerContinuityMixin",
+    "ItemEntityContinuityMixin",
+    "ServerPlayerGameModeMixin",
+    "RationWarmerCraftingMixin",
+    "VacuumLevelChunkMixin",
+    "VacuumFurnaceMixin",
+    "VacuumFireMixin"
   ],
   "client": [
+    "GuiAccessor",
+    "AtmosphericActionBarMixin",
     "DisplayWindowMixin",
     "GenericMessageScreenMixin",
     "LevelRendererMixin",
+    "LightTextureMixin",
     "HumanoidArmorLayerMixin",
     "GameRendererAccessor",
     "TitleScreenMixin",
@@ -27,7 +40,8 @@
     "ChannelAccessor",
     "SoundEngineAccessor",
     "SoundManagerAccessor",
-    "NeoForgeLoadingOverlayMixin"
+    "NeoForgeLoadingOverlayMixin",
+    "FoodFrostReequipMixin"
   ],
   "injectors": {
     "defaultRequire": 1

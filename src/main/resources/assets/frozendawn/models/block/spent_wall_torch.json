@@ -1,0 +1,166 @@
+{
+  "ambientocclusion": false,
+  "textures": {
+    "particle": "minecraft:block/torch",
+    "torch": "minecraft:block/torch",
+    "char": "minecraft:block/coal_block"
+  },
+  "elements": [
+    {
+      "from": [
+        -1,
+        3.5,
+        7
+      ],
+      "to": [
+        1,
+        11.5,
+        9
+      ],
+      "shade": false,
+      "faces": {
+        "north": {
+          "texture": "#torch",
+          "uv": [
+            7,
+            8,
+            9,
+            16
+          ]
+        },
+        "south": {
+          "texture": "#torch",
+          "uv": [
+            7,
+            8,
+            9,
+            16
+          ]
+        },
+        "east": {
+          "texture": "#torch",
+          "uv": [
+            7,
+            8,
+            9,
+            16
+          ]
+        },
+        "west": {
+          "texture": "#torch",
+          "uv": [
+            7,
+            8,
+            9,
+            16
+          ]
+        },
+        "up": {
+          "texture": "#torch",
+          "uv": [
+            7,
+            8,
+            9,
+            10
+          ]
+        },
+        "down": {
+          "texture": "#torch",
+          "uv": [
+            7,
+            13,
+            9,
+            15
+          ]
+        }
+      },
+      "rotation": {
+        "origin": [
+          0,
+          3.5,
+          8
+        ],
+        "axis": "z",
+        "angle": -22.5
+      }
+    },
+    {
+      "from": [
+        -1,
+        11.5,
+        7
+      ],
+      "to": [
+        1,
+        13.5,
+        9
+      ],
+      "shade": false,
+      "faces": {
+        "north": {
+          "texture": "#char",
+          "uv": [
+            0,
+            0,
+            2,
+            2
+          ]
+        },
+        "south": {
+          "texture": "#char",
+          "uv": [
+            0,
+            0,
+            2,
+            2
+          ]
+        },
+        "east": {
+          "texture": "#char",
+          "uv": [
+            0,
+            0,
+            2,
+            2
+          ]
+        },
+        "west": {
+          "texture": "#char",
+          "uv": [
+            0,
+            0,
+            2,
+            2
+          ]
+        },
+        "up": {
+          "texture": "#char",
+          "uv": [
+            0,
+            0,
+            2,
+            2
+          ]
+        },
+        "down": {
+          "texture": "#char",
+          "uv": [
+            0,
+            0,
+            2,
+            2
+          ]
+        }
+      },
+      "rotation": {
+        "origin": [
+          0,
+          3.5,
+          8
+        ],
+        "axis": "z",
+        "angle": -22.5
+      }
+    }
+  ]
+}

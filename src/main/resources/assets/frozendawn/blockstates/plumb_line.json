@@ -1,0 +1,36 @@
+{
+  "variants": {
+    "facing=north,pulsing=false": {
+      "model": "frozendawn:block/plumb_line",
+      "y": 0
+    },
+    "facing=north,pulsing=true": {
+      "model": "frozendawn:block/plumb_line_on",
+      "y": 0
+    },
+    "facing=east,pulsing=false": {
+      "model": "frozendawn:block/plumb_line",
+      "y": 90
+    },
+    "facing=east,pulsing=true": {
+      "model": "frozendawn:block/plumb_line_on",
+      "y": 90
+    },
+    "facing=south,pulsing=false": {
+      "model": "frozendawn:block/plumb_line",
+      "y": 180
+    },
+    "facing=south,pulsing=true": {
+      "model": "frozendawn:block/plumb_line_on",
+      "y": 180
+    },
+    "facing=west,pulsing=false": {
+      "model": "frozendawn:block/plumb_line",
+      "y": 270
+    },
+    "facing=west,pulsing=true": {
+      "model": "frozendawn:block/plumb_line_on",
+      "y": 270
+    }
+  }
+}

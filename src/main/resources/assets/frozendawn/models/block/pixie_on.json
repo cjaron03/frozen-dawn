@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/orientable",
+  "textures": {
+    "front": "frozendawn:block/pixie_front_on",
+    "side": "frozendawn:block/induction_furnace_side",
+    "top": "frozendawn:block/induction_furnace_top"
+  }
+}

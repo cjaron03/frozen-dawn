@@ -1,0 +1,16 @@
+{
+  "variants": {
+    "servings=1": {
+      "model": "frozendawn:block/seafood_boil_1"
+    },
+    "servings=2": {
+      "model": "frozendawn:block/seafood_boil_2"
+    },
+    "servings=3": {
+      "model": "frozendawn:block/seafood_boil_3"
+    },
+    "servings=4": {
+      "model": "frozendawn:block/seafood_boil_4"
+    }
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "parent": "frozendawn:phase6",
+  "display": {
+    "icon": {
+      "id": "frozendawn:geiger_counter"
+    },
+    "title": {
+      "translate": "advancement.frozendawn.three_point_six_roentgen.title"
+    },
+    "description": {
+      "translate": "advancement.frozendawn.three_point_six_roentgen.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": true
+  },
+  "criteria": {
+    "impossible": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

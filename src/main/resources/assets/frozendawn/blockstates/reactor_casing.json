@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "scorched=false": {
+      "model": "frozendawn:block/reactor_casing"
+    },
+    "scorched=true": {
+      "model": "frozendawn:block/reactor_casing_scorched"
+    }
+  }
+}

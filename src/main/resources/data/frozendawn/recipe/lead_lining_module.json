@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "pattern": [
+    "LLL",
+    "CPC",
+    "LLL"
+  ],
+  "key": {
+    "L": {
+      "item": "frozendawn:lead_ingot"
+    },
+    "C": {
+      "item": "frozendawn:tattered_clothing_scrap"
+    },
+    "P": {
+      "item": "frozendawn:orsa_suit_patch_kit"
+    }
+  },
+  "result": {
+    "id": "frozendawn:lead_lining_module",
+    "count": 1
+  }
+}

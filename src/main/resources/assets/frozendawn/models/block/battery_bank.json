@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "north": "frozendawn:block/battery_bank_front",
+    "south": "frozendawn:block/battery_bank_front",
+    "east": "frozendawn:block/power_storage_side",
+    "west": "frozendawn:block/power_storage_back",
+    "up": "frozendawn:block/power_storage_top",
+    "down": "frozendawn:block/power_storage_side",
+    "particle": "frozendawn:block/power_storage_side"
+  }
+}

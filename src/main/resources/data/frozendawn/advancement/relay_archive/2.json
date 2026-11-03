@@ -1,0 +1,7 @@
+{
+  "criteria": {
+    "archived": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

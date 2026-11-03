@@ -1,0 +1,23 @@
+{
+  "parent": "frozendawn:phase3",
+  "display": {
+    "icon": {
+      "id": "frozendawn:rimewood_sapling"
+    },
+    "title": {
+      "translate": "advancement.frozendawn.life_finds_a_way.title"
+    },
+    "description": {
+      "translate": "advancement.frozendawn.life_finds_a_way.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": true
+  },
+  "criteria": {
+    "impossible": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

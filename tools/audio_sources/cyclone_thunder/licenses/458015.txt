@@ -1,0 +1,10 @@
+Frozen Dawn individual-source license record
+Retrieved UTC: 2026-10-20T11:16:56.511120+00:00
+Source: https://freesound.org/people/seth-m/sounds/458015/
+Creator: seth-m
+Title: big thunder clap
+Individual page license: Creative Commons 0
+Canonical license: https://creativecommons.org/publicdomain/zero/1.0/
+Individual Freesound page links directly to CC0 1.0
+Raw source page SHA-256: 5f29fa7faf2deeb05362af3b8ce87ebc0da6cd717704d817ac473ab655fb7fb6
+Raw HTML retained only in ignored build evidence; no page scripts/tokens tracked.

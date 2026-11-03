@@ -1,0 +1,7 @@
+{
+  "name": "ORSA Fabricator",
+  "icon": "frozendawn:fabricator",
+  "sortnum": 3,
+  "description": "The powered printer for parts no crafting table can make, and the Data Slates that teach it.",
+  "parent": "frozendawn:industry"
+}

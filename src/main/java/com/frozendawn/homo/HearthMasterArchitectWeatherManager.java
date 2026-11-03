@@ -270,6 +270,11 @@ public final class HearthMasterArchitectWeatherManager {
                 0, 0, 0.0F, major.hearthStormDead());
     }
 
+    public static boolean isMasterFightActive(ServerLevel level) {
+        return fightActiveFor(level, ReturnedHearthSavedData.get(level.getServer())
+                .hearth(HearthSelectionPolicy.HearthType.MAJOR).orElse(null));
+    }
+
     private static boolean fightActiveFor(
             ServerLevel level, ReturnedHearthSavedData.HearthRecord major) {
         if (major == null || major.masterArchitectEntityId().isEmpty()) {

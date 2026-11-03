@@ -1,0 +1,23 @@
+{
+  "parent": "frozendawn:phase6",
+  "display": {
+    "icon": {
+      "id": "frozendawn:icarus_power_port"
+    },
+    "title": {
+      "translate": "advancement.frozendawn.continuity_beyond.title"
+    },
+    "description": {
+      "translate": "advancement.frozendawn.continuity_beyond.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": true
+  },
+  "criteria": {
+    "impossible": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

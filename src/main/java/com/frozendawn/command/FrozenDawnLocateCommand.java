@@ -119,6 +119,58 @@ final class FrozenDawnLocateCommand {
         camps(context);
         cargoDrops(context);
         stations(context);
+        reactorSites(context);
+        helionSites(context);
+        return 1;
+    }
+
+    private static int reactorSites(CommandContext<CommandSourceStack> context) {
+        var server = context.getSource().getServer(); var overworld = server.overworld();
+        var origin = BlockPos.containing(context.getSource().getPosition());
+        var state = com.frozendawn.data.ReactorSiteState.get(server);
+        BlockPos best = null; boolean bestBuilt = false; double bestSq = Double.MAX_VALUE;
+        for (var built : state.built()) {
+            double d = built.distSqr(new BlockPos(origin.getX(), built.getY(), origin.getZ()));
+            if (d < bestSq) { best = built; bestBuilt = true; bestSq = d; }
+        }
+        int size = com.frozendawn.world.ReactorSitePlacement.REGION_SIZE;
+        int rx = Math.floorDiv(origin.getX() >> 4, size), rz = Math.floorDiv(origin.getZ() >> 4, size);
+        for (int dx = -2; dx <= 2; dx++) for (int dz = -2; dz <= 2; dz++) {
+            var chunk = com.frozendawn.world.ReactorSitePlacement.siteChunk(overworld.getSeed(), rx + dx, rz + dz);
+            if (chunk == null || state.isEvaluated(chunk[0], chunk[1])) continue;
+            var pos = new BlockPos((chunk[0] << 4) + 8, 0, (chunk[1] << 4) + 8);
+            double d = pos.distSqr(new BlockPos(origin.getX(), 0, origin.getZ()));
+            if (d < bestSq) { best = pos; bestBuilt = false; bestSq = d; }
+        }
+        final BlockPos site = best; final boolean built = bestBuilt; final int dist = (int) Math.sqrt(bestSq);
+        context.getSource().sendSuccess(() -> Component.literal(site == null ? "  Ruined Reactor: none nearby"
+                : "  Ruined Reactor: (" + site.getX() + ", " + site.getZ() + ") | ~" + dist + " blocks"
+                + (built ? " | Built" : " | Candidate, builds on chunk load if the ground suits it")), false);
+        return 1;
+    }
+
+    private static int helionSites(CommandContext<CommandSourceStack> context) {
+        var server = context.getSource().getServer(); var overworld = server.overworld();
+        var origin = BlockPos.containing(context.getSource().getPosition());
+        var state = com.frozendawn.data.HelionSiteState.get(server);
+        BlockPos best = null; boolean bestBuilt = false; double bestSq = Double.MAX_VALUE;
+        for (var built : state.unlooted()) {
+            double d = built.distSqr(new BlockPos(origin.getX(), built.getY(), origin.getZ()));
+            if (d < bestSq) { best = built; bestBuilt = true; bestSq = d; }
+        }
+        int size = com.frozendawn.world.HelionSitePlacement.REGION_SIZE;
+        int rx = Math.floorDiv(origin.getX() >> 4, size), rz = Math.floorDiv(origin.getZ() >> 4, size);
+        for (int dx = -2; dx <= 2; dx++) for (int dz = -2; dz <= 2; dz++) {
+            var chunk = com.frozendawn.world.HelionSitePlacement.siteChunk(overworld.getSeed(), rx + dx, rz + dz);
+            if (chunk == null || state.isEvaluated(chunk[0], chunk[1])) continue;
+            var pos = new BlockPos((chunk[0] << 4) + 8, 0, (chunk[1] << 4) + 8);
+            double d = pos.distSqr(new BlockPos(origin.getX(), 0, origin.getZ()));
+            if (d < bestSq) { best = pos; bestBuilt = false; bestSq = d; }
+        }
+        final BlockPos site = best; final boolean built = bestBuilt; final int dist = (int) Math.sqrt(bestSq);
+        context.getSource().sendSuccess(() -> Component.literal(site == null ? "  Helion Site: none nearby"
+                : "  Helion Site: (" + site.getX() + ", " + site.getZ() + ") | ~" + dist + " blocks"
+                + (built ? " | Built" : " | Candidate, builds on chunk load if the ground suits it")), false);
         return 1;
     }
 

@@ -1,0 +1,34 @@
+{
+  "name": "Surface Hazards",
+  "category": "frozendawn:getting_started",
+  "icon": "frozendawn:icicle",
+  "sortnum": 8,
+  "pages": [
+    {
+      "type": "patchouli:spotlight",
+      "item": "frozendawn:icicle",
+      "title": "Icicle",
+      "text": "From $(bold)Phase 4$() icicles grow under snow, ice, frozen dirt and log overhangs. Each grows through four lengths.$(br2)They block movement and mobs path around them. Break the roof above and they fall away.",
+      "link_recipe": true
+    },
+    {
+      "type": "patchouli:spotlight",
+      "item": "frozendawn:volcanic_ash",
+      "title": "Volcanic Ash",
+      "text": "Settles in layers around active vents and volcanic fields. It never freezes.$(br2)Soft and quick to dig. Deep ash marks a vent that is still erupting.",
+      "link_recipe": true
+    },
+    {
+      "type": "patchouli:spotlight",
+      "item": "frozendawn:scorched_ground",
+      "title": "Scorched Ground",
+      "text": "Burnt crust left by blast pits and rupture vents. It never freezes over.$(br2)It glows faintly in the dark. Any tool digs it, slowly.",
+      "link_recipe": true
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Field Note",
+      "text": "$(flavor)Rule of thumb: if the ground isn't white, something underneath is still warm. Find out what before you sleep on it.$()"
+    }
+  ]
+}

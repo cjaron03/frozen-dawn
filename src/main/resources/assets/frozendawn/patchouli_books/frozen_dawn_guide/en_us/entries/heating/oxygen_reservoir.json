@@ -1,0 +1,51 @@
+{
+  "name": "ORSA O2 Reservoir",
+  "category": "frozendawn:life_support",
+  "icon": "frozendawn:oxygen_reservoir",
+  "sortnum": 4,
+  "pages": [
+    {
+      "type": "patchouli:spotlight",
+      "item": "frozendawn:oxygen_reservoir",
+      "text": "Stores spare oxygen for a sealed room. It makes none."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Capacity",
+      "text": "$(bold)1,200 player-seconds$(): one player for 20 minutes.$(br2)Ten canister units make one player-second."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Rates",
+      "text": "Fills from up to $(bold)4$() spare units and delivers up to $(bold)8$() per second. Empty to full: five minutes at 4 spare.$(br2)Values are configurable."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Shared Budget",
+      "text": "Breathing and flames come first. Reservoirs cover a shortfall, up to their output and contents."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Only spare production refills reservoirs, Core canisters, EVA reserves and airlock reserves, shared fairly.$(br2)Reservoir output can't recharge storage."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "More reservoirs add capacity and output to their own pool. They can't join separate rooms or pressurize one."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Shutoff",
+      "text": "A breach shuts the valve; contents stay inside. Unknown or unloaded rooms pause it.$(br2)After resealing it reconnects once normal room gas returns."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Moving It",
+      "text": "Mine it with a pickaxe to keep its exact contents. $(danger)An explosion destroys both.$()$(br2)Front bars show contents; amber means shutoff or discharging."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:oxygen_reservoir",
+      "text": "Six iron, two copper, one glass. Crafted empty.$(br2)$(flavor)Do not open the vessel to check whether it is full.$()"
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+{
+  "type": "neoforge:add_features",
+  "biomes": "#minecraft:is_overworld",
+  "features": "frozendawn:pegmatite_pod",
+  "step": "underground_ores"
+}

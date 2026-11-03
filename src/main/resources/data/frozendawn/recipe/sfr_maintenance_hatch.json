@@ -1,0 +1,23 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "IAI",
+    "W W"
+  ],
+  "key": {
+    "I": {
+      "item": "minecraft:iron_ingot"
+    },
+    "A": {
+      "item": "frozendawn:airlock_door"
+    },
+    "W": {
+      "item": "frozendawn:first_wall"
+    }
+  },
+  "result": {
+    "id": "frozendawn:sfr_maintenance_hatch",
+    "count": 1
+  }
+}

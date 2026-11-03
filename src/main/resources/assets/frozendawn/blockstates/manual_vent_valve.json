@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "frozendawn:block/manual_vent_valve"
+    },
+    "facing=east": {
+      "model": "frozendawn:block/manual_vent_valve",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "frozendawn:block/manual_vent_valve",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "frozendawn:block/manual_vent_valve",
+      "y": 270
+    }
+  }
+}

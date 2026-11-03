@@ -100,6 +100,7 @@ public final class VegetationDecay {
 
     private static void decaySurface(ServerLevel level, BlockPos pos, BlockState state, int phase) {
         if (isRemnantShelterBlock(level, pos)) return;
+        if (state.is(com.frozendawn.flora.ColdFlora.COLD_FLORA)) return; // Rimewood and Frostcap thrive in the cold
 
         if (state.is(BlockTags.FLOWERS) && phase >= 2) {
             if (state.getBlock() instanceof DoublePlantBlock) {
@@ -176,6 +177,7 @@ public final class VegetationDecay {
 
     private static void decayVolume(ServerLevel level, BlockPos pos, BlockState state, int phase, RandomSource random) {
         if (isRemnantShelterBlock(level, pos)) return;
+        if (state.is(com.frozendawn.flora.ColdFlora.COLD_FLORA)) return;
 
         // --- Leaf decay chain: gradual, phase-dependent chance ---
         if (state.is(BlockTags.LEAVES)) {
@@ -273,6 +275,7 @@ public final class VegetationDecay {
                     || state.is(ModBlocks.FROZEN_LEAVES.get())
                     || state.is(BlockTags.LEAVES)
                     || state.is(BlockTags.LOGS);
+            if (state.is(com.frozendawn.flora.ColdFlora.COLD_FLORA)) isTreeBlock = false;
 
             if (!isTreeBlock && !current.equals(start)) continue;
 
@@ -328,6 +331,7 @@ public final class VegetationDecay {
                     || state.is(ModBlocks.FROZEN_LEAVES.get())
                     || state.is(BlockTags.LEAVES)
                     || state.is(BlockTags.LOGS);
+            if (state.is(com.frozendawn.flora.ColdFlora.COLD_FLORA)) isTreeBlock = false;
 
             if (!isTreeBlock) continue;
 

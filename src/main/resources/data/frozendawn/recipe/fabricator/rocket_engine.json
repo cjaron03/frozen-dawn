@@ -1,0 +1,48 @@
+{
+  "type": "frozendawn:fabricating",
+  "blueprint": "rocket",
+  "ingredients": [
+    {
+      "ingredient": {
+        "item": "minecraft:obsidian"
+      },
+      "count": 2
+    },
+    {
+      "ingredient": {
+        "tag": "frozendawn:igniter"
+      },
+      "count": 1
+    },
+    {
+      "ingredient": {
+        "item": "frozendawn:refined_acheronite"
+      },
+      "count": 2
+    },
+    {
+      "ingredient": {
+        "item": "frozendawn:thermal_core"
+      },
+      "count": 1
+    },
+    {
+      "ingredient": {
+        "item": "minecraft:copper_ingot"
+      },
+      "count": 2
+    },
+    {
+      "ingredient": {
+        "item": "minecraft:blast_furnace"
+      },
+      "count": 1
+    }
+  ],
+  "result": {
+    "id": "frozendawn:rocket_engine",
+    "count": 1
+  },
+  "watts": 15000,
+  "seconds": 120
+}

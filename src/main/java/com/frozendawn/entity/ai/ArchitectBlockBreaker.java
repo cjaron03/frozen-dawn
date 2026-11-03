@@ -177,7 +177,7 @@ public class ArchitectBlockBreaker {
             level.destroyBlockProgress(mob.getId(), targetPos, -1);
             level.playSound(null, targetPos, ModSounds.ARCHITECT_MINE.get(),
                     SoundSource.HOSTILE, 0.8f, 0.75f + mob.getRandom().nextFloat() * 0.15f);
-            boolean destroyed = level.destroyBlock(targetPos, true);
+            boolean destroyed = level.destroyBlock(targetPos, true, mob);
             if (!destroyed) {
                 finish("DESTROY_REJECTED");
                 return false;
@@ -235,7 +235,8 @@ public class ArchitectBlockBreaker {
         if (hardness < 0) return MAX_BREAK_TICKS; // Unbreakable — will be caught by immune check
         float seconds = getEffectiveBreakTime(state, pos, mob.level());
         int ticks = (int) Math.ceil(seconds * 20.0F);
-        return Math.min(MAX_BREAK_TICKS, Math.max(MIN_BREAK_TICKS, ticks));
+        int ordinary = Math.min(MAX_BREAK_TICKS, Math.max(MIN_BREAK_TICKS, ticks));
+        return mob instanceof ArchitectEntity actor && actor.isBlindArchitect() ? ordinary * 2 : ordinary;
     }
 
     /**

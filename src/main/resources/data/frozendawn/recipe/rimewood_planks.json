@@ -1,0 +1,13 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "building",
+  "ingredients": [
+    {
+      "tag": "frozendawn:rimewood_logs"
+    }
+  ],
+  "result": {
+    "id": "frozendawn:rimewood_planks",
+    "count": 4
+  }
+}

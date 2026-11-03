@@ -148,6 +148,9 @@ public final class FrozenTownRuntime {
         }
     }
 
+    /** Jar of Miel: rare in personal places. */
+    static final float MIEL_CHANCE = 0.03f;
+
     private static void fillTownContainer(ServerLevel level, BarrelBlockEntity barrel) {
         Component customName = barrel.getCustomName();
         if (customName == null || !barrel.isEmpty()) {
@@ -319,6 +322,9 @@ public final class FrozenTownRuntime {
         }
         if (random.nextInt(4) == 0) {
             items.add(random.nextBoolean() ? new ItemStack(Items.IRON_AXE) : new ItemStack(Items.IRON_SHOVEL));
+        }
+        if (random.nextFloat() < MIEL_CHANCE) {
+            items.add(new ItemStack(com.frozendawn.init.ModItems.MIEL_HONEY.get()));
         }
         return items;
     }

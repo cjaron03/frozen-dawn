@@ -1,0 +1,265 @@
+{
+  "parent": "minecraft:block/block",
+  "textures": {
+    "base": "minecraft:block/polished_deepslate",
+    "rim": "minecraft:block/iron_block",
+    "lens": "minecraft:block/white_concrete",
+    "shine": "minecraft:block/white_concrete",
+    "particle": "#lens"
+  },
+  "elements": [
+    {
+      "from": [
+        4,
+        0,
+        4
+      ],
+      "to": [
+        12,
+        1,
+        12
+      ],
+      "shade": true,
+      "faces": {
+        "down": {
+          "texture": "#base"
+        },
+        "up": {
+          "texture": "#base"
+        },
+        "north": {
+          "texture": "#base"
+        },
+        "south": {
+          "texture": "#base"
+        },
+        "east": {
+          "texture": "#base"
+        },
+        "west": {
+          "texture": "#base"
+        }
+      }
+    },
+    {
+      "from": [
+        5,
+        1,
+        5
+      ],
+      "to": [
+        11,
+        1.5,
+        11
+      ],
+      "shade": true,
+      "faces": {
+        "down": {
+          "texture": "#rim"
+        },
+        "up": {
+          "texture": "#rim"
+        },
+        "north": {
+          "texture": "#rim"
+        },
+        "south": {
+          "texture": "#rim"
+        },
+        "east": {
+          "texture": "#rim"
+        },
+        "west": {
+          "texture": "#rim"
+        }
+      }
+    },
+    {
+      "from": [
+        5,
+        1.5,
+        6
+      ],
+      "to": [
+        11,
+        4.5,
+        10
+      ],
+      "shade": false,
+      "faces": {
+        "down": {
+          "texture": "#lens",
+          "tintindex": 0
+        },
+        "up": {
+          "texture": "#lens",
+          "tintindex": 0
+        },
+        "north": {
+          "texture": "#lens",
+          "tintindex": 0
+        },
+        "south": {
+          "texture": "#lens",
+          "tintindex": 0
+        },
+        "east": {
+          "texture": "#lens",
+          "tintindex": 0
+        },
+        "west": {
+          "texture": "#lens",
+          "tintindex": 0
+        }
+      }
+    },
+    {
+      "from": [
+        6,
+        1.5,
+        5
+      ],
+      "to": [
+        10,
+        4.5,
+        11
+      ],
+      "shade": false,
+      "faces": {
+        "down": {
+          "texture": "#lens",
+          "tintindex": 0
+        },
+        "up": {
+          "texture": "#lens",
+          "tintindex": 0
+        },
+        "north": {
+          "texture": "#lens",
+          "tintindex": 0
+        },
+        "south": {
+          "texture": "#lens",
+          "tintindex": 0
+        },
+        "east": {
+          "texture": "#lens",
+          "tintindex": 0
+        },
+        "west": {
+          "texture": "#lens",
+          "tintindex": 0
+        }
+      }
+    },
+    {
+      "from": [
+        6,
+        4.5,
+        6
+      ],
+      "to": [
+        10,
+        5.5,
+        10
+      ],
+      "shade": false,
+      "faces": {
+        "down": {
+          "texture": "#lens",
+          "tintindex": 0
+        },
+        "up": {
+          "texture": "#lens",
+          "tintindex": 0
+        },
+        "north": {
+          "texture": "#lens",
+          "tintindex": 0
+        },
+        "south": {
+          "texture": "#lens",
+          "tintindex": 0
+        },
+        "east": {
+          "texture": "#lens",
+          "tintindex": 0
+        },
+        "west": {
+          "texture": "#lens",
+          "tintindex": 0
+        }
+      }
+    },
+    {
+      "from": [
+        6.25,
+        4.51,
+        6.25
+      ],
+      "to": [
+        7.25,
+        4.61,
+        7.25
+      ],
+      "shade": false,
+      "faces": {
+        "down": {
+          "texture": "#shine",
+          "tintindex": 1
+        },
+        "up": {
+          "texture": "#shine",
+          "tintindex": 1
+        },
+        "north": {
+          "texture": "#shine",
+          "tintindex": 1
+        },
+        "south": {
+          "texture": "#shine",
+          "tintindex": 1
+        },
+        "east": {
+          "texture": "#shine",
+          "tintindex": 1
+        },
+        "west": {
+          "texture": "#shine",
+          "tintindex": 1
+        }
+      }
+    }
+  ],
+  "display": {
+    "gui": {
+      "rotation": [
+        30,
+        225,
+        0
+      ],
+      "translation": [
+        0,
+        2,
+        0
+      ],
+      "scale": [
+        1.25,
+        1.25,
+        1.25
+      ]
+    },
+    "ground": {
+      "translation": [
+        0,
+        3,
+        0
+      ],
+      "scale": [
+        0.75,
+        0.75,
+        0.75
+      ]
+    }
+  }
+}

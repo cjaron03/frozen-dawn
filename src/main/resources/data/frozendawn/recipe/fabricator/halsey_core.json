@@ -1,0 +1,36 @@
+{
+  "type": "frozendawn:fabricating",
+  "blueprint": "icarus",
+  "ingredients": [
+    {
+      "ingredient": {
+        "item": "frozendawn:magnet_coil"
+      },
+      "count": 8
+    },
+    {
+      "ingredient": {
+        "item": "frozendawn:lithium_blanket"
+      },
+      "count": 4
+    },
+    {
+      "ingredient": {
+        "item": "frozendawn:helium_canister"
+      },
+      "count": 4
+    },
+    {
+      "ingredient": {
+        "item": "frozendawn:isotope_column"
+      },
+      "count": 2
+    }
+  ],
+  "result": {
+    "id": "frozendawn:halsey_core",
+    "count": 1
+  },
+  "watts": 60000,
+  "seconds": 600
+}

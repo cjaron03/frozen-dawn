@@ -1,0 +1,13 @@
+{
+  "type": "minecraft:blasting",
+  "category": "misc",
+  "group": "lithium_carbonate",
+  "ingredient": {
+    "item": "frozendawn:raw_spodumene"
+  },
+  "result": {
+    "id": "frozendawn:lithium_carbonate"
+  },
+  "experience": 0.7,
+  "cookingtime": 100
+}

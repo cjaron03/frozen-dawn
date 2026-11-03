@@ -1,0 +1,152 @@
+<h2>Ideas: the frosted silo telling you what it's doing</h2>
+<p class="subtitle">Option 2 in five moments. The bars, pipes, lamps and vent all change with what the battery is doing, so you can read it from across the base without opening the screen.</p>
+
+<style>
+  .states { display:grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap:14px; }
+  .st { background:#1a1c20; border-radius:8px; padding:10px; text-align:center; }
+  .st h3 { margin:6px 0 2px; font-size:14px; }
+  .st p { margin:0; font-size:12px; opacity:.75; line-height:1.35; }
+  .st svg { display:block; margin:0 auto; }
+  @keyframes shim {0%,100%{opacity:.7} 50%{opacity:1}}
+  .shim { animation: shim 2.4s ease-in-out infinite; }
+  @keyframes pulseOn {0%,100%{opacity:.15} 50%{opacity:1}}
+  .pulse { animation: pulseOn 1s ease-in-out infinite; }
+  @keyframes flick {0%,100%{opacity:1} 20%{opacity:.3} 40%{opacity:.9} 60%{opacity:.2} 80%{opacity:.7}}
+  .flick { animation: flick .9s steps(1) infinite; }
+  @keyframes blink {0%,49%{opacity:1} 50%,100%{opacity:.25}}
+  .blink { animation: blink .8s infinite; }
+  @keyframes fastblink {0%,49%{opacity:1} 50%,100%{opacity:.1}}
+  .fblink { animation: fastblink .3s infinite; }
+  @keyframes flowIn { to { stroke-dashoffset: -16; } }
+  @keyframes flowOut { to { stroke-dashoffset: 16; } }
+  .fin { stroke-dasharray: 4 12; animation: flowIn .8s linear infinite; }
+  .fout { stroke-dasharray: 4 12; animation: flowOut .8s linear infinite; }
+  @keyframes drift { 0%{transform:translate(0,0);opacity:0} 20%{opacity:.7} 100%{transform:translate(-10px,8px);opacity:0} }
+  .vap { animation: drift 3s ease-out infinite; transform-box: fill-box; }
+  .vap2 { animation: drift 3s ease-out 1.5s infinite; transform-box: fill-box; }
+  @keyframes rise { 0%{transform:translateY(0);opacity:0} 20%{opacity:.6} 100%{transform:translateY(-30px);opacity:0} }
+  .smoke { animation: rise 2.5s ease-out infinite; transform-box: fill-box; }
+  .smoke2 { animation: rise 2.5s ease-out 1.2s infinite; transform-box: fill-box; }
+  @keyframes jet { 0%{transform:translateY(0) scale(.6);opacity:.9} 100%{transform:translateY(-40px) scale(1.8);opacity:0} }
+  .jet { animation: jet .9s ease-out infinite; transform-box: fill-box; transform-origin:center; }
+  .jet2 { animation: jet .9s ease-out .3s infinite; transform-box: fill-box; transform-origin:center; }
+  .jet3 { animation: jet .9s ease-out .6s infinite; transform-box: fill-box; transform-origin:center; }
+  @keyframes drop { 0%{transform:translateY(0);opacity:1} 100%{transform:translateY(12px);opacity:0} }
+  .drip { animation: drop 1.1s ease-in infinite; transform-box: fill-box; }
+  @keyframes collapse { 0%{opacity:1} 100%{opacity:.05} }
+  .c6{animation:collapse .4s 0s infinite alternate}.c5{animation:collapse .4s .1s infinite alternate}
+  .c4{animation:collapse .4s .2s infinite alternate}.c3{animation:collapse .4s .3s infinite alternate}
+</style>
+
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <pattern id="cs" width="24" height="24" patternUnits="userSpaceOnUse">
+      <rect width="24" height="24" fill="#1e2025"/>
+      <rect width="24" height="1" fill="#3a3e45"/><rect width="1" height="24" fill="#3a3e45"/>
+      <rect y="23" width="24" height="1" fill="#0b0c0e"/><rect x="23" width="1" height="24" fill="#0b0c0e"/>
+    </pattern>
+    <linearGradient id="bl" x1="0" x2="1"><stop offset="0" stop-color="#1f6fd1"/><stop offset="1" stop-color="#5fd0ff"/></linearGradient>
+    <linearGradient id="am" x1="0" x2="1"><stop offset="0" stop-color="#c46a12"/><stop offset="1" stop-color="#ffb048"/></linearGradient>
+    <linearGradient id="rd" x1="0" x2="1"><stop offset="0" stop-color="#a01c12"/><stop offset="1" stop-color="#ff5a3c"/></linearGradient>
+    <linearGradient id="fr" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e8f2fb"/><stop offset=".6" stop-color="#b9cde0"/><stop offset="1" stop-color="#8ea6bd"/></linearGradient>
+    <linearGradient id="wet" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6d7f90"/><stop offset=".6" stop-color="#46525e"/><stop offset="1" stop-color="#2c343c"/></linearGradient>
+    <g id="body">
+      <rect x="48" y="30" width="24" height="12" fill="#4a5059"/><rect x="51" y="33" width="18" height="6" fill="#14161a"/>
+      <rect x="24" y="42" width="72" height="144" fill="url(#cs)"/>
+      <rect x="48" y="50" width="24" height="128" fill="#08090b"/>
+      <rect x="24" y="178" width="72" height="8" fill="#2b2e34"/>
+      <rect x="-20" y="196" width="160" height="4" fill="#55606b"/>
+    </g>
+    <g id="pipesFrost">
+      <path d="M24 182 H0 Q-10 182 -10 192 V196" stroke="url(#fr)" stroke-width="11" fill="none"/>
+      <path d="M96 182 H120 Q130 182 130 192 V196" stroke="url(#fr)" stroke-width="11" fill="none"/>
+    </g>
+    <g id="pipesWet">
+      <path d="M24 182 H0 Q-10 182 -10 192 V196" stroke="url(#wet)" stroke-width="11" fill="none"/>
+      <path d="M96 182 H120 Q130 182 130 192 V196" stroke="url(#wet)" stroke-width="11" fill="none"/>
+    </g>
+  </defs>
+</svg>
+
+<div class="states">
+  <div class="st">
+    <svg width="150" height="200" viewBox="-20 0 160 210">
+      <use href="#body"/><use href="#pipesFrost"/>
+      <g class="shim">
+        <rect x="51" y="166" width="18" height="10" fill="url(#bl)"/><rect x="51" y="146" width="18" height="10" fill="url(#bl)"/>
+        <rect x="51" y="126" width="18" height="10" fill="url(#bl)"/><rect x="51" y="106" width="18" height="10" fill="url(#bl)"/>
+        <rect x="51" y="86" width="18" height="10" fill="url(#bl)"/><rect x="51" y="66" width="18" height="10" fill="url(#bl)"/>
+      </g>
+      <circle class="vap" cx="2" cy="176" r="6" fill="#e8f4ff" opacity=".6"/><circle class="vap2" cx="118" cy="176" r="5" fill="#e8f4ff" opacity=".6"/>
+      <circle cx="32" cy="182" r="2" fill="#5fd0ff"/><circle cx="88" cy="182" r="2" fill="#5fd0ff"/>
+    </svg>
+    <h3>Cold and full</h3>
+    <p>All bars lit, a slow shimmer. Frosted pipes shed vapour that sinks. Lamps steady blue.</p>
+  </div>
+
+  <div class="st">
+    <svg width="150" height="200" viewBox="-20 0 160 210">
+      <use href="#body"/><use href="#pipesFrost"/>
+      <path d="M-10 196 V192 Q-10 182 0 182 H24" stroke="#5fd0ff" stroke-width="2.5" fill="none" class="fin"/>
+      <path d="M130 196 V192 Q130 182 120 182 H96" stroke="#5fd0ff" stroke-width="2.5" fill="none" class="fin"/>
+      <rect x="51" y="166" width="18" height="10" fill="url(#bl)"/><rect x="51" y="146" width="18" height="10" fill="url(#bl)"/>
+      <rect x="51" y="126" width="18" height="10" fill="url(#bl)"/>
+      <rect class="pulse" x="51" y="106" width="18" height="10" fill="url(#bl)"/>
+      <circle cx="32" cy="182" r="2" fill="#5fd0ff"/><circle cx="88" cy="182" r="2" fill="#5fd0ff"/>
+    </svg>
+    <h3>Charging</h3>
+    <p>Blue pulses flow in through the pipes. The next bar up breathes on and off until it fills.</p>
+  </div>
+
+  <div class="st">
+    <svg width="150" height="200" viewBox="-20 0 160 210">
+      <use href="#body"/><use href="#pipesFrost"/>
+      <path d="M-10 196 V192 Q-10 182 0 182 H24" stroke="#5fd0ff" stroke-width="2.5" fill="none" class="fout"/>
+      <path d="M130 196 V192 Q130 182 120 182 H96" stroke="#5fd0ff" stroke-width="2.5" fill="none" class="fout"/>
+      <rect x="51" y="166" width="18" height="10" fill="url(#bl)"/><rect x="51" y="146" width="18" height="10" fill="url(#bl)"/>
+      <rect class="flick" x="51" y="126" width="18" height="10" fill="url(#bl)"/>
+      <circle cx="32" cy="182" r="2" fill="#5fd0ff"/><circle cx="88" cy="182" r="2" fill="#5fd0ff"/>
+    </svg>
+    <h3>Discharging</h3>
+    <p>Pulses flow out. The top lit bar flickers as it drains, then goes dark.</p>
+  </div>
+
+  <div class="st">
+    <svg width="150" height="200" viewBox="-20 0 160 210">
+      <use href="#body"/><use href="#pipesWet"/>
+      <g class="blink">
+        <rect x="51" y="166" width="18" height="10" fill="url(#am)"/><rect x="51" y="146" width="18" height="10" fill="url(#am)"/>
+        <rect x="51" y="126" width="18" height="10" fill="url(#am)"/><rect x="51" y="106" width="18" height="10" fill="url(#am)"/>
+      </g>
+      <circle class="drip" cx="-6" cy="190" r="1.8" fill="#9fc6e8"/><circle class="drip" cx="126" cy="190" r="1.8" fill="#9fc6e8"/>
+      <circle class="smoke" cx="60" cy="26" r="5" fill="#ddd" opacity=".5"/><circle class="smoke2" cx="56" cy="24" r="4" fill="#ddd" opacity=".5"/>
+      <circle class="blink" cx="32" cy="182" r="2" fill="#ffb048"/><circle class="blink" cx="88" cy="182" r="2" fill="#ffb048"/>
+    </svg>
+    <h3>Overheating</h3>
+    <p>Bars turn amber and blink. Frost melts off the pipes and drips. Wisps rise from the vent.</p>
+  </div>
+
+  <div class="st">
+    <svg width="150" height="200" viewBox="-20 0 160 210">
+      <use href="#body"/><use href="#pipesWet"/>
+      <rect class="c3" x="51" y="126" width="18" height="10" fill="url(#rd)"/><rect class="c4" x="51" y="106" width="18" height="10" fill="url(#rd)"/>
+      <rect x="51" y="166" width="18" height="10" fill="url(#rd)" class="fblink"/><rect x="51" y="146" width="18" height="10" fill="url(#rd)" class="fblink"/>
+      <circle class="jet" cx="60" cy="24" r="8" fill="#fff" opacity=".9"/>
+      <circle class="jet2" cx="56" cy="22" r="9" fill="#fff" opacity=".9"/>
+      <circle class="jet3" cx="64" cy="20" r="7" fill="#fff" opacity=".9"/>
+      <circle class="fblink" cx="32" cy="182" r="2" fill="#ff5a3c"/><circle class="fblink" cx="88" cy="182" r="2" fill="#ff5a3c"/>
+    </svg>
+    <h3>Quench</h3>
+    <p>Bars flash red and collapse top to bottom. The vent blasts steam, as it does now.</p>
+  </div>
+</div>
+
+<div class="section" style="margin-top:22px">
+  <h3>Other ideas, not drawn yet</h3>
+  <ul>
+    <li><b>Frost spreads on the floor</b> around the base while it's deep cold, and melts back when it warms.</li>
+    <li><b>Any height</b>: build it 4 to 8 blocks tall, with one bar per block. Taller means more storage and more bars.</li>
+    <li><b>Scorched after a quench</b>: dark streaks down the silo and dead bars until it's cold again (like the scars now).</li>
+    <li><b>Idle cold breath</b>: a thin wisp curls out of the vent every few seconds while it's happy.</li>
+  </ul>
+</div>

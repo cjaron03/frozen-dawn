@@ -1,0 +1,25 @@
+{
+  "name": "SMS-1 \"Hyperion\"",
+  "category": "frozendawn:hyperion",
+  "icon": "frozendawn:hyperion_controller",
+  "sortnum": 0,
+  "pages": [
+    {
+      "type": "patchouli:spotlight",
+      "item": "frozendawn:hyperion_controller",
+      "title": "SMS-1 \"Hyperion\"",
+      "text": "ORSA's superconducting storage silo. It holds hundreds of times what a Battery Bank does, as long as it stays cold."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "How It Works",
+      "text": "Three parts do the work.$(li)Superconducting Cells hold the charge$(li)A Cryocooler keeps them below -180C$(li)Ports move power in and out$(li)Each cell holds 20 MJ"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Before You Build",
+      "text": "$(danger)Breaking any part while it holds charge quenches it at once.$() The charge is lost, but nothing is damaged. An empty silo is safe to build, change and take down."
+    }
+  ],
+  "priority": true
+}

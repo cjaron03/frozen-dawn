@@ -1,0 +1,55 @@
+{
+  "name": "ORSA Sites",
+  "category": "frozendawn:getting_started",
+  "icon": "frozendawn:orsa_supply_crate",
+  "sortnum": 7,
+  "pages": [
+    {
+      "type": "patchouli:spotlight",
+      "item": "frozendawn:orsa_supply_crate",
+      "title": "Supply Crate",
+      "text": "Stocked crates wait at ORSA camps, cargo drops, evac wrecks, blast pits and monitoring stations.$(br2)Look for $(l:orsa_equipment/o2_canisters)Rebreather Cartridges$(/l). Mined, a crate works like a barrel.",
+      "link_recipe": true
+    },
+    {
+      "type": "patchouli:spotlight",
+      "item": "frozendawn:camp_radio",
+      "title": "Field Radio",
+      "text": "Use the radio at a camp. About $(bold)1 in 3$() still works and reads out the nearest Communication Tower.$(br2)Smoking radios are dead: static only.",
+      "link_recipe": true
+    },
+    {
+      "type": "patchouli:spotlight",
+      "item": "frozendawn:alarm_beacon",
+      "title": "Alarm Beacon",
+      "text": "Town alarms spin and blare through $(bold)Phase 4$(), then fall silent.$(br2)They can't be taken.",
+      "link_recipe": true
+    },
+    {
+      "type": "patchouli:spotlight",
+      "item": "frozendawn:street_light",
+      "title": "Street Light",
+      "text": "Flickers on town streets through $(bold)Phase 4$(), then goes dark.$(br2)Mine it to keep. It stands on a solid block or iron bars.",
+      "link_recipe": true
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Monitoring Stations",
+      "text": "Small weather posts with a locked terminal and a sealed back room.$(br2)Read the $(bold)Weather Upload Log$() in the main room to open the $(bold)Station Terminals$() page."
+    },
+    {
+      "type": "patchouli:spotlight",
+      "item": "frozendawn:orsa_flag",
+      "title": "ORSA Flag",
+      "text": "Flies over ORSA camps, visible from far off. It frosts and freezes as the phases pass.$(br2)In a $(bold)Phase 5$() storm it streams downwind. It can't be taken.",
+      "link_recipe": true
+    },
+    {
+      "type": "patchouli:spotlight",
+      "item": "frozendawn:town_pa_speaker",
+      "title": "Town PA Speaker",
+      "text": "Loops the town broadcast about once a minute, heard $(bold)64 blocks$() out. It breaks up from Phase 3 and stops after Phase 4.$(br2)Mine it to keep.",
+      "link_recipe": true
+    }
+  ]
+}

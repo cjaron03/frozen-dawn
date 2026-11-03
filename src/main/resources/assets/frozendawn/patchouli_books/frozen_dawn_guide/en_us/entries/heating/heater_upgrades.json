@@ -5,32 +5,38 @@
   "sortnum": 2,
   "pages": [
     {
-      "type": "patchouli:text",
-      "title": "Upgrading Your Heaters",
-      "text": "As the cold intensifies, basic heaters won't cut it. Surround a $(l:heating/thermal_heater)Thermal Heater$(/l) with materials to create upgraded versions:$(br2)$(li)$(bold)Iron:$() +50°C, 9-block radius, 1.5x fuel$(li)$(bold)Gold:$() +65°C, 11-block radius, 2x fuel$(li)$(bold)Diamond:$() +80°C, 14-block radius, 3x fuel$(br2)$(bold)Warning:$() In Phase 4+, fuel burns faster (2x/4x/8x by phase). Budget accordingly."
+      "type": "patchouli:spotlight",
+      "item": "frozendawn:diamond_thermal_heater",
+      "title": "Heater Upgrades",
+      "text": "More heating power and a wider open-camp radius."
     },
     {
       "type": "patchouli:text",
-      "title": "Shelter & Strategy",
-      "text": "$(bold)Shelter matters:$() In Phase 5+, exposed heaters keep only $(bold)0.6x radius$() — a 40% range loss, not half. Put a real roof over them to maintain full range.$(br2)$(italic)\"Can I just build 30 basic heaters?\" You can. You'll also need 30 coal per minute. ORSA calls this the \"bonfire strategy.\" It works until it doesn't.$()"
+      "title": "Tiers",
+      "text": "$(bold)Iron$(): 50 output, 9 blocks, 1.5x fuel$(br)$(bold)Gold$(): 65, 11 blocks, 2x$(br)$(bold)Diamond$(): 80, 14 blocks, 3x$(br2)In sealed rooms, room shape sets coverage; output sets warm-up speed."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Phases",
+      "text": "Full-rate fuel use: $(bold)2x$() in Phase 4, $(bold)4x$() in 5, $(bold)8x$() in 6. Throttling lowers the real burn.$(br2)From Phase 5, an open-camp heater under open sky keeps 0.6x radius. A roof keeps it all."
     },
     {
       "type": "patchouli:crafting",
       "recipe": "frozendawn:iron_thermal_heater",
-      "title": "Iron Thermal Heater",
-      "text": "Surround a Thermal Heater with 8 iron ingots. A solid upgrade for Phase 3-4. The heater gets warmer and hungrier. Like Kevin at a buffet."
+      "title": "Iron Heater",
+      "text": "Eight iron around a Thermal Heater. Good for Phases 3-4.$(br2)$(flavor)Warmer and hungrier, like Kevin at a buffet.$()"
     },
     {
       "type": "patchouli:crafting",
       "recipe": "frozendawn:gold_thermal_heater",
-      "title": "Gold Thermal Heater",
-      "text": "Surround a Thermal Heater with 8 gold ingots. Extended range helps cover larger bases."
+      "title": "Gold Heater",
+      "text": "Eight gold around a Thermal Heater."
     },
     {
       "type": "patchouli:crafting",
       "recipe": "frozendawn:diamond_thermal_heater",
-      "title": "Diamond Thermal Heater",
-      "text": "8 diamonds on a heater. Massive range, 3x fuel burn. ORSA Engineering has never heard of the word \"affordable.\""
+      "title": "Diamond Heater",
+      "text": "Eight diamonds around a Thermal Heater.$(br2)$(flavor)ORSA Engineering has never heard of \"affordable.\"$()"
     }
   ]
 }

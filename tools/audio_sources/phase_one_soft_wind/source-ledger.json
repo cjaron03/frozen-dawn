@@ -1,0 +1,31 @@
+{
+  "creator": "florianreichelt",
+  "title": "Soft Wind",
+  "url": "https://freesound.org/people/florianreichelt/sounds/459977/",
+  "listedFormat": "44.1 kHz stereo MP3, 320 kbps",
+  "listedSeconds": 35.671,
+  "start": 3,
+  "length": 30,
+  "license": "CC0 1.0 Universal",
+  "licenseURL": "https://creativecommons.org/publicdomain/zero/1.0/",
+  "retrievedUTC": "2026-10-20T22:31:16.130227+00:00",
+  "downloadURL": "https://cdn.freesound.org/previews/459/459977_6253486-hq.mp3",
+  "sourceFormat": "Official HQ MP3 preview; not account-gated original file",
+  "originalLocalPath": "recordings/459977_6253486-hq.mp3",
+  "reviewStatus": "Owner accepted outdoor low-volume mix/fades, shelter attenuation/return, natural rain onset and return to clear in the same phase-1 forest world",
+  "sha256": "e1cf29f5305a79edb5e57fb658c35e307078c392fb6bb6e8e8941e1ea7f67423",
+  "bytes": 796213,
+  "verifiedDate": "2026-10-20",
+  "assetRole": "Low-volume clear-day forest wind in phases 0-1",
+  "licenseEvidence": "licenses/source-page.txt",
+  "licenseText": "licenses/cc0.txt",
+  "requiredAttribution": "None under CC0; voluntary credit retained",
+  "localRuntimeOutputPaths": [
+    "src/main/resources/assets/frozendawn/sounds/ambient/wind_early_forest.ogg"
+  ],
+  "modifications": "30-second excerpt starting 3s, mono downmix, two-pass -18 LUFS normalization and -2 dBTP limiting, 3-second edge fades, 24kHz mono Vorbis quality 5; no pitch shift, synthesis or time stretch.",
+  "ownerOutdoorAccount": "i can hear it, and yea",
+  "ownerShelterAccount": "looks good",
+  "ownerRainOnsetAccount": "yea sounds good",
+  "ownerReturnToClearAccount": "yea it returned naturally!"
+}

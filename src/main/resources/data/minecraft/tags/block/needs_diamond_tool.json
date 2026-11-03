@@ -1,6 +1,7 @@
 {
   "replace": false,
   "values": [
-    "frozendawn:frozen_obsidian"
+    "frozendawn:frozen_obsidian",
+    "frozendawn:corium"
   ]
 }

@@ -1,0 +1,14 @@
+{
+  "tools/audio_sources/room_oxygen/klaxon-584001-hq.mp3": {
+    "sha256": "9c63965bbb474d8e2654eadb209acbf38edd097258cd7ea3d7c5f71b41cf5001",
+    "bytes": 88164
+  },
+  "src/main/resources/assets/frozendawn/sounds/block/oxygen_gauge/strained.ogg": {
+    "sha256": "78ce0d40f66c4c7a6e3543a0fc8e84e1655ee58a3386e7f747117668a4efd7a7",
+    "bytes": 5517
+  },
+  "src/main/resources/assets/frozendawn/sounds/block/oxygen_gauge/critical.ogg": {
+    "sha256": "1734b491fef0d111f78479e6dedf759e47ffed42c8d0807e8437935027a4dc72",
+    "bytes": 5420
+  }
+}

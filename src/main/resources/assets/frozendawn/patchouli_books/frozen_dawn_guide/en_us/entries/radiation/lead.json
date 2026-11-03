@@ -1,0 +1,45 @@
+{
+  "name": "Lead",
+  "category": "frozendawn:radiation",
+  "icon": "frozendawn:lead_ingot",
+  "sortnum": 5,
+  "pages": [
+    {
+      "type": "patchouli:spotlight",
+      "item": "frozendawn:lead_ingot",
+      "text": "The best shielding: a Block of Lead cuts radiation to $(bold)a tenth$()."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Galena",
+      "text": "Galena ore: stone and deepslate, Y -32 to 64, about as common as iron.$(br2)Raw Galena smelts or blasts into Lead Ingots."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Lead-Lined EVA Module",
+      "text": "Carry it anywhere. Under a $(bold)full sealed EVA suit$() it halves all incoming radiation, carried sources included.$(br2)$(danger)Heavy:$() Slowness I while carried, suit or not."
+    },
+    {
+      "type": "patchouli:smelting",
+      "recipe": "frozendawn:lead_ingot_from_raw_galena_smelting",
+      "title": "Lead Ingot",
+      "text": "Smelt or blast Raw Galena."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:lead_block",
+      "title": "Block of Lead",
+      "text": "Nine lead ingots."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:lead_lining_module",
+      "title": "Lead-Lined EVA Module",
+      "text": "Six lead ingots, two Tattered Clothing Scraps and a Suit Patch Kit."
+    }
+  ],
+  "extra_recipe_mappings": {
+    "frozendawn:galena_ore": 1,
+    "frozendawn:deepslate_galena_ore": 1
+  }
+}

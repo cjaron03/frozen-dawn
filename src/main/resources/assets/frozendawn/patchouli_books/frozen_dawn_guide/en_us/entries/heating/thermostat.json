@@ -1,0 +1,53 @@
+{
+  "name": "ORSA Thermostat",
+  "category": "frozendawn:heating",
+  "icon": "frozendawn:thermostat",
+  "sortnum": 5,
+  "pages": [
+    {
+      "type": "patchouli:spotlight",
+      "item": "frozendawn:thermostat",
+      "text": "Sets the temperature of a sealed room."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Use",
+      "text": "Place it inside a sealed room and right-click.$(br2)$(bold)10-30°C$(), in 5°C steps, for every heater in the room."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Merged Rooms",
+      "text": "The newest thermostat wins; others show $(bold)Overridden$(). Splitting restores them. Removing the winner hands control to the next newest.$(br2)All of it survives reloads."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Room Reading",
+      "text": "It reads the shared room temperature the HUD uses, before your gear and effects.$(br2)Core, fire and machine warmth are part of that reading."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Heating and Cooling",
+      "text": "It throttles heaters and runs same-room $(l:heating/heat_vent)Heat Vents$(/l): open above target +0.5°C, closed at target. The screen shows $(bold)Cooling$() while venting.$(br2)It can't switch off a Core or put out a fire."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "After a Breach",
+      "text": "It shows $(bold)No seal$(); heaters fall back to 20°C until you repair. Unknown or unloaded rooms pause.$(br2)Wall heat survives a breach or restart."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Camps",
+      "text": "Placed outdoors in Phases 1-4, a new thermostat runs camp heaters within $(bold)8 blocks$().$(br2)Once bound to a room it stays indoor. Re-place it for a camp."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:thermostat",
+      "text": "Four iron, two copper, two redstone, one glass.$(br2)$(flavor)Place the sensor near the occupant. The occupant is usually you.$()"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Specs",
+      "text": "$(li)10-30°C in 5°C steps$(li)Comparator: 0 at 0°C or colder, 15 at 30°C or warmer$(li)Keeps a loaded room simulated without a fueled heater$(li)Loads no chunks, supplies no oxygen$(li)Burn % is a short average"
+    }
+  ]
+}

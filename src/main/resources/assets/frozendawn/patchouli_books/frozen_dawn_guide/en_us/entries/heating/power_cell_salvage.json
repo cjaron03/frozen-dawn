@@ -1,0 +1,24 @@
+{
+  "name": "Salvaged Cells",
+  "icon": "frozendawn:power_cell",
+  "category": "frozendawn:power",
+  "sortnum": 4,
+  "pages": [
+    {
+      "type": "patchouli:spotlight",
+      "item": "frozendawn:power_cell",
+      "title": "Salvaged Power Cells",
+      "text": "Part-charged cells left at ORSA sites: $(bold)100-300 kJ$() each."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Where",
+      "text": "$(li)Cargo drops$(li)Monitoring stations$(li)Abandoned evacuation vehicles$(li)Camp equipment crates$(br2)Caches you already looted stay empty."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Using Them",
+      "text": "Put one in a $(l:power/storage)Cell Dock$(/l) and link a lamp or machine. No Core needed.$(br2)A dock can't recharge it. Recharge in a Battery Bank with spare power; carry empties home."
+    }
+  ]
+}

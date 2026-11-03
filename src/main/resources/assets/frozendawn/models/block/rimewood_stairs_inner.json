@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/inner_stairs",
+  "textures": {
+    "bottom": "frozendawn:block/rimewood_planks",
+    "top": "frozendawn:block/rimewood_planks",
+    "side": "frozendawn:block/rimewood_planks"
+  }
+}

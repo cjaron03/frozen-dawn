@@ -21,15 +21,17 @@ public class AcheronForgeMenu extends AbstractContainerMenu {
 
     private final Container container;
     private final ContainerData data;
+    private AcheronForgeBlockEntity forge;
 
     /** Client constructor (from network). */
     public AcheronForgeMenu(int containerId, Inventory playerInv, FriendlyByteBuf buf) {
-        this(containerId, playerInv, new SimpleContainer(2), new SimpleContainerData(3));
+        this(containerId, playerInv, new SimpleContainer(2), new SimpleContainerData(AcheronForgeBlockEntity.DATA_COUNT));
     }
 
     /** Server constructor. */
     public AcheronForgeMenu(int containerId, Inventory playerInv, AcheronForgeBlockEntity entity) {
         this(containerId, playerInv, new ForgeContainer(entity), entity.getData());
+        forge = entity;
     }
 
     private AcheronForgeMenu(int containerId, Inventory playerInv, Container container, ContainerData data) {
@@ -57,6 +59,13 @@ public class AcheronForgeMenu extends AbstractContainerMenu {
     }
 
     public ContainerData getData() { return data; }
+
+    @Override
+    public boolean clickMenuButton(Player player, int id) {
+        if (forge == null || !stillValid(player) || id < 0 || id >= AcheronForgeBlockEntity.Mode.values().length) return false;
+        forge.setMode(AcheronForgeBlockEntity.Mode.fromId(id));
+        return true;
+    }
 
     @Override
     public ItemStack quickMoveStack(Player player, int index) {
@@ -142,10 +151,7 @@ public class AcheronForgeMenu extends AbstractContainerMenu {
 
         @Override
         public boolean stillValid(Player player) {
-            return entity.getLevel() != null &&
-                    player.distanceToSqr(entity.getBlockPos().getX() + 0.5,
-                            entity.getBlockPos().getY() + 0.5,
-                            entity.getBlockPos().getZ() + 0.5) <= 64.0;
+            return entity.stillValid(player);
         }
 
         @Override public void clearContent() { entity.getItems().clear(); }

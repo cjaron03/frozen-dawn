@@ -1,0 +1,37 @@
+{
+  "name": "Uplink Modes",
+  "category": "frozendawn:signals",
+  "icon": "frozendawn:uplink_dish",
+  "sortnum": 1,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "text": "Pick a mode on the console:$(li)$(bold)Off$()$(li)$(bold)Listen$(): 2 kW$(li)$(bold)Transmit$(): 40 kW for 3 min$(li)$(bold)Boost$(): 60 kW for 90 s"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Listen",
+      "text": "Every 90 s it catches a broadcast: phase advisories, a census of nearby stations, relay chatter.$(br2)Shown in the log and to players within 12 blocks."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Transmit",
+      "text": "Once a day, in the Overworld, with a dish under open sky. One reward when it finishes.$(br2)Boost gives the same reward in half the time."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Power",
+      "text": "Your grid, with batteries, must cover the full draw on top of everything else.$(br2)A refused start costs nothing. $(danger)If power or the dish fails mid-way, it aborts with no reward$() and the day's slot is spent."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Warming Up",
+      "text": "Confirm $(bold)SIGNAL DETECTABLE$() first. The prompt shows $(bold)Grid ramping up$() while a load-following $(l:reactor/operation)reactor$(/l) climbs; Confirm works at $(bold)Grid ready$().$(br2)It lapses after 60 s."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Heard",
+      "text": "Every transmission is heard. $(danger)Late in the collapse, Architects gather near a dish that transmits often.$()$(br2)Boost is louder. It fades over a few days.$(br2)$(flavor)ORSA thanks you for staying in touch.$()"
+    }
+  ]
+}

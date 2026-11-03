@@ -10,6 +10,11 @@ import java.util.function.Predicate;
 final class NoOpCuriosAccess implements CuriosAccess {
 
     @Override
+    public ItemStack helmetMount(Player player) {
+        return ItemStack.EMPTY;
+    }
+
+    @Override
     public boolean isLoaded() {
         return false;
     }

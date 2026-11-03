@@ -142,6 +142,15 @@ final class CargoDropStructureLayout {
                     Blocks.SMOOTH_STONE.defaultBlockState(),
                     Blocks.SMOOTH_STONE_SLAB.defaultBlockState()
             );
+            case UPLINK -> new ContainerPalette(
+                    Blocks.WHITE_CONCRETE.defaultBlockState(),
+                    Blocks.LIGHT_GRAY_CONCRETE.defaultBlockState(),
+                    Blocks.CYAN_CONCRETE.defaultBlockState(),
+                    Blocks.GRAY_CONCRETE.defaultBlockState(),
+                    Blocks.CYAN_TERRACOTTA.defaultBlockState(),
+                    Blocks.SMOOTH_STONE.defaultBlockState(),
+                    Blocks.SMOOTH_STONE_SLAB.defaultBlockState()
+            );
             case BUREAUCRATIC -> new ContainerPalette(
                     Blocks.LIGHT_GRAY_CONCRETE.defaultBlockState(),
                     Blocks.GRAY_CONCRETE.defaultBlockState(),
@@ -155,6 +164,7 @@ final class CargoDropStructureLayout {
     }
 
     record Plan(long seed, int phase, Direction facing, DropPreset preset, LootProfile lootProfile) {
+        Plan withLoot(LootProfile profile) { return new Plan(seed, phase, facing, preset, profile); }
     }
 
     record DropPreset(int[] floorOffsets, int craterDepth, int canopyHeight, int canopySideBias) {
@@ -174,7 +184,9 @@ final class CargoDropStructureLayout {
     enum LootProfile {
         JACKPOT("ORSA Logistics -- Emergency Resupply Package 7-C. Contents verified."),
         USEFUL("ORSA Logistics -- Standard Field Kit. Priority: LOW."),
-        BUREAUCRATIC("ORSA Administrative Services -- Document Distribution, Batch 14 of 22.");
+        BUREAUCRATIC("ORSA Administrative Services -- Document Distribution, Batch 14 of 22."),
+        /** Requested over the ORSA Uplink; never rolled by worldgen. */
+        UPLINK("ORSA Relay Logistics -- Requested Resupply. Locator beacon armed.");
 
         private final String manifestTitle;
 

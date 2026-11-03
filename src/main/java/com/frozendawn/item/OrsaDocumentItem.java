@@ -23,17 +23,59 @@ import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.level.Level;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * Custom item that represents an ORSA lore document found in structure chests.
  * Right-click to archive: consumes the item, grants the discovery advancement,
- * and unlocks the corresponding Patchouli entry in the ORSA Intel section.
+ * unlocks the matching ORSA Field Manual entry and opens the manual on it.
  */
 public class OrsaDocumentItem extends Item {
 
     public OrsaDocumentItem(Properties properties) {
         super(properties);
     }
+
+    /** Discovery advancement and the manual entry each document is filed under. */
+    private record Doc(String advancement, String entryPath, String entryName) {
+        static Doc intel(String docType, String entryName) {
+            return new Doc("found_" + docType, "orsa_intel/" + docType, entryName);
+        }
+
+        /** ORSA Uplink transcripts: invisible unlocks for the Relay Archive manual pages. */
+        static Doc relay(int item) {
+            return new Doc("relay_archive/" + item, "orsa_intel/relay_archive", "Relay Archive");
+        }
+    }
+
+    private static final Map<String, Doc> DOCS = Map.ofEntries(
+            Map.entry("villager_journal", Doc.intel("villager_journal", "A Villager's Journal")),
+            Map.entry("orsa_bulletin", Doc.intel("orsa_bulletin", "Safety Bulletin")),
+            Map.entry("vasik_log", Doc.intel("vasik_log", "Dr. Vasik's Log")),
+            Map.entry("incident_report", Doc.intel("incident_report", "Incident TIR-1171")),
+            Map.entry("satellite_log", Doc.intel("satellite_log", "Satellite System Log")),
+            Map.entry("launch_manifest", Doc.intel("launch_manifest", "Launch Manifest")),
+            Map.entry("transponder_schematic", new Doc("found_transponder_schematic", "advanced/transponder", "Transponder")),
+            Map.entry("camp_field_report", Doc.intel("camp_field_report", "ORSA Field Report")),
+            Map.entry("camp_personal_note", Doc.intel("camp_personal_note", "Crumpled Note")),
+            Map.entry("camp_transfer_log", Doc.intel("camp_transfer_log", "Camp Transfer Log")),
+            Map.entry("cargo_drop_manifest", Doc.intel("cargo_drop_manifest", "Cargo Manifest")),
+            Map.entry("station_upload_log", Doc.intel("station_upload_log", "Weather Upload Log")),
+            Map.entry("station_requisition", Doc.intel("station_requisition", "Parts Requisition")),
+            Map.entry("station_maintenance_bulletin", Doc.intel("station_maintenance_bulletin", "Ingest Node Bulletin")),
+            Map.entry("station_relay_diagnostics", Doc.intel("station_relay_diagnostics", "Relay Diagnostics")),
+            Map.entry("vehicle_transcript_abandoned", Doc.intel("vehicle_transcript_abandoned", "Audio: Cabin Mic")),
+            Map.entry("vehicle_transcript_breakdown", Doc.intel("vehicle_transcript_breakdown", "Audio: Breakdown")),
+            Map.entry("vehicle_transcript_failed", Doc.intel("vehicle_transcript_failed", "Audio: Whiteout")),
+            // News bulletins — civilian journalism, no classified_information
+            Map.entry("newspaper_cannibal", Doc.intel("newspaper_cannibal", "Grandview Gazette")),
+            Map.entry("newspaper_conspiracy", Doc.intel("newspaper_conspiracy", "The Northern Star")),
+            Map.entry("newspaper_missing", Doc.intel("newspaper_missing", "Missing Persons")),
+            Map.entry("newspaper_weather", Doc.intel("newspaper_weather", "Channel 9 Weather")),
+            Map.entry("relay_archive_1", Doc.relay(1)),
+            Map.entry("relay_archive_2", Doc.relay(2)),
+            Map.entry("relay_archive_3", Doc.relay(3))
+    );
 
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
@@ -42,42 +84,20 @@ public class OrsaDocumentItem extends Item {
         if (!level.isClientSide() && player instanceof ServerPlayer serverPlayer) {
             String docType = getDocType(stack);
 
-            if (!docType.isEmpty()) {
-                // Grant specific discovery advancement
-                switch (docType) {
-                    case "villager_journal" -> grantAdvancement(serverPlayer, "found_villager_journal");
-                    case "orsa_bulletin" -> grantAdvancement(serverPlayer, "found_orsa_bulletin");
-                    case "vasik_log" -> grantAdvancement(serverPlayer, "found_vasik_log");
-                    case "incident_report" -> grantAdvancement(serverPlayer, "found_incident_report");
-                    case "satellite_log" -> grantAdvancement(serverPlayer, "found_satellite_log");
-                    case "launch_manifest" -> grantAdvancement(serverPlayer, "found_launch_manifest");
-                    case "transponder_schematic" -> {
-                        grantAdvancement(serverPlayer, "found_transponder_schematic");
-                        // Unlock transponder recipe in Acheron Forge (world-level)
-                        WinConditionState winState = WinConditionState.get(serverPlayer.getServer());
-                        if (!winState.isSchematicUnlocked()) {
-                            winState.setSchematicUnlocked(true);
-                            serverPlayer.displayClientMessage(
-                                    Component.literal("\u00A77[\u00A76Frozen Dawn\u00A77] \u00A7dTransponder schematics unlocked. Check the Acheron Forge."),
-                                    false);
-                        }
+            Doc doc = DOCS.get(docType);
+
+            if (doc != null) {
+                grantAdvancement(serverPlayer, doc.advancement());
+
+                if (docType.equals("transponder_schematic")) {
+                    // Unlock transponder recipe in Acheron Forge (world-level)
+                    WinConditionState winState = WinConditionState.get(serverPlayer.getServer());
+                    if (!winState.isSchematicUnlocked()) {
+                        winState.setSchematicUnlocked(true);
+                        serverPlayer.displayClientMessage(
+                                Component.literal("\u00A77[\u00A76Frozen Dawn\u00A77] \u00A7dTransponder schematics unlocked. Check the Acheron Forge."),
+                                false);
                     }
-                    case "camp_field_report" -> grantAdvancement(serverPlayer, "found_camp_field_report");
-                    case "camp_personal_note" -> grantAdvancement(serverPlayer, "found_camp_personal_note");
-                    case "camp_transfer_log" -> grantAdvancement(serverPlayer, "found_camp_transfer_log");
-                    case "cargo_drop_manifest" -> grantAdvancement(serverPlayer, "found_cargo_drop_manifest");
-                    case "station_upload_log" -> grantAdvancement(serverPlayer, "found_station_upload_log");
-                    case "station_requisition" -> grantAdvancement(serverPlayer, "found_station_requisition");
-                    case "station_maintenance_bulletin" -> grantAdvancement(serverPlayer, "found_station_maintenance_bulletin");
-                    case "station_relay_diagnostics" -> grantAdvancement(serverPlayer, "found_station_relay_diagnostics");
-                    case "vehicle_transcript_abandoned" -> grantAdvancement(serverPlayer, "found_vehicle_transcript_abandoned");
-                    case "vehicle_transcript_breakdown" -> grantAdvancement(serverPlayer, "found_vehicle_transcript_breakdown");
-                    case "vehicle_transcript_failed" -> grantAdvancement(serverPlayer, "found_vehicle_transcript_failed");
-                    // News bulletins — civilian journalism, no classified_information
-                    case "newspaper_cannibal" -> grantAdvancement(serverPlayer, "found_newspaper_cannibal");
-                    case "newspaper_conspiracy" -> grantAdvancement(serverPlayer, "found_newspaper_conspiracy");
-                    case "newspaper_weather" -> grantAdvancement(serverPlayer, "found_newspaper_weather");
-                    case "newspaper_missing" -> grantAdvancement(serverPlayer, "found_newspaper_missing");
                 }
 
                 // Grant general classified_information for ORSA-authored docs only
@@ -92,13 +112,12 @@ public class OrsaDocumentItem extends Item {
                             ApocalypseState.get(serverPlayer.getServer()).getCurrentDay());
                 }
 
-                // Notify player
-                serverPlayer.displayClientMessage(
-                        Component.literal("\u00A77[\u00A76Frozen Dawn\u00A77] \u00A7fDocument archived in your \u00A76ORSA Field Survival Manual\u00A7f."),
-                        false);
+                FieldManual.announceArchived(serverPlayer, doc.entryName());
 
                 // Consume the document
                 stack.shrink(1);
+
+                FieldManual.openEntry(serverPlayer, doc.entryPath());
             }
         }
 

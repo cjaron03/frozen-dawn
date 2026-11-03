@@ -68,6 +68,19 @@ public class ModArmorMaterials {
                             ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "eva"))),
                     1.0F, 0.05F));
 
+    /** Disposable recovery armor: EVA visuals, leather-level combat protection, no repair ingredient. */
+    public static final DeferredHolder<ArmorMaterial, ArmorMaterial> EMERGENCY_EVA =
+            ARMOR_MATERIALS.register("emergency_eva", () -> new ArmorMaterial(
+                    Util.make(new EnumMap<>(ArmorItem.Type.class), map -> {
+                        map.put(ArmorItem.Type.HELMET, 1);
+                        map.put(ArmorItem.Type.CHESTPLATE, 3);
+                        map.put(ArmorItem.Type.LEGGINGS, 2);
+                        map.put(ArmorItem.Type.BOOTS, 1);
+                    }), 0, SoundEvents.ARMOR_EQUIP_LEATHER, () -> Ingredient.EMPTY,
+                    List.of(new ArmorMaterial.Layer(
+                            ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "eva"))),
+                    0.0F, 0.0F));
+
     /** Acheronite: endgame combat armor, +80C cold resistance, full set grants knockback resistance */
     public static final DeferredHolder<ArmorMaterial, ArmorMaterial> ACHERONITE =
             ARMOR_MATERIALS.register("acheronite", () -> new ArmorMaterial(

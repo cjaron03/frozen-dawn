@@ -1,0 +1,118 @@
+{
+  "multipart": [
+    {
+      "when": {
+        "facing": "up",
+        "lit": "false"
+      },
+      "apply": {
+        "model": "frozendawn:block/battery_lantern_floor"
+      }
+    },
+    {
+      "when": {
+        "facing": "up",
+        "lit": "true"
+      },
+      "apply": {
+        "model": "frozendawn:block/battery_lantern_floor_on"
+      }
+    },
+    {
+      "when": {
+        "facing": "down",
+        "lit": "false"
+      },
+      "apply": {
+        "model": "frozendawn:block/battery_lantern_ceiling"
+      }
+    },
+    {
+      "when": {
+        "facing": "down",
+        "lit": "true"
+      },
+      "apply": {
+        "model": "frozendawn:block/battery_lantern_ceiling_on"
+      }
+    },
+    {
+      "when": {
+        "facing": "north",
+        "lit": "false"
+      },
+      "apply": {
+        "model": "frozendawn:block/battery_lantern_wall"
+      }
+    },
+    {
+      "when": {
+        "facing": "north",
+        "lit": "true"
+      },
+      "apply": {
+        "model": "frozendawn:block/battery_lantern_wall_on"
+      }
+    },
+    {
+      "when": {
+        "facing": "south",
+        "lit": "false"
+      },
+      "apply": {
+        "model": "frozendawn:block/battery_lantern_wall",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "facing": "south",
+        "lit": "true"
+      },
+      "apply": {
+        "model": "frozendawn:block/battery_lantern_wall_on",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "facing": "west",
+        "lit": "false"
+      },
+      "apply": {
+        "model": "frozendawn:block/battery_lantern_wall",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "facing": "west",
+        "lit": "true"
+      },
+      "apply": {
+        "model": "frozendawn:block/battery_lantern_wall_on",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "facing": "east",
+        "lit": "false"
+      },
+      "apply": {
+        "model": "frozendawn:block/battery_lantern_wall",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "facing": "east",
+        "lit": "true"
+      },
+      "apply": {
+        "model": "frozendawn:block/battery_lantern_wall_on",
+        "y": 90
+      }
+    }
+  ]
+}

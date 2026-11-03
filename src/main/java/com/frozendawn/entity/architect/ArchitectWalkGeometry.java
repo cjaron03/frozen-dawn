@@ -5,6 +5,8 @@ import net.minecraft.core.Direction;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
+import org.jetbrains.annotations.Nullable;
 
 /** Collision-aware standing positions for walking on partial blocks. */
 public final class ArchitectWalkGeometry {
@@ -43,6 +45,27 @@ public final class ArchitectWalkGeometry {
         return offset > 0 && clear(level, body(pos, pos.getY() + offset));
     }
 
+    /** Loaded, supported feet position for observation-only walking; never creates terrain. */
+    @Nullable
+    public static Vec3 observedStandingPosition(Level level, BlockPos pos) {
+        if (!level.hasChunkAt(pos)) return null;
+        double y = standingY(level, pos);
+        if (!Double.isFinite(y)) return null;
+        var ground = level.getBlockState(y > pos.getY() ? pos : pos.below());
+        if (!ground.getFluidState().isEmpty() || ground.is(Blocks.MAGMA_BLOCK) || ground.is(Blocks.CACTUS)
+                || !clear(level, body(pos, y))) return null;
+        return new Vec3(pos.getX() + .5, y, pos.getZ() + .5);
+    }
+
+    /** Fractional steps are walkable; full-block climbs, drops and unsupported gaps are not. */
+    public static boolean canObservedWalkTransition(Level level, BlockPos from, BlockPos to) {
+        if (Math.abs(from.getX() - to.getX()) + Math.abs(from.getZ() - to.getZ()) != 1
+                || Math.abs(from.getY() - to.getY()) > 1) return false;
+        Vec3 start = observedStandingPosition(level, from), end = observedStandingPosition(level, to);
+        return start != null && end != null && Math.abs(end.y - start.y) <= .6
+                && clearStep(level, from, start.y, to, end.y);
+    }
+
     /** Conservative step sweep: rise at departure, traverse above both supports, then land. */
     public static boolean canWalkPartialTransition(Level level, BlockPos from, BlockPos to) {
         if (Math.abs(from.getX() - to.getX()) + Math.abs(from.getZ() - to.getZ()) != 1
@@ -50,6 +73,10 @@ public final class ArchitectWalkGeometry {
         if (partialSurfaceOffset(level, from) == 0 && partialSurfaceOffset(level, to) == 0) return false;
         double fromY = standingY(level, from), toY = standingY(level, to);
         if (!Double.isFinite(fromY) || !Double.isFinite(toY) || Math.abs(toY - fromY) > 0.6) return false;
+        return clearStep(level, from, fromY, to, toY);
+    }
+
+    private static boolean clearStep(Level level, BlockPos from, double fromY, BlockPos to, double toY) {
         double top = Math.max(fromY, toY);
         return clear(level, body(from, fromY).minmax(body(from, top)))
                 && clear(level, body(from, top).minmax(body(to, top)))

@@ -1,0 +1,52 @@
+{
+  "name": "Core Upgrades",
+  "category": "frozendawn:advanced",
+  "icon": "minecraft:nether_star",
+  "sortnum": 3,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "text": "The Geothermal Core's interface splits its output and takes permanent upgrades."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Output Split",
+      "text": "Three shares that add up to 100%: $(bold)heat$(), $(bold)oxygen$() and $(bold)power$().$(br2)Default: 60% heat, 40% O2, 0% power."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Power",
+      "text": "Each 1% of power share gives $(bold)0.2 kW$(): 20 kW at 100%.$(br2)Set power first; the heat/O2 slider splits what's left. See $(l:power/basics)Power Basics$(/l)."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Oxygen",
+      "text": "40% O2 supplies $(bold)8$() room units, 20% supplies 4, 0% none.$(br2)Breathing and flames draw first. Only spare production charges reservoirs, canisters, suits and airlocks."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Heat Share",
+      "text": "It scales heat transfer; supply temperature and surface penalty stay. Less heat cools the room gradually.$(br2)The split is saved and never drifts."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Upgrades",
+      "text": "Consumed. No refunds.$(br2)$(bold)Range$(), max 32 blocks$(li)Obsidian: +1$(li)Diamond Block: +4$(br2)$(bold)Temperature$(), max +100°C$(li)Blaze Powder: +5°C$(li)Thermal Core: +10°C"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Upgrade Effects",
+      "text": "Temperature upgrades raise supply temperature and output. Range upgrades extend outdoor warmth. O2 upgrades are separate."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "O2 Upgrade",
+      "text": "Nether Stars, up to 3 levels. Each adds $(bold)reach, not output$(): 16, 20, 26, 32 blocks.$(br2)$(flavor)We designed this before the Nether collapsed.$()"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Canister Slot",
+      "text": "The fourth slot refills an $(l:orsa_equipment/o2_canisters)O2 Canister$(/l) from spare production, shared with reservoirs, EVA refill and airlocks."
+    }
+  ]
+}

@@ -49,6 +49,9 @@ public class WeatherParticles {
 
         int globalParticleCount = vacuum
                 ? 0 : Math.round(getParticleCount(phase, progress) * exposure);
+        var cyclone=CycloneClientState.sampleLocal(0);
+        globalParticleCount=Math.round(globalParticleCount*(1-.85f*cyclone.calm())*(1+2*cyclone.intensity()));
+        if (cyclone.intensity() > 0) globalParticleCount = Math.min(globalParticleCount, CycloneSnowDetail.MAX_FLAKES_PER_TICK);
         int localParticleCount = Math.round(72.0F * masterStrength);
         int heartParticleCount = Math.round(28.0F * heartStrength);
         float heartQuiet = HeartQuietClient.environmentMultiplier();
@@ -83,7 +86,8 @@ public class WeatherParticles {
                     globalParticleCount,
                     globalWindSpeed * Mth.sin(windAngle),
                     globalWindSpeed * Mth.cos(windAngle),
-                    false);
+                    false,
+                    CycloneSnowDetail.nearFraction(cyclone.intensity()));
             spawnHorizontalSnow(
                     mc,
                     random,
@@ -93,7 +97,7 @@ public class WeatherParticles {
                     localParticleCount,
                     localWindSpeed * Mth.sin(windAngle),
                     localWindSpeed * Mth.cos(windAngle),
-                    true);
+                    true, 0);
             spawnHorizontalSnow(
                     mc,
                     random,
@@ -103,7 +107,7 @@ public class WeatherParticles {
                     heartParticleCount,
                     heartWindSpeed * Mth.sin(windAngle),
                     heartWindSpeed * Mth.cos(windAngle),
-                    false);
+                    false, 0);
         } else {
             // Phase 3-4: normal falling snow with mild wind
             float windStrength = 0.5f + 0.5f * (float) Math.sin(gameTime * 0.02);
@@ -133,13 +137,18 @@ public class WeatherParticles {
             int count,
             double windX,
             double windZ,
-            boolean confineToMasterEye) {
+            boolean confineToMasterEye,
+            float nearFraction) {
         int spawned = 0;
+        int nearCount = Math.round(count * nearFraction);
+        Vec3 look = nearCount > 0 ? minecraft.player.getLookAngle() : Vec3.ZERO;
         int attempts = Math.max(count, count * 4);
         for (int attempt = 0; attempt < attempts && spawned < count; attempt++) {
-            double x = playerX + random.nextGaussian() * 20.0D;
-            double y = playerY + random.nextGaussian() * 3.0D;
-            double z = playerZ + random.nextGaussian() * 20.0D;
+            boolean near = spawned < nearCount;
+            double spread = near ? 9.0D : 20.0D;
+            double x = playerX + random.nextGaussian() * spread + (near ? look.x * 6 : 0);
+            double y = playerY + random.nextGaussian() * (near ? 2.0D : 3.0D);
+            double z = playerZ + random.nextGaussian() * spread + (near ? look.z * 6 : 0);
             if (confineToMasterEye
                     && MasterArchitectAuraClient.localStormFactor(new Vec3(x, y, z))
                     <= 0.08F) {

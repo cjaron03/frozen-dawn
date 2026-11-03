@@ -90,7 +90,9 @@ public final class PostMaeveWorldState {
     public static boolean markErased(ServerLevel level) {
         BloomGrowthManager.resumePurgedGrowthForMaeveSequence(level);
         ReturnedHearthSavedData data = ReturnedHearthSavedData.get(level.getServer());
-        if (!data.markMaeveErased(level.getGameTime())) {
+        boolean changed = data.markMaeveErased(level.getGameTime());
+        com.frozendawn.maeve.MaeveDirector.erase(level.getServer());
+        if (!changed) {
             return false;
         }
         CognitiveLoadManager.clearForHeartErasure(level.getServer().overworld());
@@ -154,6 +156,8 @@ public final class PostMaeveWorldState {
     public static void setForDebug(MinecraftServer server, boolean erased) {
         ReturnedHearthSavedData data = ReturnedHearthSavedData.get(server);
         data.setMaeveErasedForDebug(erased, server.overworld().getGameTime());
+        // Debug reversal starts empty too; it is not a tactical-memory restore path.
+        com.frozendawn.maeve.MaeveDirector.erase(server);
         if (erased) {
             CognitiveLoadManager.clearForHeartErasure(server.overworld());
             HearthTransmissionManager.reset();

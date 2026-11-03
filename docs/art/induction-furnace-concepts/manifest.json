@@ -1,0 +1,10 @@
+{
+  "created": "2026-10-14",
+  "tool": "built-in imagegen",
+  "source": "/Users/jaroncabral/.codex/generated_images/01a12f52-2025-79d0-93d1-80e9e3dd66a4/exec-edec5809-1fba-479e-b2cc-7678697ad30a.png",
+  "output": "/Users/jaroncabral/.codex/worktrees/power-network/minecraft-mod/docs/art/induction-furnace-concepts/01-orsa-steel-copper.png",
+  "sha256": "efb6a567c9202e8315b654fed0e07b0a4e17fa634d95a663c6b6d7e25d6b249d",
+  "status": "concept-only",
+  "installed": false,
+  "third_party_pixels": false
+}

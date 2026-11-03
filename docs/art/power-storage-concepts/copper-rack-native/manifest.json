@@ -1,0 +1,44 @@
+[
+  {
+    "name": "power_cell",
+    "path": "src/main/resources/assets/frozendawn/textures/item/power_cell.png",
+    "width": 16,
+    "height": 16,
+    "alpha": "binary"
+  },
+  {
+    "name": "battery_bank_front",
+    "path": "src/main/resources/assets/frozendawn/textures/block/battery_bank_front.png",
+    "width": 16,
+    "height": 16,
+    "alpha": "opaque"
+  },
+  {
+    "name": "power_storage_side",
+    "path": "src/main/resources/assets/frozendawn/textures/block/power_storage_side.png",
+    "width": 16,
+    "height": 16,
+    "alpha": "opaque"
+  },
+  {
+    "name": "power_storage_top",
+    "path": "src/main/resources/assets/frozendawn/textures/block/power_storage_top.png",
+    "width": 16,
+    "height": 16,
+    "alpha": "opaque"
+  },
+  {
+    "name": "power_storage_back",
+    "path": "src/main/resources/assets/frozendawn/textures/block/power_storage_back.png",
+    "width": 16,
+    "height": 16,
+    "alpha": "opaque"
+  },
+  {
+    "name": "cell_dock_front",
+    "path": "src/main/resources/assets/frozendawn/textures/block/cell_dock_front.png",
+    "width": 16,
+    "height": 16,
+    "alpha": "opaque"
+  }
+]

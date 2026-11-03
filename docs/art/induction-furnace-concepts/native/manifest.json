@@ -1,0 +1,81 @@
+{
+  "generated": "2026-10-14",
+  "creator": "built-in imagegen; deterministic native export by Frozen Dawn",
+  "source": "generated-atlas.png",
+  "reference": "../01-orsa-steel-copper.png",
+  "prompt": "prompt.txt",
+  "export": "export_textures.py",
+  "palette": [
+    "171c21",
+    "22272c",
+    "30363d",
+    "424950",
+    "535c63",
+    "687079",
+    "939b9f",
+    "070e15",
+    "0d1b2c",
+    "16273a",
+    "68452f",
+    "986242",
+    "bb764b",
+    "d18e5a",
+    "713604",
+    "a65106",
+    "ec820a",
+    "ffc04e",
+    "175363",
+    "28d8d1"
+  ],
+  "third_party_pixels": false,
+  "textures": [
+    {
+      "name": "induction_furnace_front",
+      "path": "src/main/resources/assets/frozendawn/textures/block/induction_furnace_front.png",
+      "width": 16,
+      "height": 16,
+      "alpha": "opaque",
+      "sha256": "c7b10de326174ffe38a4beb2c4881c970762c1ad539b37ff017520c20dffa9be"
+    },
+    {
+      "name": "induction_furnace_front_on",
+      "path": "src/main/resources/assets/frozendawn/textures/block/induction_furnace_front_on.png",
+      "width": 16,
+      "height": 16,
+      "alpha": "opaque",
+      "sha256": "a95c0137efd2af9b750e3d6ff41c4bf4d7d981f408eb6aa15e7df84911fd7513"
+    },
+    {
+      "name": "induction_furnace_side",
+      "path": "src/main/resources/assets/frozendawn/textures/block/induction_furnace_side.png",
+      "width": 16,
+      "height": 16,
+      "alpha": "opaque",
+      "sha256": "6c0db403a9f58b699d3a8c5321fe51a0934f8dd1f5247e226656ea38c2da44e0"
+    },
+    {
+      "name": "induction_furnace_top",
+      "path": "src/main/resources/assets/frozendawn/textures/block/induction_furnace_top.png",
+      "width": 16,
+      "height": 16,
+      "alpha": "opaque",
+      "sha256": "9d4b7f3b685ae3a47be68cd14bddc4877f415dd00c8e926f6a09338af9621cca"
+    },
+    {
+      "name": "induction_furnace_back",
+      "path": "src/main/resources/assets/frozendawn/textures/block/induction_furnace_back.png",
+      "width": 16,
+      "height": 16,
+      "alpha": "opaque",
+      "sha256": "aabb78269febe04c8bd2f8d5bf9797b241839c88893bd9269ac3f44099801eea"
+    },
+    {
+      "name": "induction_furnace_bottom",
+      "path": "src/main/resources/assets/frozendawn/textures/block/induction_furnace_bottom.png",
+      "width": 16,
+      "height": 16,
+      "alpha": "opaque",
+      "sha256": "99a513ee8975a0b62a57612f7df6bc5313985968be68a16820449edaa970e9d2"
+    }
+  ]
+}

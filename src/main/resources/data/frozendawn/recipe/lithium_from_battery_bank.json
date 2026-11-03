@@ -1,0 +1,13 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    {
+      "item": "frozendawn:battery_bank"
+    }
+  ],
+  "result": {
+    "id": "frozendawn:lithium",
+    "count": 4
+  }
+}

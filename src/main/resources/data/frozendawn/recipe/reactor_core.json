@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "OAO",
+    "ATA",
+    "OAO"
+  ],
+  "key": {
+    "O": {
+      "item": "minecraft:obsidian"
+    },
+    "A": {
+      "item": "frozendawn:refined_acheronite"
+    },
+    "T": {
+      "item": "frozendawn:thermal_core"
+    }
+  },
+  "result": {
+    "id": "frozendawn:reactor_core",
+    "count": 1
+  }
+}

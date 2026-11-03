@@ -1,0 +1,14 @@
+# ORSA PIXIE-2 original native art
+
+Built-in imagegen created the original steel/copper front on October14,2026. The large source tile, exact prompt and reproducible exporter are preserved here. Native opaque16x16 front/working-front textures use a14-color palette. Reservoir window, paired copper electrodes, processing lamp and vents distinguish it from the furnace. The small lamp indicates actual paid production. Water quantity belongs in the simple screen; the painted window does not claim a quantitative level.
+
+Run python3 -B docs/art/pixie-2/export_textures.py from the owning checkout. It reduces the independently generated source to16x16, maps to the palette, and changes only the status lamp between idle/working. Native orientable models reuse Frozen Dawn's original induction-furnace steel side/top casing. Paths/dimensions/hashes are in manifest.json. Original filename: exec-d58e4c36-93da-44d4-857a-54f53cb1ddb3.png; original/source format PNG; creator built-in imagegen prompted for Frozen Dawn; saved as generated-front.png. No third-party pixels/models/code incorporated. No new dependency or external asset notice obligation.
+
+The processing hum uses Minecraft's existing BEACON_AMBIENT event, low volume/pitch1.55 every four seconds of production. No sound file copied into the mod. The pulse emits existing BLOCK_ACTIVATE vibration for the Blind Architect. Actual paid25percent waste heat feeds the room thermal model; no free passive heat source.
+
+| Candidate | Intended use | Verified evidence | Safe takeaway | Decision |
+| --- | --- | --- | --- | --- |
+| Mekanism1.21.x Electrolytic Separator | Design study | [Official machine](https://wiki.aidancbrady.com/wiki/Electrolytic_Separator), [item model](https://github.com/mekanism/Mekanism/blob/1.21.x/src/main/resources/assets/mekanism/models/item/electrolytic_separator.json), [README](https://github.com/mekanism/Mekanism/blob/1.21.x/README.md), [Gradle](https://github.com/mekanism/Mekanism/blob/1.21.x/build.gradle), [MIT license](https://github.com/mekanism/Mekanism/blob/1.21.x/LICENSE), checked October14,2026 | Distinct liquid storage/status and coherent industrial materials; stop when output cannot be accepted | Study only; original native cube/front and local accounting, no imported assets/dependency |
+| Thermal Expansion Aqueous Accumulator | Design study | [Team CoFH documentation](https://oldcofh.github.io/docs/thermal-expansion/machines/aqueous-accumulator/), legacy1.12 reference checked October14,2026 | Visible internal reservoir and clear operating state | Study only. No claim of1.21 compatibility. No code/assets reused; individual asset rights not established or needed |
+
+Attempted raw Mekanism block model path was unavailable; no model geometry copied or treated as verified from that path. High confidence in original source/export provenance and local native compatibility; human visual acceptance waits for the future Gradle replay.

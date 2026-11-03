@@ -1,0 +1,33 @@
+{
+  "name": "Battery Lantern",
+  "icon": "frozendawn:battery_lantern",
+  "category": "frozendawn:power",
+  "pages": [
+    {
+      "type": "patchouli:spotlight",
+      "item": "frozendawn:battery_lantern",
+      "text": "A cave light that runs on one Power Cell. Light $(bold)14$(), no grid."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Cell",
+      "text": "Use a cell on it to insert or swap. $(bold)Shift$() with an empty hand removes it.$(br2)It draws $(bold)50 W$() while on: a full cell lasts about $(bold)2 h 47 min$()."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Placing",
+      "text": "Floor, wall or ceiling, underwater too. Empty-hand use switches it.$(br2)Break it to carry it; the cell, charge and switch go with it."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "In Hand",
+      "text": "Lit in your $(bold)offhand$() only; press F to move it there. $(bold)Shift-use$() in the air switches it while held.$(br2)Other slots don't light or drain."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:battery_lantern",
+      "text": "Crafted empty. Empty ones stack to 16; loaded ones take a slot each.$(br2)$(flavor)Cheaper than torches. Eventually.$()"
+    }
+  ],
+  "sortnum": 9
+}

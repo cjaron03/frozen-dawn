@@ -1,0 +1,41 @@
+package com.frozendawn.block;
+
+import com.frozendawn.init.*;
+import net.minecraft.core.*;
+import net.minecraft.server.level.*;
+import net.minecraft.world.*;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.level.*;
+import net.minecraft.world.level.block.*;
+import net.minecraft.world.level.block.entity.*;
+import net.minecraft.world.level.block.state.*;
+import net.minecraft.world.level.block.state.properties.*;
+import net.minecraft.world.phys.BlockHitResult;
+
+public final class FabricatorBlock extends Block implements EntityBlock {
+    public static final DirectionProperty FACING=BlockStateProperties.HORIZONTAL_FACING;
+    public static final BooleanProperty LIT=BlockStateProperties.LIT;
+    public FabricatorBlock(Properties p){super(p);registerDefaultState(stateDefinition.any().setValue(FACING,Direction.NORTH).setValue(LIT,false));}
+    @Override protected void createBlockStateDefinition(StateDefinition.Builder<Block,BlockState> b){b.add(FACING,LIT);}
+    @Override public BlockState getStateForPlacement(BlockPlaceContext c){return defaultBlockState().setValue(FACING,c.getHorizontalDirection().getOpposite());}
+    @Override protected BlockState rotate(BlockState s,Rotation r){return s.setValue(FACING,r.rotate(s.getValue(FACING)));}
+    @Override protected BlockState mirror(BlockState s,Mirror m){return s.rotate(m.getRotation(s.getValue(FACING)));}
+    @Override public BlockEntity newBlockEntity(BlockPos p,BlockState s){return new FabricatorBlockEntity(p,s);}
+    @Override public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level l,BlockState s,BlockEntityType<T> t){return !l.isClientSide()&&t==ModBlockEntities.FABRICATOR.get()?(world,pos,state,be)->((FabricatorBlockEntity)be).serverTick():null;}
+    @Override protected ItemInteractionResult useItemOn(ItemStack stack,BlockState s,Level l,BlockPos p,Player player,InteractionHand hand,BlockHitResult hit){
+        if(!stack.is(ModItems.DATA_SLATE))return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+        if(l instanceof ServerLevel server)FabricatorBlockEntity.insertSlate(server,player,stack);
+        return ItemInteractionResult.sidedSuccess(l.isClientSide());
+    }
+    @Override protected InteractionResult useWithoutItem(BlockState s,Level l,BlockPos p,Player player,BlockHitResult hit){
+        if(player.getMainHandItem().is(ModItems.CONDUIT_BINDER)||player.getOffhandItem().is(ModItems.CONDUIT_BINDER))return InteractionResult.PASS;
+        if(player instanceof ServerPlayer server&&l.getBlockEntity(p) instanceof FabricatorBlockEntity fabricator)server.openMenu(fabricator,buf->buf.writeBlockPos(p));
+        return InteractionResult.sidedSuccess(l.isClientSide());
+    }
+    @Override protected void onRemove(BlockState s,Level l,BlockPos p,BlockState next,boolean moved){
+        if(s.getBlock()!=next.getBlock()&&l.getBlockEntity(p) instanceof FabricatorBlockEntity fabricator)Containers.dropContents(l,p,fabricator);
+        super.onRemove(s,l,p,next,moved);
+    }
+}

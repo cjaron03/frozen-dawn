@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:smelting",
+  "category": "food",
+  "ingredient": {
+    "item": "frozendawn:glassblood"
+  },
+  "result": {
+    "id": "frozendawn:cooked_glassblood"
+  },
+  "experience": 0.35,
+  "cookingtime": 200
+}

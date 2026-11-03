@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:campfire_cooking",
+  "category": "food",
+  "ingredient": {
+    "item": "frozendawn:rime_hagfish"
+  },
+  "result": {
+    "id": "frozendawn:cooked_rime_hagfish"
+  },
+  "experience": 0.35,
+  "cookingtime": 600
+}

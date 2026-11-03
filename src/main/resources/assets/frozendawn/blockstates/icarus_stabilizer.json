@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "frozendawn:block/icarus_stabilizer"
+    },
+    "facing=east": {
+      "model": "frozendawn:block/icarus_stabilizer",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "frozendawn:block/icarus_stabilizer",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "frozendawn:block/icarus_stabilizer",
+      "y": 270
+    }
+  }
+}

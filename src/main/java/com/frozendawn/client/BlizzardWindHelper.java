@@ -21,7 +21,13 @@ public final class BlizzardWindHelper {
     }
 
     public static float getWindAngleRad(long gameTime) {
-        return gameTime * 0.005f;
+        float ordinary=gameTime*.005f;
+        var sample=CycloneClientState.sampleLocal(0);
+        var storm=CycloneClientState.storm().orElse(null);
+        if(storm==null||sample.intensity()<=0)return ordinary;
+        float target=(float)(Math.PI/2-storm.headingRad());
+        float delta=(float)Math.atan2(Math.sin(target-ordinary),Math.cos(target-ordinary));
+        return ordinary+delta*sample.intensity();
     }
 
     public static float getSurfaceStormFade(int phase, float progress) {

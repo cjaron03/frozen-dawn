@@ -1,0 +1,30 @@
+{
+  "type": "minecraft:fishing",
+  "pools": [
+    {
+      "rolls": 1,
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "frozendawn:glassblood",
+          "weight": 55
+        },
+        {
+          "type": "minecraft:item",
+          "name": "frozendawn:rime_hagfish",
+          "weight": 35
+        },
+        {
+          "type": "minecraft:item",
+          "name": "frozendawn:longsleeper",
+          "weight": 6
+        },
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:bone",
+          "weight": 4
+        }
+      ]
+    }
+  ]
+}

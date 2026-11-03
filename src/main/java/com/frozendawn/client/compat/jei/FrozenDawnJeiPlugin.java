@@ -7,6 +7,12 @@ import com.frozendawn.block.GeothermalCoreMenu;
 import com.frozendawn.client.FuelProcessingSiloScreen;
 import com.frozendawn.client.GeothermalCoreScreen;
 import com.frozendawn.init.ModItems;
+import com.frozendawn.item.RationWarmerItem;
+import com.frozendawn.recipe.RationWarmerChargingRecipe;
+import mezz.jei.api.ingredients.subtypes.ISubtypeInterpreter;
+import mezz.jei.api.ingredients.subtypes.UidContext;
+import mezz.jei.api.registration.ISubtypeRegistration;
+import mezz.jei.api.registration.IVanillaCategoryExtensionRegistration;
 import com.frozendawn.init.ModMenuTypes;
 import com.frozendawn.recipe.FuelProcessingSiloRecipes;
 import mezz.jei.api.IModPlugin;
@@ -32,12 +38,31 @@ public class FrozenDawnJeiPlugin implements IModPlugin {
     }
 
     @Override
+    public void registerItemSubtypes(ISubtypeRegistration registration) {
+        registration.registerSubtypeInterpreter(ModItems.RATION_WARMER.get(), new ISubtypeInterpreter<ItemStack>() {
+            @Override public Object getSubtypeData(ItemStack ingredient, UidContext context) {
+                return RationWarmerItem.charges(ingredient);
+            }
+            @Override public String getLegacyStringSubtypeInfo(ItemStack ingredient, UidContext context) {
+                return Integer.toString(RationWarmerItem.charges(ingredient));
+            }
+        });
+    }
+
+    @Override
+    public void registerVanillaCategoryExtensions(IVanillaCategoryExtensionRegistration registration) {
+        registration.getCraftingCategory().addExtension(RationWarmerChargingRecipe.class, new RationWarmerJeiExtension());
+    }
+
+    @Override
     public void registerCategories(IRecipeCategoryRegistration registration) {
         var guiHelper = registration.getJeiHelpers().getGuiHelper();
         registration.addRecipeCategories(
                 new AcheronForgeCategory(guiHelper),
                 new FuelProcessingSiloCategory(guiHelper),
-                new GeothermalCoreCategory(guiHelper)
+                new GeothermalCoreCategory(guiHelper),
+                new InductionFurnaceCategory(guiHelper),
+                new FabricatorCategory(guiHelper)
         );
     }
 
@@ -72,6 +97,12 @@ public class FrozenDawnJeiPlugin implements IModPlugin {
                         "O2 Refill", "Refills O2 at +10/tick")
         ));
 
+        registration.addRecipes(InductionFurnaceCategory.RECIPE_TYPE, com.frozendawn.recipe.InductionRecipes.all());
+
+        var level = net.minecraft.client.Minecraft.getInstance().level;
+        if (level != null) registration.addRecipes(FabricatorCategory.RECIPE_TYPE,
+                level.getRecipeManager().getAllRecipesFor(com.frozendawn.init.ModRecipeTypes.FABRICATING.get()));
+
         registration.addRecipes(FuelProcessingSiloCategory.RECIPE_TYPE,
                 FuelProcessingSiloRecipes.all().stream()
                         .map(FuelProcessingSiloRecipeDisplay::from)
@@ -84,6 +115,8 @@ public class FrozenDawnJeiPlugin implements IModPlugin {
                 AcheronForgeCategory.RECIPE_TYPE);
         registration.addRecipeCatalyst(new ItemStack(ModItems.GEOTHERMAL_CORE.get()),
                 GeothermalCoreCategory.RECIPE_TYPE);
+        registration.addRecipeCatalyst(new ItemStack(ModItems.INDUCTION_FURNACE.get()), InductionFurnaceCategory.RECIPE_TYPE);
+        registration.addRecipeCatalyst(new ItemStack(ModItems.FABRICATOR.get()), FabricatorCategory.RECIPE_TYPE);
         registration.addRecipeCatalyst(new ItemStack(ModItems.FUEL_PROCESSING_SILO_CONTROLLER.get()),
                 FuelProcessingSiloCategory.RECIPE_TYPE);
     }

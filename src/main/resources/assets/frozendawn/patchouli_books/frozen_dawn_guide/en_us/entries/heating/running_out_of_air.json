@@ -1,0 +1,44 @@
+{
+  "name": "Running Out of Air",
+  "category": "frozendawn:life_support",
+  "icon": "minecraft:torch",
+  "sortnum": 2,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "text": "When a sealed room needs more oxygen than it gets, $(bold)flames go first$(), then people."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Too Many Flames",
+      "text": "In vacuum, after $(bold)10 s$() of overload, flames go out one per second, hungriest first, until demand fits.$(br2)The room stays sealed and warm. Not a breach."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "What Goes Out",
+      "text": "$(li)Furnaces pause, keeping fuel and progress$(li)Torches go spent, lanterns dark$(li)Candles and campfires go out$(br2)Relight by hand. MiteAway keeps its charge."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Paused furnaces restart once spare capacity covers them for 2 s, even after a reload. New input resets progress.$(br2)Each lit candle counts."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Not Enough Air",
+      "text": "If breathing alone still exceeds supply after 10 s, the room shows red $(bold)NO O2$().$(br2)Gas, pressure and heat stay. $(danger)Without an EVA tank or Emergency EVA reserve, you suffocate.$()"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Add supply or thin the crowd. Air returns once supply holds for $(bold)2 s$(). Reloading creates none.$(br2)Early-phase air is unlimited and needs no Core."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Warning Sounds",
+      "text": "$(li)$(bold)Chime$(): gauge strained$(li)$(bold)Double beep$(): O2 shortage, ready EVA$(li)$(bold)Same beep, no gauge$(): $(danger)you are about to suffocate$(). Repeats every 2 s."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Red NO SEAL, NO AIR and NO O2 are silent, as is near-capacity yellow. Several panels give one warning per listener. No speech."
+    }
+  ]
+}

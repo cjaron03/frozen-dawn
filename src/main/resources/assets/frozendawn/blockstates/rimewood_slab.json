@@ -1,0 +1,13 @@
+{
+  "variants": {
+    "type=bottom": {
+      "model": "frozendawn:block/rimewood_slab"
+    },
+    "type=top": {
+      "model": "frozendawn:block/rimewood_slab_top"
+    },
+    "type=double": {
+      "model": "frozendawn:block/rimewood_planks"
+    }
+  }
+}

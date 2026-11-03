@@ -1,0 +1,53 @@
+{
+  "name": "Bomb Cyclones",
+  "category": "frozendawn:getting_started",
+  "icon": "minecraft:wind_charge",
+  "sortnum": 6,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "Bomb Cyclones",
+      "text": "In $(bold)Phase 5$(), three or four storms cross the surface, at least 3 days apart. The first comes 2-4 days in.$(br2)Each front is $(bold)1600 blocks$() wide and moves over the land. Be inside before it arrives."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Severity",
+      "text": "Peak cold:$(li)Moderate: -8°C$(li)Severe: -19°C$(li)$(danger)Catastrophic: -30°C$()$(br2)Sight falls to 8, 4 or 2 blocks. The cold adds to the surface temperature. Catastrophic storms are rare, never before the third."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Stages",
+      "text": "$(li)$(bold)False Calm$(): the wind drops$(li)$(bold)Bombogenesis$(): pressure falls; your ears pop$(li)$(bold)Arrival$(): the front hits$(li)$(bold)Peak$(): 4-8 minutes$(li)$(bold)Dissipation$(), then recovery$(br2)15-30 minutes in all. $(danger)Catastrophic storms skip the calm.$()"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Wind",
+      "text": "$(li)Pushes you downwind; $(bold)crouch$() to hold still$(li)Slows you walking into it$(li)No sprinting into Severe or Catastrophic wind$(li)Pushes mobs too$(br2)EVA suits keep out the cold, not the wind."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Shelter",
+      "text": "$(li)Any roof, even glass, stops the push$(li)A full wall upwind, within 3 blocks, halves it$(li)Underground is calm$(br2)Wind strips heat from walls, so insulation counts. Deep ground below Y 48 stays steady."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Heat and Hunger",
+      "text": "Heaters in the open reach less, down to $(bold)30%$() at a Catastrophic peak. Thermostats feel the storm.$(br2)Wind burns food: up to $(bold)3x$() hunger outside. A wall upwind halves it."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Warnings",
+      "text": "The $(l:heating/phase_barometer)Phase Barometer$(/l) shows pressure, trend, severity and minutes to arrival. It buzzes every 30 s; a $(danger)Catastrophic$() alarm every 10 s.$(br2)An $(l:signals/uplink_modes)Uplink$(/l) in Listen mode relays ORSA weather."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Sight and Snow",
+      "text": "$(l:orsa_equipment/blizzard_goggles)Blizzard Goggles$(/l) raise sight to 20, 12 or 8 blocks.$(br2)The wind drowns out mobs. Look, don't listen.$(br2)Snow drifts behind walls, up to a block deep, and stays. Thundersnow is only noise and light."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "ORSA Weather Note",
+      "text": "$(italic)A bomb cyclone drops 24 hPa in a day. These drop more than that in minutes. ORSA advises against stepping outside to confirm.$()"
+    }
+  ]
+}

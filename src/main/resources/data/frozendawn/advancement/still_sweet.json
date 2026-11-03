@@ -1,0 +1,23 @@
+{
+  "parent": "frozendawn:root",
+  "display": {
+    "icon": {
+      "id": "frozendawn:empty_miel_jar"
+    },
+    "title": {
+      "translate": "advancement.frozendawn.still_sweet.title"
+    },
+    "description": {
+      "translate": "advancement.frozendawn.still_sweet.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": true
+  },
+  "criteria": {
+    "finished_miel": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

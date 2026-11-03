@@ -1,0 +1,50 @@
+{
+  "variants": {
+    "alert=false,facing=north": {
+      "model": "frozendawn:block/hyperion_controller"
+    },
+    "alert=true,facing=north": {
+      "model": "frozendawn:block/hyperion_controller_alert"
+    },
+    "alert=false,facing=east": {
+      "model": "frozendawn:block/hyperion_controller",
+      "y": 90
+    },
+    "alert=true,facing=east": {
+      "model": "frozendawn:block/hyperion_controller_alert",
+      "y": 90
+    },
+    "alert=false,facing=south": {
+      "model": "frozendawn:block/hyperion_controller",
+      "y": 180
+    },
+    "alert=true,facing=south": {
+      "model": "frozendawn:block/hyperion_controller_alert",
+      "y": 180
+    },
+    "alert=false,facing=west": {
+      "model": "frozendawn:block/hyperion_controller",
+      "y": 270
+    },
+    "alert=true,facing=west": {
+      "model": "frozendawn:block/hyperion_controller_alert",
+      "y": 270
+    },
+    "alert=false,facing=up": {
+      "model": "frozendawn:block/hyperion_controller",
+      "x": 270
+    },
+    "alert=true,facing=up": {
+      "model": "frozendawn:block/hyperion_controller_alert",
+      "x": 270
+    },
+    "alert=false,facing=down": {
+      "model": "frozendawn:block/hyperion_controller",
+      "x": 90
+    },
+    "alert=true,facing=down": {
+      "model": "frozendawn:block/hyperion_controller_alert",
+      "x": 90
+    }
+  }
+}

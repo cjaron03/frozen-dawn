@@ -1,0 +1,11 @@
+Source: https://freesound.org/people/BudJillett/sounds/109485/
+Retrieved UTC: 2026-10-20T19:39:27.638743+00:00
+Title: Wind-Gusts-late-autumn.wav
+Creator: BudJillett
+Recording: late-autumn pine forest gusts, New England
+Listed source: WAV, 5:06.120, 48 kHz, 16-bit stereo
+Exact individual-page license anchor:
+<a title="Go to the full license text" href="http://creativecommons.org/publicdomain/zero/1.0/" target="_blank" class="bw-link--black text-20 h-spacing-left-2 padding-right-4">Creative Commons 0</a>
+Official public HQ preview: https://cdn.freesound.org/previews/109/109485_1213320-hq.mp3
+Full source page SHA-256 (private ignored evidence): 14fb93d9c765787908d4878f7d18035147912d486ad0c03dba3758b593cc1db5
+No forms, scripts, cookies or session tokens are included in this snapshot.

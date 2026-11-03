@@ -1,0 +1,62 @@
+{
+  "name": "Continuity Protocol",
+  "category": "frozendawn:orsa_equipment",
+  "icon": "frozendawn:emergency_eva_chestplate",
+  "sortnum": 5,
+  "pages": [
+    {
+      "type": "patchouli:spotlight",
+      "item": "frozendawn:emergency_eva_chestplate",
+      "title": "Continuity Protocol",
+      "text": "Emergency EVA, issued after you lose your equipment in late Phase 6.",
+      "link_recipe": true
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Supplies",
+      "text": "$(li)$(bold)10 min$() reserve oxygen$(li)$(bold)15 min$() equipped thermal service$(li)Missing pieces reissued on return$(br2)$(danger)It's disposable.$() Every issued piece shares one service clock."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Goal",
+      "text": "Recover a serviceable rig or return to recorded shelter.$(br2)$(flavor)Recorded locations do not constitute confirmation of habitable conditions.$()"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Navigation",
+      "text": "Press $(k:key.frozendawn.continuity_target) to switch the target.$(br2)$(bold)LAST SHELTER$(): set when you set your respawn at a bed or charged anchor."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "The fix is degraded: follow the bearing, then search within $(bold)32 blocks$(). It stays the same across replacement issues."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Last Telemetry",
+      "text": "Where your equipment was lost: a position, not proof it's still there. Later empty-handed losses keep the original destination."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Gear from the qualifying loss lasts $(bold)15 minutes$() while its area is ticking. Fire, lava and other hazards still apply."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Service",
+      "text": "$(li)Inventory bars show service power$(li)HUD timer at 5 minutes left$(li)Breathable air saves oxygen, not power$(li)Impacts hurt you, not the service$(li)Seal wear shows at the visor edges"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "At Zero",
+      "text": "$(danger)Thermal control, navigation and emergency armor end$(), and the issued pieces are removed.$(br2)A complete sealed normal EVA rig with usable oxygen retires the issue at once."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Removing every issued piece pauses service and life support.$(br2)Repair, cartridges and replacement issues can't refresh old equipment."
+    }
+  ],
+  "extra_recipe_mappings": {
+    "frozendawn:emergency_eva_helmet": 0,
+    "frozendawn:emergency_eva_leggings": 0,
+    "frozendawn:emergency_eva_boots": 0
+  }
+}

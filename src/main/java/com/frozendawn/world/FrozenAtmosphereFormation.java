@@ -80,6 +80,8 @@ public final class FrozenAtmosphereFormation {
                         if (BlastPitWarmZoneRegistry.isInsideWarmZone(level, placePos)) break;
                         if (ThermalVentRegistry.isVolcanicField(level, placePos)) break;
                         if (FuelProcessingSiloMultiblock.isProtectedFromEnvironmentalDeposit(level, placePos)) break;
+                        // A hot reactor radiator boils off any deposit on its faces; never lay one there.
+                        if (com.frozendawn.block.ReactorRadiatorBlock.warms(level, placePos)) break;
                         BlockState aboveState = level.getBlockState(placePos);
                         if (!aboveState.isAir() && !aboveState.is(Blocks.SNOW)) break;
 
