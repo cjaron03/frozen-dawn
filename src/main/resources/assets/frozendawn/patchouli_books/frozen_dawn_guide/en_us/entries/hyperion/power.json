@@ -1,0 +1,32 @@
+{
+  "name": "Power and Cold",
+  "category": "frozendawn:hyperion",
+  "icon": "frozendawn:hyperion_port",
+  "sortnum": 2,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "text": "Link Ports with the $(l:power/binder)Conduit Binder$(/l). Each Port moves up to $(bold)500 kW$() either way. More Ports, more rate.$(br2)It charges from spare power and pays out when supply falls short. Reactors push to fill it."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Capacity",
+      "text": "20 MJ per cell.$(li)3x3x4: 640 MJ$(li)3x3x8: 1.36 GJ$(br2)Booting an Icarus takes about 70 MJ."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "The Cryocooler",
+      "text": "It runs on the silo's own charge, so a cold silo slowly drains itself. A grid outage never quenches it; it keeps itself cold until it runs empty."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Drain",
+      "text": "A full silo loses, per hour:$(li)20C room: about 2%$(li)-45C: about 0.5%$(li)-120C: about 0.1%$(li)-180C or colder: nothing"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "How Many Coolers",
+      "text": "Outdoors below 0C, one is enough at any height. In a 20C room, one holds a silo up to 4 tall; taller needs two.$(br2)Heat sources against the hull overwhelm any count."
+    }
+  ]
+}

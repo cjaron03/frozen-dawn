@@ -1,0 +1,27 @@
+{
+  "name": "Reading the Silo",
+  "category": "frozendawn:hyperion",
+  "icon": "minecraft:spyglass",
+  "sortnum": 3,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "text": "The window up the front has one bar per block of height, lit from the bottom as it fills. The top lit bar breathes while charging and flickers while discharging."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Colours",
+      "text": "The bars and the lamps on the base share colours.$(li)Blue: cold and safe$(li)Amber: warming$(li)Red: final seconds$(li)Grey with an ember: quenched"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Rings and Pipes",
+      "text": "Rings float while it holds charge and spin faster with the flow. They wobble as it warms and drop when it quenches.$(br2)Frosted pipes drip as it warms. Dashes along them show the flow."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "The Controller",
+      "text": "Use it for charge, flow, Ports and rate, cell and outside temperature, cooler draw and, while warning, the time to quench."
+    }
+  ]
+}

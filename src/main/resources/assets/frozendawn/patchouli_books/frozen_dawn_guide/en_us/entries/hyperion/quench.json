@@ -1,0 +1,32 @@
+{
+  "name": "Heat and Quench",
+  "category": "frozendawn:hyperion",
+  "icon": "frozendawn:quench_vent",
+  "sortnum": 4,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "text": "When heat beats the coolers, the cells warm toward -180C. Fix the cooling in time and they cool back down and sound the all clear."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Warning Time",
+      "text": "From the first chirp to the quench:$(li)about 15 min outside below 0C$(li)about 5 min in a 20C room$(li)90 s with a heat source against the hull: lava, fire, a heater, a hot radiator or a running reactor"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "What You Hear",
+      "text": "In order:$(li)A chirp every 10 s$(li)A steady ping as time runs short$(li)A rising whine for the last 25 s$(br2)The whine stops if it recovers."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Quench",
+      "text": "A bang, steam from the vent, and the charge is gone. Nothing else is damaged.$(br2)The cells stay scorched and hold no charge until they are cold again. The coolers draw grid power to get there."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Taking It Down",
+      "text": "Breaking any part while it holds charge quenches it at once, with no warning. Explosions and pistons count too.$(br2)Empty, it comes apart quietly."
+    }
+  ]
+}

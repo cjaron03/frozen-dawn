@@ -1,0 +1,90 @@
+{
+  "name": "Building It",
+  "category": "frozendawn:hyperion",
+  "icon": "frozendawn:superconducting_cell",
+  "sortnum": 1,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "text": "A silo 3 wide, 3 deep and 4 to 8 tall. Every block that is not a fitting is a $(bold)Superconducting Cell$(), corners and centre included. Taller holds more. Every part is crafted."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Fittings",
+      "text": "Four kinds of fitting.$(li)$(bold)Controller$(): bottom of the front middle. It sets the front.$(li)$(bold)Quench Vent$(): top centre.$(li)$(bold)Cryocooler$(): at least one, bottom row, sides or back.$(li)$(bold)Port$(): at least one, any side, never the front middle column."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Forming",
+      "text": "Use the Controller to see whether it formed, and if not, why. Once formed the cells join into one black hull with a gauge window up the front."
+    },
+    {
+      "type": "patchouli:multiblock",
+      "name": "Smallest Silo",
+      "enable_visualize": false,
+      "multiblock": {
+        "pattern": [
+          [
+            "CCC",
+            "CVC",
+            "CCC"
+          ],
+          [
+            "CCC",
+            "CCP",
+            "CCC"
+          ],
+          [
+            "CCC",
+            "CCC",
+            "CCC"
+          ],
+          [
+            "CCC",
+            "Q0C",
+            "CKC"
+          ]
+        ],
+        "mapping": {
+          "C": "frozendawn:superconducting_cell",
+          "0": "frozendawn:superconducting_cell",
+          "V": "frozendawn:quench_vent[facing=up]",
+          "P": "frozendawn:hyperion_port[facing=east]",
+          "Q": "frozendawn:cryocooler[facing=west]",
+          "K": "frozendawn:hyperion_controller[facing=south]"
+        }
+      },
+      "text": "3x3x4: 32 cells, 640 MJ."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:superconducting_cell",
+      "title": "Superconducting Cell",
+      "text": "Makes two. A silo takes 32 to 68."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:hyperion_controller",
+      "title": "Controller",
+      "text": "Gold, glass and redstone."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:hyperion_port",
+      "title": "Port",
+      "text": "Built round a Large Power Relay."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:cryocooler",
+      "title": "Cryocooler",
+      "text": "Copper, snow and redstone."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:quench_vent",
+      "title": "Quench Vent",
+      "text": "Iron and iron bars."
+    }
+  ]
+}
