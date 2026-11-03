@@ -24,7 +24,7 @@ Each slice is its own branch and PR off `feat/maeve-director`.
 - Reach 12. Each tick cuts every living thing between last tick's aim and this tick's (`BeamSweep`). Rays are at most
   a quarter block apart at full reach for turns up to about 75 degrees in one tick; past that, the 64-ray cap spreads
   them wider. A broken or stale sweep restarts as a single ray. Blocks stop the beam.
-- 0.3 damage a tick (6 a second). `frozendawn:sever_lash` bypasses the hurt cooldown and deals no knockback.
+- 0.6 damage a tick (12 a second; owner's playtest call on 2026-11-02, double the spec's 6). `frozendawn:sever_lash` bypasses the hurt cooldown and deals no knockback.
 - Owner ruling, 2026-11-02: the Lash bypasses armor entirely (`bypasses_armor`), so armor stops none of the cut and
   never wears from it. This replaces the spec's "armor blocks less than usual". Shields still stop half of what they
   would (`SeverLashDamageHandler`).
@@ -70,6 +70,11 @@ Unprompted report: "i like it", "no sounds though", and "it mowed down the husks
 owner said it died because they were standing too close; after respawning the targets and walking back, it was not
 hit. The log shows Hellwhip earned 16 s after joining. The missing sounds are expected: slice 1 only has the
 placeholder overheat hiss. Next step proposed: procedural Lash sounds and a 3D item model, in slice 2.
+
+## Owner playtest 2, 2026-11-02 (Sever Lash Check, runClient, PR head 19809a81)
+
+The owner asked for another cell mid-test, then reported "ngl this thing needs to do more damage lol". The owner
+set 12/s. That is above the spec's Sweep Turret 8/s, so raise the turret with it in slice 5.
 
 ## Verification
 

@@ -24,8 +24,8 @@ public final class SeverLash {
     public static final int DRAW_WATTS = 25_000;
     public static final int JOULES_PER_TICK = DRAW_WATTS / 20;
     public static final double REACH = 12;
-    /** Six damage a second. */
-    public static final float DAMAGE_PER_TICK = 0.3F;
+    /** Twelve damage a second: double the spec's 6, by the owner's playtest call. */
+    public static final float DAMAGE_PER_TICK = 0.6F;
     /** Hostiles cut in one continuous beam for the Hellwhip advancement. */
     public static final int HELLWHIP_HOSTILES = 3;
     private static final DustParticleOptions BEAM = new DustParticleOptions(new Vector3f(1F, .22F, .12F), .6F);

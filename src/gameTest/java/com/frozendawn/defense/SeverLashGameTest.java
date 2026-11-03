@@ -61,7 +61,7 @@ public final class SeverLashGameTest {
         var p=shooter(h,500000);var lash=p.getMainHandItem();
         var pig=target(h,EntityType.PIG,0,5);aim(p,0);
         for(int t=0;t<5;t++)SeverLash.fire(p,lash,1000+t);
-        h.assertTrue(Math.abs(pig.getHealth()-(pig.getMaxHealth()-5*SeverLash.DAMAGE_PER_TICK))<1e-4,"Every tick of contact lands: six damage a second");
+        h.assertTrue(Math.abs(pig.getHealth()-(pig.getMaxHealth()-5*SeverLash.DAMAGE_PER_TICK))<1e-4,"Every tick of contact lands: twelve damage a second");
         h.assertTrue(pig.getDeltaMovement().horizontalDistance()<1e-6,"A cutter does not shove");
         var stale=target(h,EntityType.PIG,30,5);
         aim(p,60);h.assertTrue(SeverLash.fire(p,lash,1010),"Fires again after a gap");
@@ -101,9 +101,9 @@ public final class SeverLashGameTest {
         var helmet=new ItemStack(Items.IRON_HELMET);victim.setItemSlot(EquipmentSlot.HEAD,helmet);
         try {
             aim(p,0);p.setXRot(10);
-            for(int t=0;t<40;t++)SeverLash.fire(p,lash,1000+t);
+            for(int t=0;t<20;t++)SeverLash.fire(p,lash,1000+t);
             h.assertTrue(victim.getHealth()<victim.getMaxHealth(),"The beam reached the armored player");
-            h.assertTrue(helmet.getDamageValue()==0,"Two seconds of beam leave the helmet unworn: "+helmet.getDamageValue());
+            h.assertTrue(helmet.getDamageValue()==0,"A second of beam leaves the helmet unworn: "+helmet.getDamageValue());
         } finally {server.setPvpAllowed(pvp);}
         h.succeed();
     }
