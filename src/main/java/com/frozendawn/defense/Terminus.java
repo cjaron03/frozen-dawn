@@ -62,7 +62,7 @@ public final class Terminus {
                 e -> e != op && e.isAlive())) {
             if (!TerminusCone.contains(eye, look, target.getBoundingBox().getCenter())
                     && !TerminusCone.contains(eye, look, target.getEyePosition())) continue;
-            switch (response(target, source)) {
+            switch (response(target, source, op)) {
                 case GAZE -> TerminusGaze.start((ArchitectEntity) target, op, hand);
                 case WOUND -> target.setHealth(Math.max(1f, target.getHealth() - BOSS_SHARE * target.getMaxHealth()));
                 case STOP -> {
@@ -78,13 +78,14 @@ public final class Terminus {
         op.addEffect(new MobEffectInstance(MobEffects.DARKNESS, BACKLASH_TICKS));
         op.addEffect(new MobEffectInstance(MobEffects.CONFUSION, BACKLASH_TICKS));
         ReactorAdvancements.grant(op, "deathwand");
-        PacketDistributor.sendToPlayersTrackingEntityAndSelf(op, new TerminusDischargePayload(op.getId(), minds));
+        PacketDistributor.sendToPlayersTrackingEntityAndSelf(op, TerminusDischargePayload.of(op.getId(), minds));
     }
 
-    private static Response response(LivingEntity target, DamageSource source) {
+    private static Response response(LivingEntity target, DamageSource source, ServerPlayer op) {
         if (target instanceof ArchitectEntity architect && architect.isMasterArchitectVisual()) return Response.GAZE;
         if (target.getType().is(IMMUNE) || target.isInvulnerableTo(source) || target.isSpectator()) return Response.NONE;
-        if (target instanceof Player player && (player.getAbilities().invulnerable || !player.getServer().isPvpAllowed()))
+        // Creative players, a server with PvP off, and teammates where friendly fire is off are spared.
+        if (target instanceof Player player && (player.getAbilities().invulnerable || !op.canHarmPlayer(player)))
             return Response.NONE;
         if (target.getType().is(Tags.EntityTypes.BOSSES)) return Response.WOUND;
         return target.getType().is(SUSCEPTIBLE) ? Response.STOP : Response.NONE;

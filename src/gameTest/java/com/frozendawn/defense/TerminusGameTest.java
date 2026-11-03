@@ -170,8 +170,16 @@ public final class TerminusGameTest {
             Terminus.discharge(op,op.getMainHandItem(),InteractionHand.MAIN_HAND);
             h.assertTrue(other.isDeadOrDying(),"Otherwise another player in the cone is stopped");
             h.assertTrue(!creative.isDeadOrDying(),"A creative player cannot be");
+            var board=server.getScoreboard();var team=board.addPlayerTeam("terminus_crew_"+UUID.randomUUID().toString().substring(0,8));
+            team.setAllowFriendlyFire(false);
+            var mate=player(h,"terminus_mate",new Vec3(EYE_X-1,FEET_Y,EYE_Z+6));
+            board.addPlayerToTeam(op.getScoreboardName(),team);board.addPlayerToTeam(mate.getScoreboardName(),team);
+            try {
+                Terminus.discharge(op,op.getMainHandItem(),InteractionHand.MAIN_HAND);
+                h.assertTrue(mate.isAlive(),"A teammate is spared where friendly fire is off");
+            } finally {board.removePlayerTeam(team);}
             h.assertTrue(op.isAlive()&&op.getHealth()==op.getMaxHealth(),"The operator takes nothing from the cone");
-            h.assertTrue(op.getMainHandItem().get(ModDataComponents.TERMINUS_LOG.get()).logged()==2,"The player is a transfer");
+            h.assertTrue(op.getMainHandItem().get(ModDataComponents.TERMINUS_LOG.get()).logged()==2,"The other player is a transfer");
         } finally {server.setPvpAllowed(pvp);}
         h.succeed();
     }
