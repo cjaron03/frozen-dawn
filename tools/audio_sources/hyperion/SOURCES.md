@@ -13,7 +13,7 @@ redesign (2026-11-02), when the levitating puck gave way to floating rings.
 | --- | --- | --- |
 | `sounds/blocks/hyperion/hum_loop.ogg` | `blocks.hyperion_hum` | 5 s loop: 50 and 100 Hz with low-passed brown noise, pulsing at 0.8 Hz |
 | `sounds/blocks/hyperion/chirp.ogg` | `blocks.hyperion_chirp` | 80 ms blip rising 2.2 to 3.0 kHz |
-| `sounds/blocks/hyperion/warning_loop.ogg` | `blocks.hyperion_warning` | 0.84 s loop: 881/619 Hz soft square two-tone, low-passed |
+| `sounds/blocks/hyperion/warning_loop.ogg` | `blocks.hyperion_warning` | 1.2 s loop: 1320 Hz sine ping with a fifth above, decaying to silence (owner pass 4 replaced the two-tone) |
 | `sounds/blocks/hyperion/whine.ogg` | `blocks.hyperion_whine` | 25 s band-limited saw, 220 to 1800 Hz, tremolo 4 to 14 Hz |
 | `sounds/blocks/hyperion/quench.ogg` | `blocks.hyperion_quench` | thump falling 90 to 28 Hz with a darkening noise burst |
 | `sounds/blocks/hyperion/vent.ogg` | `blocks.hyperion_vent` | 8.5 s band-passed steam roar over a low rumble |

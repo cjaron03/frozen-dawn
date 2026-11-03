@@ -32,11 +32,12 @@ render chirp \
   -f lavfi -i "aevalsrc='0.6*min(1\, t/0.005)*exp(-35*t)*sin(2*PI*(2200*t+5000*t*t))':s=44100:d=0.2" \
   -filter_complex "[0:a]afade=t=out:st=0.17:d=0.03,alimiter=limit=0.7:level=0[out]"
 
-# Warning, 0.84 s loop: alternating 881/619 Hz soft squares (odd harmonics to the 7th), each 0.42 s tone a whole number
-# of cycles and ramped at its edges. Runtime pitch rises 1.0 to 1.6 as the quench nears.
+# Warning, 1.2 s loop (owner pass 4, 2026-11-02, option B of docs/art/hyperion-storage/warning-options-sketch.html): a
+# glassy 1320 Hz sine ping with a fifth above, struck once and decaying to silence well before the loop closes, so the
+# loop is seamless at a steady pace.
 render warning_loop \
-  -f lavfi -i "aevalsrc='if(lt(t\,0.42)\, sin(2*PI*880.952381*t)+sin(6*PI*880.952381*t)/3+sin(10*PI*880.952381*t)/5+sin(14*PI*880.952381*t)/7\, sin(2*PI*619.047619*t)+sin(6*PI*619.047619*t)/3+sin(10*PI*619.047619*t)/5+sin(14*PI*619.047619*t)/7) * min(1\, min(mod(t\,0.42)\, 0.42-mod(t\,0.42))/0.01) * 0.45':s=44100:d=0.84" \
-  -filter_complex "[0:a]lowpass=f=2200,alimiter=limit=0.6:level=0[out]"
+  -f lavfi -i "aevalsrc='(0.46*sin(2*PI*1320*t)+0.13*sin(2*PI*1980*t)) * min(1\, t/0.004) * exp(-7.02*t)':s=44100:d=1.2" \
+  -filter_complex "[0:a]alimiter=limit=0.6:level=0[out]"
 
 # Whine, 25 s: the final seconds. A band-limited saw sweeping 220 to 1800 Hz, shaped by a high- and low-pass band,
 # swelling as it rises, with a tremolo that quickens from 4 to 14 Hz.

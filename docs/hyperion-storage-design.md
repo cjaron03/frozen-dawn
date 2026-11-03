@@ -106,7 +106,7 @@ The owner heard a synthesized sketch of each cue and accepted it ([audio-ladder-
 
 1. **Normal:** a low cryocooler hum with a slow compressor pulse. It gets quieter as the surroundings get colder, so a battery outside in deep cold is almost silent.
 2. **Chirp:** heat has started winning. A single short chirp about every 10 seconds.
-3. **Warning:** about a third of the time is left, and never less than 20 seconds before the final seconds (owner pass 4, 2026-11-02: beside a heat source a third was only 5 seconds). A two-tone alarm that repeats faster as the cells near the quench point.
+3. **Warning:** about a third of the time is left, and never less than 20 seconds before the final seconds (owner pass 4, 2026-11-02: beside a heat source a third was only 5 seconds). A glassy ping every 1.2 seconds at a steady pace; the final whine is what escalates (owner pass 4 replaced the two-tone alarm, which repeated faster, with option B of [warning-options-sketch.html](art/hyperion-storage/warning-options-sketch.html)).
 4. **Final seconds:** a rising whine for the last 20 to 30 seconds.
 5. **Quench:** a loud bang, then a roaring steam hiss positioned at each vent, 5 to 10 seconds.
 6. **Aftermath:** about 10 seconds of ticks, metal pings like a cooling pipe, and a fading hiss of boil-off. No creaks or voice-like sweeps (owner).
