@@ -9,6 +9,7 @@ import fcntl
 import gzip
 import io
 import json
+import math
 from pathlib import Path
 
 import prepare_blind_architect_playtest as nbt
@@ -68,6 +69,13 @@ def walls():
             'execute unless entity @e[tag=slash_master] run '+MASTER]
 
 
+# Beam station, firing from (15.5, 65, 0.5) south: pillars every 20 degrees from -50 to 50 at ten blocks, alternating
+# white and light blue concrete so a sweep can be counted. Concrete takes no heat, so the pillars never need rebuilding.
+BEAM_ARC = [f'fill {x} 65 {z} {x} 68 {z} minecraft:{"white" if i % 2 == 0 else "light_blue"}_concrete'
+            for i, (x, z) in enumerate((round(15.5 + 10 * math.sin(math.radians(a)) - .5), round(.5 + 10 * math.cos(math.radians(a)) - .5))
+                                       for a in range(-50, 51, 20))]
+
+
 def target(kind, x, z, extra=''):
     tags = 'Tags:["slash_target"],NoAI:1b,PersistenceRequired:1b,Rotation:[180f,0f]'
     return f'summon minecraft:{kind} {x} 65 {z} {{{tags}{","+extra if extra else ""}}}'
@@ -101,6 +109,8 @@ def scripts():
              'fill -1 64 12 1 64 12 minecraft:white_concrete', 'fill -1 64 15 1 64 15 minecraft:red_concrete',
              # Sealed glass room around the third station; its roof gap opens on demand.
              'fill 55 64 -3 66 70 10 minecraft:glass hollow', 'fill 55 64 -3 66 64 10 minecraft:smooth_stone',
+             # Beam station: six pillars on a ten-block arc, 100 degrees wide, to sweep across slowly and fast.
+             *BEAM_ARC,
              # Crafting bench for the Lash recipe.
              'setblock 105 65 4 minecraft:crafting_table',
              'fd world set phase 6 mid', 'fd world pause',
@@ -120,6 +130,7 @@ def scripts():
         'setup': '\n'.join(setup),
         'controls': '\n'.join([GUARD,
             tell('SEVER LASH CHECK: Creative, Normal difficulty, paused mid Phase 6 (air everywhere). Hold use to fire. Advancements are ON in this world.'),
+            tell('[Beam: slow vs fast sweeps, air vs vacuum]', 'beam'),
             tell('[Range: sweep, reach, wall, Hellwhip]', 'range'), tell('[Armor: bare vs diamond]', 'armor'),
             tell('[Room: air vs vacuum]', 'room'), tell('[World effects: melt, scorch, ignite]', 'effects'),
             tell('[Last Wall]', 'lastwall'), tell('[Craft a Lash]', 'craft'),
@@ -147,17 +158,22 @@ def scripts():
                 {'entity':'@s','nbt':'Pos','color':'gray'},{'text':' health ','color':'aqua'},{'entity':'@s','nbt':'Health','color':'white'}]),
             'return 1'])}
     views = {
+        'beam': ((15.5,65,.5), ['Six pillars on an arc ahead. Hold use and sweep slowly from end to end: the beam should stay straight, white core in an orange sheath with a violet halo.',
+                                'Now sweep fast and stop dead: the far end trails into a whip, a faint red afterimage fades behind it, and it snaps straight with a crack.',
+                                'Listen for the start-up, the hum rising as it heats, the sizzle where it lands, and the vent hiss at overheat.',
+                                'Click VACUUM in the lab menu, then fire again here: in vacuum only the white core and the impact show. The Room station keeps air for a side-by-side.']),
         'range': ((.5,65,.5), ['Three husks at six blocks: cut all three in one continuous beam, without letting go (Hellwhip).',
                                'Pigs over the white line (12, inside reach) and the red line (15, beyond). The pig left of the stone wall should be safe from straight shots.',
                                'Fire continuously for six seconds to overheat: four seconds of lockout in air.']),
         'armor': ((30.5,65,.5), ['Left husk bare, right husk in full diamond. The Lash bypasses armor: both should take the same cut.']),
         'room': ((60.5,65,.5), ['Air vs vacuum. Click VACUUM in the lab menu first: outdoors the beam then shows only its impact, and the overheat lockout doubles to eight seconds.',
-                                'Inside the sealed glass room the air remains: the beam draws its red line and the lockout is four seconds. Open the roof to make the room vacuum too.',
+                                'Inside the sealed glass room the air remains: the full beam shows, sheath, halo and afterimage, and the lockout is four seconds. Open the roof to make the room vacuum too.',
                                 'Against the back wall: ice, planks, stone and packed ice. After VACUUM, planks still catch in here and stone still scorches outdoors, but outdoor wood will not burn.']),
         'effects': ((90.5,65,.5), ['Left to right: snow, ice, packed ice, blue ice, stone, planks, log, then an unlit campfire and candle. Snow covers the floor.',
                                    'A sweep flashes snow and ice to steam. Hold the beam for 1 s on packed ice, 2 s on blue ice and 0.5 s on stone (it turns to Scorched Ground).',
                                    'Wood, the campfire and the candle catch at once while there is air. Fire tick is off here, so fire does not spread.',
-                                   'Fire continuously to watch the held Lash glow: warm from half heat, bright from 80%, white-hot when it trips, then red as it cools.']),
+                                   'Fire continuously to watch the held Lash heat: fin tips dull red from half heat, fins and barrel glowing orange from 80%.',
+                                   'At overheat the fins lean back and the slots under them flicker white, then cool through orange to red and fold shut. In air the vents smoke; in vacuum they only glow.']),
         'lastwall': ((120.5,65,.5), ['Left: a Last Wall held by a frozen Master Architect (NoAI, invulnerable, in glass). It should not melt.',
                                      'Right: the same packed ice and ice with no Master. It melts like any other.',
                                      'The frozen Master runs no AI, so breaking the seam by hand does not drop its wall here; that is checked in a live fight.']),
@@ -188,7 +204,7 @@ def prepare_world(source, destination, title=TITLE):
     report=destination/'preparation.json';info=json.loads(report.read_text())
     info.update({'advancements':'visible with toasts and chat in this world only (owner ruling 2026-11-02)',
                  'phase':'mid phase 6 (air), paused; a one-way button advances to late phase 6 vacuum',
-                 'fixtures':'firing range with Hellwhip husks, 12/15 reach pigs and a walled pig; bare vs diamond husks; sealed glass room with an openable roof and an effects wall; '
+                 'fixtures':'beam arc of six pillars for slow and fast sweeps; firing range with Hellwhip husks, 12/15 reach pigs and a walled pig; bare vs diamond husks; sealed glass room with an openable roof and an effects wall; '
                              'melt/scorch/ignite wall outdoors; Last Wall held by a NoAI Master Architect beside a plain twin; crafting bench with ingredient and memo buttons'})
     report.write_text(json.dumps(info,indent=2)+'\n')
     print(destination.resolve())

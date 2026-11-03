@@ -10,7 +10,7 @@ Each slice is its own branch and PR off `feat/maeve-director`.
 | # | Slice | Status |
 |---|---|---|
 | 1 | Lash core, Seared, acquisition, world effects, overheat glow, hellwhip memo | This branch, `feat/sever-lash`, PR #143 open; built, awaiting the owner's playtest and merge approval |
-| 2 | Lash modules (need the ORSA Fabricator, which is not built), beam render, hum, sounds, 3D model, texture | Not started |
+| 2 | Beam render, hum and sounds, 3D model and texture; the Lash modules wait for the ORSA Fabricator | `feat/sever-lash-2` off `feat/sever-lash`; built, awaiting the owner's playtest |
 | 3 | Proximity Tracker (handheld, then wall-mounted) | Not started |
 | 4 | Arc Fence | Not started |
 | 5 | Sweep Turret (needs 1 and 3) | Not started |
@@ -43,17 +43,13 @@ TR-0 Terminus page (2026-11-03) is its own slice after the Sweep Turret.
   lapsed. The lockout is 4 s
   in air and 8 s where the eye has no air (`CombustionAtmosphere.canBurnAt`). Idle ticks cool it as fast as firing
   heats it in air, and at half that rate in vacuum. A locked or unpowered trigger costs nothing.
-- In air the beam draws a red dust line; in vacuum only the impact shows. Overheat plays a vanilla extinguish hiss
-  as a placeholder.
+- Slice 1 drew the beam as a red dust line in air, only the impact in vacuum, and played a vanilla extinguish hiss at
+  overheat. Slice 2 replaces both (below).
 - Hyperion touches: serial "S/N LC-4/KSD", the "NOT FOR USE ON PERSONNEL." tooltip, the Hellwhip challenge advancement
   (three hostiles cut in one continuous beam; letting go or overheating starts a new count), and a player death message naming the hellwhip.
 - The held Lash glows as it heats (`LashHeat.glow` and `vent`, as the client item predicates `frozendawn:heat` and
-  `frozendawn:vent`, with overrides in `models/item/sever_lash*.json`).
-  - Warm from half heat.
-  - A fullbright hot glow from 80%.
-  - White-hot for the first half of a lockout and cooling red for the second.
+  `frozendawn:vent`, with overrides in `models/item/sever_lash*.json`). Slice 2 moved this onto the 3D model.
   - The client settles heat on its own clock and has no vacuum reading, so in vacuum the glow fades a little early.
-  - The overlays come from `make_textures.py`.
 
 ### Acquisition
 
@@ -177,11 +173,65 @@ Mockup: `docs/art/sever-lash/beam-mockup.png` (`make_beam_mockup.py`). The owner
 - In vacuum only the core and the impact show.
 - The bend is visual only: cutting still follows `BeamSweep`.
 
-## Deferred to slice 2
+## Slice 2 (branch `feat/sever-lash-2`, 2026-11-03)
+
+### Beam
+- `SeverLash` sends one `LashBeamPayload` a firing tick to the shooter and every player tracking them: shooter, aim,
+  length to where the last ray stops, whether it lands on a block, vacuum, and heat (0 to 1). The dust particles are
+  gone. `LashBeamClient` draws it.
+- Three camera-facing strips from the muzzle, each bright down the middle and clear at its edges, blended additively:
+  a white core, an orange sheath and a violet halo 0.34 blocks across. The sheath and halo shimmer a little.
+- The bend (`WhipBend`, pure and JUnit-tested): the near end follows the aim at once. The far end closes 40% of its
+  lag a tick, so a steady sweep trails about one and a half ticks behind, and never more than 35 degrees. The
+  direction turns toward the far end with the square of the distance along the beam. A turn under 1.5 degrees in a
+  tick is a stop: the beam snaps straight, and cracks if it was bent 10 degrees or more. A flick of 25 degrees in one
+  tick cracks on its own. Cracks are at least 6 ticks apart. The shooter's own beam follows their view each client
+  tick; everyone else's follows the server's aim.
+- The drawn curve stops at the first block it meets. The impact is a small flickering star with ember sparks.
+- In air, a thin red afterimage of the last three ticks fades behind it. In vacuum only the core and the impact show.
+- The bend is visual only: cutting still follows `BeamSweep`.
+- Ruling (agent): the muzzle is placed by eye, low right of the view in first person, at the end of an arm raised
+  along the aim otherwise. It may not meet the lens exactly; judge in game.
+
+### Sounds (`tools/generate_sever_lash_sounds.sh`, sources in `tools/audio_sources/sever_lash/`)
+- Server-played, heard by everyone near: a start-up strike on the first tick of a beam; a cut sizzle every quarter
+  second while the beam lands on a block or cuts something (`SeverLash.SIZZLE_TICKS`); and an overheat vent (valve
+  thump and steam hiss) that replaces the extinguish placeholder.
+- Client-played, on every client that sees the beam: the hum loop, following the shooter, from pitch 0.75 cool to
+  1.4 at overheat; and the crack from `WhipBend`.
+
+### 3D model (`tools/build_sever_lash_models.py`, textures from `docs/art/sever-lash/make_textures.py`)
+- The approved geometry, one model unit a mockup pixel, lens facing north. 16x16 material tiles under
+  `textures/item/sever_lash/`, one texel a unit, replace the flat sprite and its glow overlays.
+- One model a state, picked by overrides on `frozendawn:heat`, the new `frozendawn:firing` (the holder is using this
+  stack) and `frozendawn:vent`:
+  - cool: steel fins, cyan lens;
+  - warm (from half heat): fin tips and barrel tip dull red;
+  - hot (from 80%): fins red, tips and barrel orange;
+  - firing, cool, warm or hot: the same, held along the raised arm in third person;
+  - six vent stages (`LashHeat.ventStage`; the predicate is the stage in eighths): fins lean back 22.5 degrees for
+    two ticks, then 45, white-hot over flickering white slots for the first half of the lockout, orange through the
+    third quarter, red after, folding back to 22.5 and then shut in the last four ticks.
+- Fullbright (`neoforge_data` light 15, unshaded): the lens always, the vent slots, and the fins and barrel tip when
+  hot and through the whole vent. Ruling (agent): the red cooling fins stay fullbright too, as slice 1's cooling glow did.
+- Holding (`SeverLashHold`):
+  - third person idle: carried at the hip, barrel forward;
+  - third person firing: a custom arm pose (`FROZENDAWN_SEVER_LASH`, added through `META-INF/enumextensions.json`).
+    The arm is raised level along the look, and an empty off hand braces under the coils;
+  - first person: low right, lens toward the crosshair. Firing lifts it slightly with a sub-pixel tremble and no
+    kick; through a lockout it dips and tilts 10 degrees away, easing over four ticks at each end;
+  - GUI: three-quarter view.
+  - The display transforms are first estimates, to be tuned in game.
+- In air the vents put out grey smoke puffs every three ticks through the lockout. The client takes air or vacuum
+  from that player's last beam.
+- Re-equip bob: `SeverLashItem.shouldCauseReequipAnimation` ignores a change to `LashHeat` alone.
+- Open for the owner, from the model spec: is the off-hand brace wanted, is the smoke wanted in air, and should the
+  cell port show charge? The brace and smoke are built; the cell port shows no charge.
+
+## Deferred to slice 3 or later
 
 - Heat Sink, Long Focus and Wide Aperture modules. Per the Notion Fabricator page they are Fabricator recipes
   (5 kW, 30 s), so they wait for the Fabricator.
-- A proper beam render, hum, procedural sounds, a 3D item model and a better texture.
 - The two specs disagree on the Sweep Turret's recipe: the turret page gives a crafting recipe, while the Fabricator
   page lists it as a blueprint. Settle this before slice 5.
 
@@ -198,15 +248,21 @@ a sealed glass room for air vs vacuum. Slice 1 (2026-11-03, save "Sever Lash Sli
   drop the wall here.
 - **A crafting bench** at x 105, with ingredient and memo buttons.
 
+Slice 2 (2026-11-03, save "Sever Lash Slice 2") adds a **Beam** station at x 15: six white and light blue concrete
+pillars on a ten-block arc, 100 degrees wide, to sweep across slowly and fast. Its guide covers the bend, the
+afterimage, the crack and the sounds. It is in air until VACUUM is clicked, and the Room station keeps air for a
+side-by-side. The Effects station's guide now describes the 3D model's heat and vent states.
+
 A rebuild button restores every wall, and merges the wall back into the Master without killing it. By the owner's ruling (2026-11-02) this world keeps advancement toasts and chat
 on so Hellwhip can be seen; other generated worlds still filter them. Difficulty is Normal and locked.
 
 ## Deferred from the slice 1 branch review
 
 - Hurt flash and hurt sound replay on every tick a target is cut, because the cooldown is bypassed. Judge by ear in
-  the sound slice.
+  the slice 2 playtest, now that the sizzle plays over it.
 - The Lash cuts anything living except the shooter: its own mount, tamed pets, villagers. This is a design call.
-- The held stack is rewritten every firing tick; check for a hand re-equip bob in the visual pass.
+- The held stack is rewritten every firing tick; check for a hand re-equip bob in the visual pass. Slice 2 stops the
+  bob when only heat changed.
 - `use()` checks only the lockout, so a trigger with no cells flickers the use animation.
 - A player who logs out mid-beam leaves one stale entry in the aim map. It is harmless.
 
@@ -258,7 +314,12 @@ for slice 2: the 3D model and sounds, and a beam that "screams hellwhip" instead
   - `BlockHeatTest`: dwell, sweep, same-tick rays and cooling.
   - `LashSalvageTest`: 1 to 2 Helion emitters, about 1 in 4 reactor bays, about 1 in 4 memos, and determinism.
   - `SeverLashRecipeTest`: ingredients, a cool result, and a unique grid.
-  - `SeverLashModelTest`: every glow state has its model and textures, and the vent overrides come last.
+  - `SeverLashModelTest`: every state has its model and textures, the overrides are in order with the vent stages
+    last, the fins turn in vanilla steps to each stage's angle, the lens and hot parts are fullbright, and firing
+    changes only the third-person hold.
+  - `WhipBendTest`: a new beam is straight, a sweep trails and a faster one trails further, the cap, the snap with
+    and without a crack, the flick cooldown, and the curve from muzzle to far end.
+  - `LashHeatTest`: the vent stages through a lockout, in air and vacuum.
 - GameTests (`-PfdTests=severLash,seared,helionDiagnostics,helionBench,reactorMaintenance`):
   - Slice 1 core: power draw, arc-only cutting, cooldown, knockback, stale-aim reset, armor bypass, no player armor
     wear, overheat, Hellwhip, and Seared application, build-up, burn and slowdown.
@@ -268,9 +329,15 @@ for slice 2: the 3D model and sounds, and a beam that "screams hellwhip" instead
     exemption; adventure-mode refusal; ignition refused by a place-event claim on the fire cell; the once-a-second
     refusal memory.
   - Vacuum (batch `sever_lash_vacuum`): nothing burns, and stone still scorches.
-- `architectVerify` passed on 09572595 (864 GameTests) and on 435d74e4 (865), after the review fixes. Only this
-  line changed after that.
-- Not covered by a test, so these need the owner's visual pass:
+- `architectVerify` passed on 09572595 (864 GameTests) and on 435d74e4 (865), after the review fixes.
+- Slice 2 GameTests: one beam payload a firing tick, naming the shooter and carrying the aim, length to the wall,
+  landing, air and heat; the full reach in open air; nothing while locked; vacuum flagged (batch
+  `sever_lash_vacuum`); one start-up a beam; a sizzle every quarter second of contact and none into open air; one vent
+  at overheat and no extinguish placeholder; and no re-equip for heat alone.
+- Not covered by a test, so these need the owner's visual and listening pass:
+  - slice 2: how the beam looks bent and straight, where it leaves the Lash, the afterimage and impact, the model,
+    its texture and display transforms in every view, the firing and vent poses, the vent smoke, and every sound,
+    including the hum's pitch and how the sizzle sits over the repeated hurt sound;
   - the shield half-block, which needs a player blocking for 5+ ticks;
   - the ember particles and icon;
   - the glow sprites in hand, and whether the fullbright layers read as hot;
