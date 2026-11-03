@@ -14,8 +14,8 @@ is the tracked handoff; the spec stays on Notion.
 
 | # | Slice | Status |
 | --- | --- | --- |
-| T1 | The wand itself, creative tab and `/give` only | Built on `feat/terminus`; awaiting the owner's playtest |
-| T2 | The Terminus Vault at the first Helion site, the Unwatched Door puzzle, the vault documents | Not started |
+| T1 | The wand itself, creative tab and `/give` only | Built on `feat/terminus`; owner playtests passed ("good", 2026-11-03); branch review, then a PR on the owner's word |
+| T2 | The Terminus Vault at the first Helion site, the Unwatched Door puzzle, the vault documents | Not started. Owner, 2026-11-03: the room must be "very...very hidden", against the spec's "every player who reaches Helion sites finds it" |
 | T3 | Maeve, Hearth and Aggregate interplay, through the shared Maeve slice | Not started (MACS is WIP) |
 
 ### T1: the wand (creative only)
@@ -264,3 +264,7 @@ a [Wither health] button reading its health. The reach is now 24 blocks and Redu
 
 "ah enable advancemnets please, and i wanna fix the sounds. i want it to have a better chargeup sound, and maybe
 sometihng when it first, or is that not realistic"
+
+## Owner playtest 4, 2026-11-03 (Terminus Check 5, runClient, branch head f85128a0)
+
+Unprompted report: "good." Then: "whats next? the puzzle in helion? i want the room to be very...very hidden"
