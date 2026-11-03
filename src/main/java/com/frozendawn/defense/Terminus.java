@@ -40,13 +40,15 @@ import net.neoforged.neoforge.event.tick.LevelTickEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 /**
- * ORSA TR-0 Terminus: after a two-second wind-up, one discharge stops every susceptible mind in a 12-block, 30-degree
+ * ORSA TR-0 Terminus: after a two-second wind-up, one discharge stops every susceptible mind in a 24-block, 30-degree
  * cone, through blocks and armor, and takes two of its operator's hearts, which come back a heart a Minecraft day.
  * No beam, nothing burned.
  */
 @EventBusSubscriber(modid = FrozenDawn.MOD_ID)
 public final class Terminus {
     public static final int WINDUP_TICKS = 40, BACKLASH_TICKS = 200, GAZE_TICKS = 60;
+    /** Minds one discharge must stop for the hidden Reduced to Atoms (the owner's, after "Gone. Reduced to atoms."). */
+    public static final int ATOMS = 3;
     /** After a discharge or an interrupted wind-up, so a held use key cannot wind straight into the next one. */
     public static final int COOLDOWN_TICKS = 20;
     /**
@@ -94,6 +96,7 @@ public final class Terminus {
         op.addEffect(new MobEffectInstance(MobEffects.DARKNESS, BACKLASH_TICKS));
         op.addEffect(new MobEffectInstance(MobEffects.CONFUSION, BACKLASH_TICKS));
         ReactorAdvancements.grant(op, "deathwand");
+        if (minds.size() >= ATOMS) ReactorAdvancements.grant(op, "reduced_to_atoms");
         op.getCooldowns().addCooldown(stack.getItem(), COOLDOWN_TICKS);
         PacketDistributor.sendToPlayersTrackingEntityAndSelf(op, TerminusDischargePayload.of(op.getId(), minds));
     }

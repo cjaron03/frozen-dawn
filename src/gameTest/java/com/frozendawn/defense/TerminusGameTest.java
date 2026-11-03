@@ -19,6 +19,7 @@ import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.entity.monster.Husk;
 import net.minecraft.world.item.*;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Blocks;
@@ -76,13 +77,34 @@ public final class TerminusGameTest {
         var ahead=target(h,EntityType.HUSK,0,6);
         var edge=target(h,EntityType.HUSK,13,10);
         var wide=target(h,EntityType.HUSK,22,6);
-        var far=target(h,EntityType.HUSK,0,13.5);
         Terminus.discharge(op,wand,InteractionHand.MAIN_HAND);
-        h.assertTrue(ahead.isDeadOrDying()&&edge.isDeadOrDying(),"Minds inside 12 blocks and 15 degrees are stopped");
+        h.assertTrue(ahead.isDeadOrDying()&&edge.isDeadOrDying(),"Minds inside 15 degrees are stopped");
         h.assertTrue(full(wide)&&wide.isAlive(),"Outside 30 degrees is untouched");
-        h.assertTrue(full(far)&&far.isAlive(),"Beyond 12 blocks is untouched");
         var log=wand.get(ModDataComponents.TERMINUS_LOG.get());
         h.assertTrue(log.discharges()==2&&log.logged()==3,"One discharge spent, two transfers added: "+log);
+        h.assertTrue(!earned(op,"reduced_to_atoms"),"Two minds are not enough for Reduced to Atoms");
+        h.succeed();
+    }
+
+    /** 24 blocks, along the template's diagonal: the one line in it that long. */
+    @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="terminus",timeoutTicks=100)
+    public static void terminusReachesTwentyFourBlocks(GameTestHelper h) {
+        var op=player(h,"terminus_far_operator",new Vec3(1.5,FEET_Y,1.5));
+        op.setItemInHand(InteractionHand.MAIN_HAND,new ItemStack(ModItems.TERMINUS.get()));
+        op.setYRot(-45);op.setYHeadRot(-45);
+        var inside=diagonal(h,23.5);var beyond=diagonal(h,25);
+        Terminus.discharge(op,op.getMainHandItem(),InteractionHand.MAIN_HAND);
+        h.assertTrue(inside.isDeadOrDying(),"A mind 23.5 blocks out is stopped");
+        h.assertTrue(full(beyond)&&beyond.isAlive(),"Beyond 24 blocks is untouched");
+        h.succeed();
+    }
+
+    @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="terminus",timeoutTicks=100)
+    public static void terminusStoppingThreeMindsEarnsReducedToAtoms(GameTestHelper h) {
+        var op=operator(h);
+        for(double d:new double[]{5,7,9})target(h,EntityType.HUSK,0,d);
+        Terminus.discharge(op,op.getMainHandItem(),InteractionHand.MAIN_HAND);
+        h.assertTrue(earned(op,"reduced_to_atoms"),"Three minds in one discharge");
         h.succeed();
     }
 
@@ -376,6 +398,11 @@ public final class TerminusGameTest {
         double r=Math.toRadians(yaw);double eye=FEET_Y+EntityType.PLAYER.getDimensions().eyeHeight();
         var at=new Vec3(EYE_X-Math.sin(r)*distance,eye-type.getHeight()/2,EYE_Z+Math.cos(r)*distance);
         var mob=h.spawnWithNoFreeWill(type,at);mob.setNoGravity(true);mob.setDeltaMovement(Vec3.ZERO);return mob;
+    }
+    private static Husk diagonal(GameTestHelper h,double distance) {
+        double eye=FEET_Y+EntityType.PLAYER.getDimensions().eyeHeight(),step=distance/Math.sqrt(2);
+        var husk=h.spawnWithNoFreeWill(EntityType.HUSK,new Vec3(1.5+step,eye-EntityType.HUSK.getHeight()/2,1.5+step));
+        husk.setNoGravity(true);husk.setDeltaMovement(Vec3.ZERO);return husk;
     }
     private static <E extends Entity> List<E> around(GameTestHelper h,Class<E> type) {
         return h.getLevel().getEntitiesOfClass(type,new AABB(h.absolutePos(BlockPos.ZERO)).inflate(24));

@@ -5,7 +5,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import net.minecraft.world.phys.Vec3;
 import org.junit.jupiter.api.Test;
 
-/** The Terminus cone: 12 blocks from the eyes along the look, 30 degrees across, round rather than a fan. */
+/** The Terminus cone: 24 blocks from the eyes along the look, 30 degrees across, round rather than a fan. */
 class TerminusConeTest {
     private static final Vec3 EYE = new Vec3(0, 64, 0), LOOK = new Vec3(0, 0, 1);
 
@@ -36,9 +36,9 @@ class TerminusConeTest {
     }
 
     @Test
-    void twelveBlocksIsTheReach() {
-        assertTrue(TerminusCone.contains(EYE, LOOK, at(0, 0, 12)));
-        assertFalse(TerminusCone.contains(EYE, LOOK, at(0, 0, 12.01)));
+    void twentyFourBlocksIsTheReach() {
+        assertTrue(TerminusCone.contains(EYE, LOOK, at(0, 0, 24)));
+        assertFalse(TerminusCone.contains(EYE, LOOK, at(0, 0, 24.01)));
     }
 
     @Test

@@ -65,6 +65,17 @@ As the spec, sections 5, 5a, 6, 8 and 9. Open: the tale logs (count and voices).
   `docs/art/terminus/stop-mockup.png` (`make_stop_mockup.py`): the body stands still and greys for half a second, then
   crumbles from the head down along a ragged edge into one-texel grey flakes that drift up and off to the right, paling
   as they go. No tip-over, no red flush, no poof.
+- 2026-11-03, cost: after playtest 2 the owner found a permanent max-health loss through death too steep, and asked for
+  "a unique heart debuff, like how radiation acts in fallout". Approved as drawn ("Build it as drawn") in
+  `docs/art/terminus/taken-hearts-mockup.png` (`make_taken_hearts_mockup.py`): each discharge takes two hearts, shown
+  at the end of the health bar as ash-grey hearts with a pale mote; they are not health; half a heart comes back every
+  half Minecraft day. Death keeps the toll and its clock, so dying does not undo it. This replaces the spec's "removes
+  4 max HP for good".
+- 2026-11-03, reach: after playtest 3 the owner asked for a longer range and picked 24 blocks (the spec had 12). The
+  cone stays 30 degrees, about 13 blocks across at its end.
+- 2026-11-03, Reduced to Atoms: after playtest 3 the owner asked for a hidden advancement for three or more mobs in one
+  discharge, after Thanos's line. Built as "Reduced to Atoms", "Stop three minds or more with one discharge.", a hidden
+  challenge under Deathwand.
 
 ## T1 as built (2026-11-03)
 
@@ -82,8 +93,8 @@ As the spec, sections 5, 5a, 6, 8 and 9. Open: the tale logs (count and voices).
 - Held use: a discharge or an interrupt puts the wand on a 20-tick cooldown, and the client will not start another
   wind-up until the use key has come up (`TerminusClient.releaseGate`), so holding the key cannot run through the
   charges.
-- Discharge (`Terminus.discharge`): one `getEntitiesOfClass` over the 12-block box round the eyes, then each living
-  thing whose box centre or eyes fall in the cone (`TerminusCone`: 12 blocks, 15 degrees off the look, round). No line
+- Discharge (`Terminus.discharge`): one `getEntitiesOfClass` over the 24-block box round the eyes, then each living
+  thing whose box centre or eyes fall in the cone (`TerminusCone`: 24 blocks, 15 degrees off the look, round). No line
   of sight, no armor check. In order:
   - the Master Architect (`isMasterArchitectVisual`, so its mind copies too) is untouched and gazes (below);
   - `frozendawn:terminus_immune` (Heart, Successor, Aggregate and fragments, Undone, Rimebound, Resonant, Remnant),
@@ -99,9 +110,17 @@ As the spec, sections 5, 5a, 6, 8 and 9. Open: the tale logs (count and voices).
   drop. A target whose own death defers (health left above 0) is not logged.
 - The body (non-players): `Terminus.holdDeath`, from a `LivingEntityMixin` hook on `tickDeath`, keeps it for 32 ticks
   instead of vanilla's 20 and then removes it with no poof, so the client can crumble it.
-- Cost: `frozendawn:terminus_toll` (player attachment, copied on death) counts discharges; a permanent `MAX_HEALTH`
-  modifier `frozendawn:terminus_toll` of -4 each is reapplied on clone and login, and health is held under the new
-  maximum. Then 10 s of Darkness and Nausea, and the hidden advancement Deathwand ("Nothing burned.").
+- Cost (owner's ruling, taken hearts): `frozendawn:terminus_taken` (player attachment `TerminusToll`, copied on death)
+  holds the half hearts taken and the overworld game time the next half returns. A discharge takes 4; a clock already
+  running keeps running. `Terminus.onLevelTick` returns half a heart when due and sets the next half a day (12,000
+  ticks) on. A `MAX_HEALTH` modifier `frozendawn:terminus_toll` of minus the taken points is reapplied on every change,
+  clone and login, and health is held under the new maximum. Then 10 s of Darkness and Nausea, the hidden advancement
+  Deathwand ("Nothing burned."), and, if the discharge stopped three minds or more, the hidden challenge Reduced to
+  Atoms.
+- Taken hearts (`TerminusHearts`, drawn from `GuiTerminusHeartsMixin` at the end of vanilla's `Gui.renderHearts`, on its
+  rows and slots): one `hud/heart/terminus_taken` sprite per taken heart after the health and absorption hearts; an odd
+  toll covers the right half of vanilla's last heart, a half heart of maximum, with `terminus_taken_half`. The client
+  reads the count from its own toll modifier, so no packet is needed.
 - The Master's gaze (`TerminusGaze`): for 60 ticks, after its own tick, its head is turned to the wand in the
   operator's hand (`Terminus.wandPosition`: forward of the eyes, below them, to the holding side), following it if the
   operator moves. Then its own look control takes over again.
@@ -170,12 +189,13 @@ As the spec, sections 5, 5a, 6, 8 and 9. Open: the tale logs (count and voices).
 builds "Terminus Check": Survival, Normal, a station per behavior, each a gold block with its targets to the south:
 cone (edge and reach husks), walls (obsidian), the untouched table, a frozen Wither, a NoAI Master Architect
 side-on, sword zombies with before and after the Heart buttons (`fd terminus turned`), a magma interrupt pad and open
-ground for the wind-up. `fd terminus status | restore | turned <bool>` reads and resets the playtest state; in play
-neither the toll nor the turn reverses. Advancements are filtered as in every generated world.
+ground for the wind-up. `fd terminus status | restore | due | turned <bool>` reads and resets the playtest state;
+`due` brings the next half heart back at once. In play the turn never reverses. The frozen Wither's boss bar does not
+move (vanilla updates it from the Wither's AI), so its station has a [Wither health] button. Advancements are filtered as in every generated world.
 
 ### Verification
 - JUnit: `TerminusConeTest`, `TerminusLedgerTest`, `TerminusTextTest`, `TerminusDischargePayloadTest`,
-  `TerminusCrumbleTest`.
+  `TerminusCrumbleTest`, `TerminusTollTest` (two hearts a discharge, half back each half day, the clock left running).
 - GameTests (`-PfdTests=terminus`, batches `terminus` and `terminus_terminal`): found wand and tooltip; cannot burn or
   despawn; cone hits and misses; through walls; the immunity table; bosses at 40% and never killed; the Master's look at
   the wand and its end; operator spared, other players stopped, creative, PvP and teammates spared; the toll through
@@ -183,7 +203,9 @@ neither the toll nor the turn reverses. Advancements are filtered as in every ge
   and letting go does not, each leaving the cooldown; inert at zero; before the Heart one death event naming the
   operator, a credited kill and no drops or experience; an ordinary credited kill after; either way the body stands
   past vanilla's 20 ticks and is gone by 34; the toll through the End portal's return; invulnerable mobs spared by a
-  creative operator; no turn while Maeve stands; the Terminations label. The ledger is pinned per batch.
+  creative operator; no turn while Maeve stands; the Terminations label; 24 blocks of reach along the template's
+  diagonal; Reduced to Atoms for three minds and not two; taken hearts kept through death and the End portal, and half
+  a heart back when due. The ledger is pinned per batch.
 - Needs the owner's eyes and ears: the model, textures and mote drift in every view, the frost, the holds, the specks,
   the grey frame, the target motes, the crumble and its flakes, the tone, the 40% walk, and the release gate.
 
@@ -217,3 +239,12 @@ death animatioin (it falls down etc) for like a split second"
 
 Recheck after `8c41a4df` (the body held hidden until the server removes it): "that fixed it." Then: "idk a permant
 helath loss is pretty steep for this, especially if it carries over from deaths dont you tihnk"
+
+## Owner playtest 3, 2026-11-03 (Terminus Check 3, runClient, branch head 59fd7644)
+
+Unprompted report: "huh wither doesnt  take any damange, furthermore im thinking we should make the range longer, and a
+advancemnt if you like 3 or more mobs, you get a hidden advancemnet "Gone, reduced to atoms" or whatever thanos said"
+
+Response: the Wither does take the 40% (`terminusTakesFortyPercentFromBossesAndNeverKills`), but the station's Wither is
+frozen with NoAI and vanilla updates a Wither's boss bar only from its AI, so the bar stayed full. The station now has
+a [Wither health] button reading its health. The reach is now 24 blocks and Reduced to Atoms is built (rulings above).

@@ -1,0 +1,23 @@
+{
+  "parent": "frozendawn:deathwand",
+  "display": {
+    "icon": {
+      "id": "frozendawn:terminus"
+    },
+    "title": {
+      "translate": "advancement.frozendawn.reduced_to_atoms.title"
+    },
+    "description": {
+      "translate": "advancement.frozendawn.reduced_to_atoms.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": true
+  },
+  "criteria": {
+    "impossible": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

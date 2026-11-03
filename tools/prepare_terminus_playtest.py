@@ -53,9 +53,9 @@ MASTER = ('summon frozendawn:architect 120.5 65 7.5 {Tags:["terminus_target","te
 
 def targets():
     return ['kill @e[tag=terminus_target]',
-            # Cone: dead ahead at 6, near the 15-degree edge at 10, outside it at 22 degrees, and beyond reach at 13.5.
+            # Cone: dead ahead at 6, near the 15-degree edge at 10, outside it at 22 degrees, and beyond reach at 25.5.
             mob('minecraft:husk', *at(0, 0, 6)), mob('minecraft:husk', *at(0, 13, 10)),
-            mob('minecraft:husk', *at(0, 22, 6)), mob('minecraft:husk', *at(0, 0, 13.5)),
+            mob('minecraft:husk', *at(0, 22, 6)), mob('minecraft:husk', *at(0, 0, 25.5)),
             # Walls: a zombie and a villager behind obsidian.
             mob('minecraft:zombie', 30.5, 9.5), mob('minecraft:villager', 31.5, 10.5),
             # Table: a husk to show the cone landed, beside five that should be untouched.
@@ -76,9 +76,9 @@ def scripts():
              'gamerule doWeatherCycle false', 'gamerule keepInventory true',
              'gamerule sendCommandFeedback false', 'gamerule commandBlockOutput false',
              'time set noon', 'weather clear',
-             'fill -16 64 -8 196 64 24 minecraft:smooth_stone',
-             # Reach markers for the cone station: white at 12 blocks, red at 15.
-             'fill -1 64 12 1 64 12 minecraft:white_concrete', 'fill -1 64 15 1 64 15 minecraft:red_concrete',
+             'fill -16 64 -8 196 64 32 minecraft:smooth_stone',
+             # Reach markers for the cone station: white at 24 blocks, red at 27.
+             'fill -1 64 24 1 64 24 minecraft:white_concrete', 'fill -1 64 27 1 64 27 minecraft:red_concrete',
              # Walls station: obsidian four blocks out, taller and wider than the cone there.
              'fill 27 65 4 34 69 5 minecraft:obsidian',
              # Interrupt station: magma underfoot, one hurt every half second in Survival.
@@ -91,9 +91,9 @@ def scripts():
     result = {
         'load': 'scoreboard objectives add terminus dummy\nexecute unless score #built terminus matches -2..1 run scoreboard players set #built terminus 0\nexecute if score #built terminus matches 1 as @a run function '+NS+':controls',
         'bootstrap': '\n'.join(['execute unless score #built terminus matches 0 run return 0',
-                               'forceload add -16 -8 196 24', 'scoreboard players set #built terminus -1', 'return 1']),
+                               'forceload add -16 -8 196 32', 'scoreboard players set #built terminus -1', 'return 1']),
         'tick': '\n'.join(['execute if score #built terminus matches 0 as @a[limit=1] run function '+NS+':bootstrap',
-                          'execute if score #built terminus matches -1 if loaded -16 65 -8 if loaded 196 65 24 as @a[limit=1] run function '+NS+':setup']),
+                          'execute if score #built terminus matches -1 if loaded -16 65 -8 if loaded 196 65 32 as @a[limit=1] run function '+NS+':setup']),
         'setup': '\n'.join(setup),
         'controls': '\n'.join([GUARD,
             tell('TERMINUS CHECK: Survival, Normal difficulty. Hold use for two seconds to discharge. Stand on each gold block; targets are south.'),
@@ -115,27 +115,33 @@ def scripts():
             'execute as @e[tag=terminus_target] run tellraw @p '+json.dumps([{'selector':'@s','color':'aqua'},{'text':' health ','color':'aqua'},{'entity':'@s','nbt':'Health','color':'white'}]),
             'return 1'])}
     views = {
-        'cone': (0, ['Four husks: dead ahead at 6, near the cone edge at 10, outside it to the right at 6, and past the red line at 13.5.',
+        'cone': (0, ['Four husks: dead ahead at 6, near the cone edge at 10, outside it to the right at 6, and past the red line at 25.5.',
                      'Hold use two seconds aimed straight down the white line. The near two should go, with no beam and no sound; the outside and far husks stay.',
                      'Watch the wand winding up: the motes slide to the emitter, the glass frosts, pale specks stream in along the cone edge, and you walk at 40%.',
-                     'On discharge: one grey frame, a pale mote lifts from each husk and winks out, one mote is gone from the glass, two hearts are gone for good, and ten seconds of Darkness and Nausea.']),
+                     'On discharge: one grey frame, a pale mote lifts from each husk and winks out, one mote is gone from the glass, two hearts turn ash grey in the health bar, taken, and ten seconds of Darkness and Nausea.',
+                     'Taken hearts come back half a heart every half day. /fd terminus due brings the next half back now; /fd terminus status reads the toll.']),
         'walls': (30, ['A zombie and a villager behind obsidian. The cone needs no line of sight: discharge at the wall and both should be gone.']),
         'table': (60, ['A husk at the back, and in front of it a pig, a wolf, a skeleton, a Frostmite and a Rimebound.',
                        'Discharge: only the husk should go. Animals, the mindless and post-Maeve life are untouched.']),
-        'boss': (90, ['A frozen Wither. Each discharge takes 40% of its maximum; the third leaves it at 1, never dead. Watch the boss bar.']),
+        'boss': (90, ['A frozen Wither. Each discharge takes 40% of its maximum; the third leaves it at 1, never dead.',
+                      'Frozen, its boss bar stays full (vanilla updates it from the Wither\'s AI): click [Wither health] after each discharge. 300, then 180, 60, 1.']),
         'master': (120, ['A frozen Master Architect, side-on. Discharge at it: it takes nothing, and its head turns to the wand in your hand, not your face, for three seconds.',
                          'Walk around while it watches: it follows the wand. Then it goes back to looking ahead.']),
         'drops': (150, ['Three zombies, each holding a sword that always drops on an ordinary death.',
                         'Before the Heart: they stand still, grey, and crumble away from the head down. Nothing drops, no experience. Hover the wand: Transfers logged.',
-                        'Click AFTER, respawn targets, discharge again: they crumble the same way, but drop their swords and experience, and the wand reads Terminations logged with the same count.']),
+                        'Click AFTER, respawn targets, discharge again: they crumble the same way, but drop their swords and experience, and the wand reads Terminations logged with the same count.',
+                        'Stopping all three at once earns the hidden Reduced to Atoms.']),
         'interrupt': (180, ['Magma underfoot hurts you every half second in Survival. Start a wind-up here: the hit cancels it, and the discharge is spent anyway.',
                             'Letting go early anywhere else costs nothing. Interrupted, you lose no max health.']),
         'windup': (210, ['Open ground. Walk while winding up to feel the 40% slow; let go before two seconds to keep the discharge.',
                          'Press F5 to see the arm held straight out, and the specks drawn in from the cone.']),
     }
+    result['wither_health'] = '\n'.join([GUARD, 'tellraw @s ' + json.dumps(['', {'text': 'Wither health: ', 'color': 'aqua'},
+        {'entity': '@e[type=minecraft:wither,tag=terminus_target,limit=1]', 'nbt': 'Health', 'color': 'white'},
+        {'text': ' of 300', 'color': 'aqua'}]), 'return 1'])
     for name, (x, lines) in views.items():
         extra = {'drops': [tell('[BEFORE the Heart]', 'before'), tell('[AFTER the Heart]', 'after'), tell('[Respawn targets]', 'respawn')],
-                 'boss': [tell('[Respawn targets]', 'respawn')]}.get(name, [])
+                 'boss': [tell('[Wither health]', 'wither_health'), tell('[Respawn targets]', 'respawn')]}.get(name, [])
         result[name] = '\n'.join([GUARD, f'tp @s {x}.5 65 0.5 0 0',
                                   *(tell(line) for line in lines), *extra, tell('[Lab menu]', 'controls'), 'return 1'])
     return result
