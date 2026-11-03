@@ -1,0 +1,72 @@
+<style>
+.g{display:inline-grid;gap:2px;margin:6px 10px 6px 0;vertical-align:top}
+.g div{width:26px;height:26px;border-radius:3px;font:bold 10px/26px sans-serif;text-align:center;color:#111}
+.cas{background:#6b7480}.cel{background:#7fd8e6}.frm{background:#3d434b}
+.prt{background:#e6b34a}.col{background:#9b8cf0}.ven{background:#f07a6a}.ctl{background:#7be07b}.air{background:#1d2228;outline:1px dashed #444}
+.lg span{display:inline-block;margin-right:14px;font-size:13px}.lg i{display:inline-block;width:14px;height:14px;border-radius:3px;vertical-align:-2px;margin-right:5px}
+.cap{font-size:13px;margin:4px 0 10px}.cap td{padding:2px 12px 2px 0}
+.lbl{font-size:12px;opacity:.75;margin-top:2px}
+</style>
+
+<h2>How should the battery be built?</h2>
+<p class="subtitle">Both shown as a 5x5x5. Ports, the cryocooler, two quench vents and a controller sit in the outer shell in both. The difference is where the cells go and what you see.</p>
+
+<div class="lg section">
+<span><i class="cel"></i>Superconducting cell</span><span><i class="cas"></i>Cryostat casing</span><span><i class="frm"></i>Frame</span>
+<span><i class="prt"></i>Port (P)</span><span><i class="col"></i>Cryocooler (C)</span><span><i class="ven"></i>Quench vent (V)</span><span><i class="ctl"></i>Controller (K)</span>
+</div>
+
+<div class="options">
+<div class="option" data-choice="a" onclick="toggleSelect(this)">
+<div class="letter">A</div>
+<div class="content">
+<h3>Cryostat vessel: cells hidden inside a casing shell</h3>
+<p>A solid casing box, like a cold tank. Every interior block must be a cell. From outside you see the vessel and its fittings, not the cells.</p>
+<div>
+<div style="display:inline-block"><div class="g" style="grid-template-columns:repeat(5,26px)">
+<div class="cas"></div><div class="cas"></div><div class="ven">V</div><div class="cas"></div><div class="cas"></div>
+<div class="cas"></div><div class="cas"></div><div class="cas"></div><div class="cas"></div><div class="cas"></div>
+<div class="prt">P</div><div class="cas"></div><div class="ctl">K</div><div class="cas"></div><div class="prt">P</div>
+<div class="cas"></div><div class="cas"></div><div class="col">C</div><div class="cas"></div><div class="cas"></div>
+<div class="cas"></div><div class="cas"></div><div class="cas"></div><div class="cas"></div><div class="cas"></div>
+</div><div class="lbl">Front face</div></div>
+<div style="display:inline-block"><div class="g" style="grid-template-columns:repeat(5,26px)">
+<div class="cas"></div><div class="cas"></div><div class="cas"></div><div class="cas"></div><div class="cas"></div>
+<div class="cas"></div><div class="cel"></div><div class="cel"></div><div class="cel"></div><div class="cas"></div>
+<div class="cas"></div><div class="cel"></div><div class="cel"></div><div class="cel"></div><div class="cas"></div>
+<div class="cas"></div><div class="cel"></div><div class="cel"></div><div class="cel"></div><div class="cas"></div>
+<div class="cas"></div><div class="cas"></div><div class="cas"></div><div class="cas"></div><div class="cas"></div>
+</div><div class="lbl">Middle slice</div></div>
+</div>
+<table class="cap"><tr><td>Cells</td><td>3x3x3: 1</td><td>5x5x5: 27</td><td>7x7x7: 125</td></tr>
+<tr><td>At 40 MJ/cell</td><td>40 MJ</td><td>1.1 GJ</td><td>5 GJ</td></tr></table>
+<p>Reads as one sealed cold machine. The smallest build is weak (1 cell), so the real minimum would likely be 4x4x4 or 5x5x5.</p>
+</div></div>
+
+<div class="option" data-choice="b" onclick="toggleSelect(this)">
+<div class="letter">B</div>
+<div class="content">
+<h3>Frame and cell walls: cells are the walls</h3>
+<p>Frame blocks only along the 12 edges. Every other block, faces and interior alike, is a cell. Fittings replace a few face cells. You see frosted, glowing cells on the outside.</p>
+<div>
+<div style="display:inline-block"><div class="g" style="grid-template-columns:repeat(5,26px)">
+<div class="frm"></div><div class="frm"></div><div class="ven">V</div><div class="frm"></div><div class="frm"></div>
+<div class="frm"></div><div class="cel"></div><div class="cel"></div><div class="cel"></div><div class="frm"></div>
+<div class="prt">P</div><div class="cel"></div><div class="ctl">K</div><div class="cel"></div><div class="prt">P</div>
+<div class="frm"></div><div class="cel"></div><div class="col">C</div><div class="cel"></div><div class="frm"></div>
+<div class="frm"></div><div class="frm"></div><div class="frm"></div><div class="frm"></div><div class="frm"></div>
+</div><div class="lbl">Front face</div></div>
+<div style="display:inline-block"><div class="g" style="grid-template-columns:repeat(5,26px)">
+<div class="frm"></div><div class="cel"></div><div class="cel"></div><div class="cel"></div><div class="frm"></div>
+<div class="cel"></div><div class="cel"></div><div class="cel"></div><div class="cel"></div><div class="cel"></div>
+<div class="cel"></div><div class="cel"></div><div class="cel"></div><div class="cel"></div><div class="cel"></div>
+<div class="cel"></div><div class="cel"></div><div class="cel"></div><div class="cel"></div><div class="cel"></div>
+<div class="frm"></div><div class="cel"></div><div class="cel"></div><div class="cel"></div><div class="frm"></div>
+</div><div class="lbl">Middle slice</div></div>
+</div>
+<table class="cap"><tr><td>Cells (less fittings)</td><td>3x3x3: ~7</td><td>5x5x5: ~81</td><td>7x7x7: ~275</td></tr>
+<tr><td>At 20 MJ/cell</td><td>~140 MJ</td><td>~1.6 GJ</td><td>~5.5 GJ</td></tr></table>
+<p>Even the 3x3x3 is useful, and the cells themselves show charge and frost. A broken wall cell is an easy quench trigger to explain.</p>
+</div></div>
+</div>
+<p class="subtitle">Capacities are placeholders to compare shapes; real numbers come later.</p>

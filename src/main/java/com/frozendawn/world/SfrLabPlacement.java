@@ -29,7 +29,9 @@ public final class SfrLabPlacement {
     public record Lab(BlockPos controller, int failedLinks) {}
 
     /** Builds the torus around center, with radiators above it and charged banks to the north-west. */
-    public static Lab build(ServerLevel level, BlockPos center) {
+    public static Lab build(ServerLevel level, BlockPos center) { return build(level, center, true); }
+    /** As build, optionally without the banks, for a lab where something else pays the ignition. */
+    public static Lab build(ServerLevel level, BlockPos center, boolean banks) {
         for (int dx = -4; dx <= 4; dx++) for (int dy = -2; dy <= 2; dy++) for (int dz = -4; dz <= 4; dz++) {
             Block block = SfrMultiblock.expected(dx, dy, dz);
             if (block == null) block = SfrMultiblock.shell(dx, dy, dz);
@@ -55,7 +57,7 @@ public final class SfrLabPlacement {
             if (PowerNetworks.link(level, ports[n++ % 2], radiator) != PowerLinkRules.Result.OK) failed++;
         }
         var powerPort = center.offset(2, 0, -4);
-        for (int i = 0; i < BANKS; i++) {
+        for (int i = 0; i < (banks ? BANKS : 0); i++) {
             var bank = center.offset(-6 + i * 2, -1, -9);
             level.setBlock(bank, ModBlocks.BATTERY_BANK.get().defaultBlockState(), Block.UPDATE_ALL);
             if (level.getBlockEntity(bank) instanceof PowerStorageBlockEntity store)

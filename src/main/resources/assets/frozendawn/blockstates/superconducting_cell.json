@@ -1,0 +1,13 @@
+{
+  "variants": {
+    "look=loose": {
+      "model": "frozendawn:block/superconducting_cell_loose"
+    },
+    "look=formed": {
+      "model": "frozendawn:block/superconducting_cell_formed"
+    },
+    "look=scorched": {
+      "model": "frozendawn:block/superconducting_cell_scorched"
+    }
+  }
+}

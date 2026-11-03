@@ -72,6 +72,16 @@ final class FrozenDawnWorldCommand {
         return 1;
     }
 
+    /** Op playtest hook: the SMS-1 Hyperion lab, laid out to the north of the caller's feet. */
+    private static int placeHyperionLab(CommandContext<CommandSourceStack> context) {
+        var source = context.getSource();
+        var lab = com.frozendawn.world.HyperionLabPlacement.place(source.getLevel(), net.minecraft.core.BlockPos.containing(source.getPosition()));
+        if (lab.failedLinks() > 0) source.sendFailure(Component.literal(lab.failedLinks() + " Hyperion lab link(s) failed"));
+        source.sendSuccess(() -> Component.literal("Hyperion lab built: outdoor battery " + lab.outdoor().toShortString() + ", heated room " + lab.heated().toShortString()
+                + ", lava spot " + lab.lava().toShortString()), true);
+        return 1;
+    }
+
     private static int placeIcarusLab(CommandContext<CommandSourceStack> context) {
         var source = context.getSource(); var level = source.getLevel();
         var look = net.minecraft.world.phys.Vec3.directionFromRotation(0, source.getRotation().y);
@@ -126,6 +136,7 @@ final class FrozenDawnWorldCommand {
                 .then(Commands.literal("reactorsite").executes(FrozenDawnWorldCommand::placeReactorSite))
                 .then(Commands.literal("helionsite").executes(FrozenDawnWorldCommand::placeHelionSite))
                 .then(Commands.literal("sfrlab").executes(FrozenDawnWorldCommand::placeSfrLab))
+                .then(Commands.literal("hyperionlab").executes(FrozenDawnWorldCommand::placeHyperionLab))
                 .then(Commands.literal("icaruslab").executes(FrozenDawnWorldCommand::placeIcarusLab)
                         .then(Commands.literal("recharge").executes(FrozenDawnWorldCommand::rechargeIcarusLab)))
                 .then(Commands.literal("blueprint")

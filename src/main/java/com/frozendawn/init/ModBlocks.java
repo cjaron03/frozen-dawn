@@ -112,6 +112,16 @@ public class ModBlocks {
     public static final DeferredBlock<com.frozendawn.block.HighTemperatureRadiatorBlock> HIGH_TEMPERATURE_RADIATOR = BLOCKS.register("high_temperature_radiator",
             () -> new com.frozendawn.block.HighTemperatureRadiatorBlock(BlockBehaviour.Properties.of().strength(4f, 8f).requiresCorrectToolForDrops().sound(SoundType.COPPER).pushReaction(PushReaction.BLOCK)
                     .lightLevel(state -> state.getValue(com.frozendawn.block.ReactorRadiatorBlock.HOT) ? 12 : 0).emissiveRendering((state, level, pos) -> state.getValue(com.frozendawn.block.ReactorRadiatorBlock.HOT))));
+    public static final DeferredBlock<com.frozendawn.block.SuperconductingCellBlock> SUPERCONDUCTING_CELL = BLOCKS.register("superconducting_cell",
+            () -> new com.frozendawn.block.SuperconductingCellBlock(sfrShell().sound(SoundType.DEEPSLATE_TILES)));
+    public static final DeferredBlock<com.frozendawn.block.HyperionPortBlock> HYPERION_PORT = BLOCKS.register("hyperion_port",
+            () -> new com.frozendawn.block.HyperionPortBlock(sfrShell().sound(SoundType.COPPER)));
+    public static final DeferredBlock<com.frozendawn.block.CryocoolerBlock> CRYOCOOLER = BLOCKS.register("cryocooler",
+            () -> new com.frozendawn.block.CryocoolerBlock(sfrShell()));
+    public static final DeferredBlock<com.frozendawn.block.QuenchVentBlock> QUENCH_VENT = BLOCKS.register("quench_vent",
+            () -> new com.frozendawn.block.QuenchVentBlock(sfrShell()));
+    public static final DeferredBlock<com.frozendawn.block.HyperionControllerBlock> HYPERION_CONTROLLER = BLOCKS.register("hyperion_controller",
+            () -> new com.frozendawn.block.HyperionControllerBlock(sfrShell().noOcclusion()));
     private static BlockBehaviour.Properties sfrShell() {
         return BlockBehaviour.Properties.of().strength(6f, 12f).requiresCorrectToolForDrops().sound(SoundType.METAL).pushReaction(PushReaction.BLOCK);
     }

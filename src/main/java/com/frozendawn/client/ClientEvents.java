@@ -115,6 +115,8 @@ public class ClientEvents {
                 UnthreadingMemoryParticle.Provider::new);
         event.registerSpriteSet(ModParticles.UNTHREADING_RESIDUE.get(),
                 UnthreadingResidueParticle.Provider::new);
+        event.registerSpriteSet(ModParticles.COLD_VAPOUR.get(),
+                com.frozendawn.client.particle.ColdVapourParticle.Provider::new);
     }
 
     @SubscribeEvent
@@ -362,6 +364,7 @@ public class ClientEvents {
         event.registerBlockEntityRenderer(ModBlockEntities.UPLINK_DISH.get(), com.frozendawn.client.renderer.UplinkDishRenderer::new);
         event.registerBlockEntityRenderer(ModBlockEntities.OXYGEN_RESERVOIR.get(),com.frozendawn.client.renderer.OxygenReservoirRenderer::new);
         event.registerBlockEntityRenderer(ModBlockEntities.OXYGEN_GAUGE.get(), com.frozendawn.client.renderer.OxygenGaugeRenderer::new);
+        event.registerBlockEntityRenderer(ModBlockEntities.HYPERION_CONTROLLER.get(), com.frozendawn.client.renderer.HyperionSiloRenderer::new);
         event.registerBlockEntityRenderer(ModBlockEntities.HALSEY_CORE.get(), HalseyCoreRenderer::new);
         event.registerBlockEntityRenderer(ModBlockEntities.ICARUS_STABILIZER.get(), IcarusStabilizerRenderer::new);
         event.registerBlockEntityRenderer(ModBlockEntities.ICARUS_INJECTOR.get(), IcarusInjectorRenderer::new);
@@ -389,6 +392,7 @@ public class ClientEvents {
         event.register(ModMenuTypes.RESISTIVE_HEATER.get(), ResistiveHeaterScreen::new);
         event.register(ModMenuTypes.REACTOR_CONTROLLER.get(), ReactorControllerScreen::new);
         event.register(ModMenuTypes.SFR_CONTROLLER.get(), SfrControllerScreen::new);
+        event.register(ModMenuTypes.HYPERION_CONTROLLER.get(), HyperionControllerScreen::new);
         event.register(ModMenuTypes.ICARUS_CONTROLLER.get(), IcarusControllerScreen::new);
         event.register(ModMenuTypes.PIXIE.get(), PixieScreen::new);
         event.register(ModMenuTypes.POWER_MONITOR.get(), PowerMonitorScreen::new);

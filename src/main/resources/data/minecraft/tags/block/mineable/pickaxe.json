@@ -83,6 +83,11 @@
     "frozendawn:icarus_power_port",
     "frozendawn:icarus_matter_port",
     "frozendawn:icarus_capsule_dock",
-    "frozendawn:antiparticle_foundry"
+    "frozendawn:antiparticle_foundry",
+    "frozendawn:superconducting_cell",
+    "frozendawn:hyperion_port",
+    "frozendawn:cryocooler",
+    "frozendawn:quench_vent",
+    "frozendawn:hyperion_controller"
   ]
 }

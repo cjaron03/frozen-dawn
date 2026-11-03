@@ -13,7 +13,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
 /** The cells are the only store: no duplicated bank-level energy or charge on empty slots. */
-public final class PowerStorageBlockEntity extends BlockEntity implements Container, MenuProvider {
+public final class PowerStorageBlockEntity extends BlockEntity implements Container, MenuProvider, com.frozendawn.power.EnergyStore {
     private final NonNullList<ItemStack> items;
     private int charging, feeding, machineFeeding;
     private long machineDrawTick=Long.MIN_VALUE;
@@ -27,6 +27,13 @@ public final class PowerStorageBlockEntity extends BlockEntity implements Contai
     public int storedJoules() { return items.stream().mapToInt(PowerCellItem::energy).sum(); }
     public int capacityJoules() { return items.size() * PowerCellItem.CAPACITY_JOULES; }
     public int charge(int offered) { return transfer(offered, true); }
+    @Override public BlockPos storeKey() { return worldPosition; }
+    @Override public long storedEnergy() { return storedJoules(); }
+    @Override public long energyCapacity() { return capacityJoules(); }
+    @Override public long availableEnergy() { return storedJoules(); }
+    @Override public long chargeEnergy(long offered) { return charge((int) Math.min(offered, Integer.MAX_VALUE)); }
+    @Override public long drawEnergy(long requested) { return draw((int) Math.min(requested, Integer.MAX_VALUE)); }
+    @Override public boolean acceptsCharge() { return isBank(); }
     public int draw(int requested) { return transfer(requested, false); }
     private int transfer(int requested, boolean fill) {
         int remaining = Math.max(0, requested);
@@ -43,13 +50,13 @@ public final class PowerStorageBlockEntity extends BlockEntity implements Contai
     }
     private int heaterFeeding;
     private long heaterDrawTick=Long.MIN_VALUE;
-    public void publishHeaterDraw(int joules){if(joules<=0||level==null)return;if(heaterDrawTick!=level.getGameTime())heaterFeeding=0;heaterDrawTick=level.getGameTime();heaterFeeding+=joules;}
-    public void publishMachineDraw(int joules) {
+    @Override public void publishHeaterDraw(int joules){if(joules<=0||level==null)return;if(heaterDrawTick!=level.getGameTime())heaterFeeding=0;heaterDrawTick=level.getGameTime();heaterFeeding+=joules;}
+    @Override public void publishMachineDraw(int joules) {
         if(joules<=0||level==null)return;
         if(machineDrawTick!=level.getGameTime())machineFeeding=0;
         machineDrawTick=level.getGameTime();machineFeeding+=joules*20;
     }
-    public void publish(int charged, int drawn) { charging = charged; feeding = drawn; }
+    @Override public void publish(int charged, int drawn) { charging = charged; feeding = drawn; }
     private int feedingWatts() {
         return feeding+(level!=null&&level.getGameTime()>=heaterDrawTick&&level.getGameTime()-heaterDrawTick<20?heaterFeeding:0)
                 +(level!=null&&level.getGameTime()-machineDrawTick<=1&&level.getGameTime()>=machineDrawTick?machineFeeding:0);

@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>Quench audio sketch</title>
+<style>
+body{background:#14181d;color:#dfe6ee;font:15px/1.45 system-ui,sans-serif;max-width:760px;margin:24px auto;padding:0 16px}
+h2{margin:0 0 4px}.sub{opacity:.7;margin:0 0 18px}
+.row{display:flex;align-items:center;gap:12px;padding:10px 12px;border:1px solid #2a3139;border-radius:8px;margin-bottom:8px;background:#1a1f25}
+.row b{display:inline-block;width:22px;opacity:.6}.row .t{flex:1}.row .t small{display:block;opacity:.65}
+button{background:#2b6f80;color:#fff;border:0;border-radius:6px;padding:7px 12px;font-size:14px;cursor:pointer}
+button.alt{background:#3a424c}button.stop{background:#8a3b33}
+input[type=range]{width:160px}
+.seq{margin:18px 0;padding:12px;border:1px solid #2b6f80;border-radius:8px}
+</style></head><body>
+<h2>Quench audio ladder: throwaway sketch</h2>
+<p class="sub">Synthesized live in the browser, so it's rough. It's meant for judging character and timing, not final sound. Headphones help with the two vents (left and right).</p>
+
+<div class="row"><b>1</b><div class="t">Normal: cryocooler hum and compressor pulse<small>Outside temperature: <span id="tv">20</span>C. Colder is quieter.</small></div>
+<input type="range" id="temp" min="-270" max="40" value="20"><button id="humBtn">Hum on</button></div>
+<div class="row"><b>2</b><div class="t">Chirp: heat has started winning<small>Every 10 s in game</small></div><button onclick="chirp()">Play once</button><button class="alt" onclick="chirpLoop()">Loop (10 s)</button></div>
+<div class="row"><b>3</b><div class="t">Warning: two-tone alarm that speeds up<small>Demo runs 12 s, slow to fast</small></div><button onclick="warning(12)">Play</button></div>
+<div class="row"><b>4</b><div class="t">Final seconds: rising whine<small>25 s in game; demo 10 s</small></div><button onclick="whine(10)">Play</button></div>
+<div class="row"><b>5</b><div class="t">Quench: bang, then steam from both vents<small>About 8 s</small></div><button onclick="quench()">Play</button></div>
+<div class="row"><b>6</b><div class="t">Aftermath v2: ticks, metal pings and a fading hiss<small>No creaks</small></div><button onclick="aftermath(10)">Play</button></div>
+<div class="row"><b>7</b><div class="t">All clear: cooling won in time</div><button onclick="allClear()">Play</button></div>
+
+<div class="seq"><b>Whole ladder, compressed to about 45 s</b><br>
+<button onclick="sequence()">Play sequence</button> <button class="stop" onclick="stopAll()">Stop everything</button></div>
+
+<script>
+let ctx, master, live=[], timers=[], hum=null;
+function A(){ if(!ctx){ctx=new AudioContext();const c=ctx.createDynamicsCompressor();c.threshold.value=-10;master=ctx.createGain();master.gain.value=.8;master.connect(c);c.connect(ctx.destination);} if(ctx.state==='suspended')ctx.resume(); return ctx; }
+function track(n){live.push(n);return n}
+function noiseBuf(sec){const b=ctx.createBuffer(2,ctx.sampleRate*sec,ctx.sampleRate);for(let ch=0;ch<2;ch++){const d=b.getChannelData(ch);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;}return b}
+function later(fn,ms){timers.push(setTimeout(fn,ms))}
+function env(g,t,a,peak,d){g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(peak,t+a);g.gain.exponentialRampToValueAtTime(.0001,t+a+d)}
+
+/* 1 hum */
+const tempEl=document.getElementById('temp'),tv=document.getElementById('tv');
+function humLevel(){const t=+tempEl.value;return Math.max(.02,Math.min(1,(t+270)/290))}
+tempEl.oninput=()=>{tv.textContent=tempEl.value;if(hum)hum.g.gain.setTargetAtTime(.35*humLevel(),ctx.currentTime,.3)};
+document.getElementById('humBtn').onclick=e=>{A();if(hum){stopHum();e.target.textContent='Hum on';return}startHum();e.target.textContent='Hum off'};
+function startHum(){
+  const t=ctx.currentTime,g=ctx.createGain();g.gain.value=0;g.gain.setTargetAtTime(.35*humLevel(),t,.4);g.connect(master);
+  const pulse=ctx.createGain();pulse.gain.value=.7;pulse.connect(g);
+  const lfo=ctx.createOscillator();lfo.frequency.value=.8;const lg=ctx.createGain();lg.gain.value=.3;lfo.connect(lg);lg.connect(pulse.gain);lfo.start();
+  const o1=ctx.createOscillator();o1.frequency.value=50;const o2=ctx.createOscillator();o2.type='triangle';o2.frequency.value=100;
+  const g2=ctx.createGain();g2.gain.value=.25;o1.connect(pulse);o2.connect(g2);g2.connect(pulse);o1.start();o2.start();
+  const n=ctx.createBufferSource();n.buffer=noiseBuf(2);n.loop=true;const f=ctx.createBiquadFilter();f.type='lowpass';f.frequency.value=400;const ng=ctx.createGain();ng.gain.value=.15;n.connect(f);f.connect(ng);ng.connect(pulse);n.start();
+  hum={g,nodes:[lfo,o1,o2,n]};
+}
+function stopHum(){if(!hum)return;hum.g.gain.setTargetAtTime(0,ctx.currentTime,.2);const h=hum;hum=null;setTimeout(()=>h.nodes.forEach(n=>{try{n.stop()}catch(e){}}),800)}
+
+/* 2 chirp */
+function chirp(at){A();const t=at??ctx.currentTime;const o=track(ctx.createOscillator()),g=ctx.createGain();o.frequency.setValueAtTime(2200,t);o.frequency.exponentialRampToValueAtTime(3000,t+.07);env(g,t,.005,.25,.12);o.connect(g);g.connect(master);o.start(t);o.stop(t+.2)}
+function chirpLoop(){A();for(let i=0;i<4;i++)chirp(ctx.currentTime+i*10)}
+
+/* 3 warning */
+function warning(sec,at){A();let t=at??ctx.currentTime;const end=t+sec;let i=0;
+  while(t<end){const p=(t-(end-sec))/sec,len=.42-.3*p;const o=track(ctx.createOscillator()),f=ctx.createBiquadFilter(),g=ctx.createGain();
+    o.type='square';o.frequency.value=i%2?620:880;f.type='lowpass';f.frequency.value=2200;
+    g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.12,t+.01);g.gain.setValueAtTime(.12,t+len*.8);g.gain.linearRampToValueAtTime(0,t+len*.95);
+    o.connect(f);f.connect(g);g.connect(master);o.start(t);o.stop(t+len);t+=len;i++;}}
+
+/* 4 whine */
+function whine(sec,at){A();const t=at??ctx.currentTime;const o=track(ctx.createOscillator()),f=ctx.createBiquadFilter(),g=ctx.createGain(),trem=ctx.createOscillator(),tg=ctx.createGain();
+  o.type='sawtooth';o.frequency.setValueAtTime(220,t);o.frequency.exponentialRampToValueAtTime(1800,t+sec);
+  f.type='bandpass';f.Q.value=4;f.frequency.setValueAtTime(400,t);f.frequency.exponentialRampToValueAtTime(3000,t+sec);
+  g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.18,t+sec*.9);g.gain.linearRampToValueAtTime(0,t+sec);
+  trem.frequency.setValueAtTime(4,t);trem.frequency.linearRampToValueAtTime(14,t+sec);tg.gain.value=.06;trem.connect(tg);tg.connect(g.gain);
+  o.connect(f);f.connect(g);g.connect(master);o.start(t);trem.start(t);o.stop(t+sec);trem.stop(t+sec)}
+
+/* 5 quench */
+function quench(at){A();const t=at??ctx.currentTime;
+  const th=track(ctx.createOscillator()),thg=ctx.createGain();th.frequency.setValueAtTime(90,t);th.frequency.exponentialRampToValueAtTime(28,t+.6);env(thg,t,.003,1,.9);th.connect(thg);thg.connect(master);th.start(t);th.stop(t+1);
+  const b=track(ctx.createBufferSource());b.buffer=noiseBuf(1);const bf=ctx.createBiquadFilter();bf.type='lowpass';bf.frequency.setValueAtTime(5000,t);bf.frequency.exponentialRampToValueAtTime(300,t+.5);const bg=ctx.createGain();env(bg,t,.002,.9,.6);b.connect(bf);bf.connect(bg);bg.connect(master);b.start(t);
+  [-.85,.85].forEach((pan,k)=>{const s=track(ctx.createBufferSource());s.buffer=noiseBuf(9);const f=ctx.createBiquadFilter();f.type='bandpass';f.Q.value=.7;
+    const t0=t+.15+k*.05;f.frequency.setValueAtTime(1800,t0);f.frequency.exponentialRampToValueAtTime(5500,t0+1.2);f.frequency.exponentialRampToValueAtTime(900,t0+8);
+    const g=ctx.createGain();g.gain.setValueAtTime(0,t0);g.gain.linearRampToValueAtTime(.55,t0+.25);g.gain.setValueAtTime(.55,t0+2.5);g.gain.exponentialRampToValueAtTime(.001,t0+8.5);
+    const p=ctx.createStereoPanner();p.pan.value=pan;const rf=ctx.createBiquadFilter();rf.type='lowpass';rf.frequency.value=250;const rg=ctx.createGain();rg.gain.value=.6;
+    s.connect(f);f.connect(g);s.connect(rf);rf.connect(rg);rg.connect(g);g.connect(p);p.connect(master);s.start(t0);s.stop(t0+9);});}
+
+/* 6 aftermath */
+function aftermath(sec,at){A();const t0=at??ctx.currentTime;let t=t0+.3;
+  while(t<t0+sec){const s=track(ctx.createBufferSource());s.buffer=noiseBuf(.05);const f=ctx.createBiquadFilter();f.type='bandpass';f.Q.value=18;f.frequency.value=2500+Math.random()*3000;
+    const g=ctx.createGain();const v=.5*(1-(t-t0)/sec)+.1;env(g,t,.001,v,.04);const p=ctx.createStereoPanner();p.pan.value=Math.random()*1.6-.8;s.connect(f);f.connect(g);g.connect(p);p.connect(master);s.start(t);
+    t+=.15+Math.random()*(.4+1.2*(t-t0)/sec);}
+  // Metal pings from thermal contraction: inharmonic partials, like a struck pipe. No voice-like sweeps.
+  for(let k=0;k<4;k++){const c=t0+.8+k*sec/4.5+Math.random()*.8,base=420+Math.random()*380,p=ctx.createStereoPanner();p.pan.value=Math.random()*1.4-.7;p.connect(master);
+    [[1,.16,1.6],[2.76,.08,.9],[5.4,.04,.5]].forEach(([m,v,d])=>{const o=track(ctx.createOscillator()),g=ctx.createGain();o.frequency.value=base*m;env(g,c,.002,v,d);o.connect(g);g.connect(p);o.start(c);o.stop(c+d+.1)});}
+  // Residual boil-off hiss fading out.
+  const h=track(ctx.createBufferSource());h.buffer=noiseBuf(sec);const hf=ctx.createBiquadFilter();hf.type='highpass';hf.frequency.value=3000;const hg=ctx.createGain();
+  hg.gain.setValueAtTime(.08,t0);hg.gain.exponentialRampToValueAtTime(.001,t0+sec);h.connect(hf);hf.connect(hg);hg.connect(master);h.start(t0);h.stop(t0+sec);}
+
+/* 7 all clear */
+function allClear(at){A();const t=at??ctx.currentTime;[[1320,0],[990,.28],[660,.56]].forEach(([fq,d])=>{const o=track(ctx.createOscillator()),g=ctx.createGain();o.frequency.value=fq;env(g,t+d,.01,.22,.5);o.connect(g);g.connect(master);o.start(t+d);o.stop(t+d+.6)})}
+
+function sequence(){A();stopAll();tempEl.value=20;tv.textContent='20';startHum();document.getElementById('humBtn').textContent='Hum off';
+  const t=ctx.currentTime;for(let i=0;i<3;i++)chirp(t+3+i*3);warning(12,t+12);whine(8,t+24.5);
+  later(()=>stopHum(),32400);quench(t+32.5);aftermath(10,t+41);later(()=>document.getElementById('humBtn').textContent='Hum on',33000)}
+function stopAll(){timers.forEach(clearTimeout);timers=[];live.forEach(n=>{try{n.stop()}catch(e){}});live=[];stopHum();document.getElementById('humBtn').textContent='Hum on'}
+</script>
+</body></html>
