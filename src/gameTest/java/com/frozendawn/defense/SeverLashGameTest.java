@@ -200,6 +200,105 @@ public final class SeverLashGameTest {
         h.succeed();
     }
 
+    /** The block the shooter's level aim lands on, four and a half blocks out. */
+    private static final BlockPos STRUCK=new BlockPos(10,5,9);
+
+    @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="sever_lash",timeoutTicks=100)
+    public static void severLashFlashesSnowAndIceToSteam(GameTestHelper h) {
+        var p=shooter(h,500000);var lash=p.getMainHandItem();
+        h.setBlock(STRUCK,Blocks.ICE);SeverLash.fire(p,lash,1000);
+        h.assertTrue(h.getBlockState(STRUCK).isAir(),"Ice goes in one tick, leaving no meltwater: "+h.getBlockState(STRUCK));
+        h.setBlock(STRUCK,Blocks.SNOW_BLOCK);SeverLash.fire(p,lash,1001);
+        h.assertTrue(h.getBlockState(STRUCK).isAir(),"So does snow");
+        h.succeed();
+    }
+
+    @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="sever_lash",timeoutTicks=100)
+    public static void severLashMeltsPackedAndBlueIceOnlyUnderAHeldBeam(GameTestHelper h) {
+        var p=shooter(h,500000);var lash=p.getMainHandItem();
+        h.setBlock(STRUCK,Blocks.PACKED_ICE);
+        for(int t=0;t<BlockHeat.PACKED_ICE_TICKS-1;t++)SeverLash.fire(p,lash,1000+t);
+        h.assertTrue(h.getBlockState(STRUCK).is(Blocks.PACKED_ICE),"Packed ice holds for most of a second");
+        SeverLash.fire(p,lash,1000+BlockHeat.PACKED_ICE_TICKS-1);
+        h.assertTrue(h.getBlockState(STRUCK).isAir(),"A second of beam melts it: "+h.getBlockState(STRUCK));
+        // A fresh beam: blue ice takes twice as long.
+        h.setBlock(STRUCK,Blocks.BLUE_ICE);p.getMainHandItem().remove(ModDataComponents.LASH_HEAT.get());
+        for(int t=0;t<BlockHeat.BLUE_ICE_TICKS-1;t++)SeverLash.fire(p,lash,2000+t);
+        h.assertTrue(h.getBlockState(STRUCK).is(Blocks.BLUE_ICE),"Blue ice holds for most of two seconds");
+        SeverLash.fire(p,lash,2000+BlockHeat.BLUE_ICE_TICKS-1);
+        h.assertTrue(h.getBlockState(STRUCK).isAir(),"Two seconds melt it");
+        h.succeed();
+    }
+
+    @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="sever_lash",timeoutTicks=100)
+    public static void severLashScorchesStoneItDwellsOn(GameTestHelper h) {
+        var p=shooter(h,500000);var lash=p.getMainHandItem();
+        h.setBlock(STRUCK,Blocks.STONE);SeverLash.fire(p,lash,1000);
+        h.assertTrue(h.getBlockState(STRUCK).is(Blocks.STONE),"A sweep past leaves stone");
+        for(int t=0;t<BlockHeat.STONE_TICKS;t++)SeverLash.fire(p,lash,1100+t);
+        h.assertTrue(h.getBlockState(STRUCK).is(ModBlocks.SCORCHED_GROUND.get()),"Half a second of beam scorches it: "+h.getBlockState(STRUCK));
+        h.succeed();
+    }
+
+    @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="sever_lash",timeoutTicks=100)
+    public static void severLashIgnitesWoodInAir(GameTestHelper h) {
+        var p=shooter(h,500000);var lash=p.getMainHandItem();
+        h.setBlock(STRUCK,Blocks.OAK_PLANKS);SeverLash.fire(p,lash,1000);
+        h.assertTrue(h.getBlockState(STRUCK.north()).is(Blocks.FIRE),"Wood catches where the beam lands: "+h.getBlockState(STRUCK.north()));
+        h.succeed();
+    }
+
+    @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="sever_lash",timeoutTicks=100)
+    public static void severLashLeavesTheLastWallStanding(GameTestHelper h) {
+        var p=shooter(h,500000);var lash=p.getMainHandItem();var level=h.getLevel();
+        h.setBlock(STRUCK,Blocks.PACKED_ICE);
+        // A Master Architect behind the shooter, holding the struck block as part of its Last Wall.
+        var master=ModEntities.ARCHITECT.get().create(level);master.setPos(h.absoluteVec(new Vec3(EYE_X,FEET_Y,1.5)));
+        master.bindToHearthMasterArchitect(UUID.randomUUID(),master.blockPosition(),0);
+        var tag=master.saveWithoutId(new net.minecraft.nbt.CompoundTag());
+        tag.putLongArray("MasterWallBlocks",new long[]{h.absolutePos(STRUCK).asLong()});master.load(tag);
+        level.addFreshEntity(master);
+        try {
+            for(int t=0;t<2*BlockHeat.PACKED_ICE_TICKS;t++)SeverLash.fire(p,lash,1000+t);
+            h.assertTrue(h.getBlockState(STRUCK).is(Blocks.PACKED_ICE),"The Last Wall does not melt");
+        } finally {master.discard();}
+        p.getMainHandItem().remove(ModDataComponents.LASH_HEAT.get());
+        for(int t=0;t<BlockHeat.PACKED_ICE_TICKS;t++)SeverLash.fire(p,lash,2000+t);
+        h.assertTrue(h.getBlockState(STRUCK).isAir(),"Once the wall is gone, the same ice melts");
+        h.succeed();
+    }
+
+    @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="sever_lash",timeoutTicks=100)
+    public static void severLashRespectsBlockProtection(GameTestHelper h) {
+        var p=shooter(h,500000);var lash=p.getMainHandItem();p.setGameMode(GameType.ADVENTURE);
+        h.setBlock(STRUCK,Blocks.ICE);
+        h.assertTrue(SeverLash.fire(p,lash,1000),"An adventure player can still fire");
+        h.assertTrue(h.getBlockState(STRUCK).is(Blocks.ICE),"but cannot change blocks with it, as with breaking them");
+        h.succeed();
+    }
+
+    @BeforeBatch(batch="sever_lash_vacuum") public static void vacuum(ServerLevel level) {
+        GameTestReporting.installReporter(level);var a=com.frozendawn.data.ApocalypseState.get(level.getServer());phaseBefore=a.getApocalypseTicks();
+        a.setApocalypseTicks((long)(a.getTotalDays()*24000L*.90),level.getServer());com.frozendawn.world.RoomAtmosphere.reset();com.frozendawn.world.CombustionAtmosphere.reset();
+    }
+    @AfterBatch(batch="sever_lash_vacuum") public static void air(ServerLevel level) {
+        com.frozendawn.data.ApocalypseState.get(level.getServer()).setApocalypseTicks(phaseBefore,level.getServer());
+        com.frozendawn.world.RoomAtmosphere.reset();com.frozendawn.world.CombustionAtmosphere.reset();
+    }
+    private static long phaseBefore;
+
+    @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="sever_lash_vacuum",timeoutTicks=100)
+    public static void severLashBurnsNothingInVacuumButStillScorches(GameTestHelper h) {
+        var p=shooter(h,500000);var lash=p.getMainHandItem();
+        h.assertTrue(!com.frozendawn.world.CombustionAtmosphere.canBurnAt(h.getLevel(),h.absolutePos(STRUCK.north())),"The range is in vacuum");
+        h.setBlock(STRUCK,Blocks.OAK_PLANKS);SeverLash.fire(p,lash,1000);
+        h.assertTrue(h.getBlockState(STRUCK.north()).isAir()&&h.getBlockState(STRUCK).is(Blocks.OAK_PLANKS),"Nothing burns in vacuum");
+        h.setBlock(STRUCK,Blocks.STONE);
+        for(int t=0;t<BlockHeat.STONE_TICKS;t++)SeverLash.fire(p,lash,1100+t);
+        h.assertTrue(h.getBlockState(STRUCK).is(ModBlocks.SCORCHED_GROUND.get()),"Heat still scorches stone");
+        h.succeed();
+    }
+
     @GameTest(template=GameTestTemplates.EMPTY,batch="sever_lash",timeoutTicks=100)
     public static void severLashCraftsCoolFromItsEmitter(GameTestHelper h) {
         var level=h.getLevel();

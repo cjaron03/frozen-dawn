@@ -2636,6 +2636,11 @@ public class ArchitectEntity extends Monster {
         equipMasterArchitectStaff();
     }
 
+    /** Whether this Master Architect placed {@code pos} as part of its Last Wall; the Sever Lash leaves those blocks. */
+    public boolean holdsLastWall(BlockPos pos) {
+        return isHearthMasterArchitect() && hearthMasterController.holdsLastWall(pos);
+    }
+
     public boolean isHearthMasterArchitect() {
         return entityData.get(DATA_MASTER_ARCHITECT)
                 || (hearthMasterArchitectId != null && hearthMasterArchitectHome != null);

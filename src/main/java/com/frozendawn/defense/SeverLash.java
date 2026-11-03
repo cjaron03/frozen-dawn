@@ -56,10 +56,12 @@ public final class SeverLash {
         var cut = new LinkedHashSet<LivingEntity>();
         Vec3 stop = eye;
         BlockHitResult block = null;
+        var landed = new LinkedHashMap<BlockPos, net.minecraft.core.Direction>();
         for (var ray : BeamSweep.rays(from, look, REACH)) {
             var end = eye.add(ray.scale(REACH));
             block = level.clip(new ClipContext(eye, end, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, player));
             stop = block.getType() == HitResult.Type.MISS ? end : block.getLocation();
+            if (block.getType() != HitResult.Type.MISS) landed.putIfAbsent(block.getBlockPos(), block.getDirection());
             for (var e : candidates) {
                 var box = e.getBoundingBox().inflate(e.getPickRadius());
                 if (box.contains(eye) || box.clip(eye, stop).isPresent()) cut.add(e);
@@ -72,6 +74,7 @@ public final class SeverLash {
             if (e instanceof Enemy) hostiles.add(e.getUUID());
         }
         if (hostiles.size() >= HELLWHIP_HOSTILES) ReactorAdvancements.grant(player, "hellwhip");
+        LashWorldEffects.land(level, player, landed, now);
         draw(level, eye, stop, block != null && block.getType() != HitResult.Type.MISS, vacuum);
         if (shot.heat().lockedOut(now + 1)) {
             AIMS.remove(player.getUUID());

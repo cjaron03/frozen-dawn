@@ -187,6 +187,10 @@ final class ArchitectHearthMasterController {
         combatController.onMindParticipantFailed(level, player, reason);
     }
 
+    boolean holdsLastWall(BlockPos pos) {
+        return combatController.holdsLastWall(pos);
+    }
+
     void addSaveData(net.minecraft.nbt.CompoundTag tag) {
         combatController.addSaveData(tag);
     }
