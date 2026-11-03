@@ -130,7 +130,7 @@ def scripts():
         'drops': (150, ['Three zombies, each holding a sword that always drops on an ordinary death.',
                         'Before the Heart: they stand still, grey, and crumble away from the head down. Nothing drops, no experience. Hover the wand: Transfers logged.',
                         'Click AFTER, respawn targets, discharge again: they crumble the same way, but drop their swords and experience, and the wand reads Terminations logged with the same count.',
-                        'Stopping all three at once earns the hidden Reduced to Atoms.']),
+                        'Stopping all three at once earns the hidden Reduced to Atoms; this world filters advancements, so GameTest checks it.']),
         'interrupt': (180, ['Magma underfoot hurts you every half second in Survival. Start a wind-up here: the hit cancels it, and the discharge is spent anyway.',
                             'Letting go early anywhere else costs nothing. Interrupted, you lose no max health.']),
         'windup': (210, ['Open ground. Walk while winding up to feel the 40% slow; let go before two seconds to keep the discharge.',
