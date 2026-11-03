@@ -358,6 +358,7 @@ Next, unprompted: the hum "doesnt stoop when you stop firing or when it overheat
 review fix's `isActive` check read false every tick. A new hum started every tick, and only the newest was faded at
 release; the rest looped on. The hum now counts as playing while the engine ticks it, through the wrapper or not. Client
 sound only, no test; it needs the owner's ears.
+After the fix (f1374183): "perfect".
 
 ## Verification
 
@@ -384,8 +385,9 @@ sound only, no test; it needs the owner's ears.
     refusal memory.
   - Vacuum (batch `sever_lash_vacuum`): nothing burns, and stone still scorches.
 - `architectVerify` passed on 09572595 (864 GameTests) and on 435d74e4 (865), after the review fixes.
-- Slice 2: `architectVerify` passed on a5666787 (868 GameTests) and on 540ad5e2 (869), after the review fixes, and on
-  b1b19d00 (869) after the third-person holds. Only this line changed after that.
+- Slice 2: `architectVerify` passed on a5666787 (868 GameTests) and on 540ad5e2 (869), after the review fixes, on
+  b1b19d00 (869) after the third-person holds, and on f1374183 (869) after the field manual pages, the new sounds and
+  the hum fix. Only the doc changed after that.
 - Slice 2 GameTests: one beam payload a firing tick, naming the shooter and carrying the aim, length to the wall,
   landing, air and heat; the full reach in open air; nothing while locked; vacuum flagged (batch
   `sever_lash_vacuum`); one start-up a beam; a sizzle every quarter second of contact and none into open air; one vent
