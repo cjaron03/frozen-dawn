@@ -190,11 +190,11 @@ public final class SfrGameTest {
             var near = player(h, h.absolutePos(CENTER).above(6)); var far = player(h, h.absolutePos(CENTER).above(40));
             var be = ready(h, 8_000_000);
             h.succeedWhen(() -> {
-                h.assertValueEqual(be.physics().state(), FusionPhysics.State.BURNING, "state");
+                h.assertValueEqual(be.physics().state(), FusionPhysics.State.BURNING, "state (status " + be.physics().status() + ", ticking "
+                        + h.getLevel().shouldTickBlocksAt(be.getBlockPos()) + ", players " + h.getLevel().players().size() + ")");
                 h.assertTrue(earned(near, SfrAdvancements.SECOND_SUN), "A player beside the torus sees the ignition");
                 h.assertTrue(!earned(far, SfrAdvancements.SECOND_SUN), "A player 40 blocks away does not");
                 h.assertTrue(!earned(near, SfrAdvancements.TWENTY_YEARS), "A lit plasma is not an abort");
-                near.discard(); far.discard();
             });
         });
     }
@@ -209,7 +209,6 @@ public final class SfrGameTest {
                 h.assertValueEqual(be.physics().status(), FusionPhysics.Status.ABORTED, "status");
                 h.assertTrue(earned(near, SfrAdvancements.TWENTY_YEARS), "An aborted ignition grants Twenty Years Away");
                 h.assertTrue(!earned(near, SfrAdvancements.SECOND_SUN), "An aborted ignition is not A Second Sun");
-                near.discard();
             });
         });
     }
@@ -757,8 +756,8 @@ public final class SfrGameTest {
         var level = h.getLevel(); var profile = new GameProfile(UUID.randomUUID(), "sfr_" + pos.getY());
         var player = new ServerPlayer(level.getServer(), level, profile, ClientInformation.createDefault());
         player.connection = new net.neoforged.neoforge.common.util.FakePlayer(level, profile).connection;
-        player.setPos(pos.getCenter()); player.setGameMode(GameType.SURVIVAL); level.addNewPlayer(player);
-        return player;
+        player.setPos(pos.getCenter()); player.setGameMode(GameType.SURVIVAL);
+        return com.frozendawn.gametest.GameTestPlayers.join(h, player);
     }
     private static boolean earned(ServerPlayer player, String id) {
         var holder = player.getServer().getAdvancements().get(ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, id));

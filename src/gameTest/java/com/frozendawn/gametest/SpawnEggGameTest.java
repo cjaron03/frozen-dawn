@@ -133,10 +133,14 @@ public class SpawnEggGameTest {
         var restored = expected.create(helper.getLevel());
         restored.load(mob.saveWithoutId(new CompoundTag()));
         assertStandalone(helper, restored, floor.above());
+        // The player hatching an egg stands beside it, so vanilla's far-player despawn never applies. This mock player
+        // is not in the level: any real player another test leaves there would otherwise despawn the mob at once.
+        mob.setPersistenceRequired();
         helper.runAfterDelay(40, () -> {
             helper.assertTrue(mob.isAlive() && !mob.isRemoved() && mob.tickCount >= 30
                             && mob.getMaxHealth() > 0 && mob.getHealth() > 0,
-                    "hatched mob failed to survive and tick normally: " + expected);
+                    "hatched mob failed to survive and tick normally: " + expected + " (removed=" + mob.getRemovalReason()
+                            + ", ticks=" + mob.tickCount + ", health=" + mob.getHealth() + ", players=" + helper.getLevel().players() + ")");
             assertStandalone(helper, mob, floor.above());
             helper.succeed();
         });
