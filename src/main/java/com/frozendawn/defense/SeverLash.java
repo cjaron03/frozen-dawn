@@ -9,6 +9,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.server.level.*;
 import net.minecraft.sounds.*;
+import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.monster.Enemy;
 import net.minecraft.world.item.ItemStack;
@@ -66,7 +67,10 @@ public final class SeverLash {
         }
 
         var source = level.damageSources().source(ModDamageTypes.SEVER_LASH, player);
-        for (var e : cut) if (e.hurt(source, DAMAGE_PER_TICK) && e instanceof Enemy) hostiles.add(e.getUUID());
+        for (var e : cut) if (e.hurt(source, DAMAGE_PER_TICK)) {
+            sear(e);
+            if (e instanceof Enemy) hostiles.add(e.getUUID());
+        }
         if (hostiles.size() >= HELLWHIP_HOSTILES) ReactorAdvancements.grant(player, "hellwhip");
         draw(level, eye, stop, block != null && block.getType() != HitResult.Type.MISS, vacuum);
         if (shot.heat().lockedOut(now + 1)) {
@@ -74,6 +78,13 @@ public final class SeverLash {
             level.playSound(null, player.getX(), player.getEyeY(), player.getZ(), SoundEvents.FIRE_EXTINGUISH, SoundSource.PLAYERS, .8F, .7F);
         }
         return true;
+    }
+
+    private static void sear(LivingEntity target) {
+        if (!target.isAlive()) return;
+        var held = target.getEffect(ModEffects.SEARED);
+        int duration = Sear.duration(held == null ? 0 : held.getDuration());
+        target.addEffect(new MobEffectInstance(ModEffects.SEARED, duration, Sear.amplifier(duration, held == null ? -1 : held.getAmplifier())));
     }
 
     /** In vacuum nothing scatters the beam: it shows only where it lands. */

@@ -29,6 +29,8 @@ public final class ModEffects {
             EFFECTS.register("contaminated", com.frozendawn.effect.ContaminatedEffect::new);
     public static final DeferredHolder<MobEffect, com.frozendawn.effect.WarmMealEffect> WARM_MEAL =
             EFFECTS.register("warm_meal", com.frozendawn.effect.WarmMealEffect::new);
+    public static final DeferredHolder<MobEffect, com.frozendawn.effect.SearedEffect> SEARED =
+            EFFECTS.register("seared", com.frozendawn.effect.SearedEffect::new);
 
     private ModEffects() {
     }

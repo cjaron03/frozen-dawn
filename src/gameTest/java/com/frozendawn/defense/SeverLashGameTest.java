@@ -11,7 +11,9 @@ import net.minecraft.gametest.framework.*;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.*;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.*;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.item.*;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Blocks;
@@ -131,6 +133,49 @@ public final class SeverLashGameTest {
         h.assertTrue(!earned(p,"hellwhip"),"Two hostiles so far in this beam");
         aim(p,-30);SeverLash.fire(p,lash,1012);
         h.assertTrue(earned(p,"hellwhip"),"Three hostiles cut in one continuous beam earns Hellwhip, no single tick needed");
+        h.succeed();
+    }
+
+    @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="sever_lash",timeoutTicks=100)
+    public static void severLashSearsWhatItCuts(GameTestHelper h) {
+        var p=shooter(h,500000);var lash=p.getMainHandItem();
+        // A husk outlasts the 21 cuts; a pig would die first.
+        var husk=target(h,EntityType.HUSK,0,5);var spared=target(h,EntityType.PIG,70,5);aim(p,0);
+        SeverLash.fire(p,lash,1000);
+        var sear=husk.getEffect(ModEffects.SEARED);
+        h.assertTrue(sear!=null&&sear.getAmplifier()==0&&sear.getDuration()==Sear.BASE_TICKS,"One tick of beam sears for two seconds: "+sear);
+        h.assertTrue(!spared.hasEffect(ModEffects.SEARED),"Only what the beam cuts is seared");
+        // Direct calls in one game tick: the effect does not tick down between them.
+        for(int t=1;t<=20;t++)SeverLash.fire(p,lash,1000+t);
+        sear=husk.getEffect(ModEffects.SEARED);
+        h.assertTrue(sear!=null&&sear.getAmplifier()==2&&sear.getDuration()==Sear.MAX_TICKS,"A held beam deepens it to Seared III, capped: "+sear);
+        h.succeed();
+    }
+
+    @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="sever_lash",timeoutTicks=100)
+    public static void searedBurnsOnThroughArmorAfterTheBeamLeaves(GameTestHelper h) {
+        var husk=target(h,EntityType.HUSK,0,5);
+        husk.setItemSlot(EquipmentSlot.CHEST,new ItemStack(Items.DIAMOND_CHESTPLATE));
+        // Worn armor becomes attributes on the husk's next tick.
+        h.runAfterDelay(2,()->{
+            float before=husk.getHealth();
+            husk.addEffect(new MobEffectInstance(ModEffects.SEARED,Sear.BASE_TICKS,0));
+            h.runAfterDelay(Sear.BASE_TICKS+5,()->{
+                h.assertTrue(!husk.hasEffect(ModEffects.SEARED),"The sear burns out");
+                h.assertTrue(Math.abs((before-husk.getHealth())-2*Sear.PULSE_DAMAGE)<1e-4,"Two seconds of Seared I burn twice, armor or not: "+(before-husk.getHealth()));
+                h.assertTrue(husk.getDeltaMovement().horizontalDistance()<1e-6,"A burn does not shove");
+                h.succeed();
+            });
+        });
+    }
+
+    @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="sever_lash",timeoutTicks=100)
+    public static void searedSlowsWithItsLevel(GameTestHelper h) {
+        var pig=target(h,EntityType.PIG,0,5);
+        double base=pig.getAttributeValue(Attributes.MOVEMENT_SPEED);
+        pig.addEffect(new MobEffectInstance(ModEffects.SEARED,Sear.MAX_TICKS,2));
+        double seared=pig.getAttributeValue(Attributes.MOVEMENT_SPEED);
+        h.assertTrue(Math.abs(seared-base*(1-3*Sear.SLOW_PER_LEVEL))<1e-6,"Seared III slows by three steps: "+seared+" of "+base);
         h.succeed();
     }
 

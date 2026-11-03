@@ -44,6 +44,9 @@ public final class ModParticles {
     public static final DeferredHolder<ParticleType<?>, SimpleParticleType>
             COLD_VAPOUR = PARTICLES.register("cold_vapour", () -> new SimpleParticleType(false));
 
+    public static final DeferredHolder<ParticleType<?>, SimpleParticleType>
+            SEAR_EMBER = PARTICLES.register("sear_ember", () -> new SimpleParticleType(false));
+
     private ModParticles() {
     }
 }

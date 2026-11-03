@@ -28,6 +28,13 @@ Each slice is its own branch and PR off `feat/maeve-director`.
 - Owner ruling, 2026-11-02: the Lash bypasses armor entirely (`bypasses_armor`), so armor stops none of the cut and
   never wears from it. This replaces the spec's "armor blocks less than usual". Shields still stop half of what they
   would (`SeverLashDamageHandler`).
+- Seared (owner's call after playtest 3, 2026-11-03, to make the power draw pay off): every cut also sears
+  (`Sear`, `SearedEffect`). A first cut sears for 2 s; each further tick of contact adds 3 ticks, so a held beam
+  nets 2 ticks a tick, up to 5 s. About half a second of contact is Seared II and a second is Seared III; a fading
+  burn keeps its level when cut again. Each level burns 1 a second (`frozendawn:seared`, which also bypasses armor,
+  the hurt cooldown and knockback) and slows by 15%. It is heat, not fire, so it works the same in vacuum.
+  Custom ember particles cool from white through orange to red; the icon and embers come from
+  `docs/art/sever-lash/make_textures.py`.
 - Heat (`LashHeat`, on the stack, settled from game time): 6 s of continuous fire overheats it. A stored lockout
   further off than the vacuum maximum, which comes from carrying the Lash out of a world with a later clock, counts as
   lapsed. The lockout is 4 s
@@ -76,10 +83,20 @@ placeholder overheat hiss. Next step proposed: procedural Lash sounds and a 3D i
 The owner asked for another cell mid-test, then reported "ngl this thing needs to do more damage lol". The owner
 set 12/s. That is above the spec's Sweep Turret 8/s, so raise the turret with it in slice 5.
 
+## Owner playtest 3, 2026-11-03 (Sever Lash Overworld, runClient, PR head 92341c77)
+
+Unprompted report: it "still needs to get buffed" and "needs to justify the battery usage", "maybe give it a
+effect". Overheat needs visuals; the owner deferred those to the texture pass. The log shows a 30 s session that
+spawned at a village. The only kill was a Cartographer villager, "cut apart by a diagnostic emitter", a second
+before quitting.
+
 ## Verification
 
 - JUnit: `LashHeatTest`, `BeamSweepTest`.
-- GameTests (`-PfdTests=severLash`): power draw, arc-only cutting, cooldown, knockback and stale-aim reset, armor
-  bypass, no player armor wear, overheat, Hellwhip.
-- Not covered by a test: the shield half-block (needs a player blocking for 5+ ticks) and anything visual or audible.
+- JUnit `SearTest`: Seared build-up, cap and levels.
+- GameTests (`-PfdTests=severLash,seared`): power draw, arc-only cutting, cooldown, knockback and stale-aim reset,
+  armor bypass, no player armor wear, overheat, Hellwhip, Seared application and build-up, the burn after the beam
+  leaves (through armor, no shove), and the slowdown.
+- Not covered by a test: the shield half-block (needs a player blocking for 5+ ticks), the ember particles and icon,
+  and anything else visual or audible.
   These need the owner's visual pass.

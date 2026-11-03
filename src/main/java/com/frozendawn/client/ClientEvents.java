@@ -117,6 +117,8 @@ public class ClientEvents {
                 UnthreadingResidueParticle.Provider::new);
         event.registerSpriteSet(ModParticles.COLD_VAPOUR.get(),
                 com.frozendawn.client.particle.ColdVapourParticle.Provider::new);
+        event.registerSpriteSet(ModParticles.SEAR_EMBER.get(),
+                com.frozendawn.client.particle.SearEmberParticle.Provider::new);
     }
 
     @SubscribeEvent
