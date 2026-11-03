@@ -181,7 +181,7 @@ def scripts():
                                      'Right: the same packed ice and ice with no Master. It melts like any other.',
                                      'The frozen Master runs no AI, so breaking the seam by hand does not drop its wall here; that is checked in a live fight.']),
         'helion': ((39.5,65,17.5), ['A buried Helion site: the iron hatch by the bent antenna, just ahead. Open it and climb down the ladder.',
-                                     'In the hall, the diagnostics bench is on the south wall, a few steps east of the ladder. Its barrel holds one or two Lash Emitters, and at about one site in four the Hellwhip memo.',
+                                     'In the hall, the diagnostics bench is on the south wall, eleven blocks east of the ladder. Its barrel holds one or two Lash Emitters, and at about one site in four the Hellwhip memo.',
                                      'Take an emitter to the Craft station and build the Lash. The field manual has an LC-4 Sever Lash page under ORSA Equipment.']),
         'craft': ((105.5,65,.5), ['Crafting table ahead. Take the ingredients, craft the Lash: it should come out cool and carry no charge.']),
     }

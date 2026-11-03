@@ -189,8 +189,8 @@ Mockup: `docs/art/sever-lash/beam-mockup.png` (`make_beam_mockup.py`). The owner
 - The drawn curve stops at the first block it meets. The impact is a small flickering star with ember sparks.
 - In air, a thin red afterimage of the last three ticks fades behind it. In vacuum only the core and the impact show.
 - The bend is visual only: cutting still follows `BeamSweep`.
-- Ruling (agent): the muzzle is placed by eye, low right of the view in first person, at the end of an arm raised
-  along the aim otherwise. It may not meet the lens exactly; judge in game.
+- Ruling (agent): the muzzle is placed by eye, low right of the view in first person. Seen from outside it leaves
+  the lens of the two-handed firing hold (see Holding below).
 
 ### Sounds (`tools/generate_sever_lash_sounds.sh`, sources in `tools/audio_sources/sever_lash/`)
 - Server-played, heard by everyone near: a start-up strike on the first tick of a beam; a cut sizzle every quarter

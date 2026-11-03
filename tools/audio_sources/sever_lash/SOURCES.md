@@ -5,7 +5,7 @@ Original synthesis by Frozen Dawn through Claude Code at the owner's request for
 slice 1's placeholder vanilla extinguish hiss. After the owner's sound pass ("more dangerous") the whole set was rebuilt
 on the plasma roar the owner picked from three hum auditions (arc welder, plasma roar, overload).
 
-Reproduce with `tools/generate_sever_lash_sounds.sh` (ffmpeg and oggenc). Every file is mono 44.1 kHz Vorbis,
+Reproduce with `tools/generate_sever_lash_sounds.sh` (ffmpeg, oggenc and bc). Every file is mono 44.1 kHz Vorbis,
 `oggenc -q 5`, fixed noise seeds 54003, 54004 and 54011 to 54018; the hum loop is seamless.
 
 | File | Event | Character |

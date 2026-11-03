@@ -2,7 +2,7 @@
 # ORSA LC-4 Sever Lash sounds: ffmpeg lavfi synthesis only, fixed noise seeds, mono 44.1 kHz Vorbis (oggenc -q 5:
 # ffmpeg's own Vorbis encoder only writes stereo, and Minecraft attenuates only mono sounds by distance). The
 # conventions of tools/generate_hyperion_sounds.sh: the hum loop is seamless, every tone and modulation rate a whole
-# multiple of 1/duration, rendered 1.5 s long so its first second warms the filters and its last 0.5 s crossfades over
+# multiple of 1/duration, rendered 1.5 s longer so its first second warms the filters and its last 0.5 s crossfades over
 # the head. Sources are recorded in tools/audio_sources/sever_lash/SOURCES.md.
 set -euo pipefail
 
@@ -31,8 +31,8 @@ render hum_loop \
   -f lavfi -i "aevalsrc=0.5*sin(2*PI*40*t)+0.25*sin(2*PI*80*t):s=44100:d=3.5" \
   -filter_complex "[0:a]lowpass=f=700,volume=1.4[low];[1:a]bandpass=f=1400:width_type=q:w=0.7,volume=0.6[mid];[low][mid]amix=inputs=2:normalize=0,aphaser=speed=0.5:decay=0.6,volume=2,asoftclip=type=tanh,volume=0.5[roar];[2:a]tremolo=f=7:d=0.5[sub];[roar][sub]amix=inputs=2:normalize=0,alimiter=limit=0.7:level=0[mix];$(seam 2 mix out)"
 
-# Start, 0.8 s: ignition. A spark click and a 35 Hz thump, then the roar flares in over 60 ms with its low end opening
-# from 200 Hz to 900 Hz, and settles to the hum's level.
+# Start, 0.8 s: ignition. A spark click and a thump falling from about 55 Hz to 35 Hz, then the roar (under 900 Hz)
+# flares in over 60 ms and settles to the hum's level.
 render start \
   -f lavfi -i "anoisesrc=color=brown:duration=0.8:sample_rate=44100:seed=54011" \
   -f lavfi -i "anoisesrc=color=white:duration=0.8:sample_rate=44100:seed=54012" \
