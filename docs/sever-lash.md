@@ -322,6 +322,10 @@ First pass with Seared. Unprompted report: "i like it".
 First pass on the slice 1 stations. Unprompted report: "all the stations pretty much passed." The owner then asked
 for slice 2: the 3D model and sounds, and a beam that "screams hellwhip" instead of particles.
 
+## Owner playtest 6, 2026-11-03 (Sever Lash Slice 2, runClient, branch head e46c87a5)
+
+First pass on slice 2. Unprompted report: "god it looks so good".
+
 ## Verification
 
 - JUnit:
