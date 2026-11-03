@@ -1,0 +1,23 @@
+{
+  "name": "Procurement Review",
+  "category": "frozendawn:orsa_intel",
+  "icon": "frozendawn:orsa_document",
+  "sortnum": 31,
+  "advancement": "frozendawn:found_lc4_requisition_memo",
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "Req. 0447",
+      "text": "$(bold)ORSA PROCUREMENT REVIEW$()$(br)Helion Confinement Test Facility$(br)From: Supervisor, Plasma Diagnostics$(br)Re: Req. 0447, six LC-4 emitters, field conversion for cutting$(br2)Third submission. The technician on second shift has filed it again."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "The form is in order. The description is not. Where it asks for the item, the technician has once more written $(italic)hellwhip$() instead of the catalogue name.$(br2)Asked to correct it, they said the name comes from an old book they are reading, and that it suits the tool better than the catalogue does."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Disposition",
+      "text": "$(italic)DENIED.$()$(br2)Resubmit under the catalogue name. ORSA does not requisition equipment by its nickname, and the board will not sign for a whip.$(br2)Note for the file: these are diagnostic emitters. Stop cutting the ice with them."
+    }
+  ]
+}

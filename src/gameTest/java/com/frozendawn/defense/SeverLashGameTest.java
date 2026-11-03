@@ -233,6 +233,25 @@ public final class SeverLashGameTest {
         });
     }
 
+    @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="helion_site",timeoutTicks=100)
+    public static void helionBenchFilesTheHellwhipMemoWhereItRolls(GameTestHelper h) {
+        h.runAfterDelay(1,()->{
+            var level=h.getLevel();
+            BlockPos hall=null;
+            for(int i=0;i<49&&hall==null;i++){var at=h.absolutePos(new BlockPos(7+i%7,2,7+i/7));if(LashSalvage.helionMemo(level.getSeed(),at.asLong()))hall=at;}
+            h.assertTrue(hall!=null,"Some nearby hall rolls the memo");
+            com.frozendawn.world.HelionSiteBuilder.place(level,hall,hall.getY()+com.frozendawn.world.HelionSitePlacement.DEPTH);
+            var bench=(BarrelBlockEntity)level.getBlockEntity(hall.offset(com.frozendawn.world.HelionSiteBuilder.DIAGNOSTICS));
+            ItemStack memo=ItemStack.EMPTY;
+            for(int i=0;i<bench.getContainerSize();i++)if(com.frozendawn.world.HelionSiteBuilder.isHellwhipMemo(bench.getItem(i)))memo=bench.getItem(i).copy();
+            h.assertTrue(memo.is(ModItems.ORSA_DOCUMENT.get()),"The memo is an ORSA document on the diagnostics bench");
+            var p=shooter(h,0);p.setItemInHand(InteractionHand.MAIN_HAND,memo);
+            memo.use(level,p,InteractionHand.MAIN_HAND);
+            h.assertTrue(earned(p,"found_lc4_requisition_memo")&&earned(p,"classified_information"),"Reading it archives the memo");
+            h.succeed();
+        });
+    }
+
     /** Own batch: the site grades and contaminates well past this structure. */
     @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="reactor_site",timeoutTicks=100)
     public static void reactorMaintenanceBayHoldsTheLuckyEmitter(GameTestHelper h) {

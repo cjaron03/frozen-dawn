@@ -113,11 +113,27 @@ public final class HelionSiteBuilder {
         if (r.nextFloat() < CAPSULE_CHANCE) desk.add(com.frozendawn.item.AntimatterCapsuleItem.sealed(com.frozendawn.power.IcarusPhysics.CAPSULE));
         fill(l, c.offset(LOG_DESK), desk.toArray(ItemStack[]::new));
     }
-    /** The diagnostics bench along the south wall. Its emitters are always there: one or two, fixed by the seed. */
+    public static final String HELLWHIP_MEMO = "lc4_requisition_memo";
+    /** The diagnostics bench along the south wall. Its emitters are always there: one or two, fixed by the seed. Now and
+     * then the supervisor's memo on the LC-4 requisition was left with them. */
     private static void diagnostics(ServerLevel l, BlockPos c) {
         for (int dx = 4; dx <= 7; dx++) set(l, c, dx, 0, HALF - 1, Blocks.POLISHED_ANDESITE.defaultBlockState());
         set(l, c, DIAGNOSTICS.getX(), DIAGNOSTICS.getY(), DIAGNOSTICS.getZ(), Blocks.BARREL.defaultBlockState());
-        fill(l, c.offset(DIAGNOSTICS), new ItemStack(ModItems.LASH_EMITTER.get(), com.frozendawn.defense.LashSalvage.helionEmitters(l.getSeed(), c.asLong())));
+        var bench = new java.util.ArrayList<>(List.of(new ItemStack(ModItems.LASH_EMITTER.get(),
+                com.frozendawn.defense.LashSalvage.helionEmitters(l.getSeed(), c.asLong()))));
+        if (com.frozendawn.defense.LashSalvage.helionMemo(l.getSeed(), c.asLong())) bench.add(hellwhipMemo());
+        fill(l, c.offset(DIAGNOSTICS), bench.toArray(ItemStack[]::new));
+    }
+    public static ItemStack hellwhipMemo() {
+        var memo = new ItemStack(ModItems.ORSA_DOCUMENT.get());
+        memo.set(DataComponents.CUSTOM_NAME, Component.literal("Procurement Review - Req. 0447"));
+        var tag = new net.minecraft.nbt.CompoundTag(); tag.putString("doc_type", HELLWHIP_MEMO);
+        memo.set(DataComponents.CUSTOM_DATA, net.minecraft.world.item.component.CustomData.of(tag));
+        return memo;
+    }
+    public static boolean isHellwhipMemo(ItemStack stack) {
+        var data = stack.get(DataComponents.CUSTOM_DATA);
+        return stack.is(ModItems.ORSA_DOCUMENT.get()) && data != null && HELLWHIP_MEMO.equals(data.copyTag().getString("doc_type"));
     }
     /** Ladder from the hall floor up through the ceiling and ice, plugged below a hatch at the surface. */
     private static void shaft(ServerLevel l, BlockPos c, int top) {
