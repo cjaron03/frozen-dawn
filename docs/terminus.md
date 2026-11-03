@@ -6,7 +6,8 @@ is the tracked handoff; the spec stays on Notion.
 ## Checkout
 
 - Worktree `/Volumes/SSD/Work/frozen-dawn-terminus`, branch `feat/terminus`, cut 2026-11-03 from `feat/sever-lash-2`
-  at bd5d048a (PR #145, stacked on #143). A PR for this branch is based on `feat/sever-lash-2` while #145 is open.
+  at bd5d048a (PR #145, stacked on #143). Both have merged into `feat/maeve-director`, so the T1 PR is based on
+  `feat/maeve-director` (opened 2026-11-03 on the owner's word; the owner approves the merge).
 - Scheduling: the owner inserted the Terminus after Sever Lash slice 2 and before the Proximity Tracker (2026-11-03).
   The Notion page still says "after the Sweep Turret"; the owner's later word wins.
 
