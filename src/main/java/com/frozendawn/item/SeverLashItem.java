@@ -31,6 +31,13 @@ public final class SeverLashItem extends Item {
     @Override public void releaseUsing(ItemStack stack, Level level, LivingEntity entity, int remaining) {
         SeverLash.forget(entity.getUUID());
     }
+    /**
+     * Whether the holder is firing this stack, for the {@code frozendawn:firing} model predicate. It asks the hand, not
+     * the use: each firing tick the server's heat rewrite replaces the held stack a client tick before the use follows.
+     */
+    public static boolean firing(LivingEntity holder, ItemStack stack) {
+        return holder.isUsingItem() && holder.getItemInHand(holder.getUsedItemHand()) == stack;
+    }
     /** The server rewrites the held stack every firing tick as it heats; only a change beyond heat re-equips. */
     @Override public boolean shouldCauseReequipAnimation(ItemStack from, ItemStack to, boolean slotChanged) {
         return slotChanged || !ItemStack.isSameItemSameComponents(withoutHeat(from), withoutHeat(to));

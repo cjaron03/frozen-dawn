@@ -22,9 +22,10 @@ def mockup(x0, y0, z0, x1, y1, z1):
 
 def faces(lo, hi, texture, down=None, only=None):
     w, h, d = hi[0] - lo[0], hi[1] - lo[1], hi[2] - lo[2]
-    # Sides show the tile's top rows, so the highlight runs along each top edge; tops and bottoms read its middle.
+    # Sides show the tile's top rows, so the highlight runs along each top edge; tops read its middle and bottoms its
+    # foot. Vanilla does not clamp UVs, so every face stays inside its 16x16 tile.
     uv = dict(north=[0, 0, w, h], south=[0, 0, w, h], east=[0, 0, d, h], west=[0, 0, d, h],
-              up=[0, 4, w, 4 + d], down=[0, 8, w, 8 + d])
+              up=[0, 4, w, 4 + d], down=[0, 16 - d, w, 16])
     return {f: {'texture': '#' + (down if f == 'down' and down else texture), 'uv': uv[f]}
             for f in (only or uv)}
 

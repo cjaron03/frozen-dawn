@@ -56,7 +56,7 @@ public final class LashBeamClient {
         final ArrayDeque<Trace> traces = new ArrayDeque<>();
         Vec3 aim, lastAim, lastFar;
         float length, heat;
-        boolean landed, vacuum;
+        boolean landed, vacuum, fresh;
         int quiet;
         Hum hum;
     }
@@ -66,7 +66,7 @@ public final class LashBeamClient {
         beam.aim = new Vec3(payload.direction()).normalize();
         beam.length = payload.length(); beam.heat = payload.heat();
         beam.landed = payload.landed(); beam.vacuum = payload.vacuum();
-        beam.quiet = 0;
+        beam.quiet = 0; beam.fresh = true;
         VACUUM.put(payload.shooter(), payload.vacuum());
     }
 
@@ -86,11 +86,14 @@ public final class LashBeamClient {
             if (!(mc.level.getEntity(entry.getKey()) instanceof LivingEntity shooter) || beam.quiet++ > GRACE_TICKS) {
                 silence(beam); it.remove(); continue;
             }
-            // The shooter's own beam follows their view at once; everyone else's follows the server's aim.
-            var aim = shooter == mc.player ? shooter.getLookAngle() : beam.aim;
+            // The shooter's own beam follows their view at once; everyone else's follows the server's aim, stepped only
+            // on ticks that brought one, so a tick the network skipped is not taken for the sweep stopping.
+            boolean own = shooter == mc.player;
+            var aim = own ? shooter.getLookAngle() : beam.aim;
             beam.lastAim = beam.whip.aim() == null ? aim : beam.whip.aim();
             beam.lastFar = beam.whip.far() == null ? aim : beam.whip.far();
-            boolean crack = beam.whip.step(aim);
+            boolean crack = (own || beam.fresh) && beam.whip.step(aim);
+            beam.fresh = false;
             var eye = shooter.getEyePosition();
             var muzzle = muzzle(mc, shooter, beam.whip.aim(), 1);
             beam.traces.addFirst(new Trace(eye, muzzle, beam.whip.aim(), beam.whip.far(), beam.length));
@@ -106,7 +109,7 @@ public final class LashBeamClient {
                 mc.level.addParticle(ModParticles.SEAR_EMBER.get(), tip.x, tip.y, tip.z,
                         (r.nextDouble() - .5) * .12, r.nextDouble() * .08, (r.nextDouble() - .5) * .12);
             }
-            if (beam.hum == null || beam.hum.isStopped()) { beam.hum = new Hum(shooter); mc.getSoundManager().play(beam.hum); }
+            if (beam.hum == null || !mc.getSoundManager().isActive(beam.hum)) { beam.hum = new Hum(shooter); mc.getSoundManager().play(beam.hum); }
             beam.hum.heat = beam.heat;
         }
         VACUUM.keySet().removeIf(id -> mc.level.getEntity(id) == null);

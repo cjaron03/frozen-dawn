@@ -4,6 +4,7 @@ import com.frozendawn.FrozenDawn;
 import com.frozendawn.gametest.*;
 import com.frozendawn.init.*;
 import com.frozendawn.item.PowerCellItem;
+import com.frozendawn.item.SeverLashItem;
 import com.mojang.authlib.GameProfile;
 import java.util.*;
 import net.minecraft.core.BlockPos;
@@ -179,6 +180,21 @@ public final class SeverLashGameTest {
         var named=warm.copy();named.set(net.minecraft.core.component.DataComponents.CUSTOM_NAME,net.minecraft.network.chat.Component.literal("Kassad"));
         h.assertTrue(item.shouldCauseReequipAnimation(warm,named,false),"Any other change still does");
         h.assertTrue(item.shouldCauseReequipAnimation(cool,new ItemStack(ModItems.LASH_EMITTER.get()),false),"So does another item");
+        h.succeed();
+    }
+
+    /** Each firing tick replaces the held stack before the holder's use catches up; the firing model must not drop out. */
+    @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="sever_lash",timeoutTicks=20)
+    public static void severLashFiringModelSurvivesTheHeatRewrite(GameTestHelper h) {
+        var p=shooter(h,500000);var lash=p.getMainHandItem();
+        h.assertTrue(!SeverLashItem.firing(p,lash),"Held, not fired");
+        p.startUsingItem(InteractionHand.MAIN_HAND);
+        h.assertTrue(SeverLashItem.firing(p,lash),"Firing");
+        var rewritten=lash.copy();rewritten.set(ModDataComponents.LASH_HEAT.get(),new LashHeat(10,0,1000));
+        p.setItemInHand(InteractionHand.MAIN_HAND,rewritten);
+        h.assertTrue(SeverLashItem.firing(p,rewritten),"Still firing with the rewritten stack in hand");
+        h.assertTrue(!SeverLashItem.firing(p,new ItemStack(ModItems.SEVER_LASH.get())),"A Lash in another hand or slot is not");
+        p.stopUsingItem();
         h.succeed();
     }
 

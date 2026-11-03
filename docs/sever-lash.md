@@ -228,6 +228,23 @@ Mockup: `docs/art/sever-lash/beam-mockup.png` (`make_beam_mockup.py`). The owner
 - Open for the owner, from the model spec: is the off-hand brace wanted, is the smoke wanted in air, and should the
   cell port show charge? The brace and smoke are built; the cell port shows no charge.
 
+### Slice 2 branch review (Opus, 2026-11-03)
+
+Opus reviewed 267a8596..a5666787 because the branch adds client/server sync. Fixed, each with a failing test first
+where one could be written:
+- The firing model compared the held stack with the holder's use by identity. The heat rewrite replaces the held
+  stack a client tick before the use follows, so the third-person Lash flipped between its firing and idle holds.
+  `SeverLashItem.firing` now asks the hand (GameTest `severLashFiringModelSurvivesTheHeatRewrite`).
+- The body's underside UV ran to 17, past its tile, sampling a neighbouring sprite. Bottom faces now read the tile's
+  foot, and `SeverLashModelTest` keeps every UV within 0 to 16.
+- An observer's whip stepped every client tick, so a tick with no new payload read as the sweep stopping: a false
+  snap, and a crack if bent. It now steps only on ticks that bring a new aim. Client only, no test; it needs a
+  second client to see.
+- A hum the sound engine dropped was not restarted; it now checks the engine.
+
+Set aside: a released or overheated beam lingers up to three client ticks plus latency, and the shooter's own beam
+keeps following their view meanwhile. Judge it in the visual pass.
+
 ## Deferred to slice 3 or later
 
 - Heat Sink, Long Focus and Wide Aperture modules. Per the Notion Fabricator page they are Fabricator recipes

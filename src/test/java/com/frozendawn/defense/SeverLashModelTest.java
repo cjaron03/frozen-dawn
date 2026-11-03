@@ -41,6 +41,9 @@ class SeverLashModelTest {
                 for (var face : element.getAsJsonObject("faces").entrySet()) {
                     var ref = face.getValue().getAsJsonObject().get("texture").getAsString().substring(1);
                     assertTrue(textures.has(ref), name + " " + element.get("name") + " uses an undefined #" + ref);
+                    // Vanilla does not clamp face UVs: past 16 a face samples the neighbouring sprite in the atlas.
+                    for (var uv : face.getValue().getAsJsonObject().getAsJsonArray("uv"))
+                        assertTrue(uv.getAsDouble() >= 0 && uv.getAsDouble() <= 16, name + " " + element.get("name") + " " + face.getKey() + " UV leaves its tile");
                 }
         }
     }

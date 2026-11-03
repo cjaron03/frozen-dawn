@@ -277,7 +277,7 @@ public class ClientEvents {
                     (stack, level, entity, seed) -> lashHeat(stack).vent(lashClock(level)));
             // Firing swaps in models held along the raised arm (SeverLashHold); other players see it through the synced use.
             ItemProperties.register(ModItems.SEVER_LASH.get(), ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "firing"),
-                    (stack, level, entity, seed) -> entity != null && entity.isUsingItem() && entity.getUseItem() == stack ? 1 : 0);
+                    (stack, level, entity, seed) -> entity != null && com.frozendawn.item.SeverLashItem.firing(entity, stack) ? 1 : 0);
             ItemProperties.register(ModItems.MIEL_HONEY.get(), ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "fill"),
                     (stack, level, entity, seed) -> stack.getOrDefault(ModDataComponents.MIEL_SPOONFULS, MielHoneyItem.SPOONFULS) / (float) MielHoneyItem.SPOONFULS);
             CuriosClientCompat.registerRenderers();
