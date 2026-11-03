@@ -76,6 +76,10 @@ As the spec, sections 5, 5a, 6, 8 and 9. Open: the tale logs (count and voices).
 - 2026-11-03, Reduced to Atoms: after playtest 3 the owner asked for a hidden advancement for three or more mobs in one
   discharge, after Thanos's line. Built as "Reduced to Atoms", "Stop three minds or more with one discharge.", a hidden
   challenge under Deathwand.
+- 2026-11-03, sound: the owner asked for a better charge-up and wondered about a firing sound. None of nine synthesized
+  candidates (glass, capacitor, heartbeat; snap, toll, pressure; ghost choir, whispers, wrong glass; two Sleeper-like
+  crystals) clicked, nor the Warden's charge. Hyperion's deathwand is silent with an invisible beam, so the owner picked
+  demo B: a faint heartbeat charge heard only close by, and on discharge the world going silent for the operator.
 
 ## T1 as built (2026-11-03)
 
@@ -85,7 +89,7 @@ As the spec, sections 5, 5a, 6, 8 and 9. Open: the tale logs (count and voices).
   defaults to 3 and 1, so the creative tab and `/give` both hand out a wand as found. At 0 discharges `use` fails: an
   inert trophy.
 - Wind-up: `getUseDuration` 40 ticks; `finishUsingItem` discharges. On use the server plays `item.terminus.windup`
-  bound to the operator, a fixed-range sound event of 24 blocks. Movement at 40%: using an item already cuts walking to
+  bound to the operator, a fixed-range sound event of 8 blocks (attenuated over 8). Movement at 40%: using an item already cuts walking to
   a fifth, so `TerminusClient` doubles the input first (`MovementInputUpdateEvent`).
 - Interrupt (`Terminus.onDamaged`, `LivingDamageEvent.Post` with damage over 0): the discharge is spent and the use
   stops. Letting go early costs nothing. However the wind-up ends short (let go, hit, slot change, death),
@@ -158,8 +162,11 @@ As the spec, sections 5, 5a, 6, 8 and 9. Open: the tale logs (count and voices).
   of the body. About 140 `terminus_flake` particles for a husk leave the crumbling band, one texel across, drifting up
   and to the operator's right, paling and fading over 11 to 17 ticks. `TerminusCrumbleTest` holds the crumble inside
   the server's 32 ticks.
-- Sound: only the wind-up (`tools/generate_terminus_sounds.sh`, `tools/audio_sources/terminus/SOURCES.md`): a 2 s tone
-  gliding 48 to 96 Hz with its octave beating against it and a thin glassy hiss, stopping dead. The discharge is silent.
+- Sound (owner's pick): the wind-up (`tools/generate_terminus_sounds.sh`, `tools/audio_sources/terminus/SOURCES.md`) is
+  a 2 s slow 48 Hz heartbeat quickening from 1.2 to 6 beats a second under a faint, slightly rising 5.2 kHz whine,
+  stopping dead, heard to 8 blocks. The discharge has no sound of its own: for the operator (`TerminusHush`, on the
+  discharge payload) the listener's gain drops to nothing at once, holds 26 ticks, and fades back to the master volume
+  over 24.
 
 ### Rulings (agent, for the owner to confirm)
 - The table governs the tag: the owner's "zombies, all Architect subtypes, and players" plus the table's other rows.
@@ -197,11 +204,12 @@ is filtered.
 
 ### Verification
 - JUnit: `TerminusConeTest`, `TerminusLedgerTest`, `TerminusTextTest`, `TerminusDischargePayloadTest`,
-  `TerminusCrumbleTest`, `TerminusTollTest` (two hearts a discharge, half back each half day, the clock left running).
+  `TerminusCrumbleTest`, `TerminusTollTest` (two hearts a discharge, half back each half day, the clock left running),
+  `TerminusHushTest` (the silence holds, then the volume comes back whole).
 - GameTests (`-PfdTests=terminus`, batches `terminus` and `terminus_terminal`): found wand and tooltip; cannot burn or
   despawn; cone hits and misses; through walls; the immunity table; bosses at 40% and never killed; the Master's look at
   the wand and its end; operator spared, other players stopped, creative, PvP and teammates spared; the toll through
-  respawn, the backlash and Deathwand; the two-second wind-up and the 24-block tone; an interrupt spends the discharge
+  respawn, the backlash and Deathwand; the two-second wind-up and the 8-block heartbeat; an interrupt spends the discharge
   and letting go does not, each leaving the cooldown; inert at zero; before the Heart one death event naming the
   operator, a credited kill and no drops or experience; an ordinary credited kill after; either way the body stands
   past vanilla's 20 ticks and is gone by 34; the toll through the End portal's return; invulnerable mobs spared by a
@@ -209,7 +217,8 @@ is filtered.
   diagonal; Reduced to Atoms for three minds and not two; taken hearts kept through death and the End portal, and half
   a heart back when due. The ledger is pinned per batch.
 - Needs the owner's eyes and ears: the model, textures and mote drift in every view, the frost, the holds, the specks,
-  the grey frame, the target motes, the crumble and its flakes, the tone, the 40% walk, and the release gate.
+  the grey frame, the target motes, the crumble and its flakes, the heartbeat and the silence after, the 40% walk, and
+  the release gate.
 
 ## Owner playtest 1, 2026-11-03 (Terminus Check, runClient, branch head 27948f32)
 

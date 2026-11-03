@@ -259,7 +259,8 @@ public final class TerminusGameTest {
     public static void terminusWindsUpForTwoSeconds(GameTestHelper h) {
         var op=operator(h);var wand=op.getMainHandItem();
         h.assertTrue(wand.getUseDuration(op)==Terminus.WINDUP_TICKS&&Terminus.WINDUP_TICKS==40,"Two seconds of wind-up");
-        h.assertTrue(ModSounds.TERMINUS_WINDUP.get().getRange(1f)==24f,"The tone carries 24 blocks");
+        // The deathwand of Hyperion is silent: its charge is a faint heartbeat, heard only close by.
+        h.assertTrue(ModSounds.TERMINUS_WINDUP.get().getRange(1f)==8f,"The wind-up carries 8 blocks");
         var husk=target(h,EntityType.HUSK,0,6);
         wand.use(h.getLevel(),op,InteractionHand.MAIN_HAND);
         h.assertTrue(op.isUsingItem(),"Holding use winds it up");

@@ -16,12 +16,9 @@ render() { # name, then ffmpeg inputs and filter args ending in [out]
   oggenc -Q -q 5 -s 55001 -o "$OUT/$name.ogg" "$TMP"
 }
 
-# Wind-up, 2 s: a low tone rising an octave, 48 to 96 Hz on an exponential glide, with its octave a hair sharp so the
-# two beat faster as it climbs, and a thin glassy hiss (pink noise at 3 kHz) swelling under it. It swells to the end
-# and stops dead: the discharge itself makes no sound.
+# Wind-up, 2 s (owner's pick, after Hyperion's silent deathwand): a slow heartbeat, a 48 Hz thump decaying fast, its
+# rate quickening from 1.2 to 6 beats a second, under a thin 5.2 kHz whine barely there and rising a little. Heard only
+# within 8 blocks. It stops dead: the discharge makes no sound; the world goes quiet instead (TerminusHush).
 render windup \
-  -f lavfi -i "aevalsrc='0.55*sin(2*PI*138.5*(pow(2\,t/2)-1))+0.22*sin(2*PI*1.004*277*(pow(2\,t/2)-1))':s=44100:d=2" \
-  -f lavfi -i "anoisesrc=color=pink:duration=2:sample_rate=44100:seed=55002" \
-  -f lavfi -i "aevalsrc='min(1\, t/0.15)*(0.45+0.55*t/2)':s=44100:d=2" \
-  -f lavfi -i "aevalsrc='0.08*pow(t/2\,2)':s=44100:d=2" \
-  -filter_complex "[1:a]bandpass=f=3000:width_type=q:w=1.2[hiss0];[hiss0][3:a]amultiply[hiss];[0:a][hiss]amix=inputs=2:normalize=0[tone];[tone][2:a]amultiply,afade=t=out:st=1.98:d=0.02,alimiter=limit=0.8:level=0[out]"
+  -f lavfi -i "aevalsrc='0.035*sin(2*PI*(5200*t+150*t*t))*pow(t/2\,1.5)+0.7*sin(2*PI*48*mod(1.2*t+1.2*t*t\,1)/(1.2+2.4*t))*exp(-22*mod(1.2*t+1.2*t*t\,1)/(1.2+2.4*t))*(0.4+0.6*t/2)':s=44100:d=2" \
+  -filter_complex "[0:a]afade=t=out:st=1.99:d=0.01,alimiter=limit=0.8:level=0[out]"

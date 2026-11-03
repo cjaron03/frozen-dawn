@@ -2219,7 +2219,10 @@
     "category": "player",
     "subtitle": "subtitle.frozendawn.item.terminus.windup",
     "sounds": [
-      "frozendawn:item/terminus/windup"
+      {
+        "name": "frozendawn:item/terminus/windup",
+        "attenuation_distance": 8
+      }
     ]
   },
   "radio.martian_command_message": {

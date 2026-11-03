@@ -43,7 +43,10 @@ public final class TerminusClient {
     public static void receive(TerminusDischargePayload payload) {
         var mc = Minecraft.getInstance();
         if (mc.level == null) return;
-        if (mc.player != null && mc.player.getId() == payload.operator()) greyFrames = GREY_FRAMES;
+        if (mc.player != null && mc.player.getId() == payload.operator()) {
+            greyFrames = GREY_FRAMES;
+            TerminusHush.start();
+        }
         var operator = mc.level.getEntity(payload.operator());
         for (int id : payload.minds()) {
             if (!(mc.level.getEntity(id) instanceof LivingEntity mind)) continue;
