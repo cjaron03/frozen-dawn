@@ -179,8 +179,8 @@ public final class FabricatorGameTest {
         var level = h.getLevel(); var profile = new GameProfile(UUID.randomUUID(), "fabricator_" + pos.getX());
         var player = new net.minecraft.server.level.ServerPlayer(level.getServer(), level, profile, net.minecraft.server.level.ClientInformation.createDefault());
         player.connection = new FakePlayer(level, profile).connection;
-        player.setPos(pos.getCenter()); player.setGameMode(net.minecraft.world.level.GameType.SURVIVAL); level.addNewPlayer(player);
-        return player;
+        player.setPos(pos.getCenter()); player.setGameMode(net.minecraft.world.level.GameType.SURVIVAL);
+        return com.frozendawn.gametest.GameTestPlayers.join(h, player);
     }
     private static boolean earned(net.minecraft.server.level.ServerPlayer player, String id) {
         var holder = player.getServer().getAdvancements().get(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, id));
