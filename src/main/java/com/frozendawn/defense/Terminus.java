@@ -144,7 +144,8 @@ public final class Terminus {
         if (!STOPPED.contains(body)) return false;
         if (++body.deathTime >= DEATH_TICKS && !body.isRemoved()) {
             STOPPED.remove(body);
-            body.remove(Entity.RemovalReason.KILLED);
+            if (body instanceof TerminusBody torn) torn.removeStopped();
+            else body.remove(Entity.RemovalReason.KILLED);
         }
         return true;
     }

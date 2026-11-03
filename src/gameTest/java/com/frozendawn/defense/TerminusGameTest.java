@@ -396,7 +396,7 @@ public final class TerminusGameTest {
         h.succeed();
     }
 
-    private static ServerPlayer operator(GameTestHelper h) {
+    public static ServerPlayer operator(GameTestHelper h) {
         var p=player(h,"terminus_operator",new Vec3(EYE_X,FEET_Y,EYE_Z));
         p.setItemInHand(InteractionHand.MAIN_HAND,new ItemStack(ModItems.TERMINUS.get()));
         return p;
@@ -412,7 +412,7 @@ public final class TerminusGameTest {
         return player;
     }
     /** A still, floating target centred on the operator's eye line, {@code distance} blocks out at {@code yaw}. */
-    private static <T extends Mob> T target(GameTestHelper h,EntityType<T> type,double yaw,double distance) {
+    public static <T extends Mob> T target(GameTestHelper h,EntityType<T> type,double yaw,double distance) {
         double r=Math.toRadians(yaw);double eye=FEET_Y+EntityType.PLAYER.getDimensions().eyeHeight();
         var at=new Vec3(EYE_X-Math.sin(r)*distance,eye-type.getHeight()/2,EYE_Z+Math.cos(r)*distance);
         var mob=h.spawnWithNoFreeWill(type,at);mob.setNoGravity(true);mob.setDeltaMovement(Vec3.ZERO);return mob;

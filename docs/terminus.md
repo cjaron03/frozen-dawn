@@ -279,6 +279,10 @@ under a test written first and seen to fail:
 - the toll clock restarted from `now`, so time away from a running server was lost; it now steps from the due time
   (`TerminusTollTest.timeAwayCountsWhenThePlayerReturns`);
 - an Architect's `eyes` layer floated after the crumble took its head; it now crumbles with the body.
+- (an automated review of that fix) holding the clock also skipped the Architect's own teardown: its ice stayed, its
+  block breaker and tower encounter were left open. A body that tears something down implements `TerminusBody`, and
+  the Terminus calls its quiet `removeStopped` instead of a bare removal; the Architect's deaths end in the same method
+  (`TerminusArchitectGameTest`). Returned, Undone, Hollow and Frostbitten tear nothing down.
 
 Set aside (minor): taken hearts past the rows vanilla reserved (absorption, more than ten slots, a toll over 19) draw
 over the armor row, and the half sprite ignores the low-health jiggle; translucent bodies (Mimic, Hollow, the Architect)
