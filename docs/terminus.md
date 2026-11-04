@@ -526,6 +526,17 @@ a bit, incase the player forgot". The board now lights by itself 5 s after the s
 board, since lighting the right fuses would give the answer away. It can be read from the lower floor only from about mid-hall
 eastward, by geometry, not yet checked by eye; the ring hides it nearer the west wall.
 
+## Owner playtest 4 of the Watch Floor, 2026-11-03 (Terminus Watch Floor Check 4, runClientLab, branch head b70a1642)
+
+Unprompted report: "looks good. i solved it. one little thing, on the bridge area, you can build, and just bypass that. make that so
+thats not possibel"
+
+The log: first attempt lost, second purged after two openings at 20:10:04, the third reached its third opening with 00:38 left at
+20:13:31. Quit 20:15:47, no errors. First openings came with 03:27, 03:06 and 03:32 left; 4:00 fits three rounds with little over.
+
+Response: nothing can be placed over the bridge's gap, x 6..14, z -2..2, pit to ceiling, until the Custodian falls, by the rule
+that already kept the hall's floor. It is a tested rule, not checked by hand. Ender pearls still cross: open.
+
 ## ORSA System Plot (built 2026-11-03)
 
 Owner request: a map of the solar system somewhere quiet in the vault, showing what everyone was looking at when the place was

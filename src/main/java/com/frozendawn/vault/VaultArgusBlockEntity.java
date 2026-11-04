@@ -267,10 +267,16 @@ public final class VaultArgusBlockEntity extends BlockEntity {
         setChanged();
     }
 
-    /** Nothing is placed on the floor until the Custodian falls: no torches against the dark, no walls against it. */
+    /** The bridge's gap, from the pit's snow to the ceiling. */
+    private static AABB gapBox(BlockPos hall) {
+        return new AABB(hall.getX() + 6, hall.getY() + TerminusVaultBuilder.PIT_FLOOR, hall.getZ() - 2, hall.getX() + 15, hall.getY() + TerminusVaultBuilder.CEILING, hall.getZ() + 3);
+    }
+    /** Nothing is placed on the floor until the Custodian falls: no torches against the dark, no walls against it. Nor over the
+     * bridge's gap, or a few blocks would walk you past it. */
     public static boolean refuses(ServerLevel level, BlockPos pos) {
         var hall = HelionSiteState.get(level.getServer()).vault();
-        return hall != null && level.dimension() == Level.OVERWORLD && hallBox(hall).contains(Vec3.atCenterOf(pos))
+        var at = Vec3.atCenterOf(pos);
+        return hall != null && level.dimension() == Level.OVERWORLD && (hallBox(hall).contains(at) || gapBox(hall).contains(at))
                 && level.getBlockEntity(hall.offset(TerminusVaultBuilder.ARGUS)) instanceof VaultArgusBlockEntity argus && argus.fight.phase() != Phase.WON;
     }
     @SubscribeEvent public static void onPlace(BlockEvent.EntityPlaceEvent event) {

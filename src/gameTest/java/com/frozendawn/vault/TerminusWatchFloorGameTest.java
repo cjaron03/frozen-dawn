@@ -311,7 +311,9 @@ public final class TerminusWatchFloorGameTest {
         try {
             state.setVaultForTest(f.hall);
             h.assertTrue(VaultArgusBlockEntity.refuses(f.level(),inside),"No torches, no walls");
-            h.assertTrue(!VaultArgusBlockEntity.refuses(f.level(),f.hall.offset(10,UPPER,0)),"The bridge is another room");
+            for(var gap:new BlockPos[]{f.hall.offset(6,UPPER,-2),f.hall.offset(10,UPPER-1,0),f.hall.offset(14,TerminusVaultBuilder.CEILING-1,2),f.hall.offset(10,TerminusVaultBuilder.FLOOR-8,0)})
+                h.assertTrue(VaultArgusBlockEntity.refuses(f.level(),gap),"Nothing built over the bridge's gap, at "+gap);
+            h.assertTrue(!VaultArgusBlockEntity.refuses(f.level(),f.hall.offset(5,UPPER,0))&&!VaultArgusBlockEntity.refuses(f.level(),f.hall.offset(15,UPPER,0)),"The ledges are free");
             f.fight().start();f.fight().fell();
             h.assertTrue(!VaultArgusBlockEntity.refuses(f.level(),inside),"Once it falls the floor is theirs");
         } finally {state.setVaultForTest(was);}
