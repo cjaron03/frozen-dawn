@@ -19,13 +19,16 @@ public final class MorgueGate {
     /** Passed around for no reading. */
     public static final float NOBODY = -1;
     public static final int OPEN_TICKS = 5 * 20, BITE_EVERY = 2 * 20;
-    public static final float BITE_DAMAGE = 2;
+    /** Health: what a bite takes, and the half heart the cold always leaves. */
+    public static final float BITE_DAMAGE = 2, LAST_HEALTH = 1;
 
     private final Map<UUID, Float> bodies = new HashMap<>();
     private int open;
     private float reading = NOBODY;
 
     public static boolean bites(long gameTime) { return gameTime % BITE_EVERY == 0; }
+    /** What a bite takes from this much health. The cold never kills: it stops at half a heart, and the body goes on cooling. */
+    public static float bite(float health) { return Math.max(0, Math.min(BITE_DAMAGE, health - LAST_HEALTH)); }
 
     public boolean open() { return open > 0; }
     /** What the panel shows, or {@link #NOBODY}. */

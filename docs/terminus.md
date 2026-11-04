@@ -654,3 +654,17 @@ The screenshot also shows the projector's underside in stray colours: its faces 
 
 Response: the console is now on the west wall, north of the way in, x 66, z -5..-3, y -13, four texels deep, so nothing stands in the
 doorway, and it gives light 7 so it can be found. The projector's faces have their own uv.
+
+## Owner playtest 4 of the last rooms, 2026-11-03 and 04 (Terminus Watch Floor Check 8, runClientLab, branch head 56cb1a7b)
+
+Unprompted report, after the second run, with three screenshots of the Morgue: "ok check screenshots. i think that we should improve
+some things. the AC unit looks like a flat object on the wall, and the scanner need to have its readings visible from the door or
+something, plus make it so it doenst actually kill you (just brings you down to half a heart)"
+
+The log, first run: joined 21:12:54, takes 21:13:20 (3 s), 21:13:30 (3 s), 21:13:38 (5 s), both keys held and the door open 21:13:47, A/C
+to MID 21:14:06 and MAX 21:14:07, "Dev froze in the Morgue" 21:14:30, quit 21:14:34. No scanner door line, no errors. Second run:
+joined 09:03:51, takes 09:04:35 (4 s) and 09:04:47 (6 s), both keys held and the door open 09:04:59, quit 09:05:10, no errors. The
+screenshots show why the reading is out of reach: from the plate and from the A/C the arch's post cuts the panel off at "VITAL".
+
+Response: the cold now stops at half a heart, by `MorgueGate.bite`. Body temperature keeps falling at half a heart, so the room can
+always be solved; hearts are still the price.

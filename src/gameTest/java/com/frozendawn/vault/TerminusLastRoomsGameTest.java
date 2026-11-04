@@ -186,12 +186,17 @@ public final class TerminusLastRoomsGameTest {
     }
 
     @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="terminus_rooms",timeoutTicks=2000)
-    public static void theBlastCanKill(GameTestHelper h) {
+    public static void theBlastLeavesHalfAHeartAndKeepsCooling(GameTestHelper h) {
         var r=morgue(h);var op=r.player("morgue_dead",88.5,-2.5);
         op.setHealth(2);
         begin(r,TerminusVaultBuilder.VITALS).thenExecute(()->dial(r,VaultAcDialBlock.MAX))
-                .thenWaitUntil(()->h.assertTrue(op.isDeadOrDying(),"At one heart it finishes you"))
-                .thenExecuteAfter(2,()->h.assertTrue(vitals(r).gate().temperature(op.getUUID())==MorgueGate.BODY,"And the next life starts warm"))
+                .thenWaitUntil(()->h.assertTrue(op.getHealth()==1,"Down to half a heart: "+op.getHealth()))
+                .thenExecuteAfter(2*MorgueGate.BITE_EVERY+2,()->{
+                    h.assertTrue(op.getHealth()==1&&op.isAlive(),"And no further: "+op.getHealth());
+                    h.assertTrue(vitals(r).gate().temperature(op.getUUID())<MorgueGate.BODY-5,"Still cooling");
+                    op.kill();
+                })
+                .thenExecuteAfter(2,()->h.assertTrue(vitals(r).gate().temperature(op.getUUID())==MorgueGate.BODY,"A body that dies of something else starts its next life warm"))
                 .thenSucceed();
     }
 

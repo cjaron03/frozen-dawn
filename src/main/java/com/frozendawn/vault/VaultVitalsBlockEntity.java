@@ -60,7 +60,8 @@ public final class VaultVitalsBlockEntity extends BlockEntity {
             if (plate.contains(player.position())) reading.add(player.getUUID());
             if (setting != VaultAcDialBlock.MAX || player.isCreative() || !blast.contains(player.position())) continue;
             cooling.add(player.getUUID());
-            if (bites) player.hurt(level.damageSources().source(ModDamageTypes.VAULT_COLD), MorgueGate.BITE_DAMAGE);
+            float bite = MorgueGate.bite(player.getHealth());
+            if (bites && bite > 0) player.hurt(level.damageSources().source(ModDamageTypes.VAULT_COLD), bite);
         }
         boolean was = gate.open();
         gate.expose(cooling);

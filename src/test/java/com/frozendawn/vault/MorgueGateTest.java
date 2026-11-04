@@ -116,4 +116,13 @@ class MorgueGateTest {
         assertEquals(MorgueGate.NOBODY, gate.reading());
         assertEquals(MorgueGate.BODY, gate.temperature(me));
     }
+
+    @Test void aBiteNeverTakesTheLastHalfHeart() {
+        assertEquals(MorgueGate.BITE_DAMAGE, MorgueGate.bite(20));
+        assertEquals(MorgueGate.BITE_DAMAGE, MorgueGate.bite(3));
+        assertEquals(1, MorgueGate.bite(2));
+        assertEquals(.5F, MorgueGate.bite(1.5F));
+        assertEquals(0, MorgueGate.bite(1));
+        assertEquals(0, MorgueGate.bite(.5F), "Hurt lower by something else, the cold takes nothing");
+    }
 }
