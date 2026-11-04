@@ -472,3 +472,22 @@ default title Terminus Watch Floor Check. Buttons for each room, each stage of t
 - JUnit: `ArgusFightTest`, `VaultRulesTest`, `VaultDocumentsTest`.
 - GameTests (`terminus_floor`): `TerminusWatchFloorGameTest`, the floor built whole in the air over each test.
 - Needs the owner's eyes and ears: everything judged by look, sound or feel, how hard it is, and whether the archives open.
+
+## ORSA System Plot (idea, not drawn or built)
+
+Owner request, 2026-11-03: a map of the solar system somewhere quiet in the vault, showing what everyone was looking at when
+the place was sealed. Earth "clearly knocked out of orbit", Mars "clearly the center of attention", and "some sort of
+colonies" from Jupiter out, which has never been in the lore. The idea of such a map only; no Destiny names, glyphs or art.
+
+Owner's rulings on the agent's proposal:
+- Labels: plain SOL numbers with their Greek names.
+- Form: a flat wall chart, not an orrery.
+- Timing: after the Watch Floor pass. Nothing is built until a mockup at 16 pixels a block is approved.
+
+Still only proposed: ORSA SYSTEM PLOT (SOL), 5 by 3 blocks on the cot room's north wall (the interior is 4 wide, so the mockup
+must check the fit), pale line on dark steel, Sun at the left. SOL-3 a broken ring with a dashed track outward and "stop
+updating this" pencilled by it; SOL-4 red-boxed, every route ending there, stencilled EXODUS; SOL-5 coded marks like
+"J-STN 1-4", never explained; SOL-6 to 8 fainter; optionally an archived "System Plot" entry.
+
+Greek names as the agent reads them, for the owner to confirm: Helios, SOL-1 Hermes, SOL-2 Aphrodite, SOL-3 Gaia, SOL-4 Ares,
+SOL-5 Zeus, SOL-6 Kronos, SOL-7 Ouranos, SOL-8 Poseidon.
