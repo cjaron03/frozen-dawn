@@ -62,7 +62,7 @@ public final class ShepherdTalk {
 
     private ShepherdTalk() {}
 
-    /** A right-click. She picks an unfinished first meeting back up; otherwise this is the hub. */
+    /** A right-click. She picks an unfinished conversation back up, then takes one she has been waiting to have; otherwise this is the hub. */
     public static void openHub(ServerPlayer player, ShepherdEntity she) {
         if (she.offline()) return;
         if (live != null) {
@@ -73,16 +73,24 @@ public final class ShepherdTalk {
             return;
         }
         live = new Live(player, she);
-        var data = data();
-        String resume = data.resumeNode();
-        if (resume == null) {
+        String waiting = waitingNode(data());
+        if (waiting == null) {
             showHub();
-        } else if (ShepherdDialogues.nodes().containsKey(resume)) {
-            begin(resume, false);
         } else {
-            data.resumeNode(null);
-            showHub();
+            begin(waiting, false);
         }
+    }
+
+    /** A node that has gone missing, say from an edited datapack, is dropped here. */
+    private static String waitingNode(ShepherdSavedData data) {
+        var nodes = ShepherdDialogues.nodes();
+        if (data.resumeNode() != null) {
+            if (nodes.containsKey(data.resumeNode())) return data.resumeNode();
+            data.resumeNode(null);
+        }
+        String prompt = data.promptNode();
+        data.promptNode(null);
+        return nodes.containsKey(prompt == null ? "" : prompt) ? prompt : null;
     }
 
     public static void start(ServerPlayer player, String node) {

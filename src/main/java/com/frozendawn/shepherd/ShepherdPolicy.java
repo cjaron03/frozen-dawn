@@ -1,5 +1,7 @@
 package com.frozendawn.shepherd;
 
+import com.frozendawn.vault.TerminusVaultBuilder;
+
 /** Her numbers, and the one rule about when a conversation has to stop. */
 public final class ShepherdPolicy {
     public static final int MAX_HEALTH = 40;
@@ -9,8 +11,28 @@ public final class ShepherdPolicy {
     public static final int DANGER_RANGE = 12;
     public static final int TICKS_PER_CHAR = 2;
     public static final int BLIP_EVERY = 3;
+    public static final int HEARD_BLOCKS = 16;
+    public static final int CALM_HOSTILE_BLOCKS = 24;
+    public static final int CALM_HURT_TICKS = 600;
+    public static final int PROMPT_REPEAT_TICKS = 1200;
+    public static final int PROMPT_SHOWS = 3;
 
     private ShepherdPolicy() {}
+
+    /** Whether she would interrupt: nothing hostile in range and nobody hurt lately. */
+    public static boolean calm(double nearestHostile, long ticksSinceHurt) {
+        return nearestHostile > CALM_HOSTILE_BLOCKS && ticksSinceHurt >= CALM_HURT_TICKS;
+    }
+
+    /** Hall-relative: the cot room's side of the last door, on the way out. */
+    public static boolean atLastDoor(int x, int y, int z) {
+        return x >= 96 && x <= 100 && Math.abs(z) <= 3 && y > TerminusVaultBuilder.FLOOR && y < TerminusVaultBuilder.CEILING;
+    }
+
+    /** Hall-relative: the landing under the bore, and the ladder up it. */
+    public static boolean atVaultExit(int x, int y, int z) {
+        return Math.abs(x) <= 2 && Math.abs(z) <= 2 && y > TerminusVaultBuilder.FLOOR && y <= 0;
+    }
 
     /** The speaker walked off, was hurt, or has a hostile on them within range. */
     public static boolean talkMustClose(double distance, boolean hurt, double nearestHostileOnSpeaker) {

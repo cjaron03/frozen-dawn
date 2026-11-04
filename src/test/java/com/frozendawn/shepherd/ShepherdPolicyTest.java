@@ -75,4 +75,32 @@ class ShepherdPolicyTest {
         data.affinity(-5000);
         assertEquals(-1000, data.affinity());
     }
+
+    @Test
+    void calmNeedsNoHostileAndNoRecentHurt() {
+        assertTrue(ShepherdPolicy.calm(24.1, 600));
+        assertFalse(ShepherdPolicy.calm(24, 600), "A hostile at the line is within it");
+        assertFalse(ShepherdPolicy.calm(100, 599), "Hurt in the last 30 seconds");
+    }
+
+    @Test
+    void theDoorBoxCoversTheCotRoomSide() {
+        assertTrue(ShepherdPolicy.atLastDoor(96, -14, -3));
+        assertTrue(ShepherdPolicy.atLastDoor(100, -11, 3));
+        assertFalse(ShepherdPolicy.atLastDoor(95, -14, 0), "The Morgue's door");
+        assertFalse(ShepherdPolicy.atLastDoor(101, -14, 0), "Still in the vault");
+        assertFalse(ShepherdPolicy.atLastDoor(98, -14, 4));
+        assertFalse(ShepherdPolicy.atLastDoor(98, -15, 0));
+        assertFalse(ShepherdPolicy.atLastDoor(98, -10, 0));
+    }
+
+    @Test
+    void theExitBoxCoversTheLadder() {
+        assertTrue(ShepherdPolicy.atVaultExit(-2, -14, -2), "The landing");
+        assertTrue(ShepherdPolicy.atVaultExit(0, 0, 0), "The top of the ladder");
+        assertFalse(ShepherdPolicy.atVaultExit(3, -14, 0), "Door 1");
+        assertFalse(ShepherdPolicy.atVaultExit(0, 1, 0), "Out in the hall");
+        assertFalse(ShepherdPolicy.atVaultExit(0, -15, 0));
+        assertFalse(ShepherdPolicy.atVaultExit(0, -14, 3));
+    }
 }

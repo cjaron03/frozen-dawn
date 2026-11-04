@@ -22,9 +22,12 @@ import net.minecraft.gametest.framework.BeforeBatch;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
@@ -53,6 +56,30 @@ public final class ShepherdVaultGameTest {
         HelionSiteState.get(l.getServer()).setVaultForTest(worldVault);
     }
 
+    @BeforeBatch(batch = "shepherd_prompt_door") public static void doorBefore(ServerLevel l) { before(l); }
+    @AfterBatch(batch = "shepherd_prompt_door") public static void doorAfter(ServerLevel l) { after(l); }
+    @BeforeBatch(batch = "shepherd_prompt_once") public static void onceBefore(ServerLevel l) { before(l); }
+    @AfterBatch(batch = "shepherd_prompt_once") public static void onceAfter(ServerLevel l) { after(l); }
+    @BeforeBatch(batch = "shepherd_prompt_exit") public static void exitBefore(ServerLevel l) { before(l); }
+    @AfterBatch(batch = "shepherd_prompt_exit") public static void exitAfter(ServerLevel l) { after(l); }
+    @BeforeBatch(batch = "shepherd_prompt_take") public static void takeBefore(ServerLevel l) { before(l); }
+    @AfterBatch(batch = "shepherd_prompt_take") public static void takeAfter(ServerLevel l) { after(l); }
+    @BeforeBatch(batch = "shepherd_prompt_esc") public static void promptEscBefore(ServerLevel l) { before(l); }
+    @AfterBatch(batch = "shepherd_prompt_esc") public static void promptEscAfter(ServerLevel l) { after(l); }
+    @BeforeBatch(batch = "shepherd_prompt_away") public static void awayBefore(ServerLevel l) { before(l); }
+    @AfterBatch(batch = "shepherd_prompt_away") public static void awayAfter(ServerLevel l) { after(l); }
+    @BeforeBatch(batch = "shepherd_prompt_creative") public static void creativeWakeBefore(ServerLevel l) { before(l); }
+    @AfterBatch(batch = "shepherd_prompt_creative") public static void creativeWakeAfter(ServerLevel l) { after(l); }
+    @BeforeBatch(batch = "shepherd_prompt_open") public static void openBefore(ServerLevel l) { before(l); }
+    @AfterBatch(batch = "shepherd_prompt_open") public static void openAfter(ServerLevel l) { after(l); }
+    @BeforeBatch(batch = "shepherd_prompt_hostile") public static void hostileBefore(ServerLevel l) { before(l); }
+    @AfterBatch(batch = "shepherd_prompt_hostile") public static void hostileAfter(ServerLevel l) { after(l); }
+    @BeforeBatch(batch = "shepherd_prompt_hurt") public static void hurtBefore(ServerLevel l) { before(l); }
+    @AfterBatch(batch = "shepherd_prompt_hurt") public static void hurtAfter(ServerLevel l) { after(l); }
+    @BeforeBatch(batch = "shepherd_prompt_three") public static void threeBefore(ServerLevel l) { before(l); }
+    @AfterBatch(batch = "shepherd_prompt_three") public static void threeAfter(ServerLevel l) { after(l); }
+    @BeforeBatch(batch = "shepherd_prompt_reload") public static void reloadBefore(ServerLevel l) { before(l); }
+    @AfterBatch(batch = "shepherd_prompt_reload") public static void reloadAfter(ServerLevel l) { after(l); }
     @BeforeBatch(batch = "shepherd_vault_reset") public static void resetBefore(ServerLevel l) { before(l); }
     @AfterBatch(batch = "shepherd_vault_reset") public static void resetAfter(ServerLevel l) { after(l); }
     @BeforeBatch(batch = "shepherd_vault_reset_awake") public static void awakeBefore(ServerLevel l) { before(l); }
@@ -289,6 +316,209 @@ public final class ShepherdVaultGameTest {
             she.interact(player, InteractionHand.MAIN_HAND);
             say(player, KIND, CONTINUE, KIND, CONTINUE, KIND, KIND);
             h.assertTrue("fm.room".equals(ShepherdTalk.liveNode()), "A replay is still a vault meeting: " + ShepherdTalk.liveNode());
+            h.succeed();
+        });
+    }
+
+    /** She has finished the first meeting, and the world's vault stands so that the spot beside her is in the cot room. */
+    private static ShepherdEntity readyToLeave(GameTestHelper h, ServerPlayer player) {
+        var she = metInTheVault(h, player);
+        data(h).flag(ShepherdPrompt.FIRST_MEETING_DONE, true);
+        inTheCotRoom(h);
+        return she;
+    }
+
+    private static void inTheCotRoom(GameTestHelper h) {
+        HelionSiteState.get(h.getLevel().getServer()).setVaultForTest(h.absolutePos(SPOT).offset(-98, 14, 0));
+    }
+
+    private static void onTheLanding(GameTestHelper h) {
+        HelionSiteState.get(h.getLevel().getServer()).setVaultForTest(h.absolutePos(SPOT).offset(-1, 14, 0));
+    }
+
+    private static void assertAsked(GameTestHelper h, String node) {
+        h.assertTrue(node.equals(data(h).promptNode()), "She asks: " + data(h).promptNode());
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_prompt_door", timeoutTicks = 400)
+    public static void shepherdAtTheLastDoorSheAsks(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            readyToLeave(h, player(h));
+            h.succeedWhen(() -> {
+                assertAsked(h, ShepherdPrompt.DOORS);
+                h.assertTrue(ShepherdPrompt.shows() == 1, "And the strip shows: " + ShepherdPrompt.shows());
+            });
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_prompt_once", timeoutTicks = 400)
+    public static void shepherdAsksAboutTheDoorOnce(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            var she = readyToLeave(h, player);
+            h.startSequence()
+                    .thenWaitUntil(() -> assertAsked(h, ShepherdPrompt.DOORS))
+                    .thenExecute(() -> {
+                        she.interact(player, InteractionHand.MAIN_HAND);
+                        say(player, ASK, CONTINUE);
+                    })
+                    .thenExecuteAfter(15, () -> h.assertTrue(data(h).promptNode() == null, "The box again raises nothing: " + data(h).promptNode()))
+                    .thenSucceed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_prompt_exit", timeoutTicks = 400)
+    public static void shepherdAtTheExitTheLineReplacesTheDoors(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            readyToLeave(h, player(h));
+            h.startSequence()
+                    .thenWaitUntil(() -> assertAsked(h, ShepherdPrompt.DOORS))
+                    .thenExecute(() -> onTheLanding(h))
+                    .thenWaitUntil(() -> assertAsked(h, ShepherdPrompt.EXIT))
+                    .thenSucceed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_prompt_take", timeoutTicks = 400)
+    public static void shepherdRightClickTakesThePrompt(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            var she = readyToLeave(h, player);
+            h.startSequence()
+                    .thenWaitUntil(() -> assertAsked(h, ShepherdPrompt.DOORS))
+                    .thenExecute(() -> {
+                        she.interact(player, InteractionHand.MAIN_HAND);
+                        h.assertTrue(ShepherdPrompt.DOORS.equals(ShepherdTalk.liveNode()), "The right-click plays it: " + ShepherdTalk.liveNode());
+                        h.assertTrue(data(h).promptNode() == null, "It is no longer waiting");
+                        say(player, ASK, CONTINUE);
+                        she.interact(player, InteractionHand.MAIN_HAND);
+                        h.assertTrue(ShepherdTalk.live() && ShepherdTalk.liveNode() == null, "The next is the hub: " + ShepherdTalk.liveNode());
+                    })
+                    .thenSucceed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_prompt_esc", timeoutTicks = 400)
+    public static void shepherdEscResumesThePrompt(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            var she = readyToLeave(h, player);
+            h.startSequence()
+                    .thenWaitUntil(() -> assertAsked(h, ShepherdPrompt.DOORS))
+                    .thenExecute(() -> {
+                        she.interact(player, InteractionHand.MAIN_HAND);
+                        ShepherdTalk.close(player);
+                        she.interact(player, InteractionHand.MAIN_HAND);
+                        h.assertTrue(ShepherdPrompt.DOORS.equals(ShepherdTalk.liveNode()), "She picks it back up: " + ShepherdTalk.liveNode());
+                    })
+                    .thenSucceed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_prompt_away", timeoutTicks = 600)
+    public static void shepherdOfflineOrAwaySheDoesNotAsk(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            var she = metInTheVault(h, player);
+            data(h).flag(ShepherdPrompt.FIRST_MEETING_DONE, true);
+            she.goOffline();
+            inTheCotRoom(h);
+            Runnable nothing = () -> {
+                h.assertTrue(data(h).promptNode() == null, "No prompt: " + data(h).promptNode());
+                h.assertTrue(!data(h).flag(ShepherdPrompt.DOORS_ASKED), "None used up");
+            };
+            h.startSequence()
+                    .thenExecuteAfter(15, nothing)
+                    .thenExecute(() -> {
+                        she.rebootIn(1);
+                        data(h).waiting(true);
+                    })
+                    .thenWaitUntil(() -> h.assertTrue(!she.offline(), "Back up"))
+                    .thenExecuteAfter(15, nothing)
+                    .thenExecute(() -> {
+                        data(h).waiting(false);
+                        she.setNoAi(true);
+                        var far = she.position().add(0, 0, 20);
+                        she.teleportTo(far.x, far.y, far.z);
+                    })
+                    .thenExecuteAfter(15, nothing)
+                    .thenExecute(() -> she.teleportTo(player.getX(), player.getY() + 1, player.getZ()))
+                    .thenWaitUntil(() -> assertAsked(h, ShepherdPrompt.DOORS))
+                    .thenSucceed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_prompt_creative", timeoutTicks = 400)
+    public static void shepherdACreativeWakeNeverAsks(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            readyToLeave(h, player(h));
+            data(h).flag(ShepherdSavedData.WOKE_IN_VAULT, false);
+            h.startSequence().thenExecuteAfter(15, () -> h.assertTrue(data(h).promptNode() == null, "Not woken here")).thenSucceed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_prompt_open", timeoutTicks = 400)
+    public static void shepherdAnOpenFirstMeetingIsNotInterrupted(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            readyToLeave(h, player(h));
+            data(h).flag(ShepherdPrompt.FIRST_MEETING_DONE, false);
+            h.startSequence().thenExecuteAfter(15, () -> h.assertTrue(data(h).promptNode() == null, "The meeting comes first")).thenSucceed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_prompt_hostile", timeoutTicks = 400)
+    public static void shepherdAHostileDelaysThePrompt(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var zombie = h.spawnWithNoFreeWill(EntityType.ZOMBIE, new Vec3(12.5, 3, 12.5));
+            readyToLeave(h, player(h));
+            h.startSequence()
+                    .thenWaitUntil(() -> assertAsked(h, ShepherdPrompt.DOORS))
+                    .thenExecuteAfter(15, () -> h.assertTrue(ShepherdPrompt.shows() == 0, "Not while it is near: " + ShepherdPrompt.shows()))
+                    .thenExecute(zombie::discard)
+                    .thenWaitUntil(() -> h.assertTrue(ShepherdPrompt.shows() == 1, "Calm again: " + ShepherdPrompt.shows()))
+                    .thenSucceed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_prompt_hurt", timeoutTicks = 400)
+    public static void shepherdAHurtDelaysThePrompt(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            player.setGameMode(GameType.SURVIVAL);
+            player.hurt(h.getLevel().damageSources().genericKill(), 1);
+            readyToLeave(h, player);
+            h.startSequence()
+                    .thenWaitUntil(() -> assertAsked(h, ShepherdPrompt.DOORS))
+                    .thenExecuteAfter(15, () -> h.assertTrue(ShepherdPrompt.shows() == 0, "Not straight after a hit: " + ShepherdPrompt.shows()))
+                    .thenSucceed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_prompt_three", timeoutTicks = 400)
+    public static void shepherdThePromptStopsAtThree(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            var she = readyToLeave(h, player);
+            ShepherdPrompt.repeatEvery(5);
+            h.startSequence()
+                    .thenWaitUntil(() -> h.assertTrue(ShepherdPrompt.shows() == ShepherdPolicy.PROMPT_SHOWS, "Three showings: " + ShepherdPrompt.shows()))
+                    .thenExecuteAfter(30, () -> {
+                        h.assertTrue(ShepherdPrompt.shows() == ShepherdPolicy.PROMPT_SHOWS, "Then she stops: " + ShepherdPrompt.shows());
+                        assertAsked(h, ShepherdPrompt.DOORS);
+                        she.interact(player, InteractionHand.MAIN_HAND);
+                        h.assertTrue(ShepherdPrompt.DOORS.equals(ShepherdTalk.liveNode()), "She still waits: " + ShepherdTalk.liveNode());
+                    })
+                    .thenSucceed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_prompt_reload", timeoutTicks = 400)
+    public static void shepherdThePromptSurvivesAReload(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            data(h).promptNode(ShepherdPrompt.EXIT);
+            var registries = h.getLevel().registryAccess();
+            var again = ShepherdSavedData.load(data(h).save(new CompoundTag(), registries), registries);
+            h.assertTrue(ShepherdPrompt.EXIT.equals(again.promptNode()), "Still waiting: " + again.promptNode());
             h.succeed();
         });
     }

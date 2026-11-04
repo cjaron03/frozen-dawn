@@ -43,6 +43,8 @@ public class ModNetworking {
         PayloadRegistrar registrar = event.registrar(FrozenDawn.MOD_ID);
         registrar.playToClient(ShepherdNodePayload.TYPE, ShepherdNodePayload.STREAM_CODEC,
                 (payload, context) -> context.enqueueWork(() -> ClientHandlers.handleShepherdNode(payload)));
+        registrar.playToClient(ShepherdPromptPayload.TYPE, ShepherdPromptPayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(ClientHandlers::handleShepherdPrompt));
         registrar.playToClient(ShepherdHubPayload.TYPE, ShepherdHubPayload.STREAM_CODEC,
                 (payload, context) -> context.enqueueWork(() -> ClientHandlers.handleShepherdHub(payload)));
         registrar.playToServer(ShepherdReplyPayload.TYPE, ShepherdReplyPayload.STREAM_CODEC,

@@ -352,6 +352,9 @@ public final class ClientHandlers {
         shepherdScreen().show(payload);
     }
 
+    public static void handleShepherdPrompt() {
+    }
+
     public static void handleShepherdClose() {
         if (Minecraft.getInstance().screen instanceof ShepherdScreen screen) screen.closeFromServer();
     }
