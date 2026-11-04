@@ -711,5 +711,5 @@ Found two real defects and three minor ones, by reading the code.
 
 Branch `feat/terminus-vault`, worktree `/Volumes/SSD/Work/frozen-dawn-terminus-vault`, active save `Terminus Watch Floor Check 9`. The last
 rooms are built and passed by the owner on Check 9. `architectVerify` passed at 24b9d9c3: 937 tests (380, 266, 291). Not pushed, no PR.
-Open for the owner: the review's deferred items above; ender pearls still cross the bridge's gap; `sfrIgnitionGrantsASecondSunNearby`
-failed one gate run and passed unchanged on the next, cause not found.
+Open for the owner: the review's deferred items above; ender pearls still cross the bridge's gap. `sfrIgnitionGrantsASecondSunNearby`
+failed one gate run and passed unchanged on the next; see its section in [power-network-checkpoint.md](power-network-checkpoint.md).
