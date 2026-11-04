@@ -25,6 +25,7 @@ public final class TerminusLastRoomsGameTest {
 
     @BeforeBatch(batch="terminus_rooms") public static void report(ServerLevel level) {GameTestReporting.installReporter(level);}
     @BeforeBatch(batch="terminus_rooms_alone") public static void reportAlone(ServerLevel level) {GameTestReporting.installReporter(level);}
+    @BeforeBatch(batch="terminus_rooms_refuse") public static void reportRefuse(ServerLevel level) {GameTestReporting.installReporter(level);}
 
     private record Room(GameTestHelper h,BlockPos hall) {
         ServerLevel level() {return h.getLevel();}
@@ -262,7 +263,8 @@ public final class TerminusLastRoomsGameTest {
                 .thenSucceed();
     }
 
-    @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="terminus_rooms",timeoutTicks=2000)
+    /** A batch of its own, for the same reason as the next test: its Morgue lands on the next test's recorder. */
+    @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="terminus_rooms_refuse",timeoutTicks=2000)
     public static void nothingIsPlacedInThePuzzleRooms(GameTestHelper h) {
         var r=room(h,65);var state=HelionSiteState.get(r.level().getServer());var was=state.vault();
         TerminusVaultBuilder.morgue(r.level(),r.hall);TerminusVaultBuilder.drillHall(r.level(),r.hall);
@@ -276,7 +278,7 @@ public final class TerminusLastRoomsGameTest {
         h.succeed();
     }
 
-    /** A batch of its own: both rooms together are wider than the gap to the next test, whose players would stand behind its doors. */
+    /** A batch of its own: both rooms together are wider than the gap to the next test, and would build over its room and players. */
     @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="terminus_rooms_alone",timeoutTicks=2000)
     public static void aResetClearsBothRooms(GameTestHelper h) {
         var r=room(h,65);TerminusVaultBuilder.morgue(r.level(),r.hall);TerminusVaultBuilder.drillHall(r.level(),r.hall);
