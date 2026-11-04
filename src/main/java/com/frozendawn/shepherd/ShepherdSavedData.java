@@ -29,6 +29,8 @@ import net.minecraft.world.level.saveddata.SavedData;
 public final class ShepherdSavedData extends SavedData {
     private static final String DATA_NAME = FrozenDawn.MOD_ID + "_shepherd";
     private static final int MAX_AFFINITY = 1000;
+    /** She came up on the vault's dock, so the vault's lines are hers to say. */
+    public static final String WOKE_IN_VAULT = "woke_in_vault";
 
     public enum Stage {
         DORMANT,
@@ -75,10 +77,12 @@ public final class ShepherdSavedData extends SavedData {
     public boolean heavy() { return heavy; }
     public void heavy(boolean heavy) { this.heavy = heavy; setDirty(); }
 
-    /** Back to the moment she woke: everything the first meeting earned goes, and she starts it again. */
+    /** Back to the moment she woke: everything the first meeting earned goes, and she starts it again. Where she woke stays true. */
     void replayFirstMeeting() {
+        boolean vault = flag(WOKE_IN_VAULT);
         affinity = 0;
         flags.clear();
+        if (vault) flags.add(WOKE_IN_VAULT);
         heavy = false;
         resumeNode = ShepherdTalk.FIRST_MEETING;
         setDirty();

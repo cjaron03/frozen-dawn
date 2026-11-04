@@ -4,8 +4,10 @@ import com.frozendawn.FrozenDawn;
 import com.frozendawn.network.ShepherdClosePayload;
 import com.frozendawn.network.ShepherdHubPayload;
 import com.frozendawn.network.ShepherdNodePayload;
+import com.frozendawn.shepherd.ShepherdDialogue.Line;
 import com.frozendawn.shepherd.ShepherdDialogue.Node;
 import com.frozendawn.shepherd.ShepherdFace.Mood;
+import java.util.List;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Mob;
@@ -44,6 +46,8 @@ public final class ShepherdTalk {
         boolean hurt;
         int affinityApplied;
         int unimpressedTicks;
+        /** What the client was sent for this node. Conditions can change while it is on screen; her face must not. */
+        List<Line> lines = List.of();
         /** Her body has no typed text to follow, so it moves through a node's lines on a fixed count. */
         int line, lineTicks;
 
@@ -90,12 +94,23 @@ public final class ShepherdTalk {
     }
 
     private static void begin(String node, boolean fromHub) {
-        live.talk = new ShepherdConversation(ShepherdDialogues.nodes(), node, condition -> false);
+        var player = live.player;
+        live.talk = new ShepherdConversation(ShepherdDialogues.nodes(), node, condition -> holds(player, condition));
         live.fromHub = fromHub;
         live.affinityApplied = 0;
         settle();
         if (FIRST_MEETING.equals(node)) live.she.showLogo();
         send();
+    }
+
+    /** The dialogue files' conditions: where the wand is, or else a saved flag. */
+    private static boolean holds(ServerPlayer player, String condition) {
+        return switch (condition) {
+            case "wand_cradle" -> ShepherdWand.of(player) == ShepherdWand.Where.CRADLE;
+            case "wand_hand" -> ShepherdWand.of(player) == ShepherdWand.Where.HAND;
+            case "wand_other" -> ShepherdWand.of(player) == ShepherdWand.Where.OTHER;
+            default -> ShepherdSavedData.get(player.getServer()).flag(condition);
+        };
     }
 
     private static boolean speaking(ServerPlayer player, int conversation) {
@@ -171,11 +186,12 @@ public final class ShepherdTalk {
         var node = live.talk.current();
         if (!live.fromHub) data.resumeNode(node.responses().isEmpty() && node.next() == null ? null : node.id());
         int logo = live.she.logoTicks();
+        live.lines = live.talk.lines();
         live.line = 0;
         live.lineTicks = logo + TALK_TICKS_PER_LINE;
         showMood();
-        live.she.talkFor(logo + TALK_TICKS_PER_LINE * node.lines().size());
-        PacketDistributor.sendToPlayer(live.player, payload(live.id, node, data.heavy(), logo));
+        live.she.talkFor(logo + TALK_TICKS_PER_LINE * live.lines.size());
+        PacketDistributor.sendToPlayer(live.player, payload(live.id, node, live.lines, data.heavy(), logo));
     }
 
     private static void showHub() {
@@ -189,11 +205,11 @@ public final class ShepherdTalk {
 
     private static void showMood() {
         if (live.unimpressedTicks > 0) return;
-        live.she.setMood(live.talk == null ? Mood.NEUTRAL : live.talk.current().lines().get(live.line).mood());
+        live.she.setMood(live.talk == null ? Mood.NEUTRAL : live.lines.get(live.line).mood());
     }
 
-    static ShepherdNodePayload payload(int conversation, Node node, boolean heavy, int logoTicks) {
-        var lines = node.lines().stream().map(line -> new ShepherdNodePayload.Line(
+    static ShepherdNodePayload payload(int conversation, Node node, List<Line> said, boolean heavy, int logoTicks) {
+        var lines = said.stream().map(line -> new ShepherdNodePayload.Line(
                 heavy && line.heavyKey() != null ? line.heavyKey() : line.key(), line.mood())).toList();
         var replies = node.responses().stream().map(response -> new ShepherdNodePayload.Reply(
                 response.slot().ordinal(), response.label(), response.full())).toList();
@@ -233,7 +249,7 @@ public final class ShepherdTalk {
     @SubscribeEvent public static void tick(ServerTickEvent.Post event) {
         if (live == null) return;
         if (live.unimpressedTicks > 0 && --live.unimpressedTicks == 0) showMood();
-        if (live.talk != null && live.line < live.talk.current().lines().size() - 1 && --live.lineTicks <= 0) {
+        if (live.talk != null && live.line < live.lines.size() - 1 && --live.lineTicks <= 0) {
             live.line++;
             live.lineTicks = TALK_TICKS_PER_LINE;
             showMood();
@@ -263,6 +279,11 @@ public final class ShepherdTalk {
     /** The node on screen, or null on the hub or when nobody is talking. */
     static String liveNode() {
         return live == null || live.talk == null ? null : live.talk.current().id();
+    }
+
+    /** The keys on screen. */
+    static List<String> liveLines() {
+        return live == null ? List.of() : live.lines.stream().map(Line::key).toList();
     }
 
     /** GameTest isolation only. */

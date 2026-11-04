@@ -238,8 +238,8 @@ public final class ShepherdTalkGameTest {
             h.assertTrue(data(h).affinity() == 20, "15 and 10, then -5: " + data(h).affinity());
             h.assertTrue(data(h).flag("profanity_heavy") && data(h).heavy(), "The filter came off");
             var talk = ShepherdDialogues.nodes().get("hub.talk");
-            h.assertTrue(ShepherdTalk.payload(1, talk, true, 0).lines().getFirst().key().equals(talk.lines().getFirst().heavyKey()), "Heavy swaps the key");
-            h.assertTrue(ShepherdTalk.payload(1, talk, false, 0).lines().getFirst().key().equals(talk.lines().getFirst().key()), "Mild does not");
+            h.assertTrue(ShepherdTalk.payload(1, talk, talk.lines(), true, 0).lines().getFirst().key().equals(talk.lines().getFirst().heavyKey()), "Heavy swaps the key");
+            h.assertTrue(ShepherdTalk.payload(1, talk, talk.lines(), false, 0).lines().getFirst().key().equals(talk.lines().getFirst().key()), "Mild does not");
             h.succeed();
         });
     }
