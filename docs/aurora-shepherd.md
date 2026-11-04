@@ -260,7 +260,7 @@ Nothing until a slice starts.
 
 ## Plan
 
-S1 is planned in [aurora-shepherd-plan.md](aurora-shepherd-plan.md).
+S1 is planned in [aurora-shepherd-plan.md](aurora-shepherd-plan.md), S2 in [aurora-shepherd-s2-plan.md](aurora-shepherd-s2-plan.md).
 
 ## Status
 
