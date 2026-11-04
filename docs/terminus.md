@@ -16,7 +16,7 @@ is the tracked handoff; the spec stays on Notion.
 | # | Slice | Status |
 | --- | --- | --- |
 | T1 | The wand itself, creative tab and `/give` only | Built on `feat/terminus`; owner playtests passed ("good", 2026-11-03); branch review, then a PR on the owner's word |
-| T2 | The Terminus Vault at the first Helion site, the Unwatched Door puzzle, the vault documents | Built on `feat/terminus-vault` (worktree `/Volumes/SSD/Work/frozen-dawn-terminus-vault`), stacked on `feat/terminus` while PR #146 is open; awaiting the owner's pass |
+| T2 | The Terminus Vault at the first Helion site, the Unwatched Door puzzle, the vault documents | First cut built on `feat/terminus-vault` (worktree `/Volumes/SSD/Work/frozen-dawn-terminus-vault`), stacked on `feat/terminus` while PR #146 is open. The owner found it too small and easy; the Watch Floor below is approved and not built |
 | T3 | Maeve, Hearth and Aggregate interplay, through the shared Maeve slice | Not started (MACS is WIP) |
 
 ### T1: the wand (creative only)
@@ -358,3 +358,73 @@ Unprompted report: "good." Then: "whats next? the puzzle in helion? i want the r
 
 Unprompted report: "ok i played it. what does the timer mean again? and honestly, it needs to be MUCH BIGGER nad harder
 than this ngl. like i want more than what we just added"
+
+Report continued, asked what they wanted: "the whole thing ngl. i want this to feel like a actual puzzle, like destiny 2
+style. also none of the archives worked". Then: "yes, maybe a boss or something? or something close to it. i would say i
+guess my favorite would be "Security" from deep stone crypt. keep the timer etc and the clerk we already have, but expand
+on this". Then: "i want it ORSA branded too. like this vault was sealed as everyone was escaping, the names are similar to
+how orsa named their reactors (a acroynmn followed by a nickanme in quotes)". Then: "anything else? like maybe dim red
+lights or something", and of four extras offered, "All four".
+
+The log put the run at about three and a half minutes from the Drain Schedule to the last duty log.
+
+Archives: the playtest pack filters every advancement, and a manual entry is locked by its own, so a document said
+"Archived" and the manual stayed shut. That world only; `everyVaultDocumentArchivesWhenRead` covers the mod. The script now
+puts silent copies in the pack. Not yet seen working in game. The clock's 44x5 digit sheet was also turning off the block
+atlas's mipmaps ("limits mip level from 4 to 0" in the client log); it now lives in `textures/entity`. Check the warning is
+gone on the next launch.
+
+## The Watch Floor (approved, not built)
+
+Approved from `docs/art/terminus/watch-floor-mockup.png` and `vault-branding-mockup.png` (`make_watch_floor_mockup.py`,
+`make_vault_branding_mockup.py`) plus the four extras below. The owner has not asked to change them; "clerk" was read as the
+dead technician at the cradle and they did not object. It takes the mechanics of a two-floor security encounter only; the
+names, glyphs and art are ours. Door 1, the bridge, the cot, the technician, the cradle and the last door's clock all stay.
+
+### Layout (hall-relative, as the mockup)
+- The hall sits between the bridge's far ledge and the cot room, x 17..39, z -11..11. A catwalk ring two wide at the upper
+  level (walkway at y-15), open down to a lower floor at y-24, ceiling as now.
+- The cot room moves to x 40..44, the last door to x 45, the vault to x 46..50, with their contents; `REACH` goes to 52.
+- West door (x 17, z -1..1) seals behind you when the fight starts. East door (x 40) opens when the Custodian falls.
+- The board: six glyphs on the west wall at the upper level, three each side of the door. Six fuse panels on the lower
+  floor's north and south walls, one glyph each (x 23, 28, 33). Two ladders, north-east and south-west, the only way up.
+  The Custodian starts at the centre, (28, 0).
+
+### The fight
+- A round: from the upper level the board lights the round's glyphs, then goes dark. Below, the fuses have shuffled. Pull
+  the matching ones, two seconds' hold each. All pulled, the Custodian's shell opens for 15 seconds and it takes damage: a
+  third of its health a round, with a boss bar. Then climb and read again.
+- Round 1: three glyphs, shown 8 s. Round 2: four, shown 6 s. Round 3: four, shown 5 s, pulled in the order shown.
+- The Custodian moves only while no mind faces it, by `VaultWatch`'s rule. Facing a fuse means your back is to it. Its touch
+  takes hearts; nothing hurts it with the shell shut. It is no mind itself, so it freezes no door.
+- The clock: 4:00 for the fight, shown on both levels, counting back; a wrong fuse takes 20 seconds off. At zero the purge:
+  a white-out, everyone thrown back to the bridge's far ledge with half their hearts, and the fight restarts from round 1.
+  The purge does not kill (agent's call, shown to the owner): a death is a long walk from a far-off respawn.
+- It plays solo. With friends, one reads and calls out, others pull, someone stares at the Custodian.
+- The clock over the last door stays as built: it keeps running back and is never explained.
+
+### Branding
+Named as the reactors are: ORSA CVF-1 "Vigil" (Containment Vault Facility, stencilled on doors), ORSA ISS-4 "Argus"
+(Integrated Security System, the board and fuses), ORSA CSU-3 "Custodian" (Containment Security Unit, on the boss bar),
+ORSA TR-0 "Terminus" (the wand's item name gains the quotes). Sealed as everyone fled: door 1 stencilled ORSA, CVF-1, SEALED
+with a rough weld down its seam; hazard bands; EXO arrows pointing back the way you came; ORSA flags; open crates, dropped
+cases, hard hats and loose paper, all dressing with no loot. New document on the Watch Floor, the Seal Order: all CVF-1 staff
+to Exodus by 2200, ISS-4 armed on last badge-out, CSU-3 remains on duty, nobody goes back for personal effects.
+
+### The four extras
+1. Dim red lights throughout (`ORSA_EMERGENCY_LIGHT` is already red), going out a few at a time as the 4:00 runs down, so the
+   last minute is nearly dark and the Custodian's pale lens is what you track.
+2. A recorded ORSA evacuation announcement looping through the sublevel, worn and glitching, cut off when the fight begins.
+3. A low bass pulse on the Watch Floor that quickens as the clock falls.
+4. A hidden advancement, "Last Badge-Out", for a run with no wrong fuse and no purge. No new loot: the wand stays the only
+   prize.
+
+### Notes for the builder
+- Tests of one batch stand 26 blocks apart along x with nothing that stops a ray, so they watch each other's doors. Bodies
+  face north in `TerminusVaultGameTest`, and anything that must face along x gets its own batch.
+- A GameTest can start before its chunks tick block entities, by a long way on the sprinted `gameTestQuick`: wait for
+  `getFullStatus` BLOCK_TICKING and `areEntitiesLoaded`, and give generous `timeoutTicks`.
+- Do not put a texture whose sides are not multiples of 16 in `textures/block`, for the mipmap reason above.
+- Playtest worlds filter advancements: any advancement the pass needs goes in the world's pack, as
+  `document_advancements` does. Add Last Badge-Out and the Seal Order's.
+- Open for the builder: the Custodian's health, speed and touch damage, tuned so the owner's own skill finds it hard.
