@@ -137,6 +137,30 @@ class ArgusFightTest {
     }
 
     @Test
+    void eachRightFusePutsOutALampAndARepeatedRoundPutsOutNoMore() {
+        var fight = started(6);
+        assertEquals(0, fight.lampsOut());
+        read(fight);
+        var wanted = fight.wanted();
+        fight.pull(slotOf(fight, wanted[0]));
+        assertEquals(1, fight.lampsOut());
+        fight.pull(slotOf(fight, wanted[0]));
+        assertEquals(1, fight.lampsOut(), "One already pulled is no second lamp");
+        fight.pull(slotOf(fight, wanted[1]));
+        fight.pull(slotOf(fight, wanted[2]));
+        assertEquals(3, fight.lampsOut());
+        ticks(fight, ArgusFight.BURN_TICKS, false);
+        assertEquals(3, fight.lampsOut(), "Still three through the next read");
+        winRound(fight);
+        assertEquals(7, fight.lampsOut());
+        winRound(fight);
+        assertEquals(ArgusFight.LAMPS, fight.lampsOut());
+        assertEquals(11, ArgusFight.LAMPS);
+        winRound(fight);
+        assertEquals(ArgusFight.LAMPS, fight.lampsOut(), "Round 3 again has none left to put out");
+    }
+
+    @Test
     void roundThreeShowsOneGlyphAtATimeAndMustBePulledInThatOrder() {
         var fight = started(7);
         winRound(fight);

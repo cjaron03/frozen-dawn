@@ -912,6 +912,8 @@ public class ModSounds {
             () -> SoundEvent.createFixedRangeEvent(ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "block.vault.wrong"), 32));
     public static final DeferredHolder<SoundEvent, SoundEvent> VAULT_SHELL = SOUNDS.register("block.vault.shell",
             () -> SoundEvent.createFixedRangeEvent(ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "block.vault.shell"), 32));
+    public static final DeferredHolder<SoundEvent, SoundEvent> VAULT_CUSTODIAN_DEATH = SOUNDS.register("block.vault.custodian_death",
+            () -> SoundEvent.createFixedRangeEvent(ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "block.vault.custodian_death"), 32));
     public static final DeferredHolder<SoundEvent, SoundEvent> VAULT_PURGE = SOUNDS.register("block.vault.purge",
             () -> SoundEvent.createFixedRangeEvent(ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "block.vault.purge"), 32));
     public static final DeferredHolder<SoundEvent, SoundEvent> VAULT_ANNOUNCEMENT = SOUNDS.register("block.vault.announcement",

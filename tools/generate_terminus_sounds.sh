@@ -48,11 +48,19 @@ render wrong \
   -f lavfi -i "aevalsrc='0.4*sgn(sin(2*PI*(if(lt(t\,0.3)\,220\,165))*t))*if(lt(mod(t\,0.35)\,0.28)\,1\,0)':s=44100:d=0.7" \
   -filter_complex "[0:a]lowpass=f=1800,afade=t=out:st=0.6:d=0.1,alimiter=limit=0.7:level=0[out]"
 
-# The Custodian's shell, 1.2 s: seals letting go, a hiss of cold air over a falling 60 Hz clunk.
+# The Custodian's shell, 1.6 s, timed to its 0.7 s opening: seals letting go, a hiss of cold air over a falling 60 Hz clunk,
+# a second clunk as the core seats, and the core's whine climbing out of it.
 render shell \
-  -f lavfi -i "anoisesrc=d=1.2:c=pink:r=44100:a=0.7:s=55005" \
-  -f lavfi -i "aevalsrc='0.8*sin(2*PI*(60*t-12*t*t))*exp(-5*t)':d=1.2:s=44100" \
-  -filter_complex "[0:a]highpass=f=1400,lowpass=f=7000,afade=t=in:st=0:d=0.03,afade=t=out:st=0.3:d=0.9[n];[n][1:a]amix=inputs=2:normalize=0,alimiter=limit=0.8:level=0[out]"
+  -f lavfi -i "anoisesrc=d=1.6:c=pink:r=44100:a=0.7:s=55005" \
+  -f lavfi -i "aevalsrc='0.8*sin(2*PI*(60*t-12*t*t))*exp(-5*t)+0.7*sin(2*PI*48*(t-0.7))*exp(-12*(t-0.7))*gt(t\,0.7)+0.14*sin(2*PI*(240*t+190*t*t))*min(1\,max(0\,(t-0.6)*4))':d=1.6:s=44100" \
+  -filter_complex "[0:a]highpass=f=1400,lowpass=f=7000,afade=t=in:st=0:d=0.03,afade=t=out:st=0.3:d=1.0[n];[n][1:a]amix=inputs=2:normalize=0,afade=t=out:st=1.3:d=0.3,alimiter=limit=0.8:level=0[out]"
+
+# The Custodian's death, 3.6 s, timed to its 3 s fall: a servo winding down from 420 Hz and stuttering as the core does, the
+# knees landing at 1.7 and 1.95 s, then a long hiss of cold air swelling to the burst at 3 s.
+render custodian_death \
+  -f lavfi -i "anoisesrc=d=3.6:c=pink:r=44100:a=0.8:s=55009" \
+  -f lavfi -i "aevalsrc='0.3*sin(2*PI*(420*t-110*t*t))*if(lt(t\,1.6)\,1\,0)*if(between(t\,0.75\,1.5)\,gt(sin(2*PI*9*t)\,0)\,1)+0.9*sin(2*PI*52*(t-1.7))*exp(-9*(t-1.7))*gt(t\,1.7)+0.8*sin(2*PI*44*(t-1.95))*exp(-9*(t-1.95))*gt(t\,1.95)':d=3.6:s=44100" \
+  -filter_complex "[0:a]highpass=f=1200,lowpass=f=8000,afade=t=in:st=2.1:d=0.9,afade=t=out:st=3.05:d=0.55[n];[n][1:a]amix=inputs=2:normalize=0,alimiter=limit=0.85:level=0[out]"
 
 # The purge, 1.6 s: everything at once, a rising white rush cut dead.
 render purge \

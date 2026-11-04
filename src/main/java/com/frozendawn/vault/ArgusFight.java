@@ -16,6 +16,8 @@ public final class ArgusFight {
     public record Round(int glyphs, int shownTicks, boolean ordered) { }
 
     public static final int GLYPHS = 6, ROUNDS = 3, CLOCK_TICKS = 4 * 60 * 20, BURN_TICKS = 12 * 20, PENALTY_TICKS = 20 * 20, HOLD_TICKS = 40;
+    /** The lamps over the east gate: one for every fuse the three rounds ask for. */
+    public static final int LAMPS = IntStream.range(0, ROUNDS).map(r -> round(r).glyphs()).sum();
     /** A held use repeats every four ticks; a longer gap than this is a hand let go. */
     private static final int HOLD_GAP = 8;
     private static final int PULSE_SLOWEST = 24, PULSE_FASTEST = 10;
@@ -44,6 +46,14 @@ public final class ArgusFight {
     public boolean clean() { return clean; }
     /** The share of its health the Custodian cannot be brought below, for the openings so far. */
     public float floor() { return 1 - Math.min(won, ROUNDS) / (float) ROUNDS; }
+
+    /** How many of the {@link #LAMPS} are out: one for each right fuse so far, whatever round this is. */
+    public int lampsOut() {
+        if (phase == Phase.WON) return LAMPS;
+        int out = phase == Phase.PULL ? next : 0;
+        for (int r = 0; r < Math.min(won, ROUNDS); r++) out += round(r).glyphs();
+        return Math.min(LAMPS, out);
+    }
 
     public void start() { if (phase == Phase.DORMANT) phase = Phase.WAITING; }
 

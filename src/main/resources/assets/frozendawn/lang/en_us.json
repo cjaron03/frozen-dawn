@@ -1295,6 +1295,7 @@
   "subtitle.frozendawn.block.vault.fuse": "Fuse clicks",
   "subtitle.frozendawn.block.vault.wrong": "Fuse rejected",
   "subtitle.frozendawn.block.vault.shell": "Shell opens",
+  "subtitle.frozendawn.block.vault.custodian_death": "Custodian fails",
   "subtitle.frozendawn.block.vault.purge": "Purge",
   "subtitle.frozendawn.block.vault.announcement": "Worn recording plays",
   "subtitle.frozendawn.item.terminus.windup": "Terminus winds up",

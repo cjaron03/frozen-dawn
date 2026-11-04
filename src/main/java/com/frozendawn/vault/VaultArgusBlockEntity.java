@@ -123,6 +123,10 @@ public final class VaultArgusBlockEntity extends BlockEntity {
             var lamp = fight.phase() != Phase.PULL ? Lamp.DARK : fight.pulled(slot) ? Lamp.PULLED : Lamp.LIT;
             set(level, at, level.getBlockState(at).trySetValue(VaultBoardBlock.LAMP, lamp).trySetValue(VaultBoardBlock.GLYPH, fight.fuses()[slot]));
         }
+        for (int i = 0, out = fight.lampsOut(); i < TerminusVaultBuilder.TALLY.length; i++) {
+            var at = hall.offset(TerminusVaultBuilder.TALLY[i]);
+            set(level, at, level.getBlockState(at).trySetValue(VaultTallyBlock.LIT, i >= out));
+        }
         for (var clock : TerminusVaultBuilder.CLOCKS)
             if (level.getBlockEntity(hall.offset(clock)) instanceof VaultFightClockBlockEntity be) be.show(fight.seconds());
         int lit = fight.phase() == Phase.DORMANT ? TerminusVaultBuilder.LIGHTS.size() : fight.lights(TerminusVaultBuilder.LIGHTS.size());
@@ -132,7 +136,8 @@ public final class VaultArgusBlockEntity extends BlockEntity {
             set(level, at, level.getBlockState(at).trySetValue(VaultLightBlock.LIT, i < lit));
         }
         gate(level, TerminusVaultBuilder.WEST_DOOR, !fight.running());
-        gate(level, TerminusVaultBuilder.EAST_DOOR, fight.phase() == Phase.WON);
+        // The way on waits for it to finish dying.
+        gate(level, TerminusVaultBuilder.EAST_DOOR, fight.phase() == Phase.WON && (custodian == null || custodian.isRemoved()));
     }
     private static void set(ServerLevel level, BlockPos at, BlockState state) { if (level.getBlockState(at) != state) level.setBlock(at, state, 3); }
     private void gate(ServerLevel level, BlockPos gate, boolean open) {

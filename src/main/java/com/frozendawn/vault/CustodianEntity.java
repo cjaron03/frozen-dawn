@@ -10,6 +10,12 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.core.particles.ParticleOptions;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.util.Mth;
+import net.minecraft.world.entity.EntityEvent;
 import net.minecraft.world.entity.EntitySelector;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Mob;
@@ -31,12 +37,16 @@ import org.jetbrains.annotations.Nullable;
 public final class CustodianEntity extends PathfinderMob {
     public static final float HEALTH = 240, TOUCH = 12;
     public static final double SPEED = .36;
+    /** Its death runs on its own count, not {@code deathTime}, which would tip it over and flush it red. */
+    public static final int DEATH_TICKS = 60;
+    private static final int OPEN_TICKS = 14;
     private static final int TOUCH_COOLDOWN = 20;
     private static final EntityDataAccessor<Boolean> SHELL_OPEN = SynchedEntityData.defineId(CustodianEntity.class, EntityDataSerializers.BOOLEAN);
     private @Nullable BlockPos argus;
     private boolean awake;
     private float floor = 1;
-    private int touched;
+    private int touched, dying;
+    private float openness, lastOpenness;
 
     public CustodianEntity(EntityType<? extends PathfinderMob> type, Level level) {
         super(type, level);
@@ -51,6 +61,32 @@ public final class CustodianEntity extends PathfinderMob {
         builder.define(SHELL_OPEN, false);
     }
     public boolean shellOpen() { return entityData.get(SHELL_OPEN); }
+
+    /** Client side: how far the shell has opened, nought to one. */
+    public float openness(float partial) { return Mth.lerp(partial, lastOpenness, openness); }
+    /** How far through its death it is, nought to one. */
+    public float dying(float partial) { return dying == 0 ? 0 : Math.min(1, (dying + partial) / DEATH_TICKS); }
+    /** The core's light: rises with the shell and throbs; in death a flare, a stutter, a fade, then nothing. */
+    public float coreLight(float partial) {
+        float death = dying(partial);
+        if (death == 0) return openness(partial) * (.75F + .25F * Mth.sin((tickCount + partial) * .3F));
+        if (death < .25F) return 1;
+        if (death < .5F) return dying / 2 % 3 == 0 ? .15F : .6F;
+        return Math.max(0, .5F * (1 - (death - .5F) / .25F));
+    }
+
+    @Override public void tick() {
+        super.tick();
+        if (!level().isClientSide()) return;
+        lastOpenness = openness;
+        openness = Mth.clamp(openness + (shellOpen() || isDeadOrDying() ? 1F : -1F) / OPEN_TICKS, 0, 1);
+        if (openness != lastOpenness && openness < .6F) breathe(ParticleTypes.CLOUD, 3, .05);
+        if (dying > 0 && dying % 4 == 0) breathe(ParticleTypes.SNOWFLAKE, 2, .03);
+    }
+    private void breathe(ParticleOptions type, int count, double speed) {
+        for (int i = 0; i < count; i++) level().addParticle(type, getRandomX(.6), getY() + 1.2 + random.nextDouble() * 1.2, getRandomZ(.6),
+                random.nextGaussian() * speed, random.nextGaussian() * speed, random.nextGaussian() * speed);
+    }
 
     /** From Argus, every tick. {@code floor} is the share of its health an opening cannot take it below. */
     public void drive(BlockPos argus, boolean awake, boolean open, float floor) {
@@ -102,7 +138,21 @@ public final class CustodianEntity extends PathfinderMob {
     }
     @Override public void die(DamageSource source) {
         super.die(source);
+        if (level().isClientSide()) return;
+        // Volume is reach, as for the shell.
+        level().playSound(null, this, ModSounds.VAULT_CUSTODIAN_DEATH.get(), SoundSource.HOSTILE, 4, 1);
         if (argus != null && level().getBlockEntity(argus) instanceof VaultArgusBlockEntity be) be.custodianFell();
+    }
+    @Override protected @Nullable SoundEvent getDeathSound() { return null; }
+    @Override protected void tickDeath() {
+        if (++dying < DEATH_TICKS || level().isClientSide() || isRemoved()) return;
+        level().broadcastEntityEvent(this, EntityEvent.POOF);
+        remove(RemovalReason.KILLED);
+    }
+    @Override public void handleEntityEvent(byte id) {
+        if (id != EntityEvent.POOF) { super.handleEntityEvent(id); return; }
+        breathe(ParticleTypes.CLOUD, 50, .12);
+        breathe(ParticleTypes.SNOWFLAKE, 40, .2);
     }
 
     @Override public boolean isPushable() { return false; }

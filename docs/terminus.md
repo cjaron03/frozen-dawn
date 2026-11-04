@@ -495,6 +495,21 @@ and a noise 3" (the message stopped there).
 
 The log: joined 19:23:05, quit 19:34:06, no errors. It records no rounds, so `[Argus]` lines now do.
 
+Response, approved from `watch-floor-tally-mockup.png` ("Build all three"; the message's item 3 turned out to be "a death animation
+and sound too"):
+
+- Quicker rounds: the shell stays open 12 s and shuts once an opening is spent; the board shows round 1 for 6 s and round 2 for 5 s.
+- Eleven lamps over the east gate (`VaultTallyBlock`, `TALLY`), one a fuse, out from the left as you face it, by
+  `ArgusFight.lampsOut()`, which is worked out from the rounds and needs no saved state. The gate's upper clock moved to either
+  side of it, so there are now five clocks.
+- The shell opens over 0.7 s: `CustodianModel`'s two chest plates swing out, cold air, the core pushes through and throbs. The
+  shell's sound was playing from the Custodian's start mark; it now comes from the Custodian, remade at 1.6 s.
+- Its death takes three seconds on its own count, `CustodianEntity.DEATH_TICKS`, not `deathTime`, which would tip it over and flush
+  it red: the core flares, stutters and goes out as it drops to its knees, then it bursts into cold air. New sound
+  `block.vault.custodian_death`. The fight is won at the blow, so the clock stops and the badge lands there; the east gate waits
+  for the burst.
+- Needs the owner's eyes and ears: all of it. None of the model's movement or either sound has been seen or heard.
+
 ## ORSA System Plot (built 2026-11-03)
 
 Owner request: a map of the solar system somewhere quiet in the vault, showing what everyone was looking at when the place was

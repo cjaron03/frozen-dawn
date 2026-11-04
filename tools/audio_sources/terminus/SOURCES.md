@@ -14,7 +14,8 @@ noise seed 55002.
 | `sounds/blocks/vault/pulse.ogg` | `block.vault.pulse` | 0.42 s: a heartbeat, a short soft-edged lub and a softer dub of 62 Hz and its octave, sent on the Watch Floor louder and quicker as the clock falls |
 | `sounds/blocks/vault/fuse.ogg` | `block.vault.fuse` | 0.09 s: a dry relay click, pitched by the game while a hold builds |
 | `sounds/blocks/vault/wrong.ogg` | `block.vault.wrong` | 0.7 s: two falling buzzes, a wrong fuse |
-| `sounds/blocks/vault/shell.ogg` | `block.vault.shell` | 1.2 s: a hiss of cold air over a falling 60 Hz clunk, the Custodian's shell |
+| `sounds/blocks/vault/shell.ogg` | `block.vault.shell` | 1.6 s: a hiss of cold air over a falling 60 Hz clunk, a second clunk as the core seats, and its whine rising, the Custodian's shell |
+| `sounds/blocks/vault/custodian_death.ogg` | `block.vault.custodian_death` | 3.6 s: a servo stuttering down, two knee clunks, a long hiss, the Custodian's death |
 | `sounds/blocks/vault/purge.ogg` | `block.vault.purge` | 1.6 s: a rising white rush cut dead |
 | `sounds/blocks/vault/announcement.ogg` | `block.vault.announcement` | 20 s, streamed: worn tape, hiss with slow flutter, crackle, a two-tone chime, under a Piper voice with dropouts. The one exception to the no-voice line above: a generated voice, CC BY-SA 4.0, ledgered in `tools/audio_sources/generated_voice/` |
 

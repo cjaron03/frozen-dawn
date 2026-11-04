@@ -1,6 +1,6 @@
-"""The Watch Floor's tally over the east gate and the Custodian's shell opening, at Minecraft scale (16 pixels a block),
+"""The Watch Floor's tally over the east gate and the Custodian's shell opening and death, at Minecraft scale (16 pixels a block),
 shown three times over. Owner, 2026-11-03: lights over the door "that go out for every successful fuse break", and "a
-animation for when the custodians core opens". Built from the textures in the game.
+animation for when the custodians core opens", and "a death animation and sound too". Built from the textures in the game.
 Run from anywhere: python3 docs/art/terminus/make_watch_floor_tally_mockup.py
 """
 import random
@@ -64,28 +64,28 @@ def fit(part, width):
     return part.resize((max(1, width), part.height), Image.NEAREST)
 
 
-def custodian(swing, core, steam):
-    """Front on. {swing}: each half of the chest plate's width as seen, 8 shut, 1 edge-on. {core}: how far out, 0 to 2."""
+def custodian(swing, core, steam, sink=0, colour=GLOW):
+    """Front on. {swing}: each half of the chest plate's width as seen, 8 shut, 1 edge-on. {core}: how far out, 0 to 2.
+    {sink}: pixels its knees have given."""
     tex = Image.open(TEX / 'entity/custodian.png').convert('RGBA')
-    cavity = Image.open(TEX / 'entity/custodian_open.png').convert('RGBA')
     im = Image.new('RGBA', (32 + 16, 48), (0, 0, 0, 0))
     ox = 8
-    im.alpha_composite(tex.crop((10, 10, 22, 20)), (ox + 10, 0))
-    im.alpha_composite(cavity.crop((10, 30, 30, 49)), (ox + 6, 10))
-    im.alpha_composite(tex.crop((70, 6, 76, 31)), (ox + 0, 10))
-    im.alpha_composite(tex.crop((70, 6, 76, 31)), (ox + 26, 10))
+    im.alpha_composite(tex.crop((10, 10, 22, 20)), (ox + 10, sink + sink // 3))
+    im.alpha_composite(tex.crop((10, 30, 30, 49)), (ox + 6, 10 + sink))
+    arm = tex.crop((70, 6, 76, 31 - sink))
+    im.alpha_composite(arm, (ox + 0, 10 + sink))
+    im.alpha_composite(arm, (ox + 26, 10 + sink))
     for x in (11, 17):
-        im.alpha_composite(tex.crop((72, 40, 78, 59)), (ox + x, 29))
+        im.alpha_composite(tex.crop((72, 40 + sink, 78, 59)), (ox + x, 29 + sink))
     d = ImageDraw.Draw(im)
     if core:
         half = 3 + core
-        d.rectangle((ox + 16 - half, 15 - core, ox + 15 + half, 24 + core), GLOW)
+        d.rectangle((ox + 16 - half, 15 + sink - core, ox + 15 + half, 24 + sink + core), colour)
         if core == 2:
-            d.rectangle((ox + 16 - half, 15 - core, ox + 15 + half, 24 + core), outline=PALE)
-    plate = tex.crop((12, 32, 28, 48))
-    left, right = plate.crop((0, 0, 8, 16)), plate.crop((8, 0, 16, 16))
-    im.alpha_composite(fit(left, swing), (ox + 8, 12))
-    im.alpha_composite(fit(right, swing), (ox + 24 - swing, 12))
+            d.rectangle((ox + 16 - half, 15 + sink - core, ox + 15 + half, 24 + sink + core), outline=PALE)
+    left, right = tex.crop((89, 1, 97, 17)), tex.crop((89, 21, 97, 37))
+    im.alpha_composite(fit(left, swing), (ox + 8, 12 + sink))
+    im.alpha_composite(fit(right, swing), (ox + 24 - swing, 12 + sink))
     r = random.Random(swing)
     for _ in range(steam):
         side = r.choice((-1, 1))
@@ -93,12 +93,35 @@ def custodian(swing, core, steam):
     return im
 
 
+def puff():
+    """Nothing left but cold air in the shape it knelt in."""
+    im = Image.new('RGBA', (48, 48), (0, 0, 0, 0))
+    r = random.Random(9)
+    for _ in range(150):
+        x, y = int(r.gauss(24, 8)), int(r.gauss(34, 7))
+        if 0 <= x < 48 and 0 <= y < 48:
+            im.putpixel((x, y), (214, 226, 232, r.randint(90, 220)))
+    return im
+
+
+def strip(out, d, y, frames, width):
+    step = (width - 48) // len(frames)
+    for i, (label, im) in enumerate(frames):
+        im = im.resize((im.width * S, im.height * S), Image.NEAREST)
+        x = 24 + i * step
+        out.paste(im, (x, y), im)
+        d.text((x, y + im.height + 6), label, DIM, F(11))
+
+
 def main():
-    frames = [('shut', 8, 0, 0), ('0.2 s: seals go, cold air', 6, 0, 26), ('0.4 s: halves swing out', 3, 1, 40),
-              ('0.7 s: core pushes out', 1, 2, 18), ('open: core throbs', 1, 1, 0)]
+    opening = [('shut', custodian(8, 0, 0)), ('0.2 s: seals go, cold air', custodian(6, 0, 26)), ('0.4 s: halves swing out', custodian(3, 1, 40)),
+               ('0.7 s: core pushes out', custodian(1, 2, 18)), ('open: core throbs', custodian(1, 1, 0))]
+    dying = [('0 s: core flares, it locks', custodian(1, 2, 12)), ('0.8 s: core stutters', custodian(1, 1, 8, 0, (70, 92, 104))),
+             ('1.6 s: knees go, arms hang', custodian(1, 1, 14, 5, (120, 150, 164))), ('2.4 s: kneeling, core out', custodian(1, 0, 6, 11)),
+             ('3 s: bursts into cold air', puff())]
     width = 19 * B * S + 2 * 24
     wall_h = 5 * B * S
-    out = Image.new('RGB', (width, 3 * 34 + 2 * wall_h + 48 * S + 90), BG)
+    out = Image.new('RGB', (width, 3 * 34 + 2 * wall_h + 2 * (48 * S + 62) + 30), BG)
     d = ImageDraw.Draw(out)
     y = 12
     for label, n in (('Fight start: eleven lamps, one a fuse. A clock either side of the gate.', 0), ('Round 1 done, one fuse into round 2: four out.', 4)):
@@ -108,13 +131,11 @@ def main():
         y += wall_h + 14
     d.text((24, y), 'The shell opening, about a second, then shutting the same way backwards.', INK, F(14))
     y += 28
-    step = (width - 48) // len(frames)
-    for i, (label, swing, core, steam) in enumerate(frames):
-        im = custodian(swing, core, steam)
-        im = im.resize((im.width * S, im.height * S), Image.NEAREST)
-        x = 24 + i * step
-        out.paste(im, (x, y), im)
-        d.text((x, y + im.height + 6), label, DIM, F(11))
+    strip(out, d, y, opening, width)
+    y += 48 * S + 34
+    d.text((24, y), 'Its death, three seconds, the shell left open.', INK, F(14))
+    y += 28
+    strip(out, d, y, dying, width)
     out.save(OUT)
 
 

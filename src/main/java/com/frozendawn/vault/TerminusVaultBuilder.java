@@ -8,6 +8,7 @@ import com.frozendawn.world.HelionSiteBuilder;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.IntStream;
 import java.util.Random;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -45,8 +46,10 @@ public final class TerminusVaultBuilder {
     public static final BlockPos[] FUSES = {fuse(23, -12), fuse(28, -12), fuse(33, -12), fuse(23, 12), fuse(28, 12), fuse(33, 12)};
     /** Three glyphs either side of the west door, at the upper level. */
     public static final BlockPos[] BOARD = {board(-8), board(-6), board(-4), board(4), board(6), board(8)};
-    /** Over both gates at the upper level, and on the end walls of the lower floor. */
-    public static final BlockPos[] CLOCKS = {new BlockPos(40, CEILING - 1, 0), new BlockPos(17, CEILING - 1, 0), new BlockPos(40, -19, 0), new BlockPos(17, -19, 0)};
+    /** Either side of the east gate and over the west at the upper level, and on the end walls of the lower floor. */
+    public static final BlockPos[] CLOCKS = {new BlockPos(40, -13, -3), new BlockPos(40, -13, 3), new BlockPos(17, CEILING - 1, 0), new BlockPos(40, -19, 0), new BlockPos(17, -19, 0)};
+    /** Over the east gate, north to south, so they go out from the left as you face it. */
+    public static final BlockPos[] TALLY = IntStream.range(0, ArgusFight.LAMPS).mapToObj(i -> new BlockPos(40, CEILING - 1, i - ArgusFight.LAMPS / 2)).toArray(BlockPos[]::new);
     /** North-east and south-west: the only way up. */
     public static final BlockPos[] LADDERS = {new BlockPos(38, 0, -10), new BlockPos(18, 0, 10)};
     /** The Watch Floor's red lights, in the order they stay lit: the clock puts them out from the end of this list. */
@@ -166,6 +169,7 @@ public final class TerminusVaultBuilder {
         for (var at : LIGHTS) l.setBlock(c.offset(at), ModBlocks.VAULT_LIGHT.get().defaultBlockState().setValue(VaultLightBlock.FACING, wallFace(at)), 2);
         for (var at : CLOCKS)
             l.setBlock(c.offset(at), ModBlocks.VAULT_FIGHT_CLOCK.get().defaultBlockState().setValue(VaultFightClockBlock.FACING, at.getX() == 40 ? Direction.WEST : Direction.EAST), 2);
+        for (var at : TALLY) l.setBlock(c.offset(at), ModBlocks.VAULT_TALLY.get().defaultBlockState(), 2);
         gate(l, c.offset(WEST_DOOR), true);
         gate(l, c.offset(EAST_DOOR), false);
         l.setBlock(c.offset(ARGUS), ModBlocks.VAULT_ARGUS.get().defaultBlockState(), 2);

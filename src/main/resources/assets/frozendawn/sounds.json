@@ -2265,6 +2265,16 @@
       }
     ]
   },
+  "block.vault.custodian_death": {
+    "category": "block",
+    "subtitle": "subtitle.frozendawn.block.vault.custodian_death",
+    "sounds": [
+      {
+        "name": "frozendawn:blocks/vault/custodian_death",
+        "attenuation_distance": 32
+      }
+    ]
+  },
   "block.vault.shell": {
     "category": "block",
     "subtitle": "subtitle.frozendawn.block.vault.shell",

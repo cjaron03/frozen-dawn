@@ -190,15 +190,44 @@ public final class TerminusWatchFloorGameTest {
     @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="terminus_floor",timeoutTicks=2000)
     public static void theCustodianFallingOpensTheEastDoorAndACleanRunEarnsTheBadge(GameTestHelper h) {
         var f=floor(h);var op=f.reader();
+        var east=f.hall.offset(TerminusVaultBuilder.EAST_DOOR).below(3);
+        var fallen=new CustodianEntity[1];
         begin(f).thenExecute(()->{f.fight().start();f.fight().jump(2,Phase.BURN,ArgusFight.CLOCK_TICKS);})
-                .thenExecuteAfter(2,()->f.boss().hurt(f.level().damageSources().playerAttack(op),CustodianEntity.HEALTH*2))
+                .thenExecuteAfter(2,()->{fallen[0]=f.boss();fallen[0].hurt(f.level().damageSources().playerAttack(op),CustodianEntity.HEALTH*2);})
                 .thenExecuteAfter(2,()->{
                     h.assertTrue(f.fight().phase()==Phase.WON,"It is over");
-                    h.assertTrue(f.level().getBlockState(f.hall.offset(TerminusVaultBuilder.EAST_DOOR).below(3)).isAir(),"The way on stands open");
-                    h.assertTrue(f.level().getBlockState(f.hall.offset(TerminusVaultBuilder.WEST_DOOR).below(3)).isAir(),"And the way back");
+                    h.assertTrue(f.level().getBlockState(f.hall.offset(TerminusVaultBuilder.WEST_DOOR).below(3)).isAir(),"The way back");
                     h.assertTrue(badge(f,op),"No wrong fuse, no purge: Last Badge-Out");
+                    h.assertTrue(!fallen[0].isRemoved(),"It takes its time");
+                    h.assertTrue(!f.level().getBlockState(east).isAir(),"And the way on waits for it");
+                })
+                .thenExecuteAfter(CustodianEntity.DEATH_TICKS-12,()->{
+                    h.assertTrue(!fallen[0].isRemoved(),"Still kneeling");
+                    h.assertTrue(!f.level().getBlockState(east).isAir(),"Still shut");
+                })
+                .thenWaitUntil(()->{
+                    h.assertTrue(fallen[0].isRemoved(),"Gone");
+                    h.assertTrue(f.level().getBlockState(east).isAir(),"The way on stands open");
                 }).thenSucceed();
     }
+
+    @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="terminus_floor",timeoutTicks=600)
+    public static void theLampsOverTheEastGateGoOutFuseByFuse(GameTestHelper h) {
+        var f=floor(h);var op=f.reader();
+        begin(f).thenExecute(()->{
+                    h.assertTrue(TerminusVaultBuilder.TALLY.length==ArgusFight.LAMPS,"A lamp a fuse");
+                    h.assertTrue(lit(f)==ArgusFight.LAMPS,"All burning before the fight");
+                    f.fight().start();f.fight().jump(0,Phase.PULL,ArgusFight.CLOCK_TICKS);
+                })
+                .thenExecuteAfter(1,()->pull(f,op,wrongSlot(f)))
+                .thenExecute(()->h.assertTrue(lit(f)==ArgusFight.LAMPS,"A wrong fuse puts none out"))
+                .thenExecute(()->pull(f,op,slotOf(f,f.fight().wanted()[0])))
+                .thenExecute(()->{
+                    h.assertTrue(lit(f)==ArgusFight.LAMPS-1,"One out");
+                    h.assertTrue(!f.level().getBlockState(f.hall.offset(TerminusVaultBuilder.TALLY[0])).getValue(VaultTallyBlock.LIT),"From the left as you face the gate");
+                }).thenSucceed();
+    }
+    private static long lit(Floor f) {return Arrays.stream(TerminusVaultBuilder.TALLY).filter(at->f.level().getBlockState(f.hall.offset(at)).getValue(VaultTallyBlock.LIT)).count();}
 
     @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="terminus_floor",timeoutTicks=2000)
     public static void aWrongFuseCostsTheBadgeNotTheWin(GameTestHelper h) {

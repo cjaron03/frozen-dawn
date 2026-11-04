@@ -7,6 +7,7 @@ from pathlib import Path
 from PIL import Image, ImageDraw
 from make_system_plot_mockup import plot
 from make_vault_warning_mockup import scrawl
+from make_watch_floor_tally_mockup import lamp as tally_lamp
 
 ROOT = Path(__file__).resolve().parents[3]
 BLOCK = ROOT / 'src/main/resources/assets/frozendawn/textures/block'
@@ -198,7 +199,9 @@ def faces(d, u, v, w, h, depth, colour):
     d.rectangle((u, v + depth, u + 2 * depth + 2 * w - 1, v + depth + h - 1), colour)
 
 
-def custodian(open_):
+def custodian():
+    """The chest as it stands open behind two plates, which carry the paint: each 8 by 16, at (88, 0) and (88, 20), and the
+    core at (88, 40). The plates, and the core while the shell is shut, cover the cavity."""
     im = Image.new('RGBA', (128, 64), (0, 0, 0, 0))
     d = ImageDraw.Draw(im)
     faces(d, 0, 0, 12, 10, 10, STEEL)
@@ -208,15 +211,20 @@ def custodian(open_):
     hx, hy = 10, 10                                     # the head's front face
     d.rectangle((hx + 3, hy + 3, hx + 8, hy + 6), hexc('0a0c0e'))
     bx, by = 10, 30                                     # the chest's front face
-    if open_:
-        d.rectangle((bx + 3, by + 3, bx + 16, by + 16), hexc('06080a'))
-        d.rectangle((bx + 1, by + 2, bx + 2, by + 16), hexc('8a9298'))
-        d.rectangle((bx + 17, by + 2, bx + 18, by + 16), hexc('8a9298'))
-    else:
-        d.line((bx + 9, by + 1, bx + 9, by + 18), DARK)
-        d.rectangle((bx + 3, by + 3, bx + 16, by + 10), hexc('a89654'))
-        stencil(im, bx + 4, by + 4, 'CSU', hexc('1e2022'))
-        stencil(im, bx + 8, by + 12, '3', hexc('282c30'))
+    d.rectangle((bx + 3, by + 3, bx + 16, by + 16), hexc('06080a'))
+    d.rectangle((bx + 1, by + 2, bx + 2, by + 16), hexc('8a9298'))
+    d.rectangle((bx + 17, by + 2, bx + 18, by + 16), hexc('8a9298'))
+    faces(d, 88, 0, 8, 16, 1, DARK)
+    faces(d, 88, 20, 8, 16, 1, DARK)
+    faces(d, 88, 40, 6, 8, 3, hexc('2a3034'))
+    paint = Image.new('RGBA', (16, 16), STEEL)
+    p = ImageDraw.Draw(paint)
+    p.line((7, 0, 7, 15), DARK)
+    p.rectangle((1, 1, 14, 8), hexc('a89654'))
+    stencil(paint, 2, 2, 'CSU', hexc('1e2022'))
+    stencil(paint, 6, 10, '3', hexc('282c30'))
+    im.paste(paint.crop((0, 0, 8, 16)), (89, 1))
+    im.paste(paint.crop((8, 0, 16, 16)), (89, 21))
     r = random.Random(3)
     for _ in range(170):
         x, y = r.randint(0, 127), r.randint(0, 63)
@@ -226,13 +234,17 @@ def custodian(open_):
     return im
 
 
-def custodian_glow(open_):
-    """Drawn through the eyes render type: the pale lens, and the core while the shell is open."""
+def custodian_lens():
+    """Drawn through the eyes render type."""
     im = Image.new('RGBA', (128, 64), (0, 0, 0, 0))
-    d = ImageDraw.Draw(im)
-    d.rectangle((15, 14, 16, 15), hexc('d6f0fa'))
-    if open_:
-        d.rectangle((17, 36, 22, 43), hexc('f4fbff'))
+    ImageDraw.Draw(im).rectangle((15, 14, 16, 15), hexc('d6f0fa'))
+    return im
+
+
+def custodian_core():
+    """Drawn through the eyes render type too, at whatever light the core has."""
+    im = Image.new('RGBA', (128, 64), (0, 0, 0, 0))
+    faces(ImageDraw.Draw(im), 88, 40, 6, 8, 3, hexc('f4fbff'))
     return im
 
 
@@ -310,10 +322,11 @@ def main():
     seal_order().save(BLOCK / 'vault_seal_order.png')
     # Drawn directly, like the clock digits: 384 wide is no shape for the block atlas.
     plot().save(ENTITY / 'vault_system_plot.png')
-    custodian(False).save(ENTITY / 'custodian.png')
-    custodian(True).save(ENTITY / 'custodian_open.png')
-    custodian_glow(False).save(ENTITY / 'custodian_lens.png')
-    custodian_glow(True).save(ENTITY / 'custodian_lens_open.png')
+    custodian().save(ENTITY / 'custodian.png')
+    custodian_lens().save(ENTITY / 'custodian_lens.png')
+    custodian_core().save(ENTITY / 'custodian_core.png')
+    tally_lamp(True).save(BLOCK / 'vault_tally_lit.png')
+    tally_lamp(False).save(BLOCK / 'vault_tally_dark.png')
     clock_face().save(ENTITY / 'vault_clock_face.png')
     # Drawn directly, not from the block atlas: a 44x5 sheet there would turn every block's mipmaps off.
     clock_digits().save(ENTITY / 'vault_clock_digits.png')
