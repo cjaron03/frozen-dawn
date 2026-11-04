@@ -562,21 +562,22 @@ reached at one heart, and said "Build them" from `vault-last-rooms-mockup.png` (
 - Mess hall, x 41..64, z -10..10, y -14..-7: six tables, 4 by 2, at x 44, 50, 56 and z -4, 3, dressing only. The System Plot is its
   north wall (`PLOT` x 41, z -11). The old plot room is gone.
 - Door x 65, a gate built open: nothing drives it.
-- Drill hall, x 66..82, z -7..7, y -14..-10: console at x 67, z -1..1; key A (72, -7), key B (79, 7), at chest height, y -13.
-- Gold door x 83. Morgue, x 84..94, z -4..4, y -14..-10: vent x 88..90, plate x 94, both z -1..1, panel on the east wall, z -4..-3,
-  y -13..-12 as the section draws it. Gold door x 95.
+- Drill hall, x 66..82, z -7..7, y -14..-10: recorder on the west wall, x 66, z -5..-3, projector over the way in; key A (72, -7), key B
+  (79, 7), at chest height, y -13.
+- Gold door x 83. Morgue, x 84..94, z -4..4, y -14..-10: A/C on the north wall, x 87..89, dial x 90, both at z -4; arch and plate x 92,
+  z -1..1; screen over the door, x 94, y -10, z -3..3. Gold door x 95.
 - Cot room x 96..99, last door x 100, vault x 101..105. `REACH` is 107.
 - "Gold" is the plan's colour for the puzzle doors. The sections draw them dark with a lamp over them, pale shut and green open, and
   that is what is built: `vault_lintel`, over the ordinary gate panel.
 
 ### As built
-- `TwoPersonRule` is the recording with no world in it (`TwoPersonRuleTest`), `VaultRecorderBlockEntity`, the console's middle block,
-  shows it. `MorgueGate` is the scanner (`MorgueGateTest`), `VaultVitalsBlockEntity`, the panel's foot, shows it.
+- `TwoPersonRule` is the recording with no world in it (`TwoPersonRuleTest`), `VaultRecorderBlockEntity`, the recorder's middle block,
+  shows it. `MorgueGate` is the scanner (`MorgueGateTest`), `VaultVitalsBlockEntity`, the screen's middle cell, shows it.
 - A key is held as a fuse is: the client repeats use every four ticks, and a gap over eight is a hand let go.
 - `VaultRecordingEntity` is the pale figure: the player model in a see-through skin made from the technician's. No collision, not
   hittable, no mind, never saved, and it goes by itself five ticks after nothing drives it.
-- The vent does 2 health every 2 s on the game clock, as `frozendawn:vault_cold`, past armor and enchantments. It has vanilla's
-  freezing hurt sound. Nothing new in the audio.
+- The A/C at MAX does 2 health every 2 s on the game clock, down to half a heart and no further, as `frozendawn:vault_cold`, past armor
+  and enchantments. It has vanilla's freezing hurt sound. Nothing new in the audio.
 - `/fd terminus vault status` reads both rooms; `[Two-Person]` and `[Morgue]` log lines record a pass.
 
 ### Rulings (agent, for the owner to confirm)
@@ -680,3 +681,10 @@ Approved ("Build them", `docs/art/terminus/morgue-tools-mockup.png`). As built, 
   plate and full bright. A game test clips a line to its figures from the plate, the blast and the way in. From the middle of the way
   in the arch's post covers the screen's south end, the C and no figures.
 - Saves from before this have the old arch and A/C and a `vault_vitals` in the wall, and their Morgue will not work: new Checks only.
+
+## Owner playtest 5 of the last rooms, 2026-11-04 (Terminus Watch Floor Check 9, runClientLab, branch head 09c8240b)
+
+Unprompted report: "everythign looks good! whtas next"
+
+The log: joined 09:19:34, A/C to MID 09:21:03 and MAX 09:21:04, the scanner read nobody at 4.15 degrees and opened the door 09:21:31, quit
+09:22:08, no errors. `architectVerify` passed at 09c8240b: 936 tests (380, 265, 291). Nothing to fix from this pass.
