@@ -6,6 +6,7 @@ import com.frozendawn.network.ShepherdHubPayload;
 import com.frozendawn.network.ShepherdNodePayload;
 import com.frozendawn.shepherd.ShepherdDialogue.Node;
 import com.frozendawn.shepherd.ShepherdFace.Mood;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Mob;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -195,6 +196,15 @@ public final class ShepherdTalk {
         live = null;
         over.she.setMood(Mood.NEUTRAL);
         if (tellClient && !over.player.hasDisconnected()) PacketDistributor.sendToPlayer(over.player, new ShepherdClosePayload());
+    }
+
+    /** {@code /fd shepherd replay}, for trying the first meeting's other branches. False while she sleeps. */
+    public static boolean replay(MinecraftServer server) {
+        var data = ShepherdSavedData.get(server);
+        if (data.stage() != ShepherdSavedData.Stage.AWAKE) return false;
+        if (live != null) end(true);
+        data.replayFirstMeeting();
+        return true;
     }
 
     static void dialoguesReloaded() {

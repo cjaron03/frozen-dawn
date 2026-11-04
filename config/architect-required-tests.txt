@@ -913,3 +913,4 @@ shepherdofflineendsatalkandrefusesthenext xml
 shepherdholdsstationbesideherfollower xml
 shepherdstrandedfarawaycomestoherfollower xml
 shepherdteleportsintoopenair xml
+shepherdreplayrestartsthefirstmeetingfromnothing xml

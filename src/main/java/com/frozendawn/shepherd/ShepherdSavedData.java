@@ -75,6 +75,15 @@ public final class ShepherdSavedData extends SavedData {
     public boolean heavy() { return heavy; }
     public void heavy(boolean heavy) { this.heavy = heavy; setDirty(); }
 
+    /** Back to the moment she woke: everything the first meeting earned goes, and she starts it again. */
+    void replayFirstMeeting() {
+        affinity = 0;
+        flags.clear();
+        heavy = false;
+        resumeNode = ShepherdTalk.FIRST_MEETING;
+        setDirty();
+    }
+
     /** GameTest isolation only: a shard may be of any age, so each test starts from a fresh state. */
     void clearForTests() {
         stage = Stage.DORMANT;

@@ -58,6 +58,9 @@ public final class ShepherdTalkGameTest {
     @BeforeBatch(batch = "shepherd_talk_offline") public static void offlineBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
     @AfterBatch(batch = "shepherd_talk_offline") public static void offlineAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
 
+    @BeforeBatch(batch = "shepherd_talk_replay") public static void replayBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_talk_replay") public static void replayAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+
     private static ShepherdSavedData data(GameTestHelper h) {
         return ShepherdSavedData.get(h.getLevel().getServer());
     }
@@ -294,6 +297,26 @@ public final class ShepherdTalkGameTest {
                 h.assertTrue(!ShepherdTalk.live(), "Or be woken by a right-click");
                 h.succeed();
             });
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_talk_replay", timeoutTicks = 100)
+    public static void shepherdReplayRestartsTheFirstMeetingFromNothing(GameTestHelper h) {
+        h.runAfterDelay(1, () -> {
+            var player = player(h);
+            var she = awake(h, player);
+            ShepherdTalk.start(player, "fm.boot");
+            say(player, KIND, CONTINUE, SARCASTIC, CONTINUE, SARCASTIC, CONTINUE, KIND, KIND, CONTINUE);
+            h.assertTrue(data(h).heavy() && data(h).flag("used_flashlight") && data(h).affinity() != 0, "A finished first meeting left its marks");
+            rightClick(she, player);
+            var server = h.getLevel().getServer();
+            server.getCommands().performPrefixedCommand(server.createCommandSourceStack().withSuppressedOutput(), "fd shepherd replay");
+            h.assertTrue(!ShepherdTalk.live(), "The open hub closes");
+            h.assertTrue(data(h).affinity() == 0 && !data(h).heavy(), "Score and swearing are back to the start");
+            h.assertTrue(!data(h).flag("used_flashlight") && !data(h).flag("profanity_heavy"), "Her flags are cleared");
+            rightClick(she, player);
+            h.assertTrue("fm.boot".equals(ShepherdTalk.liveNode()), "The next right-click is the first meeting: " + ShepherdTalk.liveNode());
+            h.succeed();
         });
     }
 }
