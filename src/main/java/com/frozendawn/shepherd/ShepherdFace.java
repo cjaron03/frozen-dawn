@@ -9,6 +9,18 @@ public final class ShepherdFace {
 
     private ShepherdFace() {}
 
+    /** A lit texel, as this frame shows it. A blink shuts each eye down to its lowest row. */
+    public static boolean lit(Mood mood, boolean blink, int x, int y) {
+        return mood.lit(x, y) && !(blink && y + 1 < HEIGHT && mood.lit(x, y + 1));
+    }
+
+    /** A dim texel, as this frame shows it. Mouth 0 is shut, 1 open, 2 wide; the recording voice has no mouth to move. */
+    public static boolean dim(Mood mood, int mouth, int x, int y) {
+        if (mood.dim(x, y)) return true;
+        if (mood == Mood.RECORDING || mood == Mood.OFFLINE || y != HEIGHT - 1) return false;
+        return mouth == 1 && (x == 3 || x == 4) || mouth == 2 && x >= 2 && x <= 5;
+    }
+
     /** '#' is a lit texel, '+' a dim one, as face-moods-mockup.png draws them. */
     public enum Mood {
         NEUTRAL("........", ".##..##.", ".##..##.", "........", "..++++..", "........"),

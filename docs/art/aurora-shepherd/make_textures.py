@@ -4,11 +4,12 @@ Writes into src/main/resources. Run from anywhere: python3 docs/art/aurora-sheph
 """
 from pathlib import Path
 from PIL import Image
-from make_body_directions import C
+from make_body_directions import C, lantern
 import make_dock_mockup  # noqa: F401, adds the dock's colors to C
 
 HERE = Path(__file__).resolve().parent
-BLOCK = HERE.parents[2] / 'src/main/resources/assets/frozendawn/textures/block'
+TEXTURES = HERE.parents[2] / 'src/main/resources/assets/frozendawn/textures'
+BLOCK = TEXTURES / 'block'
 C['led_off'] = (30, 34, 38)
 
 
@@ -54,7 +55,54 @@ def front(name, led, cell):
     img.save(BLOCK / f'cs1_dock_front_{name}.png')
 
 
+# The Lantern's boxes, as ShepherdModel builds them: texture u, v, then the voxel corners from make_body_directions.lantern().
+BOXES = [
+    (0, 0, 0, 2, 0, 12, 12, 10),      # body
+    (0, 20, 3, 0, 2, 9, 2, 8),        # heater
+    (24, 20, -3, 5, 2, 0, 9, 8),      # left duct
+    (42, 20, 12, 5, 2, 15, 9, 8),     # right duct
+    (0, 30, -3, 3, 5, 0, 4, 6),       # left stripe
+    (8, 30, 12, 3, 5, 15, 4, 6),      # right stripe
+    (16, 30, 2, 12, 4, 3, 15, 5),     # handle posts
+    (20, 30, 9, 12, 4, 10, 15, 5),
+    (24, 30, 2, 15, 4, 10, 16, 5),    # handle bar
+]
+
+
+def unit():
+    """Her skin, on Minecraft's unfolded cube layout. The display stays dark: the face is drawn over it, full bright."""
+    body = lantern()
+    for x in range(2, 10):
+        for y in range(4, 10):
+            body.v[(x, y, 9)] = 'screen'
+    img = Image.new('RGBA', (64, 64), (0, 0, 0, 0))
+
+    def paint(px, py, x, y, z):
+        img.putpixel((px, py), C[body.v[(x, y, z)]] + (255,))
+
+    for u, v, x0, y0, z0, x1, y1, z1 in BOXES:
+        dx, dy, dz = x1 - x0, y1 - y0, z1 - z0
+        for c in range(dx):
+            for r in range(dz):
+                paint(u + dz + c, v + r, x0 + c, y1 - 1, z0 + r)
+                paint(u + dz + dx + c, v + r, x0 + c, y0, z0 + r)
+            for r in range(dy):
+                paint(u + dz + c, v + dz + r, x0 + c, y1 - 1 - r, z1 - 1)
+                paint(u + 2 * dz + dx + c, v + dz + r, x1 - 1 - c, y1 - 1 - r, z0)
+        for c in range(dz):
+            for r in range(dy):
+                paint(u + c, v + dz + r, x0, y1 - 1 - r, z0 + c)
+                paint(u + dz + dx + c, v + dz + r, x1 - 1, y1 - 1 - r, z1 - 1 - c)
+    # The face's two colors, for ShepherdFaceRenderer to point its quads at.
+    for x in range(60, 62):
+        for y in range(60, 62):
+            img.putpixel((x, y), C['glow'] + (255,))
+            img.putpixel((x + 2, y), C['glow2'] + (255,))
+    img.save(TEXTURES / 'entity/cs1_unit.png')
+
+
 def main():
+    unit()
     flat('cs1_dock_top', 'steel')
     flat('cs1_dock_rail', 'steel2')
     side()

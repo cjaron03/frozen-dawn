@@ -18,6 +18,7 @@ public class ModSounds {
                 ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, id)));
     }
 
+    public static final DeferredHolder<SoundEvent, SoundEvent> SHEPHERD_BLIP = register("entity.shepherd.blip");
     public static final DeferredHolder<SoundEvent, SoundEvent> CS1_DOCK_BOOT = register("block.cs1_dock.boot");
     public static final DeferredHolder<SoundEvent, SoundEvent> CS1_DOCK_REFUSE = register("block.cs1_dock.refuse");
     public static final DeferredHolder<SoundEvent, SoundEvent> BLIND_ARCHITECT_CLICK = register("entity.blind_architect.click");

@@ -338,6 +338,7 @@ public class ClientEvents {
         event.registerLayerDefinition(RocketLaunchModel.LAYER_LOCATION, RocketLaunchModel::createBodyLayer);
         event.registerLayerDefinition(
                 RimeboundModel.LAYER_LOCATION, RimeboundModel::createBodyLayer);
+        event.registerLayerDefinition(ShepherdModel.LAYER_LOCATION, ShepherdModel::createBodyLayer);
         event.registerLayerDefinition(com.frozendawn.client.renderer.CustodianModel.LAYER_LOCATION, com.frozendawn.client.renderer.CustodianModel::createBodyLayer);
         event.registerLayerDefinition(
                 ResonantModel.LAYER_LOCATION, ResonantModel::createBodyLayer);
@@ -359,6 +360,7 @@ public class ClientEvents {
     @SubscribeEvent
     public static void onRegisterEntityRenderers(EntityRenderersEvent.RegisterRenderers event) {
         event.registerEntityRenderer(ModEntities.AGGREGATE.get(), AggregateRenderer::new);
+        event.registerEntityRenderer(ModEntities.CS1_UNIT.get(), ShepherdRenderer::new);
         event.registerEntityRenderer(ModEntities.CUSTODIAN.get(), com.frozendawn.client.renderer.CustodianRenderer::new);
         event.registerEntityRenderer(ModEntities.VAULT_RECORDING.get(), com.frozendawn.client.renderer.VaultRecordingRenderer::new);
         event.registerEntityRenderer(
@@ -409,6 +411,7 @@ public class ClientEvents {
         event.registerBlockEntityRenderer(ModBlockEntities.VAULT_MECHANISM.get(), com.frozendawn.client.renderer.VaultMechanismRenderer::new);
         event.registerBlockEntityRenderer(ModBlockEntities.VAULT_TECHNICIAN.get(), com.frozendawn.client.renderer.VaultTechnicianRenderer::new);
         event.registerBlockEntityRenderer(ModBlockEntities.VAULT_CRADLE.get(), com.frozendawn.client.renderer.VaultCradleRenderer::new);
+        event.registerBlockEntityRenderer(ModBlockEntities.CS1_DOCK.get(), ShepherdDockRenderer::new);
         event.registerBlockEntityRenderer(ModBlockEntities.VAULT_CLOCK.get(), com.frozendawn.client.renderer.VaultClockRenderer::new);
         event.registerBlockEntityRenderer(ModBlockEntities.VAULT_FIGHT_CLOCK.get(), com.frozendawn.client.renderer.VaultFightClockRenderer::new);
         event.registerBlockEntityRenderer(ModBlockEntities.VAULT_PLOT.get(), com.frozendawn.client.renderer.VaultPlotRenderer::new);
