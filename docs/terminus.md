@@ -510,6 +510,15 @@ and sound too"):
   for the burst.
 - Needs the owner's eyes and ears: all of it. None of the model's movement or either sound has been seen or heard.
 
+## Owner playtest 3 of the Watch Floor, 2026-11-03 (Terminus Watch Floor Check 3, runClientLab, branch head 81509f36)
+
+Unprompted report: "yea i just did the first pass of fuses, and its not rerolling the next ones after i do damage to the
+custdiaon"
+
+The log and the closed save: first opening at 19:53:57 with 00:57 left, quit at 19:55:17 with no purge. Saved Argus state WAITING,
+one opening won, 6.4 s on the clock, not clean; the player on the lower floor. Not a fault: the board waits for someone on the
+upper level, and nothing tells you to climb back. That also fits the "1 rotation" of playtest 2.
+
 ## ORSA System Plot (built 2026-11-03)
 
 Owner request: a map of the solar system somewhere quiet in the vault, showing what everyone was looking at when the place was
