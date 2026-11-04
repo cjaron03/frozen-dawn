@@ -706,3 +706,10 @@ Found two real defects and three minor ones, by reading the code.
   take `terminus_floor` running as a server's first batch at a game time that is a multiple of 4 from 8 to 44.
 - Deferred: the playtest script says a burn is fifteen seconds; `BURN_TICKS` is twelve.
 
+
+## Status, 2026-11-04
+
+Branch `feat/terminus-vault`, worktree `/Volumes/SSD/Work/frozen-dawn-terminus-vault`, active save `Terminus Watch Floor Check 9`. The last
+rooms are built and passed by the owner on Check 9. `architectVerify` passed at 24b9d9c3: 937 tests (380, 266, 291). Not pushed, no PR.
+Open for the owner: the review's deferred items above; ender pearls still cross the bridge's gap; `sfrIgnitionGrantsASecondSunNearby`
+failed one gate run and passed unchanged on the next, cause not found.
