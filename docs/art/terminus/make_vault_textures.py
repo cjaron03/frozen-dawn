@@ -1,12 +1,13 @@
 """Textures of the Terminus Vault, from the approved mockups (vault-rooms-mockup.png, vault-contents-mockup.png,
-watch-floor-mockup.png, vault-branding-mockup.png, vault-last-rooms-mockup.png, drill-hall-mockup.png, vault-puzzle-tools-mockup.png).
+watch-floor-mockup.png, vault-branding-mockup.png, vault-last-rooms-mockup.png, drill-hall-mockup.png, vault-puzzle-tools-mockup.png, morgue-tools-mockup.png).
 Writes into the mod's assets. Run from anywhere: python3 docs/art/terminus/make_vault_textures.py
 """
 import random
 from pathlib import Path
 from PIL import Image, ImageDraw
 from make_drill_hall_mockup import STEEL, TRIM, console_block, key_block
-from make_vault_puzzle_tools_mockup import DRILL_PLATE, GLYPHS as LETTERS, MORGUE_PLATE, arch, dial, grille, panel as scanner_panel, placard, projector
+from make_morgue_tools_mockup import CASE, CASE_DARK, CASE_LIT, FROST as AC_FROST, ICE, PIPE, PIPE_DARK, RECESS, SIDE, box as ac_box, screen
+from make_vault_puzzle_tools_mockup import DRILL_PLATE, GLYPHS as LETTERS, MORGUE_PLATE, arch, placard, projector
 from make_system_plot_mockup import plot
 from make_vault_warning_mockup import scrawl
 from make_watch_floor_tally_mockup import lamp as tally_lamp
@@ -312,15 +313,62 @@ def plate(colour):
 
 
 def vitals():
-    """The panel's sheet: warm, cooling, dead, then the digits in white for the renderer to tint, four texels apart."""
-    im = Image.new('RGBA', (144, 32), (0, 0, 0, 0))
-    for i, state in enumerate(('alive', 'cold', 'none')):
-        im.paste(scanner_panel(state, reading=False), (i * 32, 0))
+    """The screen's sheet: idle, warm, cooling and dead down it, then the digits in white for the renderer to tint, four texels apart."""
+    im = Image.new('RGBA', (112, 72), (0, 0, 0, 0))
+    for i, state in enumerate(('idle', 'alive', 'cold', 'none')):
+        im.paste(screen(state, reading=False), (0, i * 16))
     for i, glyph in enumerate('0123456789.C'):
         for y, row in enumerate(LETTERS[glyph].split()):
             for x, bit in enumerate(row):
                 if bit == '1':
-                    im.putpixel((96 + i * 4 + x, y), (255, 255, 255, 255))
+                    im.putpixel((i * 4 + x, 64 + y), (255, 255, 255, 255))
+    return im
+
+
+def ac_case():
+    r = random.Random(41)
+    im = Image.new('RGBA', (16, 16))
+    for x in range(16):
+        for y in range(16):
+            im.putpixel((x, y), tuple(c + r.choice((-4, 0, 0, 3)) for c in CASE) + (255,))
+    return im
+
+
+def ac_tray():
+    im = Image.new('RGBA', (16, 16), CASE_DARK + (255,))
+    ImageDraw.Draw(im).line((0, 10, 15, 10), CASE + (255,))
+    return im
+
+
+def ac_slat(setting):
+    """Rows of a slat, light over shade, every other row the same, so any two rows of it are a slat. Frost by the setting."""
+    im = Image.new('RGBA', (16, 16))
+    d = ImageDraw.Draw(im)
+    for y in range(16):
+        d.line((0, y, 15, y), (CASE_LIT if y % 2 == 0 else SIDE) + (255,))
+    r = random.Random(7)
+    for _ in range({'low': 0, 'mid': 26, 'max': 110}[setting]):
+        im.putpixel((r.randrange(16), r.randrange(16)), AC_FROST + (255,))
+    return im
+
+
+def ac_ice():
+    """Icicles off the tray, in the three rows under it."""
+    im = Image.new('RGBA', (16, 16), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    for x, length in ((1, 3), (4, 2), (6, 3), (9, 1), (11, 3), (14, 2)):
+        d.line((x, 13, x, 12 + length), ICE + (255,))
+    return im
+
+
+def ac_pipe():
+    """A lagged pipe, six texels wide, in its first six columns: lit down one side, bands every eight."""
+    im = Image.new('RGBA', (16, 16), PIPE + (255,))
+    d = ImageDraw.Draw(im)
+    d.line((1, 0, 1, 15), AC_FROST + (255,))
+    d.line((5, 0, 5, 15), PIPE_DARK + (255,))
+    for y in (4, 12):
+        d.line((0, y, 5, y), PIPE_DARK + (255,))
     return im
 
 
@@ -400,11 +448,15 @@ def main():
     key_block(False).save(BLOCK / 'vault_key_idle.png')
     key_block(True).save(BLOCK / 'vault_key_held.png')
     for setting in ('low', 'mid', 'max'):
-        top, bottom = tiles(dial(setting), 1, 2)
+        top, bottom = tiles(ac_box(setting), 1, 2)
         top.save(BLOCK / f'vault_ac_dial_{setting}_top.png')
         bottom.save(BLOCK / f'vault_ac_dial_{setting}_bottom.png')
-    for i, tile in enumerate(tiles(grille(), 3, 2)):
-        tile.save(BLOCK / f'vault_mark_ac_{i}.png')
+        ac_slat(setting).save(BLOCK / f'vault_ac_slat_{setting}.png')
+    ac_case().save(BLOCK / 'vault_ac_case.png')
+    ac_tray().save(BLOCK / 'vault_ac_tray.png')
+    ac_ice().save(BLOCK / 'vault_ac_ice.png')
+    ac_pipe().save(BLOCK / 'vault_ac_pipe.png')
+    Image.new('RGBA', (16, 16), RECESS + (255,)).save(BLOCK / 'vault_ac_throat.png')
     for name, lines in (('drill', DRILL_PLATE), ('morgue', MORGUE_PLATE)):
         for i, tile in enumerate(tiles(printed(lines), 4, 2)):
             tile.save(BLOCK / f'vault_mark_{name}_plate_{i}.png')

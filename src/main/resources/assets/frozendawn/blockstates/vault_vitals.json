@@ -1,7 +1,7 @@
 {
   "variants": {
     "": {
-      "model": "frozendawn:block/vault_shell"
+      "model": "frozendawn:block/vault_screen"
     }
   }
 }

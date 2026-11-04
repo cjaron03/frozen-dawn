@@ -238,8 +238,8 @@ public final class TerminusVaultGameTest {
             h.assertTrue(level.getBlockEntity(hall.offset(TerminusVaultBuilder.VITALS)) instanceof VaultVitalsBlockEntity,"The scanner's panel");
             h.assertTrue(level.getBlockState(hall.offset(TerminusVaultBuilder.PROJECTOR)).is(ModBlocks.VAULT_PROJECTOR.get()),"The projector over the way in");
             h.assertTrue(level.getBlockState(hall.offset(TerminusVaultBuilder.AC_DIAL)).is(ModBlocks.VAULT_AC_DIAL.get())&&level.getBlockState(hall.offset(TerminusVaultBuilder.AC_DIAL).above()).is(ModBlocks.VAULT_AC_DIAL.get()),"The A/C's dial");
-            h.assertTrue(level.getBlockState(hall.offset(94,TerminusVaultBuilder.FLOOR+1,-2)).is(ModBlocks.VAULT_ARCH.get())&&level.getBlockState(hall.offset(94,TerminusVaultBuilder.FLOOR+1,0)).isAir(),"The scanner's arch, clear through the middle");
-            for(int z=-1;z<=1;z++) h.assertTrue(level.getBlockState(hall.offset(94,TerminusVaultBuilder.FLOOR,z)).is(ModBlocks.VAULT_PLATE.get()),"The scanner's plate");
+            h.assertTrue(level.getBlockState(hall.offset(TerminusVaultBuilder.PLATE_X,TerminusVaultBuilder.FLOOR+1,-2)).is(ModBlocks.VAULT_ARCH.get())&&level.getBlockState(hall.offset(94,TerminusVaultBuilder.FLOOR+1,0)).isAir(),"The scanner's arch, clear through the middle");
+            for(int z=-1;z<=1;z++) h.assertTrue(level.getBlockState(hall.offset(TerminusVaultBuilder.PLATE_X,TerminusVaultBuilder.FLOOR,z)).is(ModBlocks.VAULT_PLATE.get()),"The scanner's plate");
             h.assertTrue(level.getBlockState(hall.offset(97,TerminusVaultBuilder.FLOOR+1,-2)).is(ModBlocks.VAULT_DRESSING.get())&&level.getBlockState(hall.offset(98,TerminusVaultBuilder.CEILING-1,-3)).is(ModBlocks.VAULT_LIGHT.get()),"The cot room's paper and lamp came too");
             var shell=level.getBlockState(hall.offset(-3,TerminusVaultBuilder.CEILING,0));
             h.assertTrue(shell.is(ModBlocks.VAULT_SHELL.get())&&shell.getDestroySpeed(level,hall)<0&&shell.getBlock().getExplosionResistance()>1000,"A shell nothing mines or blasts");

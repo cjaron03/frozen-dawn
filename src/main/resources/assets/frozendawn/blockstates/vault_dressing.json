@@ -86,6 +86,30 @@
     },
     "facing=west,kind=table": {
       "model": "frozendawn:block/vault_table"
+    },
+    "facing=north,kind=pipe": {
+      "model": "frozendawn:block/vault_ac_pipe"
+    },
+    "facing=north,kind=screen": {
+      "model": "frozendawn:block/vault_screen"
+    },
+    "facing=east,kind=pipe": {
+      "model": "frozendawn:block/vault_ac_pipe"
+    },
+    "facing=east,kind=screen": {
+      "model": "frozendawn:block/vault_screen"
+    },
+    "facing=south,kind=pipe": {
+      "model": "frozendawn:block/vault_ac_pipe"
+    },
+    "facing=south,kind=screen": {
+      "model": "frozendawn:block/vault_screen"
+    },
+    "facing=west,kind=pipe": {
+      "model": "frozendawn:block/vault_ac_pipe"
+    },
+    "facing=west,kind=screen": {
+      "model": "frozendawn:block/vault_screen"
     }
   }
 }

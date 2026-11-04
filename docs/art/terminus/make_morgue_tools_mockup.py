@@ -132,7 +132,7 @@ def oblique_view():
     return im
 
 
-def screen(state):
+def screen(state, reading=True):
     """The scanner's screen, seven blocks by one, over the door: its word, a trace, and the reading in figures twice the size."""
     im = Image.new('RGB', (7 * B, B), (10, 13, 16))
     d = ImageDraw.Draw(im)
@@ -144,7 +144,7 @@ def screen(state):
         d.line((3, y, 48, y), colour)
     else:
         d.line([(3, y), (10, y), (12, y - 3), (14, y + 2), (16, y), (26, y), (28, y - 3), (30, y + 2), (32, y), (42, y), (44, y - 3), (46, y + 2), (48, y)], colour)
-    if state != 'idle':
+    if reading and state != 'idle':
         big(im, 54, 3, {'alive': '36.8', 'cold': '21.4', 'none': '11.2'}[state], colour)
         big(im, 54 + 34, 3, ' C', colour)
     return im

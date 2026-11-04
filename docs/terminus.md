@@ -668,3 +668,15 @@ screenshots show why the reading is out of reach: from the plate and from the A/
 
 Response: the cold now stops at half a heart, by `MorgueGate.bite`. Body temperature keeps falling at half a heart, so the room can
 always be solved; hearts are still the price.
+
+Approved ("Build them", `docs/art/terminus/morgue-tools-mockup.png`). As built, over the sections above where they differ:
+
+- The A/C is `vault_ac`, six cells at z -4, x 87..89, y -13..-12, standing twelve texels out from the wall: a case, a dark throat, six
+  raised slats and a tray. The dial's click sets all six, and the slats frost at MID and more at MAX, with ice off the tray at MAX. Two
+  lagged pipes go up from it into the roof at x 88. `vault_ac_dial` moved to z -4 too, a box seven texels deep with a raised knob. The
+  old flat `AC_0..5` marks are gone.
+- The scanner's arch and plate moved to x 92 (`PLATE_X`), and the head went up to y -10. The screen is a housing seven blocks wide at
+  x 94, y -10, z -3..3, over the door, drawn by `VaultVitalsRenderer` from its middle cell, `VITALS`. It is grey with nobody on the
+  plate and full bright. A game test clips a line to its figures from the plate, the blast and the way in. From the middle of the way
+  in the arch's post covers the screen's south end, the C and no figures.
+- Saves from before this have the old arch and A/C and a `vault_vitals` in the wall, and their Morgue will not work: new Checks only.

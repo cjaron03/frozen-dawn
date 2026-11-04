@@ -152,12 +152,35 @@ public final class TerminusLastRoomsGameTest {
 
     @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="terminus_rooms",timeoutTicks=2000)
     public static void aClickTurnsTheDialRoundAndEitherBlockWillDo(GameTestHelper h) {
-        var r=morgue(h);var op=r.player("morgue_dial",90.5,-3.5);var lower=r.hall.offset(TerminusVaultBuilder.AC_DIAL);
+        var r=morgue(h);var op=r.player("morgue_dial",90.5,-2.5);var lower=r.hall.offset(TerminusVaultBuilder.AC_DIAL);
         var hit=new net.minecraft.world.phys.BlockHitResult(Vec3.atCenterOf(lower),net.minecraft.core.Direction.SOUTH,lower,false);
         for(int expected:new int[]{VaultAcDialBlock.MID,VaultAcDialBlock.MAX,VaultAcDialBlock.LOW}) {
             var at=expected==VaultAcDialBlock.MAX?lower.above():lower;
             r.level().getBlockState(at).useWithoutItem(r.level(),op,hit.withPosition(at));
             h.assertTrue(r.level().getBlockState(lower).getValue(VaultAcDialBlock.SETTING)==expected&&r.level().getBlockState(lower.above()).getValue(VaultAcDialBlock.SETTING)==expected,"Both halves at "+expected);
+        }
+        h.succeed();
+    }
+
+    @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="terminus_rooms",timeoutTicks=2000)
+    public static void theDialFrostsTheWholeUnit(GameTestHelper h) {
+        var r=morgue(h);var dial=r.hall.offset(TerminusVaultBuilder.AC_DIAL);
+        dial(r,VaultAcDialBlock.MAX);
+        for(int x=-3;x<0;x++) for(int y=0;y<2;y++) {
+            var cell=r.level().getBlockState(dial.offset(x,y,0));
+            h.assertTrue(cell.is(ModBlocks.VAULT_AC.get())&&cell.getValue(VaultAcDialBlock.SETTING)==VaultAcDialBlock.MAX,"Each cell of the unit: "+cell);
+        }
+        h.succeed();
+    }
+
+    @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="terminus_rooms",timeoutTicks=2000)
+    public static void theReadingCanBeSeenFromThePlateTheBlastAndTheWayIn(GameTestHelper h) {
+        var r=morgue(h);
+        var figures=Vec3.atLowerCornerOf(r.hall.offset(TerminusVaultBuilder.VITALS)).add(.9,.5,1.5);
+        for(var eye:new Vec3[]{r.at(TerminusVaultBuilder.PLATE_X+.5,0),r.at(88.5,-2.5),r.at(84.5,0)}) {
+            var from=eye.add(0,1.62,0);
+            var hit=r.level().clip(new net.minecraft.world.level.ClipContext(from,figures,net.minecraft.world.level.ClipContext.Block.COLLIDER,net.minecraft.world.level.ClipContext.Fluid.NONE,net.minecraft.world.phys.shapes.CollisionContext.empty()));
+            h.assertTrue(hit.getBlockPos().getX()==r.hall.getX()+94&&hit.getBlockPos().getY()==r.hall.getY()+TerminusVaultBuilder.CEILING,"Something stands in the way from "+from+": "+hit.getBlockPos());
         }
         h.succeed();
     }
@@ -202,11 +225,11 @@ public final class TerminusLastRoomsGameTest {
 
     @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="terminus_rooms",timeoutTicks=2000)
     public static void theScannerOpensForTheColdAlone(GameTestHelper h) {
-        var r=morgue(h);var be=vitals(r);var op=r.player("morgue_scan",94.5,.5);
+        var r=morgue(h);var be=vitals(r);var op=r.player("morgue_scan",TerminusVaultBuilder.PLATE_X+.5,.5);
         begin(r,TerminusVaultBuilder.VITALS).thenExecuteAfter(3,()->{
                     h.assertTrue(be.tenths()==370&&!be.none(),"VITALS at body heat: "+be.tenths());
                     h.assertTrue(r.shut(MORGUE)&&!r.lampLit(MORGUE),"Alive, it stays shut");
-                    h.assertTrue(r.level().getBlockState(r.hall.offset(94,TerminusVaultBuilder.FLOOR,0)).getValue(VaultTallyBlock.LIT),"The plate reads you");
+                    h.assertTrue(r.level().getBlockState(r.hall.offset(TerminusVaultBuilder.PLATE_X,TerminusVaultBuilder.FLOOR,0)).getValue(VaultTallyBlock.LIT),"The plate reads you");
                     op.setHealth(2);
                 })
                 .thenExecuteAfter(3,()->{
@@ -225,7 +248,7 @@ public final class TerminusLastRoomsGameTest {
 
     @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="terminus_rooms",timeoutTicks=2000)
     public static void anyoneStillWarmOnThePlateKeepsItShut(GameTestHelper h) {
-        var r=morgue(h);var cold=r.player("morgue_low",94.5,-.5);r.player("morgue_well",94.5,1.5);
+        var r=morgue(h);var cold=r.player("morgue_low",TerminusVaultBuilder.PLATE_X+.5,-.5);r.player("morgue_well",TerminusVaultBuilder.PLATE_X+.5,1.5);
         begin(r,TerminusVaultBuilder.VITALS).thenExecute(()->freeze(r,cold))
                 .thenExecuteAfter(3,()->h.assertTrue(r.shut(MORGUE)&&vitals(r).tenths()==370,"It reads the living")).thenSucceed();
     }
@@ -257,7 +280,7 @@ public final class TerminusLastRoomsGameTest {
     @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="terminus_rooms_alone",timeoutTicks=2000)
     public static void aResetClearsBothRooms(GameTestHelper h) {
         var r=room(h,65);TerminusVaultBuilder.morgue(r.level(),r.hall);TerminusVaultBuilder.drillHall(r.level(),r.hall);
-        var rec=recorder(r);var be=vitals(r);var a=r.player("reset_a",72.5,-5.5);var b=r.player("reset_b",79.5,5.5);var c=r.player("reset_c",94.5,.5);
+        var rec=recorder(r);var be=vitals(r);var a=r.player("reset_a",72.5,-5.5);var b=r.player("reset_b",79.5,5.5);var c=r.player("reset_c",TerminusVaultBuilder.PLATE_X+.5,.5);
         begin(r,TerminusVaultBuilder.RECORDER).thenExecute(()->{freeze(r,c);dial(r,VaultAcDialBlock.MAX);}).thenWaitUntil(()->{
                     rec.holdKey(a,0);rec.holdKey(b,1);
                     h.assertTrue(r.open(DRILL)&&r.open(MORGUE),"Both open");

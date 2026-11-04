@@ -22,7 +22,7 @@ import org.joml.Vector3f;
 
 /**
  * The Morgue, in the world: feeds {@link MorgueGate} who stands in the A/C's blast and on the scanner's plate, bites those in the
- * blast at MAX, and sets the panel, the plate, the lamp and the door each tick. Nothing is saved but what the panel shows and the
+ * blast at MAX, and sets the screen, the plate, the lamp and the door each tick. Nothing is saved but what the panel shows and the
  * dial's own setting. The door also opens for anyone past it, so nobody who took the wand is shut in with it.
  */
 public final class VaultVitalsBlockEntity extends BlockEntity {
@@ -48,7 +48,7 @@ public final class VaultVitalsBlockEntity extends BlockEntity {
 
     private void tick(ServerLevel level) {
         var hall = hall();
-        var plate = new AABB(hall.getX() + 94, hall.getY() + TerminusVaultBuilder.FLOOR, hall.getZ() - 1, hall.getX() + 95, hall.getY() + TerminusVaultBuilder.ROOM_ROOF, hall.getZ() + 2);
+        var plate = new AABB(hall.getX() + TerminusVaultBuilder.PLATE_X, hall.getY() + TerminusVaultBuilder.FLOOR, hall.getZ() - 1, hall.getX() + TerminusVaultBuilder.PLATE_X + 1, hall.getY() + TerminusVaultBuilder.ROOM_ROOF, hall.getZ() + 2);
         var blast = new AABB(hall.getX() + 87, hall.getY() + TerminusVaultBuilder.FLOOR, hall.getZ() - 4, hall.getX() + 90, hall.getY() + TerminusVaultBuilder.ROOM_ROOF, hall.getZ() - 1);
         int setting = level.getBlockState(hall.offset(TerminusVaultBuilder.AC_DIAL)).getOptionalValue(VaultAcDialBlock.SETTING).orElse(VaultAcDialBlock.LOW);
         boolean bites = MorgueGate.bites(level.getGameTime());
@@ -79,21 +79,21 @@ public final class VaultVitalsBlockEntity extends BlockEntity {
         var hall = hall();
         var random = level.getRandom();
         for (int i = 0; i < (setting == VaultAcDialBlock.MAX ? 5 : 1); i++)
-            level.sendParticles(ParticleTypes.SNOWFLAKE, hall.getX() + 87 + random.nextDouble() * 3, hall.getY() - 13 + random.nextDouble() * 2, hall.getZ() - 3.9, 0, 0, -.06, .3, 1);
+            level.sendParticles(ParticleTypes.SNOWFLAKE, hall.getX() + 87 + random.nextDouble() * 3, hall.getY() - 13 + random.nextDouble() * 2, hall.getZ() - 3.1, 0, 0, -.06, .3, 1);
     }
 
     /** The scanner's bar, up and down the arch. */
     private void scan(ServerLevel level) {
         if (level.getGameTime() % 2 != 0) return;
         var hall = hall();
-        double y = hall.getY() + TerminusVaultBuilder.FLOOR + 1 + 2.6 * (.5 + .5 * Mth.sin(level.getGameTime() * .12F));
-        for (double z = -1; z <= 2; z += .5) level.sendParticles(gate.open() ? SCAN_GREEN : SCAN_RED, hall.getX() + 94.5, y, hall.getZ() + z, 1, 0, 0, 0, 0);
+        double y = hall.getY() + TerminusVaultBuilder.FLOOR + 1 + 3.6 * (.5 + .5 * Mth.sin(level.getGameTime() * .12F));
+        for (double z = -1; z <= 2; z += .5) level.sendParticles(gate.open() ? SCAN_GREEN : SCAN_RED, hall.getX() + TerminusVaultBuilder.PLATE_X + .5, y, hall.getZ() + z, 1, 0, 0, 0, 0);
     }
 
     /** Sets what should be showing. Each write is skipped when the block already shows it. */
     private void show(ServerLevel level, boolean read) {
         var hall = hall();
-        for (int dz = -1; dz <= 1; dz++) set(level, hall.offset(94, TerminusVaultBuilder.FLOOR, dz), read);
+        for (int dz = -1; dz <= 1; dz++) set(level, hall.offset(TerminusVaultBuilder.PLATE_X, TerminusVaultBuilder.FLOOR, dz), read);
         int shown = gate.reading() == MorgueGate.NOBODY ? NO_READING : Math.round(gate.reading() * 10);
         if (tenths != shown || none != gate.open()) {
             tenths = shown;

@@ -22,13 +22,13 @@ import net.minecraft.world.phys.shapes.VoxelShape;
  * which comes away as a document and leaves plain paper. */
 public final class VaultDressingBlock extends HorizontalDirectionalBlock {
     public enum Kind implements StringRepresentable {
-        CRATE, CASE, HARD_HAT, PAPER, SEAL_ORDER, TABLE;
+        CRATE, CASE, HARD_HAT, PAPER, SEAL_ORDER, TABLE, PIPE, SCREEN;
         @Override public String getSerializedName() { return name().toLowerCase(java.util.Locale.ROOT); }
     }
     public static final EnumProperty<Kind> KIND = EnumProperty.create("kind", Kind.class);
     public static final MapCodec<VaultDressingBlock> CODEC = simpleCodec(VaultDressingBlock::new);
     private static final VoxelShape CASE = box(1, 0, 3, 15, 6, 13), HAT = box(3, 0, 3, 13, 5, 13), FLAT = box(1, 0, 1, 15, 1, 15),
-            TABLE = Shapes.or(box(0, 12, 0, 16, 15, 16), box(6, 0, 6, 10, 12, 10));
+            TABLE = Shapes.or(box(0, 12, 0, 16, 15, 16), box(6, 0, 6, 10, 12, 10)), PIPE = box(1, 0, 2, 15, 16, 8), SCREEN = box(12, 0, 0, 16, 16, 16);
 
     public VaultDressingBlock(Properties properties) {
         super(properties);
@@ -37,10 +37,10 @@ public final class VaultDressingBlock extends HorizontalDirectionalBlock {
     @Override protected MapCodec<? extends HorizontalDirectionalBlock> codec() { return CODEC; }
     @Override protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) { builder.add(FACING, KIND); }
     @Override protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        return switch (state.getValue(KIND)) { case CRATE -> Shapes.block(); case CASE -> CASE; case HARD_HAT -> HAT; case TABLE -> TABLE; default -> FLAT; };
+        return switch (state.getValue(KIND)) { case CRATE -> Shapes.block(); case CASE -> CASE; case HARD_HAT -> HAT; case TABLE -> TABLE; case PIPE -> PIPE; case SCREEN -> SCREEN; default -> FLAT; };
     }
     @Override protected VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        return switch (state.getValue(KIND)) { case CRATE -> Shapes.block(); case TABLE -> TABLE; default -> Shapes.empty(); };
+        return switch (state.getValue(KIND)) { case CRATE -> Shapes.block(); case TABLE -> TABLE; case PIPE -> PIPE; case SCREEN -> SCREEN; default -> Shapes.empty(); };
     }
     @Override protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
         if (state.getValue(KIND) != Kind.SEAL_ORDER) return InteractionResult.PASS;

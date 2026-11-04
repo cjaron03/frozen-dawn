@@ -53,9 +53,11 @@ public final class TerminusVaultBuilder {
     /** The two keys, too far apart for one person. */
     public static final BlockPos[] KEYS = {new BlockPos(72, FLOOR + 2, -7), new BlockPos(79, FLOOR + 2, 7)};
     /** The lower block of the cold store's dial, beside its A/C on the Morgue's north wall. */
-    public static final BlockPos AC_DIAL = new BlockPos(90, FLOOR + 2, -5);
+    public static final BlockPos AC_DIAL = new BlockPos(90, FLOOR + 2, -4);
     /** The north foot of the scanner's panel, two blocks square on the wall beside the Morgue's door, which runs the Morgue. */
-    public static final BlockPos VITALS = new BlockPos(95, FLOOR + 2, -4);
+    public static final BlockPos VITALS = new BlockPos(94, CEILING, 0);
+    /** The scanner's arch and plate, two blocks west of the door, so the screen over the door can be read from them. */
+    public static final int PLATE_X = 92;
     /** North wall west to east, then south: each fuse's slot. */
     public static final BlockPos[] FUSES = {fuse(23, -12), fuse(28, -12), fuse(33, -12), fuse(23, 12), fuse(28, 12), fuse(33, 12)};
     /** Three glyphs either side of the west door, at the upper level. */
@@ -191,25 +193,27 @@ public final class TerminusVaultBuilder {
         puzzleGate(l, c, DRILL_DOOR);
     }
 
-    /** The Morgue Gate: the cold store's A/C and its dial, the scanner's arch and plate, its panel, and the door it opens for the dead. */
+    /** The Morgue Gate: the cold store's A/C and its dial, the scanner's arch and plate, its screen over the door, and the door it opens for the dead. */
     public static void morgue(ServerLevel l, BlockPos c) {
         box(l, c, 83, 95, SHELL_BOTTOM, ROOM_ROOF, -5, 5, ModBlocks.VAULT_SHELL.get().defaultBlockState());
         box(l, c, 84, 94, FLOOR, FLOOR, -4, 4, ModBlocks.VAULT_FLOOR.get().defaultBlockState());
         box(l, c, 84, 94, FLOOR + 1, ROOM_ROOF - 1, -4, 4, Blocks.AIR.defaultBlockState());
-        for (int i = 0; i < 6; i++) mark(l, c, 87 + i % 3, CEILING - 2 - i / 3, -5, Mark.valueOf("AC_" + i));
+        for (int i = 0; i < 6; i++) l.setBlock(c.offset(87 + i % 3, CEILING - 2 - i / 3, -4), ModBlocks.VAULT_AC.get().defaultBlockState().setValue(VaultAcBlock.PART, i), 2);
+        for (int y = CEILING - 1; y <= CEILING; y++) drop(l, c, Kind.PIPE, 88, y, -4, Direction.NORTH);
         var dial = ModBlocks.VAULT_AC_DIAL.get().defaultBlockState();
         l.setBlock(c.offset(AC_DIAL), dial, 2);
         l.setBlock(c.offset(AC_DIAL).above(), dial.setValue(VaultAcDialBlock.UPPER, true), 2);
-        box(l, c, 94, 94, FLOOR + 1, CEILING - 2, -2, -2, ModBlocks.VAULT_ARCH.get().defaultBlockState());
-        box(l, c, 94, 94, FLOOR + 1, CEILING - 2, 2, 2, ModBlocks.VAULT_ARCH.get().defaultBlockState());
-        box(l, c, 94, 94, CEILING - 1, CEILING - 1, -2, 2, ModBlocks.VAULT_ARCH_HEAD.get().defaultBlockState().setValue(net.minecraft.world.level.block.SlabBlock.TYPE, net.minecraft.world.level.block.state.properties.SlabType.TOP));
+        box(l, c, PLATE_X, PLATE_X, FLOOR + 1, CEILING - 1, -2, -2, ModBlocks.VAULT_ARCH.get().defaultBlockState());
+        box(l, c, PLATE_X, PLATE_X, FLOOR + 1, CEILING - 1, 2, 2, ModBlocks.VAULT_ARCH.get().defaultBlockState());
+        box(l, c, PLATE_X, PLATE_X, CEILING, CEILING, -2, 2, ModBlocks.VAULT_ARCH_HEAD.get().defaultBlockState().setValue(net.minecraft.world.level.block.SlabBlock.TYPE, net.minecraft.world.level.block.state.properties.SlabType.TOP));
         for (int x = 84; x <= 94; x++) for (int z : new int[] {-5, 5}) mark(l, c, x, CEILING - 1, z, Mark.HAZARD);
         for (int z = -4; z <= 4; z++) if (Math.abs(z) > 1) mark(l, c, 95, CEILING - 1, z, Mark.HAZARD);
         for (int i = 0; i < 8; i++) mark(l, c, 87 - i % 4, CEILING - 2 - i / 4, 5, Mark.valueOf("MORGUE_PLATE_" + i));
-        box(l, c, 94, 94, FLOOR, FLOOR, -1, 1, ModBlocks.VAULT_PLATE.get().defaultBlockState());
+        box(l, c, PLATE_X, PLATE_X, FLOOR, FLOOR, -1, 1, ModBlocks.VAULT_PLATE.get().defaultBlockState());
         l.setBlock(c.offset(89, ROOM_ROOF - 1, -4), ModBlocks.VAULT_LIGHT.get().defaultBlockState().setValue(VaultLightBlock.FACING, Direction.SOUTH), 2);
         l.setBlock(c.offset(89, ROOM_ROOF - 1, 4), ModBlocks.VAULT_LIGHT.get().defaultBlockState().setValue(VaultLightBlock.FACING, Direction.NORTH), 2);
         puzzleGate(l, c, MORGUE_DOOR);
+        for (int z = -3; z <= 3; z++) drop(l, c, Kind.SCREEN, VITALS.getX(), VITALS.getY(), z, Direction.NORTH);
         l.setBlock(c.offset(VITALS), ModBlocks.VAULT_VITALS.get().defaultBlockState(), 2);
     }
     /** A gate, shut, with the lamp over it that goes green when it opens. */
