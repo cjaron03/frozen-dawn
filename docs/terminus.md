@@ -353,3 +353,8 @@ Unprompted report: "good." Then: "whats next? the puzzle in helion? i want the r
   enough to watch each other's doors, which is why bodies face north and the bridge has its own batch.
 - Needs the owner's eyes and ears: everything judged by look or sound, the finding of the grate, the crossing in F5, and
   the wake.
+
+## Owner playtest 1 of T2, 2026-11-03 (Terminus Vault Check, runClientLab, branch head after b29ddf28)
+
+Unprompted report: "ok i played it. what does the timer mean again? and honestly, it needs to be MUCH BIGGER nad harder
+than this ngl. like i want more than what we just added"
