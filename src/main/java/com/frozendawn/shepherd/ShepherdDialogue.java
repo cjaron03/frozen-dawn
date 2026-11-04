@@ -12,8 +12,8 @@ import java.util.Locale;
 public final class ShepherdDialogue {
     private ShepherdDialogue() {}
 
-    /** One thing she says. {@code heavyKey} replaces {@code key} when swearing is on, and may be null. */
-    public record Line(String key, String heavyKey, Mood mood) {}
+    /** One thing she says. {@code heavyKey} replaces {@code key} when swearing is on, and may be null. A null {@code condition} is always said. */
+    public record Line(String key, String heavyKey, Mood mood, String condition) {}
 
     /** The four fixed reply positions, in screen order. */
     public enum Slot {
@@ -25,8 +25,11 @@ public final class ShepherdDialogue {
 
     public record Response(Slot slot, String label, String full, String next, int affinity, List<String> set) {}
 
-    /** A node with no responses continues to {@code next} on a click, or ends the conversation if that is null. */
-    public record Node(String id, List<Line> lines, List<Response> responses, String next, List<String> set) {}
+    /**
+     * A node with no responses continues to {@code next} on a click, or ends the conversation if that is null.
+     * If {@code when} does not hold, nobody ever stands on it: the walk goes straight on to {@code otherwise}.
+     */
+    public record Node(String id, List<Line> lines, List<Response> responses, String next, List<String> set, String when, String otherwise) {}
 
     public static List<Node> parse(JsonElement file) {
         List<Node> nodes = new ArrayList<>();
@@ -43,14 +46,14 @@ public final class ShepherdDialogue {
             if (json.has("responses")) {
                 for (JsonElement response : json.getAsJsonArray("responses")) responses.add(response(response.getAsJsonObject()));
             }
-            return new Node(id, List.copyOf(lines), List.copyOf(responses), string(json, "next"), flags(json));
+            return new Node(id, List.copyOf(lines), List.copyOf(responses), string(json, "next"), flags(json), string(json, "when"), string(json, "else"));
         } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException("Dialogue node " + id + ": " + e.getMessage(), e);
         }
     }
 
     private static Line line(JsonObject json) {
-        return new Line(json.get("line").getAsString(), string(json, "heavy"), Mood.byName(json.get("mood").getAsString()));
+        return new Line(json.get("line").getAsString(), string(json, "heavy"), Mood.byName(json.get("mood").getAsString()), string(json, "if"));
     }
 
     private static Response response(JsonObject json) {

@@ -2,29 +2,40 @@ package com.frozendawn.shepherd;
 
 import com.frozendawn.shepherd.ShepherdDialogue.Node;
 import com.frozendawn.shepherd.ShepherdDialogue.Response;
+import com.frozendawn.shepherd.ShepherdDialogue.Line;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Predicate;
 
 /** One walk through a tree. It knows nothing of players or the world, and refuses any move the node does not offer. */
 public final class ShepherdConversation {
     public static final int CONTINUE = -1;
 
     private final Map<String, Node> nodes;
+    private final Predicate<String> holds;
     private final Set<String> flags = new HashSet<>();
     private Node current;
     private int affinityDelta;
     private boolean finished;
 
-    public ShepherdConversation(Map<String, Node> nodes, String start) {
+    /** {@code holds} answers the file's conditions: this class knows nothing of what they mean. */
+    public ShepherdConversation(Map<String, Node> nodes, String start, Predicate<String> holds) {
         this.nodes = nodes;
-        current = nodes.get(start);
+        this.holds = holds;
+        current = arrive(start);
         if (current == null) throw new IllegalArgumentException("No dialogue node " + start);
         flags.addAll(current.set());
     }
 
     public Node current() {
         return current;
+    }
+
+    /** What she says here, as things stand. */
+    public List<Line> lines() {
+        return current.lines().stream().filter(line -> line.condition() == null || holds.test(line.condition())).toList();
     }
 
     /** A slot's ordinal, or {@link #CONTINUE}. False, with nothing changed, on anything the node does not offer. */
@@ -47,13 +58,23 @@ public final class ShepherdConversation {
 
     /** A next that has gone missing, say from an edited datapack, ends the talk instead of stranding it. */
     private void move(String next) {
-        Node node = next == null ? null : nodes.get(next);
+        Node node = arrive(next);
         if (node == null) {
             finished = true;
             return;
         }
         current = node;
         flags.addAll(node.set());
+    }
+
+    /** Where {@code id} really leads, past any node that does not hold. Null if that runs out, or an edited datapack makes it circle. */
+    private Node arrive(String id) {
+        Node node = id == null ? null : nodes.get(id);
+        for (int hops = 0; node != null && node.when() != null && !holds.test(node.when()); hops++) {
+            if (hops == nodes.size()) return null;
+            node = node.otherwise() == null ? null : nodes.get(node.otherwise());
+        }
+        return node;
     }
 
     public int affinityDelta() {

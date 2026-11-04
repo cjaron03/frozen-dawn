@@ -90,7 +90,7 @@ public final class ShepherdTalk {
     }
 
     private static void begin(String node, boolean fromHub) {
-        live.talk = new ShepherdConversation(ShepherdDialogues.nodes(), node);
+        live.talk = new ShepherdConversation(ShepherdDialogues.nodes(), node, condition -> false);
         live.fromHub = fromHub;
         live.affinityApplied = 0;
         settle();
