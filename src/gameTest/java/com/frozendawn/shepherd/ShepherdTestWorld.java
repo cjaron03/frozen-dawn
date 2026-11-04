@@ -10,6 +10,7 @@ import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ClientInformation;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.common.util.FakePlayer;
@@ -31,6 +32,15 @@ final class ShepherdTestWorld {
         ShepherdSavedData.get(level.getServer()).clearForTests();
         // A body left in a test area that has stopped ticking would never get to remove itself.
         for (var body : level.getEntities(ModEntities.CS1_UNIT.get(), e -> true)) body.discard();
+    }
+
+    /** A test can start before its chunk ticks entities, and she counts ticks. */
+    static void whenTicking(GameTestHelper h, Runnable test) {
+        h.startSequence().thenWaitUntil(() -> {
+            var level = h.getLevel();
+            var pos = h.absolutePos(new BlockPos(10, 4, 10));
+            h.assertTrue(level.isPositionEntityTicking(pos) && level.areEntitiesLoaded(ChunkPos.asLong(pos)), "Waiting for her chunk to tick");
+        }).thenExecute(test);
     }
 
     static FakePlayer player(ServerLevel level, BlockPos pos) {

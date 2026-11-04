@@ -88,7 +88,7 @@ public final class ShepherdTalkGameTest {
 
     @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_talk_wake", timeoutTicks = 100)
     public static void shepherdWakingOpensTheFirstMeeting(GameTestHelper h) {
-        h.runAfterDelay(1, () -> {
+        ShepherdTestWorld.whenTicking(h, () -> {
             h.setBlock(SPOT, ModBlocks.CS1_DOCK.get());
             var dock = h.absolutePos(SPOT);
             var player = player(h);
@@ -101,7 +101,7 @@ public final class ShepherdTalkGameTest {
 
     @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_talk_stale", timeoutTicks = 100)
     public static void shepherdAReplyForAnotherConversationIsIgnored(GameTestHelper h) {
-        h.runAfterDelay(1, () -> {
+        ShepherdTestWorld.whenTicking(h, () -> {
             var player = player(h);
             awake(h, player);
             ShepherdTalk.start(player, "fm.boot");
@@ -114,7 +114,7 @@ public final class ShepherdTalkGameTest {
 
     @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_talk_slot", timeoutTicks = 100)
     public static void shepherdASlotNotOfferedIsIgnored(GameTestHelper h) {
-        h.runAfterDelay(1, () -> {
+        ShepherdTestWorld.whenTicking(h, () -> {
             var player = player(h);
             var other = player(h);
             awake(h, player);
@@ -129,7 +129,7 @@ public final class ShepherdTalkGameTest {
 
     @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_talk_resume", timeoutTicks = 100)
     public static void shepherdEscResumesTheFirstMeeting(GameTestHelper h) {
-        h.runAfterDelay(1, () -> {
+        ShepherdTestWorld.whenTicking(h, () -> {
             var player = player(h);
             var she = awake(h, player);
             ShepherdTalk.start(player, "fm.boot");
@@ -151,7 +151,7 @@ public final class ShepherdTalkGameTest {
 
     @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_talk_damage", timeoutTicks = 100)
     public static void shepherdDamageClosesAConversation(GameTestHelper h) {
-        h.runAfterDelay(1, () -> {
+        ShepherdTestWorld.whenTicking(h, () -> {
             var player = player(h);
             player.setGameMode(GameType.SURVIVAL);
             var she = awake(h, player);
@@ -164,7 +164,7 @@ public final class ShepherdTalkGameTest {
 
     @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_talk_walk", timeoutTicks = 100)
     public static void shepherdWalkingAwayClosesIt(GameTestHelper h) {
-        h.runAfterDelay(1, () -> {
+        ShepherdTestWorld.whenTicking(h, () -> {
             var player = player(h);
             var she = awake(h, player);
             data(h).waiting(true);
@@ -176,7 +176,7 @@ public final class ShepherdTalkGameTest {
 
     @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_talk_reload", timeoutTicks = 100)
     public static void shepherdReloadEndsItCleanly(GameTestHelper h) {
-        h.runAfterDelay(1, () -> {
+        ShepherdTestWorld.whenTicking(h, () -> {
             var player = player(h);
             awake(h, player);
             ShepherdTalk.start(player, "fm.boot");
@@ -192,7 +192,7 @@ public final class ShepherdTalkGameTest {
 
     @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_talk_logout", timeoutTicks = 100)
     public static void shepherdLogoutEndsIt(GameTestHelper h) {
-        h.runAfterDelay(1, () -> {
+        ShepherdTestWorld.whenTicking(h, () -> {
             var player = player(h);
             awake(h, player);
             ShepherdTalk.start(player, "fm.boot");
@@ -203,7 +203,7 @@ public final class ShepherdTalkGameTest {
 
     @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_talk_second", timeoutTicks = 200)
     public static void shepherdASecondPlayerGetsUnimpressed(GameTestHelper h) {
-        h.runAfterDelay(1, () -> {
+        ShepherdTestWorld.whenTicking(h, () -> {
             var first = player(h);
             var second = player(h);
             var she = awake(h, first);
@@ -222,7 +222,7 @@ public final class ShepherdTalkGameTest {
 
     @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_talk_saves", timeoutTicks = 100)
     public static void shepherdAffinityAndFlagsSave(GameTestHelper h) {
-        h.runAfterDelay(1, () -> {
+        ShepherdTestWorld.whenTicking(h, () -> {
             var player = player(h);
             awake(h, player);
             ShepherdTalk.start(player, "fm.boot");
@@ -239,7 +239,7 @@ public final class ShepherdTalkGameTest {
 
     @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_talk_settings", timeoutTicks = 100)
     public static void shepherdSettingsTogglesSwearing(GameTestHelper h) {
-        h.runAfterDelay(1, () -> {
+        ShepherdTestWorld.whenTicking(h, () -> {
             var player = player(h);
             var she = awake(h, player);
             rightClick(she, player);
@@ -253,7 +253,7 @@ public final class ShepherdTalkGameTest {
 
     @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_talk_actions", timeoutTicks = 100)
     public static void shepherdFollowAndLampActionsSave(GameTestHelper h) {
-        h.runAfterDelay(1, () -> {
+        ShepherdTestWorld.whenTicking(h, () -> {
             var player = player(h);
             var other = player(h);
             var she = awake(h, player);
@@ -274,7 +274,7 @@ public final class ShepherdTalkGameTest {
 
     @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_talk_hub", timeoutTicks = 100)
     public static void shepherdTalkFromTheHubComesBackToIt(GameTestHelper h) {
-        h.runAfterDelay(1, () -> {
+        ShepherdTestWorld.whenTicking(h, () -> {
             var player = player(h);
             var she = awake(h, player);
             rightClick(she, player);
@@ -289,7 +289,7 @@ public final class ShepherdTalkGameTest {
 
     @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_talk_offline", timeoutTicks = 100)
     public static void shepherdOfflineEndsATalkAndRefusesTheNext(GameTestHelper h) {
-        h.runAfterDelay(1, () -> {
+        ShepherdTestWorld.whenTicking(h, () -> {
             var player = player(h);
             var she = awake(h, player);
             rightClick(she, player);
@@ -305,7 +305,7 @@ public final class ShepherdTalkGameTest {
 
     @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_talk_replay", timeoutTicks = 100)
     public static void shepherdReplayRestartsTheFirstMeetingFromNothing(GameTestHelper h) {
-        h.runAfterDelay(1, () -> {
+        ShepherdTestWorld.whenTicking(h, () -> {
             var player = player(h);
             var she = awake(h, player);
             ShepherdTalk.start(player, "fm.boot");
@@ -325,7 +325,7 @@ public final class ShepherdTalkGameTest {
 
     @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_talk_mouth", timeoutTicks = 100)
     public static void shepherdMouthStopsWhenTheLineOrTheTalkEnds(GameTestHelper h) {
-        h.runAfterDelay(1, () -> {
+        ShepherdTestWorld.whenTicking(h, () -> {
             var player = player(h);
             var she = awake(h, player);
             she.talkFor(2);

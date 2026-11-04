@@ -96,7 +96,7 @@ public final class ShepherdEntityGameTest {
 
     @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_lethal", timeoutTicks = 100)
     public static void shepherdLethalDamageGoesOfflineNotDead(GameTestHelper h) {
-        h.runAfterDelay(1, () -> {
+        ShepherdTestWorld.whenTicking(h, () -> {
             var she = awake(h);
             var id = she.getUUID();
             h.assertTrue(she.getType().is(EntityTypeTags.FREEZE_IMMUNE_ENTITY_TYPES), "The world's cold is not what stops her");
@@ -112,7 +112,7 @@ public final class ShepherdEntityGameTest {
 
     @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_kill", timeoutTicks = 100)
     public static void shepherdKillCommandGoesOfflineNotDead(GameTestHelper h) {
-        h.runAfterDelay(1, () -> {
+        ShepherdTestWorld.whenTicking(h, () -> {
             var she = awake(h);
             var id = she.getUUID();
             var server = h.getLevel().getServer();
@@ -127,7 +127,7 @@ public final class ShepherdEntityGameTest {
 
     @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_void", timeoutTicks = 100)
     public static void shepherdVoidReturnsHerToHerFollower(GameTestHelper h) {
-        h.runAfterDelay(1, () -> {
+        ShepherdTestWorld.whenTicking(h, () -> {
             var player = ShepherdTestWorld.onlinePlayer(h, h.absoluteVec(Vec3.atCenterOf(SPOT.east(4))));
             var she = awake(h, player);
             var id = she.getUUID();
@@ -141,7 +141,7 @@ public final class ShepherdEntityGameTest {
 
     @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_reboot", timeoutTicks = 200)
     public static void shepherdRebootsAfterTwoMinutes(GameTestHelper h) {
-        h.runAfterDelay(1, () -> {
+        ShepherdTestWorld.whenTicking(h, () -> {
             var she = awake(h);
             she.hurt(h.getLevel().damageSources().generic(), 1000);
             h.assertTrue(she.rebootTicks() == ShepherdPolicy.REBOOT_TICKS, "Two minutes: " + she.rebootTicks());
@@ -157,7 +157,7 @@ public final class ShepherdEntityGameTest {
 
     @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_follow", timeoutTicks = 100)
     public static void shepherdFollowsPastTheTeleportLine(GameTestHelper h) {
-        h.runAfterDelay(1, () -> {
+        ShepherdTestWorld.whenTicking(h, () -> {
             var player = ShepherdTestWorld.onlinePlayer(h, h.absoluteVec(Vec3.atCenterOf(SPOT)).add(30, 0, 0));
             var she = awake(h, player);
             h.runAfterDelay(25, () -> {
@@ -169,7 +169,7 @@ public final class ShepherdEntityGameTest {
 
     @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_wait", timeoutTicks = 100)
     public static void shepherdWaitHereHolds(GameTestHelper h) {
-        h.runAfterDelay(1, () -> {
+        ShepherdTestWorld.whenTicking(h, () -> {
             var player = ShepherdTestWorld.onlinePlayer(h, h.absoluteVec(Vec3.atCenterOf(SPOT)).add(8, 0, 0));
             var she = awake(h, player);
             data(h).waiting(true);
@@ -183,7 +183,7 @@ public final class ShepherdEntityGameTest {
 
     @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_discard", timeoutTicks = 100)
     public static void shepherdADiscardedBodyComesBack(GameTestHelper h) {
-        h.runAfterDelay(1, () -> {
+        ShepherdTestWorld.whenTicking(h, () -> {
             var she = awake(h);
             var last = she.blockPosition();
             data(h).lastPos(last);
@@ -199,21 +199,18 @@ public final class ShepherdEntityGameTest {
     /** A chunk that loads late, or a /summon, can hand the world a body that is not hers. */
     @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_stray", timeoutTicks = 100)
     public static void shepherdAStrayBodyRemovesItself(GameTestHelper h) {
-        h.runAfterDelay(1, () -> {
+        ShepherdTestWorld.whenTicking(h, () -> {
             var she = awake(h);
             var stray = ModEntities.CS1_UNIT.get().create(h.getLevel());
             stray.moveTo(she.position());
             h.getLevel().addFreshEntity(stray);
-            h.runAfterDelay(5, () -> {
-                h.assertTrue(stray.isRemoved() && !she.isRemoved() && bodies(h) == 1, "Only the saved body stays: " + bodies(h));
-                h.succeed();
-            });
+            h.succeedWhen(() -> h.assertTrue(stray.isRemoved() && !she.isRemoved() && bodies(h) == 1, "Only the saved body stays: " + bodies(h)));
         });
     }
 
     @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_watcher", timeoutTicks = 100)
     public static void shepherdIsNotAWatcher(GameTestHelper h) {
-        h.runAfterDelay(1, () -> {
+        ShepherdTestWorld.whenTicking(h, () -> {
             var she = awake(h);
             var target = she.getEyePosition().add(0, 0, 6);
             she.lookAt(EntityAnchorArgument.Anchor.EYES, target);
@@ -224,7 +221,7 @@ public final class ShepherdEntityGameTest {
 
     @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_terminus", timeoutTicks = 100)
     public static void shepherdTerminusLeavesHerAlone(GameTestHelper h) {
-        h.runAfterDelay(1, () -> {
+        ShepherdTestWorld.whenTicking(h, () -> {
             var she = awake(h);
             var op = ShepherdTestWorld.player(h.getLevel(), h.absolutePos(SPOT));
             op.setPos(she.getX(), she.getY() - 1, she.getZ() - 6);
@@ -240,7 +237,7 @@ public final class ShepherdEntityGameTest {
 
     @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_liftoff", timeoutTicks = 100)
     public static void shepherdLiftsOffTheDockAfterBoot(GameTestHelper h) {
-        h.runAfterDelay(1, () -> {
+        ShepherdTestWorld.whenTicking(h, () -> {
             var dock = wakeDock(h);
             h.assertTrue(bodies(h) == 0, "She stays on the dock for the recording");
             h.succeedWhen(() -> {
@@ -252,7 +249,7 @@ public final class ShepherdEntityGameTest {
 
     @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_boot_broken", timeoutTicks = 100)
     public static void shepherdBreakingABootingDockStillBringsHerUp(GameTestHelper h) {
-        h.runAfterDelay(1, () -> {
+        ShepherdTestWorld.whenTicking(h, () -> {
             var dock = wakeDock(h);
             h.getLevel().setBlockAndUpdate(dock, Blocks.AIR.defaultBlockState());
             h.succeedWhen(() -> h.assertTrue(bodies(h) == 1, "She is awake, so there has to be a body: " + bodies(h)));
@@ -261,7 +258,7 @@ public final class ShepherdEntityGameTest {
 
     @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_lamp", timeoutTicks = 100)
     public static void shepherdLampLightsWhereSheIsUntilSheGoesOffline(GameTestHelper h) {
-        h.runAfterDelay(1, () -> {
+        ShepherdTestWorld.whenTicking(h, () -> {
             var she = awake(h);
             h.runAfterDelay(3, () -> {
                 var pos = she.blockPosition();
@@ -277,7 +274,7 @@ public final class ShepherdEntityGameTest {
 
     @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_station", timeoutTicks = 200)
     public static void shepherdHoldsStationBesideHerFollower(GameTestHelper h) {
-        h.runAfterDelay(1, () -> {
+        ShepherdTestWorld.whenTicking(h, () -> {
             var player = ShepherdTestWorld.onlinePlayer(h, h.absoluteVec(Vec3.atCenterOf(SPOT)).add(2, 0, 0));
             var she = awake(h, player);
             var seen = new ArrayList<Vec3>();
@@ -293,7 +290,7 @@ public final class ShepherdEntityGameTest {
     /** Her body sits in a chunk nothing is loading, so its own goal can never fetch her. */
     @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_stranded", timeoutTicks = 100)
     public static void shepherdStrandedFarAwayComesToHerFollower(GameTestHelper h) {
-        h.runAfterDelay(1, () -> {
+        ShepherdTestWorld.whenTicking(h, () -> {
             var player = ShepherdTestWorld.onlinePlayer(h, h.absoluteVec(Vec3.atCenterOf(SPOT)));
             var she = awake(h, player);
             she.discard();
@@ -307,7 +304,7 @@ public final class ShepherdEntityGameTest {
 
     @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_tunnel", timeoutTicks = 100)
     public static void shepherdTeleportsIntoOpenAir(GameTestHelper h) {
-        h.runAfterDelay(1, () -> {
+        ShepherdTestWorld.whenTicking(h, () -> {
             var cell = new BlockPos(19, 4, 19);
             for (var pos : BlockPos.betweenClosed(new BlockPos(14, 3, 14), new BlockPos(20, 7, 20))) h.setBlock(pos, Blocks.STONE);
             h.setBlock(cell, Blocks.AIR);

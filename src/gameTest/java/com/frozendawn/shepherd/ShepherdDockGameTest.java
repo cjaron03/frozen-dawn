@@ -64,7 +64,7 @@ public final class ShepherdDockGameTest {
 
     @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_dock_wake", timeoutTicks = 100)
     public static void shepherdChargedCellWakesAndIsSpent(GameTestHelper h) {
-        h.runAfterDelay(1, () -> {
+        ShepherdTestWorld.whenTicking(h, () -> {
             var dock = dock(h, DOCK);
             h.assertTrue(state(h, dock) == DockState.FOUND, "A dock in a world where she sleeps is found");
             var player = holding(h, dock, 1000);
@@ -78,7 +78,7 @@ public final class ShepherdDockGameTest {
 
     @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_dock_refuse", timeoutTicks = 100)
     public static void shepherdEmptyCellIsRefused(GameTestHelper h) {
-        h.runAfterDelay(1, () -> {
+        ShepherdTestWorld.whenTicking(h, () -> {
             var dock = dock(h, DOCK);
             var player = holding(h, dock, 0);
             use(h, dock, player);
@@ -92,7 +92,7 @@ public final class ShepherdDockGameTest {
 
     @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_dock_dark", timeoutTicks = 100)
     public static void shepherdSecondDockStaysDark(GameTestHelper h) {
-        h.runAfterDelay(1, () -> {
+        ShepherdTestWorld.whenTicking(h, () -> {
             data(h).stage(Stage.AWAKE);
             var dock = dock(h, DOCK);
             var player = holding(h, dock, 1000);
@@ -104,7 +104,7 @@ public final class ShepherdDockGameTest {
 
     @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_dock_broken", timeoutTicks = 100)
     public static void shepherdBrokenDormantDockLeavesHerDormant(GameTestHelper h) {
-        h.runAfterDelay(1, () -> {
+        ShepherdTestWorld.whenTicking(h, () -> {
             var first = dock(h, DOCK);
             h.setBlock(DOCK, Blocks.AIR);
             h.assertTrue(data(h).stage() == Stage.DORMANT, "Breaking a dock wakes nothing");
