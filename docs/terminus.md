@@ -599,7 +599,7 @@ Buttons for the mess hall, drill hall, Morgue and cot room. `[Reset the vault]` 
 
 ### Verification
 - JUnit: `TwoPersonRuleTest`, `MorgueGateTest`.
-- GameTests (`terminus_rooms`, `_alone`): `TerminusLastRoomsGameTest`, and `theVaultStandsUnderTheCoreOncePerWorld` for the layout.
+- GameTests (`terminus_rooms`, `_alone`, `_refuse`): `TerminusLastRoomsGameTest`, and `theVaultStandsUnderTheCoreOncePerWorld` for the layout.
 - Needs the owner's eyes and ears: how the rooms read and how dim they are, the figure's walk, the panel, all new textures (drawn in
   the mockup's colours, with no art beyond it), and whether either puzzle can be worked out from the room alone.
 - A low view distance: the first site now waits on chunks about 150 blocks east of it before the vault can be claimed, so at 8 chunks
@@ -713,3 +713,9 @@ Branch `feat/terminus-vault`, worktree `/Volumes/SSD/Work/frozen-dawn-terminus-v
 rooms are built and passed by the owner on Check 9. `architectVerify` passed at 24b9d9c3: 937 tests (380, 266, 291). Not pushed, no PR.
 Open for the owner: the review's deferred items above; ender pearls still cross the bridge's gap. `sfrIgnitionGrantsASecondSunNearby`
 failed one gate run and passed unchanged on the next; see its section in [power-network-checkpoint.md](power-network-checkpoint.md).
+
+## `asecondpressplaysthetakeandtheprojectorshowsit` flake, 2026-11-04
+
+Failed 2 of 4 `architectMonkey` runs on `feat/aurora-shepherd` with "Ready when you say". The first probed run at d3552414 went further and crashed its server, because the test read the lens property from a block that was no longer the projector. The recorder did not miss a few ticks: it was destroyed. `nothingIsPlacedInThePuzzleRooms` builds both rooms from one hall, 31 blocks wide against a 26-block test pitch, so its Morgue interior covers the next test's recorder. Probe: `aSecondPress` started at server tick 217, `nothingIsPlaced` 26 blocks west of it at tick 218, and on tick 218 the block entity read `removed=true`, phase RECORDING, frozen at one frame.
+
+It needs that neighbour and that start order. Director places another test east of `nothingIsPlaced` and passed 7 of 7 runs, 6 of them with the airlock fixture fix in `room-o2-checkpoint.md`, so the fault was latent there. `nothingIsPlaced` now has a batch of its own, `terminus_rooms_refuse`, as `aResetClearsBothRooms` already did. Those two must not share a batch either.
