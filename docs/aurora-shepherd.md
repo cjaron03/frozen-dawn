@@ -60,7 +60,7 @@ From this design, 2026-11-04:
 The sky effect and the character share a word on purpose. She named herself after the last frame her camera sent, an aurora, and the player will have seen the same lights in phases 0 to 3. So:
 
 - **In the game**, both are "aurora". No text distinguishes them, and nobody explains the link until T1.
-- **In the code**, the character is "Shepherd" everywhere: package `com.frozendawn.shepherd`, entity `frozendawn:cs1_unit`, block `frozendawn:cs1_dock`, data under `data/frozendawn/shepherd/`, lang keys `shepherd.*`, debug `/fd debug shepherd`, playtest `tools/prepare_shepherd_playtest.py`. `com.frozendawn.aurora` and `AuroraStatePayload` stay the sky. This replaces the Notion spec's `data/frozendawn/aurora/dialogue/` and `aurora.*` keys. It is the one place ORSA's name is the right one: the code is ORSA's paperwork.
+- **In the code**, the character is "Shepherd" everywhere: package `com.frozendawn.shepherd`, entity `frozendawn:cs1_unit`, block `frozendawn:cs1_dock`, data under `data/frozendawn/shepherd/`, lang keys `shepherd.*`, debug `/fd shepherd dump`, playtest `tools/prepare_shepherd_playtest.py`. `com.frozendawn.aurora` and `AuroraStatePayload` stay the sky. This replaces the Notion spec's `data/frozendawn/aurora/dialogue/` and `aurora.*` keys. It is the one place ORSA's name is the right one: the code is ORSA's paperwork.
 - The entity's display name is "Aurora" once she has told you, which `fm.name` does on every path.
 
 ## Art
@@ -135,13 +135,12 @@ My calls:
 
 ## Dialogue data
 
-Trees in `data/frozendawn/shepherd/dialogue/*.json`, text in lang keys, ambient pools in a separate file with trigger, cooldown, mood and variants. The node format is the Notion spec's, with keys under `shepherd.`:
+Trees in `data/frozendawn/shepherd/dialogue/*.json`, text in lang keys, ambient pools in a separate file with trigger, cooldown, mood and variants. The node format is the Notion spec's, with keys under `shepherd.` and `lines` in place of one line, because a node can change mood partway:
 
 ```json
 {
   "id": "fm.name",
-  "line": "shepherd.fm.name",
-  "mood": "neutral",
+  "lines": [{ "line": "shepherd.fm.name", "mood": "neutral" }],
   "responses": [
     { "slot": "ask", "label": "shepherd.fm.name.why.label", "full": "shepherd.fm.name.why.full", "next": "fm.name.why" },
     { "slot": "kind", "label": "shepherd.fm.name.call.label", "full": "shepherd.fm.name.call.full", "next": "fm.name.aurora", "affinity": 10 }
@@ -256,6 +255,10 @@ Tests cover behavior, not lines.
 ## Open
 
 Nothing until a slice starts.
+
+## Plan
+
+S1 is planned in [aurora-shepherd-plan.md](aurora-shepherd-plan.md).
 
 ## Status
 
