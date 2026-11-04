@@ -73,6 +73,7 @@ All at 16 texels to the block, in `docs/art/aurora-shepherd/`, each from its `ma
 | `face-moods-mockup.png` | Eight moods, mouth frames, blink, recording, at play size | Approved "Build as drawn" |
 | `talk-screen-mockup.png` | Face, typed line, four slots, hover line | Approved "Build as drawn" |
 | `dock-mockup.png` | Found, cell in, awake; vault plan | Approved "Build as drawn" |
+| `ambient-lines-mockup.png` | Ambient line, callout, "Got a minute?", recording voice during play | Waiting for the owner |
 
 **Body.** About 12 texels wide, 10 tall and 10 deep, 18 wide across the ducts, with a carry handle on top. Front display 8 by 6 texels, lamp strip above it, heater grille underneath, a duct each side. She hovers about one block off the ground.
 
@@ -80,7 +81,9 @@ All at 16 texels to the block, in `docs/art/aurora-shepherd/`, each from its `ma
 
 **Dock.** One block, 16 texels wide, with her resting on it. Red light and empty slot when found; green light and the recording when the cell goes in; empty dock once she lifts off.
 
-**Still owed, each before its slice:** the on-screen form of ambient lines, Nine's husk, Nine's lamp, and the hub if it differs from the talk grid.
+**Ambient lines.** A strip centered above the action bar, because the temperature and air panels hold the top left and status effects the top right. It uses the `OrsaHudPanel` colors with her face where the badge goes, a green edge, amber for a callout. Heard within 16 blocks. A line types out, holds 4 seconds and fades over 1 (my call). One at a time, and a callout replaces whatever is showing.
+
+**Still owed, each before its slice:** Nine's husk, Nine's lamp, and the hub if it differs from the talk grid.
 
 ## The eight fixes
 
@@ -90,13 +93,14 @@ The script was written against the Terminus spec and predates the vault as built
 2. **`fm.room`.** He is seated in the vault, not on the cot, which is the room before. Her last log becomes "him sitting right there, talking to me about nothing". His own log ends "I am going to lie down now", after her cell ran dry, so both hold. "The thing in the cradle says" gets a variant, "the thing in your hand says", because the player may already have the wand.
 3. **`fm.doors`.** Nothing can stop for her on the way out. She remembers instead, triggered at the last door: (Thinking) "He'd look at a door and it stopped. I'd look at a door and it kept going. Apparently I don't count." The replies stand. It agrees with Okoye's "The doors stopped for me when the others left" and with `VaultWatch`.
 4. **`fm.architect`.** The interrupt is cut. An Architect will not realistically follow the player that far. Only the "Before we go up" line stays, at the vault exit.
-5. **T3 "The sky".**
-   - The auroras were not a single night: `AuroraPolicy` runs them on 12 to 40 percent of nights in phases 0 to 3. Replace "The sky lit up once, and never again" with (Sad) "I think I knew. They came most clear nights, once. Then the air changed and they stopped. That frame was one of the last." The player may have seen them, which helps her line.
-   - T3 is offered from phase 4 on. Before that an aurora could actually be up.
-   - The sky has no stars in phase 5 or early phase 6 (`PhaseManager.isBlizzardActive`). During those she waits and asks again. Phase 6 mid onward draws stars on black; phase 4 uses the vanilla sky. How often phase 4 nights are clear still needs checking.
+5. **T3 "The sky".** The owner assumes she will never see a real aurora, so she imagines one instead.
+   - She has one frame and does not know how it moves. The lines at the top become: (Thinking) "...It's not there." (Sad) "I think I knew. I've got one frame of it. One. I don't even know how it moves." (Thinking) "I've thought about it a lot. I think it goes slow, like something breathing. Green first. Then a color the camera couldn't do." The stars lines follow unchanged.
+   - A new ambient pool from phase 4 on, on clear nights: "I've decided it moves slowly. Nobody can correct me. That's the upside." / "In my version there's a sound. There wouldn't be. It's my version." / "One frame. You'd be amazed what you can build from one frame."
+   - T3 and that pool start at phase 4, which is what keeps the assumption true: `AuroraPolicy` runs real auroras only in phases 0 to 3.
+   - She needs a sky she can see, so T3 waits out phase 5 and early phase 6 (`PhaseManager.isBlizzardActive`) and any storm, and she asks again. Phase 6 mid onward draws stars on black.
 6. **Late meetings.** She can be woken after anything has already happened, so every one-time topic gets a late variant, fired at the next calm moment. Maeve wakes: (Thinking) "There's something on the Reliquus band. All of them at once, like one ear. It was already doing that when you woke me." The Moon and post-Maeve silence need the same treatment. A topic whose moment passed and has no variant does not fire.
 7. **Her presence in the vault.** Nothing there mentions her. Hale's "nothing down here but the cradle and us" gains the unit, the Vault Manifest gains an item row for CS-1 unit 4, and the locker gains the spare cell. All three are edits to vault files, so they wait for PR 147.
-8. **Notion cleanup, done 2026-11-04.** T3 no longer ends on an aurora, and the personal conversations are five with T5. The Terminus note about "exactly two immunities" was stale, and the answer stands without it: she is on neither `terminus_susceptible` nor `terminus_immune`, so she is no watcher and the wand does nothing to her. The Mimic callout ("vanishes when you lose sight of it") needs checking against `MimicEntity` before it ships; a quick search found no such rule.
+8. **Notion cleanup, done 2026-11-04.** T3 no longer ends on an aurora, and the personal conversations are five with T5. The Terminus note about "exactly two immunities" was stale, and the answer stands without it: she is on neither `terminus_susceptible` nor `terminus_immune`, so she is no watcher and the wand does nothing to her. The Mimic callout said it vanishes when you lose sight of it, which `MimicEntity` does not do; see Callouts.
 
 ## Waking her
 
@@ -173,6 +177,13 @@ Hub, five personal conversations, topic conversations from world events, ambient
 
 Callout rules stand as in the script: line of sight within about 32 blocks, or the behavior in front of her. First sighting gets the full line, later ones the short. Each line must match the mob's current counter, so each is checked against that mob's code in its slice.
 
+The Mimic's, rewritten from `MimicEntity` and `MimicCombatBehavior`. It stands still and stares; a player within 16 blocks starts 5 seconds of copying their movement and facing, then it attacks hard. Left alone for 20 to 30 seconds it burrows away and is gone. Hit while staring, it goes straight to the fight. At half health it turns back to shadow and runs for the dark, then returns to staring. It takes no freezing damage, 50 percent extra from fire, and burns within 4 blocks of a heater. So:
+
+- Full: "Mimic. It's standing still because it's watching you. Get close and it copies you for five seconds, then it stops being polite. Back off and it digs out. If you have to fight, fire."
+- Copying: "It's got your walk. You have five seconds."
+- Running: "It's gone for the dark. It's not done."
+- Short: "Mimic. Keep your distance."
+
 ## Behavior
 
 My calls, all the builder's to refine:
@@ -211,7 +222,7 @@ Each is playable, on one branch per slice from `feat/maeve-director`, in a workt
 | # | Slice | Needs first |
 | --- | --- | --- |
 | S1 | Engine, creative only | PR 147 merged |
-| S2 | In the vault | S1, ambient-line mockup |
+| S2 | In the vault | S1 |
 | S3 | Affinity | S1 |
 | S4 | Personal arc, Nine's husk, TITHONUS files | S2, S3, husk and lamp mockups |
 | S5 | Ambient lines, topics, callouts | S2, 100 or more lines |
@@ -244,13 +255,8 @@ Tests cover behavior, not lines.
 
 ## Open
 
-Nothing for the owner until a slice starts.
-
-For the builder:
-
-1. How often phase 4 nights are clear enough for T3.
-2. The Mimic callout against `MimicEntity`.
+The ambient lines mockup, for the owner's approval. Nothing else until a slice starts.
 
 ## Status
 
-2026-11-04: design written, four mockups approved, no code. Waiting on PR 147, then the owner's word to start S1.
+2026-11-04: design written, four of five mockups approved, no code. Waiting on PR 147, then the owner's word to start S1.
