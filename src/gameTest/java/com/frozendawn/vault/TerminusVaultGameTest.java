@@ -222,6 +222,7 @@ public final class TerminusVaultGameTest {
             var dock=level.getBlockState(hall.offset(TerminusVaultBuilder.DOCK));
             h.assertTrue(dock.is(ModBlocks.VAULT_CS1_DOCK.get())&&dock.getValue(ShepherdDockBlock.FACING)==Direction.SOUTH&&dock.getValue(ShepherdDockBlock.STATE)==ShepherdDockBlock.DockState.FOUND,"Her dock beside him, facing south, as found");
             h.assertTrue(dock.getDestroySpeed(level,hall)<0&&dock.getBlock().getExplosionResistance()>1000,"Sealed like the vault's other fittings");
+            h.assertTrue(dock.is(net.minecraft.tags.BlockTags.WITHER_IMMUNE)&&dock.is(net.minecraft.tags.BlockTags.DRAGON_IMMUNE),"Strength stops neither boss: only these tags do");
             h.assertTrue(level.getBlockEntity(hall.offset(HelionSiteBuilder.LOG_DESK)) instanceof BarrelBlockEntity desk&&desk.getItem(0).is(ModItems.ORSA_DOCUMENT.get()),"The one clue, in the hall's desk");
             h.assertTrue(level.getBlockEntity(hall.offset(TerminusVaultBuilder.ARGUS)) instanceof VaultArgusBlockEntity,"Argus over the Watch Floor");
             h.assertTrue(level.getBlockState(hall.offset(16,TerminusVaultBuilder.FLOOR+1,-3)).getOptionalValue(VaultMarkBlock.MARK).filter(m->m==VaultMarkBlock.Mark.WARNING_14).isPresent(),"The warning ends by the door");
