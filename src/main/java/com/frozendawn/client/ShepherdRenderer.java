@@ -45,7 +45,12 @@ public final class ShepherdRenderer extends MobRenderer<ShepherdEntity, Shepherd
             Mood mood = entity.mood();
             var motion = ShepherdFace.motion(mood, entity.tickCount, entity.getId());
             int mouth = entity.talking() ? ShepherdFace.talkingMouth(entity.tickCount) : 0;
-            ShepherdFaceRenderer.drawOnModel(pose, buffers, mood, mouth, motion.blink() || entity.moodBeat(), motion.eyeShift());
+            if (entity.logo()) {
+                ShepherdFaceRenderer.drawOnModel(pose, buffers, ShepherdFace.logo(ShepherdFace.logoFrame(entity.tickCount)), 0, false, 0);
+            } else {
+                var cells = motion.cells(mood, entity.talking());
+                ShepherdFaceRenderer.drawOnModel(pose, buffers, cells, mouth, motion.blink() || entity.moodBeat(), motion.eyeShift());
+            }
             if (entity.offline()) return;
             var flame = buffers.getBuffer(RenderType.entityCutoutNoCull(ShepherdModel.TEXTURE));
             getParentModel().renderFlame(pose, flame, ShepherdFace.flameHeight(entity.tickCount, entity.getId()));

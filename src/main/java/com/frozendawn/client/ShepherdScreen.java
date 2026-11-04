@@ -45,6 +45,7 @@ public final class ShepherdScreen extends Screen {
     private boolean closedByServer;
     private Mood shownMood;
     private int moodBeat;
+    private int logoTicks;
 
     public ShepherdScreen() {
         super(CommonComponents.EMPTY);
@@ -56,6 +57,7 @@ public final class ShepherdScreen extends Screen {
         lines = payload.lines();
         replies = payload.replies();
         canContinue = payload.canContinue();
+        logoTicks = payload.logoTicks();
         line = 0;
         startLine();
     }
@@ -132,6 +134,10 @@ public final class ShepherdScreen extends Screen {
             if (shownMood != null) moodBeat = ShepherdFace.MOOD_BEAT_TICKS;
             shownMood = mood();
         }
+        if (logoTicks > 0) {
+            logoTicks--;
+            return;
+        }
         if (!typing()) return;
         if (++charTicks < ShepherdPolicy.TICKS_PER_CHAR) return;
         charTicks = 0;
@@ -184,6 +190,7 @@ public final class ShepherdScreen extends Screen {
 
     /** A click finishes a typing line; the next moves on to her next line, then continues. */
     private void advance() {
+        if (logoTicks > 0) return;
         if (typing()) {
             typed = total;
         } else if (line < lines.size() - 1) {
@@ -268,11 +275,16 @@ public final class ShepherdScreen extends Screen {
     private void drawFace(GuiGraphics g, int hover) {
         panel(g, 194, 12, 92, 70, SHELL2, SCUFF);
         g.fill(ox() + 202, oy() + 8, ox() + 278, oy() + 12, LAMP);
+        if (logoTicks > 0) {
+            ShepherdFaceRenderer.drawLogo(g, ShepherdFace.logoFrame(age), ox() + 200, oy() + 18, 10);
+            return;
+        }
         Mood mood = mood();
-        var motion = ShepherdFace.motion(mood, age, 0);
+        var motion = ShepherdFace.motion(mood, age, conversation);
         boolean looking = hover >= 0 && (hub || spoken()) && mood != Mood.RECORDING && mood != Mood.THINKING;
         int eyes = looking ? (hover % 2 == 0 ? -1 : 1) : motion.eyeShift();
-        ShepherdFaceRenderer.draw(g, mood, mouth(), motion.blink() || moodBeat > 0, eyes, ox() + 200, oy() + 18, 10);
+        var cells = motion.cells(mood, looking || typing());
+        ShepherdFaceRenderer.draw(g, cells, mouth(), motion.blink() || moodBeat > 0, eyes, ox() + 200, oy() + 18, 10);
     }
 
     private void drawLine(GuiGraphics g) {

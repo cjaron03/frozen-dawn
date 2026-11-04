@@ -11,7 +11,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.neoforged.neoforge.network.codec.NeoForgeStreamCodecs;
 
 /** One node of a conversation, already resolved for the swearing setting. The client never holds a tree. */
-public record ShepherdNodePayload(int conversation, String node, List<Line> lines, List<Reply> replies, boolean canContinue) implements CustomPacketPayload {
+public record ShepherdNodePayload(int conversation, String node, List<Line> lines, List<Reply> replies, boolean canContinue, int logoTicks) implements CustomPacketPayload {
     private static final int MAX_LINES = 16, MAX_REPLIES = 4;
 
     public record Line(String key, Mood mood) {
@@ -31,6 +31,7 @@ public record ShepherdNodePayload(int conversation, String node, List<Line> line
             Line.STREAM_CODEC.apply(ByteBufCodecs.list(MAX_LINES)), ShepherdNodePayload::lines,
             Reply.STREAM_CODEC.apply(ByteBufCodecs.list(MAX_REPLIES)), ShepherdNodePayload::replies,
             ByteBufCodecs.BOOL, ShepherdNodePayload::canContinue,
+            ByteBufCodecs.VAR_INT, ShepherdNodePayload::logoTicks,
             ShepherdNodePayload::new);
 
     @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }

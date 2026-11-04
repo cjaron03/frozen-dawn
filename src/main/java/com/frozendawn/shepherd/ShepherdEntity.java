@@ -1,6 +1,7 @@
 package com.frozendawn.shepherd;
 
 import com.frozendawn.init.ModEntities;
+import com.frozendawn.init.ModSounds;
 import com.frozendawn.shepherd.ShepherdFace.Mood;
 import java.util.EnumSet;
 import java.util.UUID;
@@ -11,6 +12,7 @@ import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
@@ -35,6 +37,7 @@ public final class ShepherdEntity extends PathfinderMob {
     private static final EntityDataAccessor<Integer> DATA_MOOD = SynchedEntityData.defineId(ShepherdEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Boolean> DATA_OFFLINE = SynchedEntityData.defineId(ShepherdEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Boolean> DATA_TALKING = SynchedEntityData.defineId(ShepherdEntity.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Boolean> DATA_LOGO = SynchedEntityData.defineId(ShepherdEntity.class, EntityDataSerializers.BOOLEAN);
     private static final double HOVER_BLOCKS = 2.5;
     private static final double HOVER_HEIGHT = 1;
     private static final double AIR_DRAG = 0.91;
@@ -43,6 +46,7 @@ public final class ShepherdEntity extends PathfinderMob {
 
     private int rebootTicks;
     private int talkTicks;
+    private int logoTicks;
     /** Client only: the mood last drawn, and how much of the blink between two moods is left. */
     private Mood shownMood;
     private int moodBeat;
@@ -103,6 +107,7 @@ public final class ShepherdEntity extends PathfinderMob {
         builder.define(DATA_MOOD, Mood.NEUTRAL.ordinal());
         builder.define(DATA_OFFLINE, false);
         builder.define(DATA_TALKING, false);
+        builder.define(DATA_LOGO, false);
     }
 
     @Override protected PathNavigation createNavigation(Level level) {
@@ -140,6 +145,21 @@ public final class ShepherdEntity extends PathfinderMob {
         return entityData.get(DATA_TALKING);
     }
 
+    /** Her first boot: the ORSA logo and its sound, before her own face comes up. */
+    public void showLogo() {
+        logoTicks = ShepherdFace.LOGO_TICKS;
+        entityData.set(DATA_LOGO, true);
+        level().playSound(null, this, ModSounds.TERMINAL_BOOT_ORSA.get(), SoundSource.NEUTRAL, 1, 1);
+    }
+
+    public boolean logo() {
+        return entityData.get(DATA_LOGO);
+    }
+
+    int logoTicks() {
+        return logoTicks;
+    }
+
     public boolean moodBeat() {
         return moodBeat > 0;
     }
@@ -158,6 +178,8 @@ public final class ShepherdEntity extends PathfinderMob {
         deathTime = 0;
         if (offline()) return;
         talkFor(0);
+        logoTicks = 0;
+        entityData.set(DATA_LOGO, false);
         entityData.set(DATA_MOOD, Mood.OFFLINE.ordinal());
         entityData.set(DATA_OFFLINE, true);
         rebootTicks = ShepherdPolicy.REBOOT_TICKS;
@@ -189,6 +211,7 @@ public final class ShepherdEntity extends PathfinderMob {
         }
         if (offline() && --rebootTicks <= 0) reboot();
         if (talkTicks > 0 && --talkTicks == 0) entityData.set(DATA_TALKING, false);
+        if (logoTicks > 0 && --logoTicks == 0) entityData.set(DATA_LOGO, false);
     }
 
     @Override public boolean hurt(DamageSource source, float amount) {

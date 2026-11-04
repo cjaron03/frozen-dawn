@@ -44,6 +44,8 @@ public final class ShepherdTalk {
         boolean hurt;
         int affinityApplied;
         int unimpressedTicks;
+        /** Her body has no typed text to follow, so it moves through a node's lines on a fixed count. */
+        int line, lineTicks;
 
         Live(ServerPlayer player, ShepherdEntity she) {
             this.player = player;
@@ -92,6 +94,7 @@ public final class ShepherdTalk {
         live.fromHub = fromHub;
         live.affinityApplied = 0;
         settle();
+        if (FIRST_MEETING.equals(node)) live.she.showLogo();
         send();
     }
 
@@ -167,9 +170,12 @@ public final class ShepherdTalk {
         var data = data();
         var node = live.talk.current();
         if (!live.fromHub) data.resumeNode(node.responses().isEmpty() && node.next() == null ? null : node.id());
+        int logo = live.she.logoTicks();
+        live.line = 0;
+        live.lineTicks = logo + TALK_TICKS_PER_LINE;
         showMood();
-        live.she.talkFor(TALK_TICKS_PER_LINE * node.lines().size());
-        PacketDistributor.sendToPlayer(live.player, payload(live.id, node, data.heavy()));
+        live.she.talkFor(logo + TALK_TICKS_PER_LINE * node.lines().size());
+        PacketDistributor.sendToPlayer(live.player, payload(live.id, node, data.heavy(), logo));
     }
 
     private static void showHub() {
@@ -183,15 +189,15 @@ public final class ShepherdTalk {
 
     private static void showMood() {
         if (live.unimpressedTicks > 0) return;
-        live.she.setMood(live.talk == null ? Mood.NEUTRAL : live.talk.current().lines().getLast().mood());
+        live.she.setMood(live.talk == null ? Mood.NEUTRAL : live.talk.current().lines().get(live.line).mood());
     }
 
-    static ShepherdNodePayload payload(int conversation, Node node, boolean heavy) {
+    static ShepherdNodePayload payload(int conversation, Node node, boolean heavy, int logoTicks) {
         var lines = node.lines().stream().map(line -> new ShepherdNodePayload.Line(
                 heavy && line.heavyKey() != null ? line.heavyKey() : line.key(), line.mood())).toList();
         var replies = node.responses().stream().map(response -> new ShepherdNodePayload.Reply(
                 response.slot().ordinal(), response.label(), response.full())).toList();
-        return new ShepherdNodePayload(conversation, node.id(), lines, replies, replies.isEmpty());
+        return new ShepherdNodePayload(conversation, node.id(), lines, replies, replies.isEmpty(), logoTicks);
     }
 
     private static void end(boolean tellClient) {
@@ -227,6 +233,11 @@ public final class ShepherdTalk {
     @SubscribeEvent public static void tick(ServerTickEvent.Post event) {
         if (live == null) return;
         if (live.unimpressedTicks > 0 && --live.unimpressedTicks == 0) showMood();
+        if (live.talk != null && live.line < live.talk.current().lines().size() - 1 && --live.lineTicks <= 0) {
+            live.line++;
+            live.lineTicks = TALK_TICKS_PER_LINE;
+            showMood();
+        }
         var player = live.player;
         var she = live.she;
         boolean gone = player.isRemoved() || player.hasDisconnected() || she.isRemoved() || she.offline() || player.level() != she.level();

@@ -61,6 +61,13 @@ public final class ShepherdTalkGameTest {
     @BeforeBatch(batch = "shepherd_talk_mouth") public static void mouthBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
     @AfterBatch(batch = "shepherd_talk_mouth") public static void mouthAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
 
+    @BeforeBatch(batch = "shepherd_talk_logo") public static void logoBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_talk_logo") public static void logoAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_talk_nologo") public static void noLogoBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_talk_nologo") public static void noLogoAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_talk_lines") public static void linesBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_talk_lines") public static void linesAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+
     @BeforeBatch(batch = "shepherd_talk_replay") public static void replayBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
     @AfterBatch(batch = "shepherd_talk_replay") public static void replayAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
 
@@ -231,8 +238,8 @@ public final class ShepherdTalkGameTest {
             h.assertTrue(data(h).affinity() == 20, "15 and 10, then -5: " + data(h).affinity());
             h.assertTrue(data(h).flag("profanity_heavy") && data(h).heavy(), "The filter came off");
             var talk = ShepherdDialogues.nodes().get("hub.talk");
-            h.assertTrue(ShepherdTalk.payload(1, talk, true).lines().getFirst().key().equals(talk.lines().getFirst().heavyKey()), "Heavy swaps the key");
-            h.assertTrue(ShepherdTalk.payload(1, talk, false).lines().getFirst().key().equals(talk.lines().getFirst().key()), "Mild does not");
+            h.assertTrue(ShepherdTalk.payload(1, talk, true, 0).lines().getFirst().key().equals(talk.lines().getFirst().heavyKey()), "Heavy swaps the key");
+            h.assertTrue(ShepherdTalk.payload(1, talk, false, 0).lines().getFirst().key().equals(talk.lines().getFirst().key()), "Mild does not");
             h.succeed();
         });
     }
@@ -341,6 +348,43 @@ public final class ShepherdTalkGameTest {
                 player.setPos(player.position().add(ShepherdPolicy.TALK_RANGE + 3, 0, 0));
                 h.succeedWhen(() -> h.assertTrue(!ShepherdTalk.live() && !she.talking(), "Ending the talk stops her mouth at once"));
             });
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_talk_logo", timeoutTicks = 400)
+    public static void shepherdFirstMeetingOpensWithTheLogo(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            var she = awake(h, player);
+            ShepherdTalk.start(player, "fm.boot");
+            h.assertTrue(she.logo(), "Her display shows the logo");
+            h.runAfterDelay(ShepherdFace.LOGO_TICKS + 2, () -> {
+                h.assertTrue(!she.logo(), "Then her face comes up");
+                h.succeed();
+            });
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_talk_nologo", timeoutTicks = 400)
+    public static void shepherdOrdinaryTalkHasNoLogo(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            var she = awake(h, player);
+            rightClick(she, player);
+            ShepherdTalk.action(player, ShepherdTalk.liveId(), Action.TALK);
+            h.assertTrue(!she.logo(), "The logo is for her first boot");
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_talk_lines", timeoutTicks = 800)
+    public static void shepherdBodyFollowsHerLinesFromRecordingToHerself(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            var she = awake(h, player);
+            ShepherdTalk.start(player, "fm.boot");
+            h.assertTrue(she.mood() == Mood.RECORDING, "The recording plays first: " + she.mood());
+            h.succeedWhen(() -> h.assertTrue(she.mood() == Mood.UNIMPRESSED, "Then she speaks for herself: " + she.mood()));
         });
     }
 }

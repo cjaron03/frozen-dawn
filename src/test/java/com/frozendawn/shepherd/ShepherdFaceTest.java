@@ -87,4 +87,85 @@ class ShepherdFaceTest {
         for (int age = 0; age < 400; age++) seen[ShepherdFace.flameHeight(age, 7)] = true;
         for (int height = 1; height <= ShepherdFace.FLAME_FRAMES; height++) assertTrue(seen[height], "never height " + height);
     }
+
+    @Test void neutralShowsEveryIdleExpressionAndOnlyBriefly() {
+        var seen = java.util.EnumSet.noneOf(ShepherdFace.Idle.class);
+        int run = 0;
+        for (int age = 0; age < 20000; age++) {
+            var idle = ShepherdFace.motion(Mood.NEUTRAL, age, 7).idle();
+            run = idle == null ? 0 : run + 1;
+            assertTrue(run <= 40, "An expression holds for a moment, not " + run);
+            if (idle != null) seen.add(idle);
+        }
+        for (var idle : ShepherdFace.EXPRESSIONS) assertTrue(seen.contains(idle), "never " + idle);
+    }
+
+    @Test void onlyNeutralHasIdleExpressions() {
+        for (Mood mood : Mood.values()) {
+            if (mood == Mood.NEUTRAL) continue;
+            for (int age = 0; age < 20000; age++) assertTrue(ShepherdFace.motion(mood, age, 7).idle() == null, mood + " stays " + mood);
+        }
+    }
+
+    @Test void anExpressionHoldsHerEyesStill() {
+        for (int age = 0; age < 20000; age++) {
+            var motion = ShepherdFace.motion(Mood.NEUTRAL, age, 7);
+            if (motion.idle() != null) assertTrue(!motion.blink() && motion.eyeShift() == 0, "at " + age);
+        }
+    }
+
+    @Test void theEyeRollIsRareAndRunsInOrder() {
+        int rolls = 0;
+        var last = (ShepherdFace.Idle) null;
+        for (int age = 0; age < 2400000; age++) {
+            var idle = ShepherdFace.motion(Mood.NEUTRAL, age, 7).idle();
+            if (idle == ShepherdFace.ROLL.getFirst() && last != idle) rolls++;
+            if (idle != null && idle != last && ShepherdFace.ROLL.contains(idle) && last != null && ShepherdFace.ROLL.contains(last))
+                assertTrue(ShepherdFace.ROLL.indexOf(idle) == ShepherdFace.ROLL.indexOf(last) + 1, "out of order at " + age);
+            last = idle;
+        }
+        assertTrue(rolls >= 100 && rolls <= 400, "Roughly every ten minutes across 33 hours: " + rolls);
+    }
+
+    @Test void talkingShowsTheMoodNotTheExpression() {
+        var motion = new ShepherdFace.Motion(0, false, ShepherdFace.Idle.WINK);
+        assertTrue(motion.cells(Mood.NEUTRAL, true) == Mood.NEUTRAL);
+        assertTrue(motion.cells(Mood.NEUTRAL, false) == ShepherdFace.Idle.WINK);
+    }
+
+    @Test void differentSeedsOpenDifferently() {
+        int differ = 0;
+        for (int seed = 1; seed < 40; seed++) {
+            for (int age = 0; age < 48; age++) {
+                if (!ShepherdFace.motion(Mood.NEUTRAL, age, seed).equals(ShepherdFace.motion(Mood.NEUTRAL, age, seed + 1))) {
+                    differ++;
+                    break;
+                }
+            }
+        }
+        assertTrue(differ > 30, "Only " + differ + " of 39 differ");
+    }
+
+    @Test void theLogoMovesItsMoonEveryFrame() {
+        for (int frame = 0; frame < ShepherdFace.LOGO_FRAMES; frame++) {
+            var now = ShepherdFace.logo(frame);
+            var next = ShepherdFace.logo((frame + 1) % ShepherdFace.LOGO_FRAMES);
+            boolean moved = false, shows = false;
+            for (int x = 0; x < ShepherdFace.WIDTH; x++) {
+                for (int y = 0; y < ShepherdFace.HEIGHT; y++) {
+                    shows |= now.lit(x, y);
+                    moved |= now.lit(x, y) != next.lit(x, y) || now.dim(x, y) != next.dim(x, y);
+                }
+            }
+            assertTrue(shows && moved, "frame " + frame);
+        }
+    }
+
+    @Test void theLogoFrameLoopsWithTheClock() {
+        for (int age = 0; age < 200; age++) {
+            int frame = ShepherdFace.logoFrame(age);
+            assertTrue(frame >= 0 && frame < ShepherdFace.LOGO_FRAMES);
+        }
+        assertTrue(ShepherdFace.logoFrame(0) != ShepherdFace.logoFrame(ShepherdFace.LOGO_TICKS / 3));
+    }
 }
