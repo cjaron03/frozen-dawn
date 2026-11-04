@@ -54,6 +54,8 @@ render() {
     orsa) filter='highpass=f=170,lowpass=f=5200,acompressor=threshold=-22dB:ratio=2.2:attack=8:release=100,volume=1.12' ;;
     radio) filter='aresample=22050,highpass=f=180,lowpass=f=3600,acompressor=threshold=0.07:ratio=4:attack=4:release=80,acrusher=bits=10:mix=0.16,aecho=0.8:0.12:61|127:0.11|0.045,loudnorm=I=-15:TP=-2:LRA=7,alimiter=limit=0.96' ;;
     successor) filter='aresample=22050,asetrate=18400,aresample=22050,highpass=f=90,lowpass=f=2500,acompressor=threshold=-24dB:ratio=3.2:attack=5:release=120,aecho=0.7:0.10:54|111:0.12|0.08,loudnorm=I=-17:TP=-2:LRA=8,alimiter=limit=0.96' ;;
+    # The Terminus Vault's recording goes over its worn tape bed, which that script owns.
+    vault) VAULT_ANNOUNCEMENT_VOICE="$input" bash "$ROOT/tools/generate_terminus_sounds.sh"; return ;;
     *) printf 'Unknown processing profile: %s\n' "$profile" >&2; exit 1 ;;
   esac
 

@@ -16,6 +16,6 @@ noise seed 55002.
 | `sounds/blocks/vault/wrong.ogg` | `block.vault.wrong` | 0.7 s: two falling buzzes, a wrong fuse |
 | `sounds/blocks/vault/shell.ogg` | `block.vault.shell` | 1.2 s: a hiss of cold air over a falling 60 Hz clunk, the Custodian's shell |
 | `sounds/blocks/vault/purge.ogg` | `block.vault.purge` | 1.6 s: a rising white rush cut dead |
-| `sounds/blocks/vault/announcement.ogg` | `block.vault.announcement` | 20 s, streamed: worn tape, hiss with slow flutter, crackle, a two-tone chime; so far no voice |
+| `sounds/blocks/vault/announcement.ogg` | `block.vault.announcement` | 20 s, streamed: worn tape, hiss with slow flutter, crackle, a two-tone chime, under a Piper voice with dropouts. The one exception to the no-voice line above: a generated voice, CC BY-SA 4.0, ledgered in `tools/audio_sources/generated_voice/` |
 
 Hashes are in `docs/audio/SHIPPED_AUDIO_INVENTORY.tsv`.

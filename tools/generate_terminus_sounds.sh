@@ -59,14 +59,15 @@ render purge \
   -f lavfi -i "aevalsrc='0.5*sin(2*PI*(80*t+260*t*t))':d=1.6:s=44100" \
   -filter_complex "[0:a]highpass=f=400,afade=t=in:st=0:d=1.4[n];[n][1:a]amix=inputs=2:normalize=0,afade=t=out:st=1.57:d=0.03,alimiter=limit=0.85:level=0[out]"
 
-# The evacuation recording, 20 s. Worn tape: hiss with slow flutter, crackle, a two-tone chime, and dropouts. The Piper voice
-# goes over this bed when its render is at VAULT_ANNOUNCEMENT_VOICE (a mono wav of tools/audio_sources/terminus/SOURCES.md's text).
+# The evacuation recording, 20 s. Worn tape: hiss with slow flutter, crackle, a two-tone chime, and dropouts in the voice.
+# The voice is tools/generate_local_voice_assets.sh's Piper render of its manifest line, passed in VAULT_ANNOUNCEMENT_VOICE;
+# run that script to rebuild this file, since without a voice this writes the bed alone.
 BED=(-f lavfi -i "anoisesrc=d=20:c=pink:r=44100:a=0.16:s=55007"
      -f lavfi -i "anoisesrc=d=20:c=white:r=44100:a=0.5:s=55008"
      -f lavfi -i "aevalsrc='0.22*(sin(2*PI*880*t)*between(t\,0.2\,0.6)+sin(2*PI*660*t)*between(t\,0.65\,1.15))':d=20:s=44100")
 MIX="[0:a]lowpass=f=3200,highpass=f=240,tremolo=f=0.7:d=0.5[h];[1:a]highpass=f=2400,volume=0.05,tremolo=f=9:d=0.95[c];[2:a]lowpass=f=2200[ch]"
 if [[ -n "${VAULT_ANNOUNCEMENT_VOICE:-}" ]]; then
-  render announcement "${BED[@]}" -i "$VAULT_ANNOUNCEMENT_VOICE" -filter_complex "$MIX;[3:a]aresample=44100,adelay=1500:all=1,highpass=f=300,lowpass=f=3000,acrusher=bits=9:mix=0.25,tremolo=f=11:d=0.35,volume=1.5,apad=whole_dur=20[v];[h][c][ch][v]amix=inputs=4:normalize=0:duration=first,afade=t=out:st=19.5:d=0.5,alimiter=limit=0.8:level=0[out]"
+  render announcement "${BED[@]}" -i "$VAULT_ANNOUNCEMENT_VOICE" -filter_complex "$MIX;[3:a]aresample=44100,adelay=1500:all=1,highpass=f=300,lowpass=f=3000,acrusher=bits=9:mix=0.25,tremolo=f=11:d=0.35,volume=1.5,volume=0:enable='between(t\,5.1\,5.35)+between(t\,9.4\,9.55)+between(t\,12.7\,13.05)',apad=whole_dur=20[v];[h][c][ch][v]amix=inputs=4:normalize=0:duration=first,afade=t=out:st=19.5:d=0.5,alimiter=limit=0.8:level=0[out]"
 else
   render announcement "${BED[@]}" -filter_complex "$MIX;[h][c][ch]amix=inputs=3:normalize=0:duration=first,afade=t=out:st=19.5:d=0.5,alimiter=limit=0.8:level=0[out]"
 fi
