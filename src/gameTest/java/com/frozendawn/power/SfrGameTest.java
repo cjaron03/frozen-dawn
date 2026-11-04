@@ -184,18 +184,19 @@ public final class SfrGameTest {
 
     // Each in a batch of its own: every SFR-1 controller grants its advancements to any player within 32 blocks, so a
     // reactor lit or aborted by a neighbouring test in the shared sfr batch would reach these probe players too.
-    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "sfr_second_sun", timeoutTicks = 300, skyAccess = true)
+    // Steps the reactor itself, in one tick. Its ticker runs only once its chunk's entities have loaded, which takes real
+    // time, and test servers tick back to back, so that wait can spend the whole budget.
+    // sfrIgnitesToBurningOnABankAndCreativeFuel covers the live, paid ignition.
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "sfr_second_sun", timeoutTicks = 100, skyAccess = true)
     public static void sfrIgnitionGrantsASecondSunNearby(GameTestHelper h) {
-        h.runAfterDelay(1, () -> {
+        scene(h, () -> {
             var near = player(h, h.absolutePos(CENTER).above(6)); var far = player(h, h.absolutePos(CENTER).above(40));
             var be = ready(h, 8_000_000);
-            h.succeedWhen(() -> {
-                h.assertValueEqual(be.physics().state(), FusionPhysics.State.BURNING, "state (status " + be.physics().status() + ", ticking "
-                        + h.getLevel().shouldTickBlocksAt(be.getBlockPos()) + ", players " + h.getLevel().players().size() + ")");
-                h.assertTrue(earned(near, SfrAdvancements.SECOND_SUN), "A player beside the torus sees the ignition");
-                h.assertTrue(!earned(far, SfrAdvancements.SECOND_SUN), "A player 40 blocks away does not");
-                h.assertTrue(!earned(near, SfrAdvancements.TWENTY_YEARS), "A lit plasma is not an abort");
-            });
+            for (int second = 0; second < FusionPhysics.IGNITION_SECONDS; second++) be.second(h.getLevel());
+            h.assertValueEqual(be.physics().state(), FusionPhysics.State.BURNING, "state (status " + be.physics().status() + ")");
+            h.assertTrue(earned(near, SfrAdvancements.SECOND_SUN), "A player beside the torus sees the ignition");
+            h.assertTrue(!earned(far, SfrAdvancements.SECOND_SUN), "A player 40 blocks away does not");
+            h.assertTrue(!earned(near, SfrAdvancements.TWENTY_YEARS), "A lit plasma is not an abort");
         });
     }
 
