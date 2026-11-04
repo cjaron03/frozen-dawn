@@ -107,6 +107,10 @@ final class TerminusDebugCommand {
                                             + ", wanted " + java.util.Arrays.toString(fight.wanted()) + ", fuses " + java.util.Arrays.toString(fight.fuses());
                                     if (argus.custodian() != null) text += ", Custodian " + Math.round(argus.custodian().getHealth()) + "/" + Math.round(argus.custodian().getMaxHealth());
                                 }
+                                if (level.getBlockEntity(hall.offset(TerminusVaultBuilder.RECORDER)) instanceof com.frozendawn.vault.VaultRecorderBlockEntity recorder)
+                                    text += " | drill " + recorder.rule().phase() + ", " + recorder.rule().ticksLeft() / 20 + " s left, door " + (recorder.rule().doorOpen() ? "open" : "shut");
+                                if (level.getBlockEntity(hall.offset(TerminusVaultBuilder.VITALS)) instanceof com.frozendawn.vault.VaultVitalsBlockEntity vitals)
+                                    text += " | morgue " + vitals.gate().hearts() + " hearts, door " + (vitals.gate().open() ? "open" : "shut");
                             }
                             c.getSource().getPlayerOrException().sendSystemMessage(Component.literal(text));
                             return 1;

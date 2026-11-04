@@ -360,6 +360,7 @@ public class ClientEvents {
     public static void onRegisterEntityRenderers(EntityRenderersEvent.RegisterRenderers event) {
         event.registerEntityRenderer(ModEntities.AGGREGATE.get(), AggregateRenderer::new);
         event.registerEntityRenderer(ModEntities.CUSTODIAN.get(), com.frozendawn.client.renderer.CustodianRenderer::new);
+        event.registerEntityRenderer(ModEntities.VAULT_RECORDING.get(), com.frozendawn.client.renderer.VaultRecordingRenderer::new);
         event.registerEntityRenderer(
                 ModEntities.AGGREGATE_FRAGMENT.get(), AggregateFragmentRenderer::new);
         event.registerEntityRenderer(
@@ -411,6 +412,7 @@ public class ClientEvents {
         event.registerBlockEntityRenderer(ModBlockEntities.VAULT_CLOCK.get(), com.frozendawn.client.renderer.VaultClockRenderer::new);
         event.registerBlockEntityRenderer(ModBlockEntities.VAULT_FIGHT_CLOCK.get(), com.frozendawn.client.renderer.VaultFightClockRenderer::new);
         event.registerBlockEntityRenderer(ModBlockEntities.VAULT_PLOT.get(), com.frozendawn.client.renderer.VaultPlotRenderer::new);
+        event.registerBlockEntityRenderer(ModBlockEntities.VAULT_VITALS.get(), com.frozendawn.client.renderer.VaultVitalsRenderer::new);
         event.registerBlockEntityRenderer(ModBlockEntities.ICARUS_STABILIZER.get(), IcarusStabilizerRenderer::new);
         event.registerBlockEntityRenderer(ModBlockEntities.ICARUS_INJECTOR.get(), IcarusInjectorRenderer::new);
     }

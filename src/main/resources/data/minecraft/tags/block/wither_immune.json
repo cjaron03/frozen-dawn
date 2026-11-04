@@ -19,6 +19,12 @@
     "frozendawn:vault_tally",
     "frozendawn:vault_mark",
     "frozendawn:vault_dressing",
-    "frozendawn:vault_plot"
+    "frozendawn:vault_plot",
+    "frozendawn:vault_lintel",
+    "frozendawn:vault_plate",
+    "frozendawn:vault_vent",
+    "frozendawn:vault_vitals",
+    "frozendawn:vault_recorder",
+    "frozendawn:vault_key"
   ]
 }

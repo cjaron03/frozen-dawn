@@ -1,5 +1,5 @@
 """Textures of the Terminus Vault, from the approved mockups (vault-rooms-mockup.png, vault-contents-mockup.png,
-watch-floor-mockup.png, vault-branding-mockup.png).
+watch-floor-mockup.png, vault-branding-mockup.png, vault-last-rooms-mockup.png).
 Writes into the mod's assets. Run from anywhere: python3 docs/art/terminus/make_vault_textures.py
 """
 import random
@@ -290,6 +290,84 @@ def technician():
     return im
 
 
+PALE, GOLD, RED, GREEN, GHOST = (159, 214, 232), (255, 214, 92), (232, 104, 92), (120, 200, 130), (170, 225, 245)
+LETTERS = {'V': '101 101 101 101 010', 'I': '111 010 010 010 111', 'T': '111 010 010 010 010', 'A': '010 101 111 101 101',
+           'L': '100 100 100 100 111', 'S': '011 100 010 001 110', 'N': '1001 1101 1011 1001 1001', 'O': '010 101 101 101 010',
+           'E': '111 100 110 100 111'}
+
+
+def lintel(colour):
+    """A block of the wall with the lamp along its foot, six texels tall, as the Morgue's section draws it."""
+    im = Image.open(BLOCK / 'vault_shell.png').convert('RGBA').crop((0, 0, 16, 16))
+    ImageDraw.Draw(im).rectangle((0, 10, 15, 15), colour + (255,))
+    return im
+
+
+def plate(colour):
+    im = Image.new('RGBA', (16, 16), colour + (255,))
+    d = ImageDraw.Draw(im)
+    d.rectangle((0, 0, 15, 15), outline=(70, 40, 38, 255))
+    for x in (5, 10):
+        d.line((x, 1, x, 14), (70, 40, 38, 255))
+    return im
+
+
+def vent():
+    im = Image.new('RGBA', (16, 16), PALE + (255,))
+    d = ImageDraw.Draw(im)
+    for y in range(2, 16, 4):
+        d.rectangle((1, y, 14, y + 1), (40, 60, 70, 255))
+    return im
+
+
+def recorder(lamp):
+    """The console: its pale housing, a dark screen and a lamp, red while it takes and pale green while it plays."""
+    im = Image.new('RGBA', (16, 16), PALE + (255,))
+    d = ImageDraw.Draw(im)
+    d.rectangle((0, 0, 15, 15), outline=(96, 134, 148, 255))
+    d.rectangle((3, 3, 12, 8), (24, 32, 38, 255))
+    d.rectangle((6, 11, 9, 13), lamp + (255,))
+    return im
+
+
+def key(bright):
+    colour = GOLD if bright else tuple(c * 3 // 5 for c in GOLD)
+    im = Image.new('RGBA', (16, 16), colour + (255,))
+    d = ImageDraw.Draw(im)
+    d.rectangle((0, 0, 15, 15), outline=(90, 72, 26, 255))
+    d.rectangle((6, 4, 9, 11), (30, 26, 16, 255))
+    return im
+
+
+def vitals():
+    """The panel's sheet: VITALS, NONE and a pip, each thirty-two texels, drawn directly like the clock."""
+    im = Image.new('RGBA', (96, 32), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    for x0, word, colour in ((0, 'VITALS', RED), (32, 'NONE', GREEN)):
+        d.rectangle((x0, 0, x0 + 31, 31), (14, 17, 20, 255), colour + (255,))
+        wide = sum(len(LETTERS[c].split()[0]) + 1 for c in word) - 1
+        x = x0 + (32 - wide) // 2
+        for letter in word:
+            for y, row in enumerate(LETTERS[letter].split()):
+                for i, bit in enumerate(row):
+                    if bit == '1':
+                        im.putpixel((x + i, 6 + y), colour + (255,))
+            x += len(row) + 1
+    d.rectangle((64, 0, 67, 3), RED + (255,))
+    return im
+
+
+def recording():
+    """The technician's suit washed out to the pale of the mockup's recording, and see-through."""
+    im = Image.open(ENTITY / 'vault_technician.png').convert('RGBA')
+    for x in range(im.width):
+        for y in range(im.height):
+            r, g, b, a = im.getpixel((x, y))
+            grey = (r + g + b) / 765 * .25 + .8
+            im.putpixel((x, y), tuple(min(255, int(c * grey)) for c in GHOST) + (150 if a else 0,))
+    return im
+
+
 def main():
     noise('s', ['5b6064', '555a5e'], 1).save(BLOCK / 'vault_shell.png')
     noise('f', ['2f3438', '2a2f33'], 2).save(BLOCK / 'vault_floor.png')
@@ -331,6 +409,19 @@ def main():
     # Drawn directly, not from the block atlas: a 44x5 sheet there would turn every block's mipmaps off.
     clock_digits().save(ENTITY / 'vault_clock_digits.png')
     technician().save(ENTITY / 'vault_technician.png')
+    lintel(PALE).save(BLOCK / 'vault_lintel_shut.png')
+    lintel(GREEN).save(BLOCK / 'vault_lintel_open.png')
+    plate((120, 56, 50)).save(BLOCK / 'vault_plate_dark.png')
+    plate(RED).save(BLOCK / 'vault_plate_lit.png')
+    vent().save(BLOCK / 'vault_vent.png')
+    recorder((52, 66, 72)).save(BLOCK / 'vault_recorder_idle.png')
+    recorder(RED).save(BLOCK / 'vault_recorder_recording.png')
+    recorder(GREEN).save(BLOCK / 'vault_recorder_playing.png')
+    key(False).save(BLOCK / 'vault_key_idle.png')
+    key(True).save(BLOCK / 'vault_key_held.png')
+    noise('t', ['5c4a36', '544330', '60503a'], 21).save(BLOCK / 'vault_table.png')
+    vitals().save(ENTITY / 'vault_vitals.png')
+    recording().save(ENTITY / 'vault_recording.png')
 
 
 main()

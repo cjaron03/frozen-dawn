@@ -243,7 +243,7 @@ public final class VaultArgusBlockEntity extends BlockEntity {
     /** Everyone from the landing to the vault. */
     private List<ServerPlayer> sublevel(ServerLevel level) {
         var hall = hall();
-        var box = new AABB(hall.getX() - 3, hall.getY() + TerminusVaultBuilder.PIT_BOTTOM, hall.getZ() - 17, hall.getX() + TerminusVaultBuilder.REACH, hall.getY() + TerminusVaultBuilder.CEILING, hall.getZ() + 13);
+        var box = new AABB(hall.getX() - 3, hall.getY() + TerminusVaultBuilder.PIT_BOTTOM, hall.getZ() - 12, hall.getX() + TerminusVaultBuilder.REACH, hall.getY() + TerminusVaultBuilder.MESS_ROOF, hall.getZ() + 13);
         return alive(level).stream().filter(p -> box.contains(p.position())).toList();
     }
     private static List<ServerPlayer> alive(ServerLevel level) {
@@ -271,12 +271,19 @@ public final class VaultArgusBlockEntity extends BlockEntity {
     private static AABB gapBox(BlockPos hall) {
         return new AABB(hall.getX() + 6, hall.getY() + TerminusVaultBuilder.PIT_FLOOR, hall.getZ() - 2, hall.getX() + 15, hall.getY() + TerminusVaultBuilder.CEILING, hall.getZ() + 3);
     }
+    /** The two puzzle rooms with their doorways, which nothing that falls ever opens up. */
+    private static boolean puzzleRoom(BlockPos hall, Vec3 at) {
+        double top = hall.getY() + TerminusVaultBuilder.ROOM_ROOF;
+        return new AABB(hall.getX() + 66, hall.getY() + TerminusVaultBuilder.FLOOR, hall.getZ() - 7, hall.getX() + 84, top, hall.getZ() + 8).contains(at)
+                || new AABB(hall.getX() + 84, hall.getY() + TerminusVaultBuilder.FLOOR, hall.getZ() - 4, hall.getX() + 96, top, hall.getZ() + 5).contains(at);
+    }
     /** Nothing is placed on the floor until the Custodian falls: no torches against the dark, no walls against it. Nor over the
-     * bridge's gap, or a few blocks would walk you past it. */
+     * bridge's gap, or a few blocks would walk you past it. Nor ever in the puzzle rooms, which a player reaches after it falls. */
     public static boolean refuses(ServerLevel level, BlockPos pos) {
         var hall = HelionSiteState.get(level.getServer()).vault();
         var at = Vec3.atCenterOf(pos);
-        return hall != null && level.dimension() == Level.OVERWORLD && (hallBox(hall).contains(at) || gapBox(hall).contains(at))
+        if (hall == null || level.dimension() != Level.OVERWORLD) return false;
+        return puzzleRoom(hall, at) || (hallBox(hall).contains(at) || gapBox(hall).contains(at))
                 && level.getBlockEntity(hall.offset(TerminusVaultBuilder.ARGUS)) instanceof VaultArgusBlockEntity argus && argus.fight.phase() != Phase.WON;
     }
     @SubscribeEvent public static void onPlace(BlockEvent.EntityPlaceEvent event) {

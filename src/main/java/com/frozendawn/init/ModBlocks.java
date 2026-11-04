@@ -285,6 +285,18 @@ public class ModBlocks {
             () -> new com.frozendawn.vault.VaultPlotBlock(vaultSealed(MapColor.COLOR_GRAY)));
     public static final DeferredBlock<com.frozendawn.vault.VaultTallyBlock> VAULT_TALLY = BLOCKS.register("vault_tally",
             () -> new com.frozendawn.vault.VaultTallyBlock(vaultSealed(MapColor.METAL).sound(SoundType.METAL).lightLevel(com.frozendawn.vault.VaultTallyBlock::light)));
+    public static final DeferredBlock<com.frozendawn.vault.VaultTallyBlock> VAULT_LINTEL = BLOCKS.register("vault_lintel",
+            () -> new com.frozendawn.vault.VaultTallyBlock(vaultSealed(MapColor.METAL).sound(SoundType.METAL).lightLevel(state -> 5)));
+    public static final DeferredBlock<com.frozendawn.vault.VaultTallyBlock> VAULT_PLATE = BLOCKS.register("vault_plate",
+            () -> new com.frozendawn.vault.VaultTallyBlock(vaultSealed(MapColor.METAL).sound(SoundType.METAL).lightLevel(com.frozendawn.vault.VaultTallyBlock::light)));
+    public static final DeferredBlock<com.frozendawn.vault.VaultVentBlock> VAULT_VENT = BLOCKS.register("vault_vent",
+            () -> new com.frozendawn.vault.VaultVentBlock(vaultSealed(MapColor.ICE).sound(SoundType.METAL).lightLevel(state -> 3)));
+    public static final DeferredBlock<com.frozendawn.vault.VaultVitalsBlock> VAULT_VITALS = BLOCKS.register("vault_vitals",
+            () -> new com.frozendawn.vault.VaultVitalsBlock(vaultSealed(MapColor.COLOR_GRAY)));
+    public static final DeferredBlock<com.frozendawn.vault.VaultRecorderBlock> VAULT_RECORDER = BLOCKS.register("vault_recorder",
+            () -> new com.frozendawn.vault.VaultRecorderBlock(vaultSealed(MapColor.METAL).sound(SoundType.METAL).lightLevel(state -> 4)));
+    public static final DeferredBlock<com.frozendawn.vault.VaultKeyBlock> VAULT_KEY = BLOCKS.register("vault_key",
+            () -> new com.frozendawn.vault.VaultKeyBlock(vaultSealed(MapColor.GOLD).sound(SoundType.METAL).lightLevel(com.frozendawn.vault.VaultKeyBlock::light)));
     public static final DeferredBlock<com.frozendawn.vault.VaultLightBlock> VAULT_LIGHT = BLOCKS.register("vault_light",
             () -> new com.frozendawn.vault.VaultLightBlock(vaultSealed(MapColor.COLOR_RED).sound(SoundType.METAL).noOcclusion().noCollission()
                     .lightLevel(state -> state.getValue(com.frozendawn.vault.VaultLightBlock.LIT) ? 6 : 0)));

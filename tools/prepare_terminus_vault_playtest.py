@@ -54,8 +54,10 @@ def scripts():
              'ledge': (tp(5, -14, 0, 90), 'The ledge, at the lip. The far side is east. Your body must not face it; F5 twice shows your own face.'),
              'far_ledge': (tp(16, -14, 0, -90), 'The bridge\'s far ledge. The Watch Floor is east, through the open door.'),
              'catwalk': (tp(18, -14, 2, -90), 'The west catwalk: the board is at your back, the Seal Order to the north. Step off it and the fight starts.'),
-             'plot': (tp(43, -14, -8, 180), 'The plot room, north of the cot room.'),
-             'cot': (tp(42, -14, 1, -90), 'The cot room. The last door is east, the cot along the south wall.')}
+             'mess': (tp(44, -14, -7, 180), 'The mess hall, past the east gate. The System Plot is on the north wall.'),
+             'drill': (tp(68, -14, 3, -90), 'The drill hall: the recorder at your back, a key on each long wall, the door east. Press the recorder and go.'),
+             'morgue': (tp(85, -14, 0, -90), 'The Morgue. The vent is ahead, the scanner plate and its panel beyond it.'),
+             'cot': (tp(97, -14, 1, -90), 'The cot room. The last door is east, the cot along the south wall.')}
     upper, lower = tp(24, -14, -10, 0), tp(28, -23, -10, 0)
     stages = {'fight_start': (upper, 'fight start', 'Round 1, full clock. The board lights.'),
               'fight_round2': (upper, 'fight round 2', 'Round 2: one opening down, full clock.'),
@@ -67,14 +69,14 @@ def scripts():
     result = {
         'load': 'scoreboard objectives add vault dummy\nexecute unless score #built vault matches -2..1 run scoreboard players set #built vault 0\nexecute if score #built vault matches -2..-1 run scoreboard players set #built vault 0',
         'bootstrap': '\n'.join(['execute unless score #built vault matches 0 run return 0',
-                               'forceload add -32 -16 80 96', 'scoreboard players set #built vault -1', 'return 1']),
+                               'forceload add -32 -16 144 96', 'scoreboard players set #built vault -1', 'return 1']),
         'tick': '\n'.join(['execute if score #built vault matches 0 as @a[limit=1] run function '+NS+':bootstrap',
-                          'execute if score #built vault matches -1 if loaded -32 65 -16 if loaded 80 65 96 as @a[limit=1] run function '+NS+':setup']),
+                          'execute if score #built vault matches -1 if loaded -32 65 -16 if loaded 144 65 96 as @a[limit=1] run function '+NS+':setup']),
         'setup': '\n'.join(setup),
         'controls': '\n'.join([GUARD,
             tell('TERMINUS VAULT CHECK: Survival, Normal. A Helion site stands 32 blocks south: look for the mast. Find your own way down, or:'),
             tell('[The hall]', 'hall'), tell('[Landing: door 1]', 'landing'), tell('[Ledge: the bridge]', 'ledge'), tell('[Far ledge]', 'far_ledge'),
-            tell('[West catwalk]', 'catwalk'), tell('[Cot room]', 'cot'), tell('[Plot room]', 'plot'), tell('[Fighter\'s kit]', 'kit'),
+            tell('[West catwalk]', 'catwalk'), tell('[Mess hall]', 'mess'), tell('[Drill hall]', 'drill'), tell('[Morgue]', 'morgue'), tell('[Cot room]', 'cot'), tell('[Fighter\'s kit]', 'kit'),
             tell('[Fight: round 1]', 'fight_start'), tell('[Round 2]', 'fight_round2'), tell('[Round 3]', 'fight_round3'),
             tell('[Pull: round 1]', 'fight_pull1'), tell('[Pull: round 3]', 'fight_pull3'),
             tell('[Burn: first]', 'fight_burn1'), tell('[Burn: last]', 'fight_burn3'),

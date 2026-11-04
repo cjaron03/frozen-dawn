@@ -74,6 +74,18 @@
     "facing=west,kind=seal_order": {
       "model": "frozendawn:block/vault_seal_order",
       "y": 270
+    },
+    "facing=north,kind=table": {
+      "model": "frozendawn:block/vault_table"
+    },
+    "facing=east,kind=table": {
+      "model": "frozendawn:block/vault_table"
+    },
+    "facing=south,kind=table": {
+      "model": "frozendawn:block/vault_table"
+    },
+    "facing=west,kind=table": {
+      "model": "frozendawn:block/vault_table"
     }
   }
 }

@@ -1289,6 +1289,8 @@
   "item.frozendawn.terminus.terminations": "Terminations logged: %s",
   "item.frozendawn.terminus.exempt": "Operator exempt. Protocol active.",
   "item.frozendawn.terminus.warning": "NOT FOR USE IN OCCUPIED HABITATS.",
+  "death.attack.frozendawn.vault_cold": "%1$s froze in the Morgue",
+  "entity.frozendawn.vault_recording": "Recording",
   "entity.frozendawn.custodian": "ORSA CSU-3 \"Custodian\"",
   "subtitle.frozendawn.block.vault.grind": "Something grinds",
   "subtitle.frozendawn.block.vault.pulse": "Low pulse",

@@ -23,25 +23,35 @@ import net.minecraft.world.level.block.state.properties.Half;
 
 /**
  * The Terminus Vault, under a Helion hall. Coordinates are relative to the hall floor centre, as in HelionSiteBuilder;
- * drawn at {@code docs/art/terminus/vault-rooms-mockup.png} and {@code watch-floor-mockup.png}. A drain grate under the
- * Confinement Core lifts onto a ladder that drops through the hall floor to the landing. East of it: door 1, the bridge
- * hall over its pit, the Watch Floor, the cot room with the plot room off it, the last door, the vault. The shell cannot be mined or blasted; the
- * bore is the way in and the doors are the way on.
+ * drawn at {@code docs/art/terminus/vault-rooms-mockup.png}, {@code watch-floor-mockup.png} and {@code vault-last-rooms-mockup.png}.
+ * A drain grate under the Confinement Core lifts onto a ladder that drops through the hall floor to the landing. East of it:
+ * door 1, the bridge hall over its pit, the Watch Floor, the mess hall, the drill hall, the Morgue, the cot room, the last door,
+ * the vault. The shell cannot be mined or blasted; the bore is the way in and the doors are the way on.
  */
 public final class TerminusVaultBuilder {
     public static final int FLOOR = -15, CEILING = -10, PIT_FLOOR = -25, SHELL_BOTTOM = -16, PIT_BOTTOM = -26, LOWER_FLOOR = -24;
     /** Blocks the pit needs under the hall; a site without them cannot hold the vault. */
     public static final int DEPTH_BELOW_HALL = -PIT_BOTTOM + 1;
     /** How far east of the hall the shell reaches, for the chunks a site must wait on. */
-    public static final int REACH = 66;
+    public static final int REACH = 107;
     public static final BlockPos GRATE = new BlockPos(0, 1, 0), DOOR = new BlockPos(3, CEILING, 0), BRIDGE = new BlockPos(5, FLOOR - 1, 0),
-            LAST_DOOR = new BlockPos(45, CEILING, 0), CLOCK = new BlockPos(45, CEILING - 1, 0), CRADLE = new BlockPos(50, FLOOR + 1, 0),
-            DESK = new BlockPos(46, FLOOR + 1, 3), LOCKER = new BlockPos(48, FLOOR + 1, 3);
+            LAST_DOOR = new BlockPos(100, CEILING, 0), CLOCK = new BlockPos(100, CEILING - 1, 0), CRADLE = new BlockPos(105, FLOOR + 1, 0),
+            DESK = new BlockPos(101, FLOOR + 1, 3), LOCKER = new BlockPos(103, FLOOR + 1, 3);
     /** The Watch Floor: Argus in the ceiling over the Custodian's mark, a gate each end, the ledge a purge throws you back to. */
     public static final BlockPos ARGUS = new BlockPos(28, CEILING, 0), WEST_DOOR = new BlockPos(17, CEILING, 0), EAST_DOOR = new BlockPos(40, CEILING, 0),
             CUSTODIAN = new BlockPos(28, LOWER_FLOOR + 1, 0), LEDGE = new BlockPos(16, FLOOR + 1, 0), SEAL_ORDER = new BlockPos(18, FLOOR + 1, -7);
     /** The foot of the System Plot's wall, at its west end: 24 blocks east of here and 8 up. */
-    public static final BlockPos PLOT = new BlockPos(41, FLOOR + 1, -17);
+    public static final BlockPos PLOT = new BlockPos(41, FLOOR + 1, -11);
+    /** The tops of the last rooms: the mess hall's and, lower, the drill hall's and the Morgue's. */
+    public static final int MESS_ROOF = -6, ROOM_ROOF = -9;
+    /** The doors east of the Watch Floor: the mess hall's stands open, the other two are the puzzles'. */
+    public static final BlockPos MESS_DOOR = new BlockPos(65, CEILING, 0), DRILL_DOOR = new BlockPos(83, CEILING, 0), MORGUE_DOOR = new BlockPos(95, CEILING, 0);
+    /** The middle of the recorder's console, which runs the Two-Person Rule. */
+    public static final BlockPos RECORDER = new BlockPos(67, FLOOR + 1, 0);
+    /** The two keys, too far apart for one person. */
+    public static final BlockPos[] KEYS = {new BlockPos(72, FLOOR + 2, -7), new BlockPos(79, FLOOR + 2, 7)};
+    /** The north foot of the scanner's panel, two blocks square on the wall beside the Morgue's door, which runs the Morgue. */
+    public static final BlockPos VITALS = new BlockPos(95, FLOOR + 2, -4);
     /** North wall west to east, then south: each fuse's slot. */
     public static final BlockPos[] FUSES = {fuse(23, -12), fuse(28, -12), fuse(33, -12), fuse(23, 12), fuse(28, 12), fuse(33, 12)};
     /** Three glyphs either side of the west door, at the upper level. */
@@ -83,8 +93,11 @@ public final class TerminusVaultBuilder {
         bore(level, hall);
         door(level, hall.offset(DOOR));
         bridge(level, hall.offset(BRIDGE));
+        // West to east each room's end wall goes over the last one's: the Watch Floor's last of all, for its gate.
+        messHall(level, hall);
+        morgue(level, hall);
+        drillHall(level, hall);
         watchFloor(level, hall);
-        plotRoom(level, hall);
         lastDoor(level, hall.offset(LAST_DOOR));
         vault(level, hall);
         dress(level, hall);
@@ -100,16 +113,16 @@ public final class TerminusVaultBuilder {
         var floor = ModBlocks.VAULT_FLOOR.get().defaultBlockState();
         var air = Blocks.AIR.defaultBlockState();
         box(l, c, -3, 16, SHELL_BOTTOM, CEILING, -5, 5, shell);
-        box(l, c, 41, 51, SHELL_BOTTOM, CEILING, -5, 5, shell);
+        box(l, c, 96, 106, SHELL_BOTTOM, CEILING, -5, 5, shell);
         box(l, c, 4, 16, PIT_BOTTOM, SHELL_BOTTOM, -3, 3, shell);
         box(l, c, -2, 2, FLOOR, FLOOR, -2, 2, floor);
         box(l, c, 4, 16, FLOOR, FLOOR, -3, 3, floor);
-        box(l, c, 41, 44, FLOOR, FLOOR, -3, 3, floor);
-        box(l, c, 46, 50, FLOOR, FLOOR, -3, 3, floor);
+        box(l, c, 96, 99, FLOOR, FLOOR, -3, 3, floor);
+        box(l, c, 101, 105, FLOOR, FLOOR, -3, 3, floor);
         box(l, c, -2, 2, FLOOR + 1, CEILING - 1, -2, 2, air);
         box(l, c, 4, 16, FLOOR + 1, CEILING - 1, -2, 2, air);
-        box(l, c, 41, 44, FLOOR + 1, CEILING - 1, -3, 3, air);
-        box(l, c, 46, 50, FLOOR + 1, CEILING - 1, -3, 3, air);
+        box(l, c, 96, 99, FLOOR + 1, CEILING - 1, -3, 3, air);
+        box(l, c, 101, 105, FLOOR + 1, CEILING - 1, -3, 3, air);
         box(l, c, 4, 16, FLOOR, FLOOR, 3, 3, shell);
         box(l, c, 4, 16, FLOOR, FLOOR, -3, -3, shell);
         // The pit, floored with powder snow: a fall costs nothing but the climb.
@@ -136,16 +149,52 @@ public final class TerminusVaultBuilder {
     /** The bridge: its mechanism under the ledge's lip; the cells come out east of it. */
     public static void bridge(ServerLevel l, BlockPos control) { mechanism(l, control, VaultMechanismBlock.Kind.BRIDGE); }
 
-    /** North of the cot room, through a gap in its wall: a quiet room whose far wall is the System Plot. */
-    private static void plotRoom(ServerLevel l, BlockPos c) {
-        box(l, c, 41, REACH - 1, SHELL_BOTTOM, -6, -17, -5, ModBlocks.VAULT_SHELL.get().defaultBlockState());
-        box(l, c, 41, 64, FLOOR, FLOOR, -16, -6, ModBlocks.VAULT_FLOOR.get().defaultBlockState());
-        box(l, c, 41, 64, FLOOR + 1, -7, -16, -6, Blocks.AIR.defaultBlockState());
-        box(l, c, 41, 42, FLOOR, FLOOR, -5, -4, ModBlocks.VAULT_FLOOR.get().defaultBlockState());
-        box(l, c, 41, 42, FLOOR + 1, FLOOR + 3, -5, -4, Blocks.AIR.defaultBlockState());
+    /** East of the gate: six long tables and the System Plot along the north wall. A quiet room with nothing in it to fear. */
+    public static void messHall(ServerLevel l, BlockPos c) {
+        box(l, c, 40, 65, SHELL_BOTTOM, MESS_ROOF, -11, 11, ModBlocks.VAULT_SHELL.get().defaultBlockState());
+        box(l, c, 41, 64, FLOOR, FLOOR, -10, 10, ModBlocks.VAULT_FLOOR.get().defaultBlockState());
+        box(l, c, 41, 64, FLOOR + 1, MESS_ROOF - 1, -10, 10, Blocks.AIR.defaultBlockState());
         l.setBlock(c.offset(PLOT), ModBlocks.VAULT_PLOT.get().defaultBlockState(), 2);
+        for (int x = 44; x <= 56; x += 6) for (int z : new int[] {-4, 3}) for (int i = 0; i < 8; i++)
+            drop(l, c, Kind.TABLE, x + i % 4, FLOOR + 1, z + i / 4, Direction.NORTH);
         // Just enough to walk by: the plot lights nothing, it only glows.
-        for (int x : new int[] {46, 59}) l.setBlock(c.offset(x, -8, -8), Blocks.LIGHT.defaultBlockState().setValue(net.minecraft.world.level.block.LightBlock.LEVEL, 2), 2);
+        for (int x : new int[] {46, 59}) for (int z : new int[] {-6, 6})
+            l.setBlock(c.offset(x, -8, z), Blocks.LIGHT.defaultBlockState().setValue(net.minecraft.world.level.block.LightBlock.LEVEL, 2), 2);
+    }
+
+    /** The Two-Person Rule: the recorder by the way in, a key on each long wall, and the door that wants both. */
+    public static void drillHall(ServerLevel l, BlockPos c) {
+        box(l, c, 65, 83, SHELL_BOTTOM, ROOM_ROOF, -8, 8, ModBlocks.VAULT_SHELL.get().defaultBlockState());
+        box(l, c, 66, 82, FLOOR, FLOOR, -7, 7, ModBlocks.VAULT_FLOOR.get().defaultBlockState());
+        box(l, c, 66, 82, FLOOR + 1, ROOM_ROOF - 1, -7, 7, Blocks.AIR.defaultBlockState());
+        for (int part = 0; part < 3; part++)
+            l.setBlock(c.offset(RECORDER).offset(0, 0, part - 1), ModBlocks.VAULT_RECORDER.get().defaultBlockState().setValue(VaultRecorderBlock.PART, part), 2);
+        for (int key = 0; key < KEYS.length; key++)
+            l.setBlock(c.offset(KEYS[key]), ModBlocks.VAULT_KEY.get().defaultBlockState().setValue(VaultKeyBlock.KEY, key), 2);
+        for (int x : new int[] {70, 78}) {
+            l.setBlock(c.offset(x, ROOM_ROOF - 1, -7), ModBlocks.VAULT_LIGHT.get().defaultBlockState().setValue(VaultLightBlock.FACING, Direction.SOUTH), 2);
+            l.setBlock(c.offset(x, ROOM_ROOF - 1, 7), ModBlocks.VAULT_LIGHT.get().defaultBlockState().setValue(VaultLightBlock.FACING, Direction.NORTH), 2);
+        }
+        gate(l, c.offset(MESS_DOOR), true);
+        puzzleGate(l, c, DRILL_DOOR);
+    }
+
+    /** The Morgue Gate: the cold vent, the scanner's plate, its panel, and the door it opens for the dead. */
+    public static void morgue(ServerLevel l, BlockPos c) {
+        box(l, c, 83, 95, SHELL_BOTTOM, ROOM_ROOF, -5, 5, ModBlocks.VAULT_SHELL.get().defaultBlockState());
+        box(l, c, 84, 94, FLOOR, FLOOR, -4, 4, ModBlocks.VAULT_FLOOR.get().defaultBlockState());
+        box(l, c, 84, 94, FLOOR + 1, ROOM_ROOF - 1, -4, 4, Blocks.AIR.defaultBlockState());
+        box(l, c, 88, 90, FLOOR, FLOOR, -1, 1, ModBlocks.VAULT_VENT.get().defaultBlockState());
+        box(l, c, 94, 94, FLOOR, FLOOR, -1, 1, ModBlocks.VAULT_PLATE.get().defaultBlockState());
+        l.setBlock(c.offset(89, ROOM_ROOF - 1, -4), ModBlocks.VAULT_LIGHT.get().defaultBlockState().setValue(VaultLightBlock.FACING, Direction.SOUTH), 2);
+        l.setBlock(c.offset(89, ROOM_ROOF - 1, 4), ModBlocks.VAULT_LIGHT.get().defaultBlockState().setValue(VaultLightBlock.FACING, Direction.NORTH), 2);
+        puzzleGate(l, c, MORGUE_DOOR);
+        l.setBlock(c.offset(VITALS), ModBlocks.VAULT_VITALS.get().defaultBlockState(), 2);
+    }
+    /** A gate, shut, with the lamp over it that goes green when it opens. */
+    private static void puzzleGate(ServerLevel l, BlockPos c, BlockPos door) {
+        gate(l, c.offset(door), false);
+        box(l, c, door.getX(), door.getX(), CEILING - 1, CEILING - 1, -1, 1, ModBlocks.VAULT_LINTEL.get().defaultBlockState());
     }
 
     /** The Watch Floor: a catwalk ring at the upper level, open down to the lower floor, its board, fuses, clocks and lamps. */
@@ -219,7 +268,7 @@ public final class TerminusVaultBuilder {
             barrel.setChanged();
         }
         // Just enough light that the viewport has something to show.
-        for (int x : new int[] {47, 49}) l.setBlock(c.offset(x, CEILING - 1, 0), Blocks.LIGHT.defaultBlockState().setValue(net.minecraft.world.level.block.LightBlock.LEVEL, 3), 2);
+        for (int x : new int[] {102, 104}) l.setBlock(c.offset(x, CEILING - 1, 0), Blocks.LIGHT.defaultBlockState().setValue(net.minecraft.world.level.block.LightBlock.LEVEL, 3), 2);
         l.setBlock(c.offset(CLOCK), ModBlocks.VAULT_CLOCK.get().defaultBlockState(), 2);
         if (l.getBlockEntity(c.offset(CLOCK)) instanceof VaultClockBlockEntity clock) clock.setStart(VaultClock.start(l.getSeed()));
     }
@@ -246,7 +295,7 @@ public final class TerminusVaultBuilder {
         // The rest of the sublevel's lamps: nothing puts these out.
         for (int x : new int[] {7, 13}) l.setBlock(c.offset(x, CEILING - 1, -2), ModBlocks.VAULT_LIGHT.get().defaultBlockState().setValue(VaultLightBlock.FACING, Direction.SOUTH), 2);
         l.setBlock(c.offset(-2, CEILING - 1, 0), ModBlocks.VAULT_LIGHT.get().defaultBlockState().setValue(VaultLightBlock.FACING, Direction.EAST), 2);
-        l.setBlock(c.offset(43, CEILING - 1, -3), ModBlocks.VAULT_LIGHT.get().defaultBlockState().setValue(VaultLightBlock.FACING, Direction.SOUTH), 2);
+        l.setBlock(c.offset(98, CEILING - 1, -3), ModBlocks.VAULT_LIGHT.get().defaultBlockState().setValue(VaultLightBlock.FACING, Direction.SOUTH), 2);
         drop(l, c, Kind.CRATE, 30, FLOOR + 1, -11, Direction.NORTH);
         drop(l, c, Kind.CRATE, 31, FLOOR + 1, -11, Direction.NORTH);
         drop(l, c, Kind.CASE, 34, FLOOR + 1, 10, Direction.EAST);
@@ -259,9 +308,9 @@ public final class TerminusVaultBuilder {
         drop(l, c, Kind.PAPER, 35, LOWER_FLOOR + 1, 7, Direction.SOUTH);
         drop(l, c, Kind.HARD_HAT, 16, FLOOR + 1, 2, Direction.EAST);
         drop(l, c, Kind.CRATE, 1, FLOOR + 1, -2, Direction.EAST);
-        drop(l, c, Kind.PAPER, 42, FLOOR + 1, -2, Direction.NORTH);
+        drop(l, c, Kind.PAPER, 97, FLOOR + 1, -2, Direction.NORTH);
         drop(l, c, Kind.CASE, 47, FLOOR + 1, -9, Direction.WEST);
-        drop(l, c, Kind.PAPER, 52, FLOOR + 1, -13, Direction.EAST);
+        drop(l, c, Kind.PAPER, 52, FLOOR + 1, -8, Direction.EAST);
         drop(l, c, Kind.SEAL_ORDER, SEAL_ORDER.getX(), SEAL_ORDER.getY(), SEAL_ORDER.getZ(), Direction.EAST);
     }
     private static void mark(ServerLevel l, BlockPos c, int x, int y, int z, Mark mark) {
@@ -296,6 +345,8 @@ public final class TerminusVaultBuilder {
         if (l.getBlockEntity(hall.offset(CRADLE)) instanceof VaultCradleBlockEntity cradle) cradle.reset();
         l.setBlock(hall.offset(DESK), ModBlocks.VAULT_DESK.get().defaultBlockState(), 2);
         if (l.getBlockEntity(hall.offset(ARGUS)) instanceof VaultArgusBlockEntity argus) argus.reset(l);
+        if (l.getBlockEntity(hall.offset(RECORDER)) instanceof VaultRecorderBlockEntity recorder) recorder.reset();
+        if (l.getBlockEntity(hall.offset(VITALS)) instanceof VaultVitalsBlockEntity vitals) vitals.reset();
         drop(l, hall, Kind.SEAL_ORDER, SEAL_ORDER.getX(), SEAL_ORDER.getY(), SEAL_ORDER.getZ(), Direction.EAST);
     }
 }

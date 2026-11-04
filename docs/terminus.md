@@ -551,3 +551,55 @@ ours, with no Destiny names, glyphs or art. A 7 by 4 chart "looks clustered as f
   distance cannot hold back the first Helion site.
 - `VaultPlotRenderer` draws `textures/entity/vault_system_plot.png` as one full-bright quad, so it glows and lights nothing.
 - Needs the owner's eyes: how it reads from the room, and whether the room's dim light is right.
+
+## The last rooms (approved, built 2026-11-03)
+
+Owner, after the Watch Floor: "one room actually for the solar map, thats a mess hall, then two other rooms with puzzles", "UNIQUE
+puzzles" that "make sense". Of three offered they picked the Two-Person Rule and the Morgue Gate, Morgue last so the cot room is
+reached at one heart, and said "Build them" from `vault-last-rooms-mockup.png` (`make_vault_last_rooms_mockup.py`). No new loot.
+
+### Layout (hall-relative)
+- Mess hall, x 41..64, z -10..10, y -14..-7: six tables, 4 by 2, at x 44, 50, 56 and z -4, 3, dressing only. The System Plot is its
+  north wall (`PLOT` x 41, z -11). The old plot room is gone.
+- Door x 65, a gate built open: nothing drives it.
+- Drill hall, x 66..82, z -7..7, y -14..-10: console at x 67, z -1..1; key A (72, -7), key B (79, 7), at chest height, y -13.
+- Gold door x 83. Morgue, x 84..94, z -4..4, y -14..-10: vent x 88..90, plate x 94, both z -1..1, panel on the east wall, z -4..-3,
+  y -13..-12 as the section draws it. Gold door x 95.
+- Cot room x 96..99, last door x 100, vault x 101..105. `REACH` is 107.
+- "Gold" is the plan's colour for the puzzle doors. The sections draw them dark with a lamp over them, pale shut and green open, and
+  that is what is built: `vault_lintel`, over the ordinary gate panel.
+
+### As built
+- `TwoPersonRule` is the recording with no world in it (`TwoPersonRuleTest`), `VaultRecorderBlockEntity`, the console's middle block,
+  shows it. `MorgueGate` is the scanner (`MorgueGateTest`), `VaultVitalsBlockEntity`, the panel's foot, shows it.
+- A key is held as a fuse is: the client repeats use every four ticks, and a gap over eight is a hand let go.
+- `VaultRecordingEntity` is the pale figure: the player model in a see-through skin made from the technician's. No collision, not
+  hittable, no mind, never saved, and it goes by itself five ticks after nothing drives it.
+- The vent does 2 health every 2 s on the game clock, as `frozendawn:vault_cold`, past armor and enchantments. It has vanilla's
+  freezing hurt sound. Nothing new in the audio.
+- `/fd terminus vault status` reads both rooms; `[Two-Person]` and `[Morgue]` log lines record a pass.
+
+### Rulings (agent, for the owner to confirm)
+- The brief said the door at x 83 opens only while both keys are held. Nobody can hold a key and walk through it, alone or with a
+  friend, so it stays open 5 s after the last moment both were held. From key B that is 7 blocks, about 2 s at a walk.
+- The two puzzle doors also open for anyone standing within two blocks east of them, and never shut on someone in the doorway.
+  Otherwise the Morgue, and the cot room and vault past it, would be traps with no way back. A friend already through can hold the
+  way for you.
+- The Morgue door shuts at once if the plate reads someone over the line, healed or a second player: anyone alive on the plate keeps
+  it shut. Absorption hearts count as alive.
+- A take is abandoned if the recorder leaves the drill hall or dies. It costs nothing; press again.
+- Pressing during a take does nothing; pressing during a replay throws it away and starts a new take.
+- Nothing in either room is saved: a reload leaves them idle and their doors shut.
+- Nothing can be placed in either room, doorways included, ever, not only until the Custodian falls: you only reach them after it.
+- The action bar counts the take down, "REC 00:17". Not in the mockup. Say if you would rather have nothing.
+
+### Playtest
+Buttons for the mess hall, drill hall, Morgue and cot room. `[Reset the vault]` clears both puzzle rooms.
+
+### Verification
+- JUnit: `TwoPersonRuleTest`, `MorgueGateTest`.
+- GameTests (`terminus_rooms`, `_alone`): `TerminusLastRoomsGameTest`, and `theVaultStandsUnderTheCoreOncePerWorld` for the layout.
+- Needs the owner's eyes and ears: how the rooms read and how dim they are, the figure's walk, the panel, all new textures (drawn in
+  the mockup's colours, with no art beyond it), and whether either puzzle can be worked out from the room alone.
+- A low view distance: the first site now waits on chunks about 150 blocks east of it before the vault can be claimed, so at 8 chunks
+  or fewer it builds only once a player has gone that far east. Not seen in play.

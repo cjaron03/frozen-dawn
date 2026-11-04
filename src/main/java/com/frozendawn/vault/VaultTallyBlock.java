@@ -6,7 +6,8 @@ import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 
-/** One lamp of the row over the east gate. Argus puts one out for every right fuse. */
+/** A block with a lamp in it. Over the east gate, one of the row Argus puts out for every right fuse; over a puzzle's door, lit when it
+ * opens; underfoot, the Morgue's scanner plate, lit while it reads someone. */
 public final class VaultTallyBlock extends Block {
     public static final BooleanProperty LIT = BlockStateProperties.LIT;
 

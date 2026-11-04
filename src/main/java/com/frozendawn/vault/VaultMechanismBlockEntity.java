@@ -16,6 +16,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 
@@ -127,6 +128,12 @@ public final class VaultMechanismBlockEntity extends BlockEntity {
         level.playSound(null, worldPosition.below(3), ModSounds.VAULT_GRIND.get(), SoundSource.BLOCKS, 1, 1);
         setChanged();
         publish();
+    }
+    /** A puzzle's gate, whichever way it is going: nobody in the doorway has it shut on them, and nobody past it is shut in. */
+    public boolean someoneInOrBehind(ServerLevel level) {
+        var door = new AABB(worldPosition.getX(), worldPosition.getY() + CELL_BOTTOM, worldPosition.getZ() - 1, worldPosition.getX() + 3, worldPosition.getY() + CELL_TOP + 1, worldPosition.getZ() + 2);
+        for (var player : level.players()) if (player.isAlive() && !player.isSpectator() && door.contains(player.position())) return true;
+        return false;
     }
     private void placeCells(ServerLevel level) {
         var cell = ModBlocks.VAULT_DOOR_CELL.get().defaultBlockState().setValue(VaultDoorCellBlock.LAST, kind() == Kind.LAST_DOOR);

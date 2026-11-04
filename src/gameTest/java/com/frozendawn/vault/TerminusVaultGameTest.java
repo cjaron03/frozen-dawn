@@ -218,11 +218,27 @@ public final class TerminusVaultGameTest {
             h.assertTrue(level.getBlockEntity(hall.offset(HelionSiteBuilder.LOG_DESK)) instanceof BarrelBlockEntity desk&&desk.getItem(0).is(ModItems.ORSA_DOCUMENT.get()),"The one clue, in the hall's desk");
             h.assertTrue(level.getBlockEntity(hall.offset(TerminusVaultBuilder.ARGUS)) instanceof VaultArgusBlockEntity,"Argus over the Watch Floor");
             h.assertTrue(level.getBlockState(hall.offset(16,TerminusVaultBuilder.FLOOR+1,-3)).getOptionalValue(VaultMarkBlock.MARK).filter(m->m==VaultMarkBlock.Mark.WARNING_14).isPresent(),"The warning ends by the door");
-            h.assertTrue(TerminusVaultBuilder.LAST_DOOR.getX()==45&&TerminusVaultBuilder.CRADLE.getX()==50,"The last door and the vault moved east of the floor");
-            h.assertTrue(level.getBlockState(hall.offset(TerminusVaultBuilder.REACH-1,TerminusVaultBuilder.FLOOR+1,-10)).is(ModBlocks.VAULT_SHELL.get()),"The shell runs that far");
-            h.assertTrue(level.getBlockEntity(hall.offset(TerminusVaultBuilder.PLOT)) instanceof VaultPlotBlockEntity,"The plot's wall");
-            for(int z=-3;z>=-15;z--) h.assertTrue(level.getBlockState(hall.offset(41,TerminusVaultBuilder.FLOOR+1,z)).isAir()||z==-3,"The way from the cot room to the plot, at "+z);
-            h.assertTrue(level.getBlockState(hall.offset(64,TerminusVaultBuilder.FLOOR+8,-16)).isAir(),"A wall twenty-four wide and eight tall");
+            h.assertTrue(TerminusVaultBuilder.LAST_DOOR.getX()==100&&TerminusVaultBuilder.CRADLE.getX()==105,"The last door and the vault moved east of the last rooms");
+            h.assertTrue(TerminusVaultBuilder.REACH==107&&level.getBlockState(hall.offset(TerminusVaultBuilder.REACH-1,TerminusVaultBuilder.FLOOR+1,0)).is(ModBlocks.VAULT_SHELL.get()),"The shell runs that far");
+            h.assertTrue(level.getBlockEntity(hall.offset(TerminusVaultBuilder.PLOT)) instanceof VaultPlotBlockEntity&&TerminusVaultBuilder.PLOT.getZ()==-11,"The plot's wall, the mess hall's north wall");
+            h.assertTrue(level.getBlockState(hall.offset(64,TerminusVaultBuilder.FLOOR+8,-10)).isAir(),"A wall twenty-four wide and eight tall");
+            h.assertTrue(level.getBlockState(hall.offset(97,TerminusVaultBuilder.FLOOR+1,-4)).is(ModBlocks.VAULT_SHELL.get()),"No gap in the cot room's north wall");
+            h.assertTrue(level.getBlockState(hall.offset(TerminusVaultBuilder.EAST_DOOR).below(3)).is(ModBlocks.VAULT_DOOR_CELL.get()),"The Watch Floor's gate survives the room built on it");
+            for(var at:new BlockPos[] {TerminusVaultBuilder.MESS_DOOR,TerminusVaultBuilder.DRILL_DOOR,TerminusVaultBuilder.MORGUE_DOOR})
+                h.assertTrue(level.getBlockEntity(hall.offset(at)) instanceof VaultMechanismBlockEntity door&&door.kind()==VaultMechanismBlock.Kind.GATE,"A gate at "+at);
+            h.assertTrue(level.getBlockState(hall.offset(TerminusVaultBuilder.MESS_DOOR).below(3)).isAir(),"The mess hall's door stands open");
+            for(var at:new BlockPos[] {TerminusVaultBuilder.DRILL_DOOR,TerminusVaultBuilder.MORGUE_DOOR}) {
+                h.assertTrue(level.getBlockState(hall.offset(at).below(3)).is(ModBlocks.VAULT_DOOR_CELL.get()),"A puzzle's door is shut at "+at);
+                h.assertTrue(level.getBlockState(hall.offset(at).below()).is(ModBlocks.VAULT_LINTEL.get()),"Its lamp");
+            }
+            for(int x:new int[]{44,47,50,53,56,59}) for(int z:new int[]{-4,-3,3,4})
+                h.assertTrue(level.getBlockState(hall.offset(x,TerminusVaultBuilder.FLOOR+1,z)).getOptionalValue(VaultDressingBlock.KIND).filter(k->k==VaultDressingBlock.Kind.TABLE).isPresent(),"A table at "+x+", "+z);
+            h.assertTrue(level.getBlockState(hall.offset(48,TerminusVaultBuilder.FLOOR+1,-4)).isAir(),"With a gap between tables");
+            h.assertTrue(level.getBlockEntity(hall.offset(TerminusVaultBuilder.RECORDER)) instanceof VaultRecorderBlockEntity,"The recorder");
+            h.assertTrue(level.getBlockEntity(hall.offset(TerminusVaultBuilder.VITALS)) instanceof VaultVitalsBlockEntity,"The scanner's panel");
+            for(int x=88;x<=90;x++) for(int z=-1;z<=1;z++) h.assertTrue(level.getBlockState(hall.offset(x,TerminusVaultBuilder.FLOOR,z)).is(ModBlocks.VAULT_VENT.get()),"The cold vent");
+            for(int z=-1;z<=1;z++) h.assertTrue(level.getBlockState(hall.offset(94,TerminusVaultBuilder.FLOOR,z)).is(ModBlocks.VAULT_PLATE.get()),"The scanner's plate");
+            h.assertTrue(level.getBlockState(hall.offset(97,TerminusVaultBuilder.FLOOR+1,-2)).is(ModBlocks.VAULT_DRESSING.get())&&level.getBlockState(hall.offset(98,TerminusVaultBuilder.CEILING-1,-3)).is(ModBlocks.VAULT_LIGHT.get()),"The cot room's paper and lamp came too");
             var shell=level.getBlockState(hall.offset(-3,TerminusVaultBuilder.CEILING,0));
             h.assertTrue(shell.is(ModBlocks.VAULT_SHELL.get())&&shell.getDestroySpeed(level,hall)<0&&shell.getBlock().getExplosionResistance()>1000,"A shell nothing mines or blasts");
         } finally {state.setVaultForTest(was);}

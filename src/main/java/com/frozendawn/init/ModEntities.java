@@ -37,6 +37,18 @@ public class ModEntities {
     public static final DeferredRegister<EntityType<?>> ENTITIES =
             DeferredRegister.create(Registries.ENTITY_TYPE, FrozenDawn.MOD_ID);
 
+    public static final DeferredHolder<EntityType<?>, EntityType<com.frozendawn.vault.VaultRecordingEntity>> VAULT_RECORDING =
+            ENTITIES.register("vault_recording", () -> EntityType.Builder
+                    .of(com.frozendawn.vault.VaultRecordingEntity::new, MobCategory.MISC)
+                    .sized(0.6F, 1.8F)
+                    .eyeHeight(1.62F)
+                    .fireImmune()
+                    .noSave()
+                    .noSummon()
+                    .clientTrackingRange(8)
+                    .updateInterval(1)
+                    .build("vault_recording"));
+
     public static final DeferredHolder<EntityType<?>, EntityType<com.frozendawn.vault.CustodianEntity>> CUSTODIAN =
             ENTITIES.register("custodian", () -> EntityType.Builder
                     .of(com.frozendawn.vault.CustodianEntity::new, MobCategory.MISC)
