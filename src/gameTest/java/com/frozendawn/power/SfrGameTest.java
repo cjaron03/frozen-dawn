@@ -148,9 +148,10 @@ public final class SfrGameTest {
         });
     }
 
-    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "sfr", timeoutTicks = 300, skyAccess = true)
+    // The live, paid ignition, so a slow entity load must not read as a failed one: the wait counts against this budget.
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "sfr", timeoutTicks = 1200, skyAccess = true)
     public static void sfrIgnitesToBurningOnABankAndCreativeFuel(GameTestHelper h) {
-        h.runAfterDelay(1, () -> {
+        GameTestPacing.whenTicking(h, () -> {
             var be = ready(h, 8_000_000);
             h.succeedWhen(() -> {
                 h.assertValueEqual(be.physics().state(), FusionPhysics.State.BURNING, "state");

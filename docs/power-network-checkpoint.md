@@ -1409,4 +1409,6 @@ OFF/IDLE is not explained. It needs a shell that fails validation or two unpaid 
 
 The test now steps the reactor itself inside one tick, so no server tick passes between arming and asserting. It no longer depends on either cause. It still proves the advancement radius, and passes with the chunk's entities held. It no longer proves live payment, which `sfrIgnitesToBurningOnABankAndCreativeFuel` covers: if OFF/IDLE is a real power bug, that test is where it would show, as state OFF.
 
+`sfrIgnitesToBurningOnABankAndCreativeFuel` now waits with `whenTicking` and has 1200 ticks, so a slow load does not read as a failed ignition: with the controller chunk's load held 400 ticks the old form timed out in IGNITION and this one passes.
+
 Same exposure, left as is: every other SFR test that waits for the reactor's own ticker with no entity wait, and `whenTicking` tests whose wait still counts against their budget. `holdNormalPace` paces nothing on the gate, which sets no sprint property and ticks back to back regardless.
