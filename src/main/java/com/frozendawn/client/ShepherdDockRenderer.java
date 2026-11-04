@@ -32,7 +32,7 @@ public final class ShepherdDockRenderer implements BlockEntityRenderer<ShepherdD
         pose.translate(0, -MODEL_HEIGHT, 0);
         model.renderToBuffer(pose, buffers.getBuffer(model.renderType(ShepherdModel.TEXTURE)), light, overlay);
         Mood face = state.getValue(ShepherdDockBlock.STATE) == DockState.BOOT ? Mood.RECORDING : Mood.OFFLINE;
-        ShepherdFaceRenderer.drawOnModel(pose, buffers, face, 0, false);
+        ShepherdFaceRenderer.drawOnModel(pose, buffers, face, 0, false, 0);
         pose.popPose();
     }
 }

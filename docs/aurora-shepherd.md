@@ -73,6 +73,7 @@ All at 16 texels to the block, in `docs/art/aurora-shepherd/`, each from its `ma
 | `face-moods-mockup.png` | Eight moods, mouth frames, blink, recording, at play size | Approved "Build as drawn" |
 | `talk-screen-mockup.png` | Face, typed line, four slots, hover line | Approved "Build as drawn" |
 | `dock-mockup.png` | Found, cell in, awake; vault plan | Approved "Build as drawn" |
+| `flame-and-faces-mockup.png` | Pilot-blue flame under the heater port; Amused, Sad, Alarmed, Thinking redrawn | Approved: flame B, all four faces; Unimpressed and Happy stay as first drawn |
 | `ambient-lines-mockup.png` | Ambient line, callout, "Got a minute?", recording voice during play | Approved "Build as drawn" |
 
 **Body.** About 12 texels wide, 10 tall and 10 deep, 18 wide across the ducts, with a carry handle on top. Front display 8 by 6 texels, lamp strip above it, heater grille underneath, a duct each side. She hovers about one block off the ground.
@@ -267,3 +268,5 @@ S1 is planned in [aurora-shepherd-plan.md](aurora-shepherd-plan.md).
 2026-11-04: S1 built on `feat/aurora-shepherd` in `/Volumes/SSD/Work/frozen-dawn-aurora-shepherd`. `architectVerify` passed at 64c461c2, after the branch review's three fixes. Active save: `run-lab/saves/Shepherd Check`, from `tools/prepare_shepherd_playtest.py`. Branch review done on Opus. Waiting on the owner's visual pass; `architectMonkey` has not run and is due before any merge.
 
 Draft for the owner to mark: `hub.talk`, the one line her hub's Talk has in S1, in a mild and a heavy form, and the two reply labels "Why Aurora?" and "Aurora it is." that the script's "If the player asks why" needs. The blip, boot chime and refuse click are auditions: `tools/generate_shepherd_sounds.sh` also writes three of each to `build/shepherd-sound-candidates`.
+
+2026-11-04, after the first visual pass: the owner reported the first meeting and replay look good and asked for a flame under her heater port and livelier faces. Added the flicker that sputters out now and then (none Offline or on the dock), the four redrawn moods, idle motion in `ShepherdFace.motion` (random blinks, double blinks, side glances, per-mood habits), a three-tick eyes-shut beat when her mood changes, her eyes following the hovered reply, and her body display showing her mood, blink and moving mouth. Her mouth on the body runs on a fixed 80 ticks per line, since the server does not hold the text. Tests cover the motion limits and when her mouth stops; how it all looks still needs the owner's pass.

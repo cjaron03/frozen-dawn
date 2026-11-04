@@ -5,6 +5,7 @@ Writes into src/main/resources. Run from anywhere: python3 docs/art/aurora-sheph
 from pathlib import Path
 from PIL import Image
 from make_body_directions import C, lantern
+from make_flame_and_faces_mockup import flame
 import make_dock_mockup  # noqa: F401, adds the dock's colors to C
 
 HERE = Path(__file__).resolve().parent
@@ -66,6 +67,11 @@ BOXES = [
     (16, 30, 2, 12, 4, 3, 15, 5),     # handle posts
     (20, 30, 9, 12, 4, 10, 15, 5),
     (24, 30, 2, 15, 4, 10, 16, 5),    # handle bar
+    (0, 34, 4, -1, 3, 8, 0, 7),       # flame, from the grille down; pilot blue, the owner's pick
+    (16, 34, 4, -2, 4, 8, -1, 6),
+    (28, 34, 5, -2, 3, 7, -1, 7),
+    (40, 34, 5, -3, 4, 7, -2, 6),
+    (48, 34, 5, -4, 4, 6, -3, 5),
 ]
 
 
@@ -75,6 +81,10 @@ def unit():
     for x in range(2, 10):
         for y in range(4, 10):
             body.v[(x, y, 9)] = 'screen'
+    flame(body, 'b', 3)
+    for x, y, z in [(x, -1 - n, z) for n, (x0, x1, z0, z1) in enumerate(((4, 8, 3, 7), (4, 8, 3, 7), (5, 7, 4, 6), (5, 6, 4, 5)))
+                    for x in range(x0, x1) for z in range(z0, z1)]:
+        body.v.setdefault((x, y, z), 'b1')
     img = Image.new('RGBA', (64, 64), (0, 0, 0, 0))
 
     def paint(px, py, x, y, z):

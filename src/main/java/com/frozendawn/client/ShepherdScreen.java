@@ -8,6 +8,7 @@ import com.frozendawn.network.ShepherdNodePayload;
 import com.frozendawn.network.ShepherdReplyPayload;
 import com.frozendawn.shepherd.ShepherdConversation;
 import com.frozendawn.shepherd.ShepherdDialogue.Slot;
+import com.frozendawn.shepherd.ShepherdFace;
 import com.frozendawn.shepherd.ShepherdFace.Mood;
 import com.frozendawn.shepherd.ShepherdPolicy;
 import com.frozendawn.shepherd.ShepherdTalk.Action;
@@ -32,7 +33,6 @@ public final class ShepherdScreen extends Screen {
     private static final int LINE_X = 92, LINE_Y = 103, LINE_W = 295, LINE_STEP = 10;
     private static final int SLOT_X = 84, SLOT_Y = 144, SLOT_DX = 158, SLOT_DY = 28, SLOT_W = 153, SLOT_H = 23;
     private static final int SETTINGS_X = 84, SETTINGS_Y = 202, SETTINGS_W = 150, SETTINGS_H = 14;
-    private static final int BLINK_EVERY = 90, BLINK_TICKS = 3;
 
     private int conversation;
     private boolean hub, waiting, lamp, heavy;
@@ -43,6 +43,8 @@ public final class ShepherdScreen extends Screen {
     private List<String> rows = List.of();
     private int total, typed, charTicks, age;
     private boolean closedByServer;
+    private Mood shownMood;
+    private int moodBeat;
 
     public ShepherdScreen() {
         super(CommonComponents.EMPTY);
@@ -125,6 +127,11 @@ public final class ShepherdScreen extends Screen {
 
     @Override public void tick() {
         age++;
+        if (moodBeat > 0) moodBeat--;
+        if (mood() != shownMood) {
+            if (shownMood != null) moodBeat = ShepherdFace.MOOD_BEAT_TICKS;
+            shownMood = mood();
+        }
         if (!typing()) return;
         if (++charTicks < ShepherdPolicy.TICKS_PER_CHAR) return;
         charTicks = 0;
@@ -243,9 +250,9 @@ public final class ShepherdScreen extends Screen {
 
     @Override public void render(GuiGraphics g, int mx, int my, float partial) {
         super.render(g, mx, my, partial);
-        drawFace(g);
-        drawLine(g);
         int hover = slotAt(mx, my);
+        drawFace(g, hover);
+        drawLine(g);
         if (hub) {
             drawHub(g, hover, inside(mx, my, SETTINGS_X, SETTINGS_Y, SETTINGS_W, SETTINGS_H));
         } else {
@@ -257,11 +264,15 @@ public final class ShepherdScreen extends Screen {
         text(g, I18n.get(hint), SLOT_X, 240, DIM);
     }
 
-    private void drawFace(GuiGraphics g) {
+    /** Her eyes go to the reply you are on: the grid's left column, or its right. */
+    private void drawFace(GuiGraphics g, int hover) {
         panel(g, 194, 12, 92, 70, SHELL2, SCUFF);
         g.fill(ox() + 202, oy() + 8, ox() + 278, oy() + 12, LAMP);
-        boolean blink = age % BLINK_EVERY < BLINK_TICKS;
-        ShepherdFaceRenderer.draw(g, mood(), mouth(), blink, ox() + 200, oy() + 18, 10);
+        Mood mood = mood();
+        var motion = ShepherdFace.motion(mood, age, 0);
+        boolean looking = hover >= 0 && (hub || spoken()) && mood != Mood.RECORDING && mood != Mood.THINKING;
+        int eyes = looking ? (hover % 2 == 0 ? -1 : 1) : motion.eyeShift();
+        ShepherdFaceRenderer.draw(g, mood, mouth(), motion.blink() || moodBeat > 0, eyes, ox() + 200, oy() + 18, 10);
     }
 
     private void drawLine(GuiGraphics g) {

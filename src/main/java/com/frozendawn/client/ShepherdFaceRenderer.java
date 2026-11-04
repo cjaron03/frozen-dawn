@@ -24,11 +24,11 @@ public final class ShepherdFaceRenderer {
 
     private ShepherdFaceRenderer() {}
 
-    public static void draw(GuiGraphics g, Mood mood, int mouthFrame, boolean blink, int x, int y, int scale) {
+    public static void draw(GuiGraphics g, Mood mood, int mouthFrame, boolean blink, int eyeShift, int x, int y, int scale) {
         g.fill(x, y, x + WIDTH * scale, y + HEIGHT * scale, SCREEN);
         for (int cx = 0; cx < WIDTH; cx++) {
             for (int cy = 0; cy < HEIGHT; cy++) {
-                boolean lit = ShepherdFace.lit(mood, blink, cx, cy);
+                boolean lit = ShepherdFace.lit(mood, blink, eyeShift, cx, cy);
                 if (!lit && !ShepherdFace.dim(mood, mouthFrame, cx, cy)) continue;
                 int left = x + cx * scale, top = y + cy * scale;
                 g.fill(left, top, left + scale, top + scale, lit ? GLOW : GLOW2);
@@ -37,11 +37,11 @@ public final class ShepherdFaceRenderer {
     }
 
     /** {@code pose} is the model's own space: y down, one unit to the block. */
-    public static void drawOnModel(PoseStack pose, MultiBufferSource buffers, Mood mood, int mouthFrame, boolean blink) {
+    public static void drawOnModel(PoseStack pose, MultiBufferSource buffers, Mood mood, int mouthFrame, boolean blink, int eyeShift) {
         var buffer = buffers.getBuffer(RenderType.entityCutoutNoCull(ShepherdModel.TEXTURE));
         for (int cx = 0; cx < WIDTH; cx++) {
             for (int cy = 0; cy < HEIGHT; cy++) {
-                boolean lit = ShepherdFace.lit(mood, blink, cx, cy);
+                boolean lit = ShepherdFace.lit(mood, blink, eyeShift, cx, cy);
                 if (!lit && !ShepherdFace.dim(mood, mouthFrame, cx, cy)) continue;
                 float left = (DISPLAY_X + cx - ShepherdModel.CENTER_X) / 16F, right = left + 1 / 16F;
                 float top = (ShepherdModel.FEET_Y - DISPLAY_TOP + cy) / 16F, bottom = top + 1 / 16F;

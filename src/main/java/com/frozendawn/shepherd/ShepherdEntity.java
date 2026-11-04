@@ -34,6 +34,7 @@ import net.minecraft.world.phys.Vec3;
 public final class ShepherdEntity extends PathfinderMob {
     private static final EntityDataAccessor<Integer> DATA_MOOD = SynchedEntityData.defineId(ShepherdEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Boolean> DATA_OFFLINE = SynchedEntityData.defineId(ShepherdEntity.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Boolean> DATA_TALKING = SynchedEntityData.defineId(ShepherdEntity.class, EntityDataSerializers.BOOLEAN);
     private static final double HOVER_BLOCKS = 2.5;
     private static final double HOVER_HEIGHT = 1;
     private static final double AIR_DRAG = 0.91;
@@ -41,6 +42,10 @@ public final class ShepherdEntity extends PathfinderMob {
     private static final double SETTLED_SQR = 0.25;
 
     private int rebootTicks;
+    private int talkTicks;
+    /** Client only: the mood last drawn, and how much of the blink between two moods is left. */
+    private Mood shownMood;
+    private int moodBeat;
 
     public ShepherdEntity(EntityType<? extends ShepherdEntity> type, Level level) {
         super(type, level);
@@ -97,6 +102,7 @@ public final class ShepherdEntity extends PathfinderMob {
         super.defineSynchedData(builder);
         builder.define(DATA_MOOD, Mood.NEUTRAL.ordinal());
         builder.define(DATA_OFFLINE, false);
+        builder.define(DATA_TALKING, false);
     }
 
     @Override protected PathNavigation createNavigation(Level level) {
@@ -124,6 +130,20 @@ public final class ShepherdEntity extends PathfinderMob {
         return entityData.get(DATA_OFFLINE);
     }
 
+    /** Her mouth moves on her body for this long. The server cannot measure the line: its text lives on the client. */
+    public void talkFor(int ticks) {
+        talkTicks = ticks;
+        entityData.set(DATA_TALKING, ticks > 0);
+    }
+
+    public boolean talking() {
+        return entityData.get(DATA_TALKING);
+    }
+
+    public boolean moodBeat() {
+        return moodBeat > 0;
+    }
+
     public int rebootTicks() {
         return rebootTicks;
     }
@@ -137,6 +157,7 @@ public final class ShepherdEntity extends PathfinderMob {
         setHealth(1);
         deathTime = 0;
         if (offline()) return;
+        talkFor(0);
         entityData.set(DATA_MOOD, Mood.OFFLINE.ordinal());
         entityData.set(DATA_OFFLINE, true);
         rebootTicks = ShepherdPolicy.REBOOT_TICKS;
@@ -153,13 +174,21 @@ public final class ShepherdEntity extends PathfinderMob {
 
     @Override public void tick() {
         super.tick();
-        if (!(level() instanceof ServerLevel level)) return;
+        if (!(level() instanceof ServerLevel level)) {
+            if (moodBeat > 0) moodBeat--;
+            if (mood() != shownMood) {
+                if (shownMood != null) moodBeat = ShepherdFace.MOOD_BEAT_TICKS;
+                shownMood = mood();
+            }
+            return;
+        }
         // A /summon, or a body that loaded after its replacement was built. There is one of her.
         if (!getUUID().equals(ShepherdSavedData.get(level.getServer()).entity())) {
             discard();
             return;
         }
         if (offline() && --rebootTicks <= 0) reboot();
+        if (talkTicks > 0 && --talkTicks == 0) entityData.set(DATA_TALKING, false);
     }
 
     @Override public boolean hurt(DamageSource source, float amount) {

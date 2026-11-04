@@ -25,6 +25,7 @@ public final class ShepherdTalk {
     public static final String FIRST_MEETING = "fm.boot";
     private static final String HUB_TALK = "hub.talk";
     private static final int UNIMPRESSED_TICKS = 40;
+    private static final int TALK_TICKS_PER_LINE = 80;
 
     public enum Action {
         TALK,
@@ -167,6 +168,7 @@ public final class ShepherdTalk {
         var node = live.talk.current();
         if (!live.fromHub) data.resumeNode(node.responses().isEmpty() && node.next() == null ? null : node.id());
         showMood();
+        live.she.talkFor(TALK_TICKS_PER_LINE * node.lines().size());
         PacketDistributor.sendToPlayer(live.player, payload(live.id, node, data.heavy()));
     }
 
@@ -174,6 +176,7 @@ public final class ShepherdTalk {
         var data = data();
         live.talk = null;
         live.fromHub = false;
+        live.she.talkFor(0);
         showMood();
         PacketDistributor.sendToPlayer(live.player, new ShepherdHubPayload(live.id, !follows(data, live.player), data.lamp(), data.heavy()));
     }
@@ -194,6 +197,7 @@ public final class ShepherdTalk {
     private static void end(boolean tellClient) {
         var over = live;
         live = null;
+        over.she.talkFor(0);
         over.she.setMood(Mood.NEUTRAL);
         if (tellClient && !over.player.hasDisconnected()) PacketDistributor.sendToPlayer(over.player, new ShepherdClosePayload());
     }

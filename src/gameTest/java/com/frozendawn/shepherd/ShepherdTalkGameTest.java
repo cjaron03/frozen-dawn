@@ -58,6 +58,9 @@ public final class ShepherdTalkGameTest {
     @BeforeBatch(batch = "shepherd_talk_offline") public static void offlineBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
     @AfterBatch(batch = "shepherd_talk_offline") public static void offlineAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
 
+    @BeforeBatch(batch = "shepherd_talk_mouth") public static void mouthBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_talk_mouth") public static void mouthAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+
     @BeforeBatch(batch = "shepherd_talk_replay") public static void replayBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
     @AfterBatch(batch = "shepherd_talk_replay") public static void replayAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
 
@@ -317,6 +320,27 @@ public final class ShepherdTalkGameTest {
             rightClick(she, player);
             h.assertTrue("fm.boot".equals(ShepherdTalk.liveNode()), "The next right-click is the first meeting: " + ShepherdTalk.liveNode());
             h.succeed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_talk_mouth", timeoutTicks = 100)
+    public static void shepherdMouthStopsWhenTheLineOrTheTalkEnds(GameTestHelper h) {
+        h.runAfterDelay(1, () -> {
+            var player = player(h);
+            var she = awake(h, player);
+            she.talkFor(2);
+            h.assertTrue(she.talking(), "Her mouth moves for the line");
+            h.runAfterDelay(5, () -> {
+                h.assertTrue(!she.talking(), "Her mouth stops when the line runs out");
+                rightClick(she, player);
+                ShepherdTalk.action(player, ShepherdTalk.liveId(), Action.TALK);
+                h.assertTrue(she.talking(), "A line in a talk moves her mouth");
+                say(player, CONTINUE);
+                h.assertTrue(!she.talking(), "Back at the hub she has stopped");
+                ShepherdTalk.action(player, ShepherdTalk.liveId(), Action.TALK);
+                player.setPos(player.position().add(ShepherdPolicy.TALK_RANGE + 3, 0, 0));
+                h.succeedWhen(() -> h.assertTrue(!ShepherdTalk.live() && !she.talking(), "Ending the talk stops her mouth at once"));
+            });
         });
     }
 }
