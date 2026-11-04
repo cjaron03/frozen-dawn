@@ -25,6 +25,15 @@ public final class ShepherdWatch {
             return;
         }
         // Entities load after their chunk: a chunk that is only half up would look like she had gone.
-        if (level.areEntitiesLoaded(ChunkPos.asLong(data.lastPos()))) ShepherdEntity.spawnFrom(level, data.lastPos(), null);
+        if (level.areEntitiesLoaded(ChunkPos.asLong(data.lastPos()))) {
+            ShepherdEntity.spawnFrom(level, data.lastPos(), null);
+            return;
+        }
+        // Her body is out of reach of everything, so her own goal cannot fetch her. It discards itself if it ever loads.
+        var player = data.waiting() ? null : ShepherdEntity.followerIn(level);
+        double line = ShepherdPolicy.TELEPORT_BLOCKS;
+        if (player != null && player.blockPosition().distSqr(data.lastPos()) > line * line) {
+            ShepherdEntity.spawnAt(level, ShepherdEntity.roomBeside(player), null);
+        }
     }
 }

@@ -910,3 +910,6 @@ shepherdsettingstogglesswearing xml
 shepherdfollowandlampactionssave xml
 shepherdtalkfromthehubcomesbacktoit xml
 shepherdofflineendsatalkandrefusesthenext xml
+shepherdholdsstationbesideherfollower xml
+shepherdstrandedfarawaycomestoherfollower xml
+shepherdteleportsintoopenair xml

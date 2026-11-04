@@ -10,6 +10,7 @@ import com.frozendawn.item.PowerCellItem;
 import com.frozendawn.shepherd.ShepherdDockBlock.DockState;
 import com.frozendawn.shepherd.ShepherdSavedData.Stage;
 import com.frozendawn.vault.VaultWatch;
+import java.util.ArrayList;
 import java.util.UUID;
 import net.minecraft.commands.arguments.EntityAnchorArgument;
 import net.minecraft.core.BlockPos;
@@ -60,6 +61,13 @@ public final class ShepherdEntityGameTest {
     @AfterBatch(batch = "shepherd_boot_broken") public static void bootBrokenAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
     @BeforeBatch(batch = "shepherd_lamp") public static void lampBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
     @AfterBatch(batch = "shepherd_lamp") public static void lampAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+
+    @BeforeBatch(batch = "shepherd_station") public static void stationBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_station") public static void stationAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_stranded") public static void strandedBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_stranded") public static void strandedAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_tunnel") public static void tunnelBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_tunnel") public static void tunnelAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
 
     private static ShepherdSavedData data(GameTestHelper h) {
         return ShepherdSavedData.get(h.getLevel().getServer());
@@ -263,6 +271,53 @@ public final class ShepherdEntityGameTest {
                     h.assertTrue(!h.getLevel().getBlockState(pos).is(ModBlocks.HELD_LANTERN_LIGHT), "Offline, the lamp is out");
                     h.succeed();
                 });
+            });
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_station", timeoutTicks = 200)
+    public static void shepherdHoldsStationBesideHerFollower(GameTestHelper h) {
+        h.runAfterDelay(1, () -> {
+            var player = ShepherdTestWorld.onlinePlayer(h, h.absoluteVec(Vec3.atCenterOf(SPOT)).add(2, 0, 0));
+            var she = awake(h, player);
+            var seen = new ArrayList<Vec3>();
+            for (int tick = 60; tick <= 120; tick += 5) h.runAfterDelay(tick, () -> seen.add(she.position()));
+            h.runAfterDelay(125, () -> {
+                for (Vec3 at : seen) h.assertTrue(at.distanceTo(seen.getFirst()) < 0.5, "She settled: " + seen);
+                h.assertTrue(she.distanceTo(player) < 4, "Beside her follower: " + she.distanceTo(player));
+                h.succeed();
+            });
+        });
+    }
+
+    /** Her body sits in a chunk nothing is loading, so its own goal can never fetch her. */
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_stranded", timeoutTicks = 100)
+    public static void shepherdStrandedFarAwayComesToHerFollower(GameTestHelper h) {
+        h.runAfterDelay(1, () -> {
+            var player = ShepherdTestWorld.onlinePlayer(h, h.absoluteVec(Vec3.atCenterOf(SPOT)));
+            var she = awake(h, player);
+            she.discard();
+            data(h).lastPos(player.blockPosition().offset(100_000, 0, 0));
+            h.succeedWhen(() -> {
+                h.assertTrue(h.getLevel().getEntity(data(h).entity()) instanceof ShepherdEntity back && back.distanceTo(player) < 5, "She came to them");
+                h.assertTrue(bodies(h) == 1, "One body: " + bodies(h));
+            });
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_tunnel", timeoutTicks = 100)
+    public static void shepherdTeleportsIntoOpenAir(GameTestHelper h) {
+        h.runAfterDelay(1, () -> {
+            var cell = new BlockPos(19, 4, 19);
+            for (var pos : BlockPos.betweenClosed(new BlockPos(14, 3, 14), new BlockPos(20, 7, 20))) h.setBlock(pos, Blocks.STONE);
+            h.setBlock(cell, Blocks.AIR);
+            h.setBlock(cell.above(), Blocks.AIR);
+            var player = ShepherdTestWorld.onlinePlayer(h, h.absoluteVec(Vec3.atBottomCenterOf(cell)));
+            data(h).stage(Stage.AWAKE);
+            var she = ShepherdEntity.spawnFrom(h.getLevel(), h.absolutePos(new BlockPos(1, 4, 1)), player.getUUID());
+            h.succeedWhen(() -> {
+                h.assertTrue(she.distanceTo(player) < 5, "Waiting for the teleport");
+                h.assertTrue(h.getLevel().noCollision(she), "She is not in the rock: " + she.position());
             });
         });
     }

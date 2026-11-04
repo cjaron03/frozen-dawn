@@ -37,6 +37,8 @@ public final class ShepherdEntity extends PathfinderMob {
     private static final double HOVER_BLOCKS = 2.5;
     private static final double HOVER_HEIGHT = 1;
     private static final double AIR_DRAG = 0.91;
+    /** Close enough to her spot to stop thrusting, or she saws back and forth across it. */
+    private static final double SETTLED_SQR = 0.25;
 
     private int rebootTicks;
 
@@ -57,8 +59,13 @@ public final class ShepherdEntity extends PathfinderMob {
 
     /** Builds a body and makes it the saved one. {@code follower} may be null, which keeps the one on record. */
     public static ShepherdEntity spawnFrom(ServerLevel level, BlockPos at, UUID follower) {
+        return spawnAt(level, Vec3.atBottomCenterOf(at), follower);
+    }
+
+    static ShepherdEntity spawnAt(ServerLevel level, Vec3 pos, UUID follower) {
         var she = ModEntities.CS1_UNIT.get().create(level);
-        she.moveTo(Vec3.atBottomCenterOf(at));
+        var at = BlockPos.containing(pos);
+        she.moveTo(pos);
         var data = ShepherdSavedData.get(level.getServer());
         data.entity(she.getUUID());
         data.dimension(level.dimension());
@@ -66,6 +73,24 @@ public final class ShepherdEntity extends PathfinderMob {
         if (follower != null) data.follower(follower);
         level.addFreshEntity(she);
         return she;
+    }
+
+    /** Where she can fit near the player: her usual spot, then around them, then on top of them, never in the rock. */
+    static Vec3 roomBeside(ServerPlayer player, Vec3 preferred) {
+        var size = ModEntities.CS1_UNIT.get().getDimensions();
+        var level = player.level();
+        if (level.noCollision(size.makeBoundingBox(preferred))) return preferred;
+        for (int i = 0; i < 8; i++) {
+            double angle = i * Math.PI / 4;
+            var spot = player.position().add(Math.cos(angle) * HOVER_BLOCKS, HOVER_HEIGHT, Math.sin(angle) * HOVER_BLOCKS);
+            if (level.noCollision(size.makeBoundingBox(spot))) return spot;
+        }
+        var above = player.position().add(0, HOVER_HEIGHT, 0);
+        return level.noCollision(size.makeBoundingBox(above)) ? above : player.position();
+    }
+
+    static Vec3 roomBeside(ServerPlayer player) {
+        return roomBeside(player, player.position().add(HOVER_BLOCKS, HOVER_HEIGHT, 0));
     }
 
     @Override protected void defineSynchedData(SynchedEntityData.Builder builder) {
@@ -180,8 +205,13 @@ public final class ShepherdEntity extends PathfinderMob {
     }
 
     private ServerPlayer follower() {
-        var id = ShepherdSavedData.get(getServer()).follower();
-        return id != null && level().getPlayerByUUID(id) instanceof ServerPlayer player ? player : null;
+        return followerIn(level());
+    }
+
+    /** The follower, if they are in {@code level}. */
+    static ServerPlayer followerIn(Level level) {
+        var id = ShepherdSavedData.get(level.getServer()).follower();
+        return id != null && level.getPlayerByUUID(id) instanceof ServerPlayer player ? player : null;
     }
 
     @Override protected InteractionResult mobInteract(Player player, InteractionHand hand) {
@@ -229,6 +259,10 @@ public final class ShepherdEntity extends PathfinderMob {
             return target() != null;
         }
 
+        @Override public boolean requiresUpdateEveryTick() {
+            return true;
+        }
+
         @Override public void tick() {
             var player = target();
             if (player == null) return;
@@ -238,7 +272,8 @@ public final class ShepherdEntity extends PathfinderMob {
             var spot = player.position().add(away.lengthSqr() < 1e-4 ? new Vec3(HOVER_BLOCKS, 0, 0) : away.normalize().scale(HOVER_BLOCKS)).add(0, HOVER_HEIGHT, 0);
             if (distance > ShepherdPolicy.TELEPORT_BLOCKS) {
                 getNavigation().stop();
-                teleportTo(spot.x, spot.y, spot.z);
+                var room = roomBeside(player, spot);
+                teleportTo(room.x, room.y, room.z);
             } else if (distance > HOVER_BLOCKS + 1) {
                 if (--repath <= 0) {
                     repath = 10;
@@ -246,7 +281,7 @@ public final class ShepherdEntity extends PathfinderMob {
                 }
             } else {
                 getNavigation().stop();
-                getMoveControl().setWantedPosition(getX(), spot.y, getZ(), 0.5);
+                if (position().distanceToSqr(spot) > SETTLED_SQR) getMoveControl().setWantedPosition(spot.x, spot.y, spot.z, 0.5);
             }
         }
     }
