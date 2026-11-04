@@ -644,3 +644,13 @@ Approved ("Build them"). As built, over the sections above where they differ:
   while someone stands on the plate. The panel shows a trace and the temperature, red, gold under 30, and a flat green NONE.
 - Ruling: the dial stays where it was left, for everyone, until someone turns it. `[Reset the vault]` puts it back on LOW.
 - Ruling: creative players take no cold.
+
+## Owner playtest 3 of the last rooms, 2026-11-03 (Terminus Watch Floor Check 7, runClientLab, branch head b21da6a7)
+
+Unprompted report, with a screenshot of the console in front of the way in: "check ss. move the trigger to the wall or something"
+
+The log: joined 21:08:28, take 21:08:41, ended by a press after 11 s, played back to 21:09:03 with no door, quit 21:09:19, no errors.
+The screenshot also shows the projector's underside in stray colours: its faces past the block's edge read outside their sprite.
+
+Response: the console is now on the west wall, north of the way in, x 66, z -5..-3, y -13, four texels deep, so nothing stands in the
+doorway, and it gives light 7 so it can be found. The projector's faces have their own uv.

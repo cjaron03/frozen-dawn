@@ -46,8 +46,8 @@ public final class TerminusVaultBuilder {
     public static final int MESS_ROOF = -6, ROOM_ROOF = -9;
     /** The doors east of the Watch Floor: the mess hall's stands open, the other two are the puzzles'. */
     public static final BlockPos MESS_DOOR = new BlockPos(65, CEILING, 0), DRILL_DOOR = new BlockPos(83, CEILING, 0), MORGUE_DOOR = new BlockPos(95, CEILING, 0);
-    /** The middle of the recorder's console, which runs the Two-Person Rule. */
-    public static final BlockPos RECORDER = new BlockPos(67, FLOOR + 1, 0);
+    /** The middle of the recorder's console, on the wall north of the way in, which runs the Two-Person Rule. */
+    public static final BlockPos RECORDER = new BlockPos(66, FLOOR + 2, -4);
     /** Over the way in, on the drill hall's west wall. */
     public static final BlockPos PROJECTOR = new BlockPos(66, ROOM_ROOF - 1, 0);
     /** The two keys, too far apart for one person. */
@@ -166,7 +166,7 @@ public final class TerminusVaultBuilder {
             l.setBlock(c.offset(x, -8, z), Blocks.LIGHT.defaultBlockState().setValue(net.minecraft.world.level.block.LightBlock.LEVEL, 2), 2);
     }
 
-    /** The Two-Person Rule: the recorder by the way in, a key on each long wall, and the door that wants both. */
+    /** The Two-Person Rule: the recorder on the wall by the way in, a key on each long wall, and the door that wants both. */
     public static void drillHall(ServerLevel l, BlockPos c) {
         box(l, c, 65, 83, SHELL_BOTTOM, ROOM_ROOF, -8, 8, ModBlocks.VAULT_SHELL.get().defaultBlockState());
         box(l, c, 66, 82, FLOOR, FLOOR, -7, 7, ModBlocks.VAULT_FLOOR.get().defaultBlockState());

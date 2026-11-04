@@ -300,7 +300,7 @@ public class ModBlocks {
     public static final DeferredBlock<com.frozendawn.vault.VaultVitalsBlock> VAULT_VITALS = BLOCKS.register("vault_vitals",
             () -> new com.frozendawn.vault.VaultVitalsBlock(vaultSealed(MapColor.COLOR_GRAY)));
     public static final DeferredBlock<com.frozendawn.vault.VaultRecorderBlock> VAULT_RECORDER = BLOCKS.register("vault_recorder",
-            () -> new com.frozendawn.vault.VaultRecorderBlock(vaultSealed(MapColor.METAL).sound(SoundType.METAL).lightLevel(state -> 4)));
+            () -> new com.frozendawn.vault.VaultRecorderBlock(vaultSealed(MapColor.METAL).sound(SoundType.METAL).noOcclusion().lightLevel(state -> 7)));
     public static final DeferredBlock<com.frozendawn.vault.VaultKeyBlock> VAULT_KEY = BLOCKS.register("vault_key",
             () -> new com.frozendawn.vault.VaultKeyBlock(vaultSealed(MapColor.GOLD).sound(SoundType.METAL).lightLevel(com.frozendawn.vault.VaultKeyBlock::light)));
     public static final DeferredBlock<com.frozendawn.vault.VaultLightBlock> VAULT_LIGHT = BLOCKS.register("vault_light",
