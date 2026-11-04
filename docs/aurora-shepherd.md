@@ -73,7 +73,7 @@ All at 16 texels to the block, in `docs/art/aurora-shepherd/`, each from its `ma
 | `face-moods-mockup.png` | Eight moods, mouth frames, blink, recording, at play size | Approved "Build as drawn" |
 | `talk-screen-mockup.png` | Face, typed line, four slots, hover line | Approved "Build as drawn" |
 | `dock-mockup.png` | Found, cell in, awake; vault plan | Approved "Build as drawn" |
-| `ambient-lines-mockup.png` | Ambient line, callout, "Got a minute?", recording voice during play | Waiting for the owner |
+| `ambient-lines-mockup.png` | Ambient line, callout, "Got a minute?", recording voice during play | Approved "Build as drawn" |
 
 **Body.** About 12 texels wide, 10 tall and 10 deep, 18 wide across the ducts, with a carry handle on top. Front display 8 by 6 texels, lamp strip above it, heater grille underneath, a duct each side. She hovers about one block off the ground.
 
@@ -255,8 +255,8 @@ Tests cover behavior, not lines.
 
 ## Open
 
-The ambient lines mockup, for the owner's approval. Nothing else until a slice starts.
+Nothing until a slice starts.
 
 ## Status
 
-2026-11-04: design written, four of five mockups approved, no code. Waiting on PR 147, then the owner's word to start S1.
+2026-11-04: design written, all five mockups approved, no code. Waiting on PR 147, then the owner's word to start S1.
