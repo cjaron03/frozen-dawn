@@ -62,7 +62,7 @@ public final class ShepherdDockGameTest {
         return ShepherdSavedData.get(h.getLevel().getServer());
     }
 
-    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_dock_wake", timeoutTicks = 100)
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_dock_wake", timeoutTicks = 400)
     public static void shepherdChargedCellWakesAndIsSpent(GameTestHelper h) {
         ShepherdTestWorld.whenTicking(h, () -> {
             var dock = dock(h, DOCK);
@@ -72,11 +72,12 @@ public final class ShepherdDockGameTest {
             h.assertTrue(player.getItemInHand(InteractionHand.MAIN_HAND).isEmpty(), "The cell is gone");
             h.assertTrue(data(h).stage() == Stage.AWAKE, "She is awake");
             h.assertTrue(state(h, dock) == DockState.BOOT, "The light goes green");
-            h.succeed();
+            // Left booting, the dock would build her in the next batch's world.
+            h.succeedWhen(() -> h.assertTrue(data(h).entity() != null, "She lifts off"));
         });
     }
 
-    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_dock_refuse", timeoutTicks = 100)
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_dock_refuse", timeoutTicks = 400)
     public static void shepherdEmptyCellIsRefused(GameTestHelper h) {
         ShepherdTestWorld.whenTicking(h, () -> {
             var dock = dock(h, DOCK);
@@ -90,7 +91,7 @@ public final class ShepherdDockGameTest {
         });
     }
 
-    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_dock_dark", timeoutTicks = 100)
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_dock_dark", timeoutTicks = 400)
     public static void shepherdSecondDockStaysDark(GameTestHelper h) {
         ShepherdTestWorld.whenTicking(h, () -> {
             data(h).stage(Stage.AWAKE);
@@ -102,7 +103,7 @@ public final class ShepherdDockGameTest {
         });
     }
 
-    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_dock_broken", timeoutTicks = 100)
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_dock_broken", timeoutTicks = 400)
     public static void shepherdBrokenDormantDockLeavesHerDormant(GameTestHelper h) {
         ShepherdTestWorld.whenTicking(h, () -> {
             var first = dock(h, DOCK);

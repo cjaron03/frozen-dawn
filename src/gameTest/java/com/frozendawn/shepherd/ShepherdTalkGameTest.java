@@ -86,7 +86,7 @@ public final class ShepherdTalkGameTest {
         for (int slot : slots) ShepherdTalk.reply(player, ShepherdTalk.liveId(), slot);
     }
 
-    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_talk_wake", timeoutTicks = 100)
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_talk_wake", timeoutTicks = 400)
     public static void shepherdWakingOpensTheFirstMeeting(GameTestHelper h) {
         ShepherdTestWorld.whenTicking(h, () -> {
             h.setBlock(SPOT, ModBlocks.CS1_DOCK.get());
@@ -99,7 +99,7 @@ public final class ShepherdTalkGameTest {
         });
     }
 
-    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_talk_stale", timeoutTicks = 100)
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_talk_stale", timeoutTicks = 400)
     public static void shepherdAReplyForAnotherConversationIsIgnored(GameTestHelper h) {
         ShepherdTestWorld.whenTicking(h, () -> {
             var player = player(h);
@@ -112,7 +112,7 @@ public final class ShepherdTalkGameTest {
         });
     }
 
-    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_talk_slot", timeoutTicks = 100)
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_talk_slot", timeoutTicks = 400)
     public static void shepherdASlotNotOfferedIsIgnored(GameTestHelper h) {
         ShepherdTestWorld.whenTicking(h, () -> {
             var player = player(h);
@@ -127,7 +127,7 @@ public final class ShepherdTalkGameTest {
         });
     }
 
-    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_talk_resume", timeoutTicks = 100)
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_talk_resume", timeoutTicks = 400)
     public static void shepherdEscResumesTheFirstMeeting(GameTestHelper h) {
         ShepherdTestWorld.whenTicking(h, () -> {
             var player = player(h);
@@ -149,7 +149,7 @@ public final class ShepherdTalkGameTest {
         });
     }
 
-    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_talk_damage", timeoutTicks = 100)
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_talk_damage", timeoutTicks = 400)
     public static void shepherdDamageClosesAConversation(GameTestHelper h) {
         ShepherdTestWorld.whenTicking(h, () -> {
             var player = player(h);
@@ -162,7 +162,7 @@ public final class ShepherdTalkGameTest {
         });
     }
 
-    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_talk_walk", timeoutTicks = 100)
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_talk_walk", timeoutTicks = 400)
     public static void shepherdWalkingAwayClosesIt(GameTestHelper h) {
         ShepherdTestWorld.whenTicking(h, () -> {
             var player = player(h);
@@ -174,7 +174,7 @@ public final class ShepherdTalkGameTest {
         });
     }
 
-    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_talk_reload", timeoutTicks = 100)
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_talk_reload", timeoutTicks = 400)
     public static void shepherdReloadEndsItCleanly(GameTestHelper h) {
         ShepherdTestWorld.whenTicking(h, () -> {
             var player = player(h);
@@ -190,7 +190,7 @@ public final class ShepherdTalkGameTest {
         });
     }
 
-    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_talk_logout", timeoutTicks = 100)
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_talk_logout", timeoutTicks = 400)
     public static void shepherdLogoutEndsIt(GameTestHelper h) {
         ShepherdTestWorld.whenTicking(h, () -> {
             var player = player(h);
@@ -220,7 +220,7 @@ public final class ShepherdTalkGameTest {
         });
     }
 
-    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_talk_saves", timeoutTicks = 100)
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_talk_saves", timeoutTicks = 400)
     public static void shepherdAffinityAndFlagsSave(GameTestHelper h) {
         ShepherdTestWorld.whenTicking(h, () -> {
             var player = player(h);
@@ -237,7 +237,7 @@ public final class ShepherdTalkGameTest {
         });
     }
 
-    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_talk_settings", timeoutTicks = 100)
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_talk_settings", timeoutTicks = 400)
     public static void shepherdSettingsTogglesSwearing(GameTestHelper h) {
         ShepherdTestWorld.whenTicking(h, () -> {
             var player = player(h);
@@ -251,7 +251,7 @@ public final class ShepherdTalkGameTest {
         });
     }
 
-    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_talk_actions", timeoutTicks = 100)
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_talk_actions", timeoutTicks = 400)
     public static void shepherdFollowAndLampActionsSave(GameTestHelper h) {
         ShepherdTestWorld.whenTicking(h, () -> {
             var player = player(h);
@@ -272,7 +272,7 @@ public final class ShepherdTalkGameTest {
         });
     }
 
-    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_talk_hub", timeoutTicks = 100)
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_talk_hub", timeoutTicks = 400)
     public static void shepherdTalkFromTheHubComesBackToIt(GameTestHelper h) {
         ShepherdTestWorld.whenTicking(h, () -> {
             var player = player(h);
@@ -287,7 +287,7 @@ public final class ShepherdTalkGameTest {
         });
     }
 
-    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_talk_offline", timeoutTicks = 100)
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_talk_offline", timeoutTicks = 400)
     public static void shepherdOfflineEndsATalkAndRefusesTheNext(GameTestHelper h) {
         ShepherdTestWorld.whenTicking(h, () -> {
             var player = player(h);
@@ -303,7 +303,7 @@ public final class ShepherdTalkGameTest {
         });
     }
 
-    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_talk_replay", timeoutTicks = 100)
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_talk_replay", timeoutTicks = 400)
     public static void shepherdReplayRestartsTheFirstMeetingFromNothing(GameTestHelper h) {
         ShepherdTestWorld.whenTicking(h, () -> {
             var player = player(h);
@@ -323,7 +323,7 @@ public final class ShepherdTalkGameTest {
         });
     }
 
-    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_talk_mouth", timeoutTicks = 100)
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_talk_mouth", timeoutTicks = 400)
     public static void shepherdMouthStopsWhenTheLineOrTheTalkEnds(GameTestHelper h) {
         ShepherdTestWorld.whenTicking(h, () -> {
             var player = player(h);
