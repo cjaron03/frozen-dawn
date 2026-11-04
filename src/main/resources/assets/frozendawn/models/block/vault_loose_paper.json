@@ -1,0 +1,72 @@
+{
+  "textures": {
+    "particle": "frozendawn:block/vault_paper",
+    "p": "frozendawn:block/vault_paper"
+  },
+  "elements": [
+    {
+      "from": [
+        1,
+        0,
+        2
+      ],
+      "to": [
+        8,
+        0.2,
+        11
+      ],
+      "faces": {
+        "north": {
+          "texture": "#p"
+        },
+        "south": {
+          "texture": "#p"
+        },
+        "east": {
+          "texture": "#p"
+        },
+        "west": {
+          "texture": "#p"
+        },
+        "up": {
+          "texture": "#p"
+        },
+        "down": {
+          "texture": "#p"
+        }
+      }
+    },
+    {
+      "from": [
+        9,
+        0,
+        6
+      ],
+      "to": [
+        15,
+        0.2,
+        14
+      ],
+      "faces": {
+        "north": {
+          "texture": "#p"
+        },
+        "south": {
+          "texture": "#p"
+        },
+        "east": {
+          "texture": "#p"
+        },
+        "west": {
+          "texture": "#p"
+        },
+        "up": {
+          "texture": "#p"
+        },
+        "down": {
+          "texture": "#p"
+        }
+      }
+    }
+  ]
+}

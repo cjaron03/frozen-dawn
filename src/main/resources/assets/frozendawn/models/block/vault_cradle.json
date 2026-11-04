@@ -1,0 +1,168 @@
+{
+  "textures": {
+    "steel": "frozendawn:block/vault_steel",
+    "particle": "frozendawn:block/vault_steel"
+  },
+  "elements": [
+    {
+      "from": [
+        2,
+        0,
+        1
+      ],
+      "to": [
+        14,
+        8,
+        15
+      ],
+      "faces": {
+        "north": {
+          "texture": "#steel"
+        },
+        "east": {
+          "texture": "#steel"
+        },
+        "south": {
+          "texture": "#steel"
+        },
+        "west": {
+          "texture": "#steel"
+        },
+        "up": {
+          "texture": "#steel"
+        },
+        "down": {
+          "texture": "#steel"
+        }
+      }
+    },
+    {
+      "from": [
+        3,
+        8,
+        1
+      ],
+      "to": [
+        5,
+        12,
+        3
+      ],
+      "faces": {
+        "north": {
+          "texture": "#steel"
+        },
+        "east": {
+          "texture": "#steel"
+        },
+        "south": {
+          "texture": "#steel"
+        },
+        "west": {
+          "texture": "#steel"
+        },
+        "up": {
+          "texture": "#steel"
+        },
+        "down": {
+          "texture": "#steel"
+        }
+      }
+    },
+    {
+      "from": [
+        11,
+        8,
+        1
+      ],
+      "to": [
+        13,
+        12,
+        3
+      ],
+      "faces": {
+        "north": {
+          "texture": "#steel"
+        },
+        "east": {
+          "texture": "#steel"
+        },
+        "south": {
+          "texture": "#steel"
+        },
+        "west": {
+          "texture": "#steel"
+        },
+        "up": {
+          "texture": "#steel"
+        },
+        "down": {
+          "texture": "#steel"
+        }
+      }
+    },
+    {
+      "from": [
+        3,
+        8,
+        13
+      ],
+      "to": [
+        5,
+        12,
+        15
+      ],
+      "faces": {
+        "north": {
+          "texture": "#steel"
+        },
+        "east": {
+          "texture": "#steel"
+        },
+        "south": {
+          "texture": "#steel"
+        },
+        "west": {
+          "texture": "#steel"
+        },
+        "up": {
+          "texture": "#steel"
+        },
+        "down": {
+          "texture": "#steel"
+        }
+      }
+    },
+    {
+      "from": [
+        11,
+        8,
+        13
+      ],
+      "to": [
+        13,
+        12,
+        15
+      ],
+      "faces": {
+        "north": {
+          "texture": "#steel"
+        },
+        "east": {
+          "texture": "#steel"
+        },
+        "south": {
+          "texture": "#steel"
+        },
+        "west": {
+          "texture": "#steel"
+        },
+        "up": {
+          "texture": "#steel"
+        },
+        "down": {
+          "texture": "#steel"
+        }
+      }
+    }
+  ]
+}

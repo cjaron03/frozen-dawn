@@ -1,0 +1,23 @@
+{
+  "parent": "frozendawn:classified_information",
+  "display": {
+    "icon": {
+      "id": "frozendawn:orsa_document"
+    },
+    "title": {
+      "translate": "advancement.frozendawn.last_badge_out.title"
+    },
+    "description": {
+      "translate": "advancement.frozendawn.last_badge_out.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": true
+  },
+  "criteria": {
+    "impossible": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

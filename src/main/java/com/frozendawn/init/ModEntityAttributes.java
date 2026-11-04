@@ -29,6 +29,8 @@ public class ModEntityAttributes {
     @SubscribeEvent
     public static void onRegisterAttributes(EntityAttributeCreationEvent event) {
         event.put(ModEntities.AGGREGATE.get(), AggregateEntity.createAttributes().build());
+        event.put(ModEntities.CUSTODIAN.get(), com.frozendawn.vault.CustodianEntity.createAttributes().build());
+        event.put(ModEntities.VAULT_RECORDING.get(), net.minecraft.world.entity.Mob.createMobAttributes().build());
         event.put(ModEntities.AGGREGATE_FRAGMENT.get(),
                 AggregateFragmentEntity.createAttributes().build());
         event.put(ModEntities.FROSTBITTEN.get(), FrostbittenEntity.createAttributes().build());

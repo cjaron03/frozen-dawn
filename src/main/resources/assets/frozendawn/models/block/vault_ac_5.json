@@ -1,0 +1,252 @@
+{
+  "textures": {
+    "particle": "frozendawn:block/vault_ac_case",
+    "case": "frozendawn:block/vault_ac_case",
+    "throat": "frozendawn:block/vault_ac_throat",
+    "tray": "frozendawn:block/vault_ac_tray",
+    "slat": "frozendawn:block/vault_ac_slat_low"
+  },
+  "elements": [
+    {
+      "from": [
+        0,
+        3,
+        0
+      ],
+      "to": [
+        16,
+        16,
+        7
+      ],
+      "faces": {
+        "south": {
+          "texture": "#throat",
+          "uv": [
+            0,
+            0,
+            16,
+            13
+          ]
+        },
+        "east": {
+          "texture": "#case",
+          "uv": [
+            0,
+            0,
+            7,
+            13
+          ]
+        },
+        "down": {
+          "texture": "#case",
+          "uv": [
+            0,
+            0,
+            16,
+            7
+          ]
+        }
+      }
+    },
+    {
+      "from": [
+        12,
+        9,
+        7
+      ],
+      "to": [
+        16,
+        16,
+        11
+      ],
+      "faces": {
+        "south": {
+          "texture": "#case",
+          "uv": [
+            12,
+            0,
+            16,
+            7
+          ]
+        },
+        "east": {
+          "texture": "#case",
+          "uv": [
+            7,
+            0,
+            11,
+            7
+          ]
+        },
+        "west": {
+          "texture": "#case",
+          "uv": [
+            7,
+            0,
+            11,
+            7
+          ]
+        },
+        "down": {
+          "texture": "#case",
+          "uv": [
+            12,
+            7,
+            16,
+            11
+          ]
+        }
+      }
+    },
+    {
+      "from": [
+        0,
+        3,
+        7
+      ],
+      "to": [
+        16,
+        9,
+        12
+      ],
+      "faces": {
+        "south": {
+          "texture": "#tray",
+          "uv": [
+            0,
+            7,
+            16,
+            13
+          ]
+        },
+        "east": {
+          "texture": "#tray",
+          "uv": [
+            7,
+            7,
+            12,
+            13
+          ]
+        },
+        "up": {
+          "texture": "#tray",
+          "uv": [
+            0,
+            7,
+            16,
+            12
+          ]
+        },
+        "down": {
+          "texture": "#tray",
+          "uv": [
+            0,
+            7,
+            16,
+            12
+          ]
+        }
+      }
+    },
+    {
+      "from": [
+        0,
+        13,
+        7
+      ],
+      "to": [
+        12,
+        15,
+        12
+      ],
+      "faces": {
+        "south": {
+          "texture": "#slat",
+          "uv": [
+            0,
+            1,
+            12,
+            3
+          ]
+        },
+        "east": {
+          "texture": "#slat",
+          "uv": [
+            7,
+            1,
+            12,
+            3
+          ]
+        },
+        "up": {
+          "texture": "#slat",
+          "uv": [
+            0,
+            7,
+            12,
+            12
+          ]
+        },
+        "down": {
+          "texture": "#slat",
+          "uv": [
+            0,
+            7,
+            12,
+            12
+          ]
+        }
+      }
+    },
+    {
+      "from": [
+        0,
+        10,
+        7
+      ],
+      "to": [
+        12,
+        12,
+        12
+      ],
+      "faces": {
+        "south": {
+          "texture": "#slat",
+          "uv": [
+            0,
+            4,
+            12,
+            6
+          ]
+        },
+        "east": {
+          "texture": "#slat",
+          "uv": [
+            7,
+            4,
+            12,
+            6
+          ]
+        },
+        "up": {
+          "texture": "#slat",
+          "uv": [
+            0,
+            7,
+            12,
+            12
+          ]
+        },
+        "down": {
+          "texture": "#slat",
+          "uv": [
+            0,
+            7,
+            12,
+            12
+          ]
+        }
+      }
+    }
+  ]
+}

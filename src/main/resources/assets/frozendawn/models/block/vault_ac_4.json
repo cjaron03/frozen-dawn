@@ -1,0 +1,166 @@
+{
+  "textures": {
+    "particle": "frozendawn:block/vault_ac_case",
+    "case": "frozendawn:block/vault_ac_case",
+    "throat": "frozendawn:block/vault_ac_throat",
+    "tray": "frozendawn:block/vault_ac_tray",
+    "slat": "frozendawn:block/vault_ac_slat_low"
+  },
+  "elements": [
+    {
+      "from": [
+        0,
+        3,
+        0
+      ],
+      "to": [
+        16,
+        16,
+        7
+      ],
+      "faces": {
+        "south": {
+          "texture": "#throat",
+          "uv": [
+            0,
+            0,
+            16,
+            13
+          ]
+        },
+        "down": {
+          "texture": "#case",
+          "uv": [
+            0,
+            0,
+            16,
+            7
+          ]
+        }
+      }
+    },
+    {
+      "from": [
+        0,
+        3,
+        7
+      ],
+      "to": [
+        16,
+        9,
+        12
+      ],
+      "faces": {
+        "south": {
+          "texture": "#tray",
+          "uv": [
+            0,
+            7,
+            16,
+            13
+          ]
+        },
+        "up": {
+          "texture": "#tray",
+          "uv": [
+            0,
+            7,
+            16,
+            12
+          ]
+        },
+        "down": {
+          "texture": "#tray",
+          "uv": [
+            0,
+            7,
+            16,
+            12
+          ]
+        }
+      }
+    },
+    {
+      "from": [
+        0,
+        13,
+        7
+      ],
+      "to": [
+        16,
+        15,
+        12
+      ],
+      "faces": {
+        "south": {
+          "texture": "#slat",
+          "uv": [
+            0,
+            1,
+            16,
+            3
+          ]
+        },
+        "up": {
+          "texture": "#slat",
+          "uv": [
+            0,
+            7,
+            16,
+            12
+          ]
+        },
+        "down": {
+          "texture": "#slat",
+          "uv": [
+            0,
+            7,
+            16,
+            12
+          ]
+        }
+      }
+    },
+    {
+      "from": [
+        0,
+        10,
+        7
+      ],
+      "to": [
+        16,
+        12,
+        12
+      ],
+      "faces": {
+        "south": {
+          "texture": "#slat",
+          "uv": [
+            0,
+            4,
+            16,
+            6
+          ]
+        },
+        "up": {
+          "texture": "#slat",
+          "uv": [
+            0,
+            7,
+            16,
+            12
+          ]
+        },
+        "down": {
+          "texture": "#slat",
+          "uv": [
+            0,
+            7,
+            16,
+            12
+          ]
+        }
+      }
+    }
+  ]
+}

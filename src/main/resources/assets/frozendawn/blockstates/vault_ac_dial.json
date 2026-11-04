@@ -1,0 +1,22 @@
+{
+  "variants": {
+    "setting=0,upper=true": {
+      "model": "frozendawn:block/vault_ac_dial_low_top"
+    },
+    "setting=0,upper=false": {
+      "model": "frozendawn:block/vault_ac_dial_low_bottom"
+    },
+    "setting=1,upper=true": {
+      "model": "frozendawn:block/vault_ac_dial_mid_top"
+    },
+    "setting=1,upper=false": {
+      "model": "frozendawn:block/vault_ac_dial_mid_bottom"
+    },
+    "setting=2,upper=true": {
+      "model": "frozendawn:block/vault_ac_dial_max_top"
+    },
+    "setting=2,upper=false": {
+      "model": "frozendawn:block/vault_ac_dial_max_bottom"
+    }
+  }
+}

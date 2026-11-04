@@ -1,0 +1,175 @@
+{
+  "multipart": [
+    {
+      "when": {
+        "part": "0",
+        "setting": "0"
+      },
+      "apply": {
+        "model": "frozendawn:block/vault_ac_0"
+      }
+    },
+    {
+      "when": {
+        "part": "0",
+        "setting": "1"
+      },
+      "apply": {
+        "model": "frozendawn:block/vault_ac_0_mid"
+      }
+    },
+    {
+      "when": {
+        "part": "0",
+        "setting": "2"
+      },
+      "apply": {
+        "model": "frozendawn:block/vault_ac_0_max"
+      }
+    },
+    {
+      "when": {
+        "part": "1",
+        "setting": "0"
+      },
+      "apply": {
+        "model": "frozendawn:block/vault_ac_1"
+      }
+    },
+    {
+      "when": {
+        "part": "1",
+        "setting": "1"
+      },
+      "apply": {
+        "model": "frozendawn:block/vault_ac_1_mid"
+      }
+    },
+    {
+      "when": {
+        "part": "1",
+        "setting": "2"
+      },
+      "apply": {
+        "model": "frozendawn:block/vault_ac_1_max"
+      }
+    },
+    {
+      "when": {
+        "part": "2",
+        "setting": "0"
+      },
+      "apply": {
+        "model": "frozendawn:block/vault_ac_2"
+      }
+    },
+    {
+      "when": {
+        "part": "2",
+        "setting": "1"
+      },
+      "apply": {
+        "model": "frozendawn:block/vault_ac_2_mid"
+      }
+    },
+    {
+      "when": {
+        "part": "2",
+        "setting": "2"
+      },
+      "apply": {
+        "model": "frozendawn:block/vault_ac_2_max"
+      }
+    },
+    {
+      "when": {
+        "part": "3",
+        "setting": "0"
+      },
+      "apply": {
+        "model": "frozendawn:block/vault_ac_3"
+      }
+    },
+    {
+      "when": {
+        "part": "3",
+        "setting": "1"
+      },
+      "apply": {
+        "model": "frozendawn:block/vault_ac_3_mid"
+      }
+    },
+    {
+      "when": {
+        "part": "3",
+        "setting": "2"
+      },
+      "apply": {
+        "model": "frozendawn:block/vault_ac_3_max"
+      }
+    },
+    {
+      "when": {
+        "part": "4",
+        "setting": "0"
+      },
+      "apply": {
+        "model": "frozendawn:block/vault_ac_4"
+      }
+    },
+    {
+      "when": {
+        "part": "4",
+        "setting": "1"
+      },
+      "apply": {
+        "model": "frozendawn:block/vault_ac_4_mid"
+      }
+    },
+    {
+      "when": {
+        "part": "4",
+        "setting": "2"
+      },
+      "apply": {
+        "model": "frozendawn:block/vault_ac_4_max"
+      }
+    },
+    {
+      "when": {
+        "part": "5",
+        "setting": "0"
+      },
+      "apply": {
+        "model": "frozendawn:block/vault_ac_5"
+      }
+    },
+    {
+      "when": {
+        "part": "5",
+        "setting": "1"
+      },
+      "apply": {
+        "model": "frozendawn:block/vault_ac_5_mid"
+      }
+    },
+    {
+      "when": {
+        "part": "5",
+        "setting": "2"
+      },
+      "apply": {
+        "model": "frozendawn:block/vault_ac_5_max"
+      }
+    },
+    {
+      "when": {
+        "part": "3|4|5",
+        "setting": "2"
+      },
+      "apply": {
+        "model": "frozendawn:block/vault_ac_ice"
+      }
+    }
+  ]
+}

@@ -102,7 +102,7 @@ public final class HyperionControllerBlockEntity extends BlockEntity implements 
             shell = HyperionMultiblock.validate(l, min, max);
             if (shell.problem() == HyperionMultiblock.Problem.UNLOADED) return;
             if (!shell.valid()) { broken(l); return; }
-            if (!registered) register(l);
+            if (!registered) register(l); else link(l);
         } else if (dirty || l.getGameTime() - lastDiscover >= 200) {
             dirty = false; lastDiscover = l.getGameTime();
             shell = HyperionMultiblock.discover(l, worldPosition);
@@ -213,8 +213,12 @@ public final class HyperionControllerBlockEntity extends BlockEntity implements 
     private void register(ServerLevel l) {
         registered = true; vents = shell.vents(); shownLook = null; shownAlert = null;
         BOXES.computeIfAbsent(l, k -> new HashMap<>()).put(worldPosition, new BlockPos[]{min, max});
-        for (var port : shell.ports()) if (l.getBlockEntity(port) instanceof HyperionPortBlockEntity p) p.setController(worldPosition);
+        link(l);
         PowerNetworks.hyperionFormed(l, worldPosition, shell.ports());
+    }
+    /** Each second as well as on forming: a port's chunk can unload and come back without this one's, and the link is not saved. */
+    private void link(ServerLevel l) {
+        for (var port : shell.ports()) if (l.getBlockEntity(port) instanceof HyperionPortBlockEntity p) p.setController(worldPosition);
     }
     private void unform(ServerLevel l) {
         min = max = null; registered = false; dirty = true;

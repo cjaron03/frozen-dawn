@@ -1,0 +1,19 @@
+{
+  "name": "Name Review",
+  "category": "frozendawn:orsa_intel",
+  "icon": "frozendawn:orsa_document",
+  "sortnum": 34,
+  "advancement": "frozendawn:found_terminus_name_review",
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "TR-0",
+      "text": "$(bold)ORSA NAME REVIEW$()$(br)From: Supervisor, Vault Stores$(br)Re: TR-0 Terminus, informal designation$(br2)All three shifts are logging the TR-0 as the $(italic)deathwand$(). They say the name comes from some old book going round the rec room."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Disposition",
+      "text": "Terminus is the catalogue name. A formal name review was requested so the matter could be closed.$(br2)$(italic)DENIED.$()$(br2)No review board will sit for an item with no issuing division. Log it as the TR-0, and stop lending out the book."
+    }
+  ]
+}

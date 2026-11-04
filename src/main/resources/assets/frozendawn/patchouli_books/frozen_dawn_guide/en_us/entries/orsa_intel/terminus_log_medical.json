@@ -1,0 +1,18 @@
+{
+  "name": "Duty Log: Anand",
+  "category": "frozendawn:orsa_intel",
+  "icon": "frozendawn:orsa_document",
+  "sortnum": 37,
+  "advancement": "frozendawn:found_terminus_log_medical",
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "Medical",
+      "text": "$(bold)DUTY LOG$()$(br)Anand, R., medical$(br2)Why I am here: somebody has to sign. I was told this post needs a doctor who can write a certificate, and that nobody would ask me to write one."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "The wand has never been fired. I have nothing to do but keep the forms in order.$(br2)The certificates came pre-printed. The cause is already filled in. It says Transfer.$(br2)I asked to where. I was told that was not a medical question."
+    }
+  ]
+}

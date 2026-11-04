@@ -1,0 +1,150 @@
+{
+  "textures": {
+    "particle": "frozendawn:block/vault_housing",
+    "steel": "frozendawn:block/vault_housing",
+    "body": "frozendawn:block/vault_projector_body",
+    "lens": "frozendawn:block/vault_projector_lens_playing"
+  },
+  "elements": [
+    {
+      "from": [
+        0,
+        0,
+        -8
+      ],
+      "to": [
+        8,
+        16,
+        8
+      ],
+      "neoforge_data": {
+        "block_light": 12,
+        "sky_light": 12
+      },
+      "faces": {
+        "north": {
+          "texture": "#steel",
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ]
+        },
+        "south": {
+          "texture": "#steel",
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ]
+        },
+        "west": {
+          "texture": "#steel",
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ]
+        },
+        "up": {
+          "texture": "#steel",
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ]
+        },
+        "down": {
+          "texture": "#steel",
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ]
+        },
+        "east": {
+          "texture": "#lens",
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ]
+        }
+      }
+    },
+    {
+      "from": [
+        0,
+        0,
+        8
+      ],
+      "to": [
+        8,
+        16,
+        24
+      ],
+      "faces": {
+        "north": {
+          "texture": "#steel",
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ]
+        },
+        "south": {
+          "texture": "#steel",
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ]
+        },
+        "west": {
+          "texture": "#steel",
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ]
+        },
+        "up": {
+          "texture": "#steel",
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ]
+        },
+        "down": {
+          "texture": "#steel",
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ]
+        },
+        "east": {
+          "texture": "#body",
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ]
+        }
+      }
+    }
+  ]
+}

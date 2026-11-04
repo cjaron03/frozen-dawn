@@ -183,4 +183,4 @@ Added four `orsa` performances for the optional AMR-1 Icarus reactor, rendered o
 - `ui/suit/icarus_critical.ogg`, "Icarus critical. Shield failure imminent.": 3.134694 seconds; SHA-256 `b70ad4393fb1b642b127d27d3cdb50e012794de37374650d4901d1c2ec1cda81`.
 - `ui/suit/icarus_radiation.ogg`, "Radiation spike detected.": 2.263946 seconds; SHA-256 `a07d542f7c7616abafb6ef574763e8cae544e38811e6cb9d908d15ade61d046a`.
 
-The notice, packaged attribution and shipped audio inventory count 62 performances. No weights or engine are shipped.
+The notice, packaged attribution and shipped audio inventory count 63 performances. No weights or engine are shipped.

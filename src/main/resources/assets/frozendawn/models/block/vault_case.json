@@ -1,0 +1,73 @@
+{
+  "textures": {
+    "particle": "frozendawn:block/vault_case",
+    "c": "frozendawn:block/vault_case",
+    "h": "frozendawn:block/vault_steel"
+  },
+  "elements": [
+    {
+      "from": [
+        1,
+        0,
+        3
+      ],
+      "to": [
+        15,
+        6,
+        13
+      ],
+      "faces": {
+        "north": {
+          "texture": "#c"
+        },
+        "south": {
+          "texture": "#c"
+        },
+        "east": {
+          "texture": "#c"
+        },
+        "west": {
+          "texture": "#c"
+        },
+        "up": {
+          "texture": "#c"
+        },
+        "down": {
+          "texture": "#c"
+        }
+      }
+    },
+    {
+      "from": [
+        6,
+        6,
+        7
+      ],
+      "to": [
+        10,
+        7,
+        9
+      ],
+      "faces": {
+        "north": {
+          "texture": "#h"
+        },
+        "south": {
+          "texture": "#h"
+        },
+        "east": {
+          "texture": "#h"
+        },
+        "west": {
+          "texture": "#h"
+        },
+        "up": {
+          "texture": "#h"
+        },
+        "down": {
+          "texture": "#h"
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "variants": {
+    "mode=idle": {
+      "model": "frozendawn:block/vault_projector_idle"
+    },
+    "mode=recording": {
+      "model": "frozendawn:block/vault_projector_recording"
+    },
+    "mode=playing": {
+      "model": "frozendawn:block/vault_projector_playing"
+    }
+  }
+}

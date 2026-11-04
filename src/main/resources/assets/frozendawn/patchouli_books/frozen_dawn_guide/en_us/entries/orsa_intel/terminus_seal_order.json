@@ -1,0 +1,14 @@
+{
+  "name": "Seal Order",
+  "category": "frozendawn:orsa_intel",
+  "icon": "frozendawn:orsa_document",
+  "sortnum": 33,
+  "advancement": "frozendawn:found_terminus_seal_order",
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "CVF-1 \"Vigil\"",
+      "text": "$(bold)ORSA SEAL ORDER$()$(br)Facility CVF-1 \"Vigil\"$(br2)All CVF-1 staff to Exodus by 2200.$(br2)ISS-4 armed on last badge-out.$(br2)CSU-3 remains on duty.$(br2)Nobody goes back for personal effects."
+    }
+  ]
+}

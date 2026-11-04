@@ -1,0 +1,27 @@
+{
+  "replace": false,
+  "values": [
+    "minecraft:player",
+    "minecraft:zombie",
+    "minecraft:husk",
+    "minecraft:drowned",
+    "minecraft:zombie_villager",
+    "minecraft:zombified_piglin",
+    "minecraft:villager",
+    "minecraft:wandering_trader",
+    "minecraft:pillager",
+    "minecraft:vindicator",
+    "minecraft:evoker",
+    "minecraft:illusioner",
+    "minecraft:witch",
+    "minecraft:piglin",
+    "minecraft:piglin_brute",
+    "frozendawn:returned",
+    "frozendawn:architect",
+    "frozendawn:undone_architect",
+    "frozendawn:frostbitten",
+    "frozendawn:hollow",
+    "frozendawn:mimic",
+    "frozendawn:archivist"
+  ]
+}

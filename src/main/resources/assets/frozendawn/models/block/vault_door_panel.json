@@ -1,0 +1,54 @@
+{
+  "render_type": "minecraft:translucent",
+  "textures": {
+    "door": "frozendawn:block/vault_door_panel",
+    "steel": "frozendawn:block/vault_steel",
+    "particle": "frozendawn:block/vault_steel"
+  },
+  "elements": [
+    {
+      "from": [
+        7,
+        -16,
+        -16
+      ],
+      "to": [
+        9,
+        32,
+        32
+      ],
+      "faces": {
+        "east": {
+          "texture": "#door",
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ]
+        },
+        "west": {
+          "texture": "#door",
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ]
+        },
+        "north": {
+          "texture": "#steel"
+        },
+        "south": {
+          "texture": "#steel"
+        },
+        "up": {
+          "texture": "#steel"
+        },
+        "down": {
+          "texture": "#steel"
+        }
+      }
+    }
+  ]
+}

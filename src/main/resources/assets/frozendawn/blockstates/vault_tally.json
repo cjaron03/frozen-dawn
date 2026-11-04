@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "lit=false": {
+      "model": "frozendawn:block/vault_tally_dark"
+    },
+    "lit=true": {
+      "model": "frozendawn:block/vault_tally_lit"
+    }
+  }
+}

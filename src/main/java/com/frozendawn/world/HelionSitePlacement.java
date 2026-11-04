@@ -46,7 +46,8 @@ public final class HelionSitePlacement {
         for (long key : Set.copyOf(pending)) {
             int chunkX = (int) (key >> 32), chunkZ = (int) key, x = (chunkX << 4) + 8, z = (chunkZ << 4) + 8;
             if (state.isEvaluated(chunkX, chunkZ)) { pending.remove(key); continue; }
-            if (!areaLoaded(overworld, x, z, RADIUS + 16)) continue;
+            // The site that may take the Terminus Vault waits on the chunks its shell runs through too, all of them east of it.
+            if (!areaLoaded(overworld, x, z, RADIUS + 16) || state.vault() == null && !vaultLoaded(overworld, x, z)) continue;
             pending.remove(key);
             var spawn = overworld.getSharedSpawnPos();
             long dx = x - spawn.getX(), dz = z - spawn.getZ();
@@ -68,6 +69,7 @@ public final class HelionSitePlacement {
             }
             build(overworld, hall);
             state.markBuilt(chunkX, chunkZ, hall);
+            com.frozendawn.vault.TerminusVaultBuilder.claim(overworld, hall);
             FrozenDawn.LOGGER.info("Helion site placed at ({}, {}, {})", hall.getX(), hall.getY(), hall.getZ());
         }
     }
@@ -128,6 +130,11 @@ public final class HelionSitePlacement {
         for (int dx = -radius; dx <= radius; dx += 16) for (int dz = -radius; dz <= radius; dz += 16)
             if (!level.isLoaded(new BlockPos(x + dx, 0, z + dz))) return false;
         return level.isLoaded(new BlockPos(x + radius, 0, z + radius));
+    }
+    private static boolean vaultLoaded(ServerLevel level, int x, int z) {
+        for (int dx = 0; dx <= RADIUS + 16 + com.frozendawn.vault.TerminusVaultBuilder.REACH; dx += 16) for (int dz = -RADIUS - 16; dz <= RADIUS + 16; dz += 16)
+            if (!level.isLoaded(new BlockPos(x + dx, 0, z + dz))) return false;
+        return true;
     }
     private static long pack(int x, int z) { return ((long) x << 32) | (z & 0xFFFFFFFFL); }
     public static void reset() { pending.clear(); }

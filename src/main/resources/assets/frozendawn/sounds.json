@@ -2215,6 +2215,97 @@
       "frozendawn:item/sever_lash/vent"
     ]
   },
+  "item.terminus.windup": {
+    "category": "player",
+    "subtitle": "subtitle.frozendawn.item.terminus.windup",
+    "sounds": [
+      {
+        "name": "frozendawn:item/terminus/windup",
+        "attenuation_distance": 8
+      }
+    ]
+  },
+  "block.vault.grind": {
+    "category": "block",
+    "subtitle": "subtitle.frozendawn.block.vault.grind",
+    "sounds": [
+      {
+        "name": "frozendawn:blocks/vault/grind",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "block.vault.pulse": {
+    "category": "block",
+    "subtitle": "subtitle.frozendawn.block.vault.pulse",
+    "sounds": [
+      {
+        "name": "frozendawn:blocks/vault/pulse",
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "block.vault.fuse": {
+    "category": "block",
+    "subtitle": "subtitle.frozendawn.block.vault.fuse",
+    "sounds": [
+      {
+        "name": "frozendawn:blocks/vault/fuse",
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "block.vault.wrong": {
+    "category": "block",
+    "subtitle": "subtitle.frozendawn.block.vault.wrong",
+    "sounds": [
+      {
+        "name": "frozendawn:blocks/vault/wrong",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "block.vault.custodian_death": {
+    "category": "block",
+    "subtitle": "subtitle.frozendawn.block.vault.custodian_death",
+    "sounds": [
+      {
+        "name": "frozendawn:blocks/vault/custodian_death",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "block.vault.shell": {
+    "category": "block",
+    "subtitle": "subtitle.frozendawn.block.vault.shell",
+    "sounds": [
+      {
+        "name": "frozendawn:blocks/vault/shell",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "block.vault.purge": {
+    "category": "block",
+    "subtitle": "subtitle.frozendawn.block.vault.purge",
+    "sounds": [
+      {
+        "name": "frozendawn:blocks/vault/purge",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "block.vault.announcement": {
+    "category": "block",
+    "subtitle": "subtitle.frozendawn.block.vault.announcement",
+    "sounds": [
+      {
+        "name": "frozendawn:blocks/vault/announcement",
+        "attenuation_distance": 16,
+        "stream": true
+      }
+    ]
+  },
   "radio.martian_command_message": {
     "category": "record",
     "subtitle": "subtitle.frozendawn.radio.martian_command",

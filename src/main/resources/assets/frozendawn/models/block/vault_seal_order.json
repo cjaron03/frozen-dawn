@@ -1,0 +1,40 @@
+{
+  "textures": {
+    "particle": "frozendawn:block/vault_seal_order",
+    "p": "frozendawn:block/vault_seal_order"
+  },
+  "elements": [
+    {
+      "from": [
+        3,
+        0,
+        2
+      ],
+      "to": [
+        13,
+        0.4,
+        14
+      ],
+      "faces": {
+        "north": {
+          "texture": "#p"
+        },
+        "south": {
+          "texture": "#p"
+        },
+        "east": {
+          "texture": "#p"
+        },
+        "west": {
+          "texture": "#p"
+        },
+        "up": {
+          "texture": "#p"
+        },
+        "down": {
+          "texture": "#p"
+        }
+      }
+    }
+  ]
+}

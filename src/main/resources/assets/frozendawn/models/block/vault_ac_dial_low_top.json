@@ -1,0 +1,68 @@
+{
+  "textures": {
+    "particle": "frozendawn:block/vault_ac_case",
+    "case": "frozendawn:block/vault_ac_case",
+    "face": "frozendawn:block/vault_ac_dial_low_top"
+  },
+  "elements": [
+    {
+      "from": [
+        1,
+        0,
+        0
+      ],
+      "to": [
+        15,
+        16,
+        5
+      ],
+      "faces": {
+        "south": {
+          "texture": "#face",
+          "uv": [
+            1,
+            0,
+            15,
+            16
+          ]
+        },
+        "east": {
+          "texture": "#case",
+          "uv": [
+            0,
+            0,
+            5,
+            16
+          ]
+        },
+        "west": {
+          "texture": "#case",
+          "uv": [
+            0,
+            0,
+            5,
+            16
+          ]
+        },
+        "up": {
+          "texture": "#case",
+          "uv": [
+            1,
+            0,
+            15,
+            5
+          ]
+        },
+        "down": {
+          "texture": "#case",
+          "uv": [
+            1,
+            0,
+            15,
+            5
+          ]
+        }
+      }
+    }
+  ]
+}

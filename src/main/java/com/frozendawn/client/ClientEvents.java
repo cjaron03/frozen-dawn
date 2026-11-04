@@ -119,6 +119,12 @@ public class ClientEvents {
                 com.frozendawn.client.particle.ColdVapourParticle.Provider::new);
         event.registerSpriteSet(ModParticles.SEAR_EMBER.get(),
                 com.frozendawn.client.particle.SearEmberParticle.Provider::new);
+        event.registerSpriteSet(ModParticles.TERMINUS_SPECK.get(),
+                com.frozendawn.client.particle.TerminusSpeckParticle.Provider::new);
+        event.registerSpriteSet(ModParticles.TERMINUS_MOTE.get(),
+                com.frozendawn.client.particle.TerminusMoteParticle.Provider::new);
+        event.registerSpriteSet(ModParticles.TERMINUS_FLAKE.get(),
+                com.frozendawn.client.particle.TerminusFlakeParticle.Provider::new);
     }
 
     @SubscribeEvent
@@ -143,6 +149,9 @@ public class ClientEvents {
                                 FrozenDawn.MOD_ID, "stillpoint_field"),
                         DefaultVertexFormat.POSITION),
                 StillpointFieldRenderer::setShader);
+        event.registerShader(new ShaderInstance(event.getResourceProvider(),
+                        ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "terminus_crumble"),
+                        DefaultVertexFormat.NEW_ENTITY), TerminusCrumble::setShader);
     }
 
     @SubscribeEvent
@@ -161,6 +170,7 @@ public class ClientEvents {
         event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "icarus_danger"), IcarusDangerHud::render);
         event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "icarus_suit"), IcarusSuitHud::render);
         event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "icarus_screen_flash"), IcarusScreenFlash::render);
+        event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "vault_purge_flash"), VaultPurgeFlash::render);
         event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "icarus_flash"), IcarusBlastEffects::renderFlash);
         event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "radiation_flashes"), RadiationClient::renderFlashes);
         event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "geiger_readout"), RadiationClient::renderReadout);
@@ -278,6 +288,13 @@ public class ClientEvents {
             // Firing swaps in models held along the raised arm (SeverLashHold); other players see it through the synced use.
             ItemProperties.register(ModItems.SEVER_LASH.get(), ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "firing"),
                     (stack, level, entity, seed) -> entity != null && com.frozendawn.item.SeverLashItem.firing(entity, stack) ? 1 : 0);
+            // The Terminus shows one mote in its glass per discharge left, and winds up in four stages (TerminusHold).
+            ItemProperties.register(ModItems.TERMINUS.get(), ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "motes"),
+                    (stack, level, entity, seed) -> Math.min(3, stack.getOrDefault(ModDataComponents.TERMINUS_LOG.get(),
+                            com.frozendawn.defense.TerminusLog.FOUND).discharges()));
+            ItemProperties.register(ModItems.TERMINUS.get(), ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "windup"),
+                    (stack, level, entity, seed) -> entity != null && com.frozendawn.item.TerminusItem.winding(entity, stack)
+                            ? 1 + Math.min(3, entity.getTicksUsingItem() * 4 / com.frozendawn.defense.Terminus.WINDUP_TICKS) : 0);
             ItemProperties.register(ModItems.MIEL_HONEY.get(), ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "fill"),
                     (stack, level, entity, seed) -> stack.getOrDefault(ModDataComponents.MIEL_SPOONFULS, MielHoneyItem.SPOONFULS) / (float) MielHoneyItem.SPOONFULS);
             CuriosClientCompat.registerRenderers();
@@ -295,6 +312,7 @@ public class ClientEvents {
     @SubscribeEvent
     public static void onRegisterClientExtensions(RegisterClientExtensionsEvent event) {
         event.registerItem(new com.frozendawn.client.SeverLashHold(), ModItems.SEVER_LASH.get());
+        event.registerItem(new com.frozendawn.client.TerminusHold(), ModItems.TERMINUS.get());
         event.registerFluidType(new IClientFluidTypeExtensions() {
             @Override
             public ResourceLocation getStillTexture() {
@@ -320,6 +338,7 @@ public class ClientEvents {
         event.registerLayerDefinition(RocketLaunchModel.LAYER_LOCATION, RocketLaunchModel::createBodyLayer);
         event.registerLayerDefinition(
                 RimeboundModel.LAYER_LOCATION, RimeboundModel::createBodyLayer);
+        event.registerLayerDefinition(com.frozendawn.client.renderer.CustodianModel.LAYER_LOCATION, com.frozendawn.client.renderer.CustodianModel::createBodyLayer);
         event.registerLayerDefinition(
                 ResonantModel.LAYER_LOCATION, ResonantModel::createBodyLayer);
         event.registerLayerDefinition(
@@ -340,6 +359,8 @@ public class ClientEvents {
     @SubscribeEvent
     public static void onRegisterEntityRenderers(EntityRenderersEvent.RegisterRenderers event) {
         event.registerEntityRenderer(ModEntities.AGGREGATE.get(), AggregateRenderer::new);
+        event.registerEntityRenderer(ModEntities.CUSTODIAN.get(), com.frozendawn.client.renderer.CustodianRenderer::new);
+        event.registerEntityRenderer(ModEntities.VAULT_RECORDING.get(), com.frozendawn.client.renderer.VaultRecordingRenderer::new);
         event.registerEntityRenderer(
                 ModEntities.AGGREGATE_FRAGMENT.get(), AggregateFragmentRenderer::new);
         event.registerEntityRenderer(
@@ -385,6 +406,13 @@ public class ClientEvents {
         event.registerBlockEntityRenderer(ModBlockEntities.OXYGEN_GAUGE.get(), com.frozendawn.client.renderer.OxygenGaugeRenderer::new);
         event.registerBlockEntityRenderer(ModBlockEntities.HYPERION_CONTROLLER.get(), com.frozendawn.client.renderer.HyperionSiloRenderer::new);
         event.registerBlockEntityRenderer(ModBlockEntities.HALSEY_CORE.get(), HalseyCoreRenderer::new);
+        event.registerBlockEntityRenderer(ModBlockEntities.VAULT_MECHANISM.get(), com.frozendawn.client.renderer.VaultMechanismRenderer::new);
+        event.registerBlockEntityRenderer(ModBlockEntities.VAULT_TECHNICIAN.get(), com.frozendawn.client.renderer.VaultTechnicianRenderer::new);
+        event.registerBlockEntityRenderer(ModBlockEntities.VAULT_CRADLE.get(), com.frozendawn.client.renderer.VaultCradleRenderer::new);
+        event.registerBlockEntityRenderer(ModBlockEntities.VAULT_CLOCK.get(), com.frozendawn.client.renderer.VaultClockRenderer::new);
+        event.registerBlockEntityRenderer(ModBlockEntities.VAULT_FIGHT_CLOCK.get(), com.frozendawn.client.renderer.VaultFightClockRenderer::new);
+        event.registerBlockEntityRenderer(ModBlockEntities.VAULT_PLOT.get(), com.frozendawn.client.renderer.VaultPlotRenderer::new);
+        event.registerBlockEntityRenderer(ModBlockEntities.VAULT_VITALS.get(), com.frozendawn.client.renderer.VaultVitalsRenderer::new);
         event.registerBlockEntityRenderer(ModBlockEntities.ICARUS_STABILIZER.get(), IcarusStabilizerRenderer::new);
         event.registerBlockEntityRenderer(ModBlockEntities.ICARUS_INJECTOR.get(), IcarusInjectorRenderer::new);
     }

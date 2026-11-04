@@ -899,6 +899,25 @@ public class ModSounds {
     public static final DeferredHolder<SoundEvent, SoundEvent> SEVER_LASH_CRACK = register("item.sever_lash.crack");
     public static final DeferredHolder<SoundEvent, SoundEvent> SEVER_LASH_SIZZLE = register("item.sever_lash.sizzle");
     public static final DeferredHolder<SoundEvent, SoundEvent> SEVER_LASH_VENT = register("item.sever_lash.vent");
+    /** The Terminus wind-up: a low tone rising over two seconds, heard to 24 blocks. */
+    public static final DeferredHolder<SoundEvent, SoundEvent> TERMINUS_WINDUP = SOUNDS.register("item.terminus.windup",
+            () -> SoundEvent.createFixedRangeEvent(ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "item.terminus.windup"), 8f));
+    public static final DeferredHolder<SoundEvent, SoundEvent> VAULT_GRIND = SOUNDS.register("block.vault.grind",
+            () -> SoundEvent.createFixedRangeEvent(ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "block.vault.grind"), 24));
+    public static final DeferredHolder<SoundEvent, SoundEvent> VAULT_PULSE = SOUNDS.register("block.vault.pulse",
+            () -> SoundEvent.createFixedRangeEvent(ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "block.vault.pulse"), 16));
+    public static final DeferredHolder<SoundEvent, SoundEvent> VAULT_FUSE = SOUNDS.register("block.vault.fuse",
+            () -> SoundEvent.createFixedRangeEvent(ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "block.vault.fuse"), 16));
+    public static final DeferredHolder<SoundEvent, SoundEvent> VAULT_WRONG = SOUNDS.register("block.vault.wrong",
+            () -> SoundEvent.createFixedRangeEvent(ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "block.vault.wrong"), 32));
+    public static final DeferredHolder<SoundEvent, SoundEvent> VAULT_SHELL = SOUNDS.register("block.vault.shell",
+            () -> SoundEvent.createFixedRangeEvent(ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "block.vault.shell"), 32));
+    public static final DeferredHolder<SoundEvent, SoundEvent> VAULT_CUSTODIAN_DEATH = SOUNDS.register("block.vault.custodian_death",
+            () -> SoundEvent.createFixedRangeEvent(ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "block.vault.custodian_death"), 32));
+    public static final DeferredHolder<SoundEvent, SoundEvent> VAULT_PURGE = SOUNDS.register("block.vault.purge",
+            () -> SoundEvent.createFixedRangeEvent(ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "block.vault.purge"), 32));
+    public static final DeferredHolder<SoundEvent, SoundEvent> VAULT_ANNOUNCEMENT = SOUNDS.register("block.vault.announcement",
+            () -> SoundEvent.createFixedRangeEvent(ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "block.vault.announcement"), 16));
     public static final DeferredHolder<SoundEvent, SoundEvent> RADIO_MARTIAN_COMMAND_MESSAGE = register("radio.martian_command_message");
     public static final DeferredHolder<SoundEvent, SoundEvent> RADIO_CUTOFF = register("radio.cutoff");
     public static final DeferredHolder<SoundEvent, SoundEvent> RADIO_VOICE_TOWER = register("radio.voice.tower");
