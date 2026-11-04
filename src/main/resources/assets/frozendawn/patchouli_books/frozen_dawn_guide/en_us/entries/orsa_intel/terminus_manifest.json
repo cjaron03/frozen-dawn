@@ -13,7 +13,7 @@
     {
       "type": "patchouli:text",
       "title": "Manifest",
-      "text": "$(bold)ORSA VAULT MANIFEST$()$(br2)Item: TR-0 Terminus, one$(br)Issuing division:$(br)Budget line:$(br2)Requisition reason: Containment of RELIQUUS COGNITIVE ECHO.$(br2)Approver signature:"
+      "text": "$(bold)ORSA VAULT MANIFEST$()$(br2)Item: TR-0 Terminus, one$(br)Item: CS-1 unit 4, one$(br)Issuing division:$(br)Budget line:$(br2)Requisition reason: Containment of RELIQUUS COGNITIVE ECHO.$(br2)Approver signature:"
     }
   ]
 }
