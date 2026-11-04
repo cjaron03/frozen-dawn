@@ -24,8 +24,8 @@ class ArgusFightTest {
 
     @Test
     void theRoundsGetHarderAsDrawn() {
-        assertEquals(new ArgusFight.Round(3, 160, false), ArgusFight.round(0));
-        assertEquals(new ArgusFight.Round(4, 120, false), ArgusFight.round(1));
+        assertEquals(new ArgusFight.Round(3, 120, false), ArgusFight.round(0));
+        assertEquals(new ArgusFight.Round(4, 100, false), ArgusFight.round(1));
         assertEquals(new ArgusFight.Round(4, 100, true), ArgusFight.round(2));
     }
 
@@ -49,7 +49,7 @@ class ArgusFightTest {
             assertEquals(Arrays.stream(fight.wanted()).anyMatch(w -> w == g), fight.boardLit(glyph));
         }
         assertEquals(3, fight.wanted().length);
-        ticks(fight, 159, false);
+        ticks(fight, 119, false);
         assertEquals(Phase.READ, fight.phase());
         fight.tick(false);
         assertEquals(Phase.PULL, fight.phase());
@@ -103,7 +103,7 @@ class ArgusFightTest {
     }
 
     @Test
-    void allPulledOpensTheShellForFifteenSecondsThenBackToTheBoard() {
+    void allPulledOpensTheShellForTwelveSecondsThenBackToTheBoard() {
         var fight = started(6);
         read(fight);
         var wanted = fight.wanted();
@@ -119,6 +119,21 @@ class ArgusFightTest {
         assertEquals(Phase.WAITING, fight.phase());
         fight.tick(true);
         assertEquals(4, fight.wanted().length, "Round 2");
+    }
+
+    @Test
+    void aSpentOpeningGoesStraightBackToTheBoard() {
+        var fight = started(6);
+        fight.spent();
+        assertEquals(Phase.WAITING, fight.phase(), "Nothing to spend before an opening");
+        read(fight);
+        pullAll(fight);
+        ticks(fight, 20, false);
+        assertEquals(Phase.BURN, fight.phase());
+        fight.spent();
+        assertEquals(Phase.WAITING, fight.phase());
+        fight.tick(true);
+        assertEquals(Phase.READ, fight.phase());
     }
 
     @Test

@@ -180,8 +180,10 @@ public final class TerminusWatchFloorGameTest {
                     h.assertTrue(Math.abs(f.boss().getHealth()-CustodianEntity.HEALTH*2/3)<.01,"A third and no more: "+f.boss().getHealth());
                     h.assertTrue(f.boss().isAlive(),"It stands");
                 })
-                .thenExecuteAfter(2,()->h.assertTrue(Math.abs(f.argus.barProgress()-2/3f)<.01,"The bar shows it: "+f.argus.barProgress()))
-                .thenWaitUntil(()->h.assertTrue(!f.boss().shellOpen()&&f.fight().phase()!=Phase.BURN,"Fifteen seconds and it shuts"))
+                .thenExecuteAfter(2,()->{
+                    h.assertTrue(Math.abs(f.argus.barProgress()-2/3f)<.01,"The bar shows it: "+f.argus.barProgress());
+                    h.assertTrue(!f.boss().shellOpen()&&f.fight().phase()!=Phase.BURN,"With nothing left to give it shuts at once");
+                })
                 .thenSucceed();
     }
 

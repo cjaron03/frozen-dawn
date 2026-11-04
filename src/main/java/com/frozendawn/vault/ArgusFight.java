@@ -15,7 +15,7 @@ public final class ArgusFight {
     public enum Pull { NOTHING, RIGHT, WRONG, COMPLETE }
     public record Round(int glyphs, int shownTicks, boolean ordered) { }
 
-    public static final int GLYPHS = 6, ROUNDS = 3, CLOCK_TICKS = 4 * 60 * 20, BURN_TICKS = 15 * 20, PENALTY_TICKS = 20 * 20, HOLD_TICKS = 40;
+    public static final int GLYPHS = 6, ROUNDS = 3, CLOCK_TICKS = 4 * 60 * 20, BURN_TICKS = 12 * 20, PENALTY_TICKS = 20 * 20, HOLD_TICKS = 40;
     /** A held use repeats every four ticks; a longer gap than this is a hand let go. */
     private static final int HOLD_GAP = 8;
     private static final int PULSE_SLOWEST = 24, PULSE_FASTEST = 10;
@@ -31,7 +31,7 @@ public final class ArgusFight {
     public ArgusFight(Random random) { this.random = random; }
 
     public static Round round(int won) {
-        return switch (Math.min(won, ROUNDS - 1)) { case 0 -> new Round(3, 8 * 20, false); case 1 -> new Round(4, 6 * 20, false); default -> new Round(4, 5 * 20, true); };
+        return switch (Math.min(won, ROUNDS - 1)) { case 0 -> new Round(3, 6 * 20, false); case 1 -> new Round(4, 5 * 20, false); default -> new Round(4, 5 * 20, true); };
     }
     public Round currentRound() { return round(won); }
     public Phase phase() { return phase; }
@@ -119,6 +119,9 @@ public final class ArgusFight {
         enter(Phase.BURN);
         return Pull.COMPLETE;
     }
+
+    /** The opening has given all it can: no reason to stand and wait out the rest of it. */
+    public void spent() { if (phase == Phase.BURN) enter(Phase.WAITING); }
 
     public void fell() { if (running()) phase = Phase.WON; }
     public void purge() { clean = false; startOver(); }

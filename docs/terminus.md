@@ -392,9 +392,9 @@ names, glyphs and art are ours. Door 1, the bridge, the cot, the technician, the
 
 ### The fight
 - A round: from the upper level the board lights the round's glyphs, then goes dark. Below, the fuses have shuffled. Pull
-  the matching ones, two seconds' hold each. All pulled, the Custodian's shell opens for 15 seconds and it takes damage: a
-  third of its health a round, with a boss bar. Then climb and read again.
-- Round 1: three glyphs, shown 8 s. Round 2: four, shown 6 s. Round 3: four, shown 5 s, pulled in the order shown.
+  the matching ones, two seconds' hold each. All pulled, the Custodian's shell opens for 12 seconds, or until the opening is
+  spent, and it takes damage: a third of its health a round, with a boss bar. Then climb and read again.
+- Round 1: three glyphs, shown 6 s. Round 2: four, shown 5 s. Round 3: four, shown 5 s, pulled in the order shown.
 - The Custodian moves only while no mind faces it, by `VaultWatch`'s rule. Facing a fuse means your back is to it. Its touch
   takes hearts; nothing hurts it with the shell shut. It is no mind itself, so it freezes no door.
 - The clock: 4:00 for the fight, shown on both levels, counting back; a wrong fuse takes 20 seconds off. At zero the purge:
@@ -485,6 +485,15 @@ Response: the heartbeat remade in `40b66d20`. For not knowing what to do, a card
 the owner wanted the instructions "written quickly in marker or something outside the door before you enter the room, like
 someone warning the palyer". Approved from `vault-warning-mockup.png`: seven scrawled lines on the bridge hall's north wall, x
 12..16, over the band. The room itself gives no hints.
+
+## Owner playtest 2 of the Watch Floor, 2026-11-03 (Terminus Watch Floor Check 2, runClientLab, branch head a17d63e9)
+
+Unprompted report: "ok so some things on the puzzle 1: sometiems id only get 1 rotation of fuses, i got 2 at one poitn, but it
+never got to 3. make it a little bit quicker inbetween fuse cycles, and maybe a indiactor above the main door we are trying to
+unlock that has like lights that go out for every successful fuse break 2: have a animation for when the custodians core opens,
+and a noise 3" (the message stopped there).
+
+The log: joined 19:23:05, quit 19:34:06, no errors. It records no rounds, so `[Argus]` lines now do.
 
 ## ORSA System Plot (built 2026-11-03)
 

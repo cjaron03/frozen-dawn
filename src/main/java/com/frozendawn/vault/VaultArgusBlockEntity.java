@@ -46,6 +46,7 @@ import org.jetbrains.annotations.Nullable;
 @EventBusSubscriber(modid = FrozenDawn.MOD_ID)
 public final class VaultArgusBlockEntity extends BlockEntity {
     /** How long a fight goes on with nobody left inside. */
+    private static final org.slf4j.Logger LOGGER = com.mojang.logging.LogUtils.getLogger();
     public static final int ABANDON_TICKS = 100;
     /** The recording's length and the hiss after it. */
     private static final int ANNOUNCE_TICKS = 24 * 20;
@@ -82,6 +83,7 @@ public final class VaultArgusBlockEntity extends BlockEntity {
             else if (fight.tick(inside.stream().anyMatch(this::onUpperLevel))) purge(level, inside);
             else pulse(level, inside);
         }
+        if (custodian != null && custodian.getHealth() <= fight.floor() * custodian.getMaxHealth()) fight.spent();
         if (custodian != null) custodian.drive(worldPosition, fight.running(), fight.phase() == Phase.BURN, fight.floor());
         show(level);
         updateBar(inside);
@@ -159,7 +161,11 @@ public final class VaultArgusBlockEntity extends BlockEntity {
         switch (fight.pull(slot)) {
             case WRONG -> server.playSound(null, at, ModSounds.VAULT_WRONG.get(), SoundSource.BLOCKS, 1, 1);
             case RIGHT -> server.playSound(null, at, ModSounds.VAULT_FUSE.get(), SoundSource.BLOCKS, 1, 1.5f);
-            case COMPLETE -> server.playSound(null, hall().offset(TerminusVaultBuilder.CUSTODIAN), ModSounds.VAULT_SHELL.get(), SoundSource.HOSTILE, 1.5f, 1);
+            case COMPLETE -> {
+                LOGGER.info("[Argus] Opening {} with {} left", fight.won(), ArgusFight.text(fight.seconds()));
+                // Volume is reach: four carries it the length of the hall, wherever the Custodian has got to.
+                if (custodian != null) server.playSound(null, custodian, ModSounds.VAULT_SHELL.get(), SoundSource.HOSTILE, 4, 1);
+            }
             case NOTHING -> { }
         }
         player.displayClientMessage(Component.empty(), true);
@@ -187,6 +193,7 @@ public final class VaultArgusBlockEntity extends BlockEntity {
             player.teleportTo(level, ledge.x, ledge.y, ledge.z, -90, 0);
             player.setHealth(Math.min(player.getHealth(), player.getMaxHealth() / 2));
         }
+        LOGGER.info("[Argus] Purged after {} openings", fight.won());
         fight.purge();
         standDown(level);
     }
