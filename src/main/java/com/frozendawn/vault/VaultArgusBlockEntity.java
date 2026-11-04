@@ -26,7 +26,6 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.BossEvent;
-import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
@@ -102,7 +101,8 @@ public final class VaultArgusBlockEntity extends BlockEntity {
         custodian = null;
         var found = level.getEntitiesOfClass(CustodianEntity.class, hallBox(), CustodianEntity::isAlive);
         if (!found.isEmpty()) { custodian = found.getFirst(); return; }
-        if (!level.areEntitiesLoaded(ChunkPos.asLong(worldPosition))) return;
+        // Not while any of the hall's chunks is still loading its entities: the Custodian may be in one, and a second must not stand up.
+        if (!ArgusFight.everyChunk(hallBox(), level::areEntitiesLoaded)) return;
         var spawned = ModEntities.CUSTODIAN.get().create(level);
         if (spawned == null) return;
         spawned.moveTo(start());

@@ -109,6 +109,14 @@ public final class ArgusFight {
     }
     private boolean wants(int glyph) { return Arrays.stream(wanted).anyMatch(g -> g == glyph); }
 
+    /** True if the test holds for each chunk the box touches, as {@link net.minecraft.world.level.ChunkPos#asLong}. */
+    public static boolean everyChunk(net.minecraft.world.phys.AABB box, java.util.function.LongPredicate test) {
+        for (int x = (int) Math.floor(box.minX) >> 4; x <= (int) Math.floor(box.maxX) >> 4; x++)
+            for (int z = (int) Math.floor(box.minZ) >> 4; z <= (int) Math.floor(box.maxZ) >> 4; z++)
+                if (!test.test(net.minecraft.world.level.ChunkPos.asLong(x, z))) return false;
+        return true;
+    }
+
     /** Use held on a fuse at game time {@code now}: true once it has been held two unbroken seconds. */
     public boolean hold(int slot, long now) {
         if (heldLast[slot] == 0 || now - heldLast[slot] > HOLD_GAP) heldFrom[slot] = now;

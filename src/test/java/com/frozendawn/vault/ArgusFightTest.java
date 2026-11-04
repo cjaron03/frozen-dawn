@@ -356,4 +356,12 @@ class ArgusFightTest {
         assertFalse(again.clean());
         assertEquals(Pull.NOTHING, again.pull(slotOf(again, again.wanted()[0])), "Pulled stays pulled");
     }
+
+    @Test void everyChunkOfTheBoxMustBeLoaded() {
+        var box = new net.minecraft.world.phys.AABB(18, 0, -11, 40, 10, 12);
+        var seen = new java.util.HashSet<Long>();
+        assertTrue(ArgusFight.everyChunk(box, chunk -> seen.add(chunk)));
+        assertEquals(4, seen.size(), "Two chunks by two");
+        for (long missing : seen) assertFalse(ArgusFight.everyChunk(box, chunk -> chunk != missing), "With " + missing + " still loading");
+    }
 }

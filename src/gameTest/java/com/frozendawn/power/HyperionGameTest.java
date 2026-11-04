@@ -321,6 +321,20 @@ public final class HyperionGameTest {
         h.succeed();
     }
 
+    /** A chunk holding only ports can unload and come back while the controller stays: nothing else would set the link again. */
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "hyperion", timeoutTicks = 100)
+    public static void hyperionPortReloadedAloneFindsItsControllerAgain(GameTestHelper h) {
+        var l = h.getLevel(); clear(h); var b = HyperionScenes.silo(h, MIN, 6, 1, 1); var c = controller(h, b); c.second(l);
+        var at = b.ports().getFirst(); var state = l.getBlockState(at);
+        l.removeBlockEntity(at);
+        var port = new com.frozendawn.block.HyperionPortBlockEntity(at, state);
+        l.setBlockEntity(port);
+        h.assertTrue(port.controller().isEmpty(), "A port fresh from its chunk knows no controller");
+        c.second(l);
+        h.assertTrue(port.controller().isPresent(), "The next second finds it");
+        h.succeed();
+    }
+
     /** Review focus: after a reload the client must still see the scorch and resting rings, not a fresh silo. */
     @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "hyperion", timeoutTicks = 100)
     public static void hyperionSnapshotRoundTripsSiloFacts(GameTestHelper h) {

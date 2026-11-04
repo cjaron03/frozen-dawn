@@ -688,3 +688,21 @@ Unprompted report: "everythign looks good! whtas next"
 
 The log: joined 09:19:34, A/C to MID 09:21:03 and MAX 09:21:04, the scanner read nobody at 4.15 degrees and opened the door 09:21:31, quit
 09:22:08, no errors. `architectVerify` passed at 09c8240b: 936 tests (380, 265, 291). Nothing to fix from this pass.
+
+## Branch review, 2026-11-04 (Opus, fresh context, 745ef305...eae00f93)
+
+Found two real defects and three minor ones, by reading the code.
+
+- Fixed: a Hyperion port whose chunk reloaded while its controller's stayed loaded lost its controller, and the battery dropped off the
+  grid. The controller now sets the link every second (`hyperionPortReloadedAloneFindsItsControllerAgain`, failing first).
+- Fixed: a reload mid-fight could stand up a second Custodian, because the check for loaded entities looked only at Argus's own chunk.
+  It now covers every chunk of the hall. `ArgusFightTest` covers the check itself; the race was not reproduced, so no test fails on the
+  old code.
+- Deferred: buckets are not refused in the puzzle rooms or on the Watch Floor (`EntityPlaceEvent` does not fire for them). No way past a
+  puzzle was found.
+- Deferred: the Custodian hunts the nearest player within 48 blocks, not only those in the hall, so a friend on the ledge can draw it to
+  the west wall.
+- Deferred: `pull()` in `TerminusWatchFloorGameTest` back-dates holds, and one landing on game time 0 would read as not held. It would
+  take `terminus_floor` running as a server's first batch at a game time that is a multiple of 4 from 8 to 44.
+- Deferred: the playtest script says a burn is fifteen seconds; `BURN_TICKS` is twelve.
+
