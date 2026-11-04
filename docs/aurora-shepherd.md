@@ -1,6 +1,6 @@
 # Aurora, ORSA CS-1 "Shepherd"
 
-Companion and dialogue system. Design only: no game code exists, and none starts until the owner confirms PR 147 (the Terminus Vault) has merged.
+Companion and dialogue system. Design only: no game code exists. PR 147 (the Terminus Vault) merged on 2026-11-04 as b333ece9, so the vault is on `feat/maeve-director`; building waits for the owner's word.
 
 Sources: Notion, Frozen Dawn / Backlog, "Aurora (ORSA CS-1 "Shepherd") — Companion and Dialogue System" and its child "Aurora — Dialogue Script v1" (both 2026-11-04). Those pages hold the character and every line, and carry the fixes below as of 2026-11-04. This file is the tracked handoff: what was settled against the built game, the art, and the slices.
 
@@ -99,7 +99,7 @@ The script was written against the Terminus spec and predates the vault as built
    - T3 and that pool start at phase 4, which is what keeps the assumption true: `AuroraPolicy` runs real auroras only in phases 0 to 3.
    - She needs a sky she can see, so T3 waits out phase 5 and early phase 6 (`PhaseManager.isBlizzardActive`) and any storm, and she asks again. Phase 6 mid onward draws stars on black.
 6. **Late meetings.** She can be woken after anything has already happened, so every one-time topic gets a late variant, fired at the next calm moment. Maeve wakes: (Thinking) "There's something on the Reliquus band. All of them at once, like one ear. It was already doing that when you woke me." The Moon and post-Maeve silence need the same treatment. A topic whose moment passed and has no variant does not fire.
-7. **Her presence in the vault.** Nothing there mentions her. Hale's "nothing down here but the cradle and us" gains the unit, the Vault Manifest gains an item row for CS-1 unit 4, and the locker gains the spare cell. All three are edits to vault files, so they wait for PR 147.
+7. **Her presence in the vault.** Nothing there mentions her. Hale's "nothing down here but the cradle and us" gains the unit, the Vault Manifest gains an item row for CS-1 unit 4, and the locker gains the spare cell. All three are edits to vault files, and land in S2.
 8. **Notion cleanup, done 2026-11-04.** T3 no longer ends on an aurora, and the personal conversations are five with T5. The Terminus note about "exactly two immunities" was stale, and the answer stands without it: she is on neither `terminus_susceptible` nor `terminus_immune`, so she is no watcher and the wand does nothing to her. The Mimic callout said it vanishes when you lose sight of it, which `MimicEntity` does not do; see Callouts.
 
 ## Waking her
@@ -217,11 +217,11 @@ Design-only, never in the game: a machine cannot move a mind, because minds do n
 
 ## Slices
 
-Each is playable, on one branch per slice from `feat/maeve-director`, in a worktree at `/Volumes/SSD/Work/frozen-dawn-aurora-shepherd`. Nothing starts until the owner confirms PR 147 has merged.
+Each is playable, on one branch per slice from `feat/maeve-director`, in a worktree at `/Volumes/SSD/Work/frozen-dawn-aurora-shepherd`. Cut from an up-to-date `origin/feat/maeve-director`.
 
 | # | Slice | Needs first |
 | --- | --- | --- |
-| S1 | Engine, creative only | PR 147 merged |
+| S1 | Engine, creative only | The owner's word |
 | S2 | In the vault | S1 |
 | S3 | Affinity | S1 |
 | S4 | Personal arc, Nine's husk, TITHONUS files | S2, S3, husk and lamp mockups |
@@ -259,4 +259,4 @@ Nothing until a slice starts.
 
 ## Status
 
-2026-11-04: design written, all five mockups approved, no code. Waiting on PR 147, then the owner's word to start S1.
+2026-11-04: design written, all five mockups approved, no code. PR 147 has merged; waiting on the owner's word to start S1.
