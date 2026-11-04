@@ -613,3 +613,34 @@ The log: joined 20:42:22, one take started 20:42:59, played back from 20:43:19, 
 at x 83 did not open and the Morgue logged nothing.
 
 Response: `drill-hall-mockup.png` (`make_drill_hall_mockup.py`) drawn for approval. "Two door room" read as the drill hall.
+
+## Owner playtest 2 of the last rooms, 2026-11-03 (Terminus Watch Floor Check 6, runClientLab, branch head 6f2bff87)
+
+Unprompted report: "ok textures still need improvemnet 1: double key room, improve emitter, maybe have it on a wall or something
+appriooate, and you can stop the recording when you deem it ready. also ahve it like emit particles as the recorder plays. have the
+recorder actually exist there for a reason (adn you just improvise to use it to trigger the door) 2: morgue room. need a more tech-y
+vital scanner, and have the vent be a A/C unit on the side of the wall, and you crank it up to max to actually LOWER your body temp,
+which the scanner records. again, ahve a reason for the A/C what im trying to say is these rooms, the puzzles are meant to get around
+the doors by using the tools in the environment, like how d2 raids / encounters are setup (exploiting something)"
+
+The log: joined 20:52:49, take 20:53:09, played back 20:53:28, both keys held and the door open 20:53:32, the Morgue read nobody at
+0.33 health at 20:54:12 and again at 20:54:29, quit 20:54:32, no errors from the mod. Both puzzles were solved first try.
+
+Response: `vault-puzzle-tools-mockup.png` (`make_vault_puzzle_tools_mockup.py`) drawn for approval. Each room gets a reason and a tool
+that was never meant for the door: the drill hall is where staff rehearsed the key turn against a recorded partner, and the Morgue's
+A/C keeps the cold store cold, with a scanner that passes the dead by pulse and temperature.
+
+Approved ("Build them"). As built, over the sections above where they differ:
+
+- The drill hall is where staff rehearsed the key turn against a recorded partner. A second press of the console ends the take, after
+  at least a second, and it still stops itself at 20 s. `vault_projector`, over the way in, shows the take's state in its lens, and a
+  stream of particles runs from the lens to the figure, or a thin red line to you while it takes. The plate is on the west wall.
+- The Morgue's vent is gone. Its A/C is on the north wall, x 87..89, with `vault_ac_dial` at x 90: a click turns it LOW, MID, MAX and
+  round. Only MAX does anything: x 87..89, z -4..-2 is the blast, 2 health every 2 s, and body temperature falls .08 degrees a tick.
+- `MorgueGate` now keeps a body temperature per player: 37, reads nobody at 12 or below, warms .01 a tick out of the blast. From full
+  hearts the line comes after 15.6 s, at about two hearts. Food no longer matters; hearts are the price, not the reading. A body that
+  dies is forgotten. Nothing about it is saved.
+- The scanner is `vault_arch` posts at z +-2 and a `vault_arch_head` slab over them at x 94, with a bar of particles going up and down it
+  while someone stands on the plate. The panel shows a trace and the temperature, red, gold under 30, and a flat green NONE.
+- Ruling: the dial stays where it was left, for everyone, until someone turns it. `[Reset the vault]` puts it back on LOW.
+- Ruling: creative players take no cold.

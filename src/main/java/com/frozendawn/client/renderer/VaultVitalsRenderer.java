@@ -1,6 +1,7 @@
 package com.frozendawn.client.renderer;
 
 import com.frozendawn.FrozenDawn;
+import com.frozendawn.vault.MorgueGate;
 import com.frozendawn.vault.VaultVitalsBlockEntity;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -13,22 +14,32 @@ import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.phys.AABB;
 
-/** The scanner's panel on the wall's west face, two blocks square: VITALS and a pip for each heart it reads, NONE at one heart,
- * dim with nobody on the plate. Texels run from its top left as seen from the west, where north is left. */
+/** The scanner's panel on the wall's west face, two blocks square: its word, a pulse trace and the temperature it reads, red for
+ * the warm, gold for the cooling, a flat green line and NONE for the dead, dim with nobody on the plate. Texels run from its top
+ * left as seen from the west, where north is left. */
 public final class VaultVitalsRenderer implements BlockEntityRenderer<VaultVitalsBlockEntity> {
     private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "textures/entity/vault_vitals.png");
-    /** The sheet: VITALS, NONE, a pip. */
-    private static final float SHEET_W = 96, SIZE = 32, PIP_U = 64, PIP = 4;
-    private static final int LIT = 0xFFFFFF, DIM = 0x707070;
+    /** The sheet: warm, cooling and dead panels, then the digits, a point and a C, in white, four texels apart. */
+    private static final float SHEET_W = 144, SIZE = 32, GLYPHS_U = 96, GLYPH_W = 3, GLYPH_H = 5;
+    private static final String GLYPHS = "0123456789.C";
+    private static final int WHITE = 0xFFFFFF, DIM = 0x707070, RED = 0xE8685C, GOLD = 0xFFD65C, GREEN = 0x78C882;
 
     public VaultVitalsRenderer(BlockEntityRendererProvider.Context context) { }
 
     @Override public void render(VaultVitalsBlockEntity be, float partial, PoseStack pose, MultiBufferSource buffers, int light, int overlay) {
         var c = buffers.getBuffer(RenderType.entityCutoutNoCull(TEXTURE));
-        float u = be.none() ? SIZE : 0;
-        quad(c, pose, -.01F, 0, 0, SIZE, SIZE, u / SHEET_W, (u + SIZE) / SHEET_W, 0, 1, be.hearts() == 0 ? DIM : LIT);
-        for (int i = 0; i < be.hearts(); i++)
-            quad(c, pose, -.02F, 4 + i % 5 * 5, 18 + i / 5 * 5, PIP, PIP, PIP_U / SHEET_W, (PIP_U + PIP) / SHEET_W, 0, PIP / SIZE, LIT);
+        boolean read = be.tenths() >= 0, cooling = read && be.tenths() < MorgueGate.COOLING * 10;
+        float u = be.none() ? 2 * SIZE : cooling ? SIZE : 0;
+        quad(c, pose, -.01F, 0, 0, SIZE, SIZE, u / SHEET_W, (u + SIZE) / SHEET_W, 0, 1, read ? WHITE : DIM);
+        if (!read) return;
+        int colour = be.none() ? GREEN : cooling ? GOLD : RED;
+        String text = be.tenths() / 10 + "." + be.tenths() % 10 + "C";
+        float x = 3;
+        for (char glyph : text.toCharArray()) {
+            float g = GLYPHS_U + GLYPHS.indexOf(glyph) * 4;
+            quad(c, pose, -.02F, x, 22, GLYPH_W, GLYPH_H, g / SHEET_W, (g + GLYPH_W) / SHEET_W, 0, GLYPH_H / SIZE, colour);
+            x += 4;
+        }
     }
 
     private static void quad(VertexConsumer c, PoseStack pose, float depth, float x, float y, float w, float h, float u0, float u1, float v0, float v1, int rgb) {

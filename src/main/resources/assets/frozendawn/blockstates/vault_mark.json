@@ -80,6 +80,72 @@
     },
     "mark=warning_14": {
       "model": "frozendawn:block/vault_mark_warning_14"
+    },
+    "mark=drill_plate_0": {
+      "model": "frozendawn:block/vault_mark_drill_plate_0"
+    },
+    "mark=drill_plate_1": {
+      "model": "frozendawn:block/vault_mark_drill_plate_1"
+    },
+    "mark=drill_plate_2": {
+      "model": "frozendawn:block/vault_mark_drill_plate_2"
+    },
+    "mark=drill_plate_3": {
+      "model": "frozendawn:block/vault_mark_drill_plate_3"
+    },
+    "mark=drill_plate_4": {
+      "model": "frozendawn:block/vault_mark_drill_plate_4"
+    },
+    "mark=drill_plate_5": {
+      "model": "frozendawn:block/vault_mark_drill_plate_5"
+    },
+    "mark=drill_plate_6": {
+      "model": "frozendawn:block/vault_mark_drill_plate_6"
+    },
+    "mark=drill_plate_7": {
+      "model": "frozendawn:block/vault_mark_drill_plate_7"
+    },
+    "mark=morgue_plate_0": {
+      "model": "frozendawn:block/vault_mark_morgue_plate_0"
+    },
+    "mark=morgue_plate_1": {
+      "model": "frozendawn:block/vault_mark_morgue_plate_1"
+    },
+    "mark=morgue_plate_2": {
+      "model": "frozendawn:block/vault_mark_morgue_plate_2"
+    },
+    "mark=morgue_plate_3": {
+      "model": "frozendawn:block/vault_mark_morgue_plate_3"
+    },
+    "mark=morgue_plate_4": {
+      "model": "frozendawn:block/vault_mark_morgue_plate_4"
+    },
+    "mark=morgue_plate_5": {
+      "model": "frozendawn:block/vault_mark_morgue_plate_5"
+    },
+    "mark=morgue_plate_6": {
+      "model": "frozendawn:block/vault_mark_morgue_plate_6"
+    },
+    "mark=morgue_plate_7": {
+      "model": "frozendawn:block/vault_mark_morgue_plate_7"
+    },
+    "mark=ac_0": {
+      "model": "frozendawn:block/vault_mark_ac_0"
+    },
+    "mark=ac_1": {
+      "model": "frozendawn:block/vault_mark_ac_1"
+    },
+    "mark=ac_2": {
+      "model": "frozendawn:block/vault_mark_ac_2"
+    },
+    "mark=ac_3": {
+      "model": "frozendawn:block/vault_mark_ac_3"
+    },
+    "mark=ac_4": {
+      "model": "frozendawn:block/vault_mark_ac_4"
+    },
+    "mark=ac_5": {
+      "model": "frozendawn:block/vault_mark_ac_5"
     }
   }
 }

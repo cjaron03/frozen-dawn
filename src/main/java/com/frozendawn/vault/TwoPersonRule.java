@@ -5,8 +5,9 @@ import java.util.List;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * The drill hall's Two-Person Rule, without a world. Pressing record takes twenty seconds of one body and the key it holds,
- * then plays them back; {@link VaultRecorderBlockEntity} shows it as a pale figure. The door wants both keys held at once, by
+ * The drill hall's Two-Person Rule, without a world. ORSA staff rehearsed the key turn here against a recorded partner. Pressing
+ * record takes up to twenty seconds of one body and the key it holds, until pressed again, then plays them back;
+ * {@link VaultRecorderBlockEntity} shows it as a pale figure. The door wants both keys held at once, by
  * any mix of hands and the ghost, and stays open long enough to reach it: nobody can hold a key and walk through. Nothing here
  * is saved: a take lost to a reload costs what any retry costs, which is nothing.
  */
@@ -17,6 +18,8 @@ public final class TwoPersonRule {
     public record Frame(Pose pose, int key) { }
 
     public static final int TAKE_TICKS = 20 * 20, KEYS = 2, NO_KEY = -1;
+    /** A press sooner than this after the first is a fumble, not an end. */
+    public static final int MIN_TAKE_TICKS = 20;
     /** From the last moment both keys were held to the door shutting: a walk from the far key, with some over. */
     public static final int OPEN_TICKS = 5 * 20;
     /** A held use repeats every four ticks; a longer gap than this is a hand let go. */
@@ -37,12 +40,20 @@ public final class TwoPersonRule {
     /** Where the ghost stands this tick, or null when nothing is playing. */
     public @Nullable Frame ghost() { return phase == Phase.PLAYING ? take.get(playhead) : null; }
 
-    /** The record button. A take runs to its end; a replay can be thrown away for a new take. */
+    /** The record button: starts a take, ends one when you are ready, and throws a replay away for a new take. */
     public boolean press() {
-        if (phase == Phase.RECORDING) return false;
+        if (phase == Phase.RECORDING) {
+            if (take.size() < MIN_TAKE_TICKS) return false;
+            play();
+            return true;
+        }
         take.clear();
         phase = Phase.RECORDING;
         return true;
+    }
+    private void play() {
+        phase = Phase.PLAYING;
+        playhead = 0;
     }
 
     /** A hand on a key, repeated while it stays there. {@code recorder}: it is the hand of the body being recorded. */
@@ -68,9 +79,7 @@ public final class TwoPersonRule {
         int key = NO_KEY;
         for (int k = 0; k < KEYS; k++) if (within(recorderHand[k], now)) key = k;
         take.add(new Frame(body, key));
-        if (take.size() < TAKE_TICKS) return;
-        phase = Phase.PLAYING;
-        playhead = 0;
+        if (take.size() >= TAKE_TICKS) play();
     }
     private void stop() {
         phase = Phase.IDLE;

@@ -289,8 +289,14 @@ public class ModBlocks {
             () -> new com.frozendawn.vault.VaultTallyBlock(vaultSealed(MapColor.METAL).sound(SoundType.METAL).lightLevel(state -> 5)));
     public static final DeferredBlock<com.frozendawn.vault.VaultTallyBlock> VAULT_PLATE = BLOCKS.register("vault_plate",
             () -> new com.frozendawn.vault.VaultTallyBlock(vaultSealed(MapColor.METAL).sound(SoundType.METAL).lightLevel(com.frozendawn.vault.VaultTallyBlock::light)));
-    public static final DeferredBlock<com.frozendawn.vault.VaultVentBlock> VAULT_VENT = BLOCKS.register("vault_vent",
-            () -> new com.frozendawn.vault.VaultVentBlock(vaultSealed(MapColor.ICE).sound(SoundType.METAL).lightLevel(state -> 3)));
+    public static final DeferredBlock<com.frozendawn.vault.VaultAcDialBlock> VAULT_AC_DIAL = BLOCKS.register("vault_ac_dial",
+            () -> new com.frozendawn.vault.VaultAcDialBlock(vaultSealed(MapColor.METAL).sound(SoundType.METAL).lightLevel(state -> 3)));
+    public static final DeferredBlock<net.minecraft.world.level.block.Block> VAULT_ARCH = BLOCKS.register("vault_arch",
+            () -> new net.minecraft.world.level.block.Block(vaultSealed(MapColor.METAL).sound(SoundType.METAL)));
+    public static final DeferredBlock<net.minecraft.world.level.block.SlabBlock> VAULT_ARCH_HEAD = BLOCKS.register("vault_arch_head",
+            () -> new net.minecraft.world.level.block.SlabBlock(vaultSealed(MapColor.METAL).sound(SoundType.METAL)));
+    public static final DeferredBlock<com.frozendawn.vault.VaultProjectorBlock> VAULT_PROJECTOR = BLOCKS.register("vault_projector",
+            () -> new com.frozendawn.vault.VaultProjectorBlock(vaultSealed(MapColor.METAL).sound(SoundType.METAL).noOcclusion().lightLevel(state -> 4)));
     public static final DeferredBlock<com.frozendawn.vault.VaultVitalsBlock> VAULT_VITALS = BLOCKS.register("vault_vitals",
             () -> new com.frozendawn.vault.VaultVitalsBlock(vaultSealed(MapColor.COLOR_GRAY)));
     public static final DeferredBlock<com.frozendawn.vault.VaultRecorderBlock> VAULT_RECORDER = BLOCKS.register("vault_recorder",

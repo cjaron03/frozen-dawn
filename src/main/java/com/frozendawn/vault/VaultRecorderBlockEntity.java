@@ -7,6 +7,7 @@ import com.frozendawn.vault.TwoPersonRule.Phase;
 import com.frozendawn.vault.TwoPersonRule.Pose;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -15,15 +16,18 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
+import org.joml.Vector3f;
 
 /**
  * The drill hall, in the world: takes {@link TwoPersonRule}'s recording from a player, walks a {@link VaultRecordingEntity}
- * through it, and sets the keys, the console and the door each tick. Nothing is saved: after a reload the room stands idle.
+ * through it with a stream of light from the projector, and sets the keys, the console and the door each tick. Nothing is saved: after a reload the room stands idle.
  * The door also opens for anyone past it, so the Morgue is never a trap.
  */
 public final class VaultRecorderBlockEntity extends BlockEntity {
     private static final org.slf4j.Logger LOGGER = com.mojang.logging.LogUtils.getLogger();
+    private static final DustParticleOptions PALE = new DustParticleOptions(new Vector3f(.62F, .84F, .91F), .7F), RED = new DustParticleOptions(new Vector3f(.91F, .41F, .36F), .5F);
     private final TwoPersonRule rule = new TwoPersonRule();
     private @Nullable UUID recorder;
     private @Nullable VaultRecordingEntity ghost;
@@ -44,6 +48,7 @@ public final class VaultRecorderBlockEntity extends BlockEntity {
         rule.tick(level.getGameTime(), body(level));
         if (rule.phase() != shown) changed(level);
         walk(level);
+        stream(level);
         show(level);
         if (rule.phase() == Phase.RECORDING && level.getPlayerByUUID(recorder) instanceof ServerPlayer player)
             player.displayClientMessage(Component.literal("REC " + ArgusFight.text((rule.ticksLeft() + 19) / 20)), true);
@@ -83,12 +88,32 @@ public final class VaultRecorderBlockEntity extends BlockEntity {
         ghost = null;
     }
 
+    /** From the projector's lens to whoever it has: a flow of pale to the figure as it plays, a thin red line to you as it takes. */
+    private void stream(ServerLevel level) {
+        long now = level.getGameTime();
+        boolean playing = rule.phase() == Phase.PLAYING;
+        if (rule.phase() == Phase.IDLE || now % (playing ? 2 : 4) != 0) return;
+        Vec3 target = playing ? ghost == null ? null : ghost.position() : level.getPlayerByUUID(recorder) instanceof ServerPlayer player ? player.position() : null;
+        if (target == null) return;
+        var lens = Vec3.atLowerCornerOf(hall()).add(66.6, -9.5, 0);
+        var to = target.add(0, 1.1, 0).subtract(lens);
+        int points = playing ? 14 : 6;
+        double flow = now % 8 / 8D;
+        for (int i = 0; i < points; i++) {
+            var at = lens.add(to.scale((i + flow) / points));
+            level.sendParticles(playing ? PALE : RED, at.x, at.y, at.z, 1, 0, 0, 0, 0);
+        }
+        if (playing) level.sendParticles(PALE, target.x, target.y + 1, target.z, 3, .35, .6, .35, 0);
+    }
+
     /** Sets what should be showing. Each write is skipped when the block already shows it. */
     private void show(ServerLevel level) {
         var hall = hall();
         long now = level.getGameTime();
         var mode = VaultRecorderBlock.Mode.of(rule.phase());
         for (int dz = -1; dz <= 1; dz++) set(level, worldPosition.offset(0, 0, dz), level.getBlockState(worldPosition.offset(0, 0, dz)).trySetValue(VaultRecorderBlock.MODE, mode));
+        var projector = hall.offset(TerminusVaultBuilder.PROJECTOR);
+        set(level, projector, level.getBlockState(projector).trySetValue(VaultRecorderBlock.MODE, mode));
         for (int key = 0; key < TwoPersonRule.KEYS; key++) {
             var at = hall.offset(TerminusVaultBuilder.KEYS[key]);
             set(level, at, level.getBlockState(at).trySetValue(VaultKeyBlock.HELD, rule.held(key, now)));
@@ -107,7 +132,8 @@ public final class VaultRecorderBlockEntity extends BlockEntity {
 
     /** The record button. */
     public void press(ServerPlayer player) {
-        if (!rule.press()) return;
+        boolean starts = rule.phase() != Phase.RECORDING;
+        if (!rule.press() || !starts) return;
         recorder = player.getUUID();
         LOGGER.info("[Two-Person] {} starts a take", player.getGameProfile().getName());
     }

@@ -1,6 +1,6 @@
 {
   "parent": "minecraft:block/cube_all",
   "textures": {
-    "all": "frozendawn:block/vault_vent"
+    "all": "frozendawn:block/vault_ac_dial_max_bottom"
   }
 }

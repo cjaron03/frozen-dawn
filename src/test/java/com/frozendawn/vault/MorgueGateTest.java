@@ -4,68 +4,116 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
 class MorgueGateTest {
     private final MorgueGate gate = new MorgueGate();
+    private final UUID me = new UUID(0, 1), you = new UUID(0, 2);
+
+    private void blast(int ticks, UUID... bodies) { for (int i = 0; i < ticks; i++) gate.expose(Set.of(bodies)); }
+
+    @Test void aBodyStartsWarm() {
+        assertEquals(MorgueGate.BODY, gate.temperature(me));
+    }
+
+    @Test void theBlastLowersYourTemperatureAndNobodyElses() {
+        blast(100, me);
+        assertEquals(MorgueGate.BODY - 100 * MorgueGate.COOL, gate.temperature(me), .01);
+        assertEquals(MorgueGate.BODY, gate.temperature(you));
+    }
+
+    @Test void itReachesTheLineWithAboutTwoHeartsLeft() {
+        int ticks = (int) Math.ceil((MorgueGate.BODY - MorgueGate.LINE) / MorgueGate.COOL);
+        int bites = ticks / MorgueGate.BITE_EVERY;
+        assertTrue(ticks < 9 * MorgueGate.BITE_EVERY, "Short of the bite that leaves one heart: " + ticks);
+        assertEquals(4, 20 - bites * MorgueGate.BITE_DAMAGE, 2.01, "From full hearts, some left");
+    }
+
+    @Test void outOfTheBlastYouWarmSlowly() {
+        blast(100, me);
+        float cold = gate.temperature(me);
+        blast(100);
+        assertEquals(cold + 100 * MorgueGate.WARM, gate.temperature(me), .01);
+        assertTrue(MorgueGate.WARM < MorgueGate.COOL / 4, "Time to walk to the plate");
+    }
+
+    @Test void warmedBackUpYouAreForgotten() {
+        blast(10, me);
+        blast((int) (10 * MorgueGate.COOL / MorgueGate.WARM) + 2);
+        assertEquals(MorgueGate.BODY, gate.temperature(me));
+        assertEquals(0, gate.bodies());
+    }
+
+    @Test void theDeadStartTheirNextLifeWarm() {
+        blast(100, me);
+        gate.forget(me);
+        assertEquals(MorgueGate.BODY, gate.temperature(me));
+    }
 
     @Test void anEmptyPlateReadsNothing() {
-        gate.tick(MorgueGate.NOBODY);
-        assertEquals(0, gate.hearts());
+        gate.tick(List.of());
+        assertEquals(MorgueGate.NOBODY, gate.reading());
         assertFalse(gate.open());
     }
 
-    @Test void theLivingAreCountedAndKeptOut() {
-        gate.tick(20);
-        assertEquals(10, gate.hearts());
+    @Test void theWarmAreReadAndKeptOut() {
+        gate.tick(List.of(me));
+        assertEquals(MorgueGate.BODY, gate.reading());
         assertFalse(gate.open());
-        gate.tick(5);
-        assertEquals(3, gate.hearts(), "A part heart is a heart");
-        gate.tick(2.5F);
-        assertFalse(gate.open(), "Just over the line is alive");
     }
 
-    @Test void moreThanTenHeartsStayOnThePanel() {
-        gate.tick(40);
-        assertEquals(10, gate.hearts());
+    @Test void coldEnoughItOpens() {
+        blast(1000, me);
+        gate.tick(List.of(me));
+        assertTrue(gate.open());
+        assertTrue(gate.reading() <= MorgueGate.LINE);
     }
 
-    @Test void atOneHeartItReadsNobodyAndOpens() {
-        gate.tick(2);
-        assertTrue(gate.open());
-        assertEquals(1, gate.hearts());
-        gate.tick(.5F);
-        assertTrue(gate.open());
-        assertEquals(1, gate.hearts());
+    @Test void itStopsAtTheColdOfTheStore() {
+        blast(100000, me);
+        assertEquals(MorgueGate.COLDEST, gate.temperature(me));
+    }
+
+    @Test void justOverTheLineIsAlive() {
+        blast((int) ((MorgueGate.BODY - MorgueGate.LINE) / MorgueGate.COOL) - 2, me);
+        gate.tick(List.of(me));
+        assertFalse(gate.open());
     }
 
     @Test void itOpensForAFewSecondsAfterYouStepOff() {
-        gate.tick(2);
-        for (int i = 1; i < MorgueGate.OPEN_TICKS; i++) { gate.tick(MorgueGate.NOBODY); assertTrue(gate.open(), "At " + i); }
-        assertEquals(1, gate.hearts(), "The reading stands while the door does");
-        gate.tick(MorgueGate.NOBODY);
+        blast(1000, me);
+        gate.tick(List.of(me));
+        for (int i = 1; i < MorgueGate.OPEN_TICKS; i++) { gate.tick(List.of()); assertTrue(gate.open(), "At " + i); }
+        assertTrue(gate.reading() != MorgueGate.NOBODY, "The reading stands while the door does");
+        gate.tick(List.of());
         assertFalse(gate.open());
-        assertEquals(0, gate.hearts());
+        assertEquals(MorgueGate.NOBODY, gate.reading());
     }
 
-    @Test void healedOverTheLineItShutsAtOnce() {
-        gate.tick(2);
-        gate.tick(3);
+    @Test void anyoneWarmOnThePlateShutsIt() {
+        blast(1000, me);
+        gate.tick(List.of(me));
+        gate.tick(List.of(me, you));
         assertFalse(gate.open());
-        assertEquals(2, gate.hearts());
+        assertEquals(MorgueGate.BODY, gate.reading());
     }
 
-    @Test void theVentBitesEveryTwoSeconds() {
+    @Test void theBlastBitesEveryTwoSeconds() {
         int bites = 0;
         for (long t = 1; t <= 400; t++) if (MorgueGate.bites(t)) bites++;
         assertEquals(10, bites);
-        assertEquals(2, MorgueGate.VENT_DAMAGE, "About a heart");
+        assertEquals(2, MorgueGate.BITE_DAMAGE, "About a heart");
     }
 
-    @Test void resetClearsTheReading() {
-        gate.tick(2);
+    @Test void resetForgetsEveryone() {
+        blast(1000, me);
+        gate.tick(List.of(me));
         gate.reset();
         assertFalse(gate.open());
-        assertEquals(0, gate.hearts());
+        assertEquals(MorgueGate.NOBODY, gate.reading());
+        assertEquals(MorgueGate.BODY, gate.temperature(me));
     }
 }

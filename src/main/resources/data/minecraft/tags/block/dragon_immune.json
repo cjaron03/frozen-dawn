@@ -22,9 +22,12 @@
     "frozendawn:vault_plot",
     "frozendawn:vault_lintel",
     "frozendawn:vault_plate",
-    "frozendawn:vault_vent",
     "frozendawn:vault_vitals",
     "frozendawn:vault_recorder",
-    "frozendawn:vault_key"
+    "frozendawn:vault_key",
+    "frozendawn:vault_ac_dial",
+    "frozendawn:vault_projector",
+    "frozendawn:vault_arch",
+    "frozendawn:vault_arch_head"
   ]
 }

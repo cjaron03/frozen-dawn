@@ -104,18 +104,43 @@ class TwoPersonRuleTest {
         assertFalse(rule.held(A, now));
     }
 
-    @Test void pressingMidTakeDoesNothingAndAReplayCanBeThrownAway() {
+    @Test void pressingAgainEndsTheTakeWhenYouAreReady() {
+        assertTrue(rule.press());
+        for (int i = 0; i < 60; i++) tick(at(i));
+        assertTrue(rule.press(), "Ready");
+        assertEquals(Phase.PLAYING, rule.phase());
+        assertEquals(at(0), rule.ghost().pose());
+        assertEquals(60, rule.ticksLeft(), "It plays what it took");
+        for (int i = 0; i < 59; i++) tick(null);
+        assertEquals(at(59), rule.ghost().pose());
+        tick(null);
+        assertEquals(Phase.IDLE, rule.phase());
+    }
+
+    @Test void aSecondPressRightAwayIsAFumbleNotAnEnd() {
         assertTrue(rule.press());
         tick(at(1));
-        assertFalse(rule.press(), "One take at a time");
+        assertFalse(rule.press());
         assertEquals(Phase.RECORDING, rule.phase());
-        for (int i = 1; i < TwoPersonRule.TAKE_TICKS; i++) tick(at(2));
+        for (int i = 1; i < TwoPersonRule.MIN_TAKE_TICKS; i++) tick(at(1));
+        assertTrue(rule.press());
         assertEquals(Phase.PLAYING, rule.phase());
+    }
+
+    @Test void aTakeStopsItselfAtTwentySeconds() {
+        assertTrue(rule.press());
+        for (int i = 0; i < TwoPersonRule.TAKE_TICKS; i++) tick(at(2));
+        assertEquals(Phase.PLAYING, rule.phase());
+        assertEquals(TwoPersonRule.TAKE_TICKS, rule.ticksLeft());
+    }
+
+    @Test void aReplayCanBeThrownAway() {
+        assertTrue(rule.press());
+        for (int i = 0; i < TwoPersonRule.TAKE_TICKS; i++) tick(at(2));
         assertTrue(rule.press(), "Retry is free");
         assertEquals(Phase.RECORDING, rule.phase());
         assertNull(rule.ghost());
-        tick(at(9));
-        for (int i = 1; i < TwoPersonRule.TAKE_TICKS; i++) tick(at(9));
+        for (int i = 0; i < TwoPersonRule.TAKE_TICKS; i++) tick(at(9));
         assertEquals(at(9), rule.ghost().pose(), "Nothing of the old take is left");
     }
 

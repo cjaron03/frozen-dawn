@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/slab_top",
+  "textures": {
+    "bottom": "frozendawn:block/vault_steel",
+    "top": "frozendawn:block/vault_steel",
+    "side": "frozendawn:block/vault_steel"
+  }
+}

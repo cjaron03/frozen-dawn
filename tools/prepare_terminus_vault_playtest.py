@@ -56,7 +56,7 @@ def scripts():
              'catwalk': (tp(18, -14, 2, -90), 'The west catwalk: the board is at your back, the Seal Order to the north. Step off it and the fight starts.'),
              'mess': (tp(44, -14, -7, 180), 'The mess hall, past the east gate. The System Plot is on the north wall.'),
              'drill': (tp(68, -14, 3, -90), 'The drill hall: the recorder at your back, a key on each long wall, the door east. Press the recorder and go.'),
-             'morgue': (tp(85, -14, 0, -90), 'The Morgue. The vent is ahead, the scanner plate and its panel beyond it.'),
+             'morgue': (tp(85, -14, 0, -90), 'The Morgue. The A/C is on the north wall, the scanner arch east, before the door.'),
              'cot': (tp(97, -14, 1, -90), 'The cot room. The last door is east, the cot along the south wall.')}
     upper, lower = tp(24, -14, -10, 0), tp(28, -23, -10, 0)
     stages = {'fight_start': (upper, 'fight start', 'Round 1, full clock. The board lights.'),

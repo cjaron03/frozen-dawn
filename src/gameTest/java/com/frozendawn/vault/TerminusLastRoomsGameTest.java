@@ -83,6 +83,19 @@ public final class TerminusLastRoomsGameTest {
     }
 
     @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="terminus_rooms",timeoutTicks=2000)
+    public static void aSecondPressPlaysTheTakeAndTheProjectorShowsIt(GameTestHelper h) {
+        var r=drill(h);var rec=recorder(r);var op=r.player("drill_ready",68.5,2.5);
+        begin(r,TerminusVaultBuilder.RECORDER).thenExecute(()->rec.press(op))
+                .thenExecuteAfter(2,()->h.assertTrue(mode(r)==VaultRecorderBlock.Mode.RECORDING,"The lens shows it taking"))
+                .thenExecuteAfter(TwoPersonRule.MIN_TAKE_TICKS,()->rec.press(op))
+                .thenExecuteAfter(2,()->{
+                    h.assertTrue(rec.rule().phase()==Phase.PLAYING&&rec.ghost()!=null,"Ready when you say");
+                    h.assertTrue(mode(r)==VaultRecorderBlock.Mode.PLAYING,"The lens shows it playing");
+                }).thenSucceed();
+    }
+    private static VaultRecorderBlock.Mode mode(Room r) {return r.level().getBlockState(r.hall.offset(TerminusVaultBuilder.PROJECTOR)).getValue(VaultRecorderBlock.MODE);}
+
+    @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="terminus_rooms",timeoutTicks=2000)
     public static void twoPlayersNeedNoRecorder(GameTestHelper h) {
         var r=drill(h);var rec=recorder(r);var a=r.player("drill_a",72.5,-5.5);var b=r.player("drill_b",79.5,5.5);
         begin(r,TerminusVaultBuilder.RECORDER).thenExecute(()->{rec.holdKey(a,0);rec.holdKey(b,1);})
@@ -133,51 +146,83 @@ public final class TerminusLastRoomsGameTest {
         h.succeedWhen(()->h.assertTrue(ghost.isRemoved(),"Its recorder is gone"));
     }
 
+    private static void dial(Room r,int setting) {VaultAcDialBlock.set(r.level(),r.hall.offset(TerminusVaultBuilder.AC_DIAL),setting);}
+    /** Cold enough for the scanner, without the wait. */
+    private static void freeze(Room r,ServerPlayer op) {for(int i=0;i<1000;i++) vitals(r).gate().expose(java.util.Set.of(op.getUUID()));}
+
     @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="terminus_rooms",timeoutTicks=2000)
-    public static void theVentTakesAHeartEveryTwoSecondsThroughArmor(GameTestHelper h) {
-        var r=morgue(h);var op=r.player("morgue_cold",89.5,.5);
-        op.setItemSlot(net.minecraft.world.entity.EquipmentSlot.CHEST,new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.DIAMOND_CHESTPLATE));
-        begin(r,TerminusVaultBuilder.VITALS).thenWaitUntil(()->h.assertTrue(op.getHealth()==18,"The first bite: "+op.getHealth()))
-                .thenExecuteAfter(MorgueGate.VENT_EVERY+2,()->h.assertTrue(op.getHealth()==16,"The next, two seconds on: "+op.getHealth()))
-                .thenExecute(()->op.setPos(r.at(86.5,.5)))
-                .thenExecuteAfter(MorgueGate.VENT_EVERY+2,()->h.assertTrue(op.getHealth()==16,"Out of it, nothing: "+op.getHealth()))
+    public static void aClickTurnsTheDialRoundAndEitherBlockWillDo(GameTestHelper h) {
+        var r=morgue(h);var op=r.player("morgue_dial",90.5,-3.5);var lower=r.hall.offset(TerminusVaultBuilder.AC_DIAL);
+        var hit=new net.minecraft.world.phys.BlockHitResult(Vec3.atCenterOf(lower),net.minecraft.core.Direction.SOUTH,lower,false);
+        for(int expected:new int[]{VaultAcDialBlock.MID,VaultAcDialBlock.MAX,VaultAcDialBlock.LOW}) {
+            var at=expected==VaultAcDialBlock.MAX?lower.above():lower;
+            r.level().getBlockState(at).useWithoutItem(r.level(),op,hit.withPosition(at));
+            h.assertTrue(r.level().getBlockState(lower).getValue(VaultAcDialBlock.SETTING)==expected&&r.level().getBlockState(lower.above()).getValue(VaultAcDialBlock.SETTING)==expected,"Both halves at "+expected);
+        }
+        h.succeed();
+    }
+
+    @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="terminus_rooms",timeoutTicks=2000)
+    public static void onlyMaxDoesAnything(GameTestHelper h) {
+        var r=morgue(h);var op=r.player("morgue_low",88.5,-2.5);
+        begin(r,TerminusVaultBuilder.VITALS).thenExecute(()->dial(r,VaultAcDialBlock.MID))
+                .thenExecuteAfter(MorgueGate.BITE_EVERY+4,()->h.assertTrue(op.getHealth()==20&&vitals(r).gate().temperature(op.getUUID())==MorgueGate.BODY,"LOW and MID leave you be"))
                 .thenSucceed();
     }
 
     @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="terminus_rooms",timeoutTicks=2000)
-    public static void theVentCanKill(GameTestHelper h) {
-        var r=morgue(h);var op=r.player("morgue_dead",89.5,.5);
-        op.setHealth(2);
-        begin(r,TerminusVaultBuilder.VITALS).thenWaitUntil(()->h.assertTrue(op.isDeadOrDying(),"At one heart it finishes you")).thenSucceed();
+    public static void theBlastAtMaxTakesAHeartEveryTwoSecondsThroughArmor(GameTestHelper h) {
+        var r=morgue(h);var op=r.player("morgue_cold",88.5,-2.5);
+        op.setItemSlot(net.minecraft.world.entity.EquipmentSlot.CHEST,new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.DIAMOND_CHESTPLATE));
+        begin(r,TerminusVaultBuilder.VITALS).thenExecute(()->dial(r,VaultAcDialBlock.MAX))
+                .thenWaitUntil(()->h.assertTrue(op.getHealth()==18,"The first bite: "+op.getHealth()))
+                .thenExecuteAfter(MorgueGate.BITE_EVERY+2,()->{
+                    h.assertTrue(op.getHealth()==16,"The next, two seconds on: "+op.getHealth());
+                    h.assertTrue(vitals(r).gate().temperature(op.getUUID())<MorgueGate.BODY-2,"And you are colder");
+                    op.setPos(r.at(86.5,.5));
+                })
+                .thenExecuteAfter(MorgueGate.BITE_EVERY+2,()->h.assertTrue(op.getHealth()==16,"Out of it, nothing: "+op.getHealth()))
+                .thenSucceed();
     }
 
     @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="terminus_rooms",timeoutTicks=2000)
-    public static void theScannerOpensForTheDeadAlone(GameTestHelper h) {
+    public static void theBlastCanKill(GameTestHelper h) {
+        var r=morgue(h);var op=r.player("morgue_dead",88.5,-2.5);
+        op.setHealth(2);
+        begin(r,TerminusVaultBuilder.VITALS).thenExecute(()->dial(r,VaultAcDialBlock.MAX))
+                .thenWaitUntil(()->h.assertTrue(op.isDeadOrDying(),"At one heart it finishes you"))
+                .thenExecuteAfter(2,()->h.assertTrue(vitals(r).gate().temperature(op.getUUID())==MorgueGate.BODY,"And the next life starts warm"))
+                .thenSucceed();
+    }
+
+    @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="terminus_rooms",timeoutTicks=2000)
+    public static void theScannerOpensForTheColdAlone(GameTestHelper h) {
         var r=morgue(h);var be=vitals(r);var op=r.player("morgue_scan",94.5,.5);
         begin(r,TerminusVaultBuilder.VITALS).thenExecuteAfter(3,()->{
-                    h.assertTrue(be.hearts()==10&&!be.none(),"VITALS, ten hearts: "+be.hearts());
+                    h.assertTrue(be.tenths()==370&&!be.none(),"VITALS at body heat: "+be.tenths());
                     h.assertTrue(r.shut(MORGUE)&&!r.lampLit(MORGUE),"Alive, it stays shut");
                     h.assertTrue(r.level().getBlockState(r.hall.offset(94,TerminusVaultBuilder.FLOOR,0)).getValue(VaultTallyBlock.LIT),"The plate reads you");
                     op.setHealth(2);
                 })
-                .thenExecuteAfter(2,()->{
-                    h.assertTrue(be.none()&&be.hearts()==1,"NONE");
-                    h.assertTrue(r.open(MORGUE)&&r.lampLit(MORGUE),"At one heart it opens");
-                    op.setHealth(4);
+                .thenExecuteAfter(3,()->{
+                    h.assertTrue(r.shut(MORGUE),"One heart is not dead: it reads temperature");
+                    freeze(r,op);
                 })
-                .thenExecuteAfter(2,()->h.assertTrue(r.shut(MORGUE)&&!be.none(),"Healed over the line it shuts"))
-                .thenExecute(()->op.setHealth(2))
-                .thenExecuteAfter(2,()->{h.assertTrue(r.open(MORGUE),"Open again");op.setPos(r.at(90.5,3.5));})
+                .thenExecuteAfter(2,()->{
+                    h.assertTrue(be.none()&&be.tenths()<=MorgueGate.LINE*10,"NONE: "+be.tenths());
+                    h.assertTrue(r.open(MORGUE)&&r.lampLit(MORGUE),"Cold enough it opens");
+                    op.setPos(r.at(90.5,3.5));
+                })
                 .thenExecuteAfter(MorgueGate.OPEN_TICKS-10,()->h.assertTrue(r.open(MORGUE),"Off the plate it stays a few seconds"))
-                .thenExecuteAfter(15,()->h.assertTrue(r.shut(MORGUE)&&be.hearts()==0,"Then it shuts"))
+                .thenExecuteAfter(15,()->h.assertTrue(r.shut(MORGUE)&&be.tenths()<0,"Then it shuts"))
                 .thenSucceed();
     }
 
     @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="terminus_rooms",timeoutTicks=2000)
-    public static void anyoneStillAliveOnThePlateKeepsItShut(GameTestHelper h) {
-        var r=morgue(h);var dead=r.player("morgue_low",94.5,-.5);r.player("morgue_well",94.5,1.5);
-        dead.setHealth(2);
-        begin(r,TerminusVaultBuilder.VITALS).thenExecuteAfter(3,()->h.assertTrue(r.shut(MORGUE)&&vitals(r).hearts()==10,"It reads the living")).thenSucceed();
+    public static void anyoneStillWarmOnThePlateKeepsItShut(GameTestHelper h) {
+        var r=morgue(h);var cold=r.player("morgue_low",94.5,-.5);r.player("morgue_well",94.5,1.5);
+        begin(r,TerminusVaultBuilder.VITALS).thenExecute(()->freeze(r,cold))
+                .thenExecuteAfter(3,()->h.assertTrue(r.shut(MORGUE)&&vitals(r).tenths()==370,"It reads the living")).thenSucceed();
     }
 
     @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="terminus_rooms",timeoutTicks=2000)
@@ -195,7 +240,7 @@ public final class TerminusLastRoomsGameTest {
         TerminusVaultBuilder.morgue(r.level(),r.hall);TerminusVaultBuilder.drillHall(r.level(),r.hall);
         try {
             state.setVaultForTest(r.hall);
-            for(var at:new BlockPos[]{new BlockPos(66,FEET,-7),new BlockPos(82,FEET,7),new BlockPos(75,TerminusVaultBuilder.ROOM_ROOF-1,0),DRILL.below(3),new BlockPos(84,FEET,-4),new BlockPos(94,FEET,4),new BlockPos(89,FEET,0),MORGUE.below(3)})
+            for(var at:new BlockPos[]{new BlockPos(66,FEET,-7),new BlockPos(82,FEET,7),new BlockPos(75,TerminusVaultBuilder.ROOM_ROOF-1,0),DRILL.below(3),new BlockPos(84,FEET,-4),new BlockPos(93,FEET,4),new BlockPos(89,FEET,0),MORGUE.below(3)})
                 h.assertTrue(VaultArgusBlockEntity.refuses(r.level(),r.hall.offset(at)),"Nothing built at "+at);
             for(var at:new BlockPos[]{new BlockPos(60,FEET,0),new BlockPos(96,FEET,0)})
                 h.assertTrue(!VaultArgusBlockEntity.refuses(r.level(),r.hall.offset(at)),"Free at "+at);
@@ -208,8 +253,7 @@ public final class TerminusLastRoomsGameTest {
     public static void aResetClearsBothRooms(GameTestHelper h) {
         var r=room(h,65);TerminusVaultBuilder.morgue(r.level(),r.hall);TerminusVaultBuilder.drillHall(r.level(),r.hall);
         var rec=recorder(r);var be=vitals(r);var a=r.player("reset_a",72.5,-5.5);var b=r.player("reset_b",79.5,5.5);var c=r.player("reset_c",94.5,.5);
-        c.setHealth(2);
-        begin(r,TerminusVaultBuilder.RECORDER).thenWaitUntil(()->{
+        begin(r,TerminusVaultBuilder.RECORDER).thenExecute(()->{freeze(r,c);dial(r,VaultAcDialBlock.MAX);}).thenWaitUntil(()->{
                     rec.holdKey(a,0);rec.holdKey(b,1);
                     h.assertTrue(r.open(DRILL)&&r.open(MORGUE),"Both open");
                 })
@@ -217,7 +261,10 @@ public final class TerminusLastRoomsGameTest {
                     c.setPos(r.at(90.5,3.5));
                     TerminusVaultBuilder.reset(r.level(),r.hall);
                 })
-                .thenExecuteAfter(12,()->h.assertTrue(r.shut(DRILL)&&r.shut(MORGUE)&&be.hearts()==0,"Both shut"))
+                .thenExecuteAfter(12,()->{
+                    h.assertTrue(r.shut(DRILL)&&r.shut(MORGUE)&&be.tenths()<0,"Both shut");
+                    h.assertTrue(r.level().getBlockState(r.hall.offset(TerminusVaultBuilder.AC_DIAL)).getValue(VaultAcDialBlock.SETTING)==VaultAcDialBlock.LOW,"The dial back on LOW");
+                })
                 .thenSucceed();
     }
 }

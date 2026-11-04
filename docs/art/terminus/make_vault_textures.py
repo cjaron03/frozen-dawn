@@ -1,11 +1,12 @@
 """Textures of the Terminus Vault, from the approved mockups (vault-rooms-mockup.png, vault-contents-mockup.png,
-watch-floor-mockup.png, vault-branding-mockup.png, vault-last-rooms-mockup.png, drill-hall-mockup.png).
+watch-floor-mockup.png, vault-branding-mockup.png, vault-last-rooms-mockup.png, drill-hall-mockup.png, vault-puzzle-tools-mockup.png).
 Writes into the mod's assets. Run from anywhere: python3 docs/art/terminus/make_vault_textures.py
 """
 import random
 from pathlib import Path
 from PIL import Image, ImageDraw
 from make_drill_hall_mockup import STEEL, TRIM, console_block, key_block
+from make_vault_puzzle_tools_mockup import DRILL_PLATE, GLYPHS as LETTERS, MORGUE_PLATE, arch, dial, grille, panel as scanner_panel, placard, projector
 from make_system_plot_mockup import plot
 from make_vault_warning_mockup import scrawl
 from make_watch_floor_tally_mockup import lamp as tally_lamp
@@ -291,10 +292,7 @@ def technician():
     return im
 
 
-PALE, GOLD, RED, GREEN, GHOST = (159, 214, 232), (255, 214, 92), (232, 104, 92), (120, 200, 130), (170, 225, 245)
-LETTERS = {'V': '101 101 101 101 010', 'I': '111 010 010 010 111', 'T': '111 010 010 010 010', 'A': '010 101 111 101 101',
-           'L': '100 100 100 100 111', 'S': '011 100 010 001 110', 'N': '1001 1101 1011 1001 1001', 'O': '010 101 101 101 010',
-           'E': '111 100 110 100 111'}
+PALE, RED, GREEN, GHOST = (159, 214, 232), (232, 104, 92), (120, 200, 130), (170, 225, 245)
 
 
 def lintel(colour):
@@ -313,38 +311,26 @@ def plate(colour):
     return im
 
 
-def vent():
-    im = Image.new('RGBA', (16, 16), PALE + (255,))
-    d = ImageDraw.Draw(im)
-    for y in range(2, 16, 4):
-        d.rectangle((1, y, 14, y + 1), (40, 60, 70, 255))
-    return im
-
-
-def beam():
-    """The emitter's beam on playback: a broken line of pale, drawn on one column of a transparent block."""
-    im = Image.new('RGBA', (16, 16), (0, 0, 0, 0))
-    for y in range(16):
-        if y % 3:
-            im.putpixel((7, y), PALE + (255,))
-    return im
-
-
 def vitals():
-    """The panel's sheet: VITALS, NONE and a pip, each thirty-two texels, drawn directly like the clock."""
-    im = Image.new('RGBA', (96, 32), (0, 0, 0, 0))
-    d = ImageDraw.Draw(im)
-    for x0, word, colour in ((0, 'VITALS', RED), (32, 'NONE', GREEN)):
-        d.rectangle((x0, 0, x0 + 31, 31), (14, 17, 20, 255), colour + (255,))
-        wide = sum(len(LETTERS[c].split()[0]) + 1 for c in word) - 1
-        x = x0 + (32 - wide) // 2
-        for letter in word:
-            for y, row in enumerate(LETTERS[letter].split()):
-                for i, bit in enumerate(row):
-                    if bit == '1':
-                        im.putpixel((x + i, 6 + y), colour + (255,))
-            x += len(row) + 1
-    d.rectangle((64, 0, 67, 3), RED + (255,))
+    """The panel's sheet: warm, cooling, dead, then the digits in white for the renderer to tint, four texels apart."""
+    im = Image.new('RGBA', (144, 32), (0, 0, 0, 0))
+    for i, state in enumerate(('alive', 'cold', 'none')):
+        im.paste(scanner_panel(state, reading=False), (i * 32, 0))
+    for i, glyph in enumerate('0123456789.C'):
+        for y, row in enumerate(LETTERS[glyph].split()):
+            for x, bit in enumerate(row):
+                if bit == '1':
+                    im.putpixel((96 + i * 4 + x, y), (255, 255, 255, 255))
+    return im
+
+
+def tiles(im, columns, rows):
+    return [im.crop((x * 16, y * 16, x * 16 + 16, y * 16 + 16)) for y in range(rows) for x in range(columns)]
+
+
+def printed(lines):
+    im = Image.new('RGB', (64, 32))
+    placard(im, 0, 0, lines)
     return im
 
 
@@ -404,16 +390,24 @@ def main():
     lintel(GREEN).save(BLOCK / 'vault_lintel_open.png')
     plate((120, 56, 50)).save(BLOCK / 'vault_plate_dark.png')
     plate(RED).save(BLOCK / 'vault_plate_lit.png')
-    vent().save(BLOCK / 'vault_vent.png')
-    for mode, lamp, lens in (('idle', (52, 66, 72), PALE), ('recording', RED, RED), ('playing', GREEN, GREEN)):
+    for mode, lamp in (('idle', (52, 66, 72)), ('recording', RED), ('playing', GREEN)):
         console_block(lamp).save(BLOCK / f'vault_recorder_{mode}.png')
-        Image.new('RGB', (16, 16), lens).save(BLOCK / f'vault_recorder_lens_{mode}.png')
-    collar = Image.new('RGB', (16, 16), STEEL)
-    ImageDraw.Draw(collar).line((0, 0, 15, 0), TRIM)
-    collar.save(BLOCK / 'vault_recorder_collar.png')
-    beam().save(BLOCK / 'vault_recorder_beam.png')
+        body, lens = projector(mode)
+        lens.save(BLOCK / f'vault_projector_lens_{mode}.png')
+    body.save(BLOCK / 'vault_projector_body.png')
+    Image.new('RGB', (16, 16), STEEL).save(BLOCK / 'vault_steel.png')
+    arch().save(BLOCK / 'vault_arch.png')
     key_block(False).save(BLOCK / 'vault_key_idle.png')
     key_block(True).save(BLOCK / 'vault_key_held.png')
+    for setting in ('low', 'mid', 'max'):
+        top, bottom = tiles(dial(setting), 1, 2)
+        top.save(BLOCK / f'vault_ac_dial_{setting}_top.png')
+        bottom.save(BLOCK / f'vault_ac_dial_{setting}_bottom.png')
+    for i, tile in enumerate(tiles(grille(), 3, 2)):
+        tile.save(BLOCK / f'vault_mark_ac_{i}.png')
+    for name, lines in (('drill', DRILL_PLATE), ('morgue', MORGUE_PLATE)):
+        for i, tile in enumerate(tiles(printed(lines), 4, 2)):
+            tile.save(BLOCK / f'vault_mark_{name}_plate_{i}.png')
     noise('t', ['5c4a36', '544330', '60503a'], 21).save(BLOCK / 'vault_table.png')
     vitals().save(ENTITY / 'vault_vitals.png')
     recording().save(ENTITY / 'vault_recording.png')
