@@ -264,6 +264,6 @@ S1 is planned in [aurora-shepherd-plan.md](aurora-shepherd-plan.md).
 
 2026-11-04: design written, all five mockups approved. PR 147 merged and the owner said to start.
 
-2026-11-04: S1 built on `feat/aurora-shepherd` in `/Volumes/SSD/Work/frozen-dawn-aurora-shepherd`. `architectVerify` passed at 94544d2a: 968 GameTests, all 758 required cases verified, 31 of them hers. Active save: `run-lab/saves/Shepherd Check`, from `tools/prepare_shepherd_playtest.py`. Waiting on the branch review and the owner's visual pass; `architectMonkey` has not run and is due before any merge.
+2026-11-04: S1 built on `feat/aurora-shepherd` in `/Volumes/SSD/Work/frozen-dawn-aurora-shepherd`. `architectVerify` passed at 64c461c2, after the branch review's three fixes. Active save: `run-lab/saves/Shepherd Check`, from `tools/prepare_shepherd_playtest.py`. Branch review done on Opus. Waiting on the owner's visual pass; `architectMonkey` has not run and is due before any merge.
 
 Draft for the owner to mark: `hub.talk`, the one line her hub's Talk has in S1, in a mild and a heavy form, and the two reply labels "Why Aurora?" and "Aurora it is." that the script's "If the player asks why" needs. The blip, boot chime and refuse click are auditions: `tools/generate_shepherd_sounds.sh` also writes three of each to `build/shepherd-sound-candidates`.
