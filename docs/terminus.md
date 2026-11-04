@@ -16,7 +16,7 @@ is the tracked handoff; the spec stays on Notion.
 | # | Slice | Status |
 | --- | --- | --- |
 | T1 | The wand itself, creative tab and `/give` only | Built on `feat/terminus`; owner playtests passed ("good", 2026-11-03); branch review, then a PR on the owner's word |
-| T2 | The Terminus Vault at the first Helion site, the Unwatched Door puzzle, the vault documents | Not started. Owner, 2026-11-03: the room must be "very...very hidden", against the spec's "every player who reaches Helion sites finds it" |
+| T2 | The Terminus Vault at the first Helion site, the Unwatched Door puzzle, the vault documents | Built on `feat/terminus-vault` (worktree `/Volumes/SSD/Work/frozen-dawn-terminus-vault`), stacked on `feat/terminus` while PR #146 is open; awaiting the owner's pass |
 | T3 | Maeve, Hearth and Aggregate interplay, through the shared Maeve slice | Not started (MACS is WIP) |
 
 ### T1: the wand (creative only)
@@ -45,9 +45,13 @@ is the tracked handoff; the spec stays on Notion.
   Heart, the label swap once and never in E11.
 - Playtest: `tools/prepare_terminus_playtest.py`, one station per behavior.
 
-### T2 and T3
+### T3
 
-As the spec, sections 5, 5a, 6, 8 and 9. Open: the tale logs (count and voices).
+As the spec, section 6.
+
+### T2: the vault
+
+See "T2 as built" below.
 
 ## Owner rulings
 
@@ -81,6 +85,18 @@ As the spec, sections 5, 5a, 6, 8 and 9. Open: the tale logs (count and voices).
   candidates (glass, capacitor, heartbeat; snap, toll, pressure; ghost choir, whispers, wrong glass; two Sleeper-like
   crystals) clicked, nor the Warden's charge. Hyperion's deathwand is silent with an invisible beam, so the owner picked
   demo B: a faint heartbeat charge heard only close by, and on discharge the world going silent for the operator.
+
+- 2026-11-03, the vault's hiding place: the owner asked for the room to be "very...very hidden", against the spec's
+  "every player who reaches Helion sites finds it", and picked **B, under the Core** from
+  `docs/art/terminus/hiding-options.png` (`make_hiding_mockup.py`): a drain grate under the Confinement Core, so nothing
+  shows until the Core is out, by which time the Uplink has stopped marking the site. One clue in the game, the Drain
+  Schedule in that site's desk ("Floor drains drawn: 5", "Floor drains in hall: 4").
+- 2026-11-03, the rooms and contents: "Build as drawn", `docs/art/terminus/vault-rooms-mockup.png` and
+  `vault-contents-mockup.png` (`make_vault_mockup.py`). That covers these agent calls, listed to the owner with the
+  mockups: the bridge reaches two cells past whoever stands on it (a walkway that only froze could be walked forward);
+  a fall lands in powder snow with a ladder back and costs nothing; the wand shows through the last door's viewport from
+  the start, since the spec allows one change on waking; a digital clock counting back one a second from a seed-set
+  number; the first site at least 27 blocks above the world floor takes the vault; four tale logs and the technician's.
 
 ## T1 as built (2026-11-03)
 
@@ -294,3 +310,46 @@ it; Hollow and Frostbitten still give their own burst in `die()` when stopped.
 ## Owner playtest 4, 2026-11-03 (Terminus Check 5, runClient, branch head f85128a0)
 
 Unprompted report: "good." Then: "whats next? the puzzle in helion? i want the room to be very...very hidden"
+
+## T2 as built (2026-11-03)
+
+- Keats: the four lines match Project Gutenberg #23684, *Keats: Poems Published in 1820*, word for word
+  (`VaultDocumentsTest`).
+- `TerminusVaultBuilder` lays the vault out relative to the hall floor centre, as the mockup: grate at (0, 1, 0) under the
+  Core, ladder down to the landing, door 1, the bridge hall and pit, the cot room, the last door, the vault, floor at
+  y-15. `claim` runs from `HelionSitePlacement.tickPlacement` after a site is built; `HelionSiteState.vault` is the
+  world's flag. The site that may take the vault waits on 28 more blocks of chunks. `/fd terminus vault place | reset |
+  status` is the debug placement.
+- The rule (`VaultWatch`): a player or `terminus_susceptible` mob within 24 blocks, its head within 35 degrees of the
+  target, with one clear ray. Sleepers and spectators do not count. Server only, so third-person front view needs nothing.
+- `VaultMechanismBlockEntity`, one per mechanism, in the shell: door 1 opens over 80 ticks and only forward; the bridge
+  lays a cell per 15 ticks while someone stands within `VaultBridge.REACH` of its end and nobody faces the gap; the last
+  door opens when a 100-tick rest on the cot ends unwatched, turning the technician's head. Progress persists. A door's
+  `vault_door_cell` blocks are invisible and stop you; `VaultMechanismRenderer` draws the 3x3 panel from that block's
+  model, sliding. Clearance is per column, so the panel can show a sliver more gap than you can walk through.
+- The cot (`VaultCotBlock`) is a bed to the entity's sleeping state and nothing else: no respawn, no night skip, any
+  hour (`CanContinueSleepingEvent`). The fade is vanilla's sleep overlay, which reaches about 86% dark, not black.
+- Technician: a block with a renderer, not an entity, on the player model with `textures/entity/vault_technician.png`.
+- Cradle: gives the wand as found; the forks stay empty. Desk: gives the manifest and name review once. Locker: a
+  vanilla barrel holding the five duty logs.
+- Clock: `VaultClock`, one a second off the game clock from a seed-set start, past zero back to 99:59:59.
+- Sound: `block.vault.grind`, a 0.55 s grain every half second while anything moves, heard to 24 blocks.
+- Documents (`VaultDocuments`, Field Manual entries under ORSA intel): Drain Schedule, Vault Manifest, Name Review, duty
+  logs of Deng, Varga, Anand, Hale and Okoye. No Continuity (`VaultDocumentsTest`).
+
+### Rulings (agent, for the owner to confirm)
+- Doors only ever open; nothing closes them in play.
+- The hall stays breakable, so a player can dig to the crack as they like; only the shell cannot be mined or blasted.
+- Digging down from the hall meets the shell, and a tunnel can reach the bore's ladder. It stays hidden, not sealed.
+- Any mind beside the door counts, including one on the far side.
+- A rest spoiled by a watcher ends as normal with the door shut; try again.
+
+### Playtest
+`python3 tools/prepare_terminus_vault_playtest.py --source <a 1.21.1 save>/level.dat --destination run/saves/<new name>`.
+
+### Verification
+- JUnit: `VaultRulesTest`, `VaultDocumentsTest`.
+- GameTests (`terminus_vault`, `_bridge`, `_alone`): `TerminusVaultGameTest`. Tests of a batch stand side by side, close
+  enough to watch each other's doors, which is why bodies face north and the bridge has its own batch.
+- Needs the owner's eyes and ears: everything judged by look or sound, the finding of the grate, the crossing in F5, and
+  the wake.

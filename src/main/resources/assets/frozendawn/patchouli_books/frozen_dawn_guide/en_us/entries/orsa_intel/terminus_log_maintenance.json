@@ -1,0 +1,18 @@
+{
+  "name": "Duty Log: Deng",
+  "category": "frozendawn:orsa_intel",
+  "icon": "frozendawn:orsa_document",
+  "sortnum": 35,
+  "advancement": "frozendawn:found_terminus_log_maintenance",
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "Doors",
+      "text": "$(bold)DUTY LOG$()$(br)Deng, T., door maintenance$(br2)Why I am here: I keep doors moving. Thirty years of blast doors, and the pay cleared my brother's debts. They asked if I minded working alone. I said doors don't talk."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "These do something. I greased the first one with my back to it, and it had moved when I looked round. I faced it for an hour: nothing.$(br2)There is no motor on the drawings. I have stopped putting that in the fault log. It comes back unsigned."
+    }
+  ]
+}

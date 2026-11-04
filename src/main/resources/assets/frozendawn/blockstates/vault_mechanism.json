@@ -1,0 +1,13 @@
+{
+  "variants": {
+    "kind=door": {
+      "model": "frozendawn:block/vault_shell"
+    },
+    "kind=bridge": {
+      "model": "frozendawn:block/vault_shell"
+    },
+    "kind=last_door": {
+      "model": "frozendawn:block/vault_shell"
+    }
+  }
+}

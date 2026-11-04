@@ -10,5 +10,6 @@ noise seed 55002.
 | File | Event | Character |
 | --- | --- | --- |
 | `sounds/item/terminus/windup.ogg` | `item.terminus.windup` | 2 s (owner's pick, 2026-11-03): a slow 48 Hz heartbeat quickening from 1.2 to 6 beats a second under a faint, slightly rising 5.2 kHz whine, stopping dead; heard to 8 blocks |
+| `sounds/blocks/vault/grind.ogg` | `block.vault.grind` | 0.55 s, slice T2: low stone on steel, a 34 Hz rumble under shuddering brown noise, replayed every half second while a vault door or the bridge moves; heard to 24 blocks |
 
 Hashes are in `docs/audio/SHIPPED_AUDIO_INVENTORY.tsv`.

@@ -91,6 +91,7 @@ def classify(path: str) -> tuple[str, str, str]:
         (("blocks/hyperion/",), "hyperion_storage_procedural", "tools/audio_sources/hyperion/SOURCES.md", "Frozen Dawn original"),
         (("item/sever_lash/",), "sever_lash_procedural", "tools/audio_sources/sever_lash/SOURCES.md", "Frozen Dawn original"),
         (("item/terminus/",), "terminus_procedural", "tools/audio_sources/terminus/SOURCES.md", "Frozen Dawn original"),
+        (("blocks/vault/",), "terminus_procedural", "tools/audio_sources/terminus/SOURCES.md", "Frozen Dawn original"),
         (("blocks/icarus/",), "icarus_reactor_procedural", "tools/generate_icarus_sounds.sh", "Frozen Dawn original"),
         (("blocks/reactor/",), "hearthstone_reactor_procedural", "tools/audio_sources/hearthstone/SOURCES.md", "Frozen Dawn original"),
     )

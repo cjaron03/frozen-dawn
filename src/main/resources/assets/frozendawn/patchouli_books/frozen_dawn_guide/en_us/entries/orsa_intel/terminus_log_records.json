@@ -1,0 +1,18 @@
+{
+  "name": "Duty Log: Varga",
+  "category": "frozendawn:orsa_intel",
+  "icon": "frozendawn:orsa_document",
+  "sortnum": 36,
+  "advancement": "frozendawn:found_terminus_log_records",
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "Records",
+      "text": "$(bold)DUTY LOG$()$(br)Varga, I., records$(br2)Why I am here: I type well and I read what I type. My last posting ended the week I asked who had approved a form."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "I typed the manifest for this room. There is a box for the issuing division and nobody would tell me what goes in it. I left it empty.$(br2)No one has corrected it. In eleven years no one has ever left a form of mine alone."
+    }
+  ]
+}

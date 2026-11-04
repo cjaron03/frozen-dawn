@@ -902,6 +902,8 @@ public class ModSounds {
     /** The Terminus wind-up: a low tone rising over two seconds, heard to 24 blocks. */
     public static final DeferredHolder<SoundEvent, SoundEvent> TERMINUS_WINDUP = SOUNDS.register("item.terminus.windup",
             () -> SoundEvent.createFixedRangeEvent(ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "item.terminus.windup"), 8f));
+    public static final DeferredHolder<SoundEvent, SoundEvent> VAULT_GRIND = SOUNDS.register("block.vault.grind",
+            () -> SoundEvent.createFixedRangeEvent(ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "block.vault.grind"), 24));
     public static final DeferredHolder<SoundEvent, SoundEvent> RADIO_MARTIAN_COMMAND_MESSAGE = register("radio.martian_command_message");
     public static final DeferredHolder<SoundEvent, SoundEvent> RADIO_CUTOFF = register("radio.cutoff");
     public static final DeferredHolder<SoundEvent, SoundEvent> RADIO_VOICE_TOWER = register("radio.voice.tower");

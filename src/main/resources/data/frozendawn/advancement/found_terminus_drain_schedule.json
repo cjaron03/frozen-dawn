@@ -1,0 +1,23 @@
+{
+  "parent": "frozendawn:classified_information",
+  "display": {
+    "icon": {
+      "id": "frozendawn:orsa_document"
+    },
+    "title": {
+      "translate": "advancement.frozendawn.found_terminus_drain_schedule.title"
+    },
+    "description": {
+      "translate": "advancement.frozendawn.found_terminus_drain_schedule.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": true
+  },
+  "criteria": {
+    "impossible": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

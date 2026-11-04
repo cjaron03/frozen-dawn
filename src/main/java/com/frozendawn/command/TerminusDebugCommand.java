@@ -1,13 +1,18 @@
 package com.frozendawn.command;
 
+import com.frozendawn.data.HelionSiteState;
 import com.frozendawn.defense.Terminus;
 import com.frozendawn.defense.TerminusToll;
 import com.frozendawn.defense.TerminusLedger;
 import com.frozendawn.init.ModAttachments;
+import com.frozendawn.vault.TerminusVaultBuilder;
+import com.frozendawn.vault.VaultMechanismBlockEntity;
+import com.frozendawn.world.HelionSitePlacement;
 import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 
 /**
@@ -47,6 +52,38 @@ final class TerminusDebugCommand {
                     player.sendSystemMessage(Component.literal("Terminus: the next half heart is due now"));
                     return 1;
                 }))
+                .then(Commands.literal("vault")
+                        .then(Commands.literal("place").executes(c -> {
+                            // A new site 32 blocks ahead, buried as usual, with the vault under it; the world's flag moves to it.
+                            var player = c.getSource().getPlayerOrException();
+                            var level = c.getSource().getLevel();
+                            var ahead = player.position().add(player.getLookAngle().multiply(1, 0, 1).normalize().scale(32));
+                            var hall = HelionSitePlacement.placeNow(level, (int) Math.floor(ahead.x), (int) Math.floor(ahead.z));
+                            TerminusVaultBuilder.place(level, hall);
+                            HelionSiteState.get(level.getServer()).markVault(hall);
+                            player.sendSystemMessage(Component.literal("Terminus Vault under the hall at " + hall.toShortString()));
+                            return 1;
+                        }))
+                        .then(Commands.literal("reset").executes(c -> {
+                            var player = c.getSource().getPlayerOrException();
+                            var hall = HelionSiteState.get(c.getSource().getServer()).vault();
+                            if (hall != null) TerminusVaultBuilder.reset(c.getSource().getServer().overworld(), hall);
+                            player.sendSystemMessage(Component.literal(hall == null ? "No Terminus Vault in this world" : "Terminus Vault reset: doors shut, bridge in, wand back"));
+                            return 1;
+                        }))
+                        .then(Commands.literal("status").executes(c -> {
+                            var server = c.getSource().getServer();
+                            var hall = HelionSiteState.get(server).vault();
+                            String text = "No Terminus Vault in this world";
+                            if (hall != null) {
+                                var level = server.overworld();
+                                text = "Terminus Vault at " + hall.toShortString() + ":";
+                                for (var at : new BlockPos[] {TerminusVaultBuilder.DOOR, TerminusVaultBuilder.BRIDGE, TerminusVaultBuilder.LAST_DOOR})
+                                    if (level.getBlockEntity(hall.offset(at)) instanceof VaultMechanismBlockEntity m) text += " " + m.kind().getSerializedName() + " " + m.progress();
+                            }
+                            c.getSource().getPlayerOrException().sendSystemMessage(Component.literal(text));
+                            return 1;
+                        })))
                 .then(Commands.literal("turned").then(Commands.argument("turned", BoolArgumentType.bool()).executes(c -> {
                     boolean turned = BoolArgumentType.getBool(c, "turned");
                     TerminusLedger.setForTest(c.getSource().getServer(), turned);

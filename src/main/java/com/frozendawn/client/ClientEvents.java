@@ -402,6 +402,10 @@ public class ClientEvents {
         event.registerBlockEntityRenderer(ModBlockEntities.OXYGEN_GAUGE.get(), com.frozendawn.client.renderer.OxygenGaugeRenderer::new);
         event.registerBlockEntityRenderer(ModBlockEntities.HYPERION_CONTROLLER.get(), com.frozendawn.client.renderer.HyperionSiloRenderer::new);
         event.registerBlockEntityRenderer(ModBlockEntities.HALSEY_CORE.get(), HalseyCoreRenderer::new);
+        event.registerBlockEntityRenderer(ModBlockEntities.VAULT_MECHANISM.get(), com.frozendawn.client.renderer.VaultMechanismRenderer::new);
+        event.registerBlockEntityRenderer(ModBlockEntities.VAULT_TECHNICIAN.get(), com.frozendawn.client.renderer.VaultTechnicianRenderer::new);
+        event.registerBlockEntityRenderer(ModBlockEntities.VAULT_CRADLE.get(), com.frozendawn.client.renderer.VaultCradleRenderer::new);
+        event.registerBlockEntityRenderer(ModBlockEntities.VAULT_CLOCK.get(), com.frozendawn.client.renderer.VaultClockRenderer::new);
         event.registerBlockEntityRenderer(ModBlockEntities.ICARUS_STABILIZER.get(), IcarusStabilizerRenderer::new);
         event.registerBlockEntityRenderer(ModBlockEntities.ICARUS_INJECTOR.get(), IcarusInjectorRenderer::new);
     }

@@ -1,0 +1,18 @@
+{
+  "name": "Duty Log: Okoye",
+  "category": "frozendawn:orsa_intel",
+  "icon": "frozendawn:orsa_document",
+  "sortnum": 39,
+  "advancement": "frozendawn:found_terminus_log_last",
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "Last Entry",
+      "text": "$(bold)DUTY LOG$()$(br)Okoye, A., last on the roster$(br2)Why I am here: the recall came June 18 and someone had to see the vault shut. I said I would stay a day. The others went up to Exodus."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "The doors stopped for me when the others left. My sidearm is not in its holster, and I do not remember taking it off.$(br2)The wand's log says 0. I checked it twice. I will check again when I have slept.$(br2)I am going to lie down now. Nobody is watching."
+    }
+  ]
+}

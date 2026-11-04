@@ -46,7 +46,8 @@ public final class HelionSitePlacement {
         for (long key : Set.copyOf(pending)) {
             int chunkX = (int) (key >> 32), chunkZ = (int) key, x = (chunkX << 4) + 8, z = (chunkZ << 4) + 8;
             if (state.isEvaluated(chunkX, chunkZ)) { pending.remove(key); continue; }
-            if (!areaLoaded(overworld, x, z, RADIUS + 16)) continue;
+            // The site that may take the Terminus Vault waits on the chunks its shell runs through too.
+            if (!areaLoaded(overworld, x, z, RADIUS + 16 + (state.vault() == null ? com.frozendawn.vault.TerminusVaultBuilder.REACH : 0))) continue;
             pending.remove(key);
             var spawn = overworld.getSharedSpawnPos();
             long dx = x - spawn.getX(), dz = z - spawn.getZ();
@@ -68,6 +69,7 @@ public final class HelionSitePlacement {
             }
             build(overworld, hall);
             state.markBuilt(chunkX, chunkZ, hall);
+            com.frozendawn.vault.TerminusVaultBuilder.claim(overworld, hall);
             FrozenDawn.LOGGER.info("Helion site placed at ({}, {}, {})", hall.getX(), hall.getY(), hall.getZ());
         }
     }

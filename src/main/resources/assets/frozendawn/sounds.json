@@ -2225,6 +2225,16 @@
       }
     ]
   },
+  "block.vault.grind": {
+    "category": "block",
+    "subtitle": "subtitle.frozendawn.block.vault.grind",
+    "sounds": [
+      {
+        "name": "frozendawn:blocks/vault/grind",
+        "attenuation_distance": 24
+      }
+    ]
+  },
   "radio.martian_command_message": {
     "category": "record",
     "subtitle": "subtitle.frozendawn.radio.martian_command",

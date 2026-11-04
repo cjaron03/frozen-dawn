@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "last=false": {
+      "model": "frozendawn:block/vault_door_panel"
+    },
+    "last=true": {
+      "model": "frozendawn:block/vault_last_door_panel"
+    }
+  }
+}

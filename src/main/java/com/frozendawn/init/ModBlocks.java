@@ -248,6 +248,36 @@ public class ModBlocks {
             () -> new com.frozendawn.block.ManualVentValveBlock(BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_GRAY)
                     .strength(4,6).sound(SoundType.METAL).requiresCorrectToolForDrops().pushReaction(PushReaction.BLOCK)));
 
+    // The Terminus Vault. Its shell and mechanisms cannot be mined or blasted, and no mob spawns on them.
+    private static BlockBehaviour.Properties vaultSealed(MapColor color) {
+        return BlockBehaviour.Properties.of().mapColor(color).strength(-1.0F, 3600000.0F).sound(SoundType.STONE).noLootTable()
+                .pushReaction(PushReaction.BLOCK).isValidSpawn((state, level, pos, type) -> false);
+    }
+    public static final DeferredBlock<net.minecraft.world.level.block.Block> VAULT_SHELL = BLOCKS.register("vault_shell",
+            () -> new net.minecraft.world.level.block.Block(vaultSealed(MapColor.COLOR_GRAY)));
+    public static final DeferredBlock<net.minecraft.world.level.block.Block> VAULT_FLOOR = BLOCKS.register("vault_floor",
+            () -> new net.minecraft.world.level.block.Block(vaultSealed(MapColor.COLOR_GRAY)));
+    public static final DeferredBlock<net.minecraft.world.level.block.Block> VAULT_WALKWAY = BLOCKS.register("vault_walkway",
+            () -> new net.minecraft.world.level.block.Block(vaultSealed(MapColor.METAL).sound(SoundType.METAL)));
+    public static final DeferredBlock<com.frozendawn.vault.VaultMechanismBlock> VAULT_MECHANISM = BLOCKS.register("vault_mechanism",
+            () -> new com.frozendawn.vault.VaultMechanismBlock(vaultSealed(MapColor.COLOR_GRAY)));
+    public static final DeferredBlock<com.frozendawn.vault.VaultDoorCellBlock> VAULT_DOOR_CELL = BLOCKS.register("vault_door_cell",
+            () -> new com.frozendawn.vault.VaultDoorCellBlock(vaultSealed(MapColor.METAL).sound(SoundType.METAL).noOcclusion()));
+    public static final DeferredBlock<com.frozendawn.vault.VaultClockBlock> VAULT_CLOCK = BLOCKS.register("vault_clock",
+            () -> new com.frozendawn.vault.VaultClockBlock(vaultSealed(MapColor.COLOR_GRAY)));
+    public static final DeferredBlock<com.frozendawn.vault.VaultCotBlock> VAULT_COT = BLOCKS.register("vault_cot",
+            () -> new com.frozendawn.vault.VaultCotBlock(vaultSealed(MapColor.COLOR_GRAY).sound(SoundType.WOOL).noOcclusion()));
+    public static final DeferredBlock<com.frozendawn.vault.VaultTechnicianBlock> VAULT_TECHNICIAN = BLOCKS.register("vault_technician",
+            () -> new com.frozendawn.vault.VaultTechnicianBlock(vaultSealed(MapColor.COLOR_GRAY).noOcclusion()));
+    public static final DeferredBlock<com.frozendawn.vault.VaultCradleBlock> VAULT_CRADLE = BLOCKS.register("vault_cradle",
+            () -> new com.frozendawn.vault.VaultCradleBlock(vaultSealed(MapColor.METAL).sound(SoundType.METAL).noOcclusion()));
+    public static final DeferredBlock<com.frozendawn.vault.VaultDeskBlock> VAULT_DESK = BLOCKS.register("vault_desk",
+            () -> new com.frozendawn.vault.VaultDeskBlock(vaultSealed(MapColor.METAL).sound(SoundType.METAL).noOcclusion()));
+    public static final DeferredBlock<com.frozendawn.vault.VaultGrateBlock> VAULT_GRATE = BLOCKS.register("vault_grate",
+            () -> new com.frozendawn.vault.VaultGrateBlock(BlockBehaviour.Properties.of().mapColor(MapColor.METAL).strength(5, 6)
+                    .sound(SoundType.METAL).noOcclusion().noLootTable().pushReaction(PushReaction.BLOCK)
+                    .isValidSpawn((state, level, pos, type) -> false)));
+
     private static int heaterLight(net.minecraft.world.level.block.state.BlockState state, int maxLight) {
         if (!state.getValue(ThermalHeaterBlock.LIT)) return 0;
         int glowStage = state.getValue(ThermalHeaterBlock.GLOW_STAGE);

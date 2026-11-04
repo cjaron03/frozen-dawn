@@ -1,0 +1,18 @@
+{
+  "name": "Drain Schedule",
+  "category": "frozendawn:orsa_intel",
+  "icon": "frozendawn:orsa_document",
+  "sortnum": 32,
+  "advancement": "frozendawn:found_terminus_drain_schedule",
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "Floor Drains",
+      "text": "$(bold)ORSA HELION$()$(br)Facilities, quarterly walkdown$(br2)Floor drains drawn: 5$(br)Floor drains in hall: 4$(br2)Four cleared. No fault."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "The fifth on the drawing sits where nobody can get a hand to it with the magnets in place. Left uncleared.$(br2)Ask again at the next shutdown.$(br2)$(italic)There is no next shutdown on the calendar.$()"
+    }
+  ]
+}

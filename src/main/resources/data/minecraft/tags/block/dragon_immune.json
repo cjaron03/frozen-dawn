@@ -1,0 +1,15 @@
+{
+  "replace": false,
+  "values": [
+    "frozendawn:vault_shell",
+    "frozendawn:vault_floor",
+    "frozendawn:vault_walkway",
+    "frozendawn:vault_mechanism",
+    "frozendawn:vault_door_cell",
+    "frozendawn:vault_clock",
+    "frozendawn:vault_cot",
+    "frozendawn:vault_technician",
+    "frozendawn:vault_cradle",
+    "frozendawn:vault_desk"
+  ]
+}
