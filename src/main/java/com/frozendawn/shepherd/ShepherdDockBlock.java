@@ -108,6 +108,11 @@ public final class ShepherdDockBlock extends Block implements EntityBlock {
         return ItemInteractionResult.SUCCESS;
     }
 
+    @Override protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
+        if (!state.is(newState.getBlock()) && level.getBlockEntity(pos) instanceof ShepherdDockBlockEntity dock) dock.removed();
+        super.onRemove(state, level, pos, newState, movedByPiston);
+    }
+
     @Override public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
         return new ShepherdDockBlockEntity(pos, state);
     }
