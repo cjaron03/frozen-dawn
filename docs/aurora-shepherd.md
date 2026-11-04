@@ -2,7 +2,7 @@
 
 Companion and dialogue system. Design only: no game code exists, and none starts until the owner confirms PR 147 (the Terminus Vault) has merged.
 
-Sources: Notion, Frozen Dawn / Backlog, "Aurora (ORSA CS-1 "Shepherd") — Companion and Dialogue System" and its child "Aurora — Dialogue Script v1" (both 2026-11-04). Those pages hold the character and every line. This file is the tracked handoff: what was settled against the built game, the art, and the slices. Where the two differ, this file is newer until Notion is updated.
+Sources: Notion, Frozen Dawn / Backlog, "Aurora (ORSA CS-1 "Shepherd") — Companion and Dialogue System" and its child "Aurora — Dialogue Script v1" (both 2026-11-04). Those pages hold the character and every line, and carry the fixes below as of 2026-11-04. This file is the tracked handoff: what was settled against the built game, the art, and the slices.
 
 Every line of dialogue is a draft until the owner marks it.
 
@@ -53,6 +53,7 @@ From this design, 2026-11-04:
 - Body: A, Lantern. Face, talk screen and dock approved "Build as drawn" from the mockups below.
 - All eight fixes below accepted ("Yes, take them all").
 - One charged Power Cell in the vault locker. This reverses the last rooms' "no new loot" for this one item.
+- Her name was Sophie Miller. The partner corporation is Anderson-Kind Systems. Nine's site is the Blast Pit. All `[C]` lines are signed off.
 
 ## How the two Auroras relate
 
@@ -95,7 +96,7 @@ The script was written against the Terminus spec and predates the vault as built
    - The sky has no stars in phase 5 or early phase 6 (`PhaseManager.isBlizzardActive`). During those she waits and asks again. Phase 6 mid onward draws stars on black; phase 4 uses the vanilla sky. How often phase 4 nights are clear still needs checking.
 6. **Late meetings.** She can be woken after anything has already happened, so every one-time topic gets a late variant, fired at the next calm moment. Maeve wakes: (Thinking) "There's something on the Reliquus band. All of them at once, like one ear. It was already doing that when you woke me." The Moon and post-Maeve silence need the same treatment. A topic whose moment passed and has no variant does not fire.
 7. **Her presence in the vault.** Nothing there mentions her. Hale's "nothing down here but the cradle and us" gains the unit, the Vault Manifest gains an item row for CS-1 unit 4, and the locker gains the spare cell. All three are edits to vault files, so they wait for PR 147.
-8. **Notion cleanup.** The spec page still ends T3 on an aurora. "Four personal conversations" is five with T5. The Terminus note about "exactly two immunities" is stale, and the answer stands without it: she is on neither `terminus_susceptible` nor `terminus_immune`, so she is no watcher and the wand does nothing to her. The Mimic callout ("vanishes when you lose sight of it") needs checking against `MimicEntity` before it ships; a quick search found no such rule.
+8. **Notion cleanup, done 2026-11-04.** T3 no longer ends on an aurora, and the personal conversations are five with T5. The Terminus note about "exactly two immunities" was stale, and the answer stands without it: she is on neither `terminus_susceptible` nor `terminus_immune`, so she is no watcher and the wand does nothing to her. The Mimic callout ("vanishes when you lose sight of it") needs checking against `MimicEntity` before it ships; a quick search found no such rule.
 
 ## Waking her
 
@@ -168,7 +169,7 @@ One shared score per world (the working default in Notion). "Calm" means no host
 
 Hub, five personal conversations, topic conversations from world events, ambient lines with triggers and cooldowns, one-line reactions, and weakness callouts. Personal arc: T1 Friendly "The name", T2 Friendly "The others", T3 Trusted "The sky", T4 Close "Off", T5 "Before", which needs the TITHONUS files. v1 writing target is 150 to 250 lines.
 
-**Nine's site** (proposal, needs the owner's word): the Blast Pit. There is exactly one per world, it is guaranteed, and it is where Exodus actually left from, so `{nine_site}` always resolves. No new structure: the husk is placed at the pit when T2 starts or when that area next loads.
+**Nine's site** is the Blast Pit. There is exactly one per world, it is guaranteed, and it is where Exodus actually left from, so `{nine_site}` always resolves. No new structure: the husk is placed at the pit when T2 starts or when that area next loads.
 
 Callout rules stand as in the script: line of sight within about 32 blocks, or the behavior in front of her. First sighting gets the full line, later ones the short. Each line must match the mob's current counter, so each is checked against that mob's code in its slice.
 
@@ -186,11 +187,11 @@ My calls, all the builder's to refine:
 
 ## Origin: Project TITHONUS
 
-As in Notion. Short form: a seventh-floor project with a partner corporation to upload the left-behind into frost-proof bodies. It failed: each unit got the shape of a person, voice and warmth, with no memories, and ORSA logged "pattern transfer only, subject not recovered". The survivors were rebadged as CS-1 "Shepherd", the warmth passed off as design, and they were classed as equipment, which is why the doors do not count her. Okoye was posted to the vault to talk to her, because the units degrade without conversation.
+As in Notion. Short form: a seventh-floor project with Anderson-Kind Systems to upload the left-behind into frost-proof bodies. It failed: each unit got the shape of a person, voice and warmth, with no memories, and ORSA logged "pattern transfer only, subject not recovered". The survivors were rebadged as CS-1 "Shepherd", the warmth passed off as design, and they were classed as equipment, which is why the doors do not count her. Okoye was posted to the vault to talk to her, because the units degrade without conversation.
 
 She knows none of this at first. Bleed-through comes first, played as jokes about her own glitches. T5 "Before" opens only if the player finds the files.
 
-Pending the owner's pick: her name (working pick Sophie Miller) and the partner corporation (proposed Mnemosyne Neural Systems). Until then neither appears in any document or line.
+Her name was Sophie Miller, a very ordinary name on purpose. Anderson-Kind built the transfer process and the frames; the seventh floor supplied volunteers, unauditable funding and the cover-up. Both names appear only in the TITHONUS files and T5.
 
 Design-only, never in the game: a machine cannot move a mind, because minds do not end and Continuity keeps them. That is why Nine's memory is empty, not wiped.
 
@@ -200,7 +201,7 @@ Design-only, never in the game: a machine cannot move a mind, because minds do n
 - No new redactions in What is ORSA. TITHONUS documents use blank fields.
 - The division stays unreachable (CH-17). CH-16 is untouched: her donor is not Morrow.
 - Maeve is "Reliquus signal pattern" to her until the player brings the name.
-- The `[C]` lines in the script are questions and observations only, and each needs the owner's sign-off.
+- The `[C]` lines in the script are questions and observations only. The owner signed off all of them on 2026-11-04.
 - Dressing and names are ours: Fallout 4 lends the shape of the dialogue only.
 
 ## Slices
@@ -212,7 +213,7 @@ Each is playable, on one branch per slice from `feat/maeve-director`, in a workt
 | S1 | Engine, creative only | PR 147 merged |
 | S2 | In the vault | S1, ambient-line mockup |
 | S3 | Affinity | S1 |
-| S4 | Personal arc, Nine's husk, TITHONUS files | S2, S3, names, Nine's site, husk and lamp mockups |
+| S4 | Personal arc, Nine's husk, TITHONUS files | S2, S3, husk and lamp mockups |
 | S5 | Ambient lines, topics, callouts | S2, 100 or more lines |
 | S6 | Maeve integration | Owner's approval to copy into MACS |
 
@@ -243,18 +244,12 @@ Tests cover behavior, not lines.
 
 ## Open
 
-For the owner:
-
-1. Her name: Sophie Miller, or another.
-2. The partner corporation: Mnemosyne Neural Systems, or another.
-3. Nine's site: the Blast Pit, as proposed.
-4. Sign-off on each `[C]` line.
-5. Whether Notion should be updated with the fixes above.
+Nothing for the owner until a slice starts.
 
 For the builder:
 
-6. How often phase 4 nights are clear enough for T3.
-7. The Mimic callout against `MimicEntity`.
+1. How often phase 4 nights are clear enough for T3.
+2. The Mimic callout against `MimicEntity`.
 
 ## Status
 
