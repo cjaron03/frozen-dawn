@@ -281,6 +281,8 @@ public class ModBlocks {
             () -> new com.frozendawn.vault.VaultFuseBlock(vaultSealed(MapColor.METAL).sound(SoundType.METAL).lightLevel(com.frozendawn.vault.VaultBoardBlock::light)));
     public static final DeferredBlock<com.frozendawn.vault.VaultFightClockBlock> VAULT_FIGHT_CLOCK = BLOCKS.register("vault_fight_clock",
             () -> new com.frozendawn.vault.VaultFightClockBlock(vaultSealed(MapColor.COLOR_GRAY)));
+    public static final DeferredBlock<com.frozendawn.vault.VaultPlotBlock> VAULT_PLOT = BLOCKS.register("vault_plot",
+            () -> new com.frozendawn.vault.VaultPlotBlock(vaultSealed(MapColor.COLOR_GRAY)));
     public static final DeferredBlock<com.frozendawn.vault.VaultLightBlock> VAULT_LIGHT = BLOCKS.register("vault_light",
             () -> new com.frozendawn.vault.VaultLightBlock(vaultSealed(MapColor.COLOR_RED).sound(SoundType.METAL).noOcclusion().noCollission()
                     .lightLevel(state -> state.getValue(com.frozendawn.vault.VaultLightBlock.LIT) ? 6 : 0)));

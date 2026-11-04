@@ -24,7 +24,7 @@ import net.minecraft.world.level.block.state.properties.Half;
  * The Terminus Vault, under a Helion hall. Coordinates are relative to the hall floor centre, as in HelionSiteBuilder;
  * drawn at {@code docs/art/terminus/vault-rooms-mockup.png} and {@code watch-floor-mockup.png}. A drain grate under the
  * Confinement Core lifts onto a ladder that drops through the hall floor to the landing. East of it: door 1, the bridge
- * hall over its pit, the Watch Floor, the cot room, the last door, the vault. The shell cannot be mined or blasted; the
+ * hall over its pit, the Watch Floor, the cot room with the plot room off it, the last door, the vault. The shell cannot be mined or blasted; the
  * bore is the way in and the doors are the way on.
  */
 public final class TerminusVaultBuilder {
@@ -32,13 +32,15 @@ public final class TerminusVaultBuilder {
     /** Blocks the pit needs under the hall; a site without them cannot hold the vault. */
     public static final int DEPTH_BELOW_HALL = -PIT_BOTTOM + 1;
     /** How far east of the hall the shell reaches, for the chunks a site must wait on. */
-    public static final int REACH = 52;
+    public static final int REACH = 66;
     public static final BlockPos GRATE = new BlockPos(0, 1, 0), DOOR = new BlockPos(3, CEILING, 0), BRIDGE = new BlockPos(5, FLOOR - 1, 0),
             LAST_DOOR = new BlockPos(45, CEILING, 0), CLOCK = new BlockPos(45, CEILING - 1, 0), CRADLE = new BlockPos(50, FLOOR + 1, 0),
             DESK = new BlockPos(46, FLOOR + 1, 3), LOCKER = new BlockPos(48, FLOOR + 1, 3);
     /** The Watch Floor: Argus in the ceiling over the Custodian's mark, a gate each end, the ledge a purge throws you back to. */
     public static final BlockPos ARGUS = new BlockPos(28, CEILING, 0), WEST_DOOR = new BlockPos(17, CEILING, 0), EAST_DOOR = new BlockPos(40, CEILING, 0),
             CUSTODIAN = new BlockPos(28, LOWER_FLOOR + 1, 0), LEDGE = new BlockPos(16, FLOOR + 1, 0), SEAL_ORDER = new BlockPos(18, FLOOR + 1, -7);
+    /** The foot of the System Plot's wall, at its west end: 24 blocks east of here and 8 up. */
+    public static final BlockPos PLOT = new BlockPos(41, FLOOR + 1, -17);
     /** North wall west to east, then south: each fuse's slot. */
     public static final BlockPos[] FUSES = {fuse(23, -12), fuse(28, -12), fuse(33, -12), fuse(23, 12), fuse(28, 12), fuse(33, 12)};
     /** Three glyphs either side of the west door, at the upper level. */
@@ -79,6 +81,7 @@ public final class TerminusVaultBuilder {
         door(level, hall.offset(DOOR));
         bridge(level, hall.offset(BRIDGE));
         watchFloor(level, hall);
+        plotRoom(level, hall);
         lastDoor(level, hall.offset(LAST_DOOR));
         vault(level, hall);
         dress(level, hall);
@@ -94,7 +97,7 @@ public final class TerminusVaultBuilder {
         var floor = ModBlocks.VAULT_FLOOR.get().defaultBlockState();
         var air = Blocks.AIR.defaultBlockState();
         box(l, c, -3, 16, SHELL_BOTTOM, CEILING, -5, 5, shell);
-        box(l, c, 41, REACH - 1, SHELL_BOTTOM, CEILING, -5, 5, shell);
+        box(l, c, 41, 51, SHELL_BOTTOM, CEILING, -5, 5, shell);
         box(l, c, 4, 16, PIT_BOTTOM, SHELL_BOTTOM, -3, 3, shell);
         box(l, c, -2, 2, FLOOR, FLOOR, -2, 2, floor);
         box(l, c, 4, 16, FLOOR, FLOOR, -3, 3, floor);
@@ -129,6 +132,18 @@ public final class TerminusVaultBuilder {
 
     /** The bridge: its mechanism under the ledge's lip; the cells come out east of it. */
     public static void bridge(ServerLevel l, BlockPos control) { mechanism(l, control, VaultMechanismBlock.Kind.BRIDGE); }
+
+    /** North of the cot room, through a gap in its wall: a quiet room whose far wall is the System Plot. */
+    private static void plotRoom(ServerLevel l, BlockPos c) {
+        box(l, c, 41, REACH - 1, SHELL_BOTTOM, -6, -17, -5, ModBlocks.VAULT_SHELL.get().defaultBlockState());
+        box(l, c, 41, 64, FLOOR, FLOOR, -16, -6, ModBlocks.VAULT_FLOOR.get().defaultBlockState());
+        box(l, c, 41, 64, FLOOR + 1, -7, -16, -6, Blocks.AIR.defaultBlockState());
+        box(l, c, 41, 42, FLOOR, FLOOR, -5, -4, ModBlocks.VAULT_FLOOR.get().defaultBlockState());
+        box(l, c, 41, 42, FLOOR + 1, FLOOR + 3, -5, -4, Blocks.AIR.defaultBlockState());
+        l.setBlock(c.offset(PLOT), ModBlocks.VAULT_PLOT.get().defaultBlockState(), 2);
+        // Just enough to walk by: the plot lights nothing, it only glows.
+        for (int x : new int[] {46, 59}) l.setBlock(c.offset(x, -8, -8), Blocks.LIGHT.defaultBlockState().setValue(net.minecraft.world.level.block.LightBlock.LEVEL, 2), 2);
+    }
 
     /** The Watch Floor: a catwalk ring at the upper level, open down to the lower floor, its board, fuses, clocks and lamps. */
     public static void watchFloor(ServerLevel l, BlockPos c) {
@@ -241,6 +256,8 @@ public final class TerminusVaultBuilder {
         drop(l, c, Kind.HARD_HAT, 16, FLOOR + 1, 2, Direction.EAST);
         drop(l, c, Kind.CRATE, 1, FLOOR + 1, -2, Direction.EAST);
         drop(l, c, Kind.PAPER, 42, FLOOR + 1, -2, Direction.NORTH);
+        drop(l, c, Kind.CASE, 47, FLOOR + 1, -9, Direction.WEST);
+        drop(l, c, Kind.PAPER, 52, FLOOR + 1, -13, Direction.EAST);
         drop(l, c, Kind.SEAL_ORDER, SEAL_ORDER.getX(), SEAL_ORDER.getY(), SEAL_ORDER.getZ(), Direction.EAST);
     }
     private static void mark(ServerLevel l, BlockPos c, int x, int y, int z, Mark mark) {

@@ -5,6 +5,7 @@ Writes into the mod's assets. Run from anywhere: python3 docs/art/terminus/make_
 import random
 from pathlib import Path
 from PIL import Image, ImageDraw
+from make_system_plot_mockup import plot
 from make_vault_warning_mockup import scrawl
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -307,6 +308,8 @@ def main():
     noise('e', ['2e2822', '26211c'], 11).save(BLOCK / 'vault_case.png')
     noise('h', ['d6be50', 'cfb648'], 12).save(BLOCK / 'vault_hard_hat.png')
     seal_order().save(BLOCK / 'vault_seal_order.png')
+    # Drawn directly, like the clock digits: 384 wide is no shape for the block atlas.
+    plot().save(ENTITY / 'vault_system_plot.png')
     custodian(False).save(ENTITY / 'custodian.png')
     custodian(True).save(ENTITY / 'custodian_open.png')
     custodian_glow(False).save(ENTITY / 'custodian_lens.png')

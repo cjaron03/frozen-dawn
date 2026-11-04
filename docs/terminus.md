@@ -486,21 +486,17 @@ the owner wanted the instructions "written quickly in marker or something outsid
 someone warning the palyer". Approved from `vault-warning-mockup.png`: seven scrawled lines on the bridge hall's north wall, x
 12..16, over the band. The room itself gives no hints.
 
-## ORSA System Plot (idea, not drawn or built)
+## ORSA System Plot (built 2026-11-03)
 
-Owner request, 2026-11-03: a map of the solar system somewhere quiet in the vault, showing what everyone was looking at when
-the place was sealed. Earth "clearly knocked out of orbit", Mars "clearly the center of attention", and "some sort of
-colonies" from Jupiter out, which has never been in the lore. The idea of such a map only; no Destiny names, glyphs or art.
+Owner request: a map of the solar system somewhere quiet in the vault, showing what everyone was looking at when the place was
+sealed. Earth "clearly knocked out of orbit", Mars "clearly the center of attention", and "some sort of colonies" from Jupiter
+out, which has never been in the lore. The owner sent a screenshot of a glowing lamp wall as the form; the layout and marks are
+ours, with no Destiny names, glyphs or art. A 7 by 4 chart "looks clustered as fuck". Approved from `system-plot-mockup.png`.
 
-Owner's rulings on the agent's proposal:
-- Labels: plain SOL numbers with their Greek names.
-- Form: a flat wall chart, not an orrery.
-- Timing: after the Watch Floor pass. Nothing is built until a mockup at 16 pixels a block is approved.
-
-Still only proposed: ORSA SYSTEM PLOT (SOL), 5 by 3 blocks on the cot room's north wall (the interior is 4 wide, so the mockup
-must check the fit), pale line on dark steel, Sun at the left. SOL-3 a broken ring with a dashed track outward and "stop
-updating this" pencilled by it; SOL-4 red-boxed, every route ending there, stencilled EXODUS; SOL-5 coded marks like
-"J-STN 1-4", never explained; SOL-6 to 8 fainter; optionally an archived "System Plot" entry.
-
-Greek names as the agent reads them, for the owner to confirm: Helios, SOL-1 Hermes, SOL-2 Aphrodite, SOL-3 Gaia, SOL-4 Ares,
-SOL-5 Zeus, SOL-6 Kronos, SOL-7 Ouranos, SOL-8 Poseidon.
+- Plain SOL numbers with the Greek names: Helios is unlabelled on the wall, SOL-1 Hermes, SOL-2 Aphrodite, SOL-3 Gaia, SOL-4 Ares,
+  SOL-5 Zeus, SOL-6 Kronos, SOL-7 Ouranos, SOL-8 Poseidon. Z-STN 1-4 and K-STN 2 are never explained.
+- A wall 24 blocks by 8, the north wall of its own room: interior x 41..64, z -16..-6, y-14..-7, through a two-wide gap at the
+  north-west of the cot room. `REACH` is 66, and the site that takes the vault now waits only on chunks east of it, so a low view
+  distance cannot hold back the first Helion site.
+- `VaultPlotRenderer` draws `textures/entity/vault_system_plot.png` as one full-bright quad, so it glows and lights nothing.
+- Needs the owner's eyes: how it reads from the room, and whether the room's dim light is right.

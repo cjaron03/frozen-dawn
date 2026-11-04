@@ -231,7 +231,7 @@ public final class VaultArgusBlockEntity extends BlockEntity {
     /** Everyone from the landing to the vault. */
     private List<ServerPlayer> sublevel(ServerLevel level) {
         var hall = hall();
-        var box = new AABB(hall.getX() - 3, hall.getY() + TerminusVaultBuilder.PIT_BOTTOM, hall.getZ() - 12, hall.getX() + TerminusVaultBuilder.REACH, hall.getY() + TerminusVaultBuilder.CEILING, hall.getZ() + 13);
+        var box = new AABB(hall.getX() - 3, hall.getY() + TerminusVaultBuilder.PIT_BOTTOM, hall.getZ() - 17, hall.getX() + TerminusVaultBuilder.REACH, hall.getY() + TerminusVaultBuilder.CEILING, hall.getZ() + 13);
         return alive(level).stream().filter(p -> box.contains(p.position())).toList();
     }
     private static List<ServerPlayer> alive(ServerLevel level) {

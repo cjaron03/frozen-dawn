@@ -219,7 +219,10 @@ public final class TerminusVaultGameTest {
             h.assertTrue(level.getBlockEntity(hall.offset(TerminusVaultBuilder.ARGUS)) instanceof VaultArgusBlockEntity,"Argus over the Watch Floor");
             h.assertTrue(level.getBlockState(hall.offset(16,TerminusVaultBuilder.FLOOR+1,-3)).getOptionalValue(VaultMarkBlock.MARK).filter(m->m==VaultMarkBlock.Mark.WARNING_14).isPresent(),"The warning ends by the door");
             h.assertTrue(TerminusVaultBuilder.LAST_DOOR.getX()==45&&TerminusVaultBuilder.CRADLE.getX()==50,"The last door and the vault moved east of the floor");
-            h.assertTrue(level.getBlockState(hall.offset(TerminusVaultBuilder.REACH-1,TerminusVaultBuilder.CEILING,0)).is(ModBlocks.VAULT_SHELL.get()),"The shell runs that far");
+            h.assertTrue(level.getBlockState(hall.offset(TerminusVaultBuilder.REACH-1,TerminusVaultBuilder.FLOOR+1,-10)).is(ModBlocks.VAULT_SHELL.get()),"The shell runs that far");
+            h.assertTrue(level.getBlockEntity(hall.offset(TerminusVaultBuilder.PLOT)) instanceof VaultPlotBlockEntity,"The plot's wall");
+            for(int z=-3;z>=-15;z--) h.assertTrue(level.getBlockState(hall.offset(41,TerminusVaultBuilder.FLOOR+1,z)).isAir()||z==-3,"The way from the cot room to the plot, at "+z);
+            h.assertTrue(level.getBlockState(hall.offset(64,TerminusVaultBuilder.FLOOR+8,-16)).isAir(),"A wall twenty-four wide and eight tall");
             var shell=level.getBlockState(hall.offset(-3,TerminusVaultBuilder.CEILING,0));
             h.assertTrue(shell.is(ModBlocks.VAULT_SHELL.get())&&shell.getDestroySpeed(level,hall)<0&&shell.getBlock().getExplosionResistance()>1000,"A shell nothing mines or blasts");
         } finally {state.setVaultForTest(was);}
