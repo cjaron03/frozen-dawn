@@ -46,7 +46,7 @@ def scripts():
              'tp @s 0.5 65 0.5 0 0', 'fd terminus vault place',
              'setworldspawn 0 65 0', 'spawnpoint @s 0 65 0',
              'scoreboard players set #built vault 1', 'function '+NS+':controls', 'return 1']
-    rooms = {'hall': (tp(5, 0, 0, 90), 'The hall, by the crack in the torus. The Core is the prize, and it comes out with a pickaxe.'),
+    rooms = {'hall': (tp(7, 1, 0, 90), 'The hall, by the crack in the torus. The Core is the prize, and it comes out with a pickaxe.'),
              'landing': (tp(-1, -14, 0, -90), 'The landing. Door 1 is east: turn your back and listen.'),
              'ledge': (tp(5, -14, 0, 90), 'The ledge, at the lip. The far side is east. Your body must not face it; F5 twice shows your own face.'),
              'cot': (tp(18, -14, 1, -90), 'The cot room. The last door is east, the cot along the south wall.')}
