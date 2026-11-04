@@ -237,11 +237,13 @@ class ArgusFightTest {
     @Test
     void thePulseQuickensAsTheClockFalls() {
         var fight = started(16);
-        assertEquals(40, fight.pulseEvery());
+        assertEquals(24, fight.pulseEvery(), "A resting heart");
+        assertEquals(.45f, fight.pulseVolume(), .001, "Barely there");
         ticks(fight, ArgusFight.CLOCK_TICKS / 2, false);
-        assertEquals(25, fight.pulseEvery());
+        assertEquals(17, fight.pulseEvery());
         ticks(fight, ArgusFight.CLOCK_TICKS / 2 - 1, false);
-        assertEquals(10, fight.pulseEvery());
+        assertEquals(10, fight.pulseEvery(), "A frightened one");
+        assertEquals(1, fight.pulseVolume(), .001);
     }
 
     @Test

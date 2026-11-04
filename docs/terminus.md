@@ -473,6 +473,14 @@ default title Terminus Watch Floor Check. Buttons for each room, each stage of t
 - GameTests (`terminus_floor`): `TerminusWatchFloorGameTest`, the floor built whole in the air over each test.
 - Needs the owner's eyes and ears: everything judged by look, sound or feel, how hard it is, and whether the archives open.
 
+## Owner playtest 1 of the Watch Floor, 2026-11-03 (Terminus Watch Floor Check, runClientLab, branch head 77d7fdbb)
+
+Unprompted report: "arhcives oepend yes, but idk the heart beat in the room with the custodian was weird asf. make it better,
+plus i did NOT know what i was doing lol"
+
+The log: Drain Schedule archived at 18:50:29, Seal Order at 18:52:07, slain by the Custodian at 18:52:59, quit at 18:53:26. The
+archives fix is confirmed. This run had no voice on the recording, which came in `e46f8485`.
+
 ## ORSA System Plot (idea, not drawn or built)
 
 Owner request, 2026-11-03: a map of the solar system somewhere quiet in the vault, showing what everyone was looking at when

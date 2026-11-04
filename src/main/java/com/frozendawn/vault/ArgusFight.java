@@ -18,7 +18,7 @@ public final class ArgusFight {
     public static final int GLYPHS = 6, ROUNDS = 3, CLOCK_TICKS = 4 * 60 * 20, BURN_TICKS = 15 * 20, PENALTY_TICKS = 20 * 20, HOLD_TICKS = 40;
     /** A held use repeats every four ticks; a longer gap than this is a hand let go. */
     private static final int HOLD_GAP = 8;
-    private static final int PULSE_SLOWEST = 40, PULSE_FASTEST = 10;
+    private static final int PULSE_SLOWEST = 24, PULSE_FASTEST = 10;
 
     private final Random random;
     private Phase phase = Phase.DORMANT;
@@ -138,6 +138,8 @@ public final class ArgusFight {
     public int lights(int total) { return Math.max(1, (int) Math.ceil(total * left() * left())); }
     /** Ticks between bass pulses. */
     public int pulseEvery() { return Math.round(PULSE_FASTEST + (PULSE_SLOWEST - PULSE_FASTEST) * left()); }
+    /** The heartbeat is barely there on a full clock and fills the room at the end. */
+    public float pulseVolume() { return 1 - .55f * left(); }
     public int seconds() { return (clock + 19) / 20; }
     public static String text(int seconds) { return String.format("%02d:%02d", seconds / 60, seconds % 60); }
 

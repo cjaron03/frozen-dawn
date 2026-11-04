@@ -32,10 +32,11 @@ render grind \
   -f lavfi -i "aevalsrc='0.5*sin(2*PI*34*t)*(0.75+0.25*sin(2*PI*11*t))':d=0.55:s=44100" \
   -filter_complex "[0:a]lowpass=f=520,highpass=f=70,tremolo=f=17:d=0.6[n];[n][1:a]amix=inputs=2:normalize=0,afade=t=in:st=0:d=0.04,afade=t=out:st=0.46:d=0.09,alimiter=limit=0.8:level=0[out]"
 
-# The Watch Floor's bass pulse, 0.35 s, sent at a rate that quickens with the clock: one thump at 42 Hz falling away fast.
+# The Watch Floor's heartbeat, 0.42 s, sent at a rate that quickens with the clock (owner, 2026-11-03: the first cut, one bare
+# 42 Hz thump, was "weird"): a lub and a softer dub, each a short soft-edged burst of 62 Hz and its octave, so small speakers carry it.
 render pulse \
-  -f lavfi -i "aevalsrc='0.9*sin(2*PI*(42*t-14*t*t))*exp(-11*t)':s=44100:d=0.35" \
-  -filter_complex "[0:a]afade=t=out:st=0.3:d=0.05,alimiter=limit=0.85:level=0[out]"
+  -f lavfi -i "aevalsrc='(0.8*sin(2*PI*62*t)+0.35*sin(2*PI*124*t))*(exp(-pow((t-0.06)/0.03\,2))+0.65*exp(-pow((t-0.25)/0.026\,2)))':s=44100:d=0.42" \
+  -filter_complex "[0:a]lowpass=f=420,alimiter=limit=0.8:level=0[out]"
 
 # A fuse, 0.09 s: a dry relay click, pitched up by the game while a hold builds and again when it seats.
 render fuse \

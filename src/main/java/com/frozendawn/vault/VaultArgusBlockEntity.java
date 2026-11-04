@@ -200,7 +200,7 @@ public final class VaultArgusBlockEntity extends BlockEntity {
         long now = level.getGameTime();
         if (now < nextPulse) return;
         nextPulse = now + fight.pulseEvery();
-        for (var player : inside) send(player, ModSounds.VAULT_PULSE.get(), 1);
+        for (var player : inside) send(player, ModSounds.VAULT_PULSE.get(), fight.pulseVolume());
     }
 
     private void announce(List<ServerPlayer> sublevel) {
