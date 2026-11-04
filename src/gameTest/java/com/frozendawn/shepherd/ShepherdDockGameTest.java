@@ -114,7 +114,7 @@ public final class ShepherdDockGameTest {
             var player = holding(h, dock, 1000);
             use(h, dock, player);
             h.assertTrue(data(h).stage() == Stage.AWAKE, "And it wakes her");
-            h.succeed();
+            h.succeedWhen(() -> h.assertTrue(data(h).entity() != null, "She lifts off"));
         });
     }
 }
