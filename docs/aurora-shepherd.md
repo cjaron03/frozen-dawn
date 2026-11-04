@@ -1,6 +1,6 @@
 # Aurora, ORSA CS-1 "Shepherd"
 
-Companion and dialogue system. Design only: no game code exists. PR 147 (the Terminus Vault) merged on 2026-11-04 as b333ece9, so the vault is on `feat/maeve-director`; building waits for the owner's word.
+Companion and dialogue system. Slice S1 is built on `feat/aurora-shepherd`, creative only; see Status. PR 147 (the Terminus Vault) merged on 2026-11-04 as b333ece9, so the vault is on `feat/maeve-director`.
 
 Sources: Notion, Frozen Dawn / Backlog, "Aurora (ORSA CS-1 "Shepherd") — Companion and Dialogue System" and its child "Aurora — Dialogue Script v1" (both 2026-11-04). Those pages hold the character and every line, and carry the fixes below as of 2026-11-04. This file is the tracked handoff: what was settled against the built game, the art, and the slices.
 
@@ -262,4 +262,8 @@ S1 is planned in [aurora-shepherd-plan.md](aurora-shepherd-plan.md).
 
 ## Status
 
-2026-11-04: design written, all five mockups approved, no code. PR 147 has merged; waiting on the owner's word to start S1.
+2026-11-04: design written, all five mockups approved. PR 147 merged and the owner said to start.
+
+2026-11-04: S1 built on `feat/aurora-shepherd` in `/Volumes/SSD/Work/frozen-dawn-aurora-shepherd`. `architectVerify` passed at 94544d2a: 968 GameTests, all 758 required cases verified, 31 of them hers. Active save: `run-lab/saves/Shepherd Check`, from `tools/prepare_shepherd_playtest.py`. Waiting on the branch review and the owner's visual pass; `architectMonkey` has not run and is due before any merge.
+
+Draft for the owner to mark: `hub.talk`, the one line her hub's Talk has in S1, in a mild and a heavy form, and the two reply labels "Why Aurora?" and "Aurora it is." that the script's "If the player asks why" needs. The blip, boot chime and refuse click are auditions: `tools/generate_shepherd_sounds.sh` also writes three of each to `build/shepherd-sound-candidates`.
