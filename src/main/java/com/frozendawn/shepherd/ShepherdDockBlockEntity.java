@@ -27,7 +27,9 @@ public final class ShepherdDockBlockEntity extends BlockEntity {
 
     /** The cell is already spent. */
     public void wake(ServerPlayer waker) {
-        ShepherdSavedData.get(waker.getServer()).stage(Stage.AWAKE);
+        var data = ShepherdSavedData.get(waker.getServer());
+        data.stage(Stage.AWAKE);
+        data.resumeNode(ShepherdTalk.FIRST_MEETING);
         bootTicks = BOOT_TICKS;
         this.waker = waker.getUUID();
         setState(DockState.BOOT);
@@ -41,6 +43,8 @@ public final class ShepherdDockBlockEntity extends BlockEntity {
     private void liftOff() {
         bootTicks = 0;
         ShepherdEntity.spawnFrom((ServerLevel) level, worldPosition.above(), waker);
+        // A waker who has left finds the first meeting waiting on their next right-click.
+        if (level.getPlayerByUUID(waker) instanceof ServerPlayer player) ShepherdTalk.start(player, ShepherdTalk.FIRST_MEETING);
     }
 
     /** The dock is going away: she is already awake and has to be somewhere. */

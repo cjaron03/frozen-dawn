@@ -11,6 +11,8 @@ import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MoverType;
@@ -21,6 +23,7 @@ import net.minecraft.world.entity.ai.control.FlyingMoveControl;
 import net.minecraft.world.entity.ai.goal.Goal;
 import net.minecraft.world.entity.ai.navigation.FlyingPathNavigation;
 import net.minecraft.world.entity.ai.navigation.PathNavigation;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 
@@ -179,6 +182,11 @@ public final class ShepherdEntity extends PathfinderMob {
     private ServerPlayer follower() {
         var id = ShepherdSavedData.get(getServer()).follower();
         return id != null && level().getPlayerByUUID(id) instanceof ServerPlayer player ? player : null;
+    }
+
+    @Override protected InteractionResult mobInteract(Player player, InteractionHand hand) {
+        if (hand == InteractionHand.MAIN_HAND && player instanceof ServerPlayer speaker) ShepherdTalk.openHub(speaker, this);
+        return InteractionResult.sidedSuccess(level().isClientSide);
     }
 
     @Override public boolean canBeSeenAsEnemy() {

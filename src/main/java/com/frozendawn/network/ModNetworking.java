@@ -16,6 +16,7 @@ import com.frozendawn.homo.HeartMaeveErasureManager;
 import com.frozendawn.homo.MasterArchitectFourthWallManager;
 import com.frozendawn.lore.ThaevenLoreManager;
 import com.frozendawn.lore.ThaevenRecordId;
+import com.frozendawn.shepherd.ShepherdTalk;
 import com.frozendawn.entity.UndoneEntity;
 import com.frozendawn.world.RocketLaunchManager;
 import net.minecraft.ChatFormatting;
@@ -40,6 +41,24 @@ public class ModNetworking {
     @SubscribeEvent
     public static void onRegisterPayloads(RegisterPayloadHandlersEvent event) {
         PayloadRegistrar registrar = event.registrar(FrozenDawn.MOD_ID);
+        registrar.playToClient(ShepherdNodePayload.TYPE, ShepherdNodePayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(() -> ClientHandlers.handleShepherdNode(payload)));
+        registrar.playToClient(ShepherdHubPayload.TYPE, ShepherdHubPayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(() -> ClientHandlers.handleShepherdHub(payload)));
+        registrar.playToServer(ShepherdReplyPayload.TYPE, ShepherdReplyPayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(() -> {
+                    if (context.player() instanceof ServerPlayer sp) ShepherdTalk.reply(sp, payload.conversation(), payload.slot());
+                }));
+        registrar.playToServer(ShepherdActionPayload.TYPE, ShepherdActionPayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(() -> {
+                    if (context.player() instanceof ServerPlayer sp) ShepherdTalk.action(sp, payload.conversation(), payload.action());
+                }));
+        registrar.playBidirectional(ShepherdClosePayload.TYPE, ShepherdClosePayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(() -> {
+                    if (context.player() instanceof ServerPlayer sp) ShepherdTalk.close(sp);
+                    else ClientHandlers.handleShepherdClose();
+                }));
+
         registrar.playToClient(CycloneSyncPayload.TYPE, CycloneSyncPayload.STREAM_CODEC,
                 (payload, context) -> context.enqueueWork(() -> ClientHandlers.handleCyclone(payload)));
 

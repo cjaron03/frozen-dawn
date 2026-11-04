@@ -334,4 +334,13 @@ public final class ClientHandlers {
             HeartMemoryNodeEventPayload payload) {
         HeartMemoryNodeClient.handleEvent(payload);
     }
+
+    public static void handleShepherdNode(ShepherdNodePayload payload) {
+    }
+
+    public static void handleShepherdHub(ShepherdHubPayload payload) {
+    }
+
+    public static void handleShepherdClose() {
+    }
 }
