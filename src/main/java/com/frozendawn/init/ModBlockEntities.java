@@ -116,7 +116,7 @@ public class ModBlockEntities {
             BLOCK_ENTITIES.register("plumb_line", () -> BlockEntityType.Builder.of(com.frozendawn.block.PlumbLineBlockEntity::new,ModBlocks.PLUMB_LINE.get()).build(null));
 
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.frozendawn.shepherd.ShepherdDockBlockEntity>> CS1_DOCK =
-            BLOCK_ENTITIES.register("cs1_dock", () -> BlockEntityType.Builder.of(com.frozendawn.shepherd.ShepherdDockBlockEntity::new, ModBlocks.CS1_DOCK.get()).build(null));
+            BLOCK_ENTITIES.register("cs1_dock", () -> BlockEntityType.Builder.of(com.frozendawn.shepherd.ShepherdDockBlockEntity::new, ModBlocks.CS1_DOCK.get(), ModBlocks.VAULT_CS1_DOCK.get()).build(null));
 
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.frozendawn.block.UplinkConsoleBlockEntity>> UPLINK_CONSOLE =
             BLOCK_ENTITIES.register("uplink_console", () -> BlockEntityType.Builder.of(com.frozendawn.block.UplinkConsoleBlockEntity::new,ModBlocks.UPLINK_CONSOLE.get()).build(null));

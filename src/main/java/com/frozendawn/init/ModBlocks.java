@@ -276,6 +276,9 @@ public class ModBlocks {
             () -> new com.frozendawn.vault.VaultCradleBlock(vaultSealed(MapColor.METAL).sound(SoundType.METAL).noOcclusion()));
     public static final DeferredBlock<com.frozendawn.vault.VaultDeskBlock> VAULT_DESK = BLOCKS.register("vault_desk",
             () -> new com.frozendawn.vault.VaultDeskBlock(vaultSealed(MapColor.METAL).sound(SoundType.METAL).noOcclusion()));
+    /** Her dock where the story leaves it: the same dock, sealed like the fittings around it, with no item of its own. */
+    public static final DeferredBlock<com.frozendawn.shepherd.ShepherdDockBlock> VAULT_CS1_DOCK = BLOCKS.register("vault_cs1_dock",
+            () -> new com.frozendawn.shepherd.ShepherdDockBlock(vaultSealed(MapColor.METAL).sound(SoundType.METAL).noOcclusion()));
     public static final DeferredBlock<com.frozendawn.vault.VaultArgusBlock> VAULT_ARGUS = BLOCKS.register("vault_argus",
             () -> new com.frozendawn.vault.VaultArgusBlock(vaultSealed(MapColor.COLOR_GRAY)));
     public static final DeferredBlock<com.frozendawn.vault.VaultBoardBlock> VAULT_BOARD = BLOCKS.register("vault_board",
