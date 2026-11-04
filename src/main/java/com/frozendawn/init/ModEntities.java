@@ -37,6 +37,16 @@ public class ModEntities {
     public static final DeferredRegister<EntityType<?>> ENTITIES =
             DeferredRegister.create(Registries.ENTITY_TYPE, FrozenDawn.MOD_ID);
 
+    public static final DeferredHolder<EntityType<?>, EntityType<com.frozendawn.vault.CustodianEntity>> CUSTODIAN =
+            ENTITIES.register("custodian", () -> EntityType.Builder
+                    .of(com.frozendawn.vault.CustodianEntity::new, MobCategory.MISC)
+                    .sized(1.9F, 3.0F)
+                    .eyeHeight(2.7F)
+                    .fireImmune()
+                    .clientTrackingRange(10)
+                    .updateInterval(1)
+                    .build("custodian"));
+
     public static final DeferredHolder<EntityType<?>, EntityType<AggregateEntity>> AGGREGATE =
             ENTITIES.register("aggregate", () -> EntityType.Builder
                     .of(AggregateEntity::new, MobCategory.MONSTER)

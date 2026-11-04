@@ -10,6 +10,13 @@
     "frozendawn:vault_cot",
     "frozendawn:vault_technician",
     "frozendawn:vault_cradle",
-    "frozendawn:vault_desk"
+    "frozendawn:vault_desk",
+    "frozendawn:vault_argus",
+    "frozendawn:vault_board",
+    "frozendawn:vault_fuse",
+    "frozendawn:vault_fight_clock",
+    "frozendawn:vault_light",
+    "frozendawn:vault_mark",
+    "frozendawn:vault_dressing"
   ]
 }

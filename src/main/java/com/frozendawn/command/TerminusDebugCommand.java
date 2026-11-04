@@ -5,10 +5,13 @@ import com.frozendawn.defense.Terminus;
 import com.frozendawn.defense.TerminusToll;
 import com.frozendawn.defense.TerminusLedger;
 import com.frozendawn.init.ModAttachments;
+import com.frozendawn.vault.ArgusFight;
 import com.frozendawn.vault.TerminusVaultBuilder;
+import com.frozendawn.vault.VaultArgusBlockEntity;
 import com.frozendawn.vault.VaultMechanismBlockEntity;
 import com.frozendawn.world.HelionSitePlacement;
 import com.mojang.brigadier.arguments.BoolArgumentType;
+import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -71,6 +74,24 @@ final class TerminusDebugCommand {
                             player.sendSystemMessage(Component.literal(hall == null ? "No Terminus Vault in this world" : "Terminus Vault reset: doors shut, bridge in, wand back"));
                             return 1;
                         }))
+                        .then(Commands.literal("fight")
+                                .then(Commands.literal("start").executes(c -> fight(c.getSource(), f -> f.jump(0, ArgusFight.Phase.WAITING, ArgusFight.CLOCK_TICKS))))
+                                .then(Commands.literal("round").then(Commands.argument("round", IntegerArgumentType.integer(1, 3)).executes(c -> {
+                                    int won = IntegerArgumentType.getInteger(c, "round") - 1;
+                                    return fight(c.getSource(), f -> f.jump(won, ArgusFight.Phase.WAITING, ArgusFight.CLOCK_TICKS));
+                                })))
+                                .then(Commands.literal("pull").then(Commands.argument("round", IntegerArgumentType.integer(1, 3)).executes(c -> {
+                                    int won = IntegerArgumentType.getInteger(c, "round") - 1;
+                                    return fight(c.getSource(), f -> f.jump(won, ArgusFight.Phase.PULL, ArgusFight.CLOCK_TICKS));
+                                })))
+                                .then(Commands.literal("burn").then(Commands.argument("round", IntegerArgumentType.integer(1, 3)).executes(c -> {
+                                    int won = IntegerArgumentType.getInteger(c, "round") - 1;
+                                    return fight(c.getSource(), f -> f.jump(won, ArgusFight.Phase.BURN, ArgusFight.CLOCK_TICKS));
+                                })))
+                                .then(Commands.literal("clock").then(Commands.argument("seconds", IntegerArgumentType.integer(1, ArgusFight.CLOCK_TICKS / 20)).executes(c -> {
+                                    int seconds = IntegerArgumentType.getInteger(c, "seconds");
+                                    return fight(c.getSource(), f -> f.setClock(seconds * 20));
+                                }))))
                         .then(Commands.literal("status").executes(c -> {
                             var server = c.getSource().getServer();
                             var hall = HelionSiteState.get(server).vault();
@@ -80,6 +101,12 @@ final class TerminusDebugCommand {
                                 text = "Terminus Vault at " + hall.toShortString() + ":";
                                 for (var at : new BlockPos[] {TerminusVaultBuilder.DOOR, TerminusVaultBuilder.BRIDGE, TerminusVaultBuilder.LAST_DOOR})
                                     if (level.getBlockEntity(hall.offset(at)) instanceof VaultMechanismBlockEntity m) text += " " + m.kind().getSerializedName() + " " + m.progress();
+                                if (level.getBlockEntity(hall.offset(TerminusVaultBuilder.ARGUS)) instanceof VaultArgusBlockEntity argus) {
+                                    var fight = argus.fight();
+                                    text += " | fight " + fight.phase() + ", " + ArgusFight.text(fight.seconds()) + ", openings " + fight.won() + ", clean " + fight.clean()
+                                            + ", wanted " + java.util.Arrays.toString(fight.wanted()) + ", fuses " + java.util.Arrays.toString(fight.fuses());
+                                    if (argus.custodian() != null) text += ", Custodian " + Math.round(argus.custodian().getHealth()) + "/" + Math.round(argus.custodian().getMaxHealth());
+                                }
                             }
                             c.getSource().getPlayerOrException().sendSystemMessage(Component.literal(text));
                             return 1;
@@ -91,5 +118,13 @@ final class TerminusDebugCommand {
                             "Terminus log set to " + (turned ? "terminations (after the Heart)" : "transfers (before the Heart)")));
                     return 1;
                 })));
+    }
+
+    /** Playtest only: a stage of the Watch Floor's fight, on the world's own Argus. */
+    private static int fight(CommandSourceStack source, java.util.function.Consumer<ArgusFight> stage) {
+        var hall = HelionSiteState.get(source.getServer()).vault();
+        if (hall == null || !(source.getServer().overworld().getBlockEntity(hall.offset(TerminusVaultBuilder.ARGUS)) instanceof VaultArgusBlockEntity argus)) return 0;
+        stage.accept(argus.fight());
+        return 1;
     }
 }

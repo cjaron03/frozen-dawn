@@ -19,7 +19,7 @@ import org.jetbrains.annotations.Nullable;
 /** A block of the shell that drives one of the vault's mechanisms from inside the wall. */
 public final class VaultMechanismBlock extends BaseEntityBlock {
     public enum Kind implements StringRepresentable {
-        DOOR, BRIDGE, LAST_DOOR;
+        DOOR, BRIDGE, LAST_DOOR, GATE;
         @Override public String getSerializedName() { return name().toLowerCase(java.util.Locale.ROOT); }
     }
     public static final EnumProperty<Kind> KIND = EnumProperty.create("kind", Kind.class);

@@ -1,4 +1,5 @@
-"""Textures of the Terminus Vault, from the approved mockups (vault-rooms-mockup.png, vault-contents-mockup.png).
+"""Textures of the Terminus Vault, from the approved mockups (vault-rooms-mockup.png, vault-contents-mockup.png,
+watch-floor-mockup.png, vault-branding-mockup.png).
 Writes into the mod's assets. Run from anywhere: python3 docs/art/terminus/make_vault_textures.py
 """
 import random
@@ -60,6 +61,168 @@ def clock_face():
     return im
 
 
+FONT = {'A': '111/101/111/101/101', 'C': '111/100/100/100/111', 'D': '110/101/101/101/110', 'E': '111/100/110/100/111', 'F': '111/100/110/100/100',
+        'G': '111/100/101/101/111', 'I': '111/010/010/010/111', 'L': '100/100/100/100/111', 'O': '111/101/101/101/111', 'P': '111/101/111/100/100',
+        'R': '110/101/110/101/101', 'S': '111/100/111/001/111', 'U': '101/101/101/101/111', 'V': '101/101/101/101/010', 'X': '101/101/010/101/101',
+        '1': '010/110/010/010/111', '3': '111/001/011/001/111', '4': '101/101/111/001/001', '-': '000/000/111/000/000', ' ': '000/000/000/000/000',
+        '>': '100/010/001/010/100', '<': '001/010/100/010/001'}
+STENCIL = hexc('d6c896')
+# The approved glyphs, from make_watch_floor_mockup.py.
+GLYPHS = ['..##..../.#..#.../.#..#.../..##..../...#..../...#..../..###.../........',
+          '#......#/.#....#./..#..#../...##.../...##.../..#..#../.#....#./#......#',
+          '...##.../..####../.##..##./##....##/##....##/.##..##./..####../...##...',
+          '########/#......#/#.####.#/#.#..#.#/#.#..#.#/#.####.#/#......#/########',
+          '#.#.#.#./.#.#.#.#/#.#.#.#./.#.#.#.#/#.#.#.#./.#.#.#.#/#.#.#.#./.#.#.#.#',
+          '...#..../..###.../.#####../#######./...#..../...#..../...#..../...#....']
+
+
+def stencil(im, x, y, text, colour=STENCIL):
+    for ch in text:
+        for j, row in enumerate(FONT[ch].split('/')):
+            for i, c in enumerate(row):
+                if c == '1' and 0 <= x + i < im.width:
+                    im.putpixel((x + i, y + j), colour)
+        x += 4
+
+
+def branded(viewport):
+    """The door as branded: door 1's chevrons kept, the facility stencilled over them and the seal welded in a hurry."""
+    im = panel(viewport)
+    d = ImageDraw.Draw(im)
+    if viewport:
+        stencil(im, 15, 3, 'ORSA')
+        stencil(im, 13, 30, 'CVF-1')
+        return im
+    d.rectangle((0, 4, 47, 33), hexc('3a4045'))
+    for x in (0, 15, 16, 31, 32, 47):
+        d.line((x, 4, x, 33), hexc('2c3034'))
+    for y in range(34, 42):
+        for x in range(48):
+            d.point((x, y), hexc('a89654') if ((x + y) // 4) % 2 == 0 else hexc('3a4045'))
+    stencil(im, 15, 8, 'ORSA')
+    stencil(im, 13, 16, 'CVF-1')
+    stencil(im, 7, 24, 'SEALED')
+    r = random.Random(5)
+    for y in range(1, 47, 3):                       # the weld bead down the seam, rough
+        d.point((47 - r.randint(0, 1), y), hexc('c49660'))
+    return im
+
+
+def shell(seed):
+    return noise('s', ['5b6064', '555a5e'], seed)
+
+
+def hazard(seed, x0):
+    """A shell tile with the band along its foot."""
+    im = shell(seed)
+    for x in range(16):
+        for y in range(12, 16):
+            if ((x + x0) // 6) % 2 == 0:
+                im.putpixel((x, y), hexc('a89654'))
+    return im
+
+
+def word(text, tiles, seed):
+    """Stencil across several tiles, over the band."""
+    wide = Image.new('RGBA', (16 * tiles, 16))
+    for i in range(tiles):
+        wide.paste(hazard(seed + i, i * 16), (i * 16, 0))
+    stencil(wide, 2, 4, text)
+    return [wide.crop((i * 16, 0, i * 16 + 16, 16)) for i in range(tiles)]
+
+
+def plain_word(text, tiles, seed):
+    wide = Image.new('RGBA', (16 * tiles, 16))
+    for i in range(tiles):
+        wide.paste(shell(seed + i), (i * 16, 0))
+    stencil(wide, 2, 5, text)
+    return [wide.crop((i * 16, 0, i * 16 + 16, 16)) for i in range(tiles)]
+
+
+def flag():
+    """The weathered flag laid flat on the wall, as the branding mockup: two tiles."""
+    source = Image.open(BLOCK / 'orsa_flag_weathered.png').convert('RGBA').resize((32, 16), Image.NEAREST)
+    return [source.crop((i * 16, 0, i * 16 + 16, 16)) for i in range(2)]
+
+
+def glyph(index, lamp):
+    """A panel of the board or a fuse: dark steel, the 8x8 glyph, pale lit, grey dark, gold once pulled."""
+    colour = {'lit': hexc('9fd6e8'), 'dark': hexc('3a4248'), 'pulled': hexc('d6b45c')}[lamp]
+    im = Image.new('RGBA', (16, 16), hexc('2c3034'))
+    d = ImageDraw.Draw(im)
+    d.rectangle((1, 1, 14, 14), hexc('0e1216'))
+    for y, row in enumerate(GLYPHS[index].split('/')):
+        for x, c in enumerate(row):
+            if c == '#':
+                im.putpixel((x + 4, y + 4), colour)
+    return im
+
+
+def crate():
+    side = noise('c', ['4f5a48', '48524a'], 9)
+    d = ImageDraw.Draw(side)
+    d.rectangle((0, 0, 15, 15), outline=hexc('3c4438'))
+    top = side.copy()
+    ImageDraw.Draw(top).rectangle((2, 2, 13, 13), hexc('181c1e'))
+    return side, top
+
+
+def seal_order():
+    im = noise('a', ['ded6be', 'd6cdb4'], 8)
+    d = ImageDraw.Draw(im)
+    d.rectangle((0, 0, 15, 2), hexc('963428'))
+    for y in (5, 7, 9, 11):
+        d.line((2, y, 13, y), hexc('6a665c'))
+    return im
+
+
+# Custodian: the mockup's shut and open frames on a 128x64 sheet, faces laid out as CustodianModel's boxes.
+STEEL, DARK, FROST = hexc('70787e'), hexc('3a4045'), hexc('d6e2e8')
+
+
+def faces(d, u, v, w, h, depth, colour):
+    d.rectangle((u + depth, v, u + depth + 2 * w - 1, v + depth - 1), colour)
+    d.rectangle((u, v + depth, u + 2 * depth + 2 * w - 1, v + depth + h - 1), colour)
+
+
+def custodian(open_):
+    im = Image.new('RGBA', (128, 64), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    faces(d, 0, 0, 12, 10, 10, STEEL)
+    faces(d, 0, 20, 20, 19, 10, STEEL)
+    faces(d, 64, 0, 6, 25, 6, DARK)
+    faces(d, 64, 32, 6, 19, 8, DARK)
+    hx, hy = 10, 10                                     # the head's front face
+    d.rectangle((hx + 3, hy + 3, hx + 8, hy + 6), hexc('0a0c0e'))
+    bx, by = 10, 30                                     # the chest's front face
+    if open_:
+        d.rectangle((bx + 3, by + 3, bx + 16, by + 16), hexc('06080a'))
+        d.rectangle((bx + 1, by + 2, bx + 2, by + 16), hexc('8a9298'))
+        d.rectangle((bx + 17, by + 2, bx + 18, by + 16), hexc('8a9298'))
+    else:
+        d.line((bx + 9, by + 1, bx + 9, by + 18), DARK)
+        d.rectangle((bx + 3, by + 3, bx + 16, by + 10), hexc('a89654'))
+        stencil(im, bx + 4, by + 4, 'CSU', hexc('1e2022'))
+        stencil(im, bx + 8, by + 12, '3', hexc('282c30'))
+    r = random.Random(3)
+    for _ in range(170):
+        x, y = r.randint(0, 127), r.randint(0, 63)
+        inside_plate = bx + 2 <= x <= bx + 17 and by + 2 <= y <= by + 17
+        if im.getpixel((x, y))[3] and not inside_plate:
+            im.putpixel((x, y), FROST)
+    return im
+
+
+def custodian_glow(open_):
+    """Drawn through the eyes render type: the pale lens, and the core while the shell is open."""
+    im = Image.new('RGBA', (128, 64), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    d.rectangle((15, 14, 16, 15), hexc('d6f0fa'))
+    if open_:
+        d.rectangle((17, 36, 22, 43), hexc('f4fbff'))
+    return im
+
+
 SEGMENTS = {'0': 'abcdef', '1': 'bc', '2': 'abged', '3': 'abgcd', '4': 'fgbc', '5': 'afgcd', '6': 'afgedc', '7': 'abc', '8': 'abcdefg', '9': 'abcfgd'}
 PARTS = dict(a=(0, 0, 2, 0), b=(2, 0, 2, 2), c=(2, 2, 2, 4), d=(0, 4, 2, 4), e=(0, 2, 0, 4), f=(0, 0, 0, 2), g=(0, 2, 2, 2))
 
@@ -110,8 +273,30 @@ def main():
     noise('m', ['4e5f6e', '465664'], 5).save(BLOCK / 'vault_cot_blanket.png')
     noise('p', ['c8ccc8', 'bec2be'], 6).save(BLOCK / 'vault_cot_pillow.png')
     noise('a', ['ded6be', 'd6cdb4'], 8).save(BLOCK / 'vault_paper.png')
-    panel(False).save(BLOCK / 'vault_door_panel.png')
-    panel(True).save(BLOCK / 'vault_last_door_panel.png')
+    branded(False).save(BLOCK / 'vault_door_panel.png')
+    branded(True).save(BLOCK / 'vault_last_door_panel.png')
+    hazard(21, 0).save(BLOCK / 'vault_mark_hazard.png')
+    for i, tile in enumerate(word('EXO > > >', 3, 22)):
+        tile.save(BLOCK / f'vault_mark_exo_right_{i}.png')
+    for i, tile in enumerate(word('< < < EXO', 3, 25)):
+        tile.save(BLOCK / f'vault_mark_exo_left_{i}.png')
+    for i, tile in enumerate(plain_word('ISS-4 ARGUS', 3, 28)):
+        tile.save(BLOCK / f'vault_mark_argus_{i}.png')
+    for i, tile in enumerate(flag()):
+        tile.save(BLOCK / f'vault_mark_flag_{i}.png')
+    for index in range(6):
+        for lamp in ('dark', 'lit', 'pulled'):
+            glyph(index, lamp).save(BLOCK / f'vault_glyph_{index}_{lamp}.png')
+    side, top = crate()
+    side.save(BLOCK / 'vault_crate_side.png')
+    top.save(BLOCK / 'vault_crate_top.png')
+    noise('e', ['2e2822', '26211c'], 11).save(BLOCK / 'vault_case.png')
+    noise('h', ['d6be50', 'cfb648'], 12).save(BLOCK / 'vault_hard_hat.png')
+    seal_order().save(BLOCK / 'vault_seal_order.png')
+    custodian(False).save(ENTITY / 'custodian.png')
+    custodian(True).save(ENTITY / 'custodian_open.png')
+    custodian_glow(False).save(ENTITY / 'custodian_lens.png')
+    custodian_glow(True).save(ENTITY / 'custodian_lens_open.png')
     clock_face().save(ENTITY / 'vault_clock_face.png')
     # Drawn directly, not from the block atlas: a 44x5 sheet there would turn every block's mipmaps off.
     clock_digits().save(ENTITY / 'vault_clock_digits.png')

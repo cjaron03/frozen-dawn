@@ -14,7 +14,7 @@ import org.junit.jupiter.api.Test;
 /** The vault's paper: filed in the manual, the Keats as printed, and nothing that names what the wand does. */
 class VaultDocumentsTest {
     private static List<String> all() {
-        var docs = new ArrayList<>(List.of(VaultDocuments.DRAIN_SCHEDULE, VaultDocuments.MANIFEST, VaultDocuments.NAME_REVIEW));
+        var docs = new ArrayList<>(List.of(VaultDocuments.DRAIN_SCHEDULE, VaultDocuments.MANIFEST, VaultDocuments.NAME_REVIEW, VaultDocuments.SEAL_ORDER));
         docs.addAll(VaultDocuments.TALE_LOGS);
         return docs;
     }
@@ -58,6 +58,13 @@ class VaultDocumentsTest {
     void theClueReadsAsTheOwnerSawIt() throws IOException {
         var sheet = text(entry(VaultDocuments.DRAIN_SCHEDULE), 0);
         assertTrue(sheet.contains("Floor drains drawn: 5$(br)Floor drains in hall: 4"), sheet);
+    }
+
+    @Test
+    void theSealOrderSaysWhatWasDrawn() throws IOException {
+        var order = text(entry(VaultDocuments.SEAL_ORDER), 0);
+        for (var line : List.of("All CVF-1 staff to Exodus by 2200", "ISS-4 armed on last badge-out", "CSU-3 remains on duty", "Nobody goes back for personal effects"))
+            assertTrue(order.contains(line), line);
     }
 
     @Test

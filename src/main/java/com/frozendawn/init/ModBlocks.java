@@ -273,6 +273,21 @@ public class ModBlocks {
             () -> new com.frozendawn.vault.VaultCradleBlock(vaultSealed(MapColor.METAL).sound(SoundType.METAL).noOcclusion()));
     public static final DeferredBlock<com.frozendawn.vault.VaultDeskBlock> VAULT_DESK = BLOCKS.register("vault_desk",
             () -> new com.frozendawn.vault.VaultDeskBlock(vaultSealed(MapColor.METAL).sound(SoundType.METAL).noOcclusion()));
+    public static final DeferredBlock<com.frozendawn.vault.VaultArgusBlock> VAULT_ARGUS = BLOCKS.register("vault_argus",
+            () -> new com.frozendawn.vault.VaultArgusBlock(vaultSealed(MapColor.COLOR_GRAY)));
+    public static final DeferredBlock<com.frozendawn.vault.VaultBoardBlock> VAULT_BOARD = BLOCKS.register("vault_board",
+            () -> new com.frozendawn.vault.VaultBoardBlock(vaultSealed(MapColor.METAL).sound(SoundType.METAL).lightLevel(com.frozendawn.vault.VaultBoardBlock::light)));
+    public static final DeferredBlock<com.frozendawn.vault.VaultFuseBlock> VAULT_FUSE = BLOCKS.register("vault_fuse",
+            () -> new com.frozendawn.vault.VaultFuseBlock(vaultSealed(MapColor.METAL).sound(SoundType.METAL).lightLevel(com.frozendawn.vault.VaultBoardBlock::light)));
+    public static final DeferredBlock<com.frozendawn.vault.VaultFightClockBlock> VAULT_FIGHT_CLOCK = BLOCKS.register("vault_fight_clock",
+            () -> new com.frozendawn.vault.VaultFightClockBlock(vaultSealed(MapColor.COLOR_GRAY)));
+    public static final DeferredBlock<com.frozendawn.vault.VaultLightBlock> VAULT_LIGHT = BLOCKS.register("vault_light",
+            () -> new com.frozendawn.vault.VaultLightBlock(vaultSealed(MapColor.COLOR_RED).sound(SoundType.METAL).noOcclusion().noCollission()
+                    .lightLevel(state -> state.getValue(com.frozendawn.vault.VaultLightBlock.LIT) ? 6 : 0)));
+    public static final DeferredBlock<com.frozendawn.vault.VaultMarkBlock> VAULT_MARK = BLOCKS.register("vault_mark",
+            () -> new com.frozendawn.vault.VaultMarkBlock(vaultSealed(MapColor.COLOR_GRAY)));
+    public static final DeferredBlock<com.frozendawn.vault.VaultDressingBlock> VAULT_DRESSING = BLOCKS.register("vault_dressing",
+            () -> new com.frozendawn.vault.VaultDressingBlock(vaultSealed(MapColor.COLOR_GRAY).noOcclusion()));
     public static final DeferredBlock<com.frozendawn.vault.VaultGrateBlock> VAULT_GRATE = BLOCKS.register("vault_grate",
             () -> new com.frozendawn.vault.VaultGrateBlock(BlockBehaviour.Properties.of().mapColor(MapColor.METAL).strength(5, 6)
                     .sound(SoundType.METAL).noOcclusion().noLootTable().pushReaction(PushReaction.BLOCK)

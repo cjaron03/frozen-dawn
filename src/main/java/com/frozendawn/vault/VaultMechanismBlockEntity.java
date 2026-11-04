@@ -23,7 +23,8 @@ import org.jetbrains.annotations.Nullable;
  * One mechanism of the Unwatched Door. Door 1 grinds open while unwatched; the bridge lays cells while unwatched and
  * someone stands near its end; the last door ignores all of that and opens only when a rest on the cot ends unwatched.
  * Progress is in ticks and only ever goes forward, so a frozen door stands where it stopped, through a reload too.
- * Doors are drawn by {@code VaultMechanismRenderer}; their {@code vault_door_cell} blocks only stop you.
+ * Doors are drawn by {@code VaultMechanismRenderer}; their {@code vault_door_cell} blocks only stop you. A Watch Floor gate
+ * answers to Argus alone, and shuts as well as opens.
  */
 public final class VaultMechanismBlockEntity extends BlockEntity {
     public static final int DOOR_TICKS = 80, CELL_TICKS = 15, REST_TICKS = 100, GRAIN_TICKS = 10;
@@ -42,7 +43,7 @@ public final class VaultMechanismBlockEntity extends BlockEntity {
     public int progress() { return progress; }
     public int cellsOut() { return progress / CELL_TICKS; }
     public boolean finished() {
-        return progress >= switch (kind()) { case DOOR -> DOOR_TICKS; case BRIDGE -> VaultBridge.SPAN * CELL_TICKS; case LAST_DOOR -> 1; };
+        return progress >= switch (kind()) { case DOOR, GATE -> DOOR_TICKS; case BRIDGE -> VaultBridge.SPAN * CELL_TICKS; case LAST_DOOR -> 1; };
     }
     public float shown(float partial) { return Mth.lerp(partial, shownBefore, shown); }
 
@@ -51,7 +52,7 @@ public final class VaultMechanismBlockEntity extends BlockEntity {
         self.shown += Mth.clamp(self.progress - self.shown, -2, 2);
     }
     public static void serverTick(Level level, BlockPos pos, BlockState state, VaultMechanismBlockEntity self) {
-        if (self.finished() || !(level instanceof ServerLevel server)) return;
+        if (self.finished() || self.kind() == Kind.GATE || !(level instanceof ServerLevel server)) return;
         if (self.kind() == Kind.LAST_DOOR) { self.tickRest(server); return; }
         boolean move = server.hasNearbyAlivePlayer(pos.getX() + .5, pos.getY() + .5, pos.getZ() + .5, VaultWatch.RANGE) && self.wants(server)
                 && !self.isWatched(server);
@@ -117,14 +118,28 @@ public final class VaultMechanismBlockEntity extends BlockEntity {
         rester.stopSleepInBed(false, true);
     }
 
+    /** A gate, set by Argus: the blocks change at once and the panel slides after them. */
+    public void gate(ServerLevel level, boolean open) {
+        if (open == finished()) return;
+        progress = open ? DOOR_TICKS : 0;
+        if (open) clearColumns(level, 3);
+        else placeCells(level);
+        level.playSound(null, worldPosition.below(3), ModSounds.VAULT_GRIND.get(), SoundSource.BLOCKS, 1, 1);
+        setChanged();
+        publish();
+    }
+    private void placeCells(ServerLevel level) {
+        var cell = ModBlocks.VAULT_DOOR_CELL.get().defaultBlockState().setValue(VaultDoorCellBlock.LAST, kind() == Kind.LAST_DOOR);
+        for (int dz = -1; dz <= 1; dz++) for (int dy = CELL_BOTTOM; dy <= CELL_TOP; dy++) level.setBlock(worldPosition.offset(0, dy, dz), cell, 3);
+    }
+
     private void publish() { if (level != null) level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 2); }
 
     /** Playtest only: back to the start, cells and all. */
     public void reset(ServerLevel level) {
         progress = 0; rest = 0; moving = false;
-        var cell = ModBlocks.VAULT_DOOR_CELL.get().defaultBlockState().setValue(VaultDoorCellBlock.LAST, kind() == Kind.LAST_DOOR);
         if (kind() == Kind.BRIDGE) for (int i = 1; i <= VaultBridge.SPAN; i++) level.setBlock(worldPosition.offset(i, 1, 0), Blocks.AIR.defaultBlockState(), 3);
-        else for (int dz = -1; dz <= 1; dz++) for (int dy = CELL_BOTTOM; dy <= CELL_TOP; dy++) level.setBlock(worldPosition.offset(0, dy, dz), cell, 3);
+        else placeCells(level);
         setChanged();
         publish();
     }

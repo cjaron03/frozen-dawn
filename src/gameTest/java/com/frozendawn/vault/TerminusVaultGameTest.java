@@ -216,6 +216,9 @@ public final class TerminusVaultGameTest {
             h.assertTrue(level.getBlockEntity(hall.offset(TerminusVaultBuilder.CLOCK)) instanceof VaultClockBlockEntity clock&&clock.start()==VaultClock.start(level.getSeed()),"The clock, set by the seed");
             h.assertTrue(level.getBlockEntity(hall.offset(TerminusVaultBuilder.LOCKER)) instanceof BarrelBlockEntity locker&&IntStream.range(0,locker.getContainerSize()).filter(i->locker.getItem(i).is(ModItems.ORSA_DOCUMENT.get())).count()==VaultDocuments.TALE_LOGS.size(),"The tale logs");
             h.assertTrue(level.getBlockEntity(hall.offset(HelionSiteBuilder.LOG_DESK)) instanceof BarrelBlockEntity desk&&desk.getItem(0).is(ModItems.ORSA_DOCUMENT.get()),"The one clue, in the hall's desk");
+            h.assertTrue(level.getBlockEntity(hall.offset(TerminusVaultBuilder.ARGUS)) instanceof VaultArgusBlockEntity,"Argus over the Watch Floor");
+            h.assertTrue(TerminusVaultBuilder.LAST_DOOR.getX()==45&&TerminusVaultBuilder.CRADLE.getX()==50,"The last door and the vault moved east of the floor");
+            h.assertTrue(level.getBlockState(hall.offset(TerminusVaultBuilder.REACH-1,TerminusVaultBuilder.CEILING,0)).is(ModBlocks.VAULT_SHELL.get()),"The shell runs that far");
             var shell=level.getBlockState(hall.offset(-3,TerminusVaultBuilder.CEILING,0));
             h.assertTrue(shell.is(ModBlocks.VAULT_SHELL.get())&&shell.getDestroySpeed(level,hall)<0&&shell.getBlock().getExplosionResistance()>1000,"A shell nothing mines or blasts");
         } finally {state.setVaultForTest(was);}
@@ -235,7 +238,7 @@ public final class TerminusVaultGameTest {
     @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="terminus_vault",timeoutTicks=4000)
     public static void everyVaultDocumentArchivesWhenRead(GameTestHelper h) {
         var level=h.getLevel();var op=player(h,"vault_reader",new Vec3(4.5,5,10.5),AWAY);
-        var papers=new java.util.ArrayList<>(VaultDocuments.onTheDesk());papers.addAll(VaultDocuments.inTheLocker());papers.add(VaultDocuments.drainSchedule());
+        var papers=new java.util.ArrayList<>(VaultDocuments.onTheDesk());papers.addAll(VaultDocuments.inTheLocker());papers.add(VaultDocuments.drainSchedule());papers.add(VaultDocuments.sealOrder());
         for(var paper:papers) {
             var type=paper.get(DataComponents.CUSTOM_DATA).copyTag().getString("doc_type");
             op.setItemInHand(InteractionHand.MAIN_HAND,paper);

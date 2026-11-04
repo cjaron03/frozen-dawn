@@ -1,0 +1,79 @@
+{
+  "variants": {
+    "facing=north,kind=crate": {
+      "model": "frozendawn:block/vault_crate"
+    },
+    "facing=east,kind=crate": {
+      "model": "frozendawn:block/vault_crate",
+      "y": 90
+    },
+    "facing=south,kind=crate": {
+      "model": "frozendawn:block/vault_crate",
+      "y": 180
+    },
+    "facing=west,kind=crate": {
+      "model": "frozendawn:block/vault_crate",
+      "y": 270
+    },
+    "facing=north,kind=case": {
+      "model": "frozendawn:block/vault_case"
+    },
+    "facing=east,kind=case": {
+      "model": "frozendawn:block/vault_case",
+      "y": 90
+    },
+    "facing=south,kind=case": {
+      "model": "frozendawn:block/vault_case",
+      "y": 180
+    },
+    "facing=west,kind=case": {
+      "model": "frozendawn:block/vault_case",
+      "y": 270
+    },
+    "facing=north,kind=hard_hat": {
+      "model": "frozendawn:block/vault_hard_hat"
+    },
+    "facing=east,kind=hard_hat": {
+      "model": "frozendawn:block/vault_hard_hat",
+      "y": 90
+    },
+    "facing=south,kind=hard_hat": {
+      "model": "frozendawn:block/vault_hard_hat",
+      "y": 180
+    },
+    "facing=west,kind=hard_hat": {
+      "model": "frozendawn:block/vault_hard_hat",
+      "y": 270
+    },
+    "facing=north,kind=paper": {
+      "model": "frozendawn:block/vault_loose_paper"
+    },
+    "facing=east,kind=paper": {
+      "model": "frozendawn:block/vault_loose_paper",
+      "y": 90
+    },
+    "facing=south,kind=paper": {
+      "model": "frozendawn:block/vault_loose_paper",
+      "y": 180
+    },
+    "facing=west,kind=paper": {
+      "model": "frozendawn:block/vault_loose_paper",
+      "y": 270
+    },
+    "facing=north,kind=seal_order": {
+      "model": "frozendawn:block/vault_seal_order"
+    },
+    "facing=east,kind=seal_order": {
+      "model": "frozendawn:block/vault_seal_order",
+      "y": 90
+    },
+    "facing=south,kind=seal_order": {
+      "model": "frozendawn:block/vault_seal_order",
+      "y": 180
+    },
+    "facing=west,kind=seal_order": {
+      "model": "frozendawn:block/vault_seal_order",
+      "y": 270
+    }
+  }
+}

@@ -42,6 +42,10 @@ public class ModBlockEntities {
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.frozendawn.vault.VaultClockBlockEntity>> VAULT_CLOCK = BLOCK_ENTITIES.register("vault_clock",
             () -> BlockEntityType.Builder.of(com.frozendawn.vault.VaultClockBlockEntity::new, ModBlocks.VAULT_CLOCK.get()).build(null));
 
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.frozendawn.vault.VaultArgusBlockEntity>> VAULT_ARGUS = BLOCK_ENTITIES.register("vault_argus",
+            () -> BlockEntityType.Builder.of(com.frozendawn.vault.VaultArgusBlockEntity::new, ModBlocks.VAULT_ARGUS.get()).build(null));
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.frozendawn.vault.VaultFightClockBlockEntity>> VAULT_FIGHT_CLOCK = BLOCK_ENTITIES.register("vault_fight_clock",
+            () -> BlockEntityType.Builder.of(com.frozendawn.vault.VaultFightClockBlockEntity::new, ModBlocks.VAULT_FIGHT_CLOCK.get()).build(null));
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.frozendawn.block.OrsaEmergencyLightBlockEntity>> ORSA_EMERGENCY_LIGHT =
             BLOCK_ENTITIES.register("orsa_emergency_light",()->BlockEntityType.Builder.of(com.frozendawn.block.OrsaEmergencyLightBlockEntity::new,ModBlocks.ORSA_EMERGENCY_LIGHT.get()).build(null));
 

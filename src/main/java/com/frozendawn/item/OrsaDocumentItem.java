@@ -66,6 +66,7 @@ public class OrsaDocumentItem extends Item {
             Map.entry("station_relay_diagnostics", Doc.intel("station_relay_diagnostics", "Relay Diagnostics")),
             Map.entry("lc4_requisition_memo", Doc.intel("lc4_requisition_memo", "Procurement Review")),
             Map.entry("terminus_drain_schedule", Doc.intel("terminus_drain_schedule", "Drain Schedule")),
+            Map.entry("terminus_seal_order", Doc.intel("terminus_seal_order", "Seal Order")),
             Map.entry("terminus_manifest", Doc.intel("terminus_manifest", "Vault Manifest")),
             Map.entry("terminus_name_review", Doc.intel("terminus_name_review", "Name Review")),
             Map.entry("terminus_log_maintenance", Doc.intel("terminus_log_maintenance", "Duty Log: Maintenance")),

@@ -1,0 +1,382 @@
+{
+  "variants": {
+    "glyph=0,lamp=dark,slot=0": {
+      "model": "frozendawn:block/vault_glyph_0_dark",
+      "y": 180
+    },
+    "glyph=0,lamp=lit,slot=0": {
+      "model": "frozendawn:block/vault_glyph_0_lit",
+      "y": 180
+    },
+    "glyph=0,lamp=pulled,slot=0": {
+      "model": "frozendawn:block/vault_glyph_0_pulled",
+      "y": 180
+    },
+    "glyph=1,lamp=dark,slot=0": {
+      "model": "frozendawn:block/vault_glyph_1_dark",
+      "y": 180
+    },
+    "glyph=1,lamp=lit,slot=0": {
+      "model": "frozendawn:block/vault_glyph_1_lit",
+      "y": 180
+    },
+    "glyph=1,lamp=pulled,slot=0": {
+      "model": "frozendawn:block/vault_glyph_1_pulled",
+      "y": 180
+    },
+    "glyph=2,lamp=dark,slot=0": {
+      "model": "frozendawn:block/vault_glyph_2_dark",
+      "y": 180
+    },
+    "glyph=2,lamp=lit,slot=0": {
+      "model": "frozendawn:block/vault_glyph_2_lit",
+      "y": 180
+    },
+    "glyph=2,lamp=pulled,slot=0": {
+      "model": "frozendawn:block/vault_glyph_2_pulled",
+      "y": 180
+    },
+    "glyph=3,lamp=dark,slot=0": {
+      "model": "frozendawn:block/vault_glyph_3_dark",
+      "y": 180
+    },
+    "glyph=3,lamp=lit,slot=0": {
+      "model": "frozendawn:block/vault_glyph_3_lit",
+      "y": 180
+    },
+    "glyph=3,lamp=pulled,slot=0": {
+      "model": "frozendawn:block/vault_glyph_3_pulled",
+      "y": 180
+    },
+    "glyph=4,lamp=dark,slot=0": {
+      "model": "frozendawn:block/vault_glyph_4_dark",
+      "y": 180
+    },
+    "glyph=4,lamp=lit,slot=0": {
+      "model": "frozendawn:block/vault_glyph_4_lit",
+      "y": 180
+    },
+    "glyph=4,lamp=pulled,slot=0": {
+      "model": "frozendawn:block/vault_glyph_4_pulled",
+      "y": 180
+    },
+    "glyph=5,lamp=dark,slot=0": {
+      "model": "frozendawn:block/vault_glyph_5_dark",
+      "y": 180
+    },
+    "glyph=5,lamp=lit,slot=0": {
+      "model": "frozendawn:block/vault_glyph_5_lit",
+      "y": 180
+    },
+    "glyph=5,lamp=pulled,slot=0": {
+      "model": "frozendawn:block/vault_glyph_5_pulled",
+      "y": 180
+    },
+    "glyph=0,lamp=dark,slot=1": {
+      "model": "frozendawn:block/vault_glyph_0_dark",
+      "y": 180
+    },
+    "glyph=0,lamp=lit,slot=1": {
+      "model": "frozendawn:block/vault_glyph_0_lit",
+      "y": 180
+    },
+    "glyph=0,lamp=pulled,slot=1": {
+      "model": "frozendawn:block/vault_glyph_0_pulled",
+      "y": 180
+    },
+    "glyph=1,lamp=dark,slot=1": {
+      "model": "frozendawn:block/vault_glyph_1_dark",
+      "y": 180
+    },
+    "glyph=1,lamp=lit,slot=1": {
+      "model": "frozendawn:block/vault_glyph_1_lit",
+      "y": 180
+    },
+    "glyph=1,lamp=pulled,slot=1": {
+      "model": "frozendawn:block/vault_glyph_1_pulled",
+      "y": 180
+    },
+    "glyph=2,lamp=dark,slot=1": {
+      "model": "frozendawn:block/vault_glyph_2_dark",
+      "y": 180
+    },
+    "glyph=2,lamp=lit,slot=1": {
+      "model": "frozendawn:block/vault_glyph_2_lit",
+      "y": 180
+    },
+    "glyph=2,lamp=pulled,slot=1": {
+      "model": "frozendawn:block/vault_glyph_2_pulled",
+      "y": 180
+    },
+    "glyph=3,lamp=dark,slot=1": {
+      "model": "frozendawn:block/vault_glyph_3_dark",
+      "y": 180
+    },
+    "glyph=3,lamp=lit,slot=1": {
+      "model": "frozendawn:block/vault_glyph_3_lit",
+      "y": 180
+    },
+    "glyph=3,lamp=pulled,slot=1": {
+      "model": "frozendawn:block/vault_glyph_3_pulled",
+      "y": 180
+    },
+    "glyph=4,lamp=dark,slot=1": {
+      "model": "frozendawn:block/vault_glyph_4_dark",
+      "y": 180
+    },
+    "glyph=4,lamp=lit,slot=1": {
+      "model": "frozendawn:block/vault_glyph_4_lit",
+      "y": 180
+    },
+    "glyph=4,lamp=pulled,slot=1": {
+      "model": "frozendawn:block/vault_glyph_4_pulled",
+      "y": 180
+    },
+    "glyph=5,lamp=dark,slot=1": {
+      "model": "frozendawn:block/vault_glyph_5_dark",
+      "y": 180
+    },
+    "glyph=5,lamp=lit,slot=1": {
+      "model": "frozendawn:block/vault_glyph_5_lit",
+      "y": 180
+    },
+    "glyph=5,lamp=pulled,slot=1": {
+      "model": "frozendawn:block/vault_glyph_5_pulled",
+      "y": 180
+    },
+    "glyph=0,lamp=dark,slot=2": {
+      "model": "frozendawn:block/vault_glyph_0_dark",
+      "y": 180
+    },
+    "glyph=0,lamp=lit,slot=2": {
+      "model": "frozendawn:block/vault_glyph_0_lit",
+      "y": 180
+    },
+    "glyph=0,lamp=pulled,slot=2": {
+      "model": "frozendawn:block/vault_glyph_0_pulled",
+      "y": 180
+    },
+    "glyph=1,lamp=dark,slot=2": {
+      "model": "frozendawn:block/vault_glyph_1_dark",
+      "y": 180
+    },
+    "glyph=1,lamp=lit,slot=2": {
+      "model": "frozendawn:block/vault_glyph_1_lit",
+      "y": 180
+    },
+    "glyph=1,lamp=pulled,slot=2": {
+      "model": "frozendawn:block/vault_glyph_1_pulled",
+      "y": 180
+    },
+    "glyph=2,lamp=dark,slot=2": {
+      "model": "frozendawn:block/vault_glyph_2_dark",
+      "y": 180
+    },
+    "glyph=2,lamp=lit,slot=2": {
+      "model": "frozendawn:block/vault_glyph_2_lit",
+      "y": 180
+    },
+    "glyph=2,lamp=pulled,slot=2": {
+      "model": "frozendawn:block/vault_glyph_2_pulled",
+      "y": 180
+    },
+    "glyph=3,lamp=dark,slot=2": {
+      "model": "frozendawn:block/vault_glyph_3_dark",
+      "y": 180
+    },
+    "glyph=3,lamp=lit,slot=2": {
+      "model": "frozendawn:block/vault_glyph_3_lit",
+      "y": 180
+    },
+    "glyph=3,lamp=pulled,slot=2": {
+      "model": "frozendawn:block/vault_glyph_3_pulled",
+      "y": 180
+    },
+    "glyph=4,lamp=dark,slot=2": {
+      "model": "frozendawn:block/vault_glyph_4_dark",
+      "y": 180
+    },
+    "glyph=4,lamp=lit,slot=2": {
+      "model": "frozendawn:block/vault_glyph_4_lit",
+      "y": 180
+    },
+    "glyph=4,lamp=pulled,slot=2": {
+      "model": "frozendawn:block/vault_glyph_4_pulled",
+      "y": 180
+    },
+    "glyph=5,lamp=dark,slot=2": {
+      "model": "frozendawn:block/vault_glyph_5_dark",
+      "y": 180
+    },
+    "glyph=5,lamp=lit,slot=2": {
+      "model": "frozendawn:block/vault_glyph_5_lit",
+      "y": 180
+    },
+    "glyph=5,lamp=pulled,slot=2": {
+      "model": "frozendawn:block/vault_glyph_5_pulled",
+      "y": 180
+    },
+    "glyph=0,lamp=dark,slot=3": {
+      "model": "frozendawn:block/vault_glyph_0_dark"
+    },
+    "glyph=0,lamp=lit,slot=3": {
+      "model": "frozendawn:block/vault_glyph_0_lit"
+    },
+    "glyph=0,lamp=pulled,slot=3": {
+      "model": "frozendawn:block/vault_glyph_0_pulled"
+    },
+    "glyph=1,lamp=dark,slot=3": {
+      "model": "frozendawn:block/vault_glyph_1_dark"
+    },
+    "glyph=1,lamp=lit,slot=3": {
+      "model": "frozendawn:block/vault_glyph_1_lit"
+    },
+    "glyph=1,lamp=pulled,slot=3": {
+      "model": "frozendawn:block/vault_glyph_1_pulled"
+    },
+    "glyph=2,lamp=dark,slot=3": {
+      "model": "frozendawn:block/vault_glyph_2_dark"
+    },
+    "glyph=2,lamp=lit,slot=3": {
+      "model": "frozendawn:block/vault_glyph_2_lit"
+    },
+    "glyph=2,lamp=pulled,slot=3": {
+      "model": "frozendawn:block/vault_glyph_2_pulled"
+    },
+    "glyph=3,lamp=dark,slot=3": {
+      "model": "frozendawn:block/vault_glyph_3_dark"
+    },
+    "glyph=3,lamp=lit,slot=3": {
+      "model": "frozendawn:block/vault_glyph_3_lit"
+    },
+    "glyph=3,lamp=pulled,slot=3": {
+      "model": "frozendawn:block/vault_glyph_3_pulled"
+    },
+    "glyph=4,lamp=dark,slot=3": {
+      "model": "frozendawn:block/vault_glyph_4_dark"
+    },
+    "glyph=4,lamp=lit,slot=3": {
+      "model": "frozendawn:block/vault_glyph_4_lit"
+    },
+    "glyph=4,lamp=pulled,slot=3": {
+      "model": "frozendawn:block/vault_glyph_4_pulled"
+    },
+    "glyph=5,lamp=dark,slot=3": {
+      "model": "frozendawn:block/vault_glyph_5_dark"
+    },
+    "glyph=5,lamp=lit,slot=3": {
+      "model": "frozendawn:block/vault_glyph_5_lit"
+    },
+    "glyph=5,lamp=pulled,slot=3": {
+      "model": "frozendawn:block/vault_glyph_5_pulled"
+    },
+    "glyph=0,lamp=dark,slot=4": {
+      "model": "frozendawn:block/vault_glyph_0_dark"
+    },
+    "glyph=0,lamp=lit,slot=4": {
+      "model": "frozendawn:block/vault_glyph_0_lit"
+    },
+    "glyph=0,lamp=pulled,slot=4": {
+      "model": "frozendawn:block/vault_glyph_0_pulled"
+    },
+    "glyph=1,lamp=dark,slot=4": {
+      "model": "frozendawn:block/vault_glyph_1_dark"
+    },
+    "glyph=1,lamp=lit,slot=4": {
+      "model": "frozendawn:block/vault_glyph_1_lit"
+    },
+    "glyph=1,lamp=pulled,slot=4": {
+      "model": "frozendawn:block/vault_glyph_1_pulled"
+    },
+    "glyph=2,lamp=dark,slot=4": {
+      "model": "frozendawn:block/vault_glyph_2_dark"
+    },
+    "glyph=2,lamp=lit,slot=4": {
+      "model": "frozendawn:block/vault_glyph_2_lit"
+    },
+    "glyph=2,lamp=pulled,slot=4": {
+      "model": "frozendawn:block/vault_glyph_2_pulled"
+    },
+    "glyph=3,lamp=dark,slot=4": {
+      "model": "frozendawn:block/vault_glyph_3_dark"
+    },
+    "glyph=3,lamp=lit,slot=4": {
+      "model": "frozendawn:block/vault_glyph_3_lit"
+    },
+    "glyph=3,lamp=pulled,slot=4": {
+      "model": "frozendawn:block/vault_glyph_3_pulled"
+    },
+    "glyph=4,lamp=dark,slot=4": {
+      "model": "frozendawn:block/vault_glyph_4_dark"
+    },
+    "glyph=4,lamp=lit,slot=4": {
+      "model": "frozendawn:block/vault_glyph_4_lit"
+    },
+    "glyph=4,lamp=pulled,slot=4": {
+      "model": "frozendawn:block/vault_glyph_4_pulled"
+    },
+    "glyph=5,lamp=dark,slot=4": {
+      "model": "frozendawn:block/vault_glyph_5_dark"
+    },
+    "glyph=5,lamp=lit,slot=4": {
+      "model": "frozendawn:block/vault_glyph_5_lit"
+    },
+    "glyph=5,lamp=pulled,slot=4": {
+      "model": "frozendawn:block/vault_glyph_5_pulled"
+    },
+    "glyph=0,lamp=dark,slot=5": {
+      "model": "frozendawn:block/vault_glyph_0_dark"
+    },
+    "glyph=0,lamp=lit,slot=5": {
+      "model": "frozendawn:block/vault_glyph_0_lit"
+    },
+    "glyph=0,lamp=pulled,slot=5": {
+      "model": "frozendawn:block/vault_glyph_0_pulled"
+    },
+    "glyph=1,lamp=dark,slot=5": {
+      "model": "frozendawn:block/vault_glyph_1_dark"
+    },
+    "glyph=1,lamp=lit,slot=5": {
+      "model": "frozendawn:block/vault_glyph_1_lit"
+    },
+    "glyph=1,lamp=pulled,slot=5": {
+      "model": "frozendawn:block/vault_glyph_1_pulled"
+    },
+    "glyph=2,lamp=dark,slot=5": {
+      "model": "frozendawn:block/vault_glyph_2_dark"
+    },
+    "glyph=2,lamp=lit,slot=5": {
+      "model": "frozendawn:block/vault_glyph_2_lit"
+    },
+    "glyph=2,lamp=pulled,slot=5": {
+      "model": "frozendawn:block/vault_glyph_2_pulled"
+    },
+    "glyph=3,lamp=dark,slot=5": {
+      "model": "frozendawn:block/vault_glyph_3_dark"
+    },
+    "glyph=3,lamp=lit,slot=5": {
+      "model": "frozendawn:block/vault_glyph_3_lit"
+    },
+    "glyph=3,lamp=pulled,slot=5": {
+      "model": "frozendawn:block/vault_glyph_3_pulled"
+    },
+    "glyph=4,lamp=dark,slot=5": {
+      "model": "frozendawn:block/vault_glyph_4_dark"
+    },
+    "glyph=4,lamp=lit,slot=5": {
+      "model": "frozendawn:block/vault_glyph_4_lit"
+    },
+    "glyph=4,lamp=pulled,slot=5": {
+      "model": "frozendawn:block/vault_glyph_4_pulled"
+    },
+    "glyph=5,lamp=dark,slot=5": {
+      "model": "frozendawn:block/vault_glyph_5_dark"
+    },
+    "glyph=5,lamp=lit,slot=5": {
+      "model": "frozendawn:block/vault_glyph_5_lit"
+    },
+    "glyph=5,lamp=pulled,slot=5": {
+      "model": "frozendawn:block/vault_glyph_5_pulled"
+    }
+  }
+}

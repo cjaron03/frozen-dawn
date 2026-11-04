@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:block/cube_all",
+  "textures": {
+    "all": "frozendawn:block/vault_mark_exo_left_0"
+  }
+}

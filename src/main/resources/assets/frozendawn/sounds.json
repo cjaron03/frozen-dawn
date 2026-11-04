@@ -2235,6 +2235,67 @@
       }
     ]
   },
+  "block.vault.pulse": {
+    "category": "block",
+    "subtitle": "subtitle.frozendawn.block.vault.pulse",
+    "sounds": [
+      {
+        "name": "frozendawn:blocks/vault/pulse",
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "block.vault.fuse": {
+    "category": "block",
+    "subtitle": "subtitle.frozendawn.block.vault.fuse",
+    "sounds": [
+      {
+        "name": "frozendawn:blocks/vault/fuse",
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "block.vault.wrong": {
+    "category": "block",
+    "subtitle": "subtitle.frozendawn.block.vault.wrong",
+    "sounds": [
+      {
+        "name": "frozendawn:blocks/vault/wrong",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "block.vault.shell": {
+    "category": "block",
+    "subtitle": "subtitle.frozendawn.block.vault.shell",
+    "sounds": [
+      {
+        "name": "frozendawn:blocks/vault/shell",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "block.vault.purge": {
+    "category": "block",
+    "subtitle": "subtitle.frozendawn.block.vault.purge",
+    "sounds": [
+      {
+        "name": "frozendawn:blocks/vault/purge",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "block.vault.announcement": {
+    "category": "block",
+    "subtitle": "subtitle.frozendawn.block.vault.announcement",
+    "sounds": [
+      {
+        "name": "frozendawn:blocks/vault/announcement",
+        "attenuation_distance": 16,
+        "stream": true
+      }
+    ]
+  },
   "radio.martian_command_message": {
     "category": "record",
     "subtitle": "subtitle.frozendawn.radio.martian_command",

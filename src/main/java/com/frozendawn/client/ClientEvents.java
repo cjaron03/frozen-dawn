@@ -170,6 +170,7 @@ public class ClientEvents {
         event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "icarus_danger"), IcarusDangerHud::render);
         event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "icarus_suit"), IcarusSuitHud::render);
         event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "icarus_screen_flash"), IcarusScreenFlash::render);
+        event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "vault_purge_flash"), VaultPurgeFlash::render);
         event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "icarus_flash"), IcarusBlastEffects::renderFlash);
         event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "radiation_flashes"), RadiationClient::renderFlashes);
         event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "geiger_readout"), RadiationClient::renderReadout);
@@ -337,6 +338,7 @@ public class ClientEvents {
         event.registerLayerDefinition(RocketLaunchModel.LAYER_LOCATION, RocketLaunchModel::createBodyLayer);
         event.registerLayerDefinition(
                 RimeboundModel.LAYER_LOCATION, RimeboundModel::createBodyLayer);
+        event.registerLayerDefinition(com.frozendawn.client.renderer.CustodianModel.LAYER_LOCATION, com.frozendawn.client.renderer.CustodianModel::createBodyLayer);
         event.registerLayerDefinition(
                 ResonantModel.LAYER_LOCATION, ResonantModel::createBodyLayer);
         event.registerLayerDefinition(
@@ -357,6 +359,7 @@ public class ClientEvents {
     @SubscribeEvent
     public static void onRegisterEntityRenderers(EntityRenderersEvent.RegisterRenderers event) {
         event.registerEntityRenderer(ModEntities.AGGREGATE.get(), AggregateRenderer::new);
+        event.registerEntityRenderer(ModEntities.CUSTODIAN.get(), com.frozendawn.client.renderer.CustodianRenderer::new);
         event.registerEntityRenderer(
                 ModEntities.AGGREGATE_FRAGMENT.get(), AggregateFragmentRenderer::new);
         event.registerEntityRenderer(
@@ -406,6 +409,7 @@ public class ClientEvents {
         event.registerBlockEntityRenderer(ModBlockEntities.VAULT_TECHNICIAN.get(), com.frozendawn.client.renderer.VaultTechnicianRenderer::new);
         event.registerBlockEntityRenderer(ModBlockEntities.VAULT_CRADLE.get(), com.frozendawn.client.renderer.VaultCradleRenderer::new);
         event.registerBlockEntityRenderer(ModBlockEntities.VAULT_CLOCK.get(), com.frozendawn.client.renderer.VaultClockRenderer::new);
+        event.registerBlockEntityRenderer(ModBlockEntities.VAULT_FIGHT_CLOCK.get(), com.frozendawn.client.renderer.VaultFightClockRenderer::new);
         event.registerBlockEntityRenderer(ModBlockEntities.ICARUS_STABILIZER.get(), IcarusStabilizerRenderer::new);
         event.registerBlockEntityRenderer(ModBlockEntities.ICARUS_INJECTOR.get(), IcarusInjectorRenderer::new);
     }

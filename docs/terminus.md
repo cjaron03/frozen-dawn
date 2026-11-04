@@ -16,7 +16,7 @@ is the tracked handoff; the spec stays on Notion.
 | # | Slice | Status |
 | --- | --- | --- |
 | T1 | The wand itself, creative tab and `/give` only | Built on `feat/terminus`; owner playtests passed ("good", 2026-11-03); branch review, then a PR on the owner's word |
-| T2 | The Terminus Vault at the first Helion site, the Unwatched Door puzzle, the vault documents | First cut built on `feat/terminus-vault` (worktree `/Volumes/SSD/Work/frozen-dawn-terminus-vault`), stacked on `feat/terminus` while PR #146 is open. The owner found it too small and easy; the Watch Floor below is approved and not built |
+| T2 | The Terminus Vault at the first Helion site, the Unwatched Door puzzle, the vault documents | First cut built on `feat/terminus-vault` (worktree `/Volumes/SSD/Work/frozen-dawn-terminus-vault`), stacked on `feat/terminus` while PR #146 is open. The owner found it too small and easy; the Watch Floor below is built and awaits the owner's pass, headlessly verified by `architectVerify` |
 | T3 | Maeve, Hearth and Aggregate interplay, through the shared Maeve slice | Not started (MACS is WIP) |
 
 ### T1: the wand (creative only)
@@ -374,7 +374,7 @@ puts silent copies in the pack. Not yet seen working in game. The clock's 44x5 d
 atlas's mipmaps ("limits mip level from 4 to 0" in the client log); it now lives in `textures/entity`. Check the warning is
 gone on the next launch.
 
-## The Watch Floor (approved, not built)
+## The Watch Floor (approved, built 2026-11-03)
 
 Approved from `docs/art/terminus/watch-floor-mockup.png` and `vault-branding-mockup.png` (`make_watch_floor_mockup.py`,
 `make_vault_branding_mockup.py`) plus the four extras below. The owner has not asked to change them; "clerk" was read as the
@@ -428,3 +428,47 @@ to Exodus by 2200, ISS-4 armed on last badge-out, CSU-3 remains on duty, nobody 
 - Playtest worlds filter advancements: any advancement the pass needs goes in the world's pack, as
   `document_advancements` does. Add Last Badge-Out and the Seal Order's.
 - Open for the builder: the Custodian's health, speed and touch damage, tuned so the owner's own skill finds it hard.
+
+## The Watch Floor as built (2026-11-03)
+
+- `ArgusFight` is the fight with no world in it: rounds, clock, fuses, shuffle, lights, pulse (`ArgusFightTest`).
+  `VaultArgusBlockEntity`, a block of the ceiling at (28, y-10, 0), shows it each tick, keeps it in NBT and drives the
+  Custodian. Everything it shows it sets every tick, so a reload needs no replay.
+- Hall interior x 18..39, z -11..11, walls at x 17 and 40, z +-12: the plan's and the section's numbers differ by one, and
+  this is what makes the doors at x 17 and x 40 sit in walls. The cot room's interior is x 41..44. `REACH` is 52.
+- The lower floor runs under the catwalks, as the section draws it. Fuses are in the north and south walls (z +-12), at
+  y-22; ladders at (38, -10) and (18, 10), each on a pillar so the ring is as drawn.
+- A hold is the client's own repeat of use every four ticks, so a fuse needs nothing from the client. A gap over eight
+  ticks restarts it. The Custodian's chase, touch and freeze are in `CustodianEntity`; health 240, speed .36 (a sprint,
+  5.6 blocks a second), touch 12 (six hearts before armor), a 1 s cooldown between touches.
+- The recording and the pulse go only to players inside, so nothing leaks to the hall above and the vault stays hidden.
+- Clocks: over both gates, and on both end walls of the lower floor; red for the last minute.
+- `vault_light` is the look of `orsa_emergency_light` without its power network, which would switch it off.
+- The Seal Order lies on the west catwalk, on the floor north of the door: click it and it comes away as a document.
+- `/fd terminus vault fight start | round <n> | pull <n> | burn <n> | clock <seconds>` and the status line drive the pass.
+
+### Rulings (agent, for the owner to confirm)
+- The fight starts when someone steps off the west catwalk, so the board and the Seal Order can be looked at first.
+- The board waits for someone on the upper level. The clock does not wait.
+- Fuses shuffle when the board goes dark, and are dark until then, so nobody reads them early.
+- Round 3 lights one glyph at a time, 1.25 s each: six fixed glyphs cannot otherwise show an order.
+- An opening takes at most a third, counted from the top: a poor opening can be made up in the next. A Custodian still
+  standing after three openings gets round 3 again until it falls or the clock runs out.
+- A pulled fuse stays pulled. A wrong one stays unpulled, and costs its 20 seconds each time.
+- "Half their hearts" is half the maximum, or what they had if that was less. It never kills.
+- After a purge or a death the door opens and the fight waits for you to walk back in; the recording plays again.
+- Nobody inside for 5 s (dead, or logged out with others online) stands it down. That is not a purge and does not spoil a
+  clean run; a wrong fuse or a purge spoils Last Badge-Out for good in that world, across retries.
+- Nothing can be placed in the hall until the Custodian falls: no torches against the dark, no walls against it. Water
+  buckets are not stopped.
+- With the Custodian down the lamps stay as the clock left them, and both doors stand open.
+- The wand has no effect on it (`terminus_immune`): nothing there to stop.
+
+### Playtest
+`python3 tools/prepare_terminus_vault_playtest.py --source <a 1.21.1 save>/level.dat --destination run-lab/saves/<new name>`,
+default title Terminus Watch Floor Check. Buttons for each room, each stage of the fight, the clock and a fighter's kit.
+
+### Verification
+- JUnit: `ArgusFightTest`, `VaultRulesTest`, `VaultDocumentsTest`.
+- GameTests (`terminus_floor`): `TerminusWatchFloorGameTest`, the floor built whole in the air over each test.
+- Needs the owner's eyes and ears: everything judged by look, sound or feel, how hard it is, and whether the archives open.

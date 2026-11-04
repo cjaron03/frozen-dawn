@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/cube_bottom_top",
+  "textures": {
+    "side": "frozendawn:block/vault_crate_side",
+    "top": "frozendawn:block/vault_crate_top",
+    "bottom": "frozendawn:block/vault_crate_side"
+  }
+}

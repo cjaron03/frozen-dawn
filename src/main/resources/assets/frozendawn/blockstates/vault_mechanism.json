@@ -8,6 +8,9 @@
     },
     "kind=last_door": {
       "model": "frozendawn:block/vault_shell"
+    },
+    "kind=gate": {
+      "model": "frozendawn:block/vault_shell"
     }
   }
 }
