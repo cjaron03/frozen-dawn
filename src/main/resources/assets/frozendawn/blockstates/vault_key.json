@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "held=false": {
+      "model": "frozendawn:block/vault_key_idle"
+    },
+    "held=true": {
+      "model": "frozendawn:block/vault_key_held"
+    }
+  }
+}

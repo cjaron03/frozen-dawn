@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "lit=false": {
+      "model": "frozendawn:block/vault_lintel_shut"
+    },
+    "lit=true": {
+      "model": "frozendawn:block/vault_lintel_open"
+    }
+  }
+}

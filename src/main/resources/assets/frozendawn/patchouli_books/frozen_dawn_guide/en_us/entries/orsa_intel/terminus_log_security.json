@@ -1,0 +1,18 @@
+{
+  "name": "Duty Log: Hale",
+  "category": "frozendawn:orsa_intel",
+  "icon": "frozendawn:orsa_document",
+  "sortnum": 38,
+  "advancement": "frozendawn:found_terminus_log_security",
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "Security",
+      "text": "$(bold)DUTY LOG$()$(br)Hale, M., security$(br2)Why I am here: regulations want an armed post at the cradle. One officer, one sidearm. I was cheap and I could stay awake."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Nobody said what the sidearm is for. There is nothing down here but the cradle and us.$(br2)I asked which way I was meant to face. The supervisor laughed, then stopped.$(br2)Away from the door, they said."
+    }
+  ]
+}

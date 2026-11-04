@@ -104,7 +104,7 @@ import java.util.*;
  * Actions: OBSERVE, APPROACH, ATTACK_MELEE, RETREAT, FORTIFY, TRAP_SET, PEEK
  * APPROACH reads A* path node type to determine break/scaffold/walk.
  */
-public class ArchitectEntity extends Monster {
+public class ArchitectEntity extends Monster implements com.frozendawn.defense.TerminusBody {
 
     private static final Logger LOGGER = LogUtils.getLogger();
 
@@ -2462,16 +2462,22 @@ public class ArchitectEntity extends Monster {
     }
 
     private void removeAfterDeath(double soulX, double soulY, double soulZ) {
+        removeStopped();
+        if (level() instanceof ServerLevel serverLevel) {
+            ArchitectDeathFx.emitDeathSmokeBurst(serverLevel, random, soulX, soulY, soulZ);
+            ArchitectDeathFx.emitDeathSoulRelease(serverLevel, random, soulX, soulY, soulZ);
+        }
+    }
+
+    /** The teardown every death ends in, without its smoke and soul; the Terminus calls it for a stopped Architect. */
+    @Override
+    public void removeStopped() {
         cleanupAllIce();
         blockBreaker.onDeath();
         if (towerEncounter && level() instanceof ServerLevel serverLevel) {
             TowerEncounterController.markResolved(serverLevel, towerEncounterId);
         }
         remove(RemovalReason.KILLED);
-        if (level() instanceof ServerLevel serverLevel) {
-            ArchitectDeathFx.emitDeathSmokeBurst(serverLevel, random, soulX, soulY, soulZ);
-            ArchitectDeathFx.emitDeathSoulRelease(serverLevel, random, soulX, soulY, soulZ);
-        }
     }
 
     private void tickMasterArchitectDeath(int ticks) {

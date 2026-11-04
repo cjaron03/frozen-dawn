@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "papers=false": {
+      "model": "frozendawn:block/vault_desk"
+    },
+    "papers=true": {
+      "model": "frozendawn:block/vault_desk_papers"
+    }
+  }
+}

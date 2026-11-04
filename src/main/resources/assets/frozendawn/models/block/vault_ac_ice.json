@@ -1,0 +1,32 @@
+{
+  "render_type": "minecraft:cutout",
+  "textures": {
+    "particle": "frozendawn:block/vault_ac_ice",
+    "ice": "frozendawn:block/vault_ac_ice"
+  },
+  "elements": [
+    {
+      "from": [
+        0,
+        0,
+        11
+      ],
+      "to": [
+        16,
+        3,
+        11
+      ],
+      "faces": {
+        "south": {
+          "texture": "#ice",
+          "uv": [
+            0,
+            13,
+            16,
+            16
+          ]
+        }
+      }
+    }
+  ]
+}

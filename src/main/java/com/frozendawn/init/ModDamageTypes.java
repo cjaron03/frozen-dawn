@@ -32,9 +32,17 @@ public class ModDamageTypes {
             ResourceKey.create(Registries.DAMAGE_TYPE,
                     ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "sever_lash"));
 
+    public static final ResourceKey<DamageType> TERMINUS =
+            ResourceKey.create(Registries.DAMAGE_TYPE,
+                    ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "terminus"));
+
     public static final ResourceKey<DamageType> SEARED =
             ResourceKey.create(Registries.DAMAGE_TYPE,
                     ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "seared"));
+
+    public static final ResourceKey<DamageType> VAULT_COLD =
+            ResourceKey.create(Registries.DAMAGE_TYPE,
+                    ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "vault_cold"));
 
     public static final ResourceKey<DamageType> ICARUS_DETONATION =
             ResourceKey.create(Registries.DAMAGE_TYPE,

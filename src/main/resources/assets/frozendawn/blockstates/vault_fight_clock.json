@@ -1,0 +1,16 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "frozendawn:block/vault_shell"
+    },
+    "facing=south": {
+      "model": "frozendawn:block/vault_shell"
+    },
+    "facing=east": {
+      "model": "frozendawn:block/vault_shell"
+    },
+    "facing=west": {
+      "model": "frozendawn:block/vault_shell"
+    }
+  }
+}

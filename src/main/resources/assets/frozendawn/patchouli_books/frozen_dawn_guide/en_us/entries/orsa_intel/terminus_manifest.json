@@ -1,0 +1,19 @@
+{
+  "name": "Vault Manifest",
+  "category": "frozendawn:orsa_intel",
+  "icon": "frozendawn:orsa_document",
+  "sortnum": 33,
+  "advancement": "frozendawn:found_terminus_manifest",
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "Epigraph",
+      "text": "$(italic)Deep in the shady sadness of a vale$(br)Far sunken from the healthy breath of morn,$(br)Far from the fiery noon, and eve's one star,$(br)Sat gray-hair'd Saturn, quiet as a stone,$()$(br2)John Keats, $(italic)Hyperion$()"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Manifest",
+      "text": "$(bold)ORSA VAULT MANIFEST$()$(br2)Item: TR-0 Terminus, one$(br)Issuing division:$(br)Budget line:$(br2)Requisition reason: Containment of RELIQUUS COGNITIVE ECHO.$(br2)Approver signature:"
+    }
+  ]
+}

@@ -44,6 +44,12 @@ public final class ModAttachments {
                     () -> AttachmentType.serializable(com.frozendawn.data.ContinuityRecoveryState::new)
                             .copyOnDeath().build());
 
+    /** Hearts the Terminus has taken from this player, coming back slowly, through death and respawn. */
+    public static final DeferredHolder<AttachmentType<?>, AttachmentType<com.frozendawn.defense.TerminusToll>>
+            TERMINUS_TAKEN = ATTACHMENTS.register("terminus_taken",
+                    () -> AttachmentType.builder(() -> com.frozendawn.defense.TerminusToll.NONE)
+                            .serialize(com.frozendawn.defense.TerminusToll.CODEC).copyOnDeath().build());
+
     /** Game time until which a spoonful of Miel keeps the player 5C warmer. */
     public static final DeferredHolder<AttachmentType<?>, AttachmentType<Long>>
             MIEL_WARM_UNTIL = ATTACHMENTS.register("miel_warm_until",

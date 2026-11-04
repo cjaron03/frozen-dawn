@@ -71,6 +71,12 @@ public class ModNetworking {
 
         registrar.playToClient(PlumbLineReturnsPayload.TYPE, PlumbLineReturnsPayload.STREAM_CODEC,
                 (payload, context) -> context.enqueueWork(() -> com.frozendawn.client.PlumbLineOverlay.receive(payload)));
+        registrar.playToClient(TerminusLedgerPayload.TYPE, TerminusLedgerPayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(() -> com.frozendawn.defense.TerminusLedger.receive(payload)));
+        registrar.playToClient(TerminusDischargePayload.TYPE, TerminusDischargePayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(() -> com.frozendawn.client.TerminusClient.receive(payload)));
+        registrar.playToClient(VaultPurgePayload.TYPE, VaultPurgePayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(com.frozendawn.client.VaultPurgeFlash::receive));
         registrar.playToClient(LashBeamPayload.TYPE, LashBeamPayload.STREAM_CODEC,
                 (payload, context) -> context.enqueueWork(() -> com.frozendawn.client.LashBeamClient.receive(payload)));
 

@@ -11,6 +11,7 @@ Each slice is its own branch and PR off `feat/maeve-director`.
 |---|---|---|
 | 1 | Lash core, Seared, acquisition, world effects, overheat glow, hellwhip memo | This branch, `feat/sever-lash`, PR #143 open; built, awaiting the owner's playtest and merge approval |
 | 2 | Beam render, hum and sounds, 3D model and texture; the Lash modules wait for the ORSA Fabricator | `feat/sever-lash-2` off `feat/sever-lash`; built, awaiting the owner's playtest |
+| T | ORSA TR-0 Terminus, inserted by the owner 2026-11-03; tracked in `docs/terminus.md` | `feat/terminus` off `feat/sever-lash-2`; planning |
 | 3 | Proximity Tracker (handheld, then wall-mounted) | Not started |
 | 4 | Arc Fence | Not started |
 | 5 | Sweep Turret (needs 1 and 3) | Not started |

@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "down": "frozendawn:block/vault_shell",
+    "up": "frozendawn:block/vault_shell",
+    "north": "frozendawn:block/vault_shell",
+    "south": "frozendawn:block/vault_shell",
+    "east": "frozendawn:block/vault_mark_drill_plate_2",
+    "west": "frozendawn:block/vault_shell",
+    "particle": "frozendawn:block/vault_shell"
+  }
+}

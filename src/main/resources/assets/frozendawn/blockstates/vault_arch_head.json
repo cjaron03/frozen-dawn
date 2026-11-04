@@ -1,0 +1,13 @@
+{
+  "variants": {
+    "type=top": {
+      "model": "frozendawn:block/vault_arch_head"
+    },
+    "type=bottom": {
+      "model": "frozendawn:block/vault_arch_head"
+    },
+    "type=double": {
+      "model": "frozendawn:block/vault_arch_head"
+    }
+  }
+}

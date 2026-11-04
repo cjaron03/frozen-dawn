@@ -20,6 +20,8 @@ public final class HelionSiteState extends SavedData {
     private final Set<Long> evaluated = new HashSet<>();
     private final List<BlockPos> built = new ArrayList<>();
     private final Set<Long> looted = new HashSet<>();
+    /** The hall over the world's one Terminus Vault, once it stands. It is never placed again, even if that site is lost. */
+    private @org.jetbrains.annotations.Nullable BlockPos vault;
 
     public static HelionSiteState get(MinecraftServer server) {
         return server.overworld().getDataStorage().computeIfAbsent(
@@ -31,6 +33,7 @@ public final class HelionSiteState extends SavedData {
         var list = tag.getList("built", Tag.TAG_LONG);
         for (int i = 0; i < list.size(); i++) state.built.add(BlockPos.of(((net.minecraft.nbt.LongTag) list.get(i)).getAsLong()));
         for (long packed : tag.getLongArray("looted")) state.looted.add(packed);
+        if (tag.contains("vault")) state.vault = BlockPos.of(tag.getLong("vault"));
         return state;
     }
     @Override public CompoundTag save(CompoundTag tag, HolderLookup.Provider registries) {
@@ -38,6 +41,7 @@ public final class HelionSiteState extends SavedData {
         var list = new ListTag(); for (var pos : built) list.add(net.minecraft.nbt.LongTag.valueOf(pos.asLong()));
         tag.put("built", list);
         tag.putLongArray("looted", looted.stream().mapToLong(Long::longValue).toArray());
+        if (vault != null) tag.putLong("vault", vault.asLong());
         return tag;
     }
     private static long key(int chunkX, int chunkZ) { return ((long) chunkX << 32) | (chunkZ & 0xFFFFFFFFL); }
@@ -45,6 +49,10 @@ public final class HelionSiteState extends SavedData {
     public void markEvaluated(int chunkX, int chunkZ) { if (evaluated.add(key(chunkX, chunkZ))) setDirty(); }
     public void markBuilt(int chunkX, int chunkZ, BlockPos hall) { evaluated.add(key(chunkX, chunkZ)); built.add(hall.immutable()); setDirty(); }
     public void markLooted(BlockPos hall) { if (looted.add(hall.asLong())) setDirty(); }
+    public @org.jetbrains.annotations.Nullable BlockPos vault() { return vault; }
+    public void markVault(BlockPos hall) { vault = hall.immutable(); setDirty(); }
+    /** Test only: the flag never clears in play. */
+    public void setVaultForTest(@org.jetbrains.annotations.Nullable BlockPos hall) { vault = hall; setDirty(); }
     public List<BlockPos> built() { return List.copyOf(built); }
     /** Built halls whose Confinement Core is still in place. */
     public List<BlockPos> unlooted() { return built.stream().filter(p -> !looted.contains(p.asLong())).toList(); }

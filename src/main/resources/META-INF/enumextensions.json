@@ -5,6 +5,12 @@
       "name": "FROZENDAWN_SEVER_LASH",
       "constructor": "(ZLnet/neoforged/neoforge/client/IArmPoseTransformer;)V",
       "parameters": {"class": "com/frozendawn/client/SeverLashHold", "field": "FIRING_POSE"}
+    },
+    {
+      "enum": "net/minecraft/client/model/HumanoidModel$ArmPose",
+      "name": "FROZENDAWN_TERMINUS",
+      "constructor": "(ZLnet/neoforged/neoforge/client/IArmPoseTransformer;)V",
+      "parameters": {"class": "com/frozendawn/client/TerminusHold", "field": "WINDING_POSE"}
     }
   ]
 }

@@ -33,6 +33,25 @@ public class ModBlockEntities {
             BLOCK_ENTITIES.register("airlock_controller", () -> BlockEntityType.Builder.of(
                     com.frozendawn.block.AirlockControllerBlockEntity::new, ModBlocks.AIRLOCK_CONTROLLER.get()).build(null));
 
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.frozendawn.vault.VaultMechanismBlockEntity>> VAULT_MECHANISM = BLOCK_ENTITIES.register("vault_mechanism",
+            () -> BlockEntityType.Builder.of(com.frozendawn.vault.VaultMechanismBlockEntity::new, ModBlocks.VAULT_MECHANISM.get()).build(null));
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.frozendawn.vault.VaultTechnicianBlockEntity>> VAULT_TECHNICIAN = BLOCK_ENTITIES.register("vault_technician",
+            () -> BlockEntityType.Builder.of(com.frozendawn.vault.VaultTechnicianBlockEntity::new, ModBlocks.VAULT_TECHNICIAN.get()).build(null));
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.frozendawn.vault.VaultCradleBlockEntity>> VAULT_CRADLE = BLOCK_ENTITIES.register("vault_cradle",
+            () -> BlockEntityType.Builder.of(com.frozendawn.vault.VaultCradleBlockEntity::new, ModBlocks.VAULT_CRADLE.get()).build(null));
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.frozendawn.vault.VaultClockBlockEntity>> VAULT_CLOCK = BLOCK_ENTITIES.register("vault_clock",
+            () -> BlockEntityType.Builder.of(com.frozendawn.vault.VaultClockBlockEntity::new, ModBlocks.VAULT_CLOCK.get()).build(null));
+
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.frozendawn.vault.VaultArgusBlockEntity>> VAULT_ARGUS = BLOCK_ENTITIES.register("vault_argus",
+            () -> BlockEntityType.Builder.of(com.frozendawn.vault.VaultArgusBlockEntity::new, ModBlocks.VAULT_ARGUS.get()).build(null));
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.frozendawn.vault.VaultPlotBlockEntity>> VAULT_PLOT = BLOCK_ENTITIES.register("vault_plot",
+            () -> BlockEntityType.Builder.of(com.frozendawn.vault.VaultPlotBlockEntity::new, ModBlocks.VAULT_PLOT.get()).build(null));
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.frozendawn.vault.VaultRecorderBlockEntity>> VAULT_RECORDER = BLOCK_ENTITIES.register("vault_recorder",
+            () -> BlockEntityType.Builder.of(com.frozendawn.vault.VaultRecorderBlockEntity::new, ModBlocks.VAULT_RECORDER.get()).build(null));
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.frozendawn.vault.VaultVitalsBlockEntity>> VAULT_VITALS = BLOCK_ENTITIES.register("vault_vitals",
+            () -> BlockEntityType.Builder.of(com.frozendawn.vault.VaultVitalsBlockEntity::new, ModBlocks.VAULT_VITALS.get()).build(null));
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.frozendawn.vault.VaultFightClockBlockEntity>> VAULT_FIGHT_CLOCK = BLOCK_ENTITIES.register("vault_fight_clock",
+            () -> BlockEntityType.Builder.of(com.frozendawn.vault.VaultFightClockBlockEntity::new, ModBlocks.VAULT_FIGHT_CLOCK.get()).build(null));
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.frozendawn.block.OrsaEmergencyLightBlockEntity>> ORSA_EMERGENCY_LIGHT =
             BLOCK_ENTITIES.register("orsa_emergency_light",()->BlockEntityType.Builder.of(com.frozendawn.block.OrsaEmergencyLightBlockEntity::new,ModBlocks.ORSA_EMERGENCY_LIGHT.get()).build(null));
 

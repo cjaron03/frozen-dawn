@@ -1,0 +1,6 @@
+{
+  "parent": "frozendawn:block/vault_ac_4",
+  "textures": {
+    "slat": "frozendawn:block/vault_ac_slat_mid"
+  }
+}
