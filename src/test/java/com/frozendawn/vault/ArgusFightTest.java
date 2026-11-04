@@ -117,7 +117,7 @@ class ArgusFightTest {
         assertEquals(Phase.BURN, fight.phase());
         fight.tick(false);
         assertEquals(Phase.WAITING, fight.phase());
-        fight.tick(true);
+        ticks(fight, ArgusFight.GAP_TICKS, false);
         assertEquals(4, fight.wanted().length, "Round 2");
     }
 
@@ -132,8 +132,50 @@ class ArgusFightTest {
         assertEquals(Phase.BURN, fight.phase());
         fight.spent();
         assertEquals(Phase.WAITING, fight.phase());
-        fight.tick(true);
+        ticks(fight, ArgusFight.GAP_TICKS, false);
         assertEquals(Phase.READ, fight.phase());
+    }
+
+    @Test
+    void afterAnOpeningTheBoardLightsFiveSecondsOnWhereverYouStand() {
+        var fight = started(6);
+        winRound(fight);
+        assertEquals(100, ArgusFight.GAP_TICKS);
+        ticks(fight, ArgusFight.GAP_TICKS - 1, true);
+        assertEquals(Phase.WAITING, fight.phase(), "Not even for someone on the upper level");
+        fight.tick(false);
+        assertEquals(Phase.READ, fight.phase());
+    }
+
+    @Test
+    void theBoardFlashesAgainDuringThePull() {
+        var fight = started(6);
+        read(fight);
+        int glyph = fight.wanted()[0];
+        ticks(fight, ArgusFight.REMIND_EVERY - 1, false);
+        assertFalse(fight.boardLit(glyph), "Dark until the reminder");
+        fight.tick(false);
+        assertTrue(fight.boardLit(glyph));
+        assertFalse(IntStream.range(0, 6).filter(g -> Arrays.stream(fight.wanted()).noneMatch(w -> w == g)).anyMatch(fight::boardLit), "Only the round's glyphs");
+        ticks(fight, ArgusFight.REMIND_TICKS - 1, false);
+        assertTrue(fight.boardLit(glyph));
+        fight.tick(false);
+        assertFalse(fight.boardLit(glyph), "Dark again");
+        ticks(fight, ArgusFight.REMIND_EVERY - ArgusFight.REMIND_TICKS, false);
+        assertTrue(fight.boardLit(glyph), "And again after that");
+    }
+
+    @Test
+    void roundThreesReminderKeepsItsOrder() {
+        var fight = started(6);
+        winRound(fight);
+        winRound(fight);
+        read(fight);
+        ticks(fight, ArgusFight.REMIND_EVERY, false);
+        for (int i = 0; i < fight.wanted().length; i++) {
+            assertTrue(fight.boardLit(fight.wanted()[i]), "Glyph " + i + " in its turn");
+            ticks(fight, ArgusFight.REMIND_TICKS / fight.wanted().length, false);
+        }
     }
 
     @Test
@@ -165,7 +207,7 @@ class ArgusFightTest {
         var fight = started(7);
         winRound(fight);
         winRound(fight);
-        fight.tick(true);
+        ticks(fight, ArgusFight.GAP_TICKS, false);
         assertEquals(new ArgusFight.Round(4, 100, true), fight.currentRound());
         var wanted = fight.wanted();
         for (int shown = 0; shown < 4; shown++) {

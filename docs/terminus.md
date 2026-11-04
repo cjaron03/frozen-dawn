@@ -393,7 +393,9 @@ names, glyphs and art are ours. Door 1, the bridge, the cot, the technician, the
 ### The fight
 - A round: from the upper level the board lights the round's glyphs, then goes dark. Below, the fuses have shuffled. Pull
   the matching ones, two seconds' hold each. All pulled, the Custodian's shell opens for 12 seconds, or until the opening is
-  spent, and it takes damage: a third of its health a round, with a boss bar. Then climb and read again.
+  spent, and it takes damage: a third of its health a round, with a boss bar. Five seconds after it shuts the board lights
+  again, wherever you are; only round 1 waits for someone on the upper level. While the fuses wait the board flashes the round
+  again for 3 s every 20 s, round 3 in order.
 - Round 1: three glyphs, shown 6 s. Round 2: four, shown 5 s. Round 3: four, shown 5 s, pulled in the order shown.
 - The Custodian moves only while no mind faces it, by `VaultWatch`'s rule. Facing a fuse means your back is to it. Its touch
   takes hearts; nothing hurts it with the shell shut. It is no mind itself, so it freezes no door.
@@ -518,6 +520,11 @@ custdiaon"
 The log and the closed save: first opening at 19:53:57 with 00:57 left, quit at 19:55:17 with no purge. Saved Argus state WAITING,
 one opening won, 6.4 s on the clock, not clean; the player on the lower floor. Not a fault: the board waits for someone on the
 upper level, and nothing tells you to climb back. That also fits the "1 rotation" of playtest 2.
+
+Response, owner's ruling: "around like 5 or so seconds after the core of the custiodian shuts", and "have the fuses flash again after
+a bit, incase the player forgot". The board now lights by itself 5 s after the shell shuts, and "flash again" was taken to mean the
+board, since lighting the right fuses would give the answer away. It can be read from the lower floor only from about mid-hall
+eastward, by geometry, not yet checked by eye; the ring hides it nearer the west wall.
 
 ## ORSA System Plot (built 2026-11-03)
 

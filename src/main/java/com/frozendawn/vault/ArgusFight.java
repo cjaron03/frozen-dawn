@@ -7,8 +7,9 @@ import net.minecraft.nbt.CompoundTag;
 
 /**
  * ORSA ISS-4 "Argus", without a world: the rounds, the clock and what a fuse does. {@link VaultArgusBlockEntity} shows it
- * and keeps it. A round: someone on the upper level, the board lights, it goes dark, the fuses have shuffled; all pulled,
- * the Custodian's shell opens, then back to the board. A Custodian still standing after three openings gets round 3 again.
+ * and keeps it. A round: the board lights, for the first round once someone is on the upper level, after that five seconds
+ * after the shell shuts, wherever you are. It goes dark, the fuses have shuffled, and it flashes again now and then until
+ * all are pulled; then the Custodian's shell opens. A Custodian still standing after three openings gets round 3 again.
  */
 public final class ArgusFight {
     public enum Phase { DORMANT, WAITING, READ, PULL, BURN, WON }
@@ -16,6 +17,10 @@ public final class ArgusFight {
     public record Round(int glyphs, int shownTicks, boolean ordered) { }
 
     public static final int GLYPHS = 6, ROUNDS = 3, CLOCK_TICKS = 4 * 60 * 20, BURN_TICKS = 12 * 20, PENALTY_TICKS = 20 * 20, HOLD_TICKS = 40;
+    /** From the shell shutting to the board lighting. */
+    public static final int GAP_TICKS = 5 * 20;
+    /** While the fuses wait, the board shows the round again for {@code REMIND_TICKS} every {@code REMIND_EVERY}. */
+    public static final int REMIND_EVERY = 20 * 20, REMIND_TICKS = 3 * 20;
     /** The lamps over the east gate: one for every fuse the three rounds ask for. */
     public static final int LAMPS = IntStream.range(0, ROUNDS).map(r -> round(r).glyphs()).sum();
     /** A held use repeats every four ticks; a longer gap than this is a hand let go. */
@@ -62,8 +67,9 @@ public final class ArgusFight {
         if (!running()) return false;
         if (--clock <= 0) { clock = 0; return true; }
         switch (phase) {
-            case WAITING -> { if (readerUp) enter(Phase.READ); }
+            case WAITING -> { if (won == 0 ? readerUp : ++phaseTicks >= GAP_TICKS) enter(Phase.READ); }
             case READ -> { if (++phaseTicks >= currentRound().shownTicks()) { shuffle(); enter(Phase.PULL); } }
+            case PULL -> phaseTicks++;
             case BURN -> { if (++phaseTicks >= BURN_TICKS) enter(Phase.WAITING); }
             default -> { }
         }
@@ -95,9 +101,11 @@ public final class ArgusFight {
 
     /** The glyph at {@code glyph} on the board, lit? Round 3 shows one at a time, in the order they must be pulled. */
     public boolean boardLit(int glyph) {
-        if (phase != Phase.READ) return false;
+        boolean reading = phase == Phase.READ;
+        int shown = reading ? phaseTicks : phaseTicks % REMIND_EVERY;
+        if (!reading && (phase != Phase.PULL || phaseTicks < REMIND_EVERY || shown >= REMIND_TICKS)) return false;
         if (!currentRound().ordered()) return wants(glyph);
-        return wanted[Math.min(wanted.length - 1, phaseTicks * wanted.length / currentRound().shownTicks())] == glyph;
+        return wanted[Math.min(wanted.length - 1, shown * wanted.length / (reading ? currentRound().shownTicks() : REMIND_TICKS))] == glyph;
     }
     private boolean wants(int glyph) { return Arrays.stream(wanted).anyMatch(g -> g == glyph); }
 
