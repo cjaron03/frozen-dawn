@@ -16,8 +16,20 @@ public final class ShepherdPolicy {
     public static final int CALM_HURT_TICKS = 600;
     public static final int PROMPT_REPEAT_TICKS = 1200;
     public static final int PROMPT_SHOWS = 3;
+    public static final int STRIP_HOLD_TICKS = 80;
+    public static final int STRIP_FADE_TICKS = 20;
 
     private ShepherdPolicy() {}
+
+    public static int typedChars(int age, int length) {
+        return Math.min(length, age / TICKS_PER_CHAR);
+    }
+
+    /** Solid while it types and holds, then gone over the fade. */
+    public static float stripAlpha(int age, int length) {
+        int fading = age - length * TICKS_PER_CHAR - STRIP_HOLD_TICKS;
+        return fading <= 0 ? 1 : Math.max(0, 1 - (float) fading / STRIP_FADE_TICKS);
+    }
 
     /** Whether she would interrupt: nothing hostile in range and nobody hurt lately. */
     public static boolean calm(double nearestHostile, long ticksSinceHurt) {

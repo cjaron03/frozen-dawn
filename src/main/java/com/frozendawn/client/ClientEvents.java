@@ -171,6 +171,7 @@ public class ClientEvents {
         event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "icarus_suit"), IcarusSuitHud::render);
         event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "icarus_screen_flash"), IcarusScreenFlash::render);
         event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "vault_purge_flash"), VaultPurgeFlash::render);
+        event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "shepherd_prompt"), ShepherdPromptStrip::render);
         event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "icarus_flash"), IcarusBlastEffects::renderFlash);
         event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "radiation_flashes"), RadiationClient::renderFlashes);
         event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "geiger_readout"), RadiationClient::renderReadout);

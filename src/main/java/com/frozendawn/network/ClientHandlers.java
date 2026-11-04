@@ -345,14 +345,17 @@ public final class ClientHandlers {
     }
 
     public static void handleShepherdNode(ShepherdNodePayload payload) {
+        com.frozendawn.client.ShepherdPromptStrip.clear();
         shepherdScreen().show(payload);
     }
 
     public static void handleShepherdHub(ShepherdHubPayload payload) {
+        com.frozendawn.client.ShepherdPromptStrip.clear();
         shepherdScreen().show(payload);
     }
 
     public static void handleShepherdPrompt() {
+        com.frozendawn.client.ShepherdPromptStrip.show();
     }
 
     public static void handleShepherdClose() {
