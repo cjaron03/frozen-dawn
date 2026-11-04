@@ -3,7 +3,9 @@
 
 One Helion site with the vault under it, 32 blocks south of spawn, placed by /fd terminus vault place. The player starts
 in Survival at the site's hatch with a pickaxe and light, and finds the rest. Buttons jump to each room, send in a
-follower, and reset everything. Advancements are filtered as in every generated playtest world.
+follower, and reset everything. Advancements are filtered as in every generated playtest world, but a manual entry is
+locked by its advancement, so this world's pack carries silent copies of the vault documents' own; without them a
+document says it is archived and the manual stays shut.
 """
 import argparse
 import fcntl
@@ -74,10 +76,26 @@ def scripts():
     return result
 
 
+ROOT = Path(__file__).resolve().parent.parent
+ADVANCEMENTS = ROOT/'src/main/resources/data/frozendawn/advancement'
+
+
+def document_advancements(pack):
+    """The documents' advancements, as the mod defines them but rootless and without toasts: their parent is filtered out."""
+    out = pack/'data/frozendawn/advancement'
+    out.mkdir(parents=True, exist_ok=True)
+    for source in ADVANCEMENTS.glob('found_terminus_*.json'):
+        advancement = json.loads(source.read_text())
+        del advancement['parent']
+        advancement['display'].update({'background': 'minecraft:textures/block/smooth_stone.png', 'show_toast': False})
+        (out/source.name).write_text(json.dumps(advancement, indent=2)+'\n')
+
+
 def prepare_world(source, destination, title=TITLE):
     with (source.parent/'session.lock').open('rb') as lock:
         fcntl.lockf(lock, fcntl.LOCK_SH | fcntl.LOCK_NB)
         prepare(source, destination, title=title, namespace=NS, pack=PACK, build_scripts=scripts, surface=128, structures=False)
+    document_advancements(destination/'datapacks'/PACK)
     # Lock the difficulty the shared lab chose, and give the save the empty dragon fight the client logs as missing.
     level = destination/'level.dat'
     stream = io.BytesIO(gzip.decompress(level.read_bytes()))

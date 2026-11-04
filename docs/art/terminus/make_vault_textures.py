@@ -112,8 +112,9 @@ def main():
     noise('a', ['ded6be', 'd6cdb4'], 8).save(BLOCK / 'vault_paper.png')
     panel(False).save(BLOCK / 'vault_door_panel.png')
     panel(True).save(BLOCK / 'vault_last_door_panel.png')
-    clock_face().save(BLOCK / 'vault_clock_face.png')
-    clock_digits().save(BLOCK / 'vault_clock_digits.png')
+    clock_face().save(ENTITY / 'vault_clock_face.png')
+    # Drawn directly, not from the block atlas: a 44x5 sheet there would turn every block's mipmaps off.
+    clock_digits().save(ENTITY / 'vault_clock_digits.png')
     technician().save(ENTITY / 'vault_technician.png')
 
 

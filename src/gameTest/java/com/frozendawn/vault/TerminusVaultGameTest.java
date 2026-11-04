@@ -11,8 +11,11 @@ import com.mojang.authlib.GameProfile;
 import java.util.UUID;
 import java.util.stream.IntStream;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.gametest.framework.*;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.*;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.entity.Mob;
@@ -226,6 +229,21 @@ public final class TerminusVaultGameTest {
             state.setVaultForTest(null);
             h.assertTrue(!TerminusVaultBuilder.claim(level,h.absolutePos(BlockPos.ZERO).atY(level.getMinBuildHeight()+10))&&state.vault()==null,"Too near the world's floor: the next site takes it");
         } finally {state.setVaultForTest(was);}
+        h.succeed();
+    }
+
+    @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="terminus_vault",timeoutTicks=4000)
+    public static void everyVaultDocumentArchivesWhenRead(GameTestHelper h) {
+        var level=h.getLevel();var op=player(h,"vault_reader",new Vec3(4.5,5,10.5),AWAY);
+        var papers=new java.util.ArrayList<>(VaultDocuments.onTheDesk());papers.addAll(VaultDocuments.inTheLocker());papers.add(VaultDocuments.drainSchedule());
+        for(var paper:papers) {
+            var type=paper.get(DataComponents.CUSTOM_DATA).copyTag().getString("doc_type");
+            op.setItemInHand(InteractionHand.MAIN_HAND,paper);
+            paper.use(level,op,InteractionHand.MAIN_HAND);
+            var holder=level.getServer().getAdvancements().get(ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID,"found_"+type));
+            h.assertTrue(holder!=null&&op.getAdvancements().getOrStartProgress(holder).isDone(),"Reading it unlocks its manual entry: "+type);
+            h.assertTrue(paper.isEmpty(),"Reading it files it: "+type);
+        }
         h.succeed();
     }
 

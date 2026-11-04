@@ -20,7 +20,7 @@ public final class VaultClockRenderer implements BlockEntityRenderer<VaultClockB
 
     public VaultClockRenderer(BlockEntityRendererProvider.Context context) { }
 
-    private static ResourceLocation texture(String name) { return ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "textures/block/" + name + ".png"); }
+    private static ResourceLocation texture(String name) { return ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "textures/entity/" + name + ".png"); }
 
     @Override public void render(VaultClockBlockEntity be, float partial, PoseStack pose, MultiBufferSource buffers, int light, int overlay) {
         if (be.getLevel() == null) return;
