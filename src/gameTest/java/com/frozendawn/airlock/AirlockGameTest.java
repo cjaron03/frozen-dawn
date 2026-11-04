@@ -941,7 +941,7 @@ public final class AirlockGameTest {
             l.getDataStorage().set(PowerNetworkSavedData.NAME,new PowerNetworkSavedData());
             l.getDataStorage().set(RoomThermalState.NAME,new RoomThermalState());
             RoomOxygenManager.reset();RoomThermalManager.reset();PowerNetworks.stopped(null);
-            try {body.accept(scene(h));}
+            try {var s=scene(h);completeFixtureIndex(h);body.accept(s);}
             finally {
                 l.getDataStorage().set("frozendawn_airlocks",chambers);l.getDataStorage().set(OxygenTransferState.NAME,transfer);
                 l.getDataStorage().set(PowerNetworkSavedData.NAME,links);l.getDataStorage().set(RoomThermalState.NAME,heat);
@@ -1168,14 +1168,10 @@ public final class AirlockGameTest {
         h.assertTrue(!RoomAtmosphere.hasAir(l,s.base)&&RoomAtmosphere.hasAir(l,s.center)&&c.gas.air()==chamberGas,
                 "A real exterior breach empties the base while its closed airlock retains its own air");
         l.setBlock(breach,Blocks.GLASS.defaultBlockState(),3);var base=RoomAtmosphere.view(l,s.base).geometry().cells();
-        // Complete the ordinary chunk index before measuring paid Core recovery, as in the sibling recovery fixtures.
-        completeRecoveryFixtureIndex(h,s);
         for(int i=0;i<6;i++)refillSecond(h,s,false);
         var saved=AirlockSavedState.get(l);
         h.assertTrue(saved.roomGas(l,base)==0&&!RoomAtmosphere.hasAir(l,s.base)&&c.gas.air()==chamberGas,
                 "Repair with zero production cannot borrow the isolated chamber's gas");
-        // Manual O2 seconds require the same chunk-index readiness as the other recovery fixtures.
-        completeRecoveryFixtureIndex(h,s);
         core.setPowerShare(0);core.setHeatShare(0);
         for(int i=0;i<6;i++)refillSecond(h,s,false);
         int partial=saved.roomGas(l,base);
@@ -1194,19 +1190,17 @@ public final class AirlockGameTest {
     private static void independentBaseRecovery(GameTestHelper h,Scene s,boolean pixieSource,boolean emptyChamber) {
         independentBaseRecovery(h,s,pixieSource,emptyChamber,false);
     }
-    private static void completeRecoveryFixtureIndex(GameTestHelper h,Scene s) {
-        var l=h.getLevel();var geometry=RoomAtmosphere.view(l,s.base).geometry();
-        var chunks=new HashSet<Long>();
-        for(var pos:geometry.cells())chunks.add(new net.minecraft.world.level.ChunkPos(pos).toLong());
-        for(var pos:geometry.walls())chunks.add(new net.minecraft.world.level.ChunkPos(pos).toLong());
-        var pending=new HashSet<>(VacuumFlames.snapshot(l).pendingChunks());pending.retainAll(chunks);
-        int bootstrap=0;
-        while(bootstrap<256&&!Collections.disjoint(chunks,VacuumFlames.snapshot(l).pendingChunks())) {
-            VacuumFlames.tick(new net.neoforged.neoforge.event.tick.ServerTickEvent.Post(()->true,l.getServer()));bootstrap++;
-        }
-        h.assertTrue(Collections.disjoint(chunks,VacuumFlames.snapshot(l).pendingChunks()),
-                "Recovery fixture indexes both cells and wall chunks before timing paid production");
-        System.out.println("AIRLOCK_RECOVERY_FIXTURE base="+s.base+" pending="+pending.size()+" bootstrap="+bootstrap);
+    /**
+     * These fixtures step oxygen seconds by hand inside one server tick, so the scan's own ticks never come. A room waits
+     * while a chunk of its is queued, and the first batch on a new server starts behind the hundreds of chunks it just loaded.
+     */
+    private static void completeFixtureIndex(GameTestHelper h) {
+        var l=h.getLevel();var box=h.getBounds();var chunks=new HashSet<Long>();
+        net.minecraft.world.level.ChunkPos.rangeClosed(new net.minecraft.world.level.ChunkPos(BlockPos.containing(box.minX,0,box.minZ)),
+                new net.minecraft.world.level.ChunkPos(BlockPos.containing(box.maxX,0,box.maxZ))).forEach(chunk->chunks.add(chunk.toLong()));
+        for(int i=0;i<1024&&!Collections.disjoint(chunks,VacuumFlames.snapshot(l).pendingChunks());i++)
+            VacuumFlames.tick(new net.neoforged.neoforge.event.tick.ServerTickEvent.Post(()->true,l.getServer()));
+        h.assertTrue(Collections.disjoint(chunks,VacuumFlames.snapshot(l).pendingChunks()),"The fixture's chunks are indexed before its oxygen seconds count");
     }
     private static void independentBaseRecovery(GameTestHelper h,Scene s,boolean pixieSource,boolean emptyChamber,boolean reindex) {
         var l=h.getLevel();var hole=joinEmptyChamber(h,s,false);var c=s.chamber;
@@ -1239,11 +1233,8 @@ public final class AirlockGameTest {
             h.assertTrue(VacuumFlames.snapshot(l).pendingChunks().contains(chunk.getPos().toLong())
                     &&!RoomAtmosphere.hasAir(l,s.base)&&saved.roomGas(l,base)==0,
                     "Unindexed fixture cannot claim two funded seconds: gas="+saved.roomGas(l,base)+" reading="+reading);
-            core.setPowerShare(100);
+            core.setPowerShare(100);completeFixtureIndex(h);
         }
-        // This synchronous fixture advances O2 manually, so it must also finish ordinary chunk indexing.
-        // Otherwise its first production seconds depend on the preceding test batch's chunk queue.
-        completeRecoveryFixtureIndex(h,s);
         long water=pixie==null?0:pixie.availableWater();
         if(pixieSource) {
             h.assertTrue(PowerNetworks.link(l,source,intake)==PowerLinkRules.Result.OK,"Only a real powered PIXIE can produce the base's recovery gas");PowerNetworks.update(l);
