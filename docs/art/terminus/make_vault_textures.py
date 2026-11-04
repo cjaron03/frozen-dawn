@@ -5,6 +5,7 @@ Writes into the mod's assets. Run from anywhere: python3 docs/art/terminus/make_
 import random
 from pathlib import Path
 from PIL import Image, ImageDraw
+from make_vault_warning_mockup import scrawl
 
 ROOT = Path(__file__).resolve().parents[3]
 BLOCK = ROOT / 'src/main/resources/assets/frozendawn/textures/block'
@@ -137,6 +138,17 @@ def plain_word(text, tiles, seed):
         wide.paste(shell(seed + i), (i * 16, 0))
     stencil(wide, 2, 5, text)
     return [wide.crop((i * 16, 0, i * 16 + 16, 16)) for i in range(tiles)]
+
+
+def warning():
+    """The marker on the wall by the far ledge, five blocks by three, the top row over the hazard band."""
+    wide = Image.new('RGBA', (80, 48))
+    for i in range(5):
+        wide.paste(hazard(21, 0), (i * 16, 0))
+        for j in (1, 2):
+            wide.paste(shell(1), (i * 16, j * 16))
+    scrawl(wide, 0, 1)
+    return [wide.crop((x * 16, y * 16, x * 16 + 16, y * 16 + 16)) for y in range(3) for x in range(5)]
 
 
 def flag():
@@ -282,6 +294,8 @@ def main():
         tile.save(BLOCK / f'vault_mark_exo_left_{i}.png')
     for i, tile in enumerate(plain_word('ISS-4 ARGUS', 3, 28)):
         tile.save(BLOCK / f'vault_mark_argus_{i}.png')
+    for i, tile in enumerate(warning()):
+        tile.save(BLOCK / f'vault_mark_warning_{i}.png')
     for i, tile in enumerate(flag()):
         tile.save(BLOCK / f'vault_mark_flag_{i}.png')
     for index in range(6):

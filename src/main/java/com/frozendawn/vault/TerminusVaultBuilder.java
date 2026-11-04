@@ -222,6 +222,8 @@ public final class TerminusVaultBuilder {
         mark(l, c, 17, CEILING - 1, -2, Mark.ARGUS_0);
         mark(l, c, 17, CEILING - 1, -3, Mark.ARGUS_1);
         mark(l, c, 17, CEILING - 1, -4, Mark.ARGUS_2);
+        // Somebody's warning, by the far ledge: the only instructions there are. Over the band, five by three.
+        for (int i = 0; i < 15; i++) mark(l, c, 12 + i % 5, CEILING - 2 - i / 5, -3, Mark.valueOf("WARNING_" + i));
         // The rest of the sublevel's lamps: nothing puts these out.
         for (int x : new int[] {7, 13}) l.setBlock(c.offset(x, CEILING - 1, -2), ModBlocks.VAULT_LIGHT.get().defaultBlockState().setValue(VaultLightBlock.FACING, Direction.SOUTH), 2);
         l.setBlock(c.offset(-2, CEILING - 1, 0), ModBlocks.VAULT_LIGHT.get().defaultBlockState().setValue(VaultLightBlock.FACING, Direction.EAST), 2);

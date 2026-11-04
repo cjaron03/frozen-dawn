@@ -35,6 +35,51 @@
     },
     "mark=argus_2": {
       "model": "frozendawn:block/vault_mark_argus_2"
+    },
+    "mark=warning_0": {
+      "model": "frozendawn:block/vault_mark_warning_0"
+    },
+    "mark=warning_1": {
+      "model": "frozendawn:block/vault_mark_warning_1"
+    },
+    "mark=warning_2": {
+      "model": "frozendawn:block/vault_mark_warning_2"
+    },
+    "mark=warning_3": {
+      "model": "frozendawn:block/vault_mark_warning_3"
+    },
+    "mark=warning_4": {
+      "model": "frozendawn:block/vault_mark_warning_4"
+    },
+    "mark=warning_5": {
+      "model": "frozendawn:block/vault_mark_warning_5"
+    },
+    "mark=warning_6": {
+      "model": "frozendawn:block/vault_mark_warning_6"
+    },
+    "mark=warning_7": {
+      "model": "frozendawn:block/vault_mark_warning_7"
+    },
+    "mark=warning_8": {
+      "model": "frozendawn:block/vault_mark_warning_8"
+    },
+    "mark=warning_9": {
+      "model": "frozendawn:block/vault_mark_warning_9"
+    },
+    "mark=warning_10": {
+      "model": "frozendawn:block/vault_mark_warning_10"
+    },
+    "mark=warning_11": {
+      "model": "frozendawn:block/vault_mark_warning_11"
+    },
+    "mark=warning_12": {
+      "model": "frozendawn:block/vault_mark_warning_12"
+    },
+    "mark=warning_13": {
+      "model": "frozendawn:block/vault_mark_warning_13"
+    },
+    "mark=warning_14": {
+      "model": "frozendawn:block/vault_mark_warning_14"
     }
   }
 }

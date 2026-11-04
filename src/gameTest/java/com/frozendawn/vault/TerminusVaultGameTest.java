@@ -217,6 +217,7 @@ public final class TerminusVaultGameTest {
             h.assertTrue(level.getBlockEntity(hall.offset(TerminusVaultBuilder.LOCKER)) instanceof BarrelBlockEntity locker&&IntStream.range(0,locker.getContainerSize()).filter(i->locker.getItem(i).is(ModItems.ORSA_DOCUMENT.get())).count()==VaultDocuments.TALE_LOGS.size(),"The tale logs");
             h.assertTrue(level.getBlockEntity(hall.offset(HelionSiteBuilder.LOG_DESK)) instanceof BarrelBlockEntity desk&&desk.getItem(0).is(ModItems.ORSA_DOCUMENT.get()),"The one clue, in the hall's desk");
             h.assertTrue(level.getBlockEntity(hall.offset(TerminusVaultBuilder.ARGUS)) instanceof VaultArgusBlockEntity,"Argus over the Watch Floor");
+            h.assertTrue(level.getBlockState(hall.offset(16,TerminusVaultBuilder.FLOOR+1,-3)).getOptionalValue(VaultMarkBlock.MARK).filter(m->m==VaultMarkBlock.Mark.WARNING_14).isPresent(),"The warning ends by the door");
             h.assertTrue(TerminusVaultBuilder.LAST_DOOR.getX()==45&&TerminusVaultBuilder.CRADLE.getX()==50,"The last door and the vault moved east of the floor");
             h.assertTrue(level.getBlockState(hall.offset(TerminusVaultBuilder.REACH-1,TerminusVaultBuilder.CEILING,0)).is(ModBlocks.VAULT_SHELL.get()),"The shell runs that far");
             var shell=level.getBlockState(hall.offset(-3,TerminusVaultBuilder.CEILING,0));

@@ -481,6 +481,11 @@ plus i did NOT know what i was doing lol"
 The log: Drain Schedule archived at 18:50:29, Seal Order at 18:52:07, slain by the Custodian at 18:52:59, quit at 18:53:26. The
 archives fix is confirmed. This run had no voice on the recording, which came in `e46f8485`.
 
+Response: the heartbeat remade in `40b66d20`. For not knowing what to do, a card and a status line were drawn and turned down:
+the owner wanted the instructions "written quickly in marker or something outside the door before you enter the room, like
+someone warning the palyer". Approved from `vault-warning-mockup.png`: seven scrawled lines on the bridge hall's north wall, x
+12..16, over the band. The room itself gives no hints.
+
 ## ORSA System Plot (idea, not drawn or built)
 
 Owner request, 2026-11-03: a map of the solar system somewhere quiet in the vault, showing what everyone was looking at when
