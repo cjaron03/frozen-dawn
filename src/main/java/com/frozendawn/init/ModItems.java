@@ -196,6 +196,7 @@ public class ModItems {
             new Item.Properties().stacksTo(16).rarity(net.minecraft.world.item.Rarity.RARE).component(ModDataComponents.ANTIMATTER.get(), com.frozendawn.power.IcarusPhysics.CAPSULE)));
     public static final DeferredItem<Item> EMPTY_ANTIMATTER_CAPSULE = ITEMS.registerItem("empty_antimatter_capsule", Item::new, new Item.Properties().stacksTo(16));
 
+    public static final DeferredItem<BlockItem> CS1_DOCK = ITEMS.registerSimpleBlockItem("cs1_dock", ModBlocks.CS1_DOCK);
     public static final DeferredItem<com.frozendawn.item.PowerCellItem> POWER_CELL = ITEMS.register("power_cell", () -> new com.frozendawn.item.PowerCellItem(new Item.Properties()));
     public static final DeferredItem<com.frozendawn.item.TerminusItem> TERMINUS = ITEMS.register("terminus", () -> new com.frozendawn.item.TerminusItem(new Item.Properties()));
     public static final DeferredItem<com.frozendawn.item.SeverLashItem> SEVER_LASH = ITEMS.register("sever_lash", () -> new com.frozendawn.item.SeverLashItem(new Item.Properties()));
@@ -779,6 +780,7 @@ public class ModItems {
                         output.accept(ICARUS_MATTER_PORT.get());
                         output.accept(ICARUS_CAPSULE_DOCK.get());
                         output.accept(POWER_CELL.get());
+                        output.accept(CS1_DOCK.get());
                         output.accept(SEVER_LASH.get());
                         output.accept(LASH_EMITTER.get());
                         output.accept(TERMINUS.get());

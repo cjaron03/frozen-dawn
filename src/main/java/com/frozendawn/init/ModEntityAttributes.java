@@ -51,6 +51,7 @@ public class ModEntityAttributes {
         event.put(ModEntities.BLOOM_SPORE_CORPSE.get(),
                 BloomSporeCorpseEntity.createAttributes().build());
         event.put(ModEntities.ARCHIVIST.get(), ArchivistEntity.createAttributes().build());
+        event.put(ModEntities.CS1_UNIT.get(), com.frozendawn.shepherd.ShepherdEntity.createAttributes().build());
         event.put(ModEntities.MIMIC.get(), MimicEntity.createAttributes().build());
         event.put(ModEntities.ARCHITECT.get(), ArchitectEntity.createAttributes().build());
         event.put(ModEntities.HEART_SUCCESSOR.get(), HeartSuccessorEntity.createAttributes().build());

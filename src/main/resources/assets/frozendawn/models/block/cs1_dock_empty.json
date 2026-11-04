@@ -1,0 +1,6 @@
+{
+  "parent": "frozendawn:block/cs1_dock_base",
+  "textures": {
+    "front": "frozendawn:block/cs1_dock_front_empty"
+  }
+}

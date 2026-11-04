@@ -1,6 +1,7 @@
 {
   "replace": false,
   "values": [
-    "frozendawn:aggregate"
+    "frozendawn:aggregate",
+    "frozendawn:cs1_unit"
   ]
 }

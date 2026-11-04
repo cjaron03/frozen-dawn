@@ -1,0 +1,10 @@
+{
+  "nodes": [
+    {
+      "id": "hub.talk",
+      "lines": [
+        { "line": "shepherd.hub.talk", "heavy": "shepherd.hub.talk.heavy", "mood": "thinking" }
+      ]
+    }
+  ]
+}

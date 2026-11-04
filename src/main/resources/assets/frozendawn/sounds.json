@@ -5328,5 +5328,25 @@
         "volume": 1.0
       }
     ]
+  },
+  "entity.shepherd.blip": {
+    "category": "neutral",
+    "sounds": [
+      "frozendawn:entity/shepherd/blip"
+    ]
+  },
+  "block.cs1_dock.boot": {
+    "category": "block",
+    "subtitle": "subtitle.frozendawn.block.cs1_dock.boot",
+    "sounds": [
+      "frozendawn:block/cs1_dock/boot"
+    ]
+  },
+  "block.cs1_dock.refuse": {
+    "category": "block",
+    "subtitle": "subtitle.frozendawn.block.cs1_dock.refuse",
+    "sounds": [
+      "frozendawn:block/cs1_dock/refuse"
+    ]
   }
 }

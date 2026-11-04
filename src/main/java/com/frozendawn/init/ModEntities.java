@@ -205,6 +205,15 @@ public class ModEntities {
                             .updateInterval(10)
                             .build("bloom_spore_corpse"));
 
+    public static final DeferredHolder<EntityType<?>, EntityType<com.frozendawn.shepherd.ShepherdEntity>>
+            CS1_UNIT = ENTITIES.register("cs1_unit", () -> EntityType.Builder
+                    .of(com.frozendawn.shepherd.ShepherdEntity::new, MobCategory.MISC)
+                    .sized(0.75F, 0.8F)
+                    .fireImmune()
+                    .clientTrackingRange(12)
+                    .updateInterval(2)
+                    .build("cs1_unit"));
+
     public static final DeferredHolder<EntityType<?>, EntityType<ArchivistEntity>>
             ARCHIVIST = ENTITIES.register("archivist", () -> EntityType.Builder
                     .of(ArchivistEntity::new, MobCategory.MISC)

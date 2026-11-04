@@ -169,6 +169,9 @@ public class ModBlocks {
     public static final DeferredBlock<com.frozendawn.block.UplinkDishBlock> UPLINK_DISH = BLOCKS.register("uplink_dish",
             () -> new com.frozendawn.block.UplinkDishBlock(BlockBehaviour.Properties.of().strength(3f).requiresCorrectToolForDrops().sound(SoundType.METAL).noOcclusion().pushReaction(PushReaction.DESTROY)));
 
+    public static final DeferredBlock<com.frozendawn.shepherd.ShepherdDockBlock> CS1_DOCK = BLOCKS.register("cs1_dock",
+            () -> new com.frozendawn.shepherd.ShepherdDockBlock(BlockBehaviour.Properties.of().strength(3f).sound(SoundType.METAL).noOcclusion().pushReaction(PushReaction.BLOCK)));
+
     public static final DeferredBlock<com.frozendawn.block.PowerMonitorBlock> POWER_MONITOR = BLOCKS.register("power_monitor",
             () -> new com.frozendawn.block.PowerMonitorBlock(BlockBehaviour.Properties.of().strength(2f).requiresCorrectToolForDrops().sound(SoundType.METAL).noOcclusion().pushReaction(PushReaction.DESTROY)));
 

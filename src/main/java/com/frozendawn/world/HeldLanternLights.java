@@ -37,6 +37,7 @@ public final class HeldLanternLights {
         }
         HeadlampPrototype.collect(level,players,desired);
         SuitHeadlamp.collect(level,players,desired);
+        com.frozendawn.shepherd.ShepherdLamp.collect(level,desired);
         var previous=FRAMES.put(level,new Frame(level.getGameTime(),Set.copyOf(desired.keySet())));
         // Establish the new footprint before removing old sources to avoid a dark handover.
         for(var pos:desired.keySet()){

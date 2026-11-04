@@ -24,6 +24,7 @@ import com.frozendawn.client.BloomClientState;
 import com.frozendawn.client.HearthrotClientState;
 import com.frozendawn.client.RocketLaunchClientController;
 import com.frozendawn.client.SanityClientData;
+import com.frozendawn.client.ShepherdScreen;
 import com.frozendawn.client.ThermalVentClientEffects;
 import com.frozendawn.client.SuitIntegrityClient;
 import com.frozendawn.client.TemperatureHud;
@@ -333,5 +334,25 @@ public final class ClientHandlers {
     public static void handleHeartMemoryNodeEvent(
             HeartMemoryNodeEventPayload payload) {
         HeartMemoryNodeClient.handleEvent(payload);
+    }
+
+    private static ShepherdScreen shepherdScreen() {
+        var minecraft = Minecraft.getInstance();
+        if (minecraft.screen instanceof ShepherdScreen screen) return screen;
+        var screen = new ShepherdScreen();
+        minecraft.setScreen(screen);
+        return screen;
+    }
+
+    public static void handleShepherdNode(ShepherdNodePayload payload) {
+        shepherdScreen().show(payload);
+    }
+
+    public static void handleShepherdHub(ShepherdHubPayload payload) {
+        shepherdScreen().show(payload);
+    }
+
+    public static void handleShepherdClose() {
+        if (Minecraft.getInstance().screen instanceof ShepherdScreen screen) screen.closeFromServer();
     }
 }

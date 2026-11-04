@@ -14,7 +14,7 @@ import java.util.Locale;
 /** Composes the operator surface without duplicating any gameplay authority. */
 final class FrozenDawnDebugCommand {
     static final List<String> HELP_CATEGORIES = List.of(
-            "world", "hearth", "heart", "postmaeve", "aggregate", "architect", "maeve", "uplink", "suit", "lore", "terminus");
+            "world", "hearth", "heart", "postmaeve", "aggregate", "architect", "maeve", "uplink", "shepherd", "suit", "lore", "terminus");
 
     private static final List<String> HEARTH_CHILDREN = List.of(
             "status", "list", "locate", "force-select", "reconcile", "watcher",
@@ -47,6 +47,7 @@ final class FrozenDawnDebugCommand {
                 .then(ArchitectDebugCommand.commands())
                 .then(MaeveDebugCommand.commands())
                 .then(UplinkDebugCommand.commands())
+                .then(ShepherdDebugCommand.commands())
                 .then(CycloneDebugCommand.commands())
                 .then(FrozenDawnSuitCommand.suitCommands())
                 .then(TerminusDebugCommand.commands())
@@ -99,6 +100,9 @@ final class FrozenDawnDebugCommand {
                     "Read-only tactical beliefs, observed evidence, commitment decisions and cooldowns.");
             case "uplink" -> List.of(
                     "/fd uplink dump (archive progress, cooldown, signal sites, pressure and supply drops)");
+            case "shepherd" -> List.of(
+                    "/fd shepherd dump (stage, last position, follower, affinity, flags and the node she would resume)",
+                    "/fd shepherd replay (clear her score and flags and restart the first meeting on the next right-click)");
             case "terminus" -> List.of(
                     "/fd terminus status | restore (clears your toll) | due (half a heart back now) | turned <true|false> (the world's log)",
                     "/fd terminus vault place (a new site and vault 32 blocks ahead) | reset | status | fight start | fight round|pull|burn <1-3> | fight clock <seconds>",
