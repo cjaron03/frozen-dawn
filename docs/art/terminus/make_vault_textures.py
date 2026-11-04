@@ -1,10 +1,11 @@
 """Textures of the Terminus Vault, from the approved mockups (vault-rooms-mockup.png, vault-contents-mockup.png,
-watch-floor-mockup.png, vault-branding-mockup.png, vault-last-rooms-mockup.png).
+watch-floor-mockup.png, vault-branding-mockup.png, vault-last-rooms-mockup.png, drill-hall-mockup.png).
 Writes into the mod's assets. Run from anywhere: python3 docs/art/terminus/make_vault_textures.py
 """
 import random
 from pathlib import Path
 from PIL import Image, ImageDraw
+from make_drill_hall_mockup import STEEL, TRIM, console_block, key_block
 from make_system_plot_mockup import plot
 from make_vault_warning_mockup import scrawl
 from make_watch_floor_tally_mockup import lamp as tally_lamp
@@ -320,22 +321,12 @@ def vent():
     return im
 
 
-def recorder(lamp):
-    """The console: its pale housing, a dark screen and a lamp, red while it takes and pale green while it plays."""
-    im = Image.new('RGBA', (16, 16), PALE + (255,))
-    d = ImageDraw.Draw(im)
-    d.rectangle((0, 0, 15, 15), outline=(96, 134, 148, 255))
-    d.rectangle((3, 3, 12, 8), (24, 32, 38, 255))
-    d.rectangle((6, 11, 9, 13), lamp + (255,))
-    return im
-
-
-def key(bright):
-    colour = GOLD if bright else tuple(c * 3 // 5 for c in GOLD)
-    im = Image.new('RGBA', (16, 16), colour + (255,))
-    d = ImageDraw.Draw(im)
-    d.rectangle((0, 0, 15, 15), outline=(90, 72, 26, 255))
-    d.rectangle((6, 4, 9, 11), (30, 26, 16, 255))
+def beam():
+    """The emitter's beam on playback: a broken line of pale, drawn on one column of a transparent block."""
+    im = Image.new('RGBA', (16, 16), (0, 0, 0, 0))
+    for y in range(16):
+        if y % 3:
+            im.putpixel((7, y), PALE + (255,))
     return im
 
 
@@ -414,11 +405,15 @@ def main():
     plate((120, 56, 50)).save(BLOCK / 'vault_plate_dark.png')
     plate(RED).save(BLOCK / 'vault_plate_lit.png')
     vent().save(BLOCK / 'vault_vent.png')
-    recorder((52, 66, 72)).save(BLOCK / 'vault_recorder_idle.png')
-    recorder(RED).save(BLOCK / 'vault_recorder_recording.png')
-    recorder(GREEN).save(BLOCK / 'vault_recorder_playing.png')
-    key(False).save(BLOCK / 'vault_key_idle.png')
-    key(True).save(BLOCK / 'vault_key_held.png')
+    for mode, lamp, lens in (('idle', (52, 66, 72), PALE), ('recording', RED, RED), ('playing', GREEN, GREEN)):
+        console_block(lamp).save(BLOCK / f'vault_recorder_{mode}.png')
+        Image.new('RGB', (16, 16), lens).save(BLOCK / f'vault_recorder_lens_{mode}.png')
+    collar = Image.new('RGB', (16, 16), STEEL)
+    ImageDraw.Draw(collar).line((0, 0, 15, 0), TRIM)
+    collar.save(BLOCK / 'vault_recorder_collar.png')
+    beam().save(BLOCK / 'vault_recorder_beam.png')
+    key_block(False).save(BLOCK / 'vault_key_idle.png')
+    key_block(True).save(BLOCK / 'vault_key_held.png')
     noise('t', ['5c4a36', '544330', '60503a'], 21).save(BLOCK / 'vault_table.png')
     vitals().save(ENTITY / 'vault_vitals.png')
     recording().save(ENTITY / 'vault_recording.png')

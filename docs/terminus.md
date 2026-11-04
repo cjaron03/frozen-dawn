@@ -603,3 +603,13 @@ Buttons for the mess hall, drill hall, Morgue and cot room. `[Reset the vault]` 
   the mockup's colours, with no art beyond it), and whether either puzzle can be worked out from the room alone.
 - A low view distance: the first site now waits on chunks about 150 blocks east of it before the vault can be claimed, so at 8 chunks
   or fewer it builds only once a player has gone that far east. Not seen in play.
+
+## Owner playtest 1 of the last rooms, 2026-11-03 (Terminus Watch Floor Check 5, runClientLab, branch head 8c68542b)
+
+Report so far, unprompted and mid-pass: "still palying, but the two door room could use better textures, maybe a little emitter on the
+top or something"
+
+The log: joined 20:42:22, one take started 20:42:59, played back from 20:43:19, over at 20:43:39, quit 20:43:46, no errors. The door
+at x 83 did not open and the Morgue logged nothing.
+
+Response: `drill-hall-mockup.png` (`make_drill_hall_mockup.py`) drawn for approval. "Two door room" read as the drill hall.

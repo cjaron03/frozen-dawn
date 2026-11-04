@@ -1,0 +1,168 @@
+{
+  "render_type": "minecraft:cutout",
+  "textures": {
+    "particle": "frozendawn:block/vault_recorder_playing",
+    "all": "frozendawn:block/vault_recorder_playing",
+    "collar": "frozendawn:block/vault_recorder_collar",
+    "lens": "frozendawn:block/vault_recorder_lens_playing",
+    "beam": "frozendawn:block/vault_recorder_beam"
+  },
+  "elements": [
+    {
+      "from": [
+        0,
+        0,
+        0
+      ],
+      "to": [
+        16,
+        16,
+        16
+      ],
+      "faces": {
+        "north": {
+          "texture": "#all"
+        },
+        "south": {
+          "texture": "#all"
+        },
+        "east": {
+          "texture": "#all"
+        },
+        "west": {
+          "texture": "#all"
+        },
+        "up": {
+          "texture": "#all"
+        },
+        "down": {
+          "texture": "#all"
+        }
+      }
+    },
+    {
+      "from": [
+        4,
+        16,
+        4
+      ],
+      "to": [
+        12,
+        18,
+        12
+      ],
+      "faces": {
+        "north": {
+          "texture": "#collar"
+        },
+        "south": {
+          "texture": "#collar"
+        },
+        "east": {
+          "texture": "#collar"
+        },
+        "west": {
+          "texture": "#collar"
+        },
+        "up": {
+          "texture": "#collar"
+        },
+        "down": {
+          "texture": "#collar"
+        }
+      }
+    },
+    {
+      "from": [
+        6,
+        18,
+        6
+      ],
+      "to": [
+        10,
+        21,
+        10
+      ],
+      "shade": false,
+      "neoforge_data": {
+        "block_light": 15,
+        "sky_light": 15
+      },
+      "faces": {
+        "north": {
+          "texture": "#lens"
+        },
+        "south": {
+          "texture": "#lens"
+        },
+        "east": {
+          "texture": "#lens"
+        },
+        "west": {
+          "texture": "#lens"
+        },
+        "up": {
+          "texture": "#lens"
+        },
+        "down": {
+          "texture": "#lens"
+        }
+      }
+    },
+    {
+      "from": [
+        7.5,
+        21,
+        7.5
+      ],
+      "to": [
+        8.5,
+        32,
+        8.5
+      ],
+      "shade": false,
+      "neoforge_data": {
+        "block_light": 15,
+        "sky_light": 15
+      },
+      "faces": {
+        "north": {
+          "texture": "#beam",
+          "uv": [
+            7,
+            0,
+            8,
+            11
+          ]
+        },
+        "south": {
+          "texture": "#beam",
+          "uv": [
+            7,
+            0,
+            8,
+            11
+          ]
+        },
+        "east": {
+          "texture": "#beam",
+          "uv": [
+            7,
+            0,
+            8,
+            11
+          ]
+        },
+        "west": {
+          "texture": "#beam",
+          "uv": [
+            7,
+            0,
+            8,
+            11
+          ]
+        }
+      }
+    }
+  ]
+}

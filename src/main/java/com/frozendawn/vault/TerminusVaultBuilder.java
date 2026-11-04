@@ -175,6 +175,9 @@ public final class TerminusVaultBuilder {
             l.setBlock(c.offset(x, ROOM_ROOF - 1, -7), ModBlocks.VAULT_LIGHT.get().defaultBlockState().setValue(VaultLightBlock.FACING, Direction.SOUTH), 2);
             l.setBlock(c.offset(x, ROOM_ROOF - 1, 7), ModBlocks.VAULT_LIGHT.get().defaultBlockState().setValue(VaultLightBlock.FACING, Direction.NORTH), 2);
         }
+        // The band, at door height, as in the rooms before it.
+        for (int x = 66; x <= 82; x++) for (int z : new int[] {-8, 8}) mark(l, c, x, CEILING - 2, z, Mark.HAZARD);
+        for (int z = -7; z <= 7; z++) if (Math.abs(z) > 2) for (int x : new int[] {65, 83}) mark(l, c, x, CEILING - 2, z, Mark.HAZARD);
         gate(l, c.offset(MESS_DOOR), true);
         puzzleGate(l, c, DRILL_DOOR);
     }

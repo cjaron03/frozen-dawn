@@ -1,12 +1,30 @@
 {
   "variants": {
-    "mode=idle": {
+    "mode=idle,part=0": {
       "model": "frozendawn:block/vault_recorder_idle"
     },
-    "mode=recording": {
+    "mode=idle,part=1": {
+      "model": "frozendawn:block/vault_recorder_emitter_idle"
+    },
+    "mode=idle,part=2": {
+      "model": "frozendawn:block/vault_recorder_idle"
+    },
+    "mode=recording,part=0": {
       "model": "frozendawn:block/vault_recorder_recording"
     },
-    "mode=playing": {
+    "mode=recording,part=1": {
+      "model": "frozendawn:block/vault_recorder_emitter_recording"
+    },
+    "mode=recording,part=2": {
+      "model": "frozendawn:block/vault_recorder_recording"
+    },
+    "mode=playing,part=0": {
+      "model": "frozendawn:block/vault_recorder_playing"
+    },
+    "mode=playing,part=1": {
+      "model": "frozendawn:block/vault_recorder_emitter_playing"
+    },
+    "mode=playing,part=2": {
       "model": "frozendawn:block/vault_recorder_playing"
     }
   }
