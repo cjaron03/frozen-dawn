@@ -395,7 +395,7 @@ def main():
         body, lens = projector(mode)
         lens.save(BLOCK / f'vault_projector_lens_{mode}.png')
     body.save(BLOCK / 'vault_projector_body.png')
-    Image.new('RGB', (16, 16), STEEL).save(BLOCK / 'vault_steel.png')
+    Image.new('RGB', (16, 16), STEEL).save(BLOCK / 'vault_housing.png')
     arch().save(BLOCK / 'vault_arch.png')
     key_block(False).save(BLOCK / 'vault_key_idle.png')
     key_block(True).save(BLOCK / 'vault_key_held.png')

@@ -1,7 +1,7 @@
 {
   "textures": {
-    "particle": "frozendawn:block/vault_steel",
-    "steel": "frozendawn:block/vault_steel",
+    "particle": "frozendawn:block/vault_housing",
+    "steel": "frozendawn:block/vault_housing",
     "body": "frozendawn:block/vault_projector_body",
     "lens": "frozendawn:block/vault_projector_lens_idle"
   },
