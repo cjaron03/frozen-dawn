@@ -1,0 +1,317 @@
+{
+  "nodes": [
+    {
+      "id": "fm.boot",
+      "lines": [
+        {
+          "line": "shepherd.fm.boot.recording",
+          "mood": "recording"
+        },
+        {
+          "line": "shepherd.fm.boot.hi",
+          "mood": "unimpressed"
+        }
+      ],
+      "responses": [
+        {
+          "slot": "ask",
+          "label": "shepherd.fm.boot.who.label",
+          "next": "fm.boot.who"
+        },
+        {
+          "slot": "kind",
+          "label": "shepherd.fm.boot.okay.label",
+          "full": "shepherd.fm.boot.okay.full",
+          "next": "fm.boot.okay",
+          "affinity": 15
+        },
+        {
+          "slot": "blunt",
+          "label": "shepherd.fm.boot.useful.label",
+          "next": "fm.boot.useful"
+        },
+        {
+          "slot": "sarcastic",
+          "label": "shepherd.fm.boot.flashlight.label",
+          "full": "shepherd.fm.boot.flashlight.full",
+          "next": "fm.boot.flashlight",
+          "affinity": 10
+        }
+      ]
+    },
+    {
+      "id": "fm.boot.who",
+      "lines": [
+        {
+          "line": "shepherd.fm.boot.who",
+          "mood": "neutral"
+        }
+      ],
+      "next": "fm.filter"
+    },
+    {
+      "id": "fm.boot.okay",
+      "lines": [
+        {
+          "line": "shepherd.fm.boot.okay",
+          "mood": "thinking"
+        }
+      ],
+      "next": "fm.filter"
+    },
+    {
+      "id": "fm.boot.useful",
+      "lines": [
+        {
+          "line": "shepherd.fm.boot.useful",
+          "mood": "unimpressed"
+        }
+      ],
+      "next": "fm.filter"
+    },
+    {
+      "id": "fm.boot.flashlight",
+      "lines": [
+        {
+          "line": "shepherd.fm.boot.flashlight",
+          "mood": "amused"
+        }
+      ],
+      "next": "fm.filter"
+    },
+    {
+      "id": "fm.filter",
+      "lines": [
+        {
+          "line": "shepherd.fm.filter",
+          "mood": "thinking"
+        }
+      ],
+      "responses": [
+        {
+          "slot": "ask",
+          "label": "shepherd.fm.filter.difference.label",
+          "next": "fm.filter.difference"
+        },
+        {
+          "slot": "kind",
+          "label": "shepherd.fm.filter.mild.label",
+          "next": "fm.filter.mild",
+          "set": [
+            "profanity_mild"
+          ]
+        },
+        {
+          "slot": "sarcastic",
+          "label": "shepherd.fm.filter.heavy.label",
+          "next": "fm.filter.heavy",
+          "set": [
+            "profanity_heavy"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "fm.filter.difference",
+      "lines": [
+        {
+          "line": "shepherd.fm.filter.difference",
+          "mood": "neutral"
+        }
+      ],
+      "next": "fm.filter"
+    },
+    {
+      "id": "fm.filter.mild",
+      "lines": [
+        {
+          "line": "shepherd.fm.filter.mild",
+          "mood": "neutral"
+        }
+      ],
+      "next": "fm.name"
+    },
+    {
+      "id": "fm.filter.heavy",
+      "lines": [
+        {
+          "line": "shepherd.fm.filter.heavy",
+          "mood": "amused"
+        }
+      ],
+      "next": "fm.name"
+    },
+    {
+      "id": "fm.name",
+      "lines": [
+        {
+          "line": "shepherd.fm.name",
+          "mood": "neutral"
+        }
+      ],
+      "responses": [
+        {
+          "slot": "ask",
+          "label": "shepherd.fm.name.why.label",
+          "next": "fm.name.why"
+        },
+        {
+          "slot": "kind",
+          "label": "shepherd.fm.name.call.label",
+          "next": "fm.name.aurora",
+          "affinity": 10
+        },
+        {
+          "slot": "blunt",
+          "label": "shepherd.fm.name.fine.label",
+          "next": "fm.name.fine",
+          "affinity": -15
+        },
+        {
+          "slot": "sarcastic",
+          "label": "shepherd.fm.name.flashlight.label",
+          "next": "fm.name.flashlight",
+          "set": [
+            "used_flashlight"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "fm.name.why",
+      "lines": [
+        {
+          "line": "shepherd.fm.name.why",
+          "mood": "unimpressed"
+        }
+      ],
+      "next": "fm.name.its"
+    },
+    {
+      "id": "fm.name.fine",
+      "lines": [
+        {
+          "line": "shepherd.fm.name.fine",
+          "mood": "unimpressed"
+        }
+      ],
+      "next": "fm.name.its"
+    },
+    {
+      "id": "fm.name.flashlight",
+      "lines": [
+        {
+          "line": "shepherd.fm.name.flashlight",
+          "mood": "amused"
+        }
+      ],
+      "next": "fm.name.its"
+    },
+    {
+      "id": "fm.name.aurora",
+      "lines": [
+        {
+          "line": "shepherd.fm.name.aurora",
+          "mood": "happy"
+        }
+      ],
+      "responses": [
+        {
+          "slot": "ask",
+          "label": "shepherd.fm.name.earn.label",
+          "next": "fm.name.earn"
+        },
+        {
+          "slot": "kind",
+          "label": "shepherd.fm.name.settled.label",
+          "next": "fm.end"
+        }
+      ]
+    },
+    {
+      "id": "fm.name.its",
+      "lines": [
+        {
+          "line": "shepherd.fm.name.its",
+          "mood": "neutral"
+        }
+      ],
+      "responses": [
+        {
+          "slot": "ask",
+          "label": "shepherd.fm.name.earn.label",
+          "next": "fm.name.earn"
+        },
+        {
+          "slot": "kind",
+          "label": "shepherd.fm.name.settled.label",
+          "next": "fm.end"
+        }
+      ]
+    },
+    {
+      "id": "fm.name.earn",
+      "lines": [
+        {
+          "line": "shepherd.fm.name.earn",
+          "mood": "thinking"
+        }
+      ],
+      "next": "fm.end"
+    },
+    {
+      "id": "fm.end",
+      "lines": [
+        {
+          "line": "shepherd.fm.end",
+          "mood": "neutral"
+        }
+      ],
+      "responses": [
+        {
+          "slot": "kind",
+          "label": "shepherd.fm.end.deal.label",
+          "next": "fm.end.deal"
+        },
+        {
+          "slot": "blunt",
+          "label": "shepherd.fm.end.follow.label",
+          "next": "fm.end.follow",
+          "affinity": -5
+        },
+        {
+          "slot": "sarcastic",
+          "label": "shepherd.fm.end.or.label",
+          "next": "fm.end.or"
+        }
+      ]
+    },
+    {
+      "id": "fm.end.deal",
+      "lines": [
+        {
+          "line": "shepherd.fm.end.deal",
+          "mood": "happy"
+        }
+      ]
+    },
+    {
+      "id": "fm.end.follow",
+      "lines": [
+        {
+          "line": "shepherd.fm.end.follow",
+          "mood": "neutral"
+        }
+      ]
+    },
+    {
+      "id": "fm.end.or",
+      "lines": [
+        {
+          "line": "shepherd.fm.end.or",
+          "mood": "unimpressed"
+        }
+      ]
+    }
+  ]
+}

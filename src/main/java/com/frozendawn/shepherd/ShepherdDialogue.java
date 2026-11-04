@@ -1,0 +1,75 @@
+package com.frozendawn.shepherd;
+
+import com.frozendawn.shepherd.ShepherdFace.Mood;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+
+/** The dialogue file format. Text stays in lang keys; a file holds only structure, moods and scores. */
+public final class ShepherdDialogue {
+    private ShepherdDialogue() {}
+
+    /** One thing she says. {@code heavyKey} replaces {@code key} when swearing is on, and may be null. */
+    public record Line(String key, String heavyKey, Mood mood) {}
+
+    /** The four fixed reply positions, in screen order. */
+    public enum Slot {
+        ASK,
+        KIND,
+        BLUNT,
+        SARCASTIC
+    }
+
+    public record Response(Slot slot, String label, String full, String next, int affinity, List<String> set) {}
+
+    /** A node with no responses continues to {@code next} on a click, or ends the conversation if that is null. */
+    public record Node(String id, List<Line> lines, List<Response> responses, String next, List<String> set) {}
+
+    public static List<Node> parse(JsonElement file) {
+        List<Node> nodes = new ArrayList<>();
+        for (JsonElement node : file.getAsJsonObject().getAsJsonArray("nodes")) nodes.add(node(node.getAsJsonObject()));
+        return List.copyOf(nodes);
+    }
+
+    private static Node node(JsonObject json) {
+        String id = json.get("id").getAsString();
+        try {
+            List<Line> lines = new ArrayList<>();
+            for (JsonElement line : json.getAsJsonArray("lines")) lines.add(line(line.getAsJsonObject()));
+            List<Response> responses = new ArrayList<>();
+            if (json.has("responses")) {
+                for (JsonElement response : json.getAsJsonArray("responses")) responses.add(response(response.getAsJsonObject()));
+            }
+            return new Node(id, List.copyOf(lines), List.copyOf(responses), string(json, "next"), flags(json));
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Dialogue node " + id + ": " + e.getMessage(), e);
+        }
+    }
+
+    private static Line line(JsonObject json) {
+        return new Line(json.get("line").getAsString(), string(json, "heavy"), Mood.byName(json.get("mood").getAsString()));
+    }
+
+    private static Response response(JsonObject json) {
+        String label = json.get("label").getAsString();
+        String full = string(json, "full");
+        Slot slot = Slot.valueOf(json.get("slot").getAsString().toUpperCase(Locale.ROOT));
+        int affinity = json.has("affinity") ? json.get("affinity").getAsInt() : 0;
+        return new Response(slot, label, full != null ? full : label, json.get("next").getAsString(), affinity, flags(json));
+    }
+
+    private static String string(JsonObject json, String name) {
+        return json.has(name) ? json.get(name).getAsString() : null;
+    }
+
+    private static List<String> flags(JsonObject json) {
+        if (!json.has("set")) return List.of();
+        JsonArray set = json.getAsJsonArray("set");
+        List<String> flags = new ArrayList<>();
+        for (JsonElement flag : set) flags.add(flag.getAsString());
+        return List.copyOf(flags);
+    }
+}
