@@ -251,6 +251,8 @@ S4 can run after M2, so its personal arc uses the real system. This is Architect
 
 Branch review on Opus: no critical findings. Fixed: a talk from before the state counting as a conversation; a save from a newer build being overwritten, since the game swallows a load that throws; `feel` leaving other feelings on her face. `MaeveSavedData` has the same overwrite flaw and stays as it is, since MACS is WIP. Deferred minors: a clock behind a stored time freezes a feeling, and a hand-edited time is not checked on load; `Appraised.load` leaves its values unclamped, which only diagnostics read; `/fd shepherd saw` is silent on a cooldown, and the lab menu says so instead.
 
+2026-11-04, the owner's pass in `Aurora Feelings Check`: "yea looked good", then "clear night isnt doing anytihng, but everything else worked". Her save showed `CLEAR_NIGHT` had counted: it is the one deed with no line, and the next deed followed 2.5 seconds later. Told that, the owner accepted it and asked for the PR. No idle was reported as clashing with a mood. `architectVerify` passed at e4403288 (1,117 GameTests); only docs have changed since. `architectMonkey` has not run on this branch, since no Architect code changed.
+
 ## Sources
 
 - `MaeveDirector`, `ShepherdAffinity` and `ShepherdReactions` at c866cf02 on `feat/aurora-affinity`.
