@@ -80,7 +80,7 @@ class ShepherdDialogueDataTest {
     void everyConditionIsKnown() throws Exception {
         var nodes = nodes();
         Set<String> known = new HashSet<>(List.of("woke_in_vault", "wand_cradle", "wand_hand", "wand_other", "tier_silent", "tier_wary", "tier_above_wary", "tier_friendly", "tier_trusted", "tier_close",
-                "stage_noticing", "stage_walls", "quiet", "pit_open"));
+                "stage_noticing", "stage_walls", "quiet", "pit_open", "saw_aurora", "stars_before"));
         for (Node node : nodes.values()) {
             known.addAll(node.set());
             for (Response response : node.responses()) known.addAll(response.set());
@@ -94,6 +94,7 @@ class ShepherdDialogueDataTest {
     }
 
     private static boolean isKnown(Set<String> known, String condition) {
+        if (condition.startsWith("not:")) return isKnown(known, condition.substring("not:".length()));
         return known.contains(condition) || condition.startsWith("found:") || condition.startsWith("remembers:");
     }
 
@@ -294,5 +295,30 @@ class ShepherdDialogueDataTest {
         assertEquals("Then they stopped. One at a time. Nine was the last. Nine's last ping came from the Blast Pit.", lang.get("shepherd.t2.stopped").getAsString());
         assertEquals("Cell's cracked. Memory's... empty. Not wiped. Wiped leaves marks. Empty. Like nobody was ever in there.", lang.get("shepherd.t2.site.empty").getAsString());
         assertEquals("...Can we take its lamp? I don't want to leave it down here in the dark.", lang.get("shepherd.t2.site.lamp").getAsString());
+    }
+
+    /** Ruling 2 and 17: one frame shows no motion, and the wand's last line says what it logged. */
+    @Test
+    void theShippedLinesTookTheirFixes() throws Exception {
+        var lang = lang();
+        assertEquals("The last frame it ever sent me, before it went fully white, was the sky. Green. Smeared, like it wouldn't hold still. An aurora.", lang.get("shepherd.t1.frame").getAsString());
+        assertTrue(lang.get("shepherd.fm.room.log.other").getAsString().endsWith("Now he's like that, and the last thing that wand logged was a transfer."));
+    }
+
+    @Test
+    void theSkysLinesStandAsWritten() throws Exception {
+        var lang = lang();
+        assertEquals("...It's not there.", lang.get("shepherd.t3.top.gone").getAsString());
+        assertEquals("I think I knew. I've got one frame of it. One. I don't even know how it moves.", lang.get("shepherd.t3.top.frame").getAsString());
+        assertEquals("I've thought about it a lot. I think it goes slow, like something breathing. Green first. Then a color the camera couldn't do.", lang.get("shepherd.t3.top.slow").getAsString());
+        assertEquals("Stars are still there, though. The camera never got stars. I didn't know there were this many.", lang.get("shepherd.t3.top.stars").getAsString());
+        assertEquals("Take me up. Somewhere high, on a clear night. I want to see the sky with my own sensors. Not through a lens.", lang.get("shepherd.t3.sky.up").getAsString());
+    }
+
+    /** Whatever she is asked at the top, she keeps the climb. */
+    @Test
+    void everyAnswerAtTheTopKeepsIt() throws Exception {
+        var nodes = nodes();
+        for (Response response : nodes.get("t3.top").responses()) assertEquals("t3_stars", nodes.get(response.next()).keep(), response.next());
     }
 }

@@ -160,4 +160,14 @@ class ShepherdPolicyTest {
     void theDistanceIsOnTheGround() {
         assertEquals(500, ShepherdPolicy.groundBlocks(300, -400));
     }
+
+    @Test
+    void starsDoNotShowBeforeHalfFade() {
+        assertFalse(ShepherdPolicy.starsShow(4, 0.40F), "Phase 4 has its storms");
+        assertFalse(ShepherdPolicy.starsShow(5, 0.60F), "Phase 5 draws no sky");
+        assertFalse(ShepherdPolicy.starsShow(6, 0.68F), "Nor does early phase 6");
+        assertFalse(ShepherdPolicy.starsShow(6, 0.72F), "They have only begun to fade in");
+        assertTrue(ShepherdPolicy.starsShow(6, 0.785F), "Half bright");
+        assertTrue(ShepherdPolicy.starsShow(6, 0.90F), "And on into the vacuum");
+    }
 }

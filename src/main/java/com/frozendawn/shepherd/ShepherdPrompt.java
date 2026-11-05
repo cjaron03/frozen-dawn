@@ -1,6 +1,8 @@
 package com.frozendawn.shepherd;
 
 import com.frozendawn.FrozenDawn;
+import com.frozendawn.cyclone.CycloneSavedData;
+import com.frozendawn.data.ApocalypseState;
 import com.frozendawn.data.HelionSiteState;
 import com.frozendawn.event.PlayerTickHandler;
 import com.frozendawn.network.ShepherdPromptPayload;
@@ -34,13 +36,15 @@ import net.neoforged.neoforge.network.PacketDistributor;
 @EventBusSubscriber(modid = FrozenDawn.MOD_ID)
 public final class ShepherdPrompt {
     public static final String DOORS = "fm.doors", EXIT = "fm.exit";
-    public static final String THE_NAME = "t1.name", THE_OTHERS = "t2.others", AT_NINE = "t2.site";
+    public static final String THE_NAME = "t1.name", THE_OTHERS = "t2.others", AT_NINE = "t2.site", THE_SKY = "t3.sky", AT_THE_TOP = "t3.top";
     static final String PERSONAL_GAP = "personal_gap";
     static final String FIRST_MEETING_DONE = "fm_done", DOORS_ASKED = "doors_asked", EXIT_ASKED = "exit_asked", NAME_ASKED = "t1_asked", ASKED_NAME = "asked_name",
-            OTHERS_ASKED = "t2_asked";
+            OTHERS_ASKED = "t2_asked", SKY_ASKED = "t3_asked", SKY_LATER = "t3_later", GOING_UP = "t3_going", BEEN_UP = "t3_top";
+    private static final String SKY_AGAIN = "t3_again";
     /** What each tier opens, in the order she brings it up. */
     private static final List<Personal> PERSONAL = List.of(new Personal(Tier.FRIENDLY, THE_NAME, NAME_ASKED, (server, level, data, near) -> true),
-            new Personal(Tier.FRIENDLY, THE_OTHERS, OTHERS_ASKED, ShepherdPrompt::awayFromThePit));
+            new Personal(Tier.FRIENDLY, THE_OTHERS, OTHERS_ASKED, ShepherdPrompt::awayFromThePit),
+            new Personal(Tier.TRUSTED, THE_SKY, SKY_ASKED, ShepherdPrompt::starsAreOut));
     /** A sprinter covers 1.4 blocks in this, so nobody crosses a box between looks. */
     private static final int CHECK_TICKS = 5;
     private static final long LONG_AGO = Long.MIN_VALUE / 2;
@@ -73,6 +77,7 @@ public final class ShepherdPrompt {
         ask(server, data, near);
         atNine(server, level, data, near, she);
         if (ShepherdReactions.quiet(data, server.overworld().getGameTime())) return;
+        upTop(server, level, data, near);
         offer(server, level, data, near);
         show(server, level, data, near, she);
     }
@@ -97,6 +102,38 @@ public final class ShepherdPrompt {
             return;
         }
         if (data.tier() != Tier.WARY && she.blockPosition().closerThan(husk, ShepherdPolicy.NINE_SEEN_BLOCKS) && calm(server, level, near)) raise(data, AT_NINE);
+    }
+
+    /** Unanswered it is a thought about tonight's sky, so like the site it goes when the moment does. */
+    private static void upTop(MinecraftServer server, ServerLevel level, ShepherdSavedData data, List<ServerPlayer> near) {
+        if (!data.flag(GOING_UP) || data.flag(BEEN_UP) || ShepherdTalk.live()) return;
+        boolean there = skyOverhead(server, level, near);
+        if (AT_THE_TOP.equals(data.promptNode())) {
+            if (!there) data.promptNode(null);
+            return;
+        }
+        boolean placeWaiting = data.promptNode() != null && waitingPersonal(data) == null;
+        if (there && !placeWaiting) raise(data, AT_THE_TOP);
+    }
+
+    /** What she asked to be taken up for. The cold does not come into it: by now the top is always bitter, and she knows you know. */
+    private static boolean skyOverhead(MinecraftServer server, ServerLevel level, List<ServerPlayer> near) {
+        var state = ApocalypseState.get(server);
+        return ShepherdPolicy.starsShow(state.getPhase(), state.getProgress()) && CycloneSavedData.get(server).active().isEmpty() && unhunted(server, level, near)
+                && near.stream().noneMatch(player -> PlayerTickHandler.airFailing(player.getUUID()))
+                && near.stream().anyMatch(player -> player.getBlockY() >= ShepherdPolicy.SKY_HIGH_Y && ShepherdReactions.clearNight(level, player.blockPosition()));
+    }
+
+    /** She asks once the stars are there to be shown, and not for three days after being told there is no time. */
+    private static boolean starsAreOut(MinecraftServer server, ServerLevel level, ShepherdSavedData data, List<ServerPlayer> near) {
+        var state = ApocalypseState.get(server);
+        return ShepherdPolicy.starsShow(state.getPhase(), state.getProgress()) && server.overworld().getGameTime() >= data.deedReady(SKY_AGAIN);
+    }
+
+    /** "We don't have time." Then it was not asked, and she can bring it up again. */
+    static void askAboutTheSkyLater(ShepherdSavedData data, long now) {
+        data.flag(SKY_ASKED, false);
+        data.deedReady(SKY_AGAIN, now + ShepherdPolicy.SKY_AGAIN_TICKS);
     }
 
     /** T2 sends you there, so the pit has to be somewhere, and not where you are standing. */

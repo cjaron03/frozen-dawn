@@ -1,6 +1,7 @@
 package com.frozendawn.shepherd;
 
 import com.frozendawn.FrozenDawn;
+import com.frozendawn.data.ApocalypseState;
 import com.frozendawn.entity.ArchivistEntity;
 import com.frozendawn.miller.SelfModel;
 import com.frozendawn.miller.Heard;
@@ -42,7 +43,8 @@ public final class ShepherdTalk {
     private static final String HUB_TALK = "hub.talk.quiet";
     private static final int UNIMPRESSED_TICKS = 40;
     private static final int TALK_TICKS_PER_LINE = 80;
-    private static final String FOUND = "found:", REMEMBERS = "remembers:";
+    private static final String FOUND = "found:", REMEMBERS = "remembers:", NOT = "not:";
+    private static final String CLEAR_NIGHT = "clear_night";
     /** The ground ref when there is no pit to give one for, as {@code TowerArchive} writes it. */
     private static final String NO_REF = "---";
 
@@ -161,6 +163,7 @@ public final class ShepherdTalk {
     /** The dialogue files' conditions: her tier, how far she has got, where the wand is, what this speaker has read or she holds of them, or else a saved flag. */
     static boolean holds(ServerPlayer player, String condition) {
         var server = player.getServer();
+        if (condition.startsWith(NOT)) return !holds(player, condition.substring(NOT.length()));
         if (condition.startsWith(FOUND)) return found(player, condition.substring(FOUND.length()));
         if (condition.startsWith(REMEMBERS)) return MillerPattern.remembers(server, player.getUUID(), condition.substring(REMEMBERS.length()));
         var tier = ShepherdSavedData.get(server).tier();
@@ -173,6 +176,7 @@ public final class ShepherdTalk {
             case "tier_close" -> tier.atLeast(Tier.CLOSE);
             case "pit_open" -> ShepherdSavedData.get(server).flag(ShepherdNine.OPEN) && !ShepherdSavedData.get(server).flag(ShepherdNine.SEEN);
             case "quiet" -> ShepherdReactions.quiet(ShepherdSavedData.get(server), server.overworld().getGameTime());
+            case "stars_before" -> starsBefore(player);
             case "stage_noticing" -> MillerPattern.stage(server).compareTo(SelfModel.Stage.NOTICING) >= 0;
             case "stage_walls" -> MillerPattern.stage(server).compareTo(SelfModel.Stage.FINDING_WALLS) >= 0;
             case "wand_cradle" -> ShepherdWand.of(player) == ShepherdWand.Where.CRADLE;
@@ -180,6 +184,15 @@ public final class ShepherdTalk {
             case "wand_other" -> ShepherdWand.of(player) == ShepherdWand.Where.OTHER;
             default -> ShepherdSavedData.get(player.getServer()).flag(condition);
         };
+    }
+
+    /** A clear night she kept with them before the stars came back. Every one since is a night like this one, and proves nothing about having seen them. */
+    private static boolean starsBefore(ServerPlayer player) {
+        var server = player.getServer();
+        var state = ApocalypseState.get(server);
+        long now = server.overworld().getGameTime();
+        return MillerPattern.keepsakes(server, player.getUUID()).stream().anyMatch(moment -> CLEAR_NIGHT.equals(moment.kind())
+                && ShepherdPolicy.beforeTheStars(state.getApocalypseTicks() - (now - moment.time()), state.getTotalDays()));
     }
 
     /** Whether this player has filed that document. The advancement is the record, and it is theirs alone. */
@@ -330,6 +343,7 @@ public final class ShepherdTalk {
         for (String flag : live.talk.flags()) data.flag(flag, true);
         if (firstAtNine) ShepherdNine.arrived(live.player);
         if (live.talk.flags().contains(ShepherdNine.HAND_OVER)) ShepherdNine.handOver(live.player);
+        if (live.talk.flags().contains(ShepherdPrompt.SKY_LATER)) ShepherdPrompt.askAboutTheSkyLater(data, live.player.getServer().overworld().getGameTime());
         if (live.talk.flags().contains("profanity_heavy")) swearing(data, true);
         if (live.talk.flags().contains("profanity_mild")) swearing(data, false);
     }

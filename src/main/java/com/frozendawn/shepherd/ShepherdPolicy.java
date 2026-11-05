@@ -1,5 +1,6 @@
 package com.frozendawn.shepherd;
 
+import com.frozendawn.phase.PhaseManager;
 import com.frozendawn.vault.TerminusVaultBuilder;
 
 /** Her numbers, and the one rule about when a conversation has to stop. */
@@ -25,6 +26,11 @@ public final class ShepherdPolicy {
     public static final int NINE_SEEN_BLOCKS = 12;
     /** Wider than {@link #NINE_SEEN_BLOCKS}, so her drifting on the line does not raise it again and again. */
     public static final int NINE_LEFT_BLOCKS = 24;
+    /** High enough to call it the top. A tower counts. */
+    public static final int SKY_HIGH_Y = 110;
+    public static final float STARS_SHOW_AT = 0.5F;
+    /** A sky with this much rain in it shows her nothing. */
+    public static final float AURORA_RAIN_BELOW = 0.2F;
     public static final int STRIP_HOLD_TICKS = 80;
     public static final int STRIP_FADE_TICKS = 20;
     public static final double ASK_BLOCKS = 2.5;
@@ -40,6 +46,8 @@ public final class ShepherdPolicy {
     public static final int GLAD_TICKS = 40;
     public static final int GLAD_AWAY_TICKS = 1200;
     public static final int DAY_TICKS = 24000;
+    /** "We don't have time." She lets it go for this long. */
+    public static final int SKY_AGAIN_TICKS = 3 * DAY_TICKS;
     public static final int NIGHT_STARTS = 13000, NIGHT_ENDS = 23000;
     public static final float WARM_SHELTER_C = 10, FROZEN_C = -25;
     public static final int WARM_HEATER_BLOCKS = 16, FROZEN_HEATER_BLOCKS = 8;
@@ -54,6 +62,17 @@ public final class ShepherdPolicy {
     public static String bearing(int dx, int dz) {
         double turns = StrictMath.atan2(dx, -dz) / (2 * StrictMath.PI);
         return BEARINGS[Math.floorMod((int) StrictMath.round(turns * BEARINGS.length), BEARINGS.length)];
+    }
+
+    /** Phase 5 and early phase 6 draw no sky at all, and from phase 6 mid the stars fade in. Bright enough to be worth the climb. */
+    public static boolean starsShow(int phase, float progress) {
+        return PhaseManager.isPhase6MidOrLater(phase, progress) && PhaseManager.getPhase6MidFadeProgress(progress) >= STARS_SHOW_AT;
+    }
+
+    /** Whether the world's clock at this point had not yet brought the stars back: a clear night then was the sky as it used to be. */
+    public static boolean beforeTheStars(long apocalypseTicks, int totalDays) {
+        int day = (int) Math.floorDiv(apocalypseTicks, (long) DAY_TICKS);
+        return !PhaseManager.isPhase6MidOrLater(PhaseManager.getPhase(day, totalDays), PhaseManager.getProgress(day, totalDays));
     }
 
     public static int groundBlocks(int dx, int dz) {

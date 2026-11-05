@@ -1,6 +1,7 @@
 package com.frozendawn.shepherd;
 
 import com.frozendawn.FrozenDawn;
+import com.frozendawn.aurora.AuroraEvents;
 import com.frozendawn.block.ThermalHeaterBlock;
 import com.frozendawn.data.ApocalypseState;
 import com.frozendawn.event.PlayerTickHandler;
@@ -43,7 +44,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 @EventBusSubscriber(modid = FrozenDawn.MOD_ID)
 public final class ShepherdReactions {
     public static final int POLL_TICKS = 100;
-    private static final String NAME_SHE_HATES = "shepherd", SAID_SLOW = "said_slow";
+    private static final String NAME_SHE_HATES = "shepherd", SAID_SLOW = "said_slow", SAW_AURORA = "saw_aurora";
     /** The day after Nine, kept with her other clocks so a skipped day moves it. The flag is the line she owes when it is over. */
     private static final String NINE_QUIET = "nine_quiet", QUIET_OWED = "quiet_owed";
     /** Only so a line never plays twice running: it does not need to outlive the server. */
@@ -252,6 +253,7 @@ public final class ShepherdReactions {
         MillerPattern.poll(server, near.size(), data.lastTalk(), data.tier().atLeast(Tier.TRUSTED));
         comeBack(server, she, near.getFirst());
         for (var player : near) look(level, player);
+        lookUp(level, she, ShepherdSavedData.get(server));
         ShepherdEggs.look(level, she, near);
         ShepherdWill.sorry(level);
         commentate(server, level, she, near);
@@ -316,7 +318,7 @@ public final class ShepherdReactions {
     /** From phase 4 the sky cannot show one, so she has to imagine it. The storms are locked on by then, so a clear night means no blizzard, not no rain. */
     private static boolean imaginedAuroraShows(MinecraftServer server, ServerLevel level, ServerPlayer player) {
         var state = ApocalypseState.get(server);
-        return state.getPhase() >= ShepherdPolicy.IMAGINED_AURORA_PHASE && level.canSeeSky(player.blockPosition())
+        return !ShepherdSavedData.get(server).flag(SAW_AURORA) && state.getPhase() >= ShepherdPolicy.IMAGINED_AURORA_PHASE && level.canSeeSky(player.blockPosition())
                 && !PhaseManager.isBlizzardActive(state.getPhase(), state.getProgress());
     }
 
@@ -337,6 +339,14 @@ public final class ShepherdReactions {
     /** The storms keep this to the first phases and the very end. */
     static boolean clearNight(ServerLevel level, BlockPos at) {
         return ShepherdPolicy.night(level.getDayTime()) && !level.isRaining() && level.canSeeSky(at);
+    }
+
+    /** Woken early she can stand under the real thing. She says nothing at the time: it only changes what she has to say at the top. */
+    private static void lookUp(ServerLevel level, ShepherdEntity she, ShepherdSavedData data) {
+        if (data.flag(SAW_AURORA) || !level.canSeeSky(she.blockPosition()) || level.getRainLevel(1) >= ShepherdPolicy.AURORA_RAIN_BELOW) return;
+        var aurora = AuroraEvents.snapshot(level);
+        long age = (aurora.preview() ? level.getGameTime() : level.getDayTime()) - aurora.startTick();
+        if (aurora.strength() > 0 && age >= 0 && age < aurora.durationTicks()) data.flag(SAW_AURORA, true);
     }
 
     private static void look(ServerLevel level, ServerPlayer player) {

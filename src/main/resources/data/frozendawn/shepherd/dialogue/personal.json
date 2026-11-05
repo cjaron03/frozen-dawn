@@ -366,6 +366,213 @@
           "mood": "sad"
         }
       ]
+    },
+    {
+      "id": "t3.sky",
+      "lines": [
+        {
+          "line": "shepherd.t3.sky.ask",
+          "mood": "neutral"
+        },
+        {
+          "line": "shepherd.t3.sky.storms",
+          "mood": "thinking"
+        },
+        {
+          "line": "shepherd.t3.sky.up",
+          "mood": "neutral"
+        }
+      ],
+      "responses": [
+        {
+          "slot": "ask",
+          "label": "shepherd.t3.why.label",
+          "next": "t3.why"
+        },
+        {
+          "slot": "kind",
+          "label": "shepherd.t3.go.label",
+          "next": "t3.go",
+          "affinity": 10
+        },
+        {
+          "slot": "blunt",
+          "label": "shepherd.t3.later.label",
+          "next": "t3.later",
+          "affinity": -15
+        },
+        {
+          "slot": "sarcastic",
+          "label": "shepherd.t3.snacks.label",
+          "full": "shepherd.t3.snacks.full",
+          "next": "t3.snacks"
+        }
+      ]
+    },
+    {
+      "id": "t3.why",
+      "set": [
+        "t3_going"
+      ],
+      "lines": [
+        {
+          "line": "shepherd.t3.why",
+          "mood": "thinking"
+        }
+      ]
+    },
+    {
+      "id": "t3.go",
+      "set": [
+        "t3_going"
+      ],
+      "lines": [
+        {
+          "line": "shepherd.t3.go",
+          "mood": "happy"
+        }
+      ]
+    },
+    {
+      "id": "t3.later",
+      "set": [
+        "t3_later"
+      ],
+      "lines": [
+        {
+          "line": "shepherd.t3.later",
+          "mood": "neutral"
+        }
+      ]
+    },
+    {
+      "id": "t3.snacks",
+      "set": [
+        "t3_going"
+      ],
+      "lines": [
+        {
+          "line": "shepherd.t3.snacks",
+          "mood": "amused"
+        }
+      ]
+    },
+    {
+      "id": "t3.top",
+      "set": [
+        "t3_top"
+      ],
+      "lines": [
+        {
+          "line": "shepherd.t3.top.gone",
+          "mood": "thinking"
+        },
+        {
+          "line": "shepherd.t3.top.frame",
+          "mood": "sad",
+          "if": "not:saw_aurora"
+        },
+        {
+          "line": "shepherd.t3.top.slow",
+          "mood": "thinking",
+          "if": "not:saw_aurora"
+        },
+        {
+          "line": "shepherd.t3.top.saw",
+          "mood": "sad",
+          "if": "saw_aurora"
+        },
+        {
+          "line": "shepherd.t3.top.mine",
+          "mood": "thinking",
+          "if": "saw_aurora"
+        },
+        {
+          "line": "shepherd.t3.top.stars",
+          "mood": "happy",
+          "if": "not:stars_before"
+        },
+        {
+          "line": "shepherd.t3.top.stars.again",
+          "mood": "happy",
+          "if": "stars_before"
+        },
+        {
+          "line": "shepherd.t3.top.enough",
+          "mood": "neutral"
+        }
+      ],
+      "responses": [
+        {
+          "slot": "ask",
+          "label": "shepherd.t3.pick.label",
+          "full": "shepherd.t3.pick.full",
+          "next": "t3.pick"
+        },
+        {
+          "slot": "kind",
+          "label": "shepherd.t3.worth.label",
+          "next": "t3.worth",
+          "affinity": 30
+        },
+        {
+          "slot": "blunt",
+          "label": "shepherd.t3.cold.label",
+          "full": "shepherd.t3.cold.full",
+          "next": "t3.cold"
+        },
+        {
+          "slot": "sarcastic",
+          "label": "shepherd.t3.alone.label",
+          "full": "shepherd.t3.alone.full",
+          "next": "t3.alone",
+          "affinity": 15
+        }
+      ]
+    },
+    {
+      "id": "t3.pick",
+      "keep": "t3_stars",
+      "lines": [
+        {
+          "line": "shepherd.t3.pick",
+          "mood": "neutral"
+        }
+      ]
+    },
+    {
+      "id": "t3.worth",
+      "keep": "t3_stars",
+      "lines": [
+        {
+          "line": "shepherd.t3.worth",
+          "mood": "neutral"
+        }
+      ]
+    },
+    {
+      "id": "t3.cold",
+      "keep": "t3_stars",
+      "lines": [
+        {
+          "line": "shepherd.t3.cold.1",
+          "mood": "unimpressed"
+        },
+        {
+          "line": "shepherd.t3.cold.2",
+          "mood": "neutral"
+        }
+      ]
+    },
+    {
+      "id": "t3.alone",
+      "keep": "t3_stars",
+      "lines": [
+        {
+          "line": "shepherd.t3.alone",
+          "mood": "amused"
+        }
+      ]
     }
   ]
 }
