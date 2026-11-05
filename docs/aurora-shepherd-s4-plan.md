@@ -41,7 +41,7 @@ Approving the plan accepts these unless you say otherwise.
 1. **Two slices.** S4a, Nine: the engine, T2, the husk, the lamp, the quiet day. S4b, the rest: T3, T4, T5, the files, bleed-through. Each has its own pass and Opus review, since S4b changes the Pattern's save format.
 2. **T1's "Moving." changes.** The shipped line says "Green. Moving." of one frame, and T3 says "I don't even know how it moves." Proposed: "Green. Smeared, like it wouldn't hold still." It lands in S4b with T3.
 3. **A real aurora with her awake.** "One frame" and "she will never see one" rest on nobody waking her before phase 4, and the vault has no such gate. Woken earlier, she can stand under the real thing. I recommend the flag `saw_aurora`, set when she is outdoors at night, near a player, with `AuroraPolicy.nightly` active and rain low. T3 then takes its two variant lines and the pool stays silent. She says nothing at the moment itself: writing that scene is a bigger decision. The other choice is to accept the hole for early wakers.
-4. **Nine's lamp: C, in her handle, I recommend.** Neither Notion nor the code says anything beyond "a keepsake item". A keepsake only; B a wall light on a Power Cell; C an item as in A, which she takes into her carry handle on a right-click, dark, for good. C adds to her approved body, so it needs your word on the mockup.
+4. **Nine's lamp: C, in her handle (decided, owner, 2026-11-05).** Neither Notion nor the code said anything beyond "a keepsake item". It is a keepsake item until the player right-clicks her with it. She then takes it into her carry handle, dark, for good. Approved from [nine-lamp-mockup.png](art/aurora-shepherd/nine-lamp-mockup.png), and it adds to her approved body.
 5. **Husk pose: A, sat down.** It reads as a stop, not a wreck, and it sits as Enoch sits. B is on its side. Soot, not frost, because the pit is a warm zone.
 6. **Two files, and T5 opens on the second alone.** Okoye's duty log gains a posting page: Notion says the log gives his posting, and the log as built does not. The new Frame Register is behind Nine's lamp. A player who left the log in the locker still gets T5, without Enoch's beat. Requiring both would shut out anyone who missed a locker, with no hint why.
 7. **"It's scrap." costs you the score, not the story.** Nothing is handed over in the scene, and the husk gives lamp and sheet to a right-click afterwards, with "...Thanks."
@@ -188,14 +188,14 @@ Each has its test in the task named.
 - [ ] **Step 4: Run them.** Expected: PASS.
 - [ ] **Step 5: Commit.** `feat: she tells you about the others`.
 
-### Task 5: The lamp's option, the pass, the review
+### Task 5: The lamp in her handle, the pass, the review
 
 **Files:**
-- Modify, for option C: `shepherd/ShepherdEntity.java`, `client/ShepherdModel.java`, `ShepherdRenderer.java`
+- Modify: `shepherd/ShepherdEntity.java`, `client/ShepherdModel.java`, `ShepherdRenderer.java`
 - Create: `tools/prepare_aurora_s4_playtest.py`
 - Modify: `docs/aurora-shepherd.md`, `config/architect-required-tests.txt`
 
-**Interfaces:** Consumes Task 3. For option C, `nine_lamp_worn` flag, synced by entity data; right-clicking her with the lamp takes it. Options A and B are in the mockup; A needs nothing here.
+**Interfaces:** Consumes Task 3. `nine_lamp_worn` flag, synced by entity data; right-clicking her with the lamp takes it.
 
 - [ ] **Step 1: Write the failing test.** `shepherdSheTakesTheLamp`: the item is spent, the flag holds through a reload, and her display is unchanged.
 - [ ] **Step 2: Implement it,** from the approved mockup.
