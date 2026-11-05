@@ -87,6 +87,7 @@ public final class ShepherdTalk {
             ShepherdBoot.offer(player, she);
             return;
         }
+        if (she.bootDisplay() != ShepherdEntity.BOOT_NONE) return;
         live = new Live(player, she);
         var data = data();
         String waiting = waitingNode(data);
@@ -343,6 +344,10 @@ public final class ShepherdTalk {
 
     static boolean live() {
         return live != null;
+    }
+
+    static boolean speakingTo(ServerPlayer player) {
+        return live != null && live.player == player;
     }
 
     static int liveId() {

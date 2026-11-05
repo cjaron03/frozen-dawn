@@ -153,7 +153,7 @@ public final class ShepherdBoot {
         screen = null;
         if (over == null) return;
         if (over.booting && over.player == waker && !over.troubled()) ShepherdTalk.start(over.player, ShepherdTalk.FIRST_MEETING);
-        if (!ShepherdTalk.live()) tellClosed(over.player);
+        if (!ShepherdTalk.speakingTo(over.player)) tellClosed(over.player);
     }
 
     /** Past Boot her body finishes the lines whatever happens to the screen. Short of it, her display comes back. */
@@ -177,6 +177,11 @@ public final class ShepherdBoot {
 
     private static void tellClosed(ServerPlayer player) {
         if (!player.hasDisconnected()) PacketDistributor.sendToPlayer(player, new ShepherdClosePayload());
+    }
+
+    /** Nothing has closed the lines long after they ran out, so the player may. */
+    public static boolean stuck(int age) {
+        return age >= BIOS_TICKS * 3;
     }
 
     public static boolean offered() {

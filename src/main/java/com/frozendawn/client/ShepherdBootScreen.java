@@ -77,7 +77,7 @@ public final class ShepherdBootScreen extends Screen {
 
     /** Everything after Boot is committed, and like the logo the lines cannot be skipped. */
     @Override public boolean shouldCloseOnEsc() {
-        return !booted;
+        return !booted || ShepherdBoot.stuck(age);
     }
 
     @Override public void tick() {

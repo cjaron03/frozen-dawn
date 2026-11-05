@@ -69,6 +69,11 @@ public final class ShepherdBootGameTest {
     @BeforeBatch(batch = "shepherd_boot_reboot") public static void rebootBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
     @AfterBatch(batch = "shepherd_boot_reboot") public static void rebootAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
 
+    @BeforeBatch(batch = "shepherd_boot_replay_second") public static void replaySecondBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_boot_replay_second") public static void replaySecondAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_boot_replay_trouble") public static void replayTroubleBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_boot_replay_trouble") public static void replayTroubleAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+
     private static BlockPos dock(GameTestHelper h, BlockPos at) {
         h.setBlock(at, ModBlocks.CS1_DOCK.get());
         return h.absolutePos(at);
@@ -415,6 +420,41 @@ public final class ShepherdBootGameTest {
                 h.assertTrue(!she.offline(), "She comes back");
                 h.assertTrue(!she.logo() && !ShepherdBoot.offered() && she.bootDisplay() == ShepherdEntity.BOOT_NONE, "With no boot");
             });
+        });
+    }
+
+    /** The other player would hold the talk, and the one on the BIOS would be left on a screen nothing closes. */
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_boot_replay_second", timeoutTicks = 400)
+    public static void shepherdNobodyElseOpensHerDuringTheLines(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = beside(h);
+            var other = beside(h);
+            var she = replayed(h, player);
+            rightClick(she, player);
+            ShepherdBoot.answer(player, true);
+            rightClick(she, other);
+            h.assertTrue(!ShepherdTalk.live(), "The lines are running: " + ShepherdTalk.liveNode());
+            h.succeedWhen(() -> h.assertTrue(ShepherdTalk.speakingTo(player) && "fm.boot".equals(ShepherdTalk.liveNode()), "The first meeting is the booter's"));
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_boot_replay_trouble", timeoutTicks = 400)
+    public static void shepherdAReplayFinishesItsLinesBeforeATalk(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = beside(h);
+            player.setGameMode(GameType.SURVIVAL);
+            var she = replayed(h, player);
+            rightClick(she, player);
+            ShepherdBoot.answer(player, true);
+            player.hurt(h.getLevel().damageSources().genericKill(), 1);
+            h.startSequence().thenExecuteAfter(2, () -> {
+                rightClick(she, player);
+                h.assertTrue(!ShepherdTalk.live() && !ShepherdBoot.offered(), "Her body is still on the lines");
+            }).thenWaitUntil(() -> h.assertTrue(she.bootDisplay() == ShepherdEntity.BOOT_NONE, "They run out")).thenExecute(() -> {
+                h.assertTrue(!ShepherdTalk.live(), "The screen went, so nothing opens by itself");
+                rightClick(she, player);
+                h.assertTrue("fm.boot".equals(ShepherdTalk.liveNode()) && she.logo(), "A right-click opens it: " + ShepherdTalk.liveNode());
+            }).thenSucceed();
         });
     }
 }

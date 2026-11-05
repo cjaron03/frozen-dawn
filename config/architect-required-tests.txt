@@ -901,6 +901,8 @@ shepherdreplaybootsthrough xml
 shepherdleavingareplaykeepsitwaiting xml
 shepherdresumingthefirstmeetingskipsthechoice xml
 shepherdrebootplaysnoboot xml
+shepherdnobodyelseopensherduringthelines xml
+shepherdareplayfinishesitslinesbeforeatalk xml
 shepherdananswerisheard xml
 shepherdanamedplayerisnoted xml
 shepherdhubactionsarenoted xml
