@@ -122,7 +122,7 @@ public final class ImpressionStore {
                 switch (used.action()) {
                     case FOLLOW, LAMP -> note(who, Theory.USES_ME, true);
                     case TALK -> note(who, Theory.USES_ME, false);
-                    case SETTINGS, LOG, LOG_DONE -> { }
+                    case LANGUAGE, LOG, LOG_DONE -> { }
                 }
             }
         }

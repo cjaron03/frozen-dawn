@@ -1209,3 +1209,7 @@ shepherdaclosedreadplaysatthenexttalk xml
 shepherdatwarythereadcostsandshesaysnothing xml
 shepherdthefirstreadcostswhatevershecansee xml
 shepherdthereadsurvivesareload xml
+shepherdthelogreachesthescreen xml
+shepherdlanguagestillswaps xml
+shepherdsettingsarenotevidence xml
+shepherdnologduringatalk xml

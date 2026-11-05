@@ -4,6 +4,7 @@ import com.frozendawn.FrozenDawn;
 import com.frozendawn.data.ApocalypseState;
 import com.frozendawn.event.PlayerTickHandler;
 import com.frozendawn.gametest.GameTestTemplates;
+import com.frozendawn.miller.ImpressionStore.Theory;
 import com.frozendawn.miller.LogEntry;
 import com.frozendawn.miller.MillerPattern;
 import com.frozendawn.miller.PatternSavedData;
@@ -75,6 +76,14 @@ public final class ShepherdLogGameTest {
     @AfterBatch(batch = "shepherd_read_blind") public static void readBlindAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
     @BeforeBatch(batch = "shepherd_read_reload") public static void readReloadBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
     @AfterBatch(batch = "shepherd_read_reload") public static void readReloadAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_screen_log") public static void screenLogBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_screen_log") public static void screenLogAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_screen_language") public static void screenLanguageBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_screen_language") public static void screenLanguageAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_screen_evidence") public static void screenEvidenceBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_screen_evidence") public static void screenEvidenceAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_screen_talk") public static void screenTalkBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_screen_talk") public static void screenTalkAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
 
     private static ShepherdSavedData data(GameTestHelper h) {
         return ShepherdSavedData.get(h.getLevel().getServer());
@@ -434,6 +443,78 @@ public final class ShepherdLogGameTest {
             h.assertTrue(again.equals(saved), "A reload changes nothing");
             h.assertTrue(again.getCompound("impressions").getList("read", Tag.TAG_INT_ARRAY).size() == 1, "They have read it");
             h.assertTrue(again.getCompound("impressions").getList("told", Tag.TAG_INT_ARRAY).isEmpty(), "And are still owed her lines");
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_screen_log", timeoutTicks = 200)
+    public static void shepherdTheLogReachesTheScreen(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var server = h.getLevel().getServer();
+            var player = player(h);
+            var she = withADay(h, player);
+            MillerPattern.feel(server, com.frozendawn.miller.Feelings.Feeling.GUILT);
+            MillerPattern.lean(server, player.getUUID());
+            ShepherdReactions.writeDay(player);
+            var cracked = ShepherdReactions.writeDay(player);
+            ShepherdTalk.openHub(player, she);
+            act(player, Action.LOG);
+            var sent = ShepherdTalk.liveLog();
+            h.assertTrue(sent != null && sent.conversation() == ShepherdTalk.liveId(), "It was sent");
+            var pages = sent.pages();
+            h.assertTrue(pages.size() == 3, "Every entry at once: " + pages.size());
+            h.assertTrue(pages.getFirst().day() == cracked.day() && pages.getFirst().note().equals(cracked.note()), "Newest first");
+            h.assertTrue(pages.getFirst().signed() && pages.getFirst().cracked(), "Signed and cracked");
+            h.assertTrue(pages.get(1).signed() && pages.get(1).note() == null, "The first signed entry's Notes stay blank");
+            h.assertTrue(!pages.getLast().signed() && !pages.getLast().cracked(), "An earlier day stays as it was");
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_screen_language", timeoutTicks = 200)
+    public static void shepherdLanguageStillSwaps(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            var she = withADay(h, player);
+            boolean heavy = data(h).heavy();
+            ShepherdTalk.openHub(player, she);
+            act(player, Action.LANGUAGE);
+            h.assertTrue(data(h).heavy() != heavy, "It changed");
+            act(player, Action.LANGUAGE);
+            h.assertTrue(data(h).heavy() == heavy, "And back");
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_screen_evidence", timeoutTicks = 200)
+    public static void shepherdSettingsAreNotEvidence(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var server = h.getLevel().getServer();
+            var player = player(h);
+            var she = withADay(h, player);
+            ShepherdTalk.openHub(player, she);
+            act(player, Action.LANGUAGE);
+            act(player, Action.LOG);
+            act(player, Action.LOG_DONE);
+            ShepherdTalk.close(player);
+            MillerPattern.skipDay(server);
+            MillerPattern.poll(server, 1, player.getUUID(), data(h).lastTalk(), data(h).tier());
+            for (Theory theory : Theory.values()) h.assertTrue(MillerPattern.confidence(server, player.getUUID(), theory) == 0, "No theory moved: " + theory);
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_screen_talk", timeoutTicks = 200)
+    public static void shepherdNoLogDuringATalk(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            var she = withADay(h, player);
+            ShepherdTalk.openHub(player, she);
+            act(player, Action.TALK);
+            h.assertTrue(ShepherdTalk.liveNode() != null, "She is talking");
+            act(player, Action.LOG);
+            h.assertTrue(ShepherdTalk.liveLog() == null, "Nothing was sent");
+            assertScore(h, SCORE);
             h.succeed();
         });
     }

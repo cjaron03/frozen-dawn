@@ -313,9 +313,9 @@ public final class ShepherdTalkGameTest {
             var player = player(h);
             var she = awake(h, player);
             rightClick(she, player);
-            ShepherdTalk.action(player, ShepherdTalk.liveId(), Action.SETTINGS);
+            ShepherdTalk.action(player, ShepherdTalk.liveId(), Action.LANGUAGE);
             h.assertTrue(data(h).heavy() && data(h).flag("profanity_heavy"), "Heavy on");
-            ShepherdTalk.action(player, ShepherdTalk.liveId(), Action.SETTINGS);
+            ShepherdTalk.action(player, ShepherdTalk.liveId(), Action.LANGUAGE);
             h.assertTrue(!data(h).heavy() && data(h).flag("profanity_mild"), "And off again");
             h.succeed();
         });

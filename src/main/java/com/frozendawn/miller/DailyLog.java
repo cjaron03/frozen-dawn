@@ -18,8 +18,8 @@ import net.minecraft.nbt.Tag;
  * authored and no player's words reach it. The note is chosen by a fixed order and the day number, with nothing random
  * in it. It is no keepsake: at the cap the oldest entry goes without a word.
  */
-final class DailyLog {
-    static final int MAX = 128;
+public final class DailyLog {
+    public static final int MAX = 128;
     /** How strong a feeling has to be for the punctuation to go, and for the form to break. Both are for the owner's pass. */
     static final double HIGH = 0.6, PEAK = 0.8;
     private static final int REST = 3, REUNION_DAYS = 5, KNOWS_EVERY = 4;

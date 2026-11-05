@@ -150,7 +150,7 @@ class ImpressionStoreTest {
         assertHeard(new Heard.Used(Action.FOLLOW), Theory.USES_ME, 1);
         assertHeard(new Heard.Used(Action.LAMP), Theory.USES_ME, 1);
         assertHeard(new Heard.Used(Action.TALK), Theory.USES_ME, -1);
-        assertHeard(new Heard.Used(Action.SETTINGS), Theory.USES_ME, 0);
+        assertHeard(new Heard.Used(Action.LANGUAGE), Theory.USES_ME, 0);
     }
 
     @Test

@@ -5,10 +5,12 @@ import com.frozendawn.data.ApocalypseState;
 import com.frozendawn.entity.ArchivistEntity;
 import com.frozendawn.miller.SelfModel;
 import com.frozendawn.miller.Heard;
+import com.frozendawn.miller.LogEntry;
 import com.frozendawn.miller.MillerPattern;
 import com.frozendawn.miller.Refusal;
 import com.frozendawn.network.ShepherdClosePayload;
 import com.frozendawn.network.ShepherdHubPayload;
+import com.frozendawn.network.ShepherdLogPayload;
 import com.frozendawn.network.ShepherdNodePayload;
 import com.frozendawn.shepherd.ShepherdAffinity.Tier;
 import com.frozendawn.shepherd.ShepherdDialogue.Line;
@@ -52,7 +54,7 @@ public final class ShepherdTalk {
         TALK,
         FOLLOW,
         LAMP,
-        SETTINGS,
+        LANGUAGE,
         LOG,
         LOG_DONE
     }
@@ -77,6 +79,8 @@ public final class ShepherdTalk {
         int thinkTicks;
         /** What the client was last sent. */
         ShepherdNodePayload sent;
+        /** The log it was last sent, if it has asked. */
+        ShepherdLogPayload log;
 
         Live(ServerPlayer player, ShepherdEntity she) {
             this.player = player;
@@ -287,9 +291,11 @@ public final class ShepherdTalk {
                 }
             }
             case LAMP -> data.lamp(!data.lamp());
-            case SETTINGS -> swearing(data, !data.heavy());
+            case LANGUAGE -> swearing(data, !data.heavy());
             case LOG -> {
                 readLog(player);
+                live.log = logPayload(live.id, MillerPattern.log(player.getServer()));
+                PacketDistributor.sendToPlayer(player, live.log);
                 return;
             }
             case LOG_DONE -> {
@@ -433,6 +439,10 @@ public final class ShepherdTalk {
         return new ShepherdNodePayload(conversation, node.id(), lines, replies, replies.isEmpty(), logoTicks, thinkTicks);
     }
 
+    static ShepherdLogPayload logPayload(int conversation, List<LogEntry> entries) {
+        return new ShepherdLogPayload(conversation, entries.stream().map(entry -> new ShepherdLogPayload.Page(entry.day(), entry.signed(), entry.cracked(), entry.note())).toList());
+    }
+
     private static void end(boolean tellClient) {
         var over = live;
         live = null;
@@ -507,6 +517,10 @@ public final class ShepherdTalk {
     /** What the client was last sent, or null. */
     static ShepherdNodePayload liveSent() {
         return live == null ? null : live.sent;
+    }
+
+    static ShepherdLogPayload liveLog() {
+        return live == null ? null : live.log;
     }
 
     /** How long the line on screen was made to wait. */
