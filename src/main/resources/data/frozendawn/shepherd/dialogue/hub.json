@@ -1,6 +1,14 @@
 {
   "nodes": [
     {
+      "id": "hub.talk.silent",
+      "when": "tier_silent",
+      "else": "hub.talk",
+      "lines": [
+        { "line": "shepherd.hub.talk.silent", "mood": "recording" }
+      ]
+    },
+    {
       "id": "hub.talk",
       "when": "tier_wary",
       "else": "hub.talk.warm",
@@ -20,6 +28,30 @@
       "id": "hub.talk.plain",
       "lines": [
         { "line": "shepherd.hub.talk", "heavy": "shepherd.hub.talk.heavy", "mood": "thinking" }
+      ]
+    },
+    {
+      "id": "hub.refuse.night",
+      "lines": [
+        { "line": "shepherd.refuse.night", "mood": "unimpressed" }
+      ]
+    },
+    {
+      "id": "hub.refuse.night.yield",
+      "lines": [
+        { "line": "shepherd.refuse.night.yield", "mood": "unimpressed" }
+      ]
+    },
+    {
+      "id": "hub.refuse.archivist",
+      "lines": [
+        { "line": "shepherd.refuse.archivist", "mood": "sad" }
+      ]
+    },
+    {
+      "id": "hub.refuse.archivist.yield",
+      "lines": [
+        { "line": "shepherd.refuse.archivist.yield", "mood": "sad" }
       ]
     }
   ]

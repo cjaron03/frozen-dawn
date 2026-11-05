@@ -1,8 +1,10 @@
 package com.frozendawn.shepherd;
 
 import com.frozendawn.FrozenDawn;
+import com.frozendawn.entity.ArchivistEntity;
 import com.frozendawn.miller.Heard;
 import com.frozendawn.miller.MillerPattern;
+import com.frozendawn.miller.Refusal;
 import com.frozendawn.network.ShepherdClosePayload;
 import com.frozendawn.network.ShepherdHubPayload;
 import com.frozendawn.network.ShepherdNodePayload;
@@ -13,8 +15,10 @@ import com.frozendawn.shepherd.ShepherdDialogue.Slot;
 import com.frozendawn.shepherd.ShepherdFace.Mood;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.function.Predicate;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Mob;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -31,7 +35,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 @EventBusSubscriber(modid = FrozenDawn.MOD_ID)
 public final class ShepherdTalk {
     public static final String FIRST_MEETING = "fm.boot";
-    private static final String HUB_TALK = "hub.talk";
+    private static final String HUB_TALK = "hub.talk.silent";
     private static final int UNIMPRESSED_TICKS = 40;
     private static final int TALK_TICKS_PER_LINE = 80;
 
@@ -69,8 +73,12 @@ public final class ShepherdTalk {
         }
     }
 
+    /** Whom she last said no to. It need not outlive the server: thirty seconds is all it is for. */
+    private record Refused(UUID who, Refusal.Kind kind, long at) {}
+
     private static int nextId = 1;
     private static Live live;
+    private static Refused refused;
 
     private ShepherdTalk() {}
 
@@ -142,6 +150,7 @@ public final class ShepherdTalk {
     private static boolean holds(ServerPlayer player, String condition) {
         var tier = ShepherdSavedData.get(player.getServer()).tier();
         return switch (condition) {
+            case "tier_silent" -> ShepherdSavedData.get(player.getServer()).affinity() < ShepherdAffinity.SILENT_BELOW;
             case "tier_wary" -> tier == Tier.WARY;
             case "tier_friendly" -> tier.atLeast(Tier.FRIENDLY);
             case "tier_trusted" -> tier.atLeast(Tier.TRUSTED);
@@ -201,15 +210,42 @@ public final class ShepherdTalk {
             case FOLLOW -> {
                 if (follows(data, player)) {
                     data.waiting(true);
-                } else {
-                    data.follower(player.getUUID());
-                    data.waiting(false);
+                } else if (follow(data, player)) {
+                    return;
                 }
             }
             case LAMP -> data.lamp(!data.lamp());
             case SETTINGS -> swearing(data, !data.heavy());
         }
         showHub();
+    }
+
+    /** She objects, or goes. True if she answered with a line, which takes the hub's place until it is done. */
+    private static boolean follow(ShepherdSavedData data, ServerPlayer player) {
+        var kind = refusal(player, live.she);
+        long now = player.getServer().overworld().getGameTime();
+        boolean yields = kind != null && refused != null && refused.who().equals(player.getUUID()) && refused.kind() == kind && now - refused.at() <= Refusal.YIELD_TICKS;
+        if (kind != null && !yields) {
+            refused = new Refused(player.getUUID(), kind, now);
+            if (begin(refusalNode(kind), true)) return true;
+        }
+        refused = null;
+        data.follower(player.getUUID());
+        data.waiting(false);
+        return yields && begin(refusalNode(kind) + ".yield", true);
+    }
+
+    private static String refusalNode(Refusal.Kind kind) {
+        return kind == Refusal.Kind.CLEAR_NIGHT ? "hub.refuse.night" : "hub.refuse.archivist";
+    }
+
+    /** Worked out on the press, so the Pattern still scans nothing. */
+    private static Refusal.Kind refusal(ServerPlayer player, ShepherdEntity she) {
+        var server = player.getServer();
+        var level = (ServerLevel) she.level();
+        boolean seen = !level.getEntitiesOfClass(ArchivistEntity.class, she.getBoundingBox().inflate(ShepherdPolicy.HEARD_BLOCKS), she::hasLineOfSight).isEmpty();
+        return Refusal.check(ShepherdPrompt.calm(server, level, List.of(player)), ShepherdReactions.clearNight(level, she.blockPosition()), MillerPattern.skyWanted(server),
+                seen, MillerPattern.remembers(server, player.getUUID(), "archivist_killed"));
     }
 
     /** From the client: its screen has already gone. */
@@ -341,7 +377,7 @@ public final class ShepherdTalk {
     }
 
     @SubscribeEvent public static void stopping(ServerStoppingEvent event) {
-        live = null;
+        clearForTests();
     }
 
     static boolean live() {
@@ -374,5 +410,6 @@ public final class ShepherdTalk {
     /** GameTest isolation only. */
     static void clearForTests() {
         live = null;
+        refused = null;
     }
 }

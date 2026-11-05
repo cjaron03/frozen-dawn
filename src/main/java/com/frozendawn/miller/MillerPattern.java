@@ -87,6 +87,17 @@ public final class MillerPattern {
         return current(server).state().keepsakes().of(who);
     }
 
+    /** Whether she holds a moment of this kind with this person. A keepsake, because her reasons only go back sixteen. */
+    public static boolean remembers(MinecraftServer server, UUID who, String kind) {
+        return keepsakes(server, who).stream().anyMatch(moment -> moment.kind().equals(kind));
+    }
+
+    /** What she wants of the sky, as a reason to stay under it. */
+    public static double skyWanted(MinecraftServer server) {
+        var runtime = current(server);
+        return runtime.state().skyWanted(runtime.now());
+    }
+
     /** She said what the focus named. {@code key} is a wall in lower case or {@link Attention#NOTICING}. */
     public static void spoken(MinecraftServer server, String key) {
         var runtime = current(server);

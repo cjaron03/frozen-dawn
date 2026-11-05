@@ -271,10 +271,15 @@ public final class ShepherdReactions {
         }
     }
 
+    /** The storms keep this to the first phases and the very end. */
+    static boolean clearNight(ServerLevel level, BlockPos at) {
+        return ShepherdPolicy.night(level.getDayTime()) && !level.isRaining() && level.canSeeSky(at);
+    }
+
     private static void look(ServerLevel level, ServerPlayer player) {
         if (PlayerTickHandler.airFailing(player.getUUID())) saw(player, Deed.AIR_FAILING);
         var at = player.blockPosition();
-        if (ShepherdPolicy.night(level.getDayTime()) && !level.isRaining() && level.canSeeSky(at)) saw(player, Deed.CLEAR_NIGHT);
+        if (clearNight(level, at)) saw(player, Deed.CLEAR_NIGHT);
         if (!TemperatureManager.isEnclosed(level, at)) return;
         float temperature = PlayerTickHandler.resolvedTemperature(player);
         if (temperature >= ShepherdPolicy.WARM_SHELTER_C && !HeaterRegistry.nearby(level, at, ShepherdPolicy.WARM_HEATER_BLOCKS, 1).isEmpty()) saw(player, Deed.WARM_SHELTER);

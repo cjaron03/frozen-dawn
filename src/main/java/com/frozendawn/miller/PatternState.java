@@ -18,6 +18,7 @@ final class PatternState {
     /** Bounded: she holds this many reasons and loses the oldest. */
     static final int MAX_HISTORY = 16;
     static final long NOT_SET = -1;
+    static final long NIGHT_TICKS = ShepherdPolicy.NIGHT_ENDS - ShepherdPolicy.NIGHT_STARTS;
     private static final double PRESENCE_FEEDS = 0.01, TALK_FEEDS = 0.10;
     /** Not {@link #NOT_SET}: a clock that {@link #age} has moved can land on -1. */
     private static final long UNARMED = Long.MIN_VALUE;
@@ -35,6 +36,8 @@ final class PatternState {
     private Coherence coherence = new Coherence();
     /** When anyone was last beside her. */
     private long seenAt = UNARMED;
+    /** What she wanted of the sky when a clear night last fed it, and when. Null until one has. */
+    private Fading nightSky;
 
     Drives drives() { return drives; }
     Feelings feelings() { return feelings; }
@@ -50,6 +53,7 @@ final class PatternState {
         impressions.saw(who, deed);
         var rule = Appraisal.rule(deed);
         var raised = Appraisal.intensities(rule, Appraisal.scale(rule, drives, now));
+        if (deed == Deed.CLEAR_NIGHT) nightSky = new Fading(drives.value(Drive.SKY, now), now);
         raised.forEach((feeling, intensity) -> feelings.raise(feeling, intensity, now));
         if (rule.drive() != null && rule.feeds() != 0) drives.feed(rule.drive(), rule.feeds(), now);
         keep(who, deed.name().toLowerCase(Locale.ROOT), raised.values().stream().max(Double::compare).orElse(0.0), now);
@@ -113,6 +117,12 @@ final class PatternState {
         drives.feed(Drive.CURIOSITY, PRESENCE_FEEDS, now);
     }
 
+    /** What she wants of the sky. One look at a clear night feeds it, but she goes on wanting that night until it is over. */
+    double skyWanted(long now) {
+        double wanted = drives.value(Drive.SKY, now);
+        return nightSky != null && now - nightSky.at() < NIGHT_TICKS ? Math.max(wanted, nightSky.value()) : wanted;
+    }
+
     /** What she wants to do with {@code nearest} beside her. Only reads. */
     Urges.Urge urge(UUID nearest, long now) {
         return Urges.pick(Attention.on(this, nearest, now), drives.value(Drive.CURIOSITY, now), drives.value(Drive.COMPANY, now));
@@ -125,6 +135,7 @@ final class PatternState {
         coherence.age(ticks);
         if (settleAt != UNARMED) settleAt -= ticks;
         if (seenAt != UNARMED) seenAt -= ticks;
+        if (nightSky != null) nightSky = nightSky.aged(ticks);
     }
 
     void clear() {
@@ -137,6 +148,7 @@ final class PatternState {
         self.clear();
         coherence.clear();
         settleAt = seenAt = UNARMED;
+        nightSky = null;
     }
 
     CompoundTag save() {
@@ -154,6 +166,7 @@ final class PatternState {
         tag.put("coherence", coherence.save());
         if (settleAt != UNARMED) tag.putLong("settleAt", settleAt);
         if (seenAt != UNARMED) tag.putLong("seenAt", seenAt);
+        if (nightSky != null) tag.put("nightSky", nightSky.save());
         return tag;
     }
 
@@ -174,6 +187,7 @@ final class PatternState {
         state.coherence = Coherence.load(tag.getCompound("coherence"));
         if (tag.contains("settleAt")) state.settleAt = tag.getLong("settleAt");
         if (tag.contains("seenAt")) state.seenAt = tag.getLong("seenAt");
+        if (tag.contains("nightSky")) state.nightSky = Fading.load(tag.getCompound("nightSky"));
         return state;
     }
 }

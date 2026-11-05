@@ -36,6 +36,24 @@ class PatternStateTest {
     }
 
     @Test
+    void aClearNightDoesNotSateHerUntilItIsOver() {
+        var state = woken();
+        state.drives().set(Drive.SKY, 1, 0);
+        state.appraise(ONE, Deed.CLEAR_NIGHT, 0);
+        assertTrue(state.drives().value(Drive.SKY, 0) < 0.7, "It fed her");
+        assertEquals(1, state.skyWanted(100), 1e-9, "She is still looking at it");
+        assertTrue(state.skyWanted(PatternState.NIGHT_TICKS) < 0.7, "The night is over");
+    }
+
+    @Test
+    void whatTheSkyWasSurvivesAReload() {
+        var state = woken();
+        state.drives().set(Drive.SKY, 1, 0);
+        state.appraise(ONE, Deed.CLEAR_NIGHT, 0);
+        assertEquals(1, PatternState.load(state.save()).skyWanted(100), 1e-9);
+    }
+
+    @Test
     void eachDeedRestsWhereTheTableSays() {
         assertRests(Deed.WARM_SHELTER, Mood.HAPPY, 1.3);
         assertRests(Deed.READ_LOG, Mood.THINKING, 3.2);

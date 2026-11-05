@@ -1106,3 +1106,10 @@ shepherdlookswhencurious xml
 shepherdincuriouskeepsthegap xml
 shepherddriftscloserwhenlonely xml
 shepherdholdsthegapstill xml
+shepherdrefusesoncethengoes xml
+shepherdaskinglaterstartsover xml
+shepherdfollowinafightisneverrefused xml
+shepherdwillnothuntthequietone xml
+shepherdbelowthelineonlyrecords xml
+shepherdsilentstillworksasequipment xml
+shepherddeedsstillcountinsilence xml
