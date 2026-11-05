@@ -266,12 +266,20 @@ public final class ShepherdWillGameTest {
         });
     }
 
+    /** A server of any age may be in the middle of its rain. */
+    private static void clearNight(GameTestHelper h) {
+        var level = h.getLevel();
+        level.setDayTime(18000);
+        level.setWeatherParameters(24000, 0, false, false);
+        level.setRainLevel(0);
+        MillerPattern.want(level.getServer(), Drive.SKY, 1);
+    }
+
     /** She has been left out under a clear night she has wanted, and is talking to them. */
     private static ServerPlayer underTheSky(GameTestHelper h) {
         var player = player(h);
         var she = met(h, player);
-        h.getLevel().setDayTime(18000);
-        MillerPattern.want(h.getLevel().getServer(), Drive.SKY, 1);
+        clearNight(h);
         data(h).waiting(true);
         she.interact(player, InteractionHand.MAIN_HAND);
         return player;
@@ -312,8 +320,7 @@ public final class ShepherdWillGameTest {
             follow(player);
             ShepherdTalk.reply(player, ShepherdTalk.liveId(), ShepherdConversation.CONTINUE);
             h.startSequence().thenExecuteAfter(Refusal.YIELD_TICKS + 1, () -> {
-                h.getLevel().setDayTime(18000);
-                MillerPattern.want(h.getLevel().getServer(), Drive.SKY, 1);
+                clearNight(h);
                 follow(player);
                 assertOn(h, "hub.refuse.night");
                 h.assertTrue(data(h).waiting(), "She says no again");
