@@ -279,6 +279,8 @@ Deferred minors: a vault reset silently destroys a seated cell (op-only); a runn
 
 Verified headlessly: the boot flow, memory, save, determinism and the delay's timing. Needs the owner's eyes: the choice, the BIOS pace, the seated dock, the cursor, the indicator at play distance, and whether the delay reads as thought.
 
+2026-11-04, the owner's pass in `Aurora Boot Check`: "looks good and the thinking indicator made it feel like she was thinking. i liked it". The owner asked for the list of what to expect before describing it, so this is a judgement against that list, not a blind description. The save reached Noticing through real play, with 2 keepsakes and `TALKS_TO_ME` at 0.714, and the log held no errors.
+
 ## Sources
 
 - `MaeveDirector`, `ShepherdAffinity` and `ShepherdReactions` at c866cf02 on `feat/aurora-affinity`.
