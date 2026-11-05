@@ -106,12 +106,14 @@ public final class ShepherdPrompt {
         if (data.tier() != Tier.WARY && she.blockPosition().closerThan(husk, ShepherdPolicy.NINE_SEEN_BLOCKS) && calm(server, level, near)) raise(data, AT_NINE);
     }
 
-    /** Unanswered it is a thought about tonight's sky, so like the site it goes when the moment does. */
+    /** Unanswered it is a thought about tonight's sky, so like the site it goes when the moment does, even broken off halfway through being said. */
     private static void upTop(MinecraftServer server, ServerLevel level, ShepherdSavedData data, List<ServerPlayer> near) {
         if (!data.flag(GOING_UP) || data.flag(BEEN_UP) || ShepherdTalk.live()) return;
-        boolean there = skyOverhead(server, level, near);
+        boolean there = data.tier() != Tier.WARY && skyOverhead(server, level, near);
         if (AT_THE_TOP.equals(data.promptNode())) {
-            if (!there) data.promptNode(null);
+            if (there) return;
+            data.promptNode(null);
+            if (AT_THE_TOP.equals(data.resumeNode())) data.resumeNode(null);
             return;
         }
         boolean placeWaiting = data.promptNode() != null && waitingPersonal(data) == null;
@@ -169,8 +171,8 @@ public final class ShepherdPrompt {
         long now = server.overworld().getGameTime();
         var waiting = waitingPersonal(data);
         if (waiting != null && !(tier.atLeast(waiting.tier()) && waiting.ready().test(server, level, data, near))) withdraw(data);
-        // While one waits the day has not started: it runs from when she is answered.
-        if (waitingPersonal(data) != null) data.deedReady(PERSONAL_GAP, now + ShepherdPolicy.PERSONAL_GAP_TICKS);
+        // While one waits the day has not started: it runs from when she is answered. The top is the rest of T3, so it counts.
+        if (waitingPersonal(data) != null || AT_THE_TOP.equals(data.promptNode())) data.deedReady(PERSONAL_GAP, now + ShepherdPolicy.PERSONAL_GAP_TICKS);
         if (data.promptNode() != null || data.resumeNode() != null || !data.flag(FIRST_MEETING_DONE) || now < data.deedReady(PERSONAL_GAP)) return;
         if (!calm(server, level, near)) return;
         if (!ShepherdPolicy.comfortable(coldest(near), near.stream().anyMatch(player -> PlayerTickHandler.airFailing(player.getUUID())))) return;

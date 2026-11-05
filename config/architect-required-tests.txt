@@ -1167,6 +1167,9 @@ shepherdthetopishigh xml
 shepherdthetopignoresthecold xml
 shepherdthetopwaitsoutacyclone xml
 shepherdthetopgoeswiththenight xml
+shepherdabrokenofftopwaitsforthenextnight xml
+shepherdthetopgoesifshestopsstandingforit xml
+shepherdthetoptakesthedaysconversation xml
 shepherdthetopplaysonce xml
 shepherdarealaurorachangesthetop xml
 shepherdseesarealauroraunderopensky xml

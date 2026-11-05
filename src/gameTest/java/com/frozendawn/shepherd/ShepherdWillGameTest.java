@@ -796,6 +796,7 @@ public final class ShepherdWillGameTest {
             var she = forT5(h, speaker);
             var reader = player(h);
             readTheSheet(h, reader);
+            readHisLog(h, reader);
             var beside = reader.position();
             reader.setPos(beside.add(40, 0, 0));
             h.startSequence()
@@ -807,6 +808,8 @@ public final class ShepherdWillGameTest {
                     .thenExecute(() -> {
                         she.interact(speaker, InteractionHand.MAIN_HAND);
                         h.assertTrue(ShepherdPrompt.THE_FILE.equals(ShepherdTalk.liveNode()), "On: " + ShepherdTalk.liveNode());
+                        answer(speaker, T5_KIND);
+                        h.assertFalse(ShepherdTalk.liveLines().contains(ENOCH), "His log is the reader's, not this one's: " + ShepherdTalk.liveLines());
                     })
                     .thenSucceed();
         });

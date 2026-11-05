@@ -459,9 +459,6 @@
     },
     {
       "id": "t3.top",
-      "set": [
-        "t3_top"
-      ],
       "lines": [
         {
           "line": "shepherd.t3.top.gone",
@@ -532,6 +529,9 @@
     },
     {
       "id": "t3.pick",
+      "set": [
+        "t3_top"
+      ],
       "keep": "t3_stars",
       "lines": [
         {
@@ -542,6 +542,9 @@
     },
     {
       "id": "t3.worth",
+      "set": [
+        "t3_top"
+      ],
       "keep": "t3_stars",
       "lines": [
         {
@@ -552,6 +555,9 @@
     },
     {
       "id": "t3.cold",
+      "set": [
+        "t3_top"
+      ],
       "keep": "t3_stars",
       "lines": [
         {
@@ -566,6 +572,9 @@
     },
     {
       "id": "t3.alone",
+      "set": [
+        "t3_top"
+      ],
       "keep": "t3_stars",
       "lines": [
         {

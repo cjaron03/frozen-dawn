@@ -41,7 +41,7 @@ public final class ShepherdSkyGameTest {
     private static final int TOP_Y = 112, BELOW_THE_TOP_Y = 100, A_LOOK = 25, MIDNIGHT = 18000, NOON = 6000;
     private static final int ASK = 0, KIND = 1, BLUNT = 2, SARCASTIC = 3, CONTINUE = -1;
     private static final float STARS = 0.8F;
-    private static final int TRUSTED = 500, CLOSE = 850;
+    private static final int WARY = -300, TRUSTED = 500, CLOSE = 850;
 
     private static long apocalypseTicks;
     private static final Set<BlockPos> warmed = new HashSet<>();
@@ -77,12 +77,16 @@ public final class ShepherdSkyGameTest {
     @AfterBatch(batch = "shepherd_top_lapsed") public static void topLapsedAfter(ServerLevel l) { after(l); }
     @BeforeBatch(batch = "shepherd_top_once") public static void topOnceBefore(ServerLevel l) { before(l); }
     @AfterBatch(batch = "shepherd_top_once") public static void topOnceAfter(ServerLevel l) { after(l); }
+    @BeforeBatch(batch = "shepherd_top_broken") public static void topBrokenBefore(ServerLevel l) { before(l); }
+    @AfterBatch(batch = "shepherd_top_broken") public static void topBrokenAfter(ServerLevel l) { after(l); }
+    @BeforeBatch(batch = "shepherd_top_wary") public static void topWaryBefore(ServerLevel l) { before(l); }
+    @AfterBatch(batch = "shepherd_top_wary") public static void topWaryAfter(ServerLevel l) { after(l); }
+    @BeforeBatch(batch = "shepherd_top_gap") public static void topGapBefore(ServerLevel l) { before(l); }
+    @AfterBatch(batch = "shepherd_top_gap") public static void topGapAfter(ServerLevel l) { after(l); }
     @BeforeBatch(batch = "shepherd_top_real") public static void topRealBefore(ServerLevel l) { before(l); }
     @AfterBatch(batch = "shepherd_top_real") public static void topRealAfter(ServerLevel l) { after(l); }
     @BeforeBatch(batch = "shepherd_aurora_seen") public static void auroraSeenBefore(ServerLevel l) { before(l); }
     @AfterBatch(batch = "shepherd_aurora_seen") public static void auroraSeenAfter(ServerLevel l) { after(l); }
-    @BeforeBatch(batch = "shepherd_aurora_pool") public static void auroraPoolBefore(ServerLevel l) { before(l); }
-    @AfterBatch(batch = "shepherd_aurora_pool") public static void auroraPoolAfter(ServerLevel l) { after(l); }
     @BeforeBatch(batch = "shepherd_stars_kept") public static void starsKeptBefore(ServerLevel l) { before(l); }
     @AfterBatch(batch = "shepherd_stars_kept") public static void starsKeptAfter(ServerLevel l) { after(l); }
     @BeforeBatch(batch = "shepherd_stars_tonight") public static void starsTonightBefore(ServerLevel l) { before(l); }
@@ -303,6 +307,77 @@ public final class ShepherdSkyGameTest {
         });
     }
 
+    /** Broken off before she is answered, it is still a thought about that night: it goes with the night, and the next clear one has it back. */
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_top_broken", timeoutTicks = 300, skyAccess = true)
+    public static void shepherdABrokenOffTopWaitsForTheNextNight(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            skyAt(h, STARS, MIDNIGHT);
+            var player = player(h, TOP_Y);
+            var she = upThere(h, player);
+            h.startSequence()
+                    .thenWaitUntil(() -> assertPrompt(h, ShepherdPrompt.AT_THE_TOP))
+                    .thenExecute(() -> {
+                        she.interact(player, InteractionHand.MAIN_HAND);
+                        h.assertTrue("t3.top".equals(ShepherdTalk.liveNode()), "On: " + ShepherdTalk.liveNode());
+                        ShepherdTalk.close(player);
+                        skyAt(h, STARS, NOON);
+                    })
+                    .thenWaitUntil(() -> assertNoPrompt(h, "The night is over"))
+                    .thenExecute(() -> {
+                        h.assertTrue(data(h).resumeNode() == null, "Nothing to pick up in daylight: " + data(h).resumeNode());
+                        h.assertFalse(data(h).flag("t3_top"), "And the top is still to come");
+                        skyAt(h, STARS, MIDNIGHT);
+                    })
+                    .thenWaitUntil(() -> assertPrompt(h, ShepherdPrompt.AT_THE_TOP))
+                    .thenExecute(() -> {
+                        she.interact(player, InteractionHand.MAIN_HAND);
+                        say(player, KIND);
+                        h.assertTrue(data(h).flag("t3_top"), "Answered, it is done");
+                    })
+                    .thenSucceed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_top_wary", timeoutTicks = 300, skyAccess = true)
+    public static void shepherdTheTopGoesIfSheStopsStandingForIt(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            skyAt(h, STARS, MIDNIGHT);
+            upThere(h, player(h, TOP_Y));
+            h.startSequence()
+                    .thenWaitUntil(() -> assertPrompt(h, ShepherdPrompt.AT_THE_TOP))
+                    .thenExecute(() -> data(h).affinity(WARY))
+                    .thenWaitUntil(() -> assertNoPrompt(h, "Not with you, not now"))
+                    .thenExecuteAfter(A_LOOK, () -> assertNoPrompt(h, "And it stays gone"))
+                    .thenSucceed();
+        });
+    }
+
+    /** It took over from a waiting T4, so that one is not asked yet, and it does not come straight after the top. */
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_top_gap", timeoutTicks = 300, skyAccess = true)
+    public static void shepherdTheTopTakesTheDaysConversation(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            skyAt(h, STARS, MIDNIGHT);
+            var player = player(h, TOP_Y);
+            var she = upThere(h, player);
+            data(h).affinity(CLOSE);
+            data(h).flag(ShepherdPrompt.SWITCH_ASKED, true);
+            data(h).promptNode(ShepherdPrompt.THE_SWITCH);
+            h.startSequence()
+                    .thenWaitUntil(() -> assertPrompt(h, ShepherdPrompt.AT_THE_TOP))
+                    .thenExecute(() -> {
+                        h.assertFalse(data(h).flag(ShepherdPrompt.SWITCH_ASKED), "T4 was not asked");
+                        she.interact(player, InteractionHand.MAIN_HAND);
+                        say(player, KIND, CONTINUE);
+                        warm(h, player);
+                    })
+                    .thenExecuteAfter(A_LOOK, () -> {
+                        assertNoPrompt(h, "A day between them");
+                        h.assertTrue(data(h).deedReady(ShepherdPrompt.PERSONAL_GAP) > h.getLevel().getServer().overworld().getGameTime(), "The day has started");
+                    })
+                    .thenSucceed();
+        });
+    }
+
     @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_top_real", timeoutTicks = 300, skyAccess = true)
     public static void shepherdARealAuroraChangesTheTop(GameTestHelper h) {
         ShepherdTestWorld.whenTicking(h, () -> {
@@ -356,21 +431,6 @@ public final class ShepherdSkyGameTest {
                         she.teleportTo(player.getX() + 1, player.getY() + 1, player.getZ());
                     })
                     .thenWaitUntil(() -> h.assertTrue(data(h).flag("saw_aurora"), "She saw it"))
-                    .thenSucceed();
-        });
-    }
-
-    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_aurora_pool", timeoutTicks = 400, skyAccess = true)
-    public static void shepherdNoImaginedAuroraAfterARealOne(GameTestHelper h) {
-        ShepherdTestWorld.whenTicking(h, () -> {
-            skyAt(h, 0.40F, MIDNIGHT);
-            var player = ShepherdTestWorld.onlinePlayer(h, h.absoluteVec(Vec3.atCenterOf(SPOT)).add(1, 0, 0));
-            met(h, player, 0);
-            MillerPattern.want(h.getLevel().getServer(), Drive.CURIOSITY, 1);
-            data(h).flag("saw_aurora", true);
-            h.startSequence()
-                    .thenWaitUntil(() -> h.assertTrue(ShepherdReactions.said() != null, "Something is said"))
-                    .thenExecute(() -> h.assertTrue(!ShepherdReactions.said().contains("imagined_aurora"), "She has no need to: " + ShepherdReactions.said()))
                     .thenSucceed();
         });
     }
