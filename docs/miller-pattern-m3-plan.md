@@ -12,7 +12,7 @@
 
 **Mockups:** [private-log-mockup.png](art/aurora-shepherd/private-log-mockup.png), approved 2026-11-05. [log-emotion-mockup.png](art/aurora-shepherd/log-emotion-mockup.png), approved 2026-11-05.
 
-**Status:** approved by the owner, 2026-11-05: one log per world, all 18 rulings and both mockups. The notes are drafts to build with and mark at the owner's pass. Nothing is built.
+**Status:** approved by the owner, 2026-11-05: one log per world, all 18 rulings and both mockups. The notes are drafts to build with and mark at the owner's pass. Built on `feat/miller-m3`; see the spec's Status.
 
 **Branch:** `feat/miller-m3` in `/Volumes/SSD/Work/frozen-dawn-miller-m3`, cut from `docs/miller-m3-plan`, which holds this plan on top of PR 159. PR into `feat/maeve-director`, after PR 159 has merged. It changes the save format, so the branch review runs on Opus.
 

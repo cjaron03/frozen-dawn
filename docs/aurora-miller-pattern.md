@@ -315,6 +315,24 @@ Verified headlessly: focus and urge, recall, walls said once, the slowing-down l
 
 2026-11-05: S4b adds `SelfModel.Lean` (NONE, SOMEONE, LEFT), set once at T5 and moving her to LEANING, and `PatternState` is at version 3. A save with no `lean` tag loads NONE. `Keepsakes.unspoken` exempts `NINE_FOUND`, and `Keepsake.day()` reads `ShepherdPolicy.day`. See the Status in `aurora-shepherd.md`.
 
+2026-11-05, M3 handback: built on `feat/miller-m3` in `/Volumes/SSD/Work/frozen-dawn-miller-m3` from [miller-pattern-m3-plan.md](miller-pattern-m3-plan.md), Tasks 1 to 6. `DailyLog`, `LogEntry`, `Mark` and `Marks` under `com.frozendawn.miller`, with `PatternState` at version 4; `READ_HER_LOG` and node `hub.log.read`; `ShepherdLogPayload`; Settings and the log as client pages in `ShepherdScreen` and `ShepherdLogPage`. New commands: `/fd shepherd log write`, `sign`, `mark` and `forget`; `mind` shows the last entry's key. `architectVerify` passed at 045721cf (1,272 GameTests, 1,062 required Architect cases). `architectMonkey` has not run on this branch, since no Architect code changed. Active save: `run-lab/saves/Aurora Log Check`, from `tools/prepare_miller_log_playtest.py`.
+
+Where the build goes past the plan, each for the owner's pass to mark:
+
+- Every note that is not in the table is a new draft: a `.peak` line for each of the seven feelings, since Ruling 16 breaks the form on a feeling and the table has no words for it, and `reunion.high`, mockup 2's line, for a return below the walls.
+- The plain Joy and Fear lines are the mockup's Normal, but row 7 needs High, so a new last row plays a feeling she shows below High, at Noticing or later.
+- `cargo.2` and `cargo.3` have no row of their own, so they play as `cold.cargo` and `trusted.cargo` once she has filed the name, by the day, as other variants do.
+- A `back` note is flat at Product, about Nine once at Noticing and up, the loop once a world at the walls, then "Cargo stopped again" with the name filed and two returns seen, otherwise the Noticing line. A Peak on every `back` at the walls would never reach the line the mockup draws uncracked.
+- A player who has stopped stays marked across entries until she sees them again, so an entry between the two does not lose the question.
+- Her lines on the first read wait out a quiet day and count as said only when heard, so if they are cut off they play again at the next talk.
+- A player on the stop screen is not beside her: no day settles on them and she does not mark them in the cold.
+
+Branch review on Opus: no critical findings, one important and five minor. Fixed with a failing test first: her lines were marked as said before she spoke, so a double Esc lost them; a dead player counted as near, regraded from minor because an entry could read "Good day." about someone she had just watched stop; and a day written by hand did not restart the settle, which only the lab reached. The test for a return she never saw now writes an entry about that player.
+
+Deferred minors: `seen` runs only for the nearest, so someone standing behind the follower for five days can read as a reunion; `LastWitnessHandler` cancels a death at the same priority as `killed`, so a denied Fold death may leave a `back` note, and the bus order is unspecified; `lastTalk` is world-wide and stamped on opening the hub, so a lamp press clears a `fight` note. `reunion.peak` files the name if a Peak return is what first uses it.
+
+Verified headlessly: the order, rest and variants, every note the order can reach against the lang file, save and a version 3 load, marks, the first read's cost and lines, what the screen is sent, language and the canon lints. Nothing on screen has been seen by anyone: the owner's pass judges the form's look and fit, findability, how the first read lands, the gap, how a Peak lands and how often, the first `back` note, Cargo, and the blank field against `Pattern: Sophie.`
+
 ## Sources
 
 - `MaeveDirector`, `ShepherdAffinity` and `ShepherdReactions` at c866cf02 on `feat/aurora-affinity`.
