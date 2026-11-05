@@ -12,9 +12,9 @@
 
 **Mockups:** [private-log-mockup.png](art/aurora-shepherd/private-log-mockup.png), approved 2026-11-05. [log-emotion-mockup.png](art/aurora-shepherd/log-emotion-mockup.png), approved 2026-11-05.
 
-**Status:** gone through with the owner on 2026-11-05. Decided: one log per world, skipped days, the note order with blank Notes, Cargo, the player's return in the log only, the feeling levels with all four breaks, and Rulings 7 to 12 as written, with quicker days added. Both mockups and every ruling are settled; the lines are drafts to build with and mark at the pass. Nothing is built.
+**Status:** approved by the owner, 2026-11-05: one log per world, all 18 rulings and both mockups. The notes are drafts to build with and mark at the owner's pass. Nothing is built.
 
-**Branch:** `feat/miller-m3` in `/Volumes/SSD/Work/frozen-dawn-miller-m3`, cut from `feat/maeve-director` once PR 159 has merged. PR into `feat/maeve-director`. It changes the save format, so the branch review runs on Opus.
+**Branch:** `feat/miller-m3` in `/Volumes/SSD/Work/frozen-dawn-miller-m3`, cut from `docs/miller-m3-plan`, which holds this plan on top of PR 159. PR into `feat/maeve-director`, after PR 159 has merged. It changes the save format, so the branch review runs on Opus.
 
 ## Decided: one log per world
 
