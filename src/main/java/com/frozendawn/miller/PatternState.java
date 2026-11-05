@@ -151,6 +151,7 @@ final class PatternState {
     void age(long ticks) {
         drives.age(ticks);
         feelings.age(ticks);
+        history.replaceAll(event -> event.aged(ticks));
         keepsakes.age(ticks);
         coherence.age(ticks);
         if (settleAt != UNARMED) settleAt -= ticks;

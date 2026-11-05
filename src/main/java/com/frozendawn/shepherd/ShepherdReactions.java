@@ -5,6 +5,7 @@ import com.frozendawn.block.ThermalHeaterBlock;
 import com.frozendawn.data.ApocalypseState;
 import com.frozendawn.event.PlayerTickHandler;
 import com.frozendawn.miller.MillerPattern;
+import com.frozendawn.miller.Urges;
 import com.frozendawn.network.ShepherdLinePayload;
 import com.frozendawn.phase.PhaseManager;
 import com.frozendawn.shepherd.ShepherdAffinity.Deed;
@@ -49,6 +50,8 @@ public final class ShepherdReactions {
     private static String said, saidArg;
     /** When someone near her was last in a fight she has not remarked on. */
     private static long lastFight = ShepherdSavedData.NOT_SET;
+    /** When she started holding her tongue. It need not outlive the server. */
+    private static long quietSince = ShepherdSavedData.NOT_SET;
 
     private ShepherdReactions() {}
 
@@ -170,6 +173,11 @@ public final class ShepherdReactions {
         return said;
     }
 
+    /** GameTest seam: five minutes is too long to wait on a gate. */
+    static void quietSince(long since) {
+        quietSince = since;
+    }
+
     static String saidArg() {
         return saidArg;
     }
@@ -178,6 +186,7 @@ public final class ShepherdReactions {
         lastSaid.clear();
         lastMurmur.clear();
         said = saidArg = null;
+        quietSince = ShepherdSavedData.NOT_SET;
         ShepherdWill.clearForTests();
         lastFight = ShepherdSavedData.NOT_SET;
     }
@@ -207,6 +216,7 @@ public final class ShepherdReactions {
         var she = awakeAndWatching(server);
         if (she == null) return;
         var level = (ServerLevel) she.level();
+        ShepherdTalk.catchUp(level, she);
         var near = near(level, she);
         if (near.isEmpty()) return;
         var data = ShepherdSavedData.get(server);
@@ -223,7 +233,7 @@ public final class ShepherdReactions {
         if (MillerPattern.halfLaps(server) > 0 && !data.flag(SAID_SLOW) && murmur(level, Trigger.SLOW)) data.flag(SAID_SLOW, true);
     }
 
-    /** She asks what she wants first. Only staying quiet holds back what the moment offers: the body's urges leave her voice free. */
+    /** She asks what she wants first. Only staying quiet holds back what the moment offers, and not for long: the body's urges leave her voice free. */
     private static void commentate(MinecraftServer server, ServerLevel level, ShepherdEntity she, List<ServerPlayer> near) {
         var data = ShepherdSavedData.get(server);
         long now = server.overworld().getGameTime();
@@ -232,9 +242,12 @@ public final class ShepherdReactions {
         if (ShepherdWill.slip(level)) return;
         sayWhenSlow(server, level, data);
         var nearest = near.stream().min(Comparator.comparingDouble(she::distanceTo)).orElseThrow().getUUID();
-        switch (MillerPattern.urge(server, nearest)) {
+        var urge = MillerPattern.urge(server, nearest);
+        if (urge != Urges.Urge.STAY_QUIET) quietSince = ShepherdSavedData.NOT_SET;
+        else if (quietSince == ShepherdSavedData.NOT_SET) quietSince = now;
+        switch (urge) {
             case STAY_QUIET -> {
-                return;
+                if (now - Math.max(quietSince, data.lastAmbient()) < ShepherdPolicy.QUIET_SPELL_TICKS) return;
             }
             case SPEAK -> {
                 if (ShepherdWill.say(level, nearest)) return;

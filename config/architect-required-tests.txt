@@ -1118,3 +1118,6 @@ shepherdneverslipsoveratalk xml
 shepherdneverslipsatwary xml
 shepherdsayssorryafter xml
 shepherdatalktakestheplaceofsorry xml
+shepherdcatchesupwhenthenightisover xml
+shepherdwaryhasnoopinions xml
+shepherdquiethasitslimit xml

@@ -61,8 +61,9 @@ public final class Keepsakes {
     }
 
     /**
-     * Where the one she would go back to now sits, or -1: the one that matters most, a day old at least, not gone back to
-     * in three days, and with something to say about it. One a day, or she recites them.
+     * Where the one she would go back to now sits, or -1: the one that matters most, a day old at least, with something
+     * to say about it, and rested: three days for each time she has gone back, or the top three would take every turn.
+     * One a day, or she recites them.
      */
     private int dueAt(UUID who, long now) {
         var kept = players.getOrDefault(who, List.of());
@@ -70,7 +71,7 @@ public final class Keepsakes {
         for (int i = 0; i < kept.size(); i++) {
             var moment = kept.get(i);
             if (moment.recalled() > 0 && now - moment.recalledAt() < ShepherdPolicy.DAY_TICKS) return -1;
-            if (moment.recalled() > 0 && now - moment.recalledAt() < REPEAT_TICKS || now - moment.time() < ShepherdPolicy.DAY_TICKS || unspoken(moment.kind())) continue;
+            if (moment.recalled() > 0 && now - moment.recalledAt() < REPEAT_TICKS * moment.recalled() || now - moment.time() < ShepherdPolicy.DAY_TICKS || unspoken(moment.kind())) continue;
             if (best < 0 || moment.salience() > kept.get(best).salience()) best = i;
         }
         return best;

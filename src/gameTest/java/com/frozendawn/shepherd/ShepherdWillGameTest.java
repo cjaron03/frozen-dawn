@@ -23,6 +23,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.storage.ServerLevelData;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
@@ -68,6 +69,12 @@ public final class ShepherdWillGameTest {
     @BeforeBatch(batch = "shepherd_silent_deeds") public static void silentDeedsBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
     @AfterBatch(batch = "shepherd_silent_deeds") public static void silentDeedsAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
 
+    @BeforeBatch(batch = "shepherd_refuse_wary") public static void refuseWaryBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_refuse_wary") public static void refuseWaryAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_refuse_catchup") public static void refuseCatchUpBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_refuse_catchup") public static void refuseCatchUpAfter(ServerLevel l) { afterNight(l); }
+    @BeforeBatch(batch = "shepherd_will_spell") public static void spellBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_will_spell") public static void spellAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
     @BeforeBatch(batch = "shepherd_slip_fight") public static void slipFightBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
     @AfterBatch(batch = "shepherd_slip_fight") public static void slipFightAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
     @BeforeBatch(batch = "shepherd_slip_talk") public static void slipTalkBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
@@ -319,12 +326,61 @@ public final class ShepherdWillGameTest {
             var player = underTheSky(h);
             follow(player);
             ShepherdTalk.reply(player, ShepherdTalk.liveId(), ShepherdConversation.CONTINUE);
-            h.startSequence().thenExecuteAfter(Refusal.YIELD_TICKS + 1, () -> {
-                clearNight(h);
-                follow(player);
-                assertOn(h, "hub.refuse.night");
-                h.assertTrue(data(h).waiting(), "She says no again");
-            }).thenSucceed();
+            ((ServerLevelData) h.getLevel().getLevelData()).setGameTime(h.getLevel().getGameTime() + Refusal.YIELD_TICKS + 1);
+            follow(player);
+            assertOn(h, "hub.refuse.night");
+            h.assertTrue(data(h).waiting(), "She says no again");
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_refuse_catchup", timeoutTicks = 400, skyAccess = true)
+    public static void shepherdCatchesUpWhenTheNightIsOver(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = underTheSky(h);
+            follow(player);
+            ShepherdTalk.close(player);
+            long away = h.getLevel().getGameTime() - ShepherdPolicy.DAY_TICKS;
+            data(h).lastNear(away);
+            h.assertTrue(data(h).waiting(), "She stays for it");
+            h.getLevel().setDayTime(6000);
+            int score = data(h).affinity();
+            h.startSequence()
+                    .thenWaitUntil(() -> h.assertTrue(!data(h).waiting() && player.getUUID().equals(data(h).follower()), "She said she would"))
+                    .thenExecuteAfter(A_POLL, () -> h.assertTrue(data(h).affinity() == score, "Staying was her doing, so nobody left her: " + data(h).affinity()))
+                    .thenSucceed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_refuse_wary", timeoutTicks = 400)
+    public static void shepherdWaryHasNoOpinions(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            var she = met(h, player);
+            MillerPattern.appraise(h.getLevel().getServer(), player.getUUID(), Deed.ARCHIVIST_KILLED);
+            data(h).affinity(ShepherdAffinity.SILENT_BELOW - 100);
+            data(h).waiting(true);
+            h.spawn(ModEntities.ARCHIVIST.get(), SPOT.offset(3, 0, 0));
+            she.interact(player, InteractionHand.MAIN_HAND);
+            follow(player);
+            assertOn(h, null);
+            h.assertTrue(!data(h).waiting(), "Equipment goes where it is told");
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_will_spell", timeoutTicks = 400)
+    public static void shepherdQuietHasItsLimit(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            // This can be a young server's first batch, and the spell counts from a clock that has to have run that long.
+            long now = Math.max(h.getLevel().getGameTime(), ShepherdPolicy.SILENCE_TICKS + 1);
+            ((ServerLevelData) h.getLevel().getLevelData()).setGameTime(now);
+            met(h, player(h));
+            sated(h);
+            data(h).lastTalk(now - ShepherdPolicy.SILENCE_TICKS);
+            ShepherdReactions.quietSince(now - ShepherdPolicy.QUIET_SPELL_TICKS);
+            var keys = ShepherdAmbients.pools(Trigger.SILENCE).stream().flatMap(pool -> pool.variants().stream()).map(ShepherdAffinity.Say::key).toList();
+            h.succeedWhen(() -> h.assertTrue(keys.contains(ShepherdReactions.said()), "She has held it long enough: " + ShepherdReactions.said()));
         });
     }
 

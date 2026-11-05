@@ -82,6 +82,21 @@ class KeepsakesTest {
     }
 
     @Test
+    void aLesserMomentGetsItsTurn() {
+        var kept = new Keepsakes();
+        kept.keep(ONE, "first", 0.9, 0);
+        kept.keep(ONE, "second", 0.8, 0);
+        kept.keep(ONE, "third", 0.7, 0);
+        kept.keep(ONE, "fourth", 0.4, 0);
+        var said = new java.util.HashSet<String>();
+        for (long day = 1; day <= 8; day++) {
+            var moment = kept.recall(ONE, day * DAY);
+            if (moment != null) said.add(moment.kind());
+        }
+        assertTrue(said.contains("fourth"), said.toString());
+    }
+
+    @Test
     void aMomentWaitsADayToBeAMemory() {
         var kept = new Keepsakes();
         kept.keep(ONE, "a", 0.5, 0);

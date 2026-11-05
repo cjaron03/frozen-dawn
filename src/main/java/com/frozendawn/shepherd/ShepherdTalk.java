@@ -79,6 +79,8 @@ public final class ShepherdTalk {
     private static int nextId = 1;
     private static Live live;
     private static Refused refused;
+    /** Who she told she would catch up with. Lost on a reload, which leaves her waiting as she would anyway. */
+    private static UUID catchingUp;
 
     private ShepherdTalk() {}
 
@@ -227,21 +229,34 @@ public final class ShepherdTalk {
         boolean yields = kind != null && refused != null && refused.who().equals(player.getUUID()) && refused.kind() == kind && now - refused.at() <= Refusal.YIELD_TICKS;
         if (kind != null && !yields) {
             refused = new Refused(player.getUUID(), kind, now);
+            if (kind == Refusal.Kind.CLEAR_NIGHT) catchingUp = player.getUUID();
             if (begin(refusalNode(kind), true)) return true;
         }
         refused = null;
+        catchingUp = null;
         data.follower(player.getUUID());
         data.waiting(false);
         return yields && begin(refusalNode(kind) + ".yield", true);
+    }
+
+    /** "I'll catch up." When the clear night is over she does, and staying was her doing, so nobody left her. */
+    static void catchUp(ServerLevel level, ShepherdEntity she) {
+        if (catchingUp == null || ShepherdReactions.clearNight(level, she.blockPosition())) return;
+        var data = ShepherdSavedData.get(level.getServer());
+        data.follower(catchingUp);
+        data.waiting(false);
+        data.lastNear(level.getServer().overworld().getGameTime());
+        catchingUp = null;
     }
 
     private static String refusalNode(Refusal.Kind kind) {
         return kind == Refusal.Kind.CLEAR_NIGHT ? "hub.refuse.night" : "hub.refuse.archivist";
     }
 
-    /** Worked out on the press, so the Pattern still scans nothing. */
+    /** Worked out on the press, so the Pattern still scans nothing. At Wary she is equipment, and equipment has no opinions. */
     private static Refusal.Kind refusal(ServerPlayer player, ShepherdEntity she) {
         var server = player.getServer();
+        if (ShepherdSavedData.get(server).tier() == Tier.WARY) return null;
         var level = (ServerLevel) she.level();
         boolean seen = !level.getEntitiesOfClass(ArchivistEntity.class, she.getBoundingBox().inflate(ShepherdPolicy.HEARD_BLOCKS), she::hasLineOfSight).isEmpty();
         return Refusal.check(ShepherdPrompt.calm(server, level, List.of(player)), ShepherdReactions.clearNight(level, she.blockPosition()), MillerPattern.skyWanted(server),
@@ -340,6 +355,7 @@ public final class ShepherdTalk {
         var data = ShepherdSavedData.get(server);
         if (data.stage() != ShepherdSavedData.Stage.AWAKE) return false;
         if (live != null) end(true);
+        catchingUp = null;
         ShepherdBoot.stop();
         data.replayFirstMeeting();
         MillerPattern.reset(server);
@@ -411,5 +427,6 @@ public final class ShepherdTalk {
     static void clearForTests() {
         live = null;
         refused = null;
+        catchingUp = null;
     }
 }

@@ -22,7 +22,7 @@ public final class ShepherdPolicy {
     public static final double ASK_BLOCKS = 2.5;
     public static final int ASK_TICKS = 100;
     public static final int REACT_TICKS = 60;
-    public static final int AMBIENT_GAP_TICKS = 3600, SILENCE_TICKS = 24000;
+    public static final int AMBIENT_GAP_TICKS = 3600, SILENCE_TICKS = 24000, QUIET_SPELL_TICKS = 6000;
     public static final int IMAGINED_AURORA_PHASE = 4;
     public static final int FIGHT_LINE_TICKS = 2400;
     public static final int SWARM_HOSTILES = 4, YOUR_PART_TICKS = 6000, WALL_BLOCKS = 32;

@@ -37,6 +37,15 @@ class PatternStateTest {
     }
 
     @Test
+    void ageingMovesHerReasons() {
+        var state = woken();
+        state.appraise(ONE, Deed.AIR_FAILING, 0);
+        state.age(ShepherdPolicy.DAY_TICKS);
+        assertEquals(-ShepherdPolicy.DAY_TICKS, state.history().getFirst().time());
+        assertNotEquals(Attention.Source.EVENT, Attention.on(state, ONE, 0).source(), "A day has gone by for it too");
+    }
+
+    @Test
     void theSlipComesEveryFiveDays() {
         long day = ShepherdPolicy.DAY_TICKS;
         var state = woken();
