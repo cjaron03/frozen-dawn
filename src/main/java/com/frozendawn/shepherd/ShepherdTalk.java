@@ -79,6 +79,10 @@ public final class ShepherdTalk {
             }
             return;
         }
+        if (ShepherdSavedData.get(player.getServer()).flag(ShepherdSavedData.BOOT_WAITING)) {
+            ShepherdBoot.offer(player, she);
+            return;
+        }
         live = new Live(player, she);
         var data = data();
         String waiting = waitingNode(data);
@@ -272,6 +276,7 @@ public final class ShepherdTalk {
         var data = ShepherdSavedData.get(server);
         if (data.stage() != ShepherdSavedData.Stage.AWAKE) return false;
         if (live != null) end(true);
+        ShepherdBoot.stop();
         data.replayFirstMeeting();
         MillerPattern.reset(server);
         return true;

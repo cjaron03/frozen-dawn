@@ -44,6 +44,9 @@ public final class ShepherdEntity extends PathfinderMob {
     private static final EntityDataAccessor<Boolean> DATA_TALKING = SynchedEntityData.defineId(ShepherdEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Boolean> DATA_LOGO = SynchedEntityData.defineId(ShepherdEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Boolean> DATA_RESTING = SynchedEntityData.defineId(ShepherdEntity.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Byte> DATA_BOOT = SynchedEntityData.defineId(ShepherdEntity.class, EntityDataSerializers.BYTE);
+    /** What her display shows for a replay's boot: her own face, nothing, or the BIOS cursor. */
+    public static final byte BOOT_NONE = 0, BOOT_DARK = 1, BOOT_CURSOR = 2;
     private static final double HOVER_BLOCKS = 2.5;
     private static final double HOVER_HEIGHT = 1;
     private static final double AIR_DRAG = 0.91;
@@ -58,6 +61,7 @@ public final class ShepherdEntity extends PathfinderMob {
     private int rebootTicks;
     private int talkTicks;
     private int logoTicks;
+    private int bootTicks;
     private int askTicks;
     private int reactTicks;
     private Mob watching;
@@ -128,6 +132,7 @@ public final class ShepherdEntity extends PathfinderMob {
         builder.define(DATA_TALKING, false);
         builder.define(DATA_LOGO, false);
         builder.define(DATA_RESTING, false);
+        builder.define(DATA_BOOT, BOOT_NONE);
     }
 
     @Override protected PathNavigation createNavigation(Level level) {
@@ -266,6 +271,26 @@ public final class ShepherdEntity extends PathfinderMob {
         return logoTicks;
     }
 
+    public byte bootDisplay() {
+        return entityData.get(DATA_BOOT);
+    }
+
+    /** A replay's choice is up: her display goes black until it is answered. */
+    void bootDark() {
+        entityData.set(DATA_BOOT, BOOT_DARK);
+    }
+
+    /** A replay's BIOS: the cursor, for as long as the lines run. */
+    void bootFor(int ticks) {
+        bootTicks = ticks;
+        entityData.set(DATA_BOOT, BOOT_CURSOR);
+    }
+
+    void bootStop() {
+        bootTicks = 0;
+        entityData.set(DATA_BOOT, BOOT_NONE);
+    }
+
     /** Floats up in front of her follower and holds there thinking, while the strip asks. Zero lets her drop back. */
     public void askFor(int ticks) {
         askTicks = ticks;
@@ -294,6 +319,7 @@ public final class ShepherdEntity extends PathfinderMob {
         if (offline()) return;
         talkFor(0);
         logoTicks = 0;
+        bootStop();
         askTicks = 0;
         reactTicks = 0;
         entityData.set(DATA_LOGO, false);
@@ -329,6 +355,10 @@ public final class ShepherdEntity extends PathfinderMob {
         if (offline() && --rebootTicks <= 0) reboot();
         if (talkTicks > 0 && --talkTicks == 0) entityData.set(DATA_TALKING, false);
         if (logoTicks > 0 && --logoTicks == 0) entityData.set(DATA_LOGO, false);
+        if (bootTicks > 0 && --bootTicks == 0) {
+            bootStop();
+            ShepherdBoot.biosDone(this);
+        }
         watch(level);
         trackFollower();
         if (askTicks > 0) askTicks--;

@@ -1,5 +1,6 @@
 package com.frozendawn.client;
 
+import com.frozendawn.shepherd.ShepherdBoot;
 import com.frozendawn.shepherd.ShepherdEntity;
 import com.frozendawn.shepherd.ShepherdFace;
 import com.frozendawn.shepherd.ShepherdFace.Mood;
@@ -45,7 +46,10 @@ public final class ShepherdRenderer extends MobRenderer<ShepherdEntity, Shepherd
             Mood mood = entity.mood();
             var motion = ShepherdFace.motion(mood, entity.tickCount, entity.getId(), entity.resting());
             int mouth = entity.talking() ? ShepherdFace.talkingMouth(entity.tickCount) : 0;
-            if (entity.logo()) {
+            if (entity.bootDisplay() != ShepherdEntity.BOOT_NONE) {
+                boolean cursor = entity.bootDisplay() == ShepherdEntity.BOOT_CURSOR && entity.tickCount / ShepherdBoot.LINE_TICKS % 2 == 0;
+                ShepherdFaceRenderer.drawOnModel(pose, buffers, cursor ? ShepherdBoot.cursor() : Mood.OFFLINE, 0, false, 0);
+            } else if (entity.logo()) {
                 ShepherdFaceRenderer.drawOnModel(pose, buffers, ShepherdFace.logo(ShepherdFace.logoFrame(entity.tickCount)), 0, false, 0);
             } else {
                 var cells = motion.cells(mood, entity.talking());

@@ -58,6 +58,17 @@ public final class ShepherdBootGameTest {
     @BeforeBatch(batch = "shepherd_boot_trouble") public static void troubleBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
     @AfterBatch(batch = "shepherd_boot_trouble") public static void troubleAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
 
+    @BeforeBatch(batch = "shepherd_boot_replay_offer") public static void replayOfferBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_boot_replay_offer") public static void replayOfferAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_boot_replay_through") public static void replayThroughBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_boot_replay_through") public static void replayThroughAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_boot_replay_leave") public static void replayLeaveBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_boot_replay_leave") public static void replayLeaveAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_boot_resume") public static void resumeBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_boot_resume") public static void resumeAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_boot_reboot") public static void rebootBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_boot_reboot") public static void rebootAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+
     private static BlockPos dock(GameTestHelper h, BlockPos at) {
         h.setBlock(at, ModBlocks.CS1_DOCK.get());
         return h.absolutePos(at);
@@ -309,6 +320,101 @@ public final class ShepherdBootGameTest {
                         she(h).interact(player, InteractionHand.MAIN_HAND);
                         h.assertTrue("fm.boot".equals(ShepherdTalk.liveNode()), "On a right-click: " + ShepherdTalk.liveNode());
                     }).thenSucceed();
+        });
+    }
+
+    /** Awake and past her first meeting, then put back to its start. */
+    private static ShepherdEntity replayed(GameTestHelper h, ServerPlayer player) {
+        var she = awake(h, player);
+        h.assertTrue(ShepherdTalk.replay(h.getLevel().getServer()), "She is awake to replay");
+        return she;
+    }
+
+    private static ShepherdEntity awake(GameTestHelper h, ServerPlayer player) {
+        data(h).stage(Stage.AWAKE);
+        return ShepherdEntity.spawnFrom(h.getLevel(), h.absolutePos(DOCK), player.getUUID());
+    }
+
+    private static ServerPlayer beside(GameTestHelper h) {
+        return ShepherdTestWorld.onlinePlayer(h, h.absoluteVec(Vec3.atCenterOf(DOCK)).add(1, 0, 0));
+    }
+
+    private static void rightClick(ShepherdEntity she, ServerPlayer player) {
+        she.interact(player, InteractionHand.MAIN_HAND);
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_boot_replay_offer", timeoutTicks = 400)
+    public static void shepherdReplayOffersTheChoice(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = beside(h);
+            var she = replayed(h, player);
+            rightClick(she, player);
+            h.assertTrue(ShepherdBoot.offered(), "The choice comes first");
+            h.assertTrue(ShepherdTalk.liveNode() == null && !ShepherdTalk.live(), "Nothing opens yet");
+            h.assertTrue(she.bootDisplay() == ShepherdEntity.BOOT_DARK, "Her display goes black: " + she.bootDisplay());
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_boot_replay_through", timeoutTicks = 400)
+    public static void shepherdReplayBootsThrough(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = beside(h);
+            var she = replayed(h, player);
+            rightClick(she, player);
+            ShepherdBoot.answer(player, true);
+            h.assertTrue(!data(h).flag(ShepherdSavedData.BOOT_WAITING), "Boot spends the wait");
+            h.assertTrue(she.bootDisplay() == ShepherdEntity.BOOT_CURSOR, "The cursor shows: " + she.bootDisplay());
+            h.runAfterDelay(ShepherdBoot.BIOS_TICKS - 10, () -> h.assertTrue(!ShepherdTalk.live(), "The lines run first"));
+            h.succeedWhen(() -> {
+                h.assertTrue("fm.boot".equals(ShepherdTalk.liveNode()), "On fm.boot: " + ShepherdTalk.liveNode());
+                h.assertTrue(she.logo(), "With the logo");
+                h.assertTrue(she.bootDisplay() == ShepherdEntity.BOOT_NONE, "And her own display back");
+            });
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_boot_replay_leave", timeoutTicks = 400)
+    public static void shepherdLeavingAReplayKeepsItWaiting(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = beside(h);
+            var she = replayed(h, player);
+            rightClick(she, player);
+            ShepherdBoot.answer(player, false);
+            h.assertTrue(!ShepherdBoot.offered(), "The choice closes");
+            h.assertTrue(data(h).flag(ShepherdSavedData.BOOT_WAITING), "It still waits");
+            h.assertTrue(she.bootDisplay() == ShepherdEntity.BOOT_NONE, "Her display comes back");
+            rightClick(she, player);
+            h.assertTrue(ShepherdBoot.offered(), "And the next right-click offers again");
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_boot_resume", timeoutTicks = 400)
+    public static void shepherdResumingTheFirstMeetingSkipsTheChoice(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = beside(h);
+            var she = awake(h, player);
+            ShepherdTalk.start(player, ShepherdTalk.FIRST_MEETING);
+            ShepherdTalk.close(player);
+            rightClick(she, player);
+            h.assertTrue(!ShepherdBoot.offered(), "No choice on the way back");
+            h.assertTrue("fm.boot".equals(ShepherdTalk.liveNode()) && she.logo(), "The logo alone: " + ShepherdTalk.liveNode());
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_boot_reboot", timeoutTicks = 400)
+    public static void shepherdRebootPlaysNoBoot(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = beside(h);
+            var she = awake(h, player);
+            she.goOffline();
+            she.rebootIn(1);
+            h.succeedWhen(() -> {
+                h.assertTrue(!she.offline(), "She comes back");
+                h.assertTrue(!she.logo() && !ShepherdBoot.offered() && she.bootDisplay() == ShepherdEntity.BOOT_NONE, "With no boot");
+            });
         });
     }
 }

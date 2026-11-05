@@ -59,7 +59,7 @@ public class ModNetworking {
                     if (context.player() instanceof ServerPlayer sp) ShepherdTalk.action(sp, payload.conversation(), payload.action());
                 }));
         registrar.playToClient(ShepherdBootOfferPayload.TYPE, ShepherdBootOfferPayload.STREAM_CODEC,
-                (payload, context) -> { });
+                (payload, context) -> context.enqueueWork(ClientHandlers::handleShepherdBootOffer));
         registrar.playToServer(ShepherdBootAnswerPayload.TYPE, ShepherdBootAnswerPayload.STREAM_CODEC,
                 (payload, context) -> context.enqueueWork(() -> {
                     if (context.player() instanceof ServerPlayer sp) ShepherdBoot.answer(sp, payload.boot());

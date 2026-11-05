@@ -371,8 +371,8 @@ public final class ShepherdTalkGameTest {
             h.assertTrue(data(h).affinity() == 0 && !data(h).heavy(), "Score and swearing are back to the start");
             h.assertTrue(!data(h).flag("used_flashlight") && !data(h).flag("profanity_heavy"), "Her flags are cleared");
             rightClick(she, player);
-            h.assertTrue("fm.boot".equals(ShepherdTalk.liveNode()), "The next right-click is the first meeting: " + ShepherdTalk.liveNode());
-            h.succeed();
+            ShepherdBoot.answer(player, true);
+            h.succeedWhen(() -> h.assertTrue("fm.boot".equals(ShepherdTalk.liveNode()), "The next right-click is the first meeting: " + ShepherdTalk.liveNode()));
         });
     }
 

@@ -343,9 +343,13 @@ public final class ShepherdVaultGameTest {
             var server = h.getLevel().getServer();
             server.getCommands().performPrefixedCommand(server.createCommandSourceStack().withSuppressedOutput(), "fd shepherd replay");
             she.interact(player, InteractionHand.MAIN_HAND);
-            say(player, KIND, CONTINUE, KIND, CONTINUE, KIND, KIND);
-            h.assertTrue("fm.room".equals(ShepherdTalk.liveNode()), "A replay is still a vault meeting: " + ShepherdTalk.liveNode());
-            h.succeed();
+            ShepherdBoot.answer(player, true);
+            h.startSequence()
+                    .thenWaitUntil(() -> h.assertTrue("fm.boot".equals(ShepherdTalk.liveNode()), "Waiting for fm.boot: " + ShepherdTalk.liveNode()))
+                    .thenExecute(() -> {
+                        say(player, KIND, CONTINUE, KIND, CONTINUE, KIND, KIND);
+                        h.assertTrue("fm.room".equals(ShepherdTalk.liveNode()), "A replay is still a vault meeting: " + ShepherdTalk.liveNode());
+                    }).thenSucceed();
         });
     }
 

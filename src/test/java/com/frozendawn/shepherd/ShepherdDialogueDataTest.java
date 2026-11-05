@@ -208,4 +208,41 @@ class ShepherdDialogueDataTest {
         for (String next : exits) walk(nodes, nodes.get(next), path, reached, ends);
         path.pop();
     }
+
+    private static Map<String, String> shepherdLines() throws IOException {
+        Map<String, String> lines = new HashMap<>();
+        for (var entry : lang().entrySet()) {
+            if (entry.getKey().startsWith("shepherd.")) lines.put(entry.getKey(), entry.getValue().getAsString());
+        }
+        return lines;
+    }
+
+    @Test
+    void noLineCarriesHerFileName() throws Exception {
+        for (var line : shepherdLines().entrySet()) {
+            String text = line.getValue().toLowerCase(Locale.ROOT);
+            assertFalse(text.contains("miller") || text.contains("pattern"), line.getKey());
+        }
+    }
+
+    /** She finds walls on herself, never an outside, and the BIOS names no one. Scoped by Ruling 13: "Rules." in fm.end is the deal she offers. */
+    @Test
+    void bootAndWallLinesStayInside() throws Exception {
+        var banned = java.util.regex.Pattern.compile("\\b(six|fair|rules|anderson-kind|sophie|tithonus)\\b");
+        for (var line : shepherdLines().entrySet()) {
+            if (!line.getKey().matches("shepherd\\.(wall|self|boot)\\..*")) continue;
+            assertFalse(banned.matcher(line.getValue().toLowerCase(Locale.ROOT)).find(), line.getKey());
+        }
+    }
+
+    @Test
+    void everyBootLineHasItsKeys() throws Exception {
+        var lines = shepherdLines();
+        for (String key : List.of("unit", "boot", "leave", "hint")) assertTrue(lines.containsKey("shepherd.boot." + key), key);
+        for (int line = 0; line < ShepherdBoot.LINE_COUNT; line++) {
+            assertFalse(lines.getOrDefault("shepherd.boot.line." + line + ".left", "").isEmpty(), "line " + line);
+            assertTrue(lines.containsKey("shepherd.boot.line." + line + ".right"), "line " + line);
+        }
+        assertEquals("STABILITY ABOVE.", lines.get("shepherd.boot.line." + (ShepherdBoot.LINE_COUNT - 1) + ".left"), "The motto stops there");
+    }
 }

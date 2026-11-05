@@ -354,6 +354,11 @@ public final class ClientHandlers {
         shepherdScreen().show(payload);
     }
 
+    public static void handleShepherdBootOffer() {
+        com.frozendawn.client.ShepherdPromptStrip.clear();
+        Minecraft.getInstance().setScreen(new com.frozendawn.client.ShepherdBootScreen());
+    }
+
     public static void handleShepherdPrompt() {
         com.frozendawn.client.ShepherdPromptStrip.show();
     }
@@ -363,6 +368,8 @@ public final class ClientHandlers {
     }
 
     public static void handleShepherdClose() {
-        if (Minecraft.getInstance().screen instanceof ShepherdScreen screen) screen.closeFromServer();
+        var open = Minecraft.getInstance().screen;
+        if (open instanceof ShepherdScreen screen) screen.closeFromServer();
+        else if (open instanceof com.frozendawn.client.ShepherdBootScreen screen) screen.closeFromServer();
     }
 }
