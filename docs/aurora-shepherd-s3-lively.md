@@ -1,6 +1,6 @@
 # Aurora S3 addendum: making her lively
 
-Adds to [aurora-shepherd-s3-plan.md](aurora-shepherd-s3-plan.md), whose Global Constraints apply. Same branch, one owner's pass and one PR. These five tasks run after Task 7 and before Task 8; Task 8 gains a chest, a heater and a terminal in the lab, a Hearth to walk up to, and buttons `[Raw cod]`, `[Summon an Architect]`, `[Four zombies]`, `[Explosion]`, `[Half health]`, `[Score 500]`, `[Score 850]`, `[Reset ambient gap]`.
+Adds to [aurora-shepherd-s3-plan.md](aurora-shepherd-s3-plan.md), whose Global Constraints apply. Same branch, one owner's pass and one PR. These five tasks run after Task 7 and before Task 8; Task 8 gains a chest, a heater and a terminal in the lab, a Hearth to walk up to, and buttons `[Raw cod]`, `[Summon an Architect]`, `[Four zombies]`, `[Explosion]`, `[Score 500]`, `[Score 850]`, `[Reset ambient gap]`.
 
 **Goal:** She seems alive between conversations: she watches the world, wanders over to look at things, says things unprompted, nods at three games, and once notices something that only makes sense later.
 
@@ -45,7 +45,6 @@ Script lines are marked S; everything else is a new draft.
 
 | Nod to | When | Line |
 | --- | --- | --- |
-| Destiny 2 | A near player drops under 20 percent health and lives, once a day | (Neutral) "Eyes up, survivor." |
 | Destiny 2 | She first sees an Architect, once | (Thinking) "Whether we wanted it or not, we've stepped into a war. I'd like to know with what." |
 | Subnautica | Four or more hostiles near a player, once | (Alarmed) "Detecting multiple hostile lifeforms in the region. Are you certain whatever you're doing is worth it?" |
 | Subnautica | An `AIR_FAILING` variant | (Alarmed) "Oxygen." |
@@ -68,7 +67,6 @@ Design only, never in the game: it points at the Bloom's origin, where the latti
 - An ambient pool with a missing key or an unknown trigger in an edited datapack: it is skipped with a log line, like a bad dialogue node (Task 7D).
 - Ambient lines and reactions together: the 3-minute gap holds, and a reaction is never held back by it (Task 7D).
 - `/fd shepherd replay`: eggs and the foreshadow can play again (Task 7E).
-- A nod's trigger around a death: "Eyes up" never fires if the player died (Task 7E).
 
 ---
 
@@ -108,9 +106,9 @@ Design only, never in the game: it points at the Bloom's origin, where the latti
 
 **Files:** Create `ShepherdEggs.java`. Modify `ShepherdReactions.java`, `first_meeting.json` (`fm.end.or` sets `fm_narrated`), `en_us.json`. Test `ShepherdAffinityGameTest.java`, `ShepherdDialogueDataTest.java`.
 
-**Interfaces:** `ShepherdEggs` subscribes to `LivingEntityUseItemEvent.Finish`, `ServerChatEvent`, `ExplosionEvent.Detonate` and `LivingDamageEvent.Post`, and polls with `ShepherdReactions`. Once-only ones use flags `egg_<name>` and `lore_lattice`; daily ones use the deed cooldowns. All speak through `murmur` and respect the gap, except the chat ones, which answer at once. A once-only flag is set only when the line actually plays. The Hearth check reads `ReturnedHearthSavedData`.
+**Interfaces:** `ShepherdEggs` subscribes to `LivingEntityUseItemEvent.Finish`, `ServerChatEvent` and `ExplosionEvent.Detonate`, and polls with `ShepherdReactions`. Once-only ones use flags `egg_<name>` and `lore_lattice`; daily ones use the deed cooldowns. All speak through `murmur` and respect the gap, except the chat ones, which answer at once. A once-only flag is set only when the line actually plays. The Hearth check reads `ReturnedHearthSavedData`.
 
-- [ ] Tests first: one GameTest per nod that fires it and one that shows it fires once or once a day, and `shepherdNoNarrationWithoutTheReply`, `shepherdNoEyesUpAfterADeath`, `shepherdFewerThanFourHostilesSayNothing`, `shepherdTheWallNeedsAHearth`, `shepherdTheWallStopsOnceMaeveIsErased`, `shepherdReplayResetsTheEggs`. JUnit `noNewLineNamesHerOrThePartner`: no `shepherd.*` value contains "Sophie", "Miller" or "Anderson-Kind". JUnit `noNodNamesItsGame`: no `shepherd.*` value contains "Destiny", "Subnautica", "Helldivers" or "game". Implement. Commit, `feat: hide a few things in what she says`.
+- [ ] Tests first: one GameTest per nod that fires it and one that shows it fires once or once a day, and `shepherdNoNarrationWithoutTheReply`, `shepherdFewerThanFourHostilesSayNothing`, `shepherdTheWallNeedsAHearth`, `shepherdTheWallStopsOnceMaeveIsErased`, `shepherdReplayResetsTheEggs`. JUnit `noNewLineNamesHerOrThePartner`: no `shepherd.*` value contains "Sophie", "Miller" or "Anderson-Kind". JUnit `noNodNamesItsGame`: no `shepherd.*` value contains "Destiny", "Subnautica", "Helldivers" or "game". Implement. Commit, `feat: hide a few things in what she says`.
 
 ### Additions to Tasks 8 and 9
 
