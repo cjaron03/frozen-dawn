@@ -40,7 +40,7 @@ From Notion, locked 2026-11-04:
 - Physical bot. Female. Feelings and wants. Two points for eyes and a moving mouth. Clickable dialogue buttons.
 - Fixed name Aurora, chosen by her. Dry humor. Cannot be destroyed. Dialogue modeled on Fallout 4.
 - Woken by installing a Power Cell. Found in the Terminus Vault, in the room with the TR-0 Terminus, as its evacuation guide, left behind when the staff evacuated.
-- Never comments on respawn.
+- Never comments on respawn, aloud. Owner, 2026-11-05: her private log may ask what brings a player back (Miller Pattern, Ruling 16).
 - Affinity feedback is the face only. No "Aurora liked that." text.
 - One Aurora per world, shared. Working default: she follows whoever powered her on, and anyone can talk to her.
 - Swearing is mild by default, heavy by a one-time choice at first power-on, changeable later from her hub.
@@ -81,6 +81,7 @@ All at 16 texels to the block, in `docs/art/aurora-shepherd/`, each from its `ma
 | `private-log-mockup.png` | M3: Settings as a page, "Unit diagnostics", the log before and after T5, her lines on the first read | Approved 2026-11-05, with Settings as a page |
 | `chat-bar-mockup.png` | M4: "Say something..." under the grid, typing, Orbit in place, the Strong, Close and None outcomes, the hub | Approved 2026-11-05, with "Neither." added to Close |
 | `crash-mockup.png` | M4: the stop screen, three options on her display and two on the talk panel, the world frames, the logo and her lines after | Approved 2026-11-05: display B, talk panel A |
+| `log-emotion-mockup.png` | M3: the log's feeling levels, the loop, `nominal?`, the day after, Cargo | Awaiting the owner's approval |
 | `nine-husk-mockup.png` | Nine's husk, two poses, lamp out, at scale, its place in the pit | Approved 2026-11-05: A, sat down |
 | `nine-lamp-mockup.png` | Nine's lamp three ways: keepsake, wall light, in her handle | Approved 2026-11-05: C, in her handle, a keepsake item until she takes it |
 
@@ -176,7 +177,7 @@ One shared score per world (the working default in Notion). "Calm" means no host
 
 **Speaks** in conversations, ambient lines with triggers and cooldowns, one-line reactions and callouts.
 
-**Is silent** while the talk screen is open, for one in-game day after Nine's husk, for a while after Maeve is erased, and mostly at the Wary tier. She never mentions respawn.
+**Is silent** while the talk screen is open, for one in-game day after Nine's husk, for a while after Maeve is erased, and mostly at the Wary tier. She never mentions respawn aloud.
 
 ## Conversations
 

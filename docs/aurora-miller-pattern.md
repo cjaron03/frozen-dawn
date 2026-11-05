@@ -84,6 +84,8 @@ Other sample notes: "I said the heater was fine. It wasn't. I just liked the roo
 - It sits under Settings, as "Unit diagnostics". Nothing points the player to it.
 - Reading it is a deed, with a small affinity cost the first time only. She knows: (Unimpressed) "You read my log." (Thinking) "That field's marked optional. That means private. I've decided."
 - After that, she sometimes writes knowing you might read it.
+- **She asks what she can't say (owner, 2026-11-05).** If she saw a player stop and saw them return, the log asks what brings them back. Questions, never answers. It never reaches her voice, her face, her feelings or the score.
+- **She shows what she doesn't say (owner, 2026-11-05).** The notes wake as she does, and at her strongest the form breaks for her. See [log-emotion-mockup.png](art/aurora-shepherd/log-emotion-mockup.png), awaiting approval. She calls the player Cargo, from Friendly, in the log.
 - **The blank field pays off.** "Pattern:" stays empty, a blank and not a redaction. After T5 she fills it in, and no one mentions it: `Pattern: Sophie.` The word "Miller" need not appear.
 
 ## Self-awareness
@@ -186,7 +188,7 @@ The ORSA spec's eleven red lines apply. Typing adds these:
 1. **A locked topic is an ordinary miss.** If a player types about something they haven't unlocked, she uses the same miss lines, so she never gives away that it exists. That includes "Sophie", "TITHONUS", "Anderson-Kind" and "Maeve" before the player has earned them.
 2. **Nothing about the game itself.** "Minecraft" or "this is a game" is an ordinary miss, so the fourth-wall count stays at three.
 3. **She never claims or denies being alive.** (Unimpressed) "I'm a heated, flying, talking flashlight. Beyond that you'd have to ask the doors."
-4. **No respawn.** No intent or appraisal touches it. A player's death is never an event to her.
+4. **No respawn.** No intent or appraisal touches it. A player's death is never an event to her. The one exception is the private log, Ruling 16: nothing she says aloud, and no typed reply.
 5. **Her replies are approved lines only.** The one exception is filling a slot like `{day}` or `{place}`. The player's words are never echoed back.
 
 **"Continuity" crashes her (owner, 2026-11-04).** A check before matching catches the word, however it's typed. She doesn't hear it; she goes down.
@@ -263,6 +265,8 @@ S4 can run after M2b, so its personal arc uses the real system. This is Architec
 13. **The private log: approved, owner, 2026-11-05.** Settings becomes a page holding Language and "Unit diagnostics". See [private-log-mockup.png](art/aurora-shepherd/private-log-mockup.png).
 14. **The chat bar: approved, owner, 2026-11-05.** Close gains slot 4 "Neither.", so two wrong guesses are not a dead end. See [chat-bar-mockup.png](art/aurora-shepherd/chat-bar-mockup.png).
 15. **The crash: approved, owner, 2026-11-05.** Her display shows B, a small `:(` over a row of text-shaped blue. The talk panel shows A, all the copy at once in a 3 by 5 hand font. At Wary, the logo is followed by the recording "ORSA Civilian Support Unit CS-1, online." in place of her lines. See [crash-mockup.png](art/aurora-shepherd/crash-mockup.png).
+16. **The player's return, in the log only: added, owner, 2026-11-05.** This reverses "never comments on respawn" for the private log and nowhere else. Log only, only what she saw, questions and no answers, and it stays out of her state.
+17. **Her log shows feeling: added, owner, 2026-11-05.** Three levels, her voice waking by stage, and at Peak the form loops, fills, and `Status:` reads `nominal?`. Her nickname for the player is Cargo.
 
 ## Status
 
