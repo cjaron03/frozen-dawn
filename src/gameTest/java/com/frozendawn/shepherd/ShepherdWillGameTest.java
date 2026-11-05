@@ -372,13 +372,10 @@ public final class ShepherdWillGameTest {
     @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_will_spell", timeoutTicks = 400)
     public static void shepherdQuietHasItsLimit(GameTestHelper h) {
         ShepherdTestWorld.whenTicking(h, () -> {
-            // This can be a young server's first batch, and the spell counts from a clock that has to have run that long.
-            long now = Math.max(h.getLevel().getGameTime(), ShepherdPolicy.SILENCE_TICKS + 1);
-            ((ServerLevelData) h.getLevel().getLevelData()).setGameTime(now);
             met(h, player(h));
             sated(h);
-            data(h).lastTalk(now - ShepherdPolicy.SILENCE_TICKS);
-            ShepherdReactions.quietSince(now - ShepherdPolicy.QUIET_SPELL_TICKS);
+            data(h).lastTalk(h.getLevel().getGameTime() - ShepherdPolicy.SILENCE_TICKS);
+            ShepherdReactions.quietLongAgo();
             var keys = ShepherdAmbients.pools(Trigger.SILENCE).stream().flatMap(pool -> pool.variants().stream()).map(ShepherdAffinity.Say::key).toList();
             h.succeedWhen(() -> h.assertTrue(keys.contains(ShepherdReactions.said()), "She has held it long enough: " + ShepherdReactions.said()));
         });

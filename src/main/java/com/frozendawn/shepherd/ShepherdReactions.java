@@ -174,8 +174,8 @@ public final class ShepherdReactions {
     }
 
     /** GameTest seam: five minutes is too long to wait on a gate. */
-    static void quietSince(long since) {
-        quietSince = since;
+    static void quietLongAgo() {
+        quietSince = Long.MIN_VALUE / 2;
     }
 
     static String saidArg() {
@@ -247,7 +247,7 @@ public final class ShepherdReactions {
         else if (quietSince == ShepherdSavedData.NOT_SET) quietSince = now;
         switch (urge) {
             case STAY_QUIET -> {
-                if (now - Math.max(quietSince, data.lastAmbient()) < ShepherdPolicy.QUIET_SPELL_TICKS) return;
+                if (holdingBack(data, now)) return;
             }
             case SPEAK -> {
                 if (ShepherdWill.say(level, nearest)) return;
@@ -259,6 +259,12 @@ public final class ShepherdReactions {
             case APPROACH -> she.drawClose();
         }
         moment(server, level, she, near, data, now);
+    }
+
+    /** She can hold her tongue for five minutes, counted from the last thing she said if that is later, and not for a day. */
+    private static boolean holdingBack(ShepherdSavedData data, long now) {
+        boolean spoke = data.lastAmbient() != ShepherdSavedData.NOT_SET && now - data.lastAmbient() < ShepherdPolicy.QUIET_SPELL_TICKS;
+        return spoke || now - quietSince < ShepherdPolicy.QUIET_SPELL_TICKS;
     }
 
     /** The first of these the moment allows. The gap keeps it to one. */
