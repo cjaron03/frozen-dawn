@@ -1,6 +1,6 @@
 # Aurora, ORSA CS-1 "Shepherd"
 
-Companion and dialogue system. Slice S1, creative only, merged as PR 149. Slice S2, in the vault, is built on `feat/aurora-vault`; see Status. PR 147 (the Terminus Vault) merged on 2026-11-04 as b333ece9, so the vault is on `feat/maeve-director`.
+Companion and dialogue system. Slice S1, creative only, merged as PR 149. Slice S2, in the vault, merged as PR 151. Slice S3, affinity, is built on `feat/aurora-affinity`; see Status. PR 147 (the Terminus Vault) merged on 2026-11-04 as b333ece9, so the vault is on `feat/maeve-director`.
 
 Sources: Notion, Frozen Dawn / Backlog, "Aurora (ORSA CS-1 "Shepherd") — Companion and Dialogue System" and its child "Aurora — Dialogue Script v1" (both 2026-11-04). Those pages hold the character and every line, and carry the fixes below as of 2026-11-04. This file is the tracked handoff: what was settled against the built game, the art, and the slices.
 
@@ -245,6 +245,22 @@ Playtest: `tools/prepare_shepherd_playtest.py`, one flat world, generated as AGE
 
 The dock at its place, sealed like the vault's other fittings and left as dressing once she is awake; the locker's spare cell; Okoye's initial, Hale's line and the manifest row; `fm.room` with its wand variant, `fm.doors` and the exit line; the "Got a minute?" prompt. `/fd terminus vault reset` puts the dock back but leaves her saved state alone. Check `VaultDocumentsTest` and `TerminusVaultGameTest` for anything that pins those texts or the locker's contents.
 
+### S3: affinity
+
+Built on `feat/aurora-affinity`, from [aurora-shepherd-s3-plan.md](aurora-shepherd-s3-plan.md).
+
+Her score now means something. `ShepherdAffinity` holds the tiers and the table of deeds, and `ShepherdReactions.saw` is the one door a deed comes through: she must be awake, loaded, online and within 16 blocks of the player, and the deed's cooldown, kept in saved state, must have run. Then the score moves, her face reacts for three seconds, and the strip says her line. Nothing plays while the talk screen is open, though the score and cooldown still land. Every cooldown runs on game time, so sleeping does not shorten one.
+
+At Wary she rests on the Recording face, Talk gives a formal recording, reactions are the grey recording strip, and she offers nothing personal. Her face settles every tick, so any road across the Wary line shows.
+
+A tier-up is not an event. `ShepherdPrompt` looks at the score at a calm moment, with no hostile near, nobody near hurt lately, nobody near at -10 C or colder after armor, and nobody short of air, and raises the first personal conversation not yet asked. Only T1 "The name" exists so far. If a waiting T1 drops below Friendly, or a place prompt replaces it, it is taken back and asked again later. `fm.doors` and `fm.exit` keep S2's calm.
+
+She floats up in front of her follower on the Thinking face for 100 ticks when the strip shows, going round their shoulder if she is behind them. She gives +5 C within 4 blocks, as a player adjustment: rooms do not warm, and she is no `HeaterRegistry` heater.
+
+Closed from S2's deferred minors: Esc or a hit losing `fm.exit`; a bad `when` throwing on the right-click; nothing moving her when she asks; a hit on any player delaying the strip. Still deferred: the two wording minors for S4, `fm.room` playing away from him, and the `shows()` GameTest timeouts.
+
+Debug: `/fd shepherd affinity <value>` and `/fd shepherd skipday`. Playtest: `tools/prepare_aurora_affinity_playtest.py`.
+
 ## Verification
 
 Tests cover behavior, not lines.
@@ -260,7 +276,7 @@ Nothing until a slice starts.
 
 ## Plan
 
-S1 is planned in [aurora-shepherd-plan.md](aurora-shepherd-plan.md), S2 in [aurora-shepherd-s2-plan.md](aurora-shepherd-s2-plan.md).
+S1 is planned in [aurora-shepherd-plan.md](aurora-shepherd-plan.md), S2 in [aurora-shepherd-s2-plan.md](aurora-shepherd-s2-plan.md), S3 in [aurora-shepherd-s3-plan.md](aurora-shepherd-s3-plan.md).
 
 ## Status
 
@@ -285,3 +301,7 @@ Draft for the owner to mark: `hub.talk`, the one line her hub's Talk has in S1, 
 Branch review on Opus: one real finding, the dock missing from `wither_immune` and `dragon_immune`, fixed with a failing test first. Deferred minors for the owner: "Transferred where?" is still offered after the third log line, which never says transfer; Esc or a hit right after the right-click loses `fm.exit` for good, since it has no replies to resume on; `fm.room` plays wherever she is if the first meeting is resumed away from him; a hit on any player delays the strip, not just one near her; nothing moves her when she asks, though the spec says she floats up; "the number on that wand has moved" is loose in a turned world where the wand still reads 1; a bad `when` with no `else` in an edited datapack throws on the right-click, since only JUnit guards the shipped data; the `shows()` GameTests would time out if a mob escaped a neighbouring test.
 
 2026-11-04: the owner's pass on S2 in `Aurora Vault Check`: "wow ok it worked great." The saved state after the pass shows her awake with `woke_in_vault`, `fm_done`, `doors_asked` and `exit_asked` set, and the client log has no errors. The owner reached the landing by its button, not on foot. The deferred minors above stand. S2 is ready for a PR into `feat/maeve-director`; `architectMonkey` has not run on it.
+
+2026-11-04: S2 merged as PR 151 (8f8d49d2). S3 built on `feat/aurora-affinity` in `/Volumes/SSD/Work/frozen-dawn-aurora-affinity`, from [aurora-shepherd-s3-plan.md](aurora-shepherd-s3-plan.md); the owner approved the plan and its twelve rulings. Active save: `run-lab/saves/Aurora Affinity Check`, from `tools/prepare_aurora_affinity_playtest.py`. Not yet seen by the owner, and the client has not been launched: the float-up, the reaction and recording strips, the Wary hub, the warmth's size, the pace to Friendly and every new line need the visual pass. No GameTest reaches `AIR_FAILING`, because the suffocation stage has no seam. New drafts for the owner to mark: `hub.talk`'s Wary and warm lines, the two Wary recordings, "Oh good. You remembered where you put me.", "You never asked about the name. I'm telling you anyway.", and two short reply labels, "Just a light in the sky." and "A screensaver?", with the script's words on hover because its labels overrun the slot.
+
+Found while building, not fixed: `gameTestQuick` sometimes hangs after "All N required tests passed", spinning in `ChunkMap.processUnloads` in `stopServer`. It happens without this slice's float-up code, on 2 of 5 runs of `shepherdthepromptstops`, `shepherdahostile` and `shepherdholdsstation` at 9663ced5. `shepherdHoldsStationBesideHerFollower` also timed out once running alone on a fresh server: its 200-tick timeout leaves little room after `whenTicking`.
