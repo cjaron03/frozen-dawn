@@ -8,6 +8,7 @@ import com.frozendawn.gametest.GameTestTemplates;
 import com.frozendawn.init.ModBlocks;
 import com.frozendawn.init.ModEntities;
 import com.frozendawn.init.ModItems;
+import com.frozendawn.miller.MillerPattern;
 import com.frozendawn.phase.PhaseManager;
 import com.frozendawn.shepherd.ShepherdAffinity.Deed;
 import com.frozendawn.shepherd.ShepherdAmbient.Trigger;
@@ -353,6 +354,8 @@ public final class ShepherdAffinityGameTest {
             ShepherdReactions.saw(player, Deed.CALLED_SHEPHERD);
             assertScore(h, -5);
             assertFace(h, she, Mood.UNIMPRESSED);
+            // Her feeling would hold the same face past the reaction, so this takes it away to see the reaction end.
+            MillerPattern.reset(h.getLevel().getServer());
             h.startSequence()
                     .thenExecuteAfter(ShepherdPolicy.REACT_TICKS - 10, () -> assertFace(h, she, Mood.UNIMPRESSED))
                     .thenExecuteAfter(15, () -> assertFace(h, she, Mood.NEUTRAL))

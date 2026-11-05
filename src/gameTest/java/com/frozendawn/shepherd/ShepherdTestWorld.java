@@ -3,6 +3,7 @@ package com.frozendawn.shepherd;
 import com.frozendawn.gametest.GameTestPlayers;
 import com.frozendawn.gametest.GameTestReporting;
 import com.frozendawn.init.ModEntities;
+import com.frozendawn.miller.MillerPattern;
 import com.mojang.authlib.GameProfile;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
@@ -36,6 +37,7 @@ final class ShepherdTestWorld {
         ShepherdPrompt.clearForTests();
         ShepherdReactions.clearForTests();
         ShepherdSavedData.get(level.getServer()).clearForTests();
+        MillerPattern.reset(level.getServer());
         // A body left in a test area that has stopped ticking would never get to remove itself.
         for (var body : level.getEntities(ModEntities.CS1_UNIT.get(), e -> true)) body.discard();
     }
