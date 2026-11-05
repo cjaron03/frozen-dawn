@@ -74,6 +74,7 @@ public class OrsaDocumentItem extends Item {
             Map.entry("terminus_log_medical", Doc.intel("terminus_log_medical", "Duty Log: Medical")),
             Map.entry("terminus_log_security", Doc.intel("terminus_log_security", "Duty Log: Security")),
             Map.entry("terminus_log_last", Doc.intel("terminus_log_last", "Duty Log: Last")),
+            Map.entry("tithonus_register", Doc.intel("tithonus_register", "Frame Register")),
             Map.entry("vehicle_transcript_abandoned", Doc.intel("vehicle_transcript_abandoned", "Audio: Cabin Mic")),
             Map.entry("vehicle_transcript_breakdown", Doc.intel("vehicle_transcript_breakdown", "Audio: Breakdown")),
             Map.entry("vehicle_transcript_failed", Doc.intel("vehicle_transcript_failed", "Audio: Whiteout")),
@@ -114,7 +115,8 @@ public class OrsaDocumentItem extends Item {
                 if (!docType.equals("villager_journal") && !docType.startsWith("newspaper_")) {
                     grantAdvancement(serverPlayer, "classified_information");
                     PlayerEndStats.incrementOrsaDocumentsRead(serverPlayer);
-                    com.frozendawn.shepherd.ShepherdReactions.saw(serverPlayer, com.frozendawn.shepherd.ShepherdAffinity.Deed.READ_LOG);
+                    // She has nothing to say over this one: "Read that bit again" would be wrong.
+                    com.frozendawn.shepherd.ShepherdReactions.saw(serverPlayer, com.frozendawn.shepherd.ShepherdAffinity.Deed.READ_LOG, !docType.equals("tithonus_register"));
                 }
 
                 if (docType.equals("satellite_log")) {

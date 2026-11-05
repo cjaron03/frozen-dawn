@@ -6,6 +6,7 @@ import com.frozendawn.gametest.GameTestReporting;
 import com.frozendawn.init.ModEntities;
 import com.frozendawn.miller.MillerPattern;
 import com.frozendawn.world.BlastPitPlacement;
+import com.frozendawn.world.BlastPitWarmZoneRegistry;
 import com.mojang.authlib.GameProfile;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
@@ -49,7 +50,7 @@ final class ShepherdTestWorld {
     }
 
     /** The world's pit, as it stood before a test moved it. */
-    private static BlockPos pitTarget, pitBuilt;
+    private static BlockPos pitTarget, pitBuilt, pitMoved;
     private static boolean pitPlaced;
 
     static void keepThePit(ServerLevel level) {
@@ -64,10 +65,22 @@ final class ShepherdTestWorld {
         state.setBlastPitTargetPos(pitTarget);
         state.setBlastPitPos(pitBuilt);
         state.setBlastPitPlaced(pitPlaced);
+        // A built pit warms its ground, which would reach into some later test's area.
+        if (pitMoved != null) BlastPitWarmZoneRegistry.unregister(level, pitMoved);
+        pitMoved = null;
+    }
+
+    /** A pit that is planned here and not built, as at the start of a world. Nobody may be online, or the real placement would build it. */
+    static void pitPlanned(ServerLevel level, BlockPos pos) {
+        var state = OrsaStructureState.get(level.getServer());
+        state.setBlastPitTargetPos(pos);
+        state.setBlastPitPos(null);
+        state.setBlastPitPlaced(false);
     }
 
     /** A pit standing here, as far as anyone can tell. Marked built, so the real placement leaves the test area alone. */
     static void pitAt(ServerLevel level, BlockPos pos) {
+        pitMoved = pos.immutable();
         var state = OrsaStructureState.get(level.getServer());
         state.setBlastPitTargetPos(pos);
         state.setBlastPitPos(pos);

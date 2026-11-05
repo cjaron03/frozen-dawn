@@ -78,6 +78,11 @@ public final class ShepherdReactions {
     }
 
     public static void saw(ServerPlayer player, Deed deed) {
+        saw(player, deed, true);
+    }
+
+    /** {@code aloud} false counts it and shows on her face, and leaves the strip alone. */
+    public static void saw(ServerPlayer player, Deed deed, boolean aloud) {
         var server = player.getServer();
         var she = watching(player);
         if (she == null) return;
@@ -88,11 +93,11 @@ public final class ShepherdReactions {
         data.affinity(data.affinity() + deed.score());
         MillerPattern.appraise(server, player.getUUID(), deed);
         if (ShepherdTalk.live()) return;
-        boolean quiet = quiet(data, now);
-        if (!deed.lines().isEmpty() && !quiet) data.lastAmbient(now);
+        boolean silent = quiet(data, now) || !aloud;
+        if (!deed.lines().isEmpty() && !silent) data.lastAmbient(now);
         boolean wary = data.tier() == Tier.WARY;
         if (!wary) she.react(deed.mood());
-        if (quiet) return;
+        if (silent) return;
         Say line = ShepherdAffinity.pick(reachable(server, deed.lines()), lastSaid.get(deed), she.getRandom());
         if (line == null) return;
         lastSaid.put(deed, line);
@@ -167,7 +172,16 @@ public final class ShepherdReactions {
         return speakUp(level, key, mood, null, false, false);
     }
 
+    /** The one thing she says through a quiet day: it answers what she asked for at the site, and that scene is what the day is for. */
+    static boolean thanks(ServerLevel level, String key, Mood mood) {
+        return speakUp(level, key, mood, null, false, false, false);
+    }
+
     private static boolean speakUp(ServerLevel level, String key, Mood mood, String arg, boolean needsCalm, boolean holdsTheGap) {
+        return speakUp(level, key, mood, arg, needsCalm, holdsTheGap, true);
+    }
+
+    private static boolean speakUp(ServerLevel level, String key, Mood mood, String arg, boolean needsCalm, boolean holdsTheGap, boolean holdsTheQuiet) {
         var server = level.getServer();
         var she = awakeAndWatching(server);
         if (she == null || she.level() != level) return false;
@@ -175,7 +189,7 @@ public final class ShepherdReactions {
         var data = ShepherdSavedData.get(server);
         long now = server.overworld().getGameTime();
         boolean gap = holdsTheGap && data.lastAmbient() != ShepherdSavedData.NOT_SET && now - data.lastAmbient() < ShepherdPolicy.AMBIENT_GAP_TICKS;
-        if (near.isEmpty() || !data.flag(ShepherdPrompt.FIRST_MEETING_DONE) || data.tier() == Tier.WARY || ShepherdTalk.live() || gap || quiet(data, now)) return false;
+        if (near.isEmpty() || !data.flag(ShepherdPrompt.FIRST_MEETING_DONE) || data.tier() == Tier.WARY || ShepherdTalk.live() || gap || holdsTheQuiet && quiet(data, now)) return false;
         if (needsCalm && (she.asking() || !ShepherdPrompt.calm(server, level, near))) return false;
         data.lastAmbient(now);
         she.react(mood);

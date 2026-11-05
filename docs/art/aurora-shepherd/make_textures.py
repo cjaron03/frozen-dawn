@@ -1,16 +1,20 @@
-"""The game textures for Aurora and her dock, drawn from the same voxels and colors as the approved mockups.
+"""The game textures for Aurora, her dock and Nine, drawn from the same voxels and colors as the approved mockups.
 
 Writes into src/main/resources. Run from anywhere: python3 docs/art/aurora-shepherd/make_textures.py
 """
+import json
 from pathlib import Path
 from PIL import Image
 from make_body_directions import C, lantern
 from make_flame_and_faces_mockup import flame
 import make_dock_mockup  # noqa: F401, adds the dock's colors to C
+from make_nine_husk_mockup import upright
+from make_nine_lamp_mockup import ICON, ICON_COLORS
 
 HERE = Path(__file__).resolve().parent
 TEXTURES = HERE.parents[2] / 'src/main/resources/assets/frozendawn/textures'
 BLOCK = TEXTURES / 'block'
+MODELS = TEXTURES.parent / 'models/block'
 C['led_off'] = (30, 34, 38)
 
 
@@ -111,8 +115,102 @@ def unit():
     img.save(TEXTURES / 'entity/cs1_unit.png')
 
 
+def cuboids(cells):
+    """The fewest boxes a plain sweep finds that fill these voxels exactly."""
+    left, boxes = set(cells), []
+    for x, y, z in sorted(cells, key=lambda c: (c[1], c[2], c[0])):
+        if (x, y, z) not in left:
+            continue
+        x1, z1, y1 = x + 1, z + 1, y + 1
+        while (x1, y, z) in left:
+            x1 += 1
+        while all((i, y, z1) in left for i in range(x, x1)):
+            z1 += 1
+        while all((i, y1, k) in left for i in range(x, x1) for k in range(z, z1)):
+            y1 += 1
+        left -= {(i, j, k) for i in range(x, x1) for j in range(y, y1) for k in range(z, z1)}
+        boxes.append((x, y, z, x1, y1, z1))
+    return boxes
+
+
+def face_cells(box, face):
+    """Each face as Minecraft maps it: rows of voxels, left to right as seen from outside."""
+    x0, y0, z0, x1, y1, z1 = box
+    xs, zs, ys = range(x0, x1), range(z0, z1), range(y1 - 1, y0 - 1, -1)
+    return {
+        'north': [[(x, y, z0) for x in reversed(xs)] for y in ys],
+        'south': [[(x, y, z1 - 1) for x in xs] for y in ys],
+        'west': [[(x0, y, z) for z in zs] for y in ys],
+        'east': [[(x1 - 1, y, z) for z in reversed(zs)] for y in ys],
+        'up': [[(x, y1 - 1, z) for x in xs] for z in zs],
+        'down': [[(x, y0, z) for x in xs] for z in reversed(zs)],
+    }[face]
+
+
+FACES = ('north', 'south', 'west', 'east', 'up', 'down')
+
+
+def layout(boxes, size=64):
+    """Every face a place on one sheet, in rows, tallest first. Both skins share it, so the out-model only swaps the texture."""
+    faces = sorted(((box, face) for box in boxes for face in FACES), key=lambda f: -len(face_cells(*f)))
+    spots, u, v, row = {}, 0, 0, 0
+    for box, face in faces:
+        rows = face_cells(box, face)
+        w, h = len(rows[0]), len(rows)
+        if u + w > size:
+            u, v, row = 0, v + row, 0
+        spots[(box, face)] = (u, v, w, h)
+        u, row = u + w, max(row, h)
+    assert v + row <= size, 'the husk no longer fits its sheet'
+    return spots
+
+
+def husk_voxels(lamp):
+    """The approved pose A, without the patch of floor it was drawn on."""
+    return {k: v for k, v in upright(lamp).v.items() if k[1] >= 0}
+
+
+def husk(size=64):
+    """Nine, as a block model: its broken handle and missing duct are not boxes ShepherdModel has, and it never moves."""
+    boxes = cuboids(husk_voxels(True))
+    spots = layout(boxes, size)
+    for name, lamp in (('cs1_husk', True), ('cs1_husk_out', False)):
+        voxels = husk_voxels(lamp)
+        img = Image.new('RGBA', (size, size), (0, 0, 0, 0))
+        for (box, face), (u, v, _, _) in spots.items():
+            for r, row in enumerate(face_cells(box, face)):
+                for c, cell in enumerate(row):
+                    img.putpixel((u + c, v + r), C[voxels[cell]] + (255,))
+        img.save(BLOCK / f'{name}.png')
+    scale = 16 / size
+    elements = []
+    for box in boxes:
+        x0, y0, z0, x1, y1, z1 = box
+        faces = {}
+        for face in FACES:
+            u, v, w, h = spots[(box, face)]
+            faces[face] = {'uv': [u * scale, v * scale, (u + w) * scale, (v + h) * scale], 'texture': '#skin'}
+        elements.append({'from': [x0, y0, z0], 'to': [x1, y1, z1], 'faces': faces})
+    model = {'parent': 'minecraft:block/block', 'ambientocclusion': False,
+             'textures': {'particle': 'frozendawn:block/cs1_husk', 'skin': 'frozendawn:block/cs1_husk'}, 'elements': elements}
+    (MODELS / 'cs1_husk.json').write_text(json.dumps(model, separators=(',', ':')) + '\n')
+    out = {'parent': 'frozendawn:block/cs1_husk', 'textures': {'particle': 'frozendawn:block/cs1_husk_out', 'skin': 'frozendawn:block/cs1_husk_out'}}
+    (MODELS / 'cs1_husk_out.json').write_text(json.dumps(out, indent=2) + '\n')
+
+
+def nine_lamp():
+    img = Image.new('RGBA', (16, 16), (0, 0, 0, 0))
+    for y, row in enumerate(ICON.split()):
+        for x, ch in enumerate(row):
+            if ch != '.':
+                img.putpixel((x, y), C[ICON_COLORS[ch]] + (255,))
+    img.save(TEXTURES / 'item/nine_lamp.png')
+
+
 def main():
     unit()
+    husk()
+    nine_lamp()
     flat('cs1_dock_top', 'steel')
     flat('cs1_dock_rail', 'steel2')
     side()
