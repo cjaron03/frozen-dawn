@@ -146,4 +146,18 @@ class ShepherdPolicyTest {
         assertEquals(0, ShepherdPolicy.warmth(ShepherdPolicy.WARMTH_BLOCKS + 0.1, false));
         assertEquals(0, ShepherdPolicy.warmth(1, true));
     }
+
+    @Test
+    void theBearingNamesTheCompass() {
+        assertEquals("north", ShepherdPolicy.bearing(0, -100));
+        assertEquals("east", ShepherdPolicy.bearing(100, 0));
+        assertEquals("south-west", ShepherdPolicy.bearing(-100, 100));
+        assertEquals("north-east", ShepherdPolicy.bearing(70, -60));
+        assertEquals("north", ShepherdPolicy.bearing(10, -100), "Nearly north is north");
+    }
+
+    @Test
+    void theDistanceIsOnTheGround() {
+        assertEquals(500, ShepherdPolicy.groundBlocks(300, -400));
+    }
 }

@@ -620,6 +620,70 @@ public final class ShepherdAffinityGameTest {
         h.assertTrue(Objects.equals(node, data(h).promptNode()), "Waiting: " + data(h).promptNode());
     }
 
+    @BeforeBatch(batch = "shepherd_personal_gap") public static void personalGapBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_personal_gap") public static void personalGapAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_personal_unready") public static void personalUnreadyBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_personal_unready") public static void personalUnreadyAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_personal_lapsed") public static void personalLapsedBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_personal_lapsed") public static void personalLapsedAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_personal_gap", timeoutTicks = 400)
+    public static void shepherdNextPersonalWaitsADay(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            var she = settled(h, player, 260);
+            ShepherdPrompt.personal(List.of(new ShepherdPrompt.Personal(ShepherdAffinity.Tier.FRIENDLY, ShepherdPrompt.THE_NAME, "t1_asked", (server, level, data, near) -> true),
+                    new ShepherdPrompt.Personal(ShepherdAffinity.Tier.FRIENDLY, "t1.end", "second_asked", (server, level, data, near) -> true)));
+            h.startSequence()
+                    .thenWaitUntil(() -> assertPrompt(h, ShepherdPrompt.THE_NAME))
+                    .thenExecuteAfter(10, () -> {
+                        she.interact(player, InteractionHand.MAIN_HAND);
+                        ShepherdTalk.reply(player, ShepherdTalk.liveId(), 1);
+                        ShepherdTalk.reply(player, ShepherdTalk.liveId(), CONTINUE);
+                        ShepherdTalk.reply(player, ShepherdTalk.liveId(), CONTINUE);
+                    })
+                    .thenExecuteAfter(15, () -> {
+                        assertPrompt(h, null);
+                        long left = data(h).deedReady(ShepherdPrompt.PERSONAL_GAP) - h.getLevel().getServer().overworld().getGameTime();
+                        h.assertTrue(left > ShepherdPolicy.PERSONAL_GAP_TICKS - 100 && left <= ShepherdPolicy.PERSONAL_GAP_TICKS, "A day from the answer: " + left);
+                        ShepherdReactions.skipDay(h.getLevel().getServer());
+                    })
+                    .thenWaitUntil(() -> assertPrompt(h, "t1.end"))
+                    .thenSucceed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_personal_unready", timeoutTicks = 400)
+    public static void shepherdAnUnreadyEntryIsPassedOver(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            settled(h, player(h), 260);
+            ShepherdPrompt.personal(List.of(new ShepherdPrompt.Personal(ShepherdAffinity.Tier.FRIENDLY, ShepherdPrompt.THE_NAME, "t1_asked", (server, level, data, near) -> false),
+                    new ShepherdPrompt.Personal(ShepherdAffinity.Tier.FRIENDLY, "t1.end", "second_asked", (server, level, data, near) -> true)));
+            h.startSequence()
+                    .thenWaitUntil(() -> assertPrompt(h, "t1.end"))
+                    .thenExecute(() -> h.assertFalse(data(h).flag("t1_asked"), "Not asked, so it can still come"))
+                    .thenSucceed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_personal_lapsed", timeoutTicks = 400)
+    public static void shepherdAWaitingEntryThatLapsesIsWithdrawn(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            settled(h, player(h), 260);
+            boolean[] ready = {true};
+            ShepherdPrompt.personal(List.of(new ShepherdPrompt.Personal(ShepherdAffinity.Tier.FRIENDLY, ShepherdPrompt.THE_NAME, "t1_asked", (server, level, data, near) -> ready[0])));
+            h.startSequence()
+                    .thenWaitUntil(() -> assertPrompt(h, ShepherdPrompt.THE_NAME))
+                    .thenExecute(() -> ready[0] = false)
+                    .thenWaitUntil(() -> assertPrompt(h, null))
+                    .thenExecute(() -> {
+                        h.assertFalse(data(h).flag("t1_asked"), "Unasked again");
+                        h.assertTrue(data(h).deedReady(ShepherdPrompt.PERSONAL_GAP) == 0, "A withdrawn prompt leaves no gap");
+                    })
+                    .thenSucceed();
+        });
+    }
+
     @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_name_friendly", timeoutTicks = 400)
     public static void shepherdAtFriendlySheAsksAboutTheName(GameTestHelper h) {
         ShepherdTestWorld.whenTicking(h, () -> {

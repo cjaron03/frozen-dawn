@@ -1,0 +1,34 @@
+{
+  "variants": {
+    "facing=south,lamp=true": {
+      "model": "frozendawn:block/cs1_husk"
+    },
+    "facing=south,lamp=false": {
+      "model": "frozendawn:block/cs1_husk_out"
+    },
+    "facing=west,lamp=true": {
+      "model": "frozendawn:block/cs1_husk",
+      "y": 90
+    },
+    "facing=west,lamp=false": {
+      "model": "frozendawn:block/cs1_husk_out",
+      "y": 90
+    },
+    "facing=north,lamp=true": {
+      "model": "frozendawn:block/cs1_husk",
+      "y": 180
+    },
+    "facing=north,lamp=false": {
+      "model": "frozendawn:block/cs1_husk_out",
+      "y": 180
+    },
+    "facing=east,lamp=true": {
+      "model": "frozendawn:block/cs1_husk",
+      "y": 270
+    },
+    "facing=east,lamp=false": {
+      "model": "frozendawn:block/cs1_husk_out",
+      "y": 270
+    }
+  }
+}

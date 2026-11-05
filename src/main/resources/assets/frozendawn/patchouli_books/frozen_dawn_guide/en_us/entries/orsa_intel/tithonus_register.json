@@ -1,0 +1,25 @@
+{
+  "name": "Frame Register",
+  "category": "frozendawn:orsa_intel",
+  "icon": "frozendawn:orsa_document",
+  "sortnum": 40,
+  "advancement": "frozendawn:found_tithonus_register",
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "text": "$(bold)PROJECT TITHONUS$()$(br)Frame register$(br2)Transfer vendor: Anderson-Kind Systems$(br)Issuing division:$(br)Budget line:$(br)Approver signature:$(br2)Source: volunteers, Exodus non-selected.$(br)Frames issued: twelve."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Filed by surname, as that volunteer's pattern.$(br2)Unit 1: Novak, Ilse$(br)Unit 2: Castillo, Ruben$(br)Unit 3: Brandt, Karin$(br)Unit 4: Miller, Sophie$(br)Unit 5: Osei, Kwame$(br)Unit 6: Lindqvist, Anna$(br)Unit 7: Park, Joon$(br)Unit 8: Romano, Giulia$(br)Unit 9: Walsh, Daniel$(br)Unit 10: Haddad, Samir$(br)Unit 11: Ferreira, Luis$(br)Unit 12: Moreau, Claire"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Verdict, all twelve: pattern transfer only, subject not recovered.$(br2)Reissue as CS-1 \"Shepherd\", civilian support.$(br)Class as equipment, not personnel.$(br)Retain the manner. It tests well with crowds. Describe it as designed."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Units held idle degrade without conversation. Post one attendant to each.$(br2)Do not discuss this register with any unit."
+    }
+  ]
+}

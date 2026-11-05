@@ -44,6 +44,8 @@ import net.neoforged.neoforge.network.PacketDistributor;
 public final class ShepherdReactions {
     public static final int POLL_TICKS = 100;
     private static final String NAME_SHE_HATES = "shepherd", SAID_SLOW = "said_slow";
+    /** The day after Nine, kept with her other clocks so a skipped day moves it. The flag is the line she owes when it is over. */
+    private static final String NINE_QUIET = "nine_quiet", QUIET_OWED = "quiet_owed";
     /** Only so a line never plays twice running: it does not need to outlive the server. */
     private static final Map<Deed, Say> lastSaid = new EnumMap<>(Deed.class);
     private static final Map<Trigger, Say> lastMurmur = new EnumMap<>(Trigger.class);
@@ -76,6 +78,11 @@ public final class ShepherdReactions {
     }
 
     public static void saw(ServerPlayer player, Deed deed) {
+        saw(player, deed, true);
+    }
+
+    /** {@code aloud} false counts it and shows on her face, and leaves the strip alone. */
+    public static void saw(ServerPlayer player, Deed deed, boolean aloud) {
         var server = player.getServer();
         var she = watching(player);
         if (she == null) return;
@@ -86,9 +93,11 @@ public final class ShepherdReactions {
         data.affinity(data.affinity() + deed.score());
         MillerPattern.appraise(server, player.getUUID(), deed);
         if (ShepherdTalk.live()) return;
-        if (!deed.lines().isEmpty()) data.lastAmbient(now);
+        boolean silent = quiet(data, now) || !aloud;
+        if (!deed.lines().isEmpty() && !silent) data.lastAmbient(now);
         boolean wary = data.tier() == Tier.WARY;
         if (!wary) she.react(deed.mood());
+        if (silent) return;
         Say line = ShepherdAffinity.pick(reachable(server, deed.lines()), lastSaid.get(deed), she.getRandom());
         if (line == null) return;
         lastSaid.put(deed, line);
@@ -97,6 +106,17 @@ public final class ShepherdReactions {
         } else {
             speak(she, line.key(data.heavy()), deed.mood(), null);
         }
+    }
+
+    /** She is not saying anything today. Her face and the score carry on: this is only what reaches the strip. */
+    static boolean quiet(ShepherdSavedData data, long now) {
+        return now < data.deedReady(NINE_QUIET);
+    }
+
+    /** A day from now, and a line when it is over. */
+    static void quietFor(ShepherdSavedData data, long now) {
+        data.deedReady(NINE_QUIET, now + ShepherdPolicy.DAY_TICKS);
+        data.flag(QUIET_OWED, true);
     }
 
     /** A worn-down mind reaches fewer of a pool's lines, so at the floor she repeats herself. */
@@ -152,7 +172,16 @@ public final class ShepherdReactions {
         return speakUp(level, key, mood, null, false, false);
     }
 
+    /** The one thing she says through a quiet day: it answers what she asked for at the site, and that scene is what the day is for. */
+    static boolean thanks(ServerLevel level, String key, Mood mood) {
+        return speakUp(level, key, mood, null, false, false, false);
+    }
+
     private static boolean speakUp(ServerLevel level, String key, Mood mood, String arg, boolean needsCalm, boolean holdsTheGap) {
+        return speakUp(level, key, mood, arg, needsCalm, holdsTheGap, true);
+    }
+
+    private static boolean speakUp(ServerLevel level, String key, Mood mood, String arg, boolean needsCalm, boolean holdsTheGap, boolean holdsTheQuiet) {
         var server = level.getServer();
         var she = awakeAndWatching(server);
         if (she == null || she.level() != level) return false;
@@ -160,7 +189,7 @@ public final class ShepherdReactions {
         var data = ShepherdSavedData.get(server);
         long now = server.overworld().getGameTime();
         boolean gap = holdsTheGap && data.lastAmbient() != ShepherdSavedData.NOT_SET && now - data.lastAmbient() < ShepherdPolicy.AMBIENT_GAP_TICKS;
-        if (near.isEmpty() || !data.flag(ShepherdPrompt.FIRST_MEETING_DONE) || data.tier() == Tier.WARY || ShepherdTalk.live() || gap) return false;
+        if (near.isEmpty() || !data.flag(ShepherdPrompt.FIRST_MEETING_DONE) || data.tier() == Tier.WARY || ShepherdTalk.live() || gap || holdsTheQuiet && quiet(data, now)) return false;
         if (needsCalm && (she.asking() || !ShepherdPrompt.calm(server, level, near))) return false;
         data.lastAmbient(now);
         she.react(mood);
@@ -239,7 +268,7 @@ public final class ShepherdReactions {
         long now = server.overworld().getGameTime();
         if (data.lastTalk() == ShepherdSavedData.NOT_SET) data.lastTalk(now);
         if (now - lastFight > ShepherdPolicy.FIGHT_LINE_TICKS) lastFight = ShepherdSavedData.NOT_SET;
-        if (ShepherdWill.slip(level)) return;
+        if (backFromQuiet(level, data, now) || ShepherdWill.slip(level)) return;
         sayWhenSlow(server, level, data);
         var nearest = near.stream().min(Comparator.comparingDouble(she::distanceTo)).orElseThrow().getUUID();
         var urge = MillerPattern.urge(server, nearest);
@@ -259,6 +288,13 @@ public final class ShepherdReactions {
             case APPROACH -> she.drawClose();
         }
         moment(server, level, she, near, data, now);
+    }
+
+    /** Ahead of everything held back with it, or the slip would take its place and the gap would make it wait. */
+    private static boolean backFromQuiet(ServerLevel level, ShepherdSavedData data, long now) {
+        if (!data.flag(QUIET_OWED) || quiet(data, now) || !murmur(level, Trigger.QUIET_OVER)) return false;
+        data.flag(QUIET_OWED, false);
+        return true;
     }
 
     /** She can hold her tongue for five minutes, counted from the last thing she said if that is later, and not for a day. */

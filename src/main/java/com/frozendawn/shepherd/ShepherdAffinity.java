@@ -71,7 +71,9 @@ public final class ShepherdAffinity {
                 new Say("shepherd.react.air_failing.2", "shepherd.react.air_failing.2.heavy"), new Say("shepherd.react.air_failing.3"))),
         /** Its cooldown is the day it takes to earn. */
         LEFT_BEHIND(-10, 0, Mood.UNIMPRESSED, keys("left_behind", 2)),
-        CALLED_SHEPHERD(-5, MINUTE, Mood.UNIMPRESSED, keys("called_shepherd", 3));
+        CALLED_SHEPHERD(-5, MINUTE, Mood.UNIMPRESSED, keys("called_shepherd", 3)),
+        /** She stood at the husk. It costs nobody anything, and it happens once. */
+        NINE_FOUND(0, 0, Mood.SAD, List.of());
 
         private final int score, cooldownTicks;
         private final Mood mood;

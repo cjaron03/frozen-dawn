@@ -78,6 +78,8 @@ All at 16 texels to the block, in `docs/art/aurora-shepherd/`, each from its `ma
 | `ambient-lines-mockup.png` | Ambient line, callout, "Got a minute?", recording voice during play | Approved "Build as drawn" |
 | `boot-sequence-mockup.png` | The cell seated, Boot and Leave, BIOS lines, logo and first line, frame by frame | Approved 2026-11-04, for M2a; replaces `dock-mockup.png`'s cell-in state |
 | `thinking-indicator-mockup.png` | Three indicators on her display, and how her eyes settle | Approved: A, Orbit, with her eyes going back into place |
+| `nine-husk-mockup.png` | Nine's husk, two poses, lamp out, at scale, its place in the pit | Approved 2026-11-05: A, sat down |
+| `nine-lamp-mockup.png` | Nine's lamp three ways: keepsake, wall light, in her handle | Approved 2026-11-05: C, in her handle, a keepsake item until she takes it |
 
 **Body.** About 12 texels wide, 10 tall and 10 deep, 18 wide across the ducts, with a carry handle on top. Front display 8 by 6 texels, lamp strip above it, heater grille underneath, a duct each side. She hovers about one block off the ground.
 
@@ -87,7 +89,7 @@ All at 16 texels to the block, in `docs/art/aurora-shepherd/`, each from its `ma
 
 **Ambient lines.** A strip centered above the action bar, because the temperature and air panels hold the top left and status effects the top right. It uses the `OrsaHudPanel` colors with her face where the badge goes, a green edge, amber for a callout. Heard within 16 blocks. A line types out, holds 4 seconds and fades over 1 (my call). One at a time, and a callout replaces whatever is showing.
 
-**Still owed, each before its slice:** Nine's husk, Nine's lamp, and the hub if it differs from the talk grid.
+**Still owed, each before its slice:** the hub if it differs from the talk grid.
 
 ## The eight fixes
 
@@ -100,7 +102,8 @@ The script was written against the Terminus spec and predates the vault as built
 5. **T3 "The sky".** The owner assumes she will never see a real aurora, so she imagines one instead.
    - She has one frame and does not know how it moves. The lines at the top become: (Thinking) "...It's not there." (Sad) "I think I knew. I've got one frame of it. One. I don't even know how it moves." (Thinking) "I've thought about it a lot. I think it goes slow, like something breathing. Green first. Then a color the camera couldn't do." The stars lines follow unchanged.
    - A new ambient pool from phase 4 on, on clear nights: "I've decided it moves slowly. Nobody can correct me. That's the upside." / "In my version there's a sound. There wouldn't be. It's my version." / "One frame. You'd be amazed what you can build from one frame."
-   - T3 and that pool start at phase 4, which is what keeps the assumption true: `AuroraPolicy` runs real auroras only in phases 0 to 3.
+   - That pool starts at phase 4, which is what keeps the assumption true: `AuroraPolicy` runs real auroras only in phases 0 to 3.
+   - T3 waits for the stars (owner, 2026-11-05): storms hide them until phase 6 mid, and she asks once they show, at about day 94 of 120. This replaces T3 starting at phase 4. See [aurora-shepherd-s4-plan.md](aurora-shepherd-s4-plan.md).
    - She needs a sky she can see, so T3 waits out phase 5 and early phase 6 (`PhaseManager.isBlizzardActive`) and any storm, and she asks again. Phase 6 mid onward draws stars on black.
 6. **Late meetings.** She can be woken after anything has already happened, so every one-time topic gets a late variant, fired at the next calm moment. Maeve wakes: (Thinking) "There's something on the Reliquus band. All of them at once, like one ear. It was already doing that when you woke me." The Moon and post-Maeve silence need the same treatment. A topic whose moment passed and has no variant does not fire.
 7. **Her presence in the vault.** Nothing there mentions her. Hale's "nothing down here but the cradle and us" gains the unit, the Vault Manifest gains an item row for CS-1 unit 4, and the locker gains the spare cell. All three are edits to vault files, and land in S2.
@@ -284,7 +287,7 @@ Nothing until a slice starts.
 
 ## Plan
 
-S1 is planned in [aurora-shepherd-plan.md](aurora-shepherd-plan.md), S2 in [aurora-shepherd-s2-plan.md](aurora-shepherd-s2-plan.md), S3 in [aurora-shepherd-s3-plan.md](aurora-shepherd-s3-plan.md) with the addendum [aurora-shepherd-s3-lively.md](aurora-shepherd-s3-lively.md).
+S1 is planned in [aurora-shepherd-plan.md](aurora-shepherd-plan.md), S2 in [aurora-shepherd-s2-plan.md](aurora-shepherd-s2-plan.md), S3 in [aurora-shepherd-s3-plan.md](aurora-shepherd-s3-plan.md) with the addendum [aurora-shepherd-s3-lively.md](aurora-shepherd-s3-lively.md). S4 is drafted in [aurora-shepherd-s4-plan.md](aurora-shepherd-s4-plan.md), with its lines and files in [aurora-s4-lines.md](aurora-s4-lines.md).
 
 ## Status
 
@@ -325,3 +328,7 @@ Found while building, not fixed: `gameTestQuick` sometimes hangs after "All N re
 2026-11-04: the owner approved the M2 plan, [miller-pattern-m2-plan.md](miller-pattern-m2-plan.md), which adds the boot sequence in slice M2a. Nothing is built.
 
 2026-11-04: the boot sequence built in M2a on `feat/miller-m2`, with the seated dock and the thinking indicator. `architectVerify` passed at ffcc390a (1,154 GameTests). Active save: `run-lab/saves/Aurora Boot Check`. Headless only so far; the owner's pass is next. Details in the Status of [aurora-miller-pattern.md](aurora-miller-pattern.md).
+
+2026-11-05: S4 prepared on `feat/aurora-s4` in `/Volumes/SSD/Work/frozen-dawn-aurora-s4`, cut from `feat/maeve-director` at a0b77afa with PR 155 merged. Mockups, line drafts, the TITHONUS files and the plan are for the owner to mark. Nothing is built, and no `architectVerify` has run, since only docs changed. The owner approved the plan the same day: T3 waits for the stars, about day 94 of 120; Nine's lamp rides in her handle; the husk sits down; every other ruling as recommended. The lines stay drafts until marked.
+
+2026-11-05, S4a handback: Nine is built on `feat/aurora-s4` (Tasks 1 to 5 of `docs/aurora-shepherd-s4-plan.md`): line arguments and state conditions, the quiet day, the husk at the pit, T2, and the lamp in her handle. `architectVerify` passed at d3357975 (1,218 GameTests, 1,008 required). Active save: `run-lab/saves/Aurora Nine Check`, from `tools/prepare_aurora_s4_playtest.py`. The owner's pass, in their words: "she told me. 130 blocks away. i found the pit and see nine", on the Frame Register "jesus", on the quiet ending "shes talking normally now", and on the lamp "she took it". The branch review ran on Opus, because the branch changes her saved data and the talk, reactions and dock paths other features use. It found no Critical issues and three Important ones, all fixed with failing tests first: an unanswered site prompt now goes if she turns Wary or leaves the site and comes back when she returns; a hand-over into full hands drops items that never expire; the test world unregisters every pit it moved. Those three came after the owner's pass, so they are verified by test and not seen in game. Also on the branch: a dock builds no second body, which ended a run of flaky tests, and, at the owner's request and outside the plan, the Evacuation Notice is now a chapter of ORSA Intelligence. Deferred minors: the husk can hand over mid-scene, so "Can we take its lamp?" can resume with the lamp in hand; in multiplayer `thanks` and `answer` test who is near her, not who touched the husk; `/fd shepherd replay` is not safe after Nine; the owed quiet line can land late if she stays Wary; `shepherdTheHuskWaitsForHer`'s prompt assertion cannot fail on the 12-block check; a creative player with a full inventory loses the lamp and sheet. "Nine's Lamp", "CS-1 unit 9. Off." and "CS-1 Husk" are not in the lines file, for the owner to see once. S4b must stop `Keepsakes.unspoken` hiding `nine_found` for its recall line.

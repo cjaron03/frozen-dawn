@@ -302,6 +302,8 @@ Verified headlessly: focus and urge, recall, walls said once, the slowing-down l
 
 2026-11-05, the owner's pass in `Aurora Will Check`, in their words: she speaks "pretty regualar without spamming" under `tick sprint 500`; "everything looked good", with her looking at a chest and saying "I'm not snooping. I'm auditing."; the recording "played and then she cut in"; all six wall lines fired. No refusal came at first, because she was following the whole time and a refusal needs her parked. Told the steps, the owner saw both give way on the second ask: "yea she refused lol". The log held no errors. Still open: whether a refusal is too hidden behind telling her to Wait.
 
+2026-11-05: S4a adds one appraisal, `NINE_FOUND`, which leaves her sad and counts as the world's doing, and `MillerPattern.stage` for dialogue conditions. See the Status in `aurora-shepherd.md`.
+
 ## Sources
 
 - `MaeveDirector`, `ShepherdAffinity` and `ShepherdReactions` at c866cf02 on `feat/aurora-affinity`.

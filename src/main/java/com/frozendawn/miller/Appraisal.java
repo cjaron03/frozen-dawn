@@ -32,6 +32,7 @@ final class Appraisal {
             case AIR_FAILING -> new Rule(-0.6, 0, true, null, 0, Agent.WORLD);
             case LEFT_BEHIND -> new Rule(-0.3, -0.5, false, Drive.COMPANY, 0, Agent.PLAYER);
             case CALLED_SHEPHERD -> new Rule(-0.1, -0.4, false, null, 0, Agent.PLAYER);
+            case NINE_FOUND -> new Rule(-0.6, 0, false, Drive.OTHERS, 0.6, Agent.WORLD);
         };
     }
 
