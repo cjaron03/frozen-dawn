@@ -107,6 +107,13 @@ public final class ShepherdSavedData extends SavedData {
         setDirty();
     }
 
+    /** For playtests: a day has gone by her clocks. {@code seen} leaves her clock on you alone, since someone is standing there. */
+    public void skipDay(boolean seen) {
+        deeds.replaceAll((deed, ready) -> ready - ShepherdPolicy.DAY_TICKS);
+        if (!seen && lastNear != NOT_SET) lastNear -= ShepherdPolicy.DAY_TICKS;
+        setDirty();
+    }
+
     /** GameTest isolation only: a shard may be of any age, so each test starts from a fresh state. */
     void clearForTests() {
         stage = Stage.DORMANT;

@@ -1,5 +1,6 @@
 package com.frozendawn.command;
 
+import com.frozendawn.shepherd.ShepherdReactions;
 import com.frozendawn.shepherd.ShepherdSavedData;
 import com.frozendawn.shepherd.ShepherdTalk;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
@@ -7,7 +8,7 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 
-/** CS-1 diagnostics: a read-only dump, and for playtests a replay of the first meeting and a set score. */
+/** CS-1 diagnostics: a read-only dump, and for playtests a replay of the first meeting, a set score and a skipped day. */
 final class ShepherdDebugCommand {
     private ShepherdDebugCommand() { }
 
@@ -23,6 +24,11 @@ final class ShepherdDebugCommand {
                     boolean done = ShepherdTalk.replay(c.getSource().getServer());
                     FrozenDawnCommandOutput.item(c.getSource(), done ? "first meeting reset; right-click her to start it" : "she is not awake");
                     return done ? 1 : 0;
+                }))
+                .then(Commands.literal("skipday").executes(c -> {
+                    ShepherdReactions.skipDay(c.getSource().getServer());
+                    FrozenDawnCommandOutput.item(c.getSource(), "her cooldowns and clock are a day on");
+                    return 1;
                 }))
                 .then(Commands.literal("affinity").then(Commands.argument("value", IntegerArgumentType.integer(-1000, 1000)).executes(c -> {
                     var data = ShepherdSavedData.get(c.getSource().getServer());

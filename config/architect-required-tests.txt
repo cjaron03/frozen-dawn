@@ -946,6 +946,7 @@ shepherdleavingwarybringsherfaceback xml
 shepherdhubtalkfollowsthetier xml
 shepherdreplayclearsthescore xml
 shepherdaffinitycommandsetsthescore xml
+shepherdskippingadaymovesherclocks xml
 shepherdshewarmsanearplayer xml
 shepherdsheisnoheater xml
 shepherdahitonafarplayerdoesnotdelaythestrip xml

@@ -69,6 +69,12 @@ public final class ShepherdReactions {
         return level.getPlayers(player -> !player.isSpectator() && player.distanceTo(she) <= ShepherdPolicy.HEARD_BLOCKS);
     }
 
+    /** {@code /fd shepherd skipday}: sleep and /time leave game time alone, so a playtest moves her clocks instead. */
+    public static void skipDay(MinecraftServer server) {
+        var she = loaded(server);
+        ShepherdSavedData.get(server).skipDay(she != null && !near((ServerLevel) she.level(), she).isEmpty());
+    }
+
     @SubscribeEvent public static void tick(ServerTickEvent.Post event) {
         var server = event.getServer();
         if (server.getTickCount() % POLL_TICKS != 0) return;

@@ -107,6 +107,8 @@ public final class ShepherdAffinityGameTest {
     @AfterBatch(batch = "shepherd_name_knows") public static void knowsNameAfter(ServerLevel l) { after(l); }
     @BeforeBatch(batch = "shepherd_name_replay") public static void replayNameBefore(ServerLevel l) { before(l); }
     @AfterBatch(batch = "shepherd_name_replay") public static void replayNameAfter(ServerLevel l) { after(l); }
+    @BeforeBatch(batch = "shepherd_skip_day") public static void skipBefore(ServerLevel l) { before(l); }
+    @AfterBatch(batch = "shepherd_skip_day") public static void skipAfter(ServerLevel l) { after(l); }
 
     /** Some deeds move the world's clock on, so the phase comes back. */
     private static long apocalypseTicks;
@@ -648,6 +650,27 @@ public final class ShepherdAffinityGameTest {
                     })
                     .thenWaitUntil(() -> assertPrompt(h, ShepherdPrompt.THE_NAME))
                     .thenSucceed();
+        });
+    }
+
+    /** Sleep and /time leave game time alone, so a playtest moves her clocks instead. */
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_skip_day", timeoutTicks = 400)
+    public static void shepherdSkippingADayMovesHerClocks(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            var she = awake(h, player);
+            ShepherdReactions.saw(player, Deed.WARM_SHELTER);
+            long ready = data(h).deedReady(Deed.WARM_SHELTER.name());
+            data(h).lastNear(clock(h));
+            long last = data(h).lastNear();
+            command(h, "fd shepherd skipday");
+            h.assertTrue(data(h).deedReady(Deed.WARM_SHELTER.name()) == ready - ShepherdPolicy.DAY_TICKS, "The cooldown is a day shorter");
+            h.assertTrue(data(h).lastNear() == last, "Someone is near her, so nobody left her");
+            she.setNoAi(true);
+            she.teleportTo(player.getX() + ShepherdPolicy.HEARD_BLOCKS + 5, player.getY(), player.getZ());
+            command(h, "fd shepherd skipday");
+            h.assertTrue(data(h).lastNear() == last - ShepherdPolicy.DAY_TICKS, "Out of sight, the day counts as gone");
+            h.succeed();
         });
     }
 }
