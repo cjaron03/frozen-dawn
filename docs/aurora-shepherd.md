@@ -78,6 +78,9 @@ All at 16 texels to the block, in `docs/art/aurora-shepherd/`, each from its `ma
 | `ambient-lines-mockup.png` | Ambient line, callout, "Got a minute?", recording voice during play | Approved "Build as drawn" |
 | `boot-sequence-mockup.png` | The cell seated, Boot and Leave, BIOS lines, logo and first line, frame by frame | Approved 2026-11-04, for M2a; replaces `dock-mockup.png`'s cell-in state |
 | `thinking-indicator-mockup.png` | Three indicators on her display, and how her eyes settle | Approved: A, Orbit, with her eyes going back into place |
+| `private-log-mockup.png` | M3: Settings as a page, "Unit diagnostics", the log before and after T5, her lines on the first read | Approved 2026-11-05, with Settings as a page |
+| `chat-bar-mockup.png` | M4: "Say something..." under the grid, typing, Orbit in place, the Strong, Close and None outcomes, the hub | Approved 2026-11-05, with "Neither." added to Close |
+| `crash-mockup.png` | M4: the stop screen, three options on her display and two on the talk panel, the world frames, the logo and her lines after | Approved 2026-11-05: display B, talk panel A |
 | `nine-husk-mockup.png` | Nine's husk, two poses, lamp out, at scale, its place in the pit | Approved 2026-11-05: A, sat down |
 | `nine-lamp-mockup.png` | Nine's lamp three ways: keepsake, wall light, in her handle | Approved 2026-11-05: C, in her handle, a keepsake item until she takes it |
 
