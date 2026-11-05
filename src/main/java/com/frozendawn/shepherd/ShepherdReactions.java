@@ -33,17 +33,23 @@ public final class ShepherdReactions {
 
     private ShepherdReactions() {}
 
-    /** Her body, if she is awake and it is loaded: Offline she sees nothing, and an unloaded body has no sensors. */
-    static ShepherdEntity body(MinecraftServer server) {
+    /** Her body, if she is awake and it is loaded. */
+    static ShepherdEntity loaded(MinecraftServer server) {
         var data = ShepherdSavedData.get(server);
         if (data.stage() != Stage.AWAKE || data.entity() == null || data.dimension() == null) return null;
         var level = server.getLevel(data.dimension());
-        return level != null && level.getEntity(data.entity()) instanceof ShepherdEntity she && !she.offline() ? she : null;
+        return level != null && level.getEntity(data.entity()) instanceof ShepherdEntity she ? she : null;
+    }
+
+    /** Offline she sees nothing, and an unloaded body has no sensors. */
+    private static ShepherdEntity watching(MinecraftServer server) {
+        var she = loaded(server);
+        return she == null || she.offline() ? null : she;
     }
 
     public static void saw(ServerPlayer player, Deed deed) {
         var server = player.getServer();
-        var she = body(server);
+        var she = watching(server);
         if (she == null || she.level() != player.level() || player.distanceTo(she) > ShepherdPolicy.HEARD_BLOCKS) return;
         var data = ShepherdSavedData.get(server);
         long now = server.overworld().getGameTime();
@@ -66,7 +72,7 @@ public final class ShepherdReactions {
     @SubscribeEvent public static void tick(ServerTickEvent.Post event) {
         var server = event.getServer();
         if (server.getTickCount() % POLL_TICKS != 0) return;
-        var she = body(server);
+        var she = watching(server);
         if (she == null) return;
         var level = (ServerLevel) she.level();
         var near = near(level, she);

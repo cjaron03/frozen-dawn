@@ -946,6 +946,8 @@ shepherdleavingwarybringsherfaceback xml
 shepherdhubtalkfollowsthetier xml
 shepherdreplayclearsthescore xml
 shepherdaffinitycommandsetsthescore xml
+shepherdshewarmsanearplayer xml
+shepherdsheisnoheater xml
 shepherdahitonafarplayerdoesnotdelaythestrip xml
 shepherdaplacepromptgoesfirst xml
 shepherdaplacepromptdoesnotlosethename xml

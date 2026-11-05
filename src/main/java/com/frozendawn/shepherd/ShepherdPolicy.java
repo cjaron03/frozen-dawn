@@ -26,6 +26,8 @@ public final class ShepherdPolicy {
     public static final int NIGHT_STARTS = 13000, NIGHT_ENDS = 23000;
     public static final float WARM_SHELTER_C = 10, FROZEN_C = -25;
     public static final int WARM_HEATER_BLOCKS = 16, FROZEN_HEATER_BLOCKS = 8;
+    public static final int WARMTH_BLOCKS = 4;
+    public static final float WARMTH_C = 5f;
 
     private ShepherdPolicy() {}
 
@@ -47,6 +49,11 @@ public final class ShepherdPolicy {
     public static boolean night(long dayTime) {
         long time = dayTime % DAY_TICKS;
         return time >= NIGHT_STARTS && time < NIGHT_ENDS;
+    }
+
+    /** What her heater port gives someone this far away. */
+    public static float warmth(double distance, boolean offline) {
+        return !offline && distance <= WARMTH_BLOCKS ? WARMTH_C : 0;
     }
 
     /** Whether a personal conversation could land: nobody near her is freezing or short of air. */

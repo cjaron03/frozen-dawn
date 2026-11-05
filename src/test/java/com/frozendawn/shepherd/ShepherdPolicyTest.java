@@ -139,4 +139,11 @@ class ShepherdPolicyTest {
         assertFalse(ShepherdPolicy.comfortable(-10.1F, false));
         assertFalse(ShepherdPolicy.comfortable(20, true));
     }
+
+    @Test
+    void warmthStopsAtItsEdgeAndWhenOffline() {
+        assertEquals(ShepherdPolicy.WARMTH_C, ShepherdPolicy.warmth(ShepherdPolicy.WARMTH_BLOCKS, false));
+        assertEquals(0, ShepherdPolicy.warmth(ShepherdPolicy.WARMTH_BLOCKS + 0.1, false));
+        assertEquals(0, ShepherdPolicy.warmth(1, true));
+    }
 }
