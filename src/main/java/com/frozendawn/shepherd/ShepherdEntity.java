@@ -51,6 +51,7 @@ public final class ShepherdEntity extends PathfinderMob {
     private int talkTicks;
     private int logoTicks;
     private int askTicks;
+    private int reactTicks;
     /** Client only: the mood last drawn, and how much of the blink between two moods is left. */
     private Mood shownMood;
     private int moodBeat;
@@ -140,6 +141,13 @@ public final class ShepherdEntity extends PathfinderMob {
         setMood(ShepherdSavedData.get(getServer()).tier() == Tier.WARY ? Mood.RECORDING : Mood.NEUTRAL);
     }
 
+    /** Her face answers what she just saw, then goes back. A conversation keeps her face to itself. */
+    public void react(Mood mood) {
+        if (ShepherdTalk.live()) return;
+        reactTicks = ShepherdPolicy.REACT_TICKS;
+        setMood(mood);
+    }
+
     public boolean offline() {
         return entityData.get(DATA_OFFLINE);
     }
@@ -198,6 +206,7 @@ public final class ShepherdEntity extends PathfinderMob {
         talkFor(0);
         logoTicks = 0;
         askTicks = 0;
+        reactTicks = 0;
         entityData.set(DATA_LOGO, false);
         entityData.set(DATA_MOOD, Mood.OFFLINE.ordinal());
         entityData.set(DATA_OFFLINE, true);
@@ -232,7 +241,8 @@ public final class ShepherdEntity extends PathfinderMob {
         if (talkTicks > 0 && --talkTicks == 0) entityData.set(DATA_TALKING, false);
         if (logoTicks > 0 && --logoTicks == 0) entityData.set(DATA_LOGO, false);
         if (askTicks > 0) askTicks--;
-        if (ShepherdTalk.live()) return;
+        if (reactTicks > 0) reactTicks--;
+        if (ShepherdTalk.live() || reactTicks > 0) return;
         if (asking()) {
             setMood(Mood.THINKING);
         } else {

@@ -2,6 +2,7 @@ package com.frozendawn.shepherd;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import com.frozendawn.shepherd.ShepherdAffinity.Deed;
 import com.frozendawn.shepherd.ShepherdAffinity.Tier;
 import org.junit.jupiter.api.Test;
 
@@ -25,5 +26,13 @@ class ShepherdAffinityTest {
         assertTrue(Tier.TRUSTED.atLeast(Tier.FRIENDLY));
         assertTrue(Tier.FRIENDLY.atLeast(Tier.FRIENDLY));
         assertFalse(Tier.NEUTRAL.atLeast(Tier.FRIENDLY));
+    }
+
+    @Test
+    void everyDeedScoresWithinTheSpecsRange() {
+        for (Deed deed : Deed.values()) {
+            assertTrue(Math.abs(deed.score()) >= 5 && Math.abs(deed.score()) <= 25, deed.name());
+            assertEquals(deed.score() > 0, deed.liked(), deed.name());
+        }
     }
 }

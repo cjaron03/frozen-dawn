@@ -136,6 +136,16 @@ public final class PlayerTickHandler {
                 - HearthrotManager.hiddenColdPenalty(player);
     }
 
+    /** The temperature the cold acts on: what the player feels, after armor. */
+    public static float resolvedTemperature(ServerPlayer player) {
+        return getFreezeResolvedTemperature(player, ApocalypseState.get(player.getServer()));
+    }
+
+    /** Any suffocation warning at all. */
+    public static boolean airFailing(UUID playerId) {
+        return suffocationStages.getOrDefault(playerId, SuffocationStage.NONE) != SuffocationStage.NONE;
+    }
+
     static void syncBreathableState(ServerPlayer player) {
         refreshPressureState(player,true);
         boolean breathable = computeBreathableState(player);

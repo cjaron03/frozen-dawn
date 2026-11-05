@@ -378,6 +378,7 @@ public final class ArchivistEntity extends PathfinderMob {
     }
 
     private void beginMarkedDeath(ServerPlayer killer) {
+        com.frozendawn.shepherd.ShepherdReactions.saw(killer, com.frozendawn.shepherd.ShepherdAffinity.Deed.ARCHIVIST_KILLED);
         markedKillerId = killer.getUUID();
         markedApplied = false;
         entityData.set(DATA_MARKED_DEATH_TICKS, 1);

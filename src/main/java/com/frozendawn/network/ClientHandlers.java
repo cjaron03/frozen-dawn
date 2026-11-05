@@ -358,6 +358,10 @@ public final class ClientHandlers {
         com.frozendawn.client.ShepherdPromptStrip.show();
     }
 
+    public static void handleShepherdLine(ShepherdLinePayload payload) {
+        com.frozendawn.client.ShepherdPromptStrip.say(payload.key(), payload.mood());
+    }
+
     public static void handleShepherdClose() {
         if (Minecraft.getInstance().screen instanceof ShepherdScreen screen) screen.closeFromServer();
     }

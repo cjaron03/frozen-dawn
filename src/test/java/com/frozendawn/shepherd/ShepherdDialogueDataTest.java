@@ -112,6 +112,16 @@ class ShepherdDialogueDataTest {
     }
 
     @Test
+    void everyDeedLineHasALangEntry() throws Exception {
+        var lang = lang();
+        List<String> keys = new ArrayList<>(List.of(ShepherdAffinity.WARY_LIKED, ShepherdAffinity.WARY_DISLIKED));
+        for (var deed : ShepherdAffinity.Deed.values()) {
+            if (deed.line() != null) keys.add(deed.line());
+        }
+        for (String key : keys) assertTrue(lang.has(key) && !lang.get(key).getAsString().isBlank(), key);
+    }
+
+    @Test
     void noSlotTwice() throws Exception {
         for (Node node : nodes().values()) {
             Set<ShepherdDialogue.Slot> slots = new HashSet<>();

@@ -20,6 +20,11 @@ public final class ShepherdPolicy {
     public static final int STRIP_FADE_TICKS = 20;
     public static final double ASK_BLOCKS = 2.5;
     public static final int ASK_TICKS = 100;
+    public static final int REACT_TICKS = 60;
+    public static final int DAY_TICKS = 24000;
+    public static final int NIGHT_STARTS = 13000, NIGHT_ENDS = 23000;
+    public static final float WARM_SHELTER_C = 10, FROZEN_C = -25;
+    public static final int WARM_HEATER_BLOCKS = 16, FROZEN_HEATER_BLOCKS = 8;
 
     private ShepherdPolicy() {}
 
@@ -36,6 +41,11 @@ public final class ShepherdPolicy {
     /** Whether she would interrupt: nothing hostile in range and nobody hurt lately. */
     public static boolean calm(double nearestHostile, long ticksSinceHurt) {
         return nearestHostile > CALM_HOSTILE_BLOCKS && ticksSinceHurt >= CALM_HURT_TICKS;
+    }
+
+    public static boolean night(long dayTime) {
+        long time = dayTime % DAY_TICKS;
+        return time >= NIGHT_STARTS && time < NIGHT_ENDS;
     }
 
     /** Hall-relative: the cot room's side of the last door, on the way out. */

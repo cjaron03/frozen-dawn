@@ -114,6 +114,7 @@ public class OrsaDocumentItem extends Item {
                 if (!docType.equals("villager_journal") && !docType.startsWith("newspaper_")) {
                     grantAdvancement(serverPlayer, "classified_information");
                     PlayerEndStats.incrementOrsaDocumentsRead(serverPlayer);
+                    com.frozendawn.shepherd.ShepherdReactions.saw(serverPlayer, com.frozendawn.shepherd.ShepherdAffinity.Deed.READ_LOG);
                 }
 
                 if (docType.equals("satellite_log")) {
