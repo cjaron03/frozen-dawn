@@ -3,6 +3,7 @@ package com.frozendawn.miller;
 import com.frozendawn.miller.Drives.Drive;
 import com.frozendawn.shepherd.ShepherdAffinity.Deed;
 import com.frozendawn.shepherd.ShepherdFace.Mood;
+import com.frozendawn.shepherd.ShepherdPolicy;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -17,25 +18,43 @@ final class PatternState {
     static final int MAX_HISTORY = 16;
     static final long NOT_SET = -1;
     private static final double PRESENCE_FEEDS = 0.01, TALK_FEEDS = 0.10;
+    /** Not {@link #NOT_SET}: a clock that {@link #age} has moved can land on -1. */
+    private static final long UNARMED = Long.MIN_VALUE;
 
     private Drives drives = new Drives();
     private Feelings feelings = new Feelings();
     private final List<Appraised> history = new ArrayList<>();
     /** The last conversation already counted, so a poll or a reload cannot count it twice. */
     private long heardTalk = NOT_SET;
+    private ImpressionStore impressions = new ImpressionStore();
+    /** When the day's evidence next lands. It runs on game time, because the poll knows no sky. */
+    private long settleAt = UNARMED;
 
     Drives drives() { return drives; }
     Feelings feelings() { return feelings; }
     List<Appraised> history() { return List.copyOf(history); }
+    ImpressionStore impressions() { return impressions; }
 
     void appraise(UUID who, Deed deed, long now) {
         drives.begin(now);
+        arm(now);
+        impressions.saw(who, deed);
         var rule = Appraisal.rule(deed);
         var raised = Appraisal.intensities(rule, Appraisal.scale(rule, drives, now));
         raised.forEach((feeling, intensity) -> feelings.raise(feeling, intensity, now));
         if (rule.drive() != null && rule.feeds() != 0) drives.feed(rule.drive(), rule.feeds(), now);
         history.add(new Appraised(now, who, deed.name(), raised));
         if (history.size() > MAX_HISTORY) history.removeFirst();
+    }
+
+    /** What someone said or asked of her. It reaches only the speaker, and only what they are to her. */
+    void heard(UUID who, Heard heard, long now) {
+        arm(now);
+        impressions.heard(who, heard);
+    }
+
+    private void arm(long now) {
+        if (settleAt == UNARMED) settleAt = now + ShepherdPolicy.DAY_TICKS;
     }
 
     /** {@code near} and {@code lastTalk} are what the poll already knows: nothing here looks at the world. */
@@ -49,6 +68,11 @@ final class PatternState {
             heardTalk = lastTalk;
             drives.feed(Drive.COMPANY, TALK_FEEDS, now);
         }
+        arm(now);
+        if (near > 0 && now >= settleAt) {
+            impressions.settle();
+            settleAt = now + ShepherdPolicy.DAY_TICKS;
+        }
     }
 
     Mood mood(long now) {
@@ -58,6 +82,7 @@ final class PatternState {
     void age(long ticks) {
         drives.age(ticks);
         feelings.age(ticks);
+        if (settleAt != UNARMED) settleAt -= ticks;
     }
 
     void clear() {
@@ -65,6 +90,8 @@ final class PatternState {
         feelings.clear();
         history.clear();
         heardTalk = NOT_SET;
+        impressions.clear();
+        settleAt = UNARMED;
     }
 
     CompoundTag save() {
@@ -76,6 +103,8 @@ final class PatternState {
         for (var entry : history) list.add(entry.save());
         tag.put("history", list);
         tag.putLong("heardTalk", heardTalk);
+        tag.put("impressions", impressions.save());
+        if (settleAt != UNARMED) tag.putLong("settleAt", settleAt);
         return tag;
     }
 
@@ -90,6 +119,8 @@ final class PatternState {
         }
         while (state.history.size() > MAX_HISTORY) state.history.removeFirst();
         if (tag.contains("heardTalk")) state.heardTalk = tag.getLong("heardTalk");
+        state.impressions = ImpressionStore.load(tag.getCompound("impressions"));
+        if (tag.contains("settleAt")) state.settleAt = tag.getLong("settleAt");
         return state;
     }
 }

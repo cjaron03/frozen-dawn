@@ -2,6 +2,7 @@ package com.frozendawn.shepherd;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import com.frozendawn.miller.ImpressionStore;
 import com.frozendawn.shepherd.ShepherdDialogue.Node;
 import com.frozendawn.shepherd.ShepherdDialogue.Response;
 import com.google.gson.JsonObject;
@@ -207,6 +208,13 @@ class ShepherdDialogueDataTest {
         }
         for (String next : exits) walk(nodes, nodes.get(next), path, reached, ends);
         path.pop();
+    }
+
+    @Test
+    void everyNoteNamesATheory() throws Exception {
+        for (Node node : nodes().values()) {
+            for (String note : node.noted()) assertNotNull(ImpressionStore.noted(note), node.id() + ": " + note);
+        }
     }
 
     private static Map<String, String> shepherdLines() throws IOException {

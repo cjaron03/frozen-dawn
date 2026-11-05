@@ -1,6 +1,7 @@
 package com.frozendawn.shepherd;
 
 import com.frozendawn.FrozenDawn;
+import com.frozendawn.miller.Heard;
 import com.frozendawn.miller.MillerPattern;
 import com.frozendawn.network.ShepherdClosePayload;
 import com.frozendawn.network.ShepherdHubPayload;
@@ -8,6 +9,7 @@ import com.frozendawn.network.ShepherdNodePayload;
 import com.frozendawn.shepherd.ShepherdAffinity.Tier;
 import com.frozendawn.shepherd.ShepherdDialogue.Line;
 import com.frozendawn.shepherd.ShepherdDialogue.Node;
+import com.frozendawn.shepherd.ShepherdDialogue.Slot;
 import com.frozendawn.shepherd.ShepherdFace.Mood;
 import java.util.List;
 import java.util.function.Predicate;
@@ -153,6 +155,7 @@ public final class ShepherdTalk {
 
     public static void reply(ServerPlayer player, int conversation, int slot) {
         if (!speaking(player, conversation) || live.talk == null || !live.talk.answer(slot)) return;
+        hear(slot);
         spendPrompt();
         settle();
         if (!live.talk.finished()) {
@@ -164,6 +167,16 @@ public final class ShepherdTalk {
         }
     }
 
+    /** What the reply told her about the speaker, and what the node it led to has to add. */
+    private static void hear(int slot) {
+        var tone = slot == ShepherdConversation.CONTINUE ? null : Slot.values()[slot];
+        var node = live.talk.finished() ? null : live.talk.current();
+        var noted = node == null ? List.<String>of() : node.noted();
+        String keep = node == null ? null : node.keep();
+        if (tone == null && noted.isEmpty() && keep == null) return;
+        MillerPattern.heard(live.player.getServer(), live.player.getUUID(), new Heard.Reply(tone, noted, keep));
+    }
+
     /** A newer prompt raised while this one was on screen is not the one that was answered. */
     private static void spendPrompt() {
         var data = data();
@@ -173,6 +186,7 @@ public final class ShepherdTalk {
 
     public static void action(ServerPlayer player, int conversation, Action action) {
         if (!speaking(player, conversation) || live.talk != null) return;
+        MillerPattern.heard(player.getServer(), player.getUUID(), new Heard.Used(action));
         var data = data();
         switch (action) {
             case TALK -> {

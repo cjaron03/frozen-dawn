@@ -15,7 +15,7 @@ import net.minecraft.server.MinecraftServer;
 /**
  * What runs under her, the counterpart to {@link com.frozendawn.maeve.MaeveDirector}. It decides what she feels, never
  * what she says: her words stay authored. It knows only what comes through
- * {@link com.frozendawn.shepherd.ShepherdReactions#saw} and the poll, and scans nothing itself.
+ * {@link com.frozendawn.shepherd.ShepherdReactions#saw}, {@link #heard} and the poll, and scans nothing itself.
  */
 public final class MillerPattern {
     private MillerPattern() { }
@@ -26,6 +26,13 @@ public final class MillerPattern {
     public static void appraise(MinecraftServer server, UUID who, Deed deed) {
         var runtime = current(server);
         runtime.state().appraise(who, deed, runtime.now());
+        runtime.data.setDirty();
+    }
+
+    /** Her hearing, as {@code saw} is her seeing: what someone said or asked of her, for what she makes of them. */
+    public static void heard(MinecraftServer server, UUID who, Heard heard) {
+        var runtime = current(server);
+        runtime.state().heard(who, heard, runtime.now());
         runtime.data.setDirty();
     }
 
@@ -40,6 +47,11 @@ public final class MillerPattern {
     public static Mood restingMood(MinecraftServer server) {
         var runtime = current(server);
         return runtime.state().mood(runtime.now());
+    }
+
+    /** How sure she is of this about them, from -1 to 1. */
+    public static double confidence(MinecraftServer server, UUID who, ImpressionStore.Theory theory) {
+        return current(server).state().impressions().confidence(who, theory);
     }
 
     /** {@code /fd shepherd skipday}: a day has gone by for her too. */
