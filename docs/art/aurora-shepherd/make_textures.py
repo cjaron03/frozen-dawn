@@ -117,6 +117,7 @@ def main():
     flat('cs1_dock_rail', 'steel2')
     side()
     front('found', 'led_red', False)
+    front('seated', 'led_red', True)
     front('boot', 'led_green', True)
     front('empty', 'led_green', False)
     front('dark', 'led_off', False)

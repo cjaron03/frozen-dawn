@@ -68,7 +68,7 @@ public final class ShepherdDockGameTest {
             var dock = dock(h, DOCK);
             h.assertTrue(state(h, dock) == DockState.FOUND, "A dock in a world where she sleeps is found");
             var player = holding(h, dock, 1000);
-            use(h, dock, player);
+            ShepherdTestWorld.boot(h, dock, player);
             h.assertTrue(player.getItemInHand(InteractionHand.MAIN_HAND).isEmpty(), "The cell is gone");
             h.assertTrue(data(h).stage() == Stage.AWAKE, "She is awake");
             h.assertTrue(state(h, dock) == DockState.BOOT, "The light goes green");
@@ -112,7 +112,7 @@ public final class ShepherdDockGameTest {
             var dock = dock(h, DOCK.east(2));
             h.assertTrue(state(h, dock) == DockState.FOUND && !dock.equals(first), "The next dock is found");
             var player = holding(h, dock, 1000);
-            use(h, dock, player);
+            ShepherdTestWorld.boot(h, dock, player);
             h.assertTrue(data(h).stage() == Stage.AWAKE, "And it wakes her");
             h.succeedWhen(() -> h.assertTrue(data(h).entity() != null, "She lifts off"));
         });

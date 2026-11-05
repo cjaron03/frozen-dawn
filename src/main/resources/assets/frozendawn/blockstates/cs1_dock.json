@@ -3,6 +3,9 @@
     "facing=south,state=found": {
       "model": "frozendawn:block/cs1_dock_found"
     },
+    "facing=south,state=seated": {
+      "model": "frozendawn:block/cs1_dock_seated"
+    },
     "facing=south,state=boot": {
       "model": "frozendawn:block/cs1_dock_boot"
     },
@@ -14,6 +17,10 @@
     },
     "facing=west,state=found": {
       "model": "frozendawn:block/cs1_dock_found",
+      "y": 90
+    },
+    "facing=west,state=seated": {
+      "model": "frozendawn:block/cs1_dock_seated",
       "y": 90
     },
     "facing=west,state=boot": {
@@ -32,6 +39,10 @@
       "model": "frozendawn:block/cs1_dock_found",
       "y": 180
     },
+    "facing=north,state=seated": {
+      "model": "frozendawn:block/cs1_dock_seated",
+      "y": 180
+    },
     "facing=north,state=boot": {
       "model": "frozendawn:block/cs1_dock_boot",
       "y": 180
@@ -46,6 +57,10 @@
     },
     "facing=east,state=found": {
       "model": "frozendawn:block/cs1_dock_found",
+      "y": 270
+    },
+    "facing=east,state=seated": {
+      "model": "frozendawn:block/cs1_dock_seated",
       "y": 270
     },
     "facing=east,state=boot": {

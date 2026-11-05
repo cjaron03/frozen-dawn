@@ -13,6 +13,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.StringRepresentable;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.ItemInteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -37,14 +38,16 @@ import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
 /**
- * The CS-1 dock. While she sleeps she rests on it as part of the block; a charged Power Cell wakes her, and from then
- * on every dock in the world is furniture. The world's truth is {@link ShepherdSavedData}, never the block.
+ * The CS-1 dock. While she sleeps she rests on it as part of the block. A charged Power Cell seats in it and the player
+ * chooses whether to boot her; once she is awake every dock in the world is furniture. The world's truth is {@link ShepherdSavedData}, never the block.
  */
 public final class ShepherdDockBlock extends Block implements EntityBlock {
     public enum DockState implements StringRepresentable {
         /** Red light, empty slot, her at rest. */
         FOUND,
-        /** Green light, the cell in, her recording playing. */
+        /** Red light, a cell in the slot, nothing woken: the player has not chosen yet. */
+        SEATED,
+        /** Green light, the cell in, the BIOS running. */
         BOOT,
         /** The bare dock she lifted off from. */
         EMPTY,
@@ -57,7 +60,7 @@ public final class ShepherdDockBlock extends Block implements EntityBlock {
 
         /** The states that draw her body on the dock. */
         public boolean holdsHer() {
-            return this == FOUND || this == BOOT;
+            return this == FOUND || this == SEATED || this == BOOT;
         }
     }
 
@@ -97,15 +100,26 @@ public final class ShepherdDockBlock extends Block implements EntityBlock {
     @Override protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
         if (!stack.is(ModItems.POWER_CELL)) return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
         if (!(level instanceof ServerLevel server) || !(player instanceof ServerPlayer waker)) return ItemInteractionResult.SUCCESS;
+        if (state.getValue(STATE) == DockState.SEATED) {
+            ShepherdBoot.offer(waker, pos);
+            return ItemInteractionResult.SUCCESS;
+        }
         boolean sleeping = ShepherdSavedData.get(server.getServer()).stage() == Stage.DORMANT;
         if (sleeping && state.getValue(STATE) == DockState.FOUND && PowerCellItem.energy(stack) > 0
                 && level.getBlockEntity(pos) instanceof ShepherdDockBlockEntity dock) {
-            stack.shrink(1);
-            dock.wake(waker);
+            dock.seat(stack.split(1));
+            ShepherdBoot.offer(waker, pos);
         } else {
             level.playSound(null, pos, ModSounds.CS1_DOCK_REFUSE.get(), SoundSource.BLOCKS, 1, 1);
         }
         return ItemInteractionResult.SUCCESS;
+    }
+
+    /** Whatever is in hand, a seated dock offers the choice again. */
+    @Override protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+        if (state.getValue(STATE) != DockState.SEATED) return InteractionResult.PASS;
+        if (player instanceof ServerPlayer waker) ShepherdBoot.offer(waker, pos);
+        return InteractionResult.sidedSuccess(level.isClientSide);
     }
 
     @Override protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {

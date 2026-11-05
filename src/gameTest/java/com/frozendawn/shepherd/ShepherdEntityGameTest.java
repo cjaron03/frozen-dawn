@@ -16,7 +16,6 @@ import java.util.ArrayList;
 import java.util.UUID;
 import net.minecraft.commands.arguments.EntityAnchorArgument;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.AfterBatch;
 import net.minecraft.gametest.framework.BeforeBatch;
 import net.minecraft.gametest.framework.GameTest;
@@ -27,7 +26,6 @@ import net.minecraft.tags.EntityTypeTags;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
@@ -358,8 +356,7 @@ public final class ShepherdEntityGameTest {
         var dock = h.absolutePos(SPOT);
         var player = ShepherdTestWorld.player(h.getLevel(), dock.above());
         player.setItemInHand(InteractionHand.MAIN_HAND, PowerCellItem.charged(1000));
-        var hit = new BlockHitResult(dock.getCenter(), Direction.UP, dock, false);
-        h.getLevel().getBlockState(dock).useItemOn(player.getMainHandItem(), h.getLevel(), player, InteractionHand.MAIN_HAND, hit);
+        ShepherdTestWorld.boot(h, dock, player);
         return dock;
     }
 }

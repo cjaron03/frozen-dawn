@@ -281,8 +281,7 @@ public final class ShepherdTalk {
         if (live != null) end(true);
     }
 
-    private static double nearestHostileOnSpeaker() {
-        var player = live.player;
+    static double nearestHostileOn(ServerPlayer player) {
         double nearest = Double.MAX_VALUE;
         for (var mob : player.level().getEntitiesOfClass(Mob.class, player.getBoundingBox().inflate(ShepherdPolicy.DANGER_RANGE), mob -> mob.getTarget() == player)) {
             nearest = Math.min(nearest, mob.distanceTo(player));
@@ -301,7 +300,7 @@ public final class ShepherdTalk {
         var player = live.player;
         var she = live.she;
         boolean gone = player.isRemoved() || player.hasDisconnected() || she.isRemoved() || she.offline() || player.level() != she.level();
-        if (gone || ShepherdPolicy.talkMustClose(player.distanceTo(she), live.hurt, nearestHostileOnSpeaker())) end(true);
+        if (gone || ShepherdPolicy.talkMustClose(player.distanceTo(she), live.hurt, nearestHostileOn(player))) end(true);
     }
 
     @SubscribeEvent public static void damaged(LivingDamageEvent.Post event) {

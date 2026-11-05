@@ -13,7 +13,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.AfterBatch;
 import net.minecraft.gametest.framework.BeforeBatch;
 import net.minecraft.gametest.framework.GameTest;
@@ -23,7 +22,6 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.GameType;
-import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
@@ -119,8 +117,7 @@ public final class ShepherdTalkGameTest {
             var dock = h.absolutePos(SPOT);
             var player = player(h);
             player.setItemInHand(InteractionHand.MAIN_HAND, PowerCellItem.charged(1000));
-            h.getLevel().getBlockState(dock).useItemOn(player.getMainHandItem(), h.getLevel(), player, InteractionHand.MAIN_HAND,
-                    new BlockHitResult(dock.getCenter(), Direction.UP, dock, false));
+            ShepherdTestWorld.boot(h, dock, player);
             h.succeedWhen(() -> h.assertTrue("fm.boot".equals(ShepherdTalk.liveNode()), "On fm.boot: " + ShepherdTalk.liveNode()));
         });
     }

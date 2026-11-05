@@ -18,7 +18,6 @@ import com.frozendawn.shepherd.ShepherdSavedData.Stage;
 import com.frozendawn.vault.TerminusVaultBuilder;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.AfterBatch;
 import net.minecraft.gametest.framework.BeforeBatch;
 import net.minecraft.gametest.framework.GameTest;
@@ -31,7 +30,6 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.common.util.FakePlayer;
 import net.neoforged.neoforge.gametest.GameTestHolder;
@@ -166,9 +164,7 @@ public final class ShepherdVaultGameTest {
     }
 
     private static void useCell(GameTestHelper h, BlockPos dock, FakePlayer player) {
-        var level = h.getLevel();
-        var hit = new BlockHitResult(dock.getCenter(), Direction.UP, dock, false);
-        level.getBlockState(dock).useItemOn(player.getItemInHand(InteractionHand.MAIN_HAND), level, player, InteractionHand.MAIN_HAND, hit);
+        ShepherdTestWorld.boot(h, dock, player);
     }
 
     @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_vault_reset", timeoutTicks = 400)
@@ -253,7 +249,7 @@ public final class ShepherdVaultGameTest {
         var at = h.absolutePos(SPOT);
         var player = player(h);
         player.setItemInHand(InteractionHand.MAIN_HAND, PowerCellItem.charged(1000));
-        h.getLevel().getBlockState(at).useItemOn(player.getMainHandItem(), h.getLevel(), player, InteractionHand.MAIN_HAND, new BlockHitResult(at.getCenter(), Direction.UP, at, false));
+        ShepherdTestWorld.boot(h, at, player);
         h.startSequence()
                 .thenWaitUntil(() -> h.assertTrue("fm.boot".equals(ShepherdTalk.liveNode()), "Waiting for fm.boot: " + ShepherdTalk.liveNode()))
                 .thenExecute(() -> {
