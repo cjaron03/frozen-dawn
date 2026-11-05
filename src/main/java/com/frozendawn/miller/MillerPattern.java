@@ -49,9 +49,10 @@ public final class MillerPattern {
         runtime.data.setDirty();
     }
 
-    /** {@code /fd shepherd feel}: a feeling at its fullest, for looking at a face. Not something she saw, so it leaves no reason behind. */
+    /** {@code /fd shepherd feel}: only this feeling, at its fullest, for looking at a face. Not something she saw, so it leaves no reason behind. */
     public static void feel(MinecraftServer server, Feeling feeling) {
         var runtime = current(server);
+        runtime.state().feelings().clear();
         runtime.state().feelings().raise(feeling, 1, runtime.now());
         runtime.data.setDirty();
     }

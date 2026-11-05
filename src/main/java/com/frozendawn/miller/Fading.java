@@ -11,10 +11,6 @@ record Fading(double value, long at) {
         return target + (value - target) * StrictMath.pow(0.5, Math.max(0, now - at) / (double) halfLife);
     }
 
-    Fading set(double value, long now) {
-        return new Fading(value, now);
-    }
-
     /** As if {@code ticks} more had passed. */
     Fading aged(long ticks) {
         return new Fading(value, at - ticks);

@@ -146,6 +146,21 @@ class PatternStateTest {
     }
 
     @Test
+    void aTalkFromBeforeTheStateIsNotAConversation() {
+        var state = PatternState.load(new CompoundTag());
+        state.poll(1, 5_000_000, 10_000_000);
+        assertEquals(0.49, state.drives().value(Drive.COMPANY, 10_000_000), 1e-9);
+    }
+
+    @Test
+    void theClockSeededInTheSameTickIsNotAConversation() {
+        var state = new PatternState();
+        state.poll(1, PatternState.NOT_SET, 1000);
+        state.poll(1, 1000, 1100);
+        assertTrue(state.drives().value(Drive.COMPANY, 1100) > 0.47, "Company: " + state.drives().value(Drive.COMPANY, 1100));
+    }
+
+    @Test
     void aFirstDeedOnAnOldWorldStartsAtRestToo() {
         var state = new PatternState();
         state.appraise(ONE, Deed.CLEAR_NIGHT, 10_000_000);

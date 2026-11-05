@@ -10,6 +10,8 @@ import net.minecraft.world.level.saveddata.SavedData;
 public final class PatternSavedData extends SavedData {
     static final String NAME = "frozendawn_shepherd_state";
     private PatternState state = new PatternState();
+    /** A save from a newer build. The game swallows a load that throws and writes a blank state over the file, so this keeps it as it was. */
+    private CompoundTag future;
 
     public static PatternSavedData get(MinecraftServer server) {
         return server.overworld().getDataStorage().computeIfAbsent(
@@ -19,12 +21,13 @@ public final class PatternSavedData extends SavedData {
     PatternState state() { return state; }
 
     @Override public CompoundTag save(CompoundTag tag, HolderLookup.Provider registries) {
-        return tag.merge(state.save());
+        return tag.merge(future != null ? future : state.save());
     }
 
     public static PatternSavedData load(CompoundTag tag, HolderLookup.Provider registries) {
         var data = new PatternSavedData();
-        data.state = PatternState.load(tag);
+        if (tag.getInt("dataVersion") > PatternState.VERSION) data.future = tag;
+        else data.state = PatternState.load(tag);
         return data;
     }
 }

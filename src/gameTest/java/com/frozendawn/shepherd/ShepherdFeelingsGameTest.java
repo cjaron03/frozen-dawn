@@ -20,8 +20,6 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.common.NeoForge;
-import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
@@ -148,8 +146,13 @@ public final class ShepherdFeelingsGameTest {
             h.assertTrue(ShepherdTalk.live(), "They are talking");
             ShepherdReactions.saw(player, Deed.CALLED_SHEPHERD);
             h.assertTrue(inner(h).history().size() == 1, "She heard it");
-            ShepherdTalk.close(player);
-            h.succeed();
+            h.startSequence()
+                    .thenExecuteAfter(5, () -> {
+                        assertFace(h, she, Mood.NEUTRAL);
+                        ShepherdTalk.close(player);
+                    })
+                    .thenExecuteAfter(3, () -> assertFace(h, she, Mood.UNIMPRESSED))
+                    .thenSucceed();
         });
     }
 
@@ -159,14 +162,19 @@ public final class ShepherdFeelingsGameTest {
             var player = player(h);
             player.setGameMode(GameType.SURVIVAL);
             awake(h, player);
+            var drives = inner(h).drives();
             int[] ticks = {0};
             h.startSequence()
                     .thenExecuteAfter(2, () -> {
-                        player.hurt(h.getLevel().damageSources().genericKill(), 1);
-                        NeoForge.EVENT_BUS.post(new LivingDeathEvent(player, h.getLevel().damageSources().generic()));
+                        player.hurt(h.getLevel().damageSources().genericKill(), Float.MAX_VALUE);
+                        h.assertTrue(player.isDeadOrDying(), "They died beside her");
                     })
                     .thenWaitUntil(() -> h.assertTrue(++ticks[0] > ShepherdReactions.POLL_TICKS + 10, "A poll has run"))
-                    .thenExecute(() -> assertFeelsNothing(h))
+                    .thenExecute(() -> {
+                        assertFeelsNothing(h);
+                        // The poll feeds Company with anyone near; nothing else may have moved but by time.
+                        for (var drive : Drive.values()) if (drive != Drive.COMPANY) h.assertTrue(Math.abs(inner(h).drives().get(drive) - drives.get(drive)) < 0.01, drive.name());
+                    })
                     .thenSucceed();
         });
     }
@@ -341,10 +349,12 @@ public final class ShepherdFeelingsGameTest {
         ShepherdTestWorld.whenTicking(h, () -> {
             var she = awake(h, player(h));
             var server = h.getLevel().getServer();
+            server.getCommands().performPrefixedCommand(server.createCommandSourceStack().withSuppressedOutput(), "fd shepherd feel fear");
             server.getCommands().performPrefixedCommand(server.createCommandSourceStack().withSuppressedOutput(), "fd shepherd feel gratitude");
             h.startSequence()
                     .thenExecuteAfter(3, () -> {
                         assertFace(h, she, Mood.AMUSED);
+                        h.assertTrue(inner(h).feelings().get(Feeling.FEAR) == 0, "It replaces what she felt, so the face stays the one asked for");
                         h.assertTrue(inner(h).history().isEmpty(), "It is no event she saw");
                     })
                     .thenSucceed();

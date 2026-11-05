@@ -41,14 +41,14 @@ def scripts():
     setup = [f'execute unless score #built {OBJECTIVE} matches -1 run return 0',
              f'scoreboard players set #built {OBJECTIVE} -2', 'gamemode survival @s',
              'gamerule doMobSpawning false', 'gamerule doDaylightCycle false', 'gamerule doWeatherCycle false',
-             'gamerule doFireTick false', 'gamerule mobGriefing false', 'gamerule keepInventory true', 'gamerule sendCommandFeedback false',
+             'gamerule doFireTick false', 'gamerule mobGriefing false', 'gamerule keepInventory true',
              'gamerule commandBlockOutput false', 'gamerule announceAdvancements false',
              'difficulty normal', 'time set noon', 'weather clear', 'clear @s', 'fd world pause',
              'item replace entity @s hotbar.0 with minecraft:cooked_beef 32', CELL,
              'fill -16 64 -12 16 64 12 minecraft:polished_deepslate', 'setblock 0 65 -4 frozendawn:cs1_dock[facing=south]',
              'setworldspawn 0 65 3', 'spawnpoint @s 0 65 3', 'tp @s 0.5 65 3.5 180 0',
              f'scoreboard players set #built {OBJECTIVE} 1', 'function '+NS+':controls', 'return 1']
-    controls = [GUARD, tell('AURORA FEELINGS CHECK: wake her with the cell and finish the first meeting. A deed plays her reaction, then she rests on what she feels.')]
+    controls = [GUARD, tell('AURORA FEELINGS CHECK: wake her with the cell and finish the first meeting. A deed plays her reaction, then she rests on what she feels. A deed on its cooldown does nothing: [Skip a day] runs them out, and ages her feelings too.')]
     controls += [tell(f'[{deed}]', command='/fd shepherd saw '+deed) for deed in DEEDS]
     controls += [tell(f'[Hold {feeling}]', command='/fd shepherd feel '+feeling, color='green') for feeling in FEELINGS]
     controls += [tell('[Skip a day]', command='/fd shepherd skipday'), tell('[Score -300]', command='/fd shepherd affinity -300'), tell('[Score 0]', command='/fd shepherd affinity 0'),

@@ -73,6 +73,17 @@ class PatternDiagnosticsTest {
         assertEquals("frozendawn_shepherd_state", PatternSavedData.NAME);
     }
 
+    /** The game swallows a load that throws and writes a blank state over the file, so a newer save has to survive this way. */
+    @Test
+    void aFutureSaveIsWrittenBackUntouched() {
+        var tag = new PatternState().save();
+        tag.putInt("dataVersion", PatternState.VERSION + 1);
+        tag.putString("fromTheFuture", "keepsakes");
+        var data = PatternSavedData.load(tag.copy(), null);
+        data.state().appraise(WHO, Deed.WARM_SHELTER, 100);
+        assertEquals(tag, data.save(new net.minecraft.nbt.CompoundTag(), null));
+    }
+
     @Test
     void savedDataRoundTrips() {
         var data = new PatternSavedData();

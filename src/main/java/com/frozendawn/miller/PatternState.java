@@ -42,7 +42,10 @@ final class PatternState {
     void poll(int near, long lastTalk, long now) {
         drives.begin(now);
         if (near > 0) drives.feed(Drive.COMPANY, PRESENCE_FEEDS, now);
-        if (lastTalk > heardTalk) {
+        if (heardTalk == NOT_SET) {
+            // The first look only sets the line: a talk from before this state, or the clock seeded this tick, is no conversation.
+            heardTalk = Math.max(lastTalk, now);
+        } else if (lastTalk > heardTalk) {
             heardTalk = lastTalk;
             drives.feed(Drive.COMPANY, TALK_FEEDS, now);
         }

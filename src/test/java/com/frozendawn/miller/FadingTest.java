@@ -25,7 +25,7 @@ class FadingTest {
     @Test
     void twoStepsEqualOne() {
         var start = new Fading(0.8, 0);
-        var halfway = start.set(start.toward(0.2, 1000, 50), 50);
+        var halfway = new Fading(start.toward(0.2, 1000, 50), 50);
         assertEquals(start.toward(0.2, 1000, 100), halfway.toward(0.2, 1000, 100), 1e-12);
     }
 
