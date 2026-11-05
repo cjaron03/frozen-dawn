@@ -57,6 +57,18 @@ public final class MillerPattern {
         return current(server).state().impressions().confidence(who, theory);
     }
 
+    /** The one thing on her mind, with this person beside her. Only reads. */
+    public static Attention.Focus focus(MinecraftServer server, UUID nearest) {
+        var runtime = current(server);
+        return Attention.on(runtime.state(), nearest, runtime.now());
+    }
+
+    /** What she wants to do about it. Only reads. */
+    public static Urges.Urge urge(MinecraftServer server, UUID nearest) {
+        var runtime = current(server);
+        return runtime.state().urge(nearest, runtime.now());
+    }
+
     /** How long a reply waits, in half laps of her thinking indicator: 0, 1 or 2. */
     public static int halfLaps(MinecraftServer server) {
         var runtime = current(server);
@@ -111,16 +123,17 @@ public final class MillerPattern {
         var drives = new EnumMap<Drive, Double>(Drive.class);
         for (Drive drive : Drive.values()) drives.put(drive, state.drives().value(drive, now));
         return new Snapshot(now, state.mood(now), state.feelings().strongest(now), feelings, drives, state.history(), state.coherence().value(now),
-                state.self().stage(), state.self().walls(), state.impressions().all(), state.keepsakes().counts());
+                state.self().stage(), state.self().walls(), state.impressions().all(), state.keepsakes().counts(), Attention.on(state, null, now));
     }
 
     public static List<String> diagnostics(MinecraftServer server) { return PatternDiagnostics.format(snapshot(server)); }
     public static List<String> explain(MinecraftServer server) { return PatternDiagnostics.explain(snapshot(server)); }
     public static List<String> mind(MinecraftServer server) { return PatternDiagnostics.mind(snapshot(server)); }
 
-    /** {@code strongest} is the feeling on her face, or null when she is Neutral. */
+    /** {@code strongest} is the feeling on her face, or null when she is Neutral. {@code focus} is what is on her mind beside nobody in particular. */
     public record Snapshot(long now, Mood mood, Feeling strongest, Map<Feeling, Double> feelings, Map<Drive, Double> drives, List<Appraised> history,
-                           double coherence, SelfModel.Stage stage, Set<PatternLaws> walls, Map<UUID, Map<Theory, Double>> impressions, Map<UUID, Integer> keepsakes) {
+                           double coherence, SelfModel.Stage stage, Set<PatternLaws> walls, Map<UUID, Map<Theory, Double>> impressions, Map<UUID, Integer> keepsakes,
+                           Attention.Focus focus) {
         public Snapshot {
             feelings = Collections.unmodifiableMap(new EnumMap<>(feelings));
             drives = Collections.unmodifiableMap(new EnumMap<>(drives));

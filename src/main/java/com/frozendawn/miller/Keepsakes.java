@@ -1,5 +1,7 @@
 package com.frozendawn.miller;
 
+import com.frozendawn.shepherd.ShepherdAffinity.Deed;
+import com.frozendawn.shepherd.ShepherdPolicy;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -58,19 +60,41 @@ public final class Keepsakes {
         return least;
     }
 
-    /** The one that matters most among those she has not gone back to in three days, or null. Going back strengthens it. */
-    Keepsake recall(UUID who, long now) {
-        var kept = players.get(who);
-        if (kept == null) return null;
+    /**
+     * Where the one she would go back to now sits, or -1: the one that matters most, a day old at least, not gone back to
+     * in three days, and with something to say about it. One a day, or she recites them.
+     */
+    private int dueAt(UUID who, long now) {
+        var kept = players.getOrDefault(who, List.of());
         int best = -1;
         for (int i = 0; i < kept.size(); i++) {
             var moment = kept.get(i);
-            if (moment.recalled() > 0 && now - moment.recalledAt() < REPEAT_TICKS) continue;
+            if (moment.recalled() > 0 && now - moment.recalledAt() < ShepherdPolicy.DAY_TICKS) return -1;
+            if (moment.recalled() > 0 && now - moment.recalledAt() < REPEAT_TICKS || now - moment.time() < ShepherdPolicy.DAY_TICKS || unspoken(moment.kind())) continue;
             if (best < 0 || moment.salience() > kept.get(best).salience()) best = i;
         }
-        if (best < 0) return null;
-        var recalled = kept.get(best).recalled(RECALL_GAIN, now);
-        kept.set(best, recalled);
+        return best;
+    }
+
+    /** A deed with no lines she keeps to herself, and that goes for the memory of it too. */
+    private static boolean unspoken(String kind) {
+        for (Deed deed : Deed.values()) if (deed.name().equalsIgnoreCase(kind)) return deed.lines().isEmpty();
+        return false;
+    }
+
+    /** Reading it changes nothing. */
+    Keepsake due(UUID who, long now) {
+        int at = dueAt(who, now);
+        return at < 0 ? null : players.get(who).get(at);
+    }
+
+    /** Going back to it strengthens it. Null if none is due. */
+    Keepsake recall(UUID who, long now) {
+        int at = dueAt(who, now);
+        if (at < 0) return null;
+        var kept = players.get(who);
+        var recalled = kept.get(at).recalled(RECALL_GAIN, now);
+        kept.set(at, recalled);
         return recalled;
     }
 

@@ -108,6 +108,11 @@ final class PatternState {
         return feelings.mood(now);
     }
 
+    /** What she wants to do with {@code nearest} beside her. Only reads. */
+    Urges.Urge urge(UUID nearest, long now) {
+        return Urges.pick(Attention.on(this, nearest, now), drives.value(Drive.CURIOSITY, now), drives.value(Drive.COMPANY, now));
+    }
+
     void age(long ticks) {
         drives.age(ticks);
         feelings.age(ticks);

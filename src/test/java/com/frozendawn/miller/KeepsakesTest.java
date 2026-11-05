@@ -71,13 +71,38 @@ class KeepsakesTest {
         var kept = new Keepsakes();
         kept.keep(ONE, "low", 0.4, 0);
         kept.keep(ONE, "high", 0.8, 0);
-        var first = kept.recall(ONE, 100);
+        var first = kept.recall(ONE, DAY);
         assertEquals("high", first.kind(), "The one that mattered most");
         assertEquals(0.8 + 0.2 * Keepsakes.RECALL_GAIN, first.salience(), 1e-12);
         assertEquals(1, first.recalled());
-        assertEquals("low", kept.recall(ONE, 100).kind(), "That one rests");
-        assertNull(kept.recall(ONE, 100 + THREE_DAYS - 1), "Both rest");
-        assertEquals("high", kept.recall(ONE, 100 + THREE_DAYS).kind());
+        assertNull(kept.recall(ONE, 2 * DAY - 1), "One a day");
+        assertEquals("low", kept.recall(ONE, 2 * DAY).kind(), "That one rests");
+        assertNull(kept.recall(ONE, 3 * DAY), "Both rest");
+        assertEquals("high", kept.recall(ONE, DAY + THREE_DAYS).kind());
+    }
+
+    @Test
+    void aMomentWaitsADayToBeAMemory() {
+        var kept = new Keepsakes();
+        kept.keep(ONE, "a", 0.5, 0);
+        assertNull(kept.due(ONE, DAY - 1));
+        assertEquals("a", kept.due(ONE, DAY).kind());
+    }
+
+    @Test
+    void lookingAtWhatIsDueChangesNothing() {
+        var kept = new Keepsakes();
+        kept.keep(ONE, "a", 0.5, 0);
+        var saved = kept.save();
+        kept.due(ONE, DAY);
+        assertEquals(saved, kept.save());
+    }
+
+    @Test
+    void aDeedWithNoWordsStaysUnsaid() {
+        var kept = new Keepsakes();
+        kept.keep(ONE, "clear_night", 0.9, 0);
+        assertNull(kept.due(ONE, DAY));
     }
 
     @Test
@@ -115,9 +140,9 @@ class KeepsakesTest {
     void ageingMovesARecall() {
         var state = new PatternState();
         state.keepsakes().keep(ONE, "a", 0.5, 0);
-        state.keepsakes().recall(ONE, 0);
+        state.keepsakes().recall(ONE, DAY);
         state.age(THREE_DAYS);
-        assertNotNull(state.keepsakes().recall(ONE, 0), "Three days have gone by for it too");
+        assertNotNull(state.keepsakes().recall(ONE, DAY), "Three days have gone by for it too");
     }
 
     @Test
