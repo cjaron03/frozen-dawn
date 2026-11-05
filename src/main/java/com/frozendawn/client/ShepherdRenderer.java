@@ -43,7 +43,7 @@ public final class ShepherdRenderer extends MobRenderer<ShepherdEntity, Shepherd
         @Override public void render(PoseStack pose, MultiBufferSource buffers, int light, ShepherdEntity entity, float limbSwing, float limbSwingAmount,
                 float partial, float age, float headYaw, float headPitch) {
             Mood mood = entity.mood();
-            var motion = ShepherdFace.motion(mood, entity.tickCount, entity.getId());
+            var motion = ShepherdFace.motion(mood, entity.tickCount, entity.getId(), entity.resting());
             int mouth = entity.talking() ? ShepherdFace.talkingMouth(entity.tickCount) : 0;
             if (entity.logo()) {
                 ShepherdFaceRenderer.drawOnModel(pose, buffers, ShepherdFace.logo(ShepherdFace.logoFrame(entity.tickCount)), 0, false, 0);

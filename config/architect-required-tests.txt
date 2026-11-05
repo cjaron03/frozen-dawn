@@ -1051,3 +1051,10 @@ shepherdthepollfeedscompany xml
 shepherdfeelingssurviveareload xml
 shepherdreplayclearsherfeelings xml
 shepherdaskippeddayagesherfeelings xml
+shepherdrestsonwhatshefeels xml
+shepherdthefeelingfadestoneutral xml
+shepherdatwarysheplaysnofeeling xml
+shepherdaskingstaysthinking xml
+shepherdatalkkeepsherface xml
+shepherdisrestingonlywhensherests xml
+shepherdrebootsontoherfeeling xml

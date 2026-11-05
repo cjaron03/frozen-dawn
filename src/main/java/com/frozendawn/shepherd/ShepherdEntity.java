@@ -2,6 +2,7 @@ package com.frozendawn.shepherd;
 
 import com.frozendawn.init.ModEntities;
 import com.frozendawn.init.ModSounds;
+import com.frozendawn.miller.MillerPattern;
 import com.frozendawn.shepherd.ShepherdAffinity.Tier;
 import com.frozendawn.shepherd.ShepherdFace.Mood;
 import java.util.EnumSet;
@@ -42,6 +43,7 @@ public final class ShepherdEntity extends PathfinderMob {
     private static final EntityDataAccessor<Boolean> DATA_OFFLINE = SynchedEntityData.defineId(ShepherdEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Boolean> DATA_TALKING = SynchedEntityData.defineId(ShepherdEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Boolean> DATA_LOGO = SynchedEntityData.defineId(ShepherdEntity.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Boolean> DATA_RESTING = SynchedEntityData.defineId(ShepherdEntity.class, EntityDataSerializers.BOOLEAN);
     private static final double HOVER_BLOCKS = 2.5;
     private static final double HOVER_HEIGHT = 1;
     private static final double AIR_DRAG = 0.91;
@@ -125,6 +127,7 @@ public final class ShepherdEntity extends PathfinderMob {
         builder.define(DATA_OFFLINE, false);
         builder.define(DATA_TALKING, false);
         builder.define(DATA_LOGO, false);
+        builder.define(DATA_RESTING, false);
     }
 
     @Override protected PathNavigation createNavigation(Level level) {
@@ -146,11 +149,27 @@ public final class ShepherdEntity extends PathfinderMob {
 
     /** Offline shows nothing, whatever a conversation last asked for. */
     public void setMood(Mood mood) {
-        if (!offline()) entityData.set(DATA_MOOD, mood.ordinal());
+        show(mood, false);
     }
 
-    /** The face she goes back to. Server side only: the score lives there. */
+    private void show(Mood mood, boolean resting) {
+        if (offline()) return;
+        entityData.set(DATA_MOOD, mood.ordinal());
+        entityData.set(DATA_RESTING, resting);
+    }
+
+    /** A face she has settled on, which keeps its idle life. A reaction or a conversation has none. */
+    public boolean resting() {
+        return entityData.get(DATA_RESTING);
+    }
+
+    /** The face she goes back to: what she feels. Server side only: the score lives there. */
     public void rest() {
+        show(ShepherdSavedData.get(getServer()).tier() == Tier.WARY ? Mood.RECORDING : MillerPattern.restingMood(getServer()), true);
+    }
+
+    /** Her face with someone at the hub: what the talk screen shows, whatever she feels. */
+    void composed() {
         setMood(ShepherdSavedData.get(getServer()).tier() == Tier.WARY ? Mood.RECORDING : Mood.NEUTRAL);
     }
 

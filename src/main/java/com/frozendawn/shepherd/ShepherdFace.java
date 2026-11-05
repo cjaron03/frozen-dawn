@@ -67,9 +67,14 @@ public final class ShepherdFace {
 
     /** Idle life, the same on her body and the talk screen. {@code seed} keeps two views from moving in lockstep. */
     public static Motion motion(Mood mood, int age, int seed) {
+        return motion(mood, age, seed, false);
+    }
+
+    /** {@code resting} is a face she has settled on, which keeps its idle life whatever the mood. */
+    public static Motion motion(Mood mood, int age, int seed, boolean resting) {
         if (mood == Mood.RECORDING || mood == Mood.OFFLINE) return new Motion(0, false);
         int window = age / WINDOW_TICKS, tick = age % WINDOW_TICKS, h = hash(window, seed);
-        var idle = mood == Mood.NEUTRAL ? idle(tick, h) : null;
+        var idle = resting || mood == Mood.NEUTRAL ? idle(tick, h) : null;
         if (idle != null) return new Motion(0, false, idle);
         return new Motion(eyeShift(mood, age, window, tick, h), blink(mood, tick, h));
     }

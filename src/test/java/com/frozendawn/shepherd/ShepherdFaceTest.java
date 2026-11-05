@@ -100,6 +100,36 @@ class ShepherdFaceTest {
         for (var idle : ShepherdFace.EXPRESSIONS) assertTrue(seen.contains(idle), "never " + idle);
     }
 
+    @Test void idlesPlayOnEveryRestingMood() {
+        for (Mood mood : Mood.values()) {
+            if (mood == Mood.RECORDING || mood == Mood.OFFLINE) continue;
+            var seen = java.util.EnumSet.noneOf(ShepherdFace.Idle.class);
+            for (int seed = 0; seed < 40; seed++) for (int age = 0; age < 60000; age++) {
+                var idle = ShepherdFace.motion(mood, age, seed, true).idle();
+                if (idle != null) seen.add(idle);
+            }
+            assertTrue(seen.containsAll(ShepherdFace.EXPRESSIONS), mood + " is missing an expression: " + seen);
+            assertTrue(seen.containsAll(ShepherdFace.ROLL), mood + " never rolls her eyes: " + seen);
+        }
+    }
+
+    @Test void noIdlesOnRecordingOrOffline() {
+        for (Mood mood : new Mood[] {Mood.RECORDING, Mood.OFFLINE}) {
+            for (int age = 0; age < 20000; age++) assertEquals(new ShepherdFace.Motion(0, false), ShepherdFace.motion(mood, age, 7, true), mood + " at " + age);
+        }
+    }
+
+    @Test void noIdlesOffNeutralWhenNotResting() {
+        for (Mood mood : Mood.values()) {
+            if (mood == Mood.NEUTRAL) continue;
+            for (int age = 0; age < 20000; age++) assertTrue(ShepherdFace.motion(mood, age, 7, false).idle() == null, mood + " at " + age);
+        }
+    }
+
+    @Test void neutralKeepsItsIdlesWhetherRestingOrNot() {
+        for (int age = 0; age < 20000; age++) assertEquals(ShepherdFace.motion(Mood.NEUTRAL, age, 7), ShepherdFace.motion(Mood.NEUTRAL, age, 7, false));
+    }
+
     @Test void onlyNeutralHasIdleExpressions() {
         for (Mood mood : Mood.values()) {
             if (mood == Mood.NEUTRAL) continue;

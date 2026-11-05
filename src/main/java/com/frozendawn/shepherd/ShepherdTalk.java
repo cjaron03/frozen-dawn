@@ -245,7 +245,7 @@ public final class ShepherdTalk {
     private static void showMood() {
         if (live.unimpressedTicks > 0) return;
         if (live.talk == null || live.lines.isEmpty()) {
-            live.she.rest();
+            live.she.composed();
         } else {
             live.she.setMood(live.lines.get(live.line).mood());
         }

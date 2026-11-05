@@ -7,6 +7,7 @@ import com.frozendawn.miller.Feelings.Feeling;
 import com.frozendawn.miller.MillerPattern;
 import com.frozendawn.miller.PatternSavedData;
 import com.frozendawn.shepherd.ShepherdAffinity.Deed;
+import com.frozendawn.shepherd.ShepherdFace.Mood;
 import com.frozendawn.shepherd.ShepherdSavedData.Stage;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.AfterBatch;
@@ -50,6 +51,20 @@ public final class ShepherdFeelingsGameTest {
     @AfterBatch(batch = "shepherd_feel_replay") public static void replayAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
     @BeforeBatch(batch = "shepherd_feel_skip") public static void skipBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
     @AfterBatch(batch = "shepherd_feel_skip") public static void skipAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_feel_rests") public static void restsBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_feel_rests") public static void restsAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_feel_fades") public static void fadesBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_feel_fades") public static void fadesAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_feel_wary") public static void waryBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_feel_wary") public static void waryAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_feel_asking") public static void askingBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_feel_asking") public static void askingAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_feel_hub") public static void hubBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_feel_hub") public static void hubAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_feel_resting") public static void restingBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_feel_resting") public static void restingAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_feel_reboot") public static void rebootBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_feel_reboot") public static void rebootAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
 
     private static ShepherdSavedData data(GameTestHelper h) {
         return ShepherdSavedData.get(h.getLevel().getServer());
@@ -201,6 +216,120 @@ public final class ShepherdFeelingsGameTest {
             double after = inner(h).feelings().get(Feeling.REPROACH);
             h.assertTrue(Math.abs(after - before / 2) < 0.01, before + " to " + after);
             h.succeed();
+        });
+    }
+
+    private static void assertFace(GameTestHelper h, ShepherdEntity she, Mood mood) {
+        h.assertTrue(she.mood() == mood, "Her face: " + she.mood());
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_feel_rests", timeoutTicks = 400)
+    public static void shepherdRestsOnWhatSheFeels(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            var she = awake(h, player);
+            ShepherdReactions.saw(player, Deed.READ_LOG);
+            assertFace(h, she, Mood.NEUTRAL);
+            h.startSequence()
+                    .thenExecuteAfter(ShepherdPolicy.REACT_TICKS + 5, () -> assertFace(h, she, Mood.THINKING))
+                    .thenSucceed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_feel_fades", timeoutTicks = 400)
+    public static void shepherdTheFeelingFadesToNeutral(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            var she = awake(h, player);
+            ShepherdReactions.saw(player, Deed.ARCHIVIST_KILLED);
+            h.startSequence()
+                    .thenExecuteAfter(ShepherdPolicy.REACT_TICKS + 5, () -> {
+                        assertFace(h, she, Mood.SAD);
+                        ShepherdReactions.skipDay(h.getLevel().getServer());
+                        ShepherdReactions.skipDay(h.getLevel().getServer());
+                    })
+                    .thenExecuteAfter(3, () -> assertFace(h, she, Mood.NEUTRAL))
+                    .thenSucceed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_feel_wary", timeoutTicks = 400)
+    public static void shepherdAtWaryShePlaysNoFeeling(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            var she = awake(h, player);
+            data(h).affinity(-300);
+            ShepherdReactions.saw(player, Deed.ARCHIVIST_KILLED);
+            h.startSequence()
+                    .thenExecuteAfter(ShepherdPolicy.REACT_TICKS + 5, () -> {
+                        assertFace(h, she, Mood.RECORDING);
+                        h.assertTrue(inner(h).feelings().get(Feeling.DISTRESS) > 0, "She still feels it");
+                    })
+                    .thenSucceed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_feel_asking", timeoutTicks = 400)
+    public static void shepherdAskingStaysThinking(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            var she = awake(h, player);
+            ShepherdReactions.saw(player, Deed.CLEAR_NIGHT);
+            she.askFor(ShepherdPolicy.REACT_TICKS + 40);
+            h.startSequence()
+                    .thenExecuteAfter(ShepherdPolicy.REACT_TICKS + 5, () -> assertFace(h, she, Mood.THINKING))
+                    .thenSucceed();
+        });
+    }
+
+    /** The talk screen's hub is always Neutral, so her body stays with it. */
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_feel_hub", timeoutTicks = 400)
+    public static void shepherdATalkKeepsHerFace(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            var she = awake(h, player);
+            ShepherdReactions.saw(player, Deed.ARCHIVIST_KILLED);
+            she.interact(player, InteractionHand.MAIN_HAND);
+            h.startSequence()
+                    .thenExecuteAfter(5, () -> {
+                        assertFace(h, she, Mood.NEUTRAL);
+                        h.assertTrue(!she.resting(), "A conversation has no resting face");
+                        ShepherdTalk.close(player);
+                    })
+                    .thenExecuteAfter(3, () -> assertFace(h, she, Mood.SAD))
+                    .thenSucceed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_feel_resting", timeoutTicks = 400)
+    public static void shepherdIsRestingOnlyWhenSheRests(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            var she = awake(h, player);
+            h.startSequence()
+                    .thenExecuteAfter(3, () -> {
+                        h.assertTrue(she.resting(), "She has settled");
+                        ShepherdReactions.saw(player, Deed.CLEAR_NIGHT);
+                        she.react(Mood.HAPPY);
+                        h.assertTrue(!she.resting(), "A reaction is not a rest");
+                    })
+                    .thenExecuteAfter(ShepherdPolicy.REACT_TICKS + 5, () -> h.assertTrue(she.resting(), "She has settled again"))
+                    .thenSucceed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_feel_reboot", timeoutTicks = 400)
+    public static void shepherdRebootsOntoHerFeeling(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            var she = awake(h, player);
+            ShepherdReactions.saw(player, Deed.ARCHIVIST_KILLED);
+            she.die(h.getLevel().damageSources().generic());
+            she.rebootIn(5);
+            h.startSequence()
+                    .thenWaitUntil(() -> h.assertTrue(!she.offline(), "Waiting for the reboot"))
+                    .thenExecute(() -> assertFace(h, she, Mood.SAD))
+                    .thenSucceed();
         });
     }
 }
