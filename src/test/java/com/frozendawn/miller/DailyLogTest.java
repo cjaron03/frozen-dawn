@@ -513,4 +513,43 @@ class DailyLogTest {
         after.remove("marks");
         assertEquals(before, after, "No feeling, no keepsake, no impression, no reason");
     }
+
+    @Test
+    void readingHerLogIsAFactThatNeverFades() {
+        var store = new ImpressionStore();
+        assertFalse(store.readLog(ONE));
+        store.read(ONE);
+        store.told(TWO);
+        for (int i = 0; i < 100; i++) store.settle();
+        store = ImpressionStore.load(store.save());
+        assertTrue(store.readLog(ONE));
+        assertFalse(store.readLog(TWO));
+        assertTrue(store.toldOff(TWO));
+        assertFalse(store.toldOff(ONE));
+        store.clear();
+        assertFalse(store.readLog(ONE));
+    }
+
+    @Test
+    void sheOnlyWritesForSomeoneWhoHasRead() {
+        var state = woken();
+        state.impressions().read(TWO);
+        state.poll(1, ONE, 3 * DAY, Tier.NEUTRAL, 3 * DAY + 100);
+        assertNull(state.log().entries().getFirst().note(), "Day 4, but this one has not read it");
+        state.poll(1, ONE, 7 * DAY, Tier.NEUTRAL, 7 * DAY + 100);
+        var other = woken();
+        other.impressions().read(ONE);
+        other.poll(1, ONE, 3 * DAY, Tier.NEUTRAL, 3 * DAY + 100);
+        assertEquals(NOTE + "knows.2", other.log().entries().getFirst().note());
+    }
+
+    @Test
+    void readingCostsAReproachSheKeeps() {
+        var state = woken();
+        state.appraise(ONE, Deed.READ_HER_LOG, 100);
+        assertEquals(0.4, state.feelings().value(Feeling.REPROACH, 100), 1e-9);
+        assertEquals(Feeling.REPROACH, state.feelings().strongest(100));
+        assertEquals("read_her_log", state.keepsakes().of(ONE).getFirst().kind());
+        assertEquals("read_her_log", state.keepsakes().due(ONE, 100 + 2 * DAY).kind(), "She can go back to it");
+    }
 }

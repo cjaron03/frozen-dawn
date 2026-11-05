@@ -57,6 +57,8 @@ public final class ImpressionStore {
 
     /** Who has ever named her. It is a fact, not a theory: it does not fade, and nothing takes it back. */
     private final Set<UUID> named = new LinkedHashSet<>();
+    /** Who has read her log, and who has heard what she thinks about that. Facts too, for the same reason. */
+    private final Set<UUID> read = new LinkedHashSet<>(), told = new LinkedHashSet<>();
 
     /** The theory a dialogue file's {@code "+kind"} or {@code "-kind"} names, or null if it names none. */
     public static Theory noted(String entry) {
@@ -103,7 +105,7 @@ public final class ImpressionStore {
             case AIR_FAILING -> note(who, Theory.CAREFUL, false);
             case LEFT_BEHIND -> note(who, Theory.TALKS_TO_ME, false);
             case CALLED_SHEPHERD -> note(who, Theory.CALLS_ME_AURORA, false);
-            case CLEAR_NIGHT, NINE_FOUND -> { }
+            case CLEAR_NIGHT, NINE_FOUND, READ_HER_LOG -> { }
         }
     }
 
@@ -120,7 +122,7 @@ public final class ImpressionStore {
                 switch (used.action()) {
                     case FOLLOW, LAMP -> note(who, Theory.USES_ME, true);
                     case TALK -> note(who, Theory.USES_ME, false);
-                    case SETTINGS -> { }
+                    case SETTINGS, LOG, LOG_DONE -> { }
                 }
             }
         }
@@ -176,6 +178,22 @@ public final class ImpressionStore {
         return named.contains(who) && confidence(who, Theory.TALKS_TO_ME) >= confidence(who, Theory.USES_ME);
     }
 
+    public boolean readLog(UUID who) {
+        return read.contains(who);
+    }
+
+    void read(UUID who) {
+        read.add(who);
+    }
+
+    public boolean toldOff(UUID who) {
+        return told.contains(who);
+    }
+
+    void told(UUID who) {
+        told.add(who);
+    }
+
     /** Everyone she has a theory on, and what she makes of them. */
     Map<UUID, Map<Theory, Double>> all() {
         var all = new LinkedHashMap<UUID, Map<Theory, Double>>();
@@ -196,6 +214,8 @@ public final class ImpressionStore {
     void clear() {
         players.clear();
         named.clear();
+        read.clear();
+        told.clear();
     }
 
     CompoundTag save() {
@@ -218,10 +238,20 @@ public final class ImpressionStore {
         });
         var tag = new CompoundTag();
         tag.put("players", list);
-        var names = new ListTag();
-        named.forEach(who -> names.add(NbtUtils.createUUID(who)));
-        tag.put("named", names);
+        tag.put("named", people(named));
+        tag.put("read", people(read));
+        tag.put("told", people(told));
         return tag;
+    }
+
+    private static ListTag people(Set<UUID> who) {
+        var list = new ListTag();
+        who.forEach(person -> list.add(NbtUtils.createUUID(person)));
+        return list;
+    }
+
+    private static void load(ListTag list, Set<UUID> into) {
+        for (Tag entry : list) if (((IntArrayTag) entry).size() == 4) into.add(NbtUtils.loadUUID(entry));
     }
 
     private static double count(CompoundTag tag, String name) {
@@ -251,9 +281,9 @@ public final class ImpressionStore {
             store.players.put(player.getUUID("who"), theories);
             if (store.players.size() > MAX_PLAYERS) store.players.remove(store.players.keySet().iterator().next());
         }
-        for (Tag entry : tag.getList("named", Tag.TAG_INT_ARRAY)) {
-            if (((IntArrayTag) entry).size() == 4) store.named.add(NbtUtils.loadUUID(entry));
-        }
+        load(tag.getList("named", Tag.TAG_INT_ARRAY), store.named);
+        load(tag.getList("read", Tag.TAG_INT_ARRAY), store.read);
+        load(tag.getList("told", Tag.TAG_INT_ARRAY), store.told);
         return store;
     }
 }

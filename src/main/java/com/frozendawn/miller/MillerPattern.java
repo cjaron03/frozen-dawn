@@ -60,6 +60,29 @@ public final class MillerPattern {
         return current(server).state().log().entries();
     }
 
+    /** Whether this person has paid for reading it. Only reads. */
+    public static boolean hasRead(MinecraftServer server, UUID who) {
+        return current(server).state().impressions().readLog(who);
+    }
+
+    /** They have paid, once. Charge first: a read she could not see is not marked. */
+    public static void markRead(MinecraftServer server, UUID who) {
+        var runtime = current(server);
+        runtime.state().impressions().read(who);
+        runtime.data.setDirty();
+    }
+
+    /** Whether she has said what she had to about it, or been unable to. Only reads. */
+    public static boolean toldOff(MinecraftServer server, UUID who) {
+        return current(server).state().impressions().toldOff(who);
+    }
+
+    public static void markTold(MinecraftServer server, UUID who) {
+        var runtime = current(server);
+        runtime.state().impressions().told(who);
+        runtime.data.setDirty();
+    }
+
     /** {@code /fd shepherd log write}: an entry now, about this person, without waiting for the day to settle. */
     public static LogEntry writeDay(MinecraftServer server, UUID who, long lastTalk, Tier tier) {
         var runtime = current(server);

@@ -69,6 +69,13 @@
       "lines": [
         { "line": "shepherd.refuse.archivist.yield", "mood": "sad" }
       ]
+    },
+    {
+      "id": "hub.log.read",
+      "lines": [
+        { "line": "shepherd.log.read.1", "mood": "unimpressed" },
+        { "line": "shepherd.log.read.2", "mood": "thinking" }
+      ]
     }
   ]
 }

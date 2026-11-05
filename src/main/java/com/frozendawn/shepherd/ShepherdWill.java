@@ -15,7 +15,7 @@ final class ShepherdWill {
     private static final Map<String, Mood> RECALLS = Map.ofEntries(Map.entry("first_meeting", Mood.NEUTRAL), Map.entry("named", Mood.THINKING), Map.entry("warm_shelter", Mood.NEUTRAL),
             Map.entry("archivist_killed", Mood.SAD), Map.entry("left_behind", Mood.UNIMPRESSED), Map.entry("air_failing", Mood.THINKING), Map.entry("read_log", Mood.THINKING),
             Map.entry("shelter_froze", Mood.UNIMPRESSED), Map.entry("called_shepherd", Mood.UNIMPRESSED), Map.entry("nine_found", Mood.SAD), Map.entry("t3_stars", Mood.NEUTRAL),
-            Map.entry("t4_off", Mood.THINKING), Map.entry("t5_before", Mood.THINKING));
+            Map.entry("t4_off", Mood.THINKING), Map.entry("t5_before", Mood.THINKING), Map.entry("read_her_log", Mood.UNIMPRESSED));
     private static final Map<String, Mood> WALLS = Map.of("lagged", Mood.THINKING, "legible", Mood.UNIMPRESSED, "exploitable", Mood.NEUTRAL,
             "fallible", Mood.SAD, "bounded", Mood.SAD, "causal", Mood.NEUTRAL);
 

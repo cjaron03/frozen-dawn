@@ -6,12 +6,16 @@ import com.frozendawn.event.PlayerTickHandler;
 import com.frozendawn.gametest.GameTestTemplates;
 import com.frozendawn.miller.LogEntry;
 import com.frozendawn.miller.MillerPattern;
+import com.frozendawn.miller.PatternSavedData;
 import com.frozendawn.shepherd.ShepherdSavedData.Stage;
+import com.frozendawn.shepherd.ShepherdTalk.Action;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.AfterBatch;
 import net.minecraft.gametest.framework.BeforeBatch;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EntityType;
@@ -27,7 +31,8 @@ public final class ShepherdLogGameTest {
     private static final BlockPos SPOT = new BlockPos(10, 4, 10);
     private static final int A_POLL = ShepherdReactions.POLL_TICKS + 10, TOP_Y = 112, MIDNIGHT = 18000;
     private static final float STARS = 0.8F;
-    private static final String NOTE = "shepherd.log.note.";
+    private static final String NOTE = "shepherd.log.note.", READ = "hub.log.read";
+    private static final int SCORE = 100, COST = 5;
 
     private static long apocalypseTicks;
 
@@ -54,6 +59,22 @@ public final class ShepherdLogGameTest {
     @AfterBatch(batch = "shepherd_log_close_call") public static void closeCallAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
     @BeforeBatch(batch = "shepherd_log_fight") public static void fightBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
     @AfterBatch(batch = "shepherd_log_fight") public static void fightAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_read_once") public static void readOnceBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_read_once") public static void readOnceAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_read_second") public static void readSecondBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_read_second") public static void readSecondAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_read_empty") public static void readEmptyBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_read_empty") public static void readEmptyAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_read_leaving") public static void readLeavingBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_read_leaving") public static void readLeavingAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_read_closed") public static void readClosedBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_read_closed") public static void readClosedAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_read_wary") public static void readWaryBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_read_wary") public static void readWaryAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_read_blind") public static void readBlindBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_read_blind") public static void readBlindAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_read_reload") public static void readReloadBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_read_reload") public static void readReloadAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
 
     private static ShepherdSavedData data(GameTestHelper h) {
         return ShepherdSavedData.get(h.getLevel().getServer());
@@ -246,6 +267,174 @@ public final class ShepherdLogGameTest {
                     })
                     .thenExecuteAfter(A_POLL, () -> assertNote(h, "fight.product"))
                     .thenSucceed();
+        });
+    }
+
+    /** Beside her, with a day written and something to lose. */
+    private static ShepherdEntity withADay(GameTestHelper h, ServerPlayer player) {
+        var she = awake(h, player);
+        data(h).flag(ShepherdPrompt.FIRST_MEETING_DONE, true);
+        data(h).affinity(SCORE);
+        ShepherdReactions.writeDay(player);
+        return she;
+    }
+
+    private static void act(ServerPlayer player, Action action) {
+        ShepherdTalk.action(player, ShepherdTalk.liveId(), action);
+    }
+
+    private static void assertScore(GameTestHelper h, int score) {
+        h.assertTrue(data(h).affinity() == score, "Expected " + score + ", is " + data(h).affinity());
+    }
+
+    private static void assertNode(GameTestHelper h, String node) {
+        h.assertTrue(java.util.Objects.equals(node, ShepherdTalk.liveNode()), "Expected " + node + ", on " + ShepherdTalk.liveNode());
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_read_once", timeoutTicks = 200)
+    public static void shepherdTheFirstReadCostsOnce(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            var she = withADay(h, player);
+            ShepherdTalk.openHub(player, she);
+            act(player, Action.LOG);
+            assertScore(h, SCORE - COST);
+            act(player, Action.LOG);
+            assertScore(h, SCORE - COST);
+            act(player, Action.LOG_DONE);
+            assertNode(h, READ);
+            ShepherdTalk.reply(player, ShepherdTalk.liveId(), ShepherdConversation.CONTINUE);
+            assertNode(h, null);
+            h.assertTrue(ShepherdTalk.live(), "Back on the hub");
+            act(player, Action.LOG);
+            act(player, Action.LOG_DONE);
+            assertNode(h, null);
+            assertScore(h, SCORE - COST);
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_read_second", timeoutTicks = 200)
+    public static void shepherdASecondPlayerPaysToo(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            var other = player(h);
+            var she = withADay(h, player);
+            ShepherdTalk.openHub(player, she);
+            act(player, Action.LOG);
+            ShepherdTalk.close(player);
+            ShepherdTalk.openHub(other, she);
+            assertNode(h, null);
+            act(other, Action.LOG);
+            assertScore(h, SCORE - 2 * COST);
+            act(other, Action.LOG_DONE);
+            assertNode(h, READ);
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_read_empty", timeoutTicks = 200)
+    public static void shepherdAnEmptyLogCostsNothing(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            var she = awake(h, player);
+            data(h).flag(ShepherdPrompt.FIRST_MEETING_DONE, true);
+            data(h).affinity(SCORE);
+            ShepherdTalk.openHub(player, she);
+            act(player, Action.LOG);
+            act(player, Action.LOG_DONE);
+            assertScore(h, SCORE);
+            assertNode(h, null);
+            h.assertTrue(!MillerPattern.hasRead(h.getLevel().getServer(), player.getUUID()), "There was nothing to read");
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_read_leaving", timeoutTicks = 200)
+    public static void shepherdLeavingTheLogPlaysHerLines(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            var she = withADay(h, player);
+            ShepherdTalk.openHub(player, she);
+            act(player, Action.LOG);
+            assertNode(h, null);
+            act(player, Action.LOG_DONE);
+            h.assertTrue(ShepherdTalk.liveLines().size() == 2, "Both lines: " + ShepherdTalk.liveLines());
+            h.assertTrue(ShepherdTalk.liveSent().lines().getFirst().mood() == ShepherdFace.Mood.UNIMPRESSED, "She knows");
+            h.assertTrue(ShepherdTalk.liveSent().lines().getLast().mood() == ShepherdFace.Mood.THINKING, "She has decided");
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_read_closed", timeoutTicks = 200)
+    public static void shepherdAClosedReadPlaysAtTheNextTalk(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            var she = withADay(h, player);
+            ShepherdTalk.openHub(player, she);
+            act(player, Action.LOG);
+            ShepherdTalk.close(player);
+            ShepherdTalk.openHub(player, she);
+            assertNode(h, READ);
+            ShepherdTalk.reply(player, ShepherdTalk.liveId(), ShepherdConversation.CONTINUE);
+            h.assertTrue(ShepherdTalk.live(), "Then the hub, as the mockup draws it");
+            ShepherdTalk.close(player);
+            ShepherdTalk.openHub(player, she);
+            assertNode(h, null);
+            assertScore(h, SCORE - COST);
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_read_wary", timeoutTicks = 200)
+    public static void shepherdAtWaryTheReadCostsAndSheSaysNothing(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            var she = withADay(h, player);
+            data(h).affinity(-300);
+            ShepherdTalk.openHub(player, she);
+            act(player, Action.LOG);
+            assertScore(h, -300 - COST);
+            act(player, Action.LOG_DONE);
+            assertNode(h, null);
+            data(h).affinity(SCORE);
+            ShepherdTalk.close(player);
+            ShepherdTalk.openHub(player, she);
+            assertNode(h, null);
+            h.assertTrue(MillerPattern.toldOff(h.getLevel().getServer(), player.getUUID()), "Dropped, and marked as said");
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_read_blind", timeoutTicks = 200)
+    public static void shepherdTheFirstReadCostsWhateverSheCanSee(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            var she = withADay(h, player);
+            ShepherdTalk.openHub(player, she);
+            she.goOffline();
+            act(player, Action.LOG);
+            assertScore(h, SCORE);
+            h.assertTrue(!MillerPattern.hasRead(h.getLevel().getServer(), player.getUUID()), "A read she could not charge is not marked paid");
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_read_reload", timeoutTicks = 200)
+    public static void shepherdTheReadSurvivesAReload(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            var she = withADay(h, player);
+            ShepherdTalk.openHub(player, she);
+            act(player, Action.LOG);
+            ShepherdTalk.close(player);
+            var registries = h.getLevel().registryAccess();
+            var saved = PatternSavedData.get(h.getLevel().getServer()).save(new CompoundTag(), registries);
+            var again = PatternSavedData.load(saved, registries).save(new CompoundTag(), registries);
+            h.assertTrue(again.equals(saved), "A reload changes nothing");
+            h.assertTrue(again.getCompound("impressions").getList("read", Tag.TAG_INT_ARRAY).size() == 1, "They have read it");
+            h.assertTrue(again.getCompound("impressions").getList("told", Tag.TAG_INT_ARRAY).isEmpty(), "And are still owed her lines");
+            h.succeed();
         });
     }
 }

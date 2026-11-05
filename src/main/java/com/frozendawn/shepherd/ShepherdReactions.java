@@ -86,31 +86,32 @@ public final class ShepherdReactions {
         saw(player, deed, true);
     }
 
-    /** {@code aloud} false counts it and shows on her face, and leaves the strip alone. */
-    public static void saw(ServerPlayer player, Deed deed, boolean aloud) {
+    /** {@code aloud} false counts it and shows on her face, and leaves the strip alone. True if it counted: she has to see it, and it has to be off cooldown. */
+    public static boolean saw(ServerPlayer player, Deed deed, boolean aloud) {
         var server = player.getServer();
         var she = watching(player);
-        if (she == null) return;
+        if (she == null) return false;
         var data = ShepherdSavedData.get(server);
         long now = server.overworld().getGameTime();
-        if (now < data.deedReady(deed.name())) return;
+        if (now < data.deedReady(deed.name())) return false;
         data.deedReady(deed.name(), now + deed.cooldownTicks());
         data.affinity(data.affinity() + deed.score());
         MillerPattern.appraise(server, player.getUUID(), deed);
-        if (ShepherdTalk.live()) return;
+        if (ShepherdTalk.live()) return true;
         boolean silent = quiet(data, now) || !aloud;
         if (!deed.lines().isEmpty() && !silent) data.lastAmbient(now);
         boolean wary = data.tier() == Tier.WARY;
         if (!wary) she.react(deed.mood());
-        if (silent) return;
+        if (silent) return true;
         Say line = ShepherdAffinity.pick(reachable(server, deed.lines()), lastSaid.get(deed), she.getRandom());
-        if (line == null) return;
+        if (line == null) return true;
         lastSaid.put(deed, line);
         if (wary) {
             speak(she, deed.liked() ? ShepherdAffinity.WARY_LIKED : ShepherdAffinity.WARY_DISLIKED, Mood.RECORDING, null);
         } else {
             speak(she, line.key(data.heavy()), deed.mood(), null);
         }
+        return true;
     }
 
     /** She is not saying anything today. Her face and the score carry on: this is only what reaches the strip. */

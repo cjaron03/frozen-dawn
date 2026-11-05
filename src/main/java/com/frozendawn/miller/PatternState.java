@@ -142,7 +142,7 @@ final class PatternState {
         }
         var strongest = feelings.strongest(now);
         return new DailyLog.Day(now, self.lean() != SelfModel.Lean.NONE, self.stage(), tier, coherence.value(now), strongest, strongest == null ? 0 : feelings.value(strongest, now),
-                marks.of(who, lastTalk), deeds, marks.backs(who), marks.unseen(who, now), false, nineFound);
+                marks.of(who, lastTalk), deeds, marks.backs(who), marks.unseen(who, now), impressions.readLog(who), nineFound);
     }
 
     Mood mood(long now) {
