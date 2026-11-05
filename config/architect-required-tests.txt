@@ -941,3 +941,8 @@ shepherdahostiledelaystheprompt xml
 shepherdahurtdelaystheprompt xml
 shepherdthepromptstopsatthree xml
 shepherdthepromptsurvivesareload xml
+shepherdesckeepstheexitlinewaiting xml
+shepherdahitkeepstheexitlinewaiting xml
+shepherdaclickspendstheexitline xml
+shepherdaresumeleavesthepromptwaiting xml
+shepherdanewerpromptsurvivestheanswer xml

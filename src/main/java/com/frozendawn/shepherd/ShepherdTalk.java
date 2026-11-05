@@ -43,6 +43,8 @@ public final class ShepherdTalk {
         /** Null while the hub is showing. */
         ShepherdConversation talk;
         boolean fromHub;
+        /** The prompt this was opened from, which stays waiting until an answer shows it was heard. */
+        String fromPrompt;
         boolean hurt;
         int affinityApplied;
         int unimpressedTicks;
@@ -73,10 +75,12 @@ public final class ShepherdTalk {
             return;
         }
         live = new Live(player, she);
-        String waiting = waitingNode(data());
+        var data = data();
+        String waiting = waitingNode(data);
         if (waiting == null) {
             showHub();
         } else {
+            if (waiting.equals(data.promptNode())) live.fromPrompt = waiting;
             begin(waiting, false);
         }
     }
@@ -89,8 +93,9 @@ public final class ShepherdTalk {
             data.resumeNode(null);
         }
         String prompt = data.promptNode();
+        if (prompt == null || nodes.containsKey(prompt)) return prompt;
         data.promptNode(null);
-        return nodes.containsKey(prompt == null ? "" : prompt) ? prompt : null;
+        return null;
     }
 
     public static void start(ServerPlayer player, String node) {
@@ -127,6 +132,7 @@ public final class ShepherdTalk {
 
     public static void reply(ServerPlayer player, int conversation, int slot) {
         if (!speaking(player, conversation) || live.talk == null || !live.talk.answer(slot)) return;
+        spendPrompt();
         settle();
         if (!live.talk.finished()) {
             send();
@@ -135,6 +141,13 @@ public final class ShepherdTalk {
         } else {
             end(true);
         }
+    }
+
+    /** A newer prompt raised while this one was on screen is not the one that was answered. */
+    private static void spendPrompt() {
+        var data = data();
+        if (live.fromPrompt != null && live.fromPrompt.equals(data.promptNode())) data.promptNode(null);
+        live.fromPrompt = null;
     }
 
     public static void action(ServerPlayer player, int conversation, Action action) {

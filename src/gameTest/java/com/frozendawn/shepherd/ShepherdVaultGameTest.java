@@ -80,6 +80,16 @@ public final class ShepherdVaultGameTest {
     @AfterBatch(batch = "shepherd_prompt_three") public static void threeAfter(ServerLevel l) { after(l); }
     @BeforeBatch(batch = "shepherd_prompt_reload") public static void reloadBefore(ServerLevel l) { before(l); }
     @AfterBatch(batch = "shepherd_prompt_reload") public static void reloadAfter(ServerLevel l) { after(l); }
+    @BeforeBatch(batch = "shepherd_prompt_kept") public static void keptBefore(ServerLevel l) { before(l); }
+    @AfterBatch(batch = "shepherd_prompt_kept") public static void keptAfter(ServerLevel l) { after(l); }
+    @BeforeBatch(batch = "shepherd_prompt_kept_hit") public static void keptHitBefore(ServerLevel l) { before(l); }
+    @AfterBatch(batch = "shepherd_prompt_kept_hit") public static void keptHitAfter(ServerLevel l) { after(l); }
+    @BeforeBatch(batch = "shepherd_prompt_spent") public static void spentBefore(ServerLevel l) { before(l); }
+    @AfterBatch(batch = "shepherd_prompt_spent") public static void spentAfter(ServerLevel l) { after(l); }
+    @BeforeBatch(batch = "shepherd_prompt_resume") public static void promptResumeBefore(ServerLevel l) { before(l); }
+    @AfterBatch(batch = "shepherd_prompt_resume") public static void promptResumeAfter(ServerLevel l) { after(l); }
+    @BeforeBatch(batch = "shepherd_prompt_newer") public static void newerBefore(ServerLevel l) { before(l); }
+    @AfterBatch(batch = "shepherd_prompt_newer") public static void newerAfter(ServerLevel l) { after(l); }
     @BeforeBatch(batch = "shepherd_vault_reset") public static void resetBefore(ServerLevel l) { before(l); }
     @AfterBatch(batch = "shepherd_vault_reset") public static void resetAfter(ServerLevel l) { after(l); }
     @BeforeBatch(batch = "shepherd_vault_reset_awake") public static void awakeBefore(ServerLevel l) { before(l); }
@@ -389,8 +399,9 @@ public final class ShepherdVaultGameTest {
                     .thenExecute(() -> {
                         she.interact(player, InteractionHand.MAIN_HAND);
                         h.assertTrue(ShepherdPrompt.DOORS.equals(ShepherdTalk.liveNode()), "The right-click plays it: " + ShepherdTalk.liveNode());
-                        h.assertTrue(data(h).promptNode() == null, "It is no longer waiting");
-                        say(player, ASK, CONTINUE);
+                        say(player, ASK);
+                        h.assertTrue(data(h).promptNode() == null, "An answer spends it");
+                        say(player, CONTINUE);
                         she.interact(player, InteractionHand.MAIN_HAND);
                         h.assertTrue(ShepherdTalk.live() && ShepherdTalk.liveNode() == null, "The next is the hub: " + ShepherdTalk.liveNode());
                     })
@@ -412,6 +423,85 @@ public final class ShepherdVaultGameTest {
                         h.assertTrue(ShepherdPrompt.DOORS.equals(ShepherdTalk.liveNode()), "She picks it back up: " + ShepherdTalk.liveNode());
                     })
                     .thenSucceed();
+        });
+    }
+
+    /** She is met and done, with the exit line waiting and open on {@code player}'s screen. */
+    private static ShepherdEntity onTheExitLine(GameTestHelper h, ServerPlayer player) {
+        var she = metInTheVault(h, player);
+        data(h).flag(ShepherdPrompt.FIRST_MEETING_DONE, true);
+        data(h).promptNode(ShepherdPrompt.EXIT);
+        she.interact(player, InteractionHand.MAIN_HAND);
+        h.assertTrue(ShepherdPrompt.EXIT.equals(ShepherdTalk.liveNode()), "On the exit line: " + ShepherdTalk.liveNode());
+        return she;
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_prompt_kept", timeoutTicks = 400)
+    public static void shepherdEscKeepsTheExitLineWaiting(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            var she = onTheExitLine(h, player);
+            ShepherdTalk.close(player);
+            she.interact(player, InteractionHand.MAIN_HAND);
+            h.assertTrue(ShepherdPrompt.EXIT.equals(ShepherdTalk.liveNode()), "It has no replies to resume on, and still waits: " + ShepherdTalk.liveNode());
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_prompt_kept_hit", timeoutTicks = 400)
+    public static void shepherdAHitKeepsTheExitLineWaiting(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            player.setGameMode(GameType.SURVIVAL);
+            var she = onTheExitLine(h, player);
+            player.hurt(h.getLevel().damageSources().genericKill(), 1);
+            h.startSequence()
+                    .thenWaitUntil(() -> h.assertTrue(!ShepherdTalk.live(), "A hit closes the screen"))
+                    .thenExecute(() -> {
+                        she.interact(player, InteractionHand.MAIN_HAND);
+                        h.assertTrue(ShepherdPrompt.EXIT.equals(ShepherdTalk.liveNode()), "And she still waits: " + ShepherdTalk.liveNode());
+                    })
+                    .thenSucceed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_prompt_spent", timeoutTicks = 400)
+    public static void shepherdAClickSpendsTheExitLine(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            var she = onTheExitLine(h, player);
+            say(player, CONTINUE);
+            h.assertTrue(data(h).promptNode() == null, "A click has heard it: " + data(h).promptNode());
+            she.interact(player, InteractionHand.MAIN_HAND);
+            h.assertTrue(ShepherdTalk.live() && ShepherdTalk.liveNode() == null, "The next is the hub: " + ShepherdTalk.liveNode());
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_prompt_newer", timeoutTicks = 400)
+    public static void shepherdANewerPromptSurvivesTheAnswer(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            onTheExitLine(h, player);
+            data(h).promptNode(ShepherdPrompt.DOORS);
+            say(player, CONTINUE);
+            h.assertTrue(ShepherdPrompt.DOORS.equals(data(h).promptNode()), "Raised while the other was open: " + data(h).promptNode());
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_prompt_resume", timeoutTicks = 400)
+    public static void shepherdAResumeLeavesThePromptWaiting(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            var she = metInTheVault(h, player);
+            data(h).resumeNode("fm.room");
+            data(h).promptNode(ShepherdPrompt.EXIT);
+            she.interact(player, InteractionHand.MAIN_HAND);
+            h.assertTrue("fm.room".equals(ShepherdTalk.liveNode()), "The unfinished one first: " + ShepherdTalk.liveNode());
+            say(player, ASK);
+            h.assertTrue(ShepherdPrompt.EXIT.equals(data(h).promptNode()), "The prompt is not what was answered: " + data(h).promptNode());
+            h.succeed();
         });
     }
 
