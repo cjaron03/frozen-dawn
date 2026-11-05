@@ -45,6 +45,8 @@ public final class ShepherdPolicy {
     public static final int WATCH_BLOCKS = 16;
     public static final int STILL_TICKS = 300, LOOK_TICKS = 100, CURIOUS_GAP_TICKS = 1200, CURIOUS_BLOCKS = 8, STILL_BLOCKS = 3;
     public static final int FLINCH_TICKS = 20;
+    /** Two hearts: how little someone has left for her to call it close. */
+    public static final float CLOSE_CALL_HEALTH = 4;
     public static final int GLAD_TICKS = 40;
     public static final int GLAD_AWAY_TICKS = 1200;
     public static final int DAY_TICKS = 24000;

@@ -48,6 +48,7 @@ final class PatternDiagnostics {
         var lines = new ArrayList<String>();
         lines.add(header(snapshot));
         lines.add(String.format(Locale.ROOT, "coherence=%.3f stage=%s lean=%s walls=%s", snapshot.coherence(), snapshot.stage(), snapshot.lean(), snapshot.walls().stream().sorted().toList()));
+        lines.add("log last=" + snapshot.lastNote());
         var people = new LinkedHashSet<>(snapshot.impressions().keySet());
         people.addAll(snapshot.keepsakes().keySet());
         for (var who : people) {

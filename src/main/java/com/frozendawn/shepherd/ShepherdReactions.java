@@ -5,6 +5,8 @@ import com.frozendawn.aurora.AuroraEvents;
 import com.frozendawn.block.ThermalHeaterBlock;
 import com.frozendawn.data.ApocalypseState;
 import com.frozendawn.event.PlayerTickHandler;
+import com.frozendawn.miller.LogEntry;
+import com.frozendawn.miller.Mark;
 import com.frozendawn.miller.MillerPattern;
 import com.frozendawn.miller.Urges;
 import com.frozendawn.network.ShepherdLinePayload;
@@ -23,6 +25,7 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
@@ -255,13 +258,21 @@ public final class ShepherdReactions {
         var near = near(level, she);
         if (near.isEmpty()) return;
         var data = ShepherdSavedData.get(server);
-        MillerPattern.poll(server, near.size(), data.lastTalk(), data.tier().atLeast(Tier.TRUSTED));
+        var nearest = near.stream().min(Comparator.comparingDouble(she::distanceTo)).orElseThrow().getUUID();
+        for (var player : near) if (player.isAlive()) MillerPattern.marked(server, player.getUUID(), Mark.BACK);
+        MillerPattern.poll(server, near.size(), nearest, data.lastTalk(), data.tier());
         comeBack(server, she, near.getFirst());
         for (var player : near) look(level, player);
         lookUp(level, she, ShepherdSavedData.get(server));
         ShepherdEggs.look(level, she, near);
         ShepherdWill.sorry(level);
-        commentate(server, level, she, near);
+        commentate(server, level, she, near, nearest);
+    }
+
+    /** {@code /fd shepherd log write}. */
+    public static LogEntry writeDay(ServerPlayer player) {
+        var data = ShepherdSavedData.get(player.getServer());
+        return MillerPattern.writeDay(player.getServer(), player.getUUID(), data.lastTalk(), data.tier());
     }
 
     /** The first time she is slow she says so, so nobody takes it for a bug. Staying quiet does not hold this one back. */
@@ -270,14 +281,13 @@ public final class ShepherdReactions {
     }
 
     /** She asks what she wants first. Only staying quiet holds back what the moment offers, and not for long: the body's urges leave her voice free. */
-    private static void commentate(MinecraftServer server, ServerLevel level, ShepherdEntity she, List<ServerPlayer> near) {
+    private static void commentate(MinecraftServer server, ServerLevel level, ShepherdEntity she, List<ServerPlayer> near, UUID nearest) {
         var data = ShepherdSavedData.get(server);
         long now = server.overworld().getGameTime();
         if (data.lastTalk() == ShepherdSavedData.NOT_SET) data.lastTalk(now);
         if (now - lastFight > ShepherdPolicy.FIGHT_LINE_TICKS) lastFight = ShepherdSavedData.NOT_SET;
         if (backFromQuiet(level, data, now) || ShepherdWill.slip(level)) return;
         sayWhenSlow(server, level, data);
-        var nearest = near.stream().min(Comparator.comparingDouble(she::distanceTo)).orElseThrow().getUUID();
         var urge = MillerPattern.urge(server, nearest);
         if (urge != Urges.Urge.STAY_QUIET) quietSince = ShepherdSavedData.NOT_SET;
         else if (quietSince == ShepherdSavedData.NOT_SET) quietSince = now;
@@ -363,6 +373,7 @@ public final class ShepherdReactions {
 
     private static void look(ServerLevel level, ServerPlayer player) {
         if (PlayerTickHandler.airFailing(player.getUUID())) saw(player, Deed.AIR_FAILING);
+        if (PlayerTickHandler.resolvedTemperature(player) <= ShepherdPolicy.COLD_LINE_C) MillerPattern.marked(level.getServer(), player.getUUID(), Mark.COLD);
         var at = player.blockPosition();
         if (clearNight(level, at)) saw(player, Deed.CLEAR_NIGHT);
         if (!TemperatureManager.isEnclosed(level, at)) return;
@@ -387,14 +398,23 @@ public final class ShepherdReactions {
         var she = watching(player);
         if (she == null) return;
         if (ShepherdSavedData.get(player.getServer()).tier() != Tier.WARY) she.react(Mood.ALARMED, ShepherdPolicy.FLINCH_TICKS);
-        if (event.getSource().getEntity() instanceof Enemy) lastFight = player.getServer().overworld().getGameTime();
+        if (event.getSource().getEntity() instanceof Enemy) fought(player);
+        if (player.isAlive() && player.getHealth() <= ShepherdPolicy.CLOSE_CALL_HEALTH) MillerPattern.marked(player.getServer(), player.getUUID(), Mark.CLOSE_CALL);
     }
 
-    /** A fight someone died in is one she never mentions: she does not know they came back. */
+    private static void fought(ServerPlayer player) {
+        lastFight = player.getServer().overworld().getGameTime();
+        MillerPattern.marked(player.getServer(), player.getUUID(), Mark.FIGHT);
+    }
+
+    /** A fight someone died in is one she never mentions: she does not know they came back. Her log may ask, if she saw it, and that goes no further. */
     @SubscribeEvent public static void killed(LivingDeathEvent event) {
-        if (event.getEntity() instanceof ServerPlayer) lastFight = ShepherdSavedData.NOT_SET;
+        if (event.getEntity() instanceof ServerPlayer stopped) {
+            lastFight = ShepherdSavedData.NOT_SET;
+            if (watching(stopped) != null) MillerPattern.marked(stopped.getServer(), stopped.getUUID(), Mark.STOPPED);
+        }
         if (!(event.getEntity() instanceof Enemy) || !(event.getSource().getEntity() instanceof ServerPlayer player)) return;
-        if (watching(player) != null) lastFight = player.getServer().overworld().getGameTime();
+        if (watching(player) != null) fought(player);
     }
 
     @SubscribeEvent public static void chat(ServerChatEvent event) {

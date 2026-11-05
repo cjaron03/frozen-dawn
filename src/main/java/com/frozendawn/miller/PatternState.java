@@ -2,9 +2,11 @@ package com.frozendawn.miller;
 
 import com.frozendawn.miller.Drives.Drive;
 import com.frozendawn.shepherd.ShepherdAffinity.Deed;
+import com.frozendawn.shepherd.ShepherdAffinity.Tier;
 import com.frozendawn.shepherd.ShepherdFace.Mood;
 import com.frozendawn.shepherd.ShepherdPolicy;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
@@ -41,6 +43,7 @@ final class PatternState {
     /** What she wanted of the sky when a clear night last fed it, and when. Null until one has. */
     private Fading nightSky;
     private DailyLog log = new DailyLog();
+    private Marks marks = new Marks();
 
     Drives drives() { return drives; }
     Feelings feelings() { return feelings; }
@@ -50,6 +53,7 @@ final class PatternState {
     SelfModel self() { return self; }
     Coherence coherence() { return coherence; }
     DailyLog log() { return log; }
+    Marks marks() { return marks; }
 
     void appraise(UUID who, Deed deed, long now) {
         drives.begin(now);
@@ -82,8 +86,13 @@ final class PatternState {
         if (nextSlip == UNARMED) slipped(now);
     }
 
-    /** {@code near}, {@code lastTalk} and {@code trusted} are what the poll already knows: nothing here looks at the world. */
-    void poll(int near, long lastTalk, boolean trusted, long now) {
+    /** Only the log reads this: she saw it, and it is not a deed. */
+    void marked(UUID who, Mark mark, long now) {
+        marks.mark(who, mark, now);
+    }
+
+    /** {@code near}, {@code nearest}, {@code lastTalk} and {@code tier} are what the poll already knows: nothing here looks at the world. */
+    void poll(int near, UUID nearest, long lastTalk, Tier tier, long now) {
         drives.begin(now);
         arm(now);
         if (near > 0) drives.feed(Drive.COMPANY, PRESENCE_FEEDS, now);
@@ -96,21 +105,44 @@ final class PatternState {
             coherence.spoken(now);
             if (feelings.strongest(now) != null) self.witness(PatternLaws.LEGIBLE);
         }
-        if (near > 0) noticed(now);
-        self.look(impressions.known(), trusted);
+        if (near > 0) noticed(nearest, lastTalk, tier, now);
+        self.look(impressions.known(), tier.atLeast(Tier.TRUSTED));
     }
 
-    /** Someone is beside her. What she has been turning over lands, and being away shows. */
-    private void noticed(long now) {
+    /** Someone is beside her. What she has been turning over lands, she writes the day down, and being away shows. */
+    private void noticed(UUID nearest, long lastTalk, Tier tier, long now) {
         if (now >= settleAt) {
             var settled = impressions.settle();
             settleAt = now + ShepherdPolicy.DAY_TICKS;
             if (!settled.changed().isEmpty()) self.witness(PatternLaws.LAGGED);
             if (!settled.flipped().isEmpty()) self.witness(PatternLaws.FALLIBLE);
             if (settled.fromKindness()) self.witness(PatternLaws.EXPLOITABLE);
+            writeDay(nearest, lastTalk, tier, now);
         }
         if (seenAt != UNARMED && now - seenAt >= ShepherdPolicy.DAY_TICKS) self.witness(PatternLaws.CAUSAL);
         seenAt = now;
+        marks.seen(nearest, now);
+    }
+
+    /** One entry about {@code who}. What it took from the marks is spent. */
+    LogEntry writeDay(UUID who, long lastTalk, Tier tier, long now) {
+        var entry = log.write(day(who, lastTalk, tier, now));
+        marks.written();
+        return entry;
+    }
+
+    private DailyLog.Day day(UUID who, long lastTalk, Tier tier, long now) {
+        var deeds = EnumSet.noneOf(Deed.class);
+        boolean nineFound = false;
+        for (var event : history) {
+            if (event.time() < log.lastWritten()) continue;
+            nineFound |= Deed.NINE_FOUND.name().equals(event.deed());
+            if (!who.equals(event.who())) continue;
+            for (Deed deed : Deed.values()) if (deed.name().equals(event.deed())) deeds.add(deed);
+        }
+        var strongest = feelings.strongest(now);
+        return new DailyLog.Day(now, self.lean() != SelfModel.Lean.NONE, self.stage(), tier, coherence.value(now), strongest, strongest == null ? 0 : feelings.value(strongest, now),
+                marks.of(who, lastTalk), deeds, marks.backs(who), marks.unseen(who, now), false, nineFound);
     }
 
     Mood mood(long now) {
@@ -161,6 +193,7 @@ final class PatternState {
         if (nightSky != null) nightSky = nightSky.aged(ticks);
         if (nextSlip != UNARMED) nextSlip -= ticks;
         log.age(ticks);
+        marks.age(ticks);
     }
 
     void clear() {
@@ -175,6 +208,7 @@ final class PatternState {
         settleAt = seenAt = nextSlip = UNARMED;
         nightSky = null;
         log.clear();
+        marks.clear();
     }
 
     CompoundTag save() {
@@ -195,6 +229,7 @@ final class PatternState {
         if (nightSky != null) tag.put("nightSky", nightSky.save());
         if (nextSlip != UNARMED) tag.putLong("nextSlip", nextSlip);
         tag.put("log", log.save());
+        tag.put("marks", marks.save());
         return tag;
     }
 
@@ -218,6 +253,7 @@ final class PatternState {
         if (tag.contains("nightSky")) state.nightSky = Fading.load(tag.getCompound("nightSky"));
         if (tag.contains("nextSlip")) state.nextSlip = tag.getLong("nextSlip");
         state.log = DailyLog.load(tag.getCompound("log"));
+        state.marks = Marks.load(tag.getCompound("marks"));
         return state;
     }
 }

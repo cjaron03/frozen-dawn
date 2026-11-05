@@ -11,6 +11,7 @@ import com.frozendawn.shepherd.ShepherdPolicy;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import org.junit.jupiter.api.Test;
@@ -355,5 +356,161 @@ class DailyLogTest {
         assertEquals(2, state.log().entries().getFirst().day());
         state.clear();
         assertTrue(state.log().entries().isEmpty());
+    }
+
+    private static final UUID ONE = new UUID(0, 1), TWO = new UUID(0, 2);
+
+    private static PatternState woken() {
+        var state = new PatternState();
+        state.poll(1, ONE, PatternState.NOT_SET, Tier.NEUTRAL, 0);
+        return state;
+    }
+
+    private static String settled(PatternState state, UUID who, long lastTalk, long now) {
+        state.poll(1, who, lastTalk, Tier.NEUTRAL, now);
+        var note = state.log().entries().getFirst().note();
+        return note == null ? null : note.substring(NOTE.length());
+    }
+
+    @Test
+    void theSettleWritesOneEntry() {
+        var state = woken();
+        assertTrue(state.log().entries().isEmpty(), "Nothing has settled");
+        state.poll(1, ONE, PatternState.NOT_SET, Tier.NEUTRAL, DAY - 1);
+        assertTrue(state.log().entries().isEmpty());
+        state.poll(1, ONE, PatternState.NOT_SET, Tier.NEUTRAL, DAY);
+        state.poll(1, ONE, PatternState.NOT_SET, Tier.NEUTRAL, DAY + 100);
+        assertEquals(1, state.log().entries().size());
+        assertEquals(DAY, state.log().entries().getFirst().time());
+    }
+
+    @Test
+    void nobodyNearWritesNothing() {
+        var state = woken();
+        state.poll(0, ONE, PatternState.NOT_SET, Tier.NEUTRAL, 3 * DAY);
+        assertTrue(state.log().entries().isEmpty());
+        state.poll(1, ONE, PatternState.NOT_SET, Tier.NEUTRAL, 4 * DAY);
+        assertEquals(1, state.log().entries().size(), "The days nobody was near are simply skipped");
+    }
+
+    @Test
+    void aDeedByAnotherPlayerIsNotTheirs() {
+        var state = woken();
+        state.appraise(TWO, Deed.AIR_FAILING, 100);
+        assertNull(settled(state, ONE, PatternState.NOT_SET, DAY));
+        var other = woken();
+        other.appraise(TWO, Deed.AIR_FAILING, 100);
+        assertEquals("air_failing.1", settled(other, TWO, PatternState.NOT_SET, DAY));
+    }
+
+    @Test
+    void aDeedFromBeforeTheLastEntryIsOld() {
+        var state = woken();
+        state.appraise(ONE, Deed.AIR_FAILING, 100);
+        assertEquals("air_failing.1", settled(state, ONE, PatternState.NOT_SET, DAY));
+        for (int i = 2; i <= 5; i++) assertNotEquals("air_failing.1", settled(state, ONE, PatternState.NOT_SET, i * DAY), "One deed, one note, on day " + i);
+    }
+
+    @Test
+    void aTalkAfterTheFightClearsIt() {
+        var state = woken();
+        state.marked(ONE, Mark.FIGHT, 100);
+        assertNull(settled(state, ONE, 200, DAY));
+        var silent = woken();
+        silent.marked(ONE, Mark.FIGHT, 100);
+        assertEquals("fight.product", settled(silent, ONE, 50, DAY));
+    }
+
+    @Test
+    void anEntryIsAboutWhoeverWasBesideHer() {
+        var state = woken();
+        state.marked(TWO, Mark.COLD, 100);
+        assertNull(settled(state, ONE, PatternState.NOT_SET, DAY));
+    }
+
+    @Test
+    void anEntryClearsTheMarks() {
+        var state = woken();
+        state.marked(ONE, Mark.COLD, 100);
+        assertEquals("cold.product", settled(state, ONE, PatternState.NOT_SET, DAY));
+        for (int i = 2; i <= 5; i++) assertNotEquals("cold.product", settled(state, ONE, PatternState.NOT_SET, i * DAY), "Rested by day 5, and still nothing to write");
+    }
+
+    @Test
+    void aReturnNeedsAStop() {
+        var state = woken();
+        state.marked(ONE, Mark.BACK, 100);
+        assertNull(settled(state, ONE, PatternState.NOT_SET, DAY), "She saw nobody stop");
+    }
+
+    @Test
+    void aStopWaitsForTheReturn() {
+        var state = woken();
+        state.marked(ONE, Mark.STOPPED, 100);
+        assertNull(settled(state, ONE, PatternState.NOT_SET, DAY), "She has not seen them come back");
+        state.marked(ONE, Mark.BACK, 2 * DAY - 50);
+        assertEquals("back.product", settled(state, ONE, PatternState.NOT_SET, 2 * DAY), "The entry between them does not lose it");
+    }
+
+    @Test
+    void sheCountsTheReturnsSheSaw() {
+        var state = woken();
+        state.marked(ONE, Mark.BACK, 50);
+        state.marked(ONE, Mark.STOPPED, 100);
+        state.marked(ONE, Mark.BACK, 200);
+        state.marked(ONE, Mark.BACK, 300);
+        assertEquals(1, state.marks().backs(ONE));
+        state.marked(ONE, Mark.STOPPED, 400);
+        state.marked(ONE, Mark.BACK, 500);
+        assertEquals(2, state.marks().backs(ONE));
+        assertEquals(0, state.marks().backs(TWO));
+    }
+
+    @Test
+    void aLongAbsenceReachesTheReunion() {
+        var state = woken();
+        state.self().look(true, false);
+        state.poll(1, ONE, PatternState.NOT_SET, Tier.FRIENDLY, DAY);
+        assertEquals(NOTE + "cargo.1", state.log().entries().getFirst().note());
+        state.poll(1, ONE, PatternState.NOT_SET, Tier.FRIENDLY, 7 * DAY);
+        assertEquals(NOTE + "reunion.high", state.log().entries().getFirst().note());
+    }
+
+    @Test
+    void sameEventsSameLog() {
+        var log = java.util.stream.Stream.of(1, 2).map(run -> {
+            var state = woken();
+            state.appraise(ONE, Deed.WARM_SHELTER, 100);
+            state.marked(ONE, Mark.CLOSE_CALL, 200);
+            state.poll(1, ONE, PatternState.NOT_SET, Tier.NEUTRAL, DAY);
+            state.marked(ONE, Mark.STOPPED, DAY + 50);
+            state.marked(ONE, Mark.BACK, DAY + 60);
+            state.poll(1, ONE, PatternState.NOT_SET, Tier.NEUTRAL, 2 * DAY);
+            return state.save();
+        }).toList();
+        assertEquals(log.get(0), log.get(1));
+        assertEquals(log.get(0), PatternState.load(log.get(0)).save(), "And the same after a reload");
+    }
+
+    @Test
+    void ageMovesTheMarks() {
+        var state = woken();
+        state.marked(ONE, Mark.STOPPED, 100);
+        state.age(DAY);
+        state.marked(ONE, Mark.BACK, 10);
+        assertEquals(1, state.marks().backs(ONE));
+        assertEquals(2 * DAY, state.marks().unseen(ONE, DAY), "The clock on them moved too");
+    }
+
+    @Test
+    void aPlayerDeathTouchesNothingElse() {
+        var state = woken();
+        var before = state.save();
+        before.remove("marks");
+        state.marked(ONE, Mark.STOPPED, 100);
+        state.marked(ONE, Mark.BACK, 200);
+        var after = state.save();
+        after.remove("marks");
+        assertEquals(before, after, "No feeling, no keepsake, no impression, no reason");
     }
 }

@@ -2,6 +2,8 @@ package com.frozendawn.miller;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import com.frozendawn.shepherd.ShepherdAffinity.Tier;
+import java.util.UUID;
 import net.minecraft.nbt.CompoundTag;
 import org.junit.jupiter.api.Test;
 
@@ -49,14 +51,14 @@ class CoherenceTest {
     @Test
     void aConversationCountsOnce() {
         var state = new PatternState();
-        state.poll(1, PatternState.NOT_SET, false, 0);
+        state.poll(1, new UUID(0, 1), PatternState.NOT_SET, Tier.NEUTRAL, 0);
         state.coherence().set(Coherence.FLOOR, 0);
-        state.poll(1, 50, false, 100);
+        state.poll(1, new UUID(0, 1), 50, Tier.NEUTRAL, 100);
         double once = state.coherence().value(100);
         assertEquals(0.5, once, 1e-6);
-        state.poll(1, 50, false, 100);
+        state.poll(1, new UUID(0, 1), 50, Tier.NEUTRAL, 100);
         state = PatternState.load(state.save());
-        state.poll(1, 50, false, 100);
+        state.poll(1, new UUID(0, 1), 50, Tier.NEUTRAL, 100);
         assertEquals(once, state.coherence().value(100), 1e-12);
     }
 

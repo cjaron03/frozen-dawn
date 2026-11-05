@@ -76,6 +76,11 @@ final class DailyLog {
         return List.copyOf(entries.reversed());
     }
 
+    /** When she last wrote, so what came after it is what the next entry is about. */
+    long lastWritten() {
+        return entries.isEmpty() ? Long.MIN_VALUE : entries.getLast().time();
+    }
+
     LogEntry write(Day day) {
         nineSeen |= day.nineFound();
         boolean firstSigned = day.signed() && entries.stream().noneMatch(LogEntry::signed);

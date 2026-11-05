@@ -1193,3 +1193,11 @@ shepherdfewerplaysonce xml
 shepherdfewerechoesnothing xml
 shepherdfewerneedshertohear xml
 shepherdeachnewkeepsakehasaline xml
+shepherdadayleavesanentry xml
+shepherdacolddayislogged xml
+shepherdadeathshesawislogged xml
+shepherdadeathshedidnotseeleavesnothing xml
+shepherdareturnsheneversawleavesnothing xml
+shepherdadeathshesawchangesnothingaloud xml
+shepherdacloseacallislogged xml
+shepherdafightislogged xml
