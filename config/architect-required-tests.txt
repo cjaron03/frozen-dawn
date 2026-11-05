@@ -1199,7 +1199,7 @@ shepherdadeathshesawislogged xml
 shepherdadeathshedidnotseeleavesnothing xml
 shepherdareturnsheneversawleavesnothing xml
 shepherdadeathshesawchangesnothingaloud xml
-shepherdacloseacallislogged xml
+shepherdaclosecallislogged xml
 shepherdafightislogged xml
 shepherdthefirstreadcostsonce xml
 shepherdasecondplayerpaystoo xml
