@@ -102,6 +102,8 @@ final class FrozenDawnDebugCommand {
                     "/fd uplink dump (archive progress, cooldown, signal sites, pressure and supply drops)");
             case "shepherd" -> List.of(
                     "/fd shepherd dump (stage, last position, follower, affinity, flags and the node she would resume)",
+                    "/fd shepherd state (her feelings and drives) | why (what her resting face comes from)",
+                    "/fd shepherd saw <deed> (a deed through the real door: cooldown and range apply)",
                     "/fd shepherd replay (clear her score and flags and restart the first meeting on the next right-click)",
                     "/fd shepherd affinity <value> (set her score, -1000 to 1000)",
                     "/fd shepherd skipday (run her cooldowns, and if nobody is near her, her clock on you, a day on)",

@@ -1,6 +1,8 @@
 package com.frozendawn.command;
 
 import com.frozendawn.data.ReturnedHearthSavedData;
+import com.frozendawn.miller.MillerPattern;
+import com.frozendawn.shepherd.ShepherdAffinity.Deed;
 import com.frozendawn.shepherd.ShepherdEggs;
 import com.frozendawn.shepherd.ShepherdReactions;
 import com.frozendawn.shepherd.ShepherdSavedData;
@@ -8,6 +10,7 @@ import com.frozendawn.shepherd.ShepherdTalk;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import java.util.List;
+import java.util.Locale;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 
@@ -15,8 +18,28 @@ import net.minecraft.commands.Commands;
 final class ShepherdDebugCommand {
     private ShepherdDebugCommand() { }
 
+    private static int lines(CommandSourceStack source, List<String> lines) {
+        for (var line : lines) FrozenDawnCommandOutput.item(source, line);
+        return 1;
+    }
+
+    /** Through the real door: it pays the cooldown and needs her in range, like any deed. */
+    private static LiteralArgumentBuilder<CommandSourceStack> saw() {
+        var saw = Commands.literal("saw");
+        for (Deed deed : Deed.values()) {
+            saw.then(Commands.literal(deed.name().toLowerCase(Locale.ROOT)).executes(c -> {
+                ShepherdReactions.saw(c.getSource().getPlayerOrException(), deed);
+                return 1;
+            }));
+        }
+        return saw;
+    }
+
     static LiteralArgumentBuilder<CommandSourceStack> commands() {
         return Commands.literal("shepherd").requires(source -> source.hasPermission(2))
+                .then(Commands.literal("state").executes(c -> lines(c.getSource(), MillerPattern.diagnostics(c.getSource().getServer()))))
+                .then(Commands.literal("why").executes(c -> lines(c.getSource(), MillerPattern.explain(c.getSource().getServer()))))
+                .then(saw())
                 .then(Commands.literal("dump").executes(c -> {
                     FrozenDawnCommandOutput.heading(c.getSource(), "CS-1 Shepherd");
                     for (var line : ShepherdSavedData.get(c.getSource().getServer()).describe())
