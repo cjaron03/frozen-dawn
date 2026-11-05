@@ -44,6 +44,8 @@ public final class ShepherdEntity extends PathfinderMob {
     private static final EntityDataAccessor<Boolean> DATA_TALKING = SynchedEntityData.defineId(ShepherdEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Boolean> DATA_LOGO = SynchedEntityData.defineId(ShepherdEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Boolean> DATA_RESTING = SynchedEntityData.defineId(ShepherdEntity.class, EntityDataSerializers.BOOLEAN);
+    /** The length of the wait she is showing, or 0. */
+    private static final EntityDataAccessor<Integer> DATA_THINK = SynchedEntityData.defineId(ShepherdEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Byte> DATA_BOOT = SynchedEntityData.defineId(ShepherdEntity.class, EntityDataSerializers.BYTE);
     /** What her display shows for a replay's boot: her own face, nothing, or the BIOS cursor. */
     public static final byte BOOT_NONE = 0, BOOT_DARK = 1, BOOT_CURSOR = 2;
@@ -62,6 +64,7 @@ public final class ShepherdEntity extends PathfinderMob {
     private int talkTicks;
     private int logoTicks;
     private int bootTicks;
+    private int thinkTicks;
     private int askTicks;
     private int reactTicks;
     private Mob watching;
@@ -73,6 +76,8 @@ public final class ShepherdEntity extends PathfinderMob {
     /** Client only: the mood last drawn, and how much of the blink between two moods is left. */
     private Mood shownMood;
     private int moodBeat;
+    /** Client only: how far into the wait it has got. */
+    private int thinkAge;
 
     public ShepherdEntity(EntityType<? extends ShepherdEntity> type, Level level) {
         super(type, level);
@@ -133,6 +138,7 @@ public final class ShepherdEntity extends PathfinderMob {
         builder.define(DATA_LOGO, false);
         builder.define(DATA_RESTING, false);
         builder.define(DATA_BOOT, BOOT_NONE);
+        builder.define(DATA_THINK, 0);
     }
 
     @Override protected PathNavigation createNavigation(Level level) {
@@ -271,6 +277,22 @@ public final class ShepherdEntity extends PathfinderMob {
         return logoTicks;
     }
 
+    /** Her eyes circle while a reply waits. It runs to its end whatever happens to the talk, so she always settles. */
+    void thinkFor(int ticks) {
+        thinkTicks = ticks;
+        entityData.set(DATA_THINK, ticks);
+    }
+
+    public boolean thinking() {
+        return entityData.get(DATA_THINK) > 0;
+    }
+
+    /** Client only: what her display shows while {@link #thinking()}. */
+    public ShepherdFace.Cells thinkingFrame() {
+        int ticks = entityData.get(DATA_THINK);
+        return ShepherdFace.thinking(Math.min(thinkAge, ticks - 1), ticks);
+    }
+
     public byte bootDisplay() {
         return entityData.get(DATA_BOOT);
     }
@@ -319,6 +341,7 @@ public final class ShepherdEntity extends PathfinderMob {
         if (offline()) return;
         talkFor(0);
         logoTicks = 0;
+        thinkFor(0);
         bootStop();
         askTicks = 0;
         reactTicks = 0;
@@ -345,6 +368,13 @@ public final class ShepherdEntity extends PathfinderMob {
                 if (shownMood != null) moodBeat = ShepherdFace.MOOD_BEAT_TICKS;
                 shownMood = mood();
             }
+            if (thinking()) {
+                thinkAge++;
+            } else if (thinkAge > 0) {
+                // The same blink as a change of mood, even if the mood did not change: it takes her into the line's face.
+                thinkAge = 0;
+                moodBeat = ShepherdFace.MOOD_BEAT_TICKS;
+            }
             return;
         }
         // A /summon, or a body that loaded after its replacement was built. There is one of her.
@@ -355,6 +385,7 @@ public final class ShepherdEntity extends PathfinderMob {
         if (offline() && --rebootTicks <= 0) reboot();
         if (talkTicks > 0 && --talkTicks == 0) entityData.set(DATA_TALKING, false);
         if (logoTicks > 0 && --logoTicks == 0) entityData.set(DATA_LOGO, false);
+        if (thinkTicks > 0 && --thinkTicks == 0) entityData.set(DATA_THINK, 0);
         if (bootTicks > 0 && --bootTicks == 0) {
             bootStop();
             ShepherdBoot.biosDone(this);

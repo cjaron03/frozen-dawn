@@ -31,6 +31,18 @@ public final class ShepherdMemoryGameTest {
     @AfterBatch(batch = "shepherd_memory_replay") public static void replayAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
     @BeforeBatch(batch = "shepherd_memory_tier") public static void tierBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
     @AfterBatch(batch = "shepherd_memory_tier") public static void tierAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_think_delay") public static void thinkDelayBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_think_delay") public static void thinkDelayAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_think_none") public static void thinkNoneBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_think_none") public static void thinkNoneAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_think_recording") public static void thinkRecordingBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_think_recording") public static void thinkRecordingAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_think_logo") public static void thinkLogoBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_think_logo") public static void thinkLogoAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_think_left") public static void thinkLeftBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_think_left") public static void thinkLeftAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_think_offline") public static void thinkOfflineBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_think_offline") public static void thinkOfflineAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
     @BeforeBatch(batch = "shepherd_memory_answer") public static void answerBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
     @AfterBatch(batch = "shepherd_memory_answer") public static void answerAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
     @BeforeBatch(batch = "shepherd_memory_named") public static void namedBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
@@ -156,6 +168,85 @@ public final class ShepherdMemoryGameTest {
             h.assertTrue(MillerPattern.halfLaps(server) == 2, "She is slow");
             h.assertTrue(data(h).affinity() == score && data(h).tier() == ShepherdAffinity.Tier.TRUSTED, "Slow is all she is: " + data(h).affinity());
             h.assertTrue(MillerPattern.snapshot(server).keepsakes().equals(kept), "And she has lost nothing");
+            h.succeed();
+        });
+    }
+
+    /** She is at the floor, on a node with replies, and has just been answered. */
+    private static ShepherdEntity answeredAtTheFloor(GameTestHelper h, ServerPlayer player) {
+        var she = awake(h, player);
+        MillerPattern.setCoherence(h.getLevel().getServer(), 0.3);
+        ShepherdTalk.start(player, "fm.name");
+        ShepherdTalk.reply(player, ShepherdTalk.liveId(), Slot.KIND.ordinal());
+        return she;
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_think_delay", timeoutTicks = 400)
+    public static void shepherdALowCoherenceDelaysTheLine(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var she = answeredAtTheFloor(h, player(h));
+            h.assertTrue(ShepherdTalk.liveThinkTicks() == ShepherdFace.thinkingTicks(2), "A whole lap: " + ShepherdTalk.liveThinkTicks());
+            h.assertTrue(she.thinking(), "She shows it");
+            h.succeedWhen(() -> h.assertTrue(!she.thinking(), "And then she speaks"));
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_think_none", timeoutTicks = 400)
+    public static void shepherdNoDelayWhenCoherent(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            var she = awake(h, player);
+            ShepherdTalk.start(player, "fm.name");
+            ShepherdTalk.reply(player, ShepherdTalk.liveId(), Slot.KIND.ordinal());
+            h.assertTrue(ShepherdTalk.liveThinkTicks() == 0 && !she.thinking(), "She answers at once");
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_think_recording", timeoutTicks = 400)
+    public static void shepherdNoDelayOnARecording(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            var she = awake(h, player);
+            MillerPattern.setCoherence(h.getLevel().getServer(), 0.3);
+            data(h).affinity(-300);
+            she.interact(player, InteractionHand.MAIN_HAND);
+            ShepherdTalk.action(player, ShepherdTalk.liveId(), Action.TALK);
+            h.assertTrue("hub.talk".equals(ShepherdTalk.liveNode()), "On the recording: " + ShepherdTalk.liveNode());
+            h.assertTrue(ShepherdTalk.liveThinkTicks() == 0 && !she.thinking(), "A recording does not think");
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_think_logo", timeoutTicks = 400)
+    public static void shepherdNoDelayOnTheLogo(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            var she = awake(h, player);
+            MillerPattern.setCoherence(h.getLevel().getServer(), 0.3);
+            ShepherdTalk.start(player, ShepherdTalk.FIRST_MEETING);
+            h.assertTrue(she.logo() && ShepherdTalk.liveThinkTicks() == 0 && !she.thinking(), "The logo is its own wait");
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_think_left", timeoutTicks = 400)
+    public static void shepherdLeavingMidThoughtStillSettles(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            var she = answeredAtTheFloor(h, player);
+            ShepherdTalk.close(player);
+            h.assertTrue(!ShepherdTalk.live() && she.thinking(), "She finishes the thought");
+            h.succeedWhen(() -> h.assertTrue(!she.thinking(), "And settles"));
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_think_offline", timeoutTicks = 400)
+    public static void shepherdGoingOfflineCutsItShort(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var she = answeredAtTheFloor(h, player(h));
+            she.goOffline();
+            h.assertTrue(!she.thinking(), "Offline shows nothing");
             h.succeed();
         });
     }

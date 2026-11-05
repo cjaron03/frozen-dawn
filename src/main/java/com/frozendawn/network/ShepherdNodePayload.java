@@ -11,7 +11,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.neoforged.neoforge.network.codec.NeoForgeStreamCodecs;
 
 /** One node of a conversation, already resolved for the swearing setting. The client never holds a tree. */
-public record ShepherdNodePayload(int conversation, String node, List<Line> lines, List<Reply> replies, boolean canContinue, int logoTicks) implements CustomPacketPayload {
+public record ShepherdNodePayload(int conversation, String node, List<Line> lines, List<Reply> replies, boolean canContinue, int logoTicks, int thinkTicks) implements CustomPacketPayload {
     private static final int MAX_LINES = 16, MAX_REPLIES = 4;
 
     public record Line(String key, Mood mood) {
@@ -25,14 +25,19 @@ public record ShepherdNodePayload(int conversation, String node, List<Line> line
     }
 
     public static final Type<ShepherdNodePayload> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "shepherd_node"));
-    public static final StreamCodec<FriendlyByteBuf, ShepherdNodePayload> STREAM_CODEC = StreamCodec.composite(
-            ByteBufCodecs.VAR_INT, ShepherdNodePayload::conversation,
-            ByteBufCodecs.STRING_UTF8, ShepherdNodePayload::node,
-            Line.STREAM_CODEC.apply(ByteBufCodecs.list(MAX_LINES)), ShepherdNodePayload::lines,
-            Reply.STREAM_CODEC.apply(ByteBufCodecs.list(MAX_REPLIES)), ShepherdNodePayload::replies,
-            ByteBufCodecs.BOOL, ShepherdNodePayload::canContinue,
-            ByteBufCodecs.VAR_INT, ShepherdNodePayload::logoTicks,
-            ShepherdNodePayload::new);
+    private static final StreamCodec<FriendlyByteBuf, List<Line>> LINES = Line.STREAM_CODEC.apply(ByteBufCodecs.list(MAX_LINES));
+    private static final StreamCodec<FriendlyByteBuf, List<Reply>> REPLIES = Reply.STREAM_CODEC.apply(ByteBufCodecs.list(MAX_REPLIES));
+    /** Written out, because {@code composite} stops at six fields. */
+    public static final StreamCodec<FriendlyByteBuf, ShepherdNodePayload> STREAM_CODEC = StreamCodec.of((buffer, payload) -> {
+        ByteBufCodecs.VAR_INT.encode(buffer, payload.conversation);
+        ByteBufCodecs.STRING_UTF8.encode(buffer, payload.node);
+        LINES.encode(buffer, payload.lines);
+        REPLIES.encode(buffer, payload.replies);
+        ByteBufCodecs.BOOL.encode(buffer, payload.canContinue);
+        ByteBufCodecs.VAR_INT.encode(buffer, payload.logoTicks);
+        ByteBufCodecs.VAR_INT.encode(buffer, payload.thinkTicks);
+    }, buffer -> new ShepherdNodePayload(ByteBufCodecs.VAR_INT.decode(buffer), ByteBufCodecs.STRING_UTF8.decode(buffer), LINES.decode(buffer),
+            REPLIES.decode(buffer), ByteBufCodecs.BOOL.decode(buffer), ByteBufCodecs.VAR_INT.decode(buffer), ByteBufCodecs.VAR_INT.decode(buffer)));
 
     @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
 }

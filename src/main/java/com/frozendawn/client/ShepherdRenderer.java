@@ -51,6 +51,8 @@ public final class ShepherdRenderer extends MobRenderer<ShepherdEntity, Shepherd
                 ShepherdFaceRenderer.drawOnModel(pose, buffers, cursor ? ShepherdBoot.cursor() : Mood.OFFLINE, 0, false, 0);
             } else if (entity.logo()) {
                 ShepherdFaceRenderer.drawOnModel(pose, buffers, ShepherdFace.logo(ShepherdFace.logoFrame(entity.tickCount)), 0, false, 0);
+            } else if (entity.thinking()) {
+                ShepherdFaceRenderer.drawOnModel(pose, buffers, entity.thinkingFrame(), 0, false, 0);
             } else {
                 var cells = motion.cells(mood, entity.talking());
                 ShepherdFaceRenderer.drawOnModel(pose, buffers, cells, mouth, motion.blink() || entity.moodBeat(), motion.eyeShift());

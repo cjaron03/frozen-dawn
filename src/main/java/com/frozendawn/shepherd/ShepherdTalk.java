@@ -57,6 +57,8 @@ public final class ShepherdTalk {
         List<Line> lines = List.of();
         /** Her body has no typed text to follow, so it moves through a node's lines on a fixed count. */
         int line, lineTicks;
+        /** How long the line on screen waited before it started. */
+        int thinkTicks;
 
         Live(ServerPlayer player, ShepherdEntity she) {
             this.player = player;
@@ -245,10 +247,19 @@ public final class ShepherdTalk {
         int logo = live.she.logoTicks();
         live.lines = live.talk.lines();
         live.line = 0;
-        live.lineTicks = logo + TALK_TICKS_PER_LINE;
+        live.thinkTicks = thinkTicks(logo);
+        int wait = logo + live.thinkTicks;
+        live.lineTicks = wait + TALK_TICKS_PER_LINE;
         showMood();
-        live.she.talkFor(logo + TALK_TICKS_PER_LINE * live.lines.size());
-        PacketDistributor.sendToPlayer(live.player, payload(live.id, node, live.lines, data.heavy(), logo));
+        live.she.talkFor(wait + TALK_TICKS_PER_LINE * live.lines.size());
+        live.she.thinkFor(live.thinkTicks);
+        PacketDistributor.sendToPlayer(live.player, payload(live.id, node, live.lines, data.heavy(), logo, live.thinkTicks));
+    }
+
+    /** She takes a moment when her coherence is low. The logo is its own wait, and a recording has nobody in it to think. */
+    private static int thinkTicks(int logo) {
+        boolean recording = !live.lines.isEmpty() && live.lines.getFirst().mood() == Mood.RECORDING;
+        return logo > 0 || live.lines.isEmpty() || recording ? 0 : ShepherdFace.thinkingTicks(MillerPattern.halfLaps(live.player.getServer()));
     }
 
     private static void showHub() {
@@ -269,12 +280,12 @@ public final class ShepherdTalk {
         }
     }
 
-    static ShepherdNodePayload payload(int conversation, Node node, List<Line> said, boolean heavy, int logoTicks) {
+    static ShepherdNodePayload payload(int conversation, Node node, List<Line> said, boolean heavy, int logoTicks, int thinkTicks) {
         var lines = said.stream().map(line -> new ShepherdNodePayload.Line(
                 heavy && line.heavyKey() != null ? line.heavyKey() : line.key(), line.mood())).toList();
         var replies = node.responses().stream().map(response -> new ShepherdNodePayload.Reply(
                 response.slot().ordinal(), response.label(), response.full())).toList();
-        return new ShepherdNodePayload(conversation, node.id(), lines, replies, replies.isEmpty(), logoTicks);
+        return new ShepherdNodePayload(conversation, node.id(), lines, replies, replies.isEmpty(), logoTicks, thinkTicks);
     }
 
     private static void end(boolean tellClient) {
@@ -341,6 +352,11 @@ public final class ShepherdTalk {
     /** The node on screen, or null on the hub or when nobody is talking. */
     static String liveNode() {
         return live == null || live.talk == null ? null : live.talk.current().id();
+    }
+
+    /** How long the line on screen was made to wait. */
+    static int liveThinkTicks() {
+        return live == null ? 0 : live.thinkTicks;
     }
 
     /** The keys on screen. */

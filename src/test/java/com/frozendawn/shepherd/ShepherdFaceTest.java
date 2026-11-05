@@ -198,4 +198,102 @@ class ShepherdFaceTest {
         }
         assertTrue(ShepherdFace.logoFrame(0) != ShepherdFace.logoFrame(ShepherdFace.LOGO_TICKS / 3));
     }
+
+    private static final int HALF_LAP = ShepherdFace.thinkingTicks(1), WHOLE_LAP = ShepherdFace.thinkingTicks(2);
+    /** The ticks of a wait spent going round, before the settle. */
+    private static final int SETTLE = 8;
+
+    private static boolean same(ShepherdFace.Cells a, ShepherdFace.Cells b) {
+        for (int x = 0; x < ShepherdFace.WIDTH; x++) {
+            for (int y = 0; y < ShepherdFace.HEIGHT; y++) {
+                if (a.lit(x, y) != b.lit(x, y) || a.dim(x, y) != b.dim(x, y)) return false;
+            }
+        }
+        return true;
+    }
+
+    private static int count(ShepherdFace.Cells cells, boolean lit) {
+        int count = 0;
+        for (int x = 0; x < ShepherdFace.WIDTH; x++) {
+            for (int y = 0; y < ShepherdFace.HEIGHT; y++) if (lit ? cells.lit(x, y) : cells.dim(x, y)) count++;
+        }
+        return count;
+    }
+
+    @Test
+    void theWaitComesInWholeHalfLaps() {
+        assertEquals(0, ShepherdFace.thinkingTicks(0));
+        assertEquals(28, HALF_LAP);
+        assertEquals(44, WHOLE_LAP);
+    }
+
+    @Test
+    void theIndicatorIsNoMood() {
+        for (int ticks : new int[] {HALF_LAP, WHOLE_LAP}) {
+            for (int age = 0; age < ticks; age++) {
+                var frame = ShepherdFace.thinking(age, ticks);
+                for (Mood mood : Mood.values()) assertFalse(same(frame, mood), mood + " at " + age);
+                for (ShepherdFace.Idle idle : ShepherdFace.Idle.values()) assertFalse(same(frame, idle), idle + " at " + age);
+            }
+        }
+    }
+
+    @Test
+    void theIndicatorIsTwoDots() {
+        for (int age = 0; age < WHOLE_LAP - SETTLE; age++) {
+            var frame = ShepherdFace.thinking(age, WHOLE_LAP);
+            assertEquals(4, count(frame, true), "lit at " + age);
+            assertEquals(4, count(frame, false), "dim at " + age);
+        }
+    }
+
+    @Test
+    void theIndicatorGoesRound() {
+        var first = ShepherdFace.thinking(0, WHOLE_LAP);
+        var half = ShepherdFace.thinking(4 * ShepherdFace.THINKING_FRAME_TICKS, WHOLE_LAP);
+        for (int x = 0; x < ShepherdFace.WIDTH; x++) {
+            for (int y = 0; y < ShepherdFace.HEIGHT; y++) {
+                assertEquals(first.lit(x, y), half.dim(x, y), x + "," + y);
+                assertEquals(first.dim(x, y), half.lit(x, y), x + "," + y);
+            }
+        }
+    }
+
+    @Test
+    void theOrbitAlwaysEndsLevel() {
+        for (int ticks : new int[] {HALF_LAP, WHOLE_LAP}) {
+            var last = ShepherdFace.thinking(ticks - SETTLE - 1, ticks);
+            for (int x = 0; x < ShepherdFace.WIDTH; x++) {
+                for (int y = 0; y < ShepherdFace.HEIGHT; y++) {
+                    boolean shown = last.lit(x, y) || last.dim(x, y);
+                    assertEquals((y == 2 || y == 3) && (x == 1 || x == 2 || x == 5 || x == 6), shown, ticks + " at " + x + "," + y);
+                }
+            }
+        }
+    }
+
+    @Test
+    void herEyesRiseBeforeTheyLight() {
+        for (int ticks : new int[] {HALF_LAP, WHOLE_LAP}) {
+            var risen = ShepherdFace.thinking(ticks - SETTLE, ticks);
+            assertEquals(4, count(risen, true));
+            assertEquals(4, count(risen, false), "The dim one is still dim");
+            for (int x = 0; x < ShepherdFace.WIDTH; x++) {
+                assertFalse(risen.lit(x, 3) || risen.dim(x, 3), "Up a row at " + x);
+            }
+        }
+    }
+
+    @Test
+    void herEyesComeHome() {
+        for (int ticks : new int[] {HALF_LAP, WHOLE_LAP}) {
+            var home = ShepherdFace.thinking(ticks - 1, ticks);
+            for (int x = 0; x < ShepherdFace.WIDTH; x++) {
+                for (int y = 0; y < ShepherdFace.HEIGHT; y++) {
+                    assertEquals(Mood.NEUTRAL.lit(x, y), home.lit(x, y), "Her eyes at " + x + "," + y);
+                    assertFalse(home.dim(x, y), "No mouth at " + x + "," + y);
+                }
+            }
+        }
+    }
 }

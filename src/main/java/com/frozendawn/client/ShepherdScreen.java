@@ -52,6 +52,8 @@ public final class ShepherdScreen extends Screen {
     private Mood shownMood;
     private int moodBeat;
     private int logoTicks;
+    /** The wait this line was sent with, and how much of it is left. */
+    private int thinkTicks, thinkLeft;
 
     public ShepherdScreen() {
         super(CommonComponents.EMPTY);
@@ -64,6 +66,7 @@ public final class ShepherdScreen extends Screen {
         replies = payload.replies();
         canContinue = payload.canContinue();
         logoTicks = payload.logoTicks();
+        thinkTicks = thinkLeft = payload.thinkTicks();
         line = 0;
         startLine();
     }
@@ -79,6 +82,7 @@ public final class ShepherdScreen extends Screen {
         canContinue = false;
         rows = List.of();
         total = typed = 0;
+        thinkLeft = 0;
     }
 
     /** The server ended it, so there is nothing to tell the server back. */
@@ -144,6 +148,11 @@ public final class ShepherdScreen extends Screen {
             logoTicks--;
             return;
         }
+        if (thinkLeft > 0) {
+            // The same blink as a change of mood, even if the mood did not change: it takes her into the line's face.
+            if (--thinkLeft == 0) moodBeat = ShepherdFace.MOOD_BEAT_TICKS;
+            return;
+        }
         if (!typing()) return;
         if (++charTicks < ShepherdPolicy.TICKS_PER_CHAR) return;
         charTicks = 0;
@@ -205,7 +214,7 @@ public final class ShepherdScreen extends Screen {
 
     /** A click finishes a typing line; the next moves on to her next line, then continues. */
     private void advance() {
-        if (logoTicks > 0) return;
+        if (logoTicks > 0 || thinkLeft > 0) return;
         if (typing()) {
             typed = total;
         } else if (line < lines.size() - 1) {
@@ -310,6 +319,10 @@ public final class ShepherdScreen extends Screen {
         shell(g, ox(), oy());
         if (logoTicks > 0) {
             ShepherdFaceRenderer.drawLogo(g, ShepherdFace.logoFrame(age), ox() + FACE_X, oy() + FACE_Y, FACE_SCALE);
+            return;
+        }
+        if (thinkLeft > 0) {
+            ShepherdFaceRenderer.draw(g, ShepherdFace.thinking(thinkTicks - thinkLeft, thinkTicks), 0, false, 0, ox() + FACE_X, oy() + FACE_Y, FACE_SCALE);
             return;
         }
         Mood mood = mood();

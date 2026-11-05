@@ -46,6 +46,14 @@ public final class ShepherdFace {
     /** The moon's x, y and cell: lit round the front of the orbit, dim round the back. */
     private static final int[][] LOGO_MOON = {{7, 1, '#'}, {5, 2, '#'}, {3, 3, '#'}, {1, 3, '#'}, {0, 4, '#'}, {1, 1, '+'}, {2, 0, '+'}, {6, 0, '+'}};
 
+    public static final int THINKING_FRAMES = 8, THINKING_FRAME_TICKS = 4;
+    /** Her two dots ride this ring, lit and dim opposite each other, as the moon rides her logo. Spots 0 and 4 are level with her eyes. */
+    private static final int[][] THINKING_SPOTS = {{1, 2}, {1, 0}, {3, 0}, {5, 0}, {5, 2}, {5, 4}, {3, 4}, {1, 4}};
+    private static final int THINKING_HALF_LAP_TICKS = THINKING_FRAMES / 2 * THINKING_FRAME_TICKS;
+    /** One level frame to finish on, then a row up, then both lit. */
+    private static final int RISE_TICKS = 4, HOME_TICKS = 4, EYES_Y = 1;
+    private static final int THINKING_END_TICKS = THINKING_FRAME_TICKS + RISE_TICKS + HOME_TICKS;
+
     /** What her eyes are doing on one tick. */
     public record Motion(int eyeShift, boolean blink, Idle idle) {
         public Motion(int eyeShift, boolean blink) {
@@ -132,6 +140,35 @@ public final class ShepherdFace {
 
         @Override public boolean dim(int x, int y) {
             return at(x, y) == '+';
+        }
+    }
+
+    /** How long a wait of this many half laps runs. The orbit always ends level, so it comes in whole half laps. */
+    public static int thinkingTicks(int halfLaps) {
+        return halfLaps == 0 ? 0 : halfLaps * THINKING_HALF_LAP_TICKS + THINKING_END_TICKS;
+    }
+
+    /** One frame of the indicator, {@code age} ticks into a wait of {@code ticks}, from thinking-indicator-mockup.png. */
+    public static Cells thinking(int age, int ticks) {
+        int orbit = ticks - RISE_TICKS - HOME_TICKS;
+        int frame = Math.min(age, orbit - 1) / THINKING_FRAME_TICKS % THINKING_FRAMES;
+        int[] lit = THINKING_SPOTS[frame], dim = THINKING_SPOTS[(frame + THINKING_FRAMES / 2) % THINKING_FRAMES];
+        if (age < orbit) return new Dots(lit[0], lit[1], dim[0], dim[1], false);
+        return new Dots(lit[0], EYES_Y, dim[0], EYES_Y, age >= orbit + RISE_TICKS);
+    }
+
+    /** Two 2 by 2 dots. {@code bothLit} is her eyes come home. */
+    private record Dots(int litX, int litY, int dimX, int dimY, boolean bothLit) implements Cells {
+        private static boolean on(int dotX, int dotY, int x, int y) {
+            return x >= dotX && x < dotX + 2 && y >= dotY && y < dotY + 2;
+        }
+
+        @Override public boolean lit(int x, int y) {
+            return on(litX, litY, x, y) || bothLit && on(dimX, dimY, x, y);
+        }
+
+        @Override public boolean dim(int x, int y) {
+            return !bothLit && on(dimX, dimY, x, y);
         }
     }
 
