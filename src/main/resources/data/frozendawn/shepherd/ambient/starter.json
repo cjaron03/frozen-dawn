@@ -147,6 +147,89 @@
           "line": "shepherd.ambient.looked_animal.1"
         }
       ]
+    },
+    {
+      "trigger": "bleed",
+      "from": "noticing",
+      "cooldown": 72000,
+      "mood": "thinking",
+      "variants": [
+        {
+          "line": "shepherd.bleed.tune"
+        },
+        {
+          "line": "shepherd.bleed.rain"
+        }
+      ]
+    },
+    {
+      "trigger": "bleed",
+      "from": "noticing",
+      "cooldown": 72000,
+      "mood": "amused",
+      "variants": [
+        {
+          "line": "shepherd.bleed.throughput"
+        }
+      ]
+    },
+    {
+      "trigger": "bleed",
+      "from": "noticing",
+      "cooldown": 72000,
+      "mood": "unimpressed",
+      "variants": [
+        {
+          "line": "shepherd.bleed.toast"
+        }
+      ]
+    },
+    {
+      "trigger": "bleed",
+      "from": "walls",
+      "cooldown": 72000,
+      "mood": "thinking",
+      "variants": [
+        {
+          "line": "shepherd.bleed.verse"
+        },
+        {
+          "line": "shepherd.bleed.faults"
+        }
+      ]
+    },
+    {
+      "trigger": "bleed",
+      "from": "walls",
+      "cooldown": 72000,
+      "mood": "sad",
+      "variants": [
+        {
+          "line": "shepherd.bleed.nothing_broken"
+        }
+      ]
+    },
+    {
+      "trigger": "bleed",
+      "from": "after",
+      "cooldown": 72000,
+      "mood": "thinking",
+      "variants": [
+        {
+          "line": "shepherd.bleed.tune_again"
+        }
+      ]
+    },
+    {
+      "trigger": "bleed",
+      "from": "after",
+      "cooldown": 72000,
+      "mood": "sad",
+      "variants": [
+        {
+          "line": "shepherd.bleed.which_road"
+        }
+      ]
     }
   ]
 }

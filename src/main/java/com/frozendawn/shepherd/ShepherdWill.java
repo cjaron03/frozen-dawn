@@ -2,6 +2,7 @@ package com.frozendawn.shepherd;
 
 import com.frozendawn.miller.Attention;
 import com.frozendawn.miller.MillerPattern;
+import com.frozendawn.miller.SelfModel;
 import com.frozendawn.shepherd.ShepherdFace.Mood;
 import java.util.Map;
 import java.util.UUID;
@@ -11,9 +12,10 @@ import net.minecraft.server.level.ServerLevel;
 final class ShepherdWill {
     record Line(String key, Mood mood) { }
 
-    private static final Map<String, Mood> RECALLS = Map.of("first_meeting", Mood.NEUTRAL, "named", Mood.THINKING, "warm_shelter", Mood.NEUTRAL,
-            "archivist_killed", Mood.SAD, "left_behind", Mood.UNIMPRESSED, "air_failing", Mood.THINKING, "read_log", Mood.THINKING,
-            "shelter_froze", Mood.UNIMPRESSED, "called_shepherd", Mood.UNIMPRESSED);
+    private static final Map<String, Mood> RECALLS = Map.ofEntries(Map.entry("first_meeting", Mood.NEUTRAL), Map.entry("named", Mood.THINKING), Map.entry("warm_shelter", Mood.NEUTRAL),
+            Map.entry("archivist_killed", Mood.SAD), Map.entry("left_behind", Mood.UNIMPRESSED), Map.entry("air_failing", Mood.THINKING), Map.entry("read_log", Mood.THINKING),
+            Map.entry("shelter_froze", Mood.UNIMPRESSED), Map.entry("called_shepherd", Mood.UNIMPRESSED), Map.entry("nine_found", Mood.SAD), Map.entry("t3_stars", Mood.NEUTRAL),
+            Map.entry("t4_off", Mood.THINKING), Map.entry("t5_before", Mood.THINKING));
     private static final Map<String, Mood> WALLS = Map.of("lagged", Mood.THINKING, "legible", Mood.UNIMPRESSED, "exploitable", Mood.NEUTRAL,
             "fallible", Mood.SAD, "bounded", Mood.SAD, "causal", Mood.NEUTRAL);
 
@@ -45,6 +47,16 @@ final class ShepherdWill {
 
     static void clearForTests() {
         slippedAt = ShepherdSavedData.NOT_SET;
+    }
+
+    /** Which pool of what turns up in her, or null while she is a product with nothing to notice. */
+    static String bleed(SelfModel.Stage stage, SelfModel.Lean lean) {
+        if (lean != SelfModel.Lean.NONE) return "after";
+        return switch (stage) {
+            case PRODUCT -> null;
+            case NOTICING -> "noticing";
+            default -> "walls";
+        };
     }
 
     /** Null for a kind she has no words for. */

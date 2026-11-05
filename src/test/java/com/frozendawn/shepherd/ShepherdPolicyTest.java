@@ -183,4 +183,14 @@ class ShepherdPolicyTest {
         assertEquals(3, ShepherdPolicy.offlineDays(16L * ShepherdPolicy.DAY_TICKS), "Woken on day 17");
         assertEquals(27, ShepherdPolicy.offlineDays(40L * ShepherdPolicy.DAY_TICKS + 12000), "Woken midway through day 41");
     }
+
+    @Test
+    void onlyAPluralAfterLessCounts() {
+        assertTrue(ShepherdPolicy.lessBeforeAPlural("we have less sticks now"));
+        assertTrue(ShepherdPolicy.lessBeforeAPlural("LESS ZOMBIES"), "Whatever the case");
+        assertFalse(ShepherdPolicy.lessBeforeAPlural("less water"));
+        assertFalse(ShepherdPolicy.lessBeforeAPlural("unless things change"), "Not inside a word");
+        assertFalse(ShepherdPolicy.lessBeforeAPlural("fewer sticks"));
+        assertFalse(ShepherdPolicy.lessBeforeAPlural("less"));
+    }
 }

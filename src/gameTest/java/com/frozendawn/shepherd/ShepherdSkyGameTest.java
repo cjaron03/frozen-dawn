@@ -205,9 +205,10 @@ public final class ShepherdSkyGameTest {
                     // Open sky is read from the light, and a new roof's shadow takes its time.
                     .thenWaitUntil(() -> h.assertFalse(h.getLevel().canSeeSky(player.blockPosition()), "Waiting for the shadow"))
                     .thenExecute(() -> skyAt(h, STARS, MIDNIGHT))
+                    // Stepping out from under it, because light takes longer than a sprinted test to come back.
                     .thenExecuteAfter(A_LOOK, () -> {
                         assertNoPrompt(h, "Not under a roof");
-                        h.getLevel().setBlockAndUpdate(roof, Blocks.AIR.defaultBlockState());
+                        player.setPos(player.position().add(3, 0, 0));
                     })
                     .thenWaitUntil(() -> assertPrompt(h, ShepherdPrompt.AT_THE_TOP))
                     .thenSucceed();
@@ -290,8 +291,10 @@ public final class ShepherdSkyGameTest {
                     .thenExecute(() -> {
                         she.interact(player, InteractionHand.MAIN_HAND);
                         h.assertTrue("t3.top".equals(ShepherdTalk.liveNode()), "On: " + ShepherdTalk.liveNode());
+                        // The night itself may already have scored, so this is from wherever it stands.
+                        int before = data(h).affinity();
                         say(player, KIND);
-                        h.assertTrue(data(h).affinity() == TRUSTED + 30, "Scored: " + data(h).affinity());
+                        h.assertTrue(data(h).affinity() == before + 30, "Scored: " + data(h).affinity());
                         h.assertTrue(MillerPattern.remembers(h.getLevel().getServer(), player.getUUID(), "t3_stars"), "She keeps it");
                         say(player, CONTINUE);
                     })
@@ -348,7 +351,9 @@ public final class ShepherdSkyGameTest {
                     .thenExecute(() -> ApocalypseState.get(level.getServer()).setApocalypseTicks(auroraTime(h), level.getServer()))
                     .thenExecuteAfter(ShepherdReactions.POLL_TICKS + 10, () -> {
                         h.assertFalse(data(h).flag("saw_aurora"), "Nothing through a roof");
-                        roof.forEach(at -> level.setBlockAndUpdate(at, Blocks.AIR.defaultBlockState()));
+                        // Out from under it, because light takes longer than a sprinted test to come back.
+                        player.setPos(player.position().add(20, 0, 0));
+                        she.teleportTo(player.getX() + 1, player.getY() + 1, player.getZ());
                     })
                     .thenWaitUntil(() -> h.assertTrue(data(h).flag("saw_aurora"), "She saw it"))
                     .thenSucceed();

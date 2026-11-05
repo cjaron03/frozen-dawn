@@ -4,6 +4,8 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import com.frozendawn.miller.Attention;
 import com.frozendawn.miller.PatternLaws;
+import com.frozendawn.miller.SelfModel.Lean;
+import com.frozendawn.miller.SelfModel.Stage;
 import com.frozendawn.network.ShepherdLinePayload;
 import com.frozendawn.shepherd.ShepherdAffinity.Deed;
 import com.frozendawn.shepherd.ShepherdFace.Mood;
@@ -81,5 +83,25 @@ class ShepherdWillTest {
             String text = line.getValue().getAsString().toLowerCase(Locale.ROOT);
             for (String word : List.of("six", "fair", "rules")) assertFalse(text.contains(word), line.getKey());
         }
+    }
+
+    @Test
+    void everyMomentOfTheArcHasItsLine() throws Exception {
+        var lang = lang();
+        for (String kind : List.of("nine_found", "t3_stars", "t4_off", "t5_before")) {
+            var line = ShepherdWill.recall(kind);
+            assertNotNull(line, kind);
+            assertTrue(lang.get(line.key()).getAsString().contains("%s"), line.key() + " carries the day");
+        }
+    }
+
+    @Test
+    void whatTurnsUpFollowsHerPictureOfHerself() {
+        assertNull(ShepherdWill.bleed(Stage.PRODUCT, Lean.NONE), "A product has nothing to notice");
+        assertEquals("noticing", ShepherdWill.bleed(Stage.NOTICING, Lean.NONE));
+        assertEquals("walls", ShepherdWill.bleed(Stage.FINDING_WALLS, Lean.NONE));
+        assertEquals("walls", ShepherdWill.bleed(Stage.RECOGNISING, Lean.NONE));
+        assertEquals("after", ShepherdWill.bleed(Stage.LEANING, Lean.SOMEONE));
+        assertEquals("after", ShepherdWill.bleed(Stage.LEANING, Lean.LEFT));
     }
 }

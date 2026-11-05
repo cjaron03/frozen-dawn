@@ -3,11 +3,13 @@ package com.frozendawn.shepherd;
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.gametest.GameTestTemplates;
 import com.frozendawn.init.ModEntities;
+import com.frozendawn.miller.Attention;
 import com.frozendawn.miller.Drives.Drive;
+import com.frozendawn.miller.Heard;
 import com.frozendawn.miller.MillerPattern;
-import com.frozendawn.miller.SelfModel;
 import com.frozendawn.miller.PatternLaws;
 import com.frozendawn.miller.Refusal;
+import com.frozendawn.miller.SelfModel;
 import com.frozendawn.shepherd.ShepherdAffinity.Deed;
 import com.frozendawn.shepherd.ShepherdAmbient.Trigger;
 import com.frozendawn.shepherd.ShepherdSavedData.Stage;
@@ -19,6 +21,7 @@ import net.minecraft.gametest.framework.AfterBatch;
 import net.minecraft.gametest.framework.BeforeBatch;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
@@ -26,6 +29,8 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.storage.ServerLevelData;
 import net.minecraft.world.phys.Vec3;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.ServerChatEvent;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
@@ -121,6 +126,21 @@ public final class ShepherdWillGameTest {
     @AfterBatch(batch = "shepherd_t5_someone") public static void t5SomeoneAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
     @BeforeBatch(batch = "shepherd_t5_left") public static void t5LeftBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
     @AfterBatch(batch = "shepherd_t5_left") public static void t5LeftAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+
+    @BeforeBatch(batch = "shepherd_bleed_noticing") public static void bleedNoticingBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_bleed_noticing") public static void bleedNoticingAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_bleed_walls") public static void bleedWallsBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_bleed_walls") public static void bleedWallsAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_bleed_after") public static void bleedAfterBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_bleed_after") public static void bleedAfterAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_fewer_once") public static void fewerOnceBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_fewer_once") public static void fewerOnceAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_fewer_echo") public static void fewerEchoBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_fewer_echo") public static void fewerEchoAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_fewer_far") public static void fewerFarBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_fewer_far") public static void fewerFarAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_recall_nine") public static void recallNineBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_recall_nine") public static void recallNineAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
 
     private static ShepherdSavedData data(GameTestHelper h) {
         return ShepherdSavedData.get(h.getLevel().getServer());
@@ -869,6 +889,132 @@ public final class ShepherdWillGameTest {
                         h.assertTrue("t5.end".equals(ShepherdTalk.liveNode()), "On: " + ShepherdTalk.liveNode());
                     })
                     .thenSucceed();
+        });
+    }
+
+    private static List<String> bleed(String from) {
+        return ShepherdAmbients.pools(Trigger.BLEED).stream().filter(pool -> from.equals(pool.from())).flatMap(pool -> pool.variants().stream()).map(ShepherdAffinity.Say::key).toList();
+    }
+
+    /** Free to speak, with the noticing line already behind her. */
+    private static void readyToSay(GameTestHelper h) {
+        var server = h.getLevel().getServer();
+        MillerPattern.want(server, Drive.CURIOSITY, 1);
+        MillerPattern.spoken(server, Attention.NOTICING);
+    }
+
+    private static void assertSaidFrom(GameTestHelper h, List<String> keys) {
+        h.assertTrue(keys.contains(ShepherdReactions.said()), "Said: " + ShepherdReactions.said());
+    }
+
+    private static void chat(ServerPlayer player, String text) {
+        NeoForge.EVENT_BUS.post(new ServerChatEvent(player, text, Component.literal(text)));
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_bleed_noticing", timeoutTicks = 500)
+    public static void shepherdBleedNeedsNoticing(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            met(h, player);
+            readyToSay(h);
+            var server = h.getLevel().getServer();
+            h.startSequence()
+                    .thenExecuteAfter(A_POLL, () -> {
+                        h.assertTrue(data(h).deedReady("ambient.BLEED") == 0, "Nothing turns up in a product");
+                        again(h);
+                        for (int i = 0; i < 3; i++) MillerPattern.heard(server, player.getUUID(), new Heard.Reply(ShepherdDialogue.Slot.KIND, List.of("+calls_me_aurora"), null));
+                        MillerPattern.skipDay(server);
+                    })
+                    .thenWaitUntil(() -> assertSaidFrom(h, bleed("noticing")))
+                    .thenExecute(() -> h.assertTrue(data(h).deedReady("ambient.BLEED") > now(h) + 71000, "Three days: " + data(h).deedReady("ambient.BLEED")))
+                    .thenSucceed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_bleed_walls", timeoutTicks = 400)
+    public static void shepherdBleedTurnsAtTheWalls(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            met(h, player(h));
+            readyToSay(h);
+            MillerPattern.witness(h.getLevel().getServer(), PatternLaws.CAUSAL, 1);
+            h.startSequence().thenWaitUntil(() -> assertSaidFrom(h, bleed("walls"))).thenSucceed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_bleed_after", timeoutTicks = 400)
+    public static void shepherdBleedChangesAfterT5(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            met(h, player);
+            readyToSay(h);
+            MillerPattern.lean(h.getLevel().getServer(), player.getUUID());
+            h.startSequence().thenWaitUntil(() -> assertSaidFrom(h, bleed("after"))).thenSucceed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_fewer_once", timeoutTicks = 400)
+    public static void shepherdFewerPlaysOnce(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            met(h, player);
+            sated(h);
+            chat(player, "we have less sticks");
+            h.startSequence()
+                    .thenWaitUntil(() -> assertSaid(h, "shepherd.bleed.fewer"))
+                    .thenExecuteAfter(60, () -> assertSaid(h, "shepherd.bleed.fewer"))
+                    .thenWaitUntil(() -> assertSaid(h, "shepherd.bleed.fewer.aside"))
+                    .thenExecute(() -> {
+                        again(h);
+                        chat(player, "even less sticks");
+                    })
+                    .thenExecuteAfter(A_POLL, () -> assertSaid(h, null))
+                    .thenSucceed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_fewer_echo", timeoutTicks = 200)
+    public static void shepherdFewerEchoesNothing(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            met(h, player);
+            sated(h);
+            chat(player, "less zombies please");
+            h.startSequence()
+                    .thenWaitUntil(() -> assertSaid(h, "shepherd.bleed.fewer"))
+                    .thenExecute(() -> h.assertTrue(ShepherdReactions.saidArg() == null, "Their words are not in it: " + ShepherdReactions.saidArg()))
+                    .thenSucceed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_fewer_far", timeoutTicks = 300)
+    public static void shepherdFewerNeedsHerToHear(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            met(h, player);
+            sated(h);
+            var faraway = ShepherdTestWorld.onlinePlayer(h, player.position().add(40, 0, 0));
+            chat(faraway, "less sticks");
+            h.startSequence()
+                    .thenExecuteAfter(A_LOOK, () -> {
+                        assertSaid(h, null);
+                        h.assertFalse(data(h).flag("said_fewer"), "Still to come");
+                        chat(player, "less sticks");
+                    })
+                    .thenWaitUntil(() -> assertSaid(h, "shepherd.bleed.fewer"))
+                    .thenSucceed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_recall_nine", timeoutTicks = 400)
+    public static void shepherdEachNewKeepsakeHasALine(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            met(h, player);
+            var server = h.getLevel().getServer();
+            MillerPattern.appraise(server, player.getUUID(), Deed.NINE_FOUND);
+            MillerPattern.skipDay(server);
+            sated(h);
+            h.startSequence().thenWaitUntil(() -> assertSaid(h, "shepherd.recall.nine_found")).thenSucceed();
         });
     }
 }

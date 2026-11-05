@@ -374,4 +374,30 @@ class ShepherdDialogueDataTest {
             assertTrue(nodes.get(close).set().contains("t5_done"), close);
         }
     }
+
+    /** Who she is and is not stays out of everything she says about herself in the arc. */
+    @Test
+    void herWordsAboutHerselfStayClean() throws Exception {
+        var banned = java.util.regex.Pattern.compile("\\b(six|fair|rules|alive|mind|heart|archive|respawn|morrow|maeve)\\b");
+        for (var line : shepherdLines().entrySet()) {
+            if (!line.getKey().matches("shepherd\\.(bleed|t2|t3|t4|t5)\\..*")) continue;
+            assertFalse(banned.matcher(line.getValue().toLowerCase(Locale.ROOT)).find(), line.getKey());
+        }
+    }
+
+    @Test
+    void whatTurnsUpComesEveryThreeDaysFromEachPlace() throws Exception {
+        try (var in = ShepherdDialogueDataTest.class.getResourceAsStream("/data/frozendawn/shepherd/ambient/starter.json")) {
+            var pools = ShepherdAmbient.parse(JsonParser.parseReader(new InputStreamReader(in, StandardCharsets.UTF_8))).stream()
+                    .filter(pool -> pool.trigger() == ShepherdAmbient.Trigger.BLEED).toList();
+            assertEquals(Set.of("noticing", "walls", "after"), pools.stream().map(ShepherdAmbient.Pool::from).collect(java.util.stream.Collectors.toSet()));
+            for (var pool : pools) assertEquals(72000, pool.cooldownTicks());
+            assertEquals(9, pools.stream().mapToInt(pool -> pool.variants().size()).sum());
+        }
+    }
+
+    @Test
+    void fewerIsHerOneWord() throws Exception {
+        assertEquals("Fewer.", lang().get("shepherd.bleed.fewer").getAsString());
+    }
 }

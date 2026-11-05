@@ -2,6 +2,8 @@ package com.frozendawn.shepherd;
 
 import com.frozendawn.phase.PhaseManager;
 import com.frozendawn.vault.TerminusVaultBuilder;
+import java.util.Locale;
+import java.util.regex.Pattern;
 
 /** Her numbers, and the one rule about when a conversation has to stop. */
 public final class ShepherdPolicy {
@@ -55,6 +57,7 @@ public final class ShepherdPolicy {
     public static final int WARMTH_BLOCKS = 4;
     public static final float WARMTH_C = 5f;
 
+    private static final Pattern LESS_PLURAL = Pattern.compile("\\bless [a-z]+s\\b");
     private static final String[] BEARINGS = {"north", "north-east", "east", "south-east", "south", "south-west", "west", "north-west"};
 
     private ShepherdPolicy() {}
@@ -84,6 +87,11 @@ public final class ShepherdPolicy {
     /** How long her clock says she was out: Enoch's weeks off the day she woke. Never fewer than two, so it stays "days". */
     public static int offlineDays(long wokeAt) {
         return (int) Math.max(OFFLINE_DAYS_FLOOR, day(wokeAt) - ENOCH_DAYS);
+    }
+
+    /** A false hit costs one odd line. */
+    public static boolean lessBeforeAPlural(String text) {
+        return LESS_PLURAL.matcher(text.toLowerCase(Locale.ROOT)).find();
     }
 
     public static int groundBlocks(int dx, int dz) {

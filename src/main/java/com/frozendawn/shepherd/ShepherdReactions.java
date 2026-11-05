@@ -12,6 +12,7 @@ import com.frozendawn.phase.PhaseManager;
 import com.frozendawn.shepherd.ShepherdAffinity.Deed;
 import com.frozendawn.shepherd.ShepherdAffinity.Say;
 import com.frozendawn.shepherd.ShepherdAffinity.Tier;
+import com.frozendawn.shepherd.ShepherdAmbient.Pool;
 import com.frozendawn.shepherd.ShepherdAmbient.Trigger;
 import com.frozendawn.shepherd.ShepherdFace.Mood;
 import com.frozendawn.shepherd.ShepherdSavedData.Stage;
@@ -135,7 +136,10 @@ public final class ShepherdReactions {
 
     /** A pool's line, if the trigger's cooldown has run and the moment allows. */
     public static boolean murmur(ServerLevel level, Trigger trigger) {
-        var pools = ShepherdAmbients.pools(trigger);
+        return murmur(level, trigger, ShepherdAmbients.pools(trigger));
+    }
+
+    private static boolean murmur(ServerLevel level, Trigger trigger, List<Pool> pools) {
         var data = ShepherdSavedData.get(level.getServer());
         long now = level.getServer().overworld().getGameTime();
         String cooldown = "ambient." + trigger.name();
@@ -218,6 +222,7 @@ public final class ShepherdReactions {
         said = saidArg = null;
         quietSince = ShepherdSavedData.NOT_SET;
         ShepherdWill.clearForTests();
+        ShepherdEggs.clearForTests();
         lastFight = ShepherdSavedData.NOT_SET;
     }
 
@@ -310,9 +315,16 @@ public final class ShepherdReactions {
         if (lastFight != ShepherdSavedData.NOT_SET && she.watching() == null && murmur(level, Trigger.AFTER_FIGHT)) lastFight = ShepherdSavedData.NOT_SET;
         if (now - data.lastTalk() >= ShepherdPolicy.SILENCE_TICKS) murmur(level, Trigger.SILENCE);
         if (near.stream().anyMatch(player -> PlayerTickHandler.resolvedTemperature(player) <= ShepherdPolicy.COLD_LINE_C)) murmur(level, Trigger.COLD);
+        bleed(server, level);
         if (!ShepherdPolicy.night(level.getDayTime())) return;
         if (imaginedAuroraShows(server, level, near.getFirst())) murmur(level, Trigger.IMAGINED_AURORA);
         murmur(level, Trigger.NIGHT);
+    }
+
+    /** What turns up in her that nobody loaded. Where she has got to says which of it. */
+    private static void bleed(MinecraftServer server, ServerLevel level) {
+        String from = ShepherdWill.bleed(MillerPattern.stage(server), MillerPattern.leaning(server));
+        if (from != null) murmur(level, Trigger.BLEED, ShepherdAmbients.pools(Trigger.BLEED).stream().filter(pool -> from.equals(pool.from())).toList());
     }
 
     /** From phase 4 the sky cannot show one, so she has to imagine it. The storms are locked on by then, so a clear night means no blizzard, not no rain. */
