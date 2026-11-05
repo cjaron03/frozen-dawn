@@ -1213,3 +1213,4 @@ shepherdthelogreachesthescreen xml
 shepherdlanguagestillswaps xml
 shepherdsettingsarenotevidence xml
 shepherdnologduringatalk xml
+shepherdherlinescutoffplayagain xml

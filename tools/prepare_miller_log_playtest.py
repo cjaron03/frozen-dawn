@@ -3,7 +3,7 @@
 
 A flat lab in Survival with a dock, and charged and empty cells in a chest. Boot her, finish the first meeting, then the
 buttons write days into her log: plain, cold, a fight, a close call, a return, a peak, a long absence, and signed. The
-world starts on day 41, so a skipped day moves entries back and the days read as days. Advancements are filtered as in
+clock stands still on day 48, so each button first skips a day, which moves the older entries back. Advancements are filtered as in
 every generated playtest world, and the difficulty is locked. Never overwrites a save.
 Usage (lab client, run-lab/ directory):
   python3 tools/prepare_miller_log_playtest.py --source <any closed level.dat> --destination "run-lab/saves/Aurora Log Check"
@@ -27,8 +27,9 @@ GUARD = f'execute unless score #built {OBJECTIVE} matches 1 run return 0'
 CHEST = (3, 65, -4)
 CHARGED = 'frozendawn:power_cell[frozendawn:cell_joules=500000]'
 EMPTY = 'frozendawn:power_cell'
-START_DAY = 41
+START_DAY = 48
 DAY_TICKS = 24000
+SKIP = 'fd shepherd skipday'
 WRITE = 'fd shepherd log write'
 
 
@@ -55,7 +56,7 @@ def scripts():
              'setworldspawn 0 65 3', 'spawnpoint @s 0 65 3', 'tp @s 0.5 65 3.5 180 0',
              f'scoreboard players set #built {OBJECTIVE} 1', 'function '+NS+':controls', 'return 1']
     controls = [GUARD, tell('AURORA LOG CHECK: the cells are in the chest beside the dock. Boot her, finish the first meeting, then click these beside her. Her log is under Settings, Unit diagnostics.'),
-                tell('[Write a day]', command='/'+WRITE), tell('[Skip a day]', command='/fd shepherd skipday'), tell('[Cold day]', 'cold_day'), tell('[Fight]', 'fight_day'), tell('[Close call]', 'close_call'),
+                tell('[Write a day]', 'write_day'), tell('[Skip a day]', command='/'+SKIP), tell('[Cold day]', 'cold_day'), tell('[Fight]', 'fight_day'), tell('[Close call]', 'close_call'),
                 tell('[Warm room]', 'warm_room'), tell('[Stopped and back]', 'stopped_and_back', 'yellow'), tell('[Peak]', 'peak', 'yellow'), tell('[Five days away]', 'five_days', 'yellow'),
                 tell('[Friendly]', command='/fd shepherd affinity 260', color='green'), tell('[Walls]', command='/fd shepherd witness lagged', color='green'), tell('[Wary]', command='/fd shepherd affinity -300', color='red'),
                 tell('[Sign the log]', command='/fd shepherd log sign', color='light_purple'), tell('[Forget the read]', command='/fd shepherd log forget', color='light_purple'),
@@ -68,14 +69,15 @@ def scripts():
                           f'execute if score #built {OBJECTIVE} matches -1 if loaded -32 65 -16 if loaded 32 65 16 as @a[limit=1] run function '+NS+':setup']),
         'setup': '\n'.join(setup),
         'controls': '\n'.join(controls),
-        'cold_day': '\n'.join([GUARD, 'fd shepherd log mark cold', WRITE, 'return 1']),
-        'fight_day': '\n'.join([GUARD, 'fd shepherd log mark fight', WRITE, 'return 1']),
-        'close_call': '\n'.join([GUARD, 'fd shepherd log mark close_call', WRITE, 'return 1']),
-        'warm_room': '\n'.join([GUARD, 'fd shepherd saw warm_shelter', WRITE, 'return 1']),
-        'stopped_and_back': '\n'.join([GUARD, 'fd shepherd log mark stopped', 'fd shepherd log mark back', WRITE, 'return 1']),
-        'peak': '\n'.join([GUARD, 'fd shepherd feel distress', WRITE, 'return 1']),
+        'write_day': '\n'.join([GUARD, SKIP, WRITE, 'return 1']),
+        'cold_day': '\n'.join([GUARD, SKIP, 'fd shepherd log mark cold', WRITE, 'return 1']),
+        'fight_day': '\n'.join([GUARD, SKIP, 'fd shepherd log mark fight', WRITE, 'return 1']),
+        'close_call': '\n'.join([GUARD, SKIP, 'fd shepherd log mark close_call', WRITE, 'return 1']),
+        'warm_room': '\n'.join([GUARD, SKIP, 'fd shepherd saw warm_shelter', WRITE, 'return 1']),
+        'stopped_and_back': '\n'.join([GUARD, SKIP, 'fd shepherd log mark stopped', 'fd shepherd log mark back', WRITE, 'return 1']),
+        'peak': '\n'.join([GUARD, SKIP, 'fd shepherd feel distress', WRITE, 'return 1']),
         # Written in the same tick, before a poll sees them beside her again.
-        'five_days': '\n'.join([GUARD, *['fd shepherd skipday']*5, WRITE, 'return 1'])}
+        'five_days': '\n'.join([GUARD, *[SKIP]*5, WRITE, 'return 1'])}
 
 
 def prepare_world(source, destination):

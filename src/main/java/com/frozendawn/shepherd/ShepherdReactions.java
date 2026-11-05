@@ -256,11 +256,12 @@ public final class ShepherdReactions {
         if (she == null) return;
         var level = (ServerLevel) she.level();
         ShepherdTalk.catchUp(level, she);
-        var near = near(level, she);
+        // Nobody on the stop screen is beside her: no day settles on them, and she does not watch them in the cold.
+        var near = near(level, she).stream().filter(ServerPlayer::isAlive).toList();
         if (near.isEmpty()) return;
         var data = ShepherdSavedData.get(server);
         var nearest = near.stream().min(Comparator.comparingDouble(she::distanceTo)).orElseThrow().getUUID();
-        for (var player : near) if (player.isAlive()) MillerPattern.marked(server, player.getUUID(), Mark.BACK);
+        for (var player : near) MillerPattern.marked(server, player.getUUID(), Mark.BACK);
         MillerPattern.poll(server, near.size(), nearest, data.lastTalk(), data.tier());
         comeBack(server, she, near.getFirst());
         for (var player : near) look(level, player);

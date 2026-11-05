@@ -113,7 +113,6 @@ final class PatternState {
     private void noticed(UUID nearest, long lastTalk, Tier tier, long now) {
         if (now >= settleAt) {
             var settled = impressions.settle();
-            settleAt = now + ShepherdPolicy.DAY_TICKS;
             if (!settled.changed().isEmpty()) self.witness(PatternLaws.LAGGED);
             if (!settled.flipped().isEmpty()) self.witness(PatternLaws.FALLIBLE);
             if (settled.fromKindness()) self.witness(PatternLaws.EXPLOITABLE);
@@ -124,10 +123,11 @@ final class PatternState {
         marks.seen(nearest, now);
     }
 
-    /** One entry about {@code who}. What it took from the marks is spent. */
+    /** One entry about {@code who}, and the next is a day off. What it took from the marks is spent. */
     LogEntry writeDay(UUID who, long lastTalk, Tier tier, long now) {
         var entry = log.write(day(who, lastTalk, tier, now));
         marks.written();
+        settleAt = now + ShepherdPolicy.DAY_TICKS;
         return entry;
     }
 

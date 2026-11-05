@@ -174,7 +174,6 @@ public final class ShepherdTalk {
         live.fromHub = fromHub;
         live.affinityApplied = 0;
         settle();
-        if (LOG_READ.equals(node)) MillerPattern.markTold(player.getServer(), player.getUUID());
         if (FIRST_MEETING.equals(node)) live.she.showLogo();
         send();
         return true;
@@ -243,7 +242,11 @@ public final class ShepherdTalk {
     }
 
     public static void reply(ServerPlayer player, int conversation, int slot) {
-        if (!speaking(player, conversation) || live.talk == null || !live.talk.answer(slot)) return;
+        if (!speaking(player, conversation) || live.talk == null) return;
+        boolean readToThem = LOG_READ.equals(live.talk.current().id());
+        if (!live.talk.answer(slot)) return;
+        // Only once they have heard it: cut off partway, she says it again at the next talk.
+        if (readToThem) MillerPattern.markTold(player.getServer(), player.getUUID());
         hear(slot);
         spendPrompt();
         settle();

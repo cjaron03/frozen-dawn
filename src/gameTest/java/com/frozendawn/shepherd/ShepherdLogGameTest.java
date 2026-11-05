@@ -72,6 +72,8 @@ public final class ShepherdLogGameTest {
     @AfterBatch(batch = "shepherd_read_closed") public static void readClosedAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
     @BeforeBatch(batch = "shepherd_read_wary") public static void readWaryBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
     @AfterBatch(batch = "shepherd_read_wary") public static void readWaryAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_read_midline") public static void readMidlineBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_read_midline") public static void readMidlineAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
     @BeforeBatch(batch = "shepherd_read_blind") public static void readBlindBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
     @AfterBatch(batch = "shepherd_read_blind") public static void readBlindAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
     @BeforeBatch(batch = "shepherd_read_reload") public static void readReloadBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
@@ -173,11 +175,10 @@ public final class ShepherdLogGameTest {
                     .thenExecuteAfter(A_POLL, () -> kill(h, player))
                     .thenExecuteAfter(A_POLL, () -> skip(h))
                     .thenExecuteAfter(A_POLL, () -> {
-                        assertNote(h, null);
+                        h.assertTrue(MillerPattern.log(h.getLevel().getServer()).isEmpty(), "Nobody is on their feet beside her, so nothing settles");
                         revive(player);
-                        skip(h);
                     })
-                    .thenExecuteAfter(2 * A_POLL, () -> assertNote(h, "back.product"))
+                    .thenExecuteAfter(A_POLL, () -> assertNote(h, "back.product"))
                     .thenSucceed();
         });
     }
@@ -217,7 +218,7 @@ public final class ShepherdLogGameTest {
                     .thenExecuteAfter(A_POLL, () -> skip(h))
                     .thenExecuteAfter(A_POLL, () -> {
                         h.assertTrue(other.distanceTo(player) > ShepherdPolicy.HEARD_BLOCKS, "They came back somewhere else");
-                        assertNote(h, null);
+                        h.assertTrue(ShepherdReactions.writeDay(player).note() == null, "An entry about them has no return in it");
                     })
                     .thenSucceed();
         });
@@ -387,6 +388,27 @@ public final class ShepherdLogGameTest {
             assertNode(h, READ);
             ShepherdTalk.reply(player, ShepherdTalk.liveId(), ShepherdConversation.CONTINUE);
             h.assertTrue(ShepherdTalk.live(), "Then the hub, as the mockup draws it");
+            ShepherdTalk.close(player);
+            ShepherdTalk.openHub(player, she);
+            assertNode(h, null);
+            assertScore(h, SCORE - COST);
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_read_midline", timeoutTicks = 200)
+    public static void shepherdHerLinesCutOffPlayAgain(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            var she = withADay(h, player);
+            ShepherdTalk.openHub(player, she);
+            act(player, Action.LOG);
+            act(player, Action.LOG_DONE);
+            assertNode(h, READ);
+            ShepherdTalk.close(player);
+            ShepherdTalk.openHub(player, she);
+            assertNode(h, READ);
+            ShepherdTalk.reply(player, ShepherdTalk.liveId(), ShepherdConversation.CONTINUE);
             ShepherdTalk.close(player);
             ShepherdTalk.openHub(player, she);
             assertNode(h, null);

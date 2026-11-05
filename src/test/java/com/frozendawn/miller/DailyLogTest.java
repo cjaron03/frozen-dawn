@@ -385,6 +385,14 @@ class DailyLogTest {
     }
 
     @Test
+    void writingTheDayRestartsTheSettle() {
+        var state = woken();
+        state.writeDay(ONE, PatternState.NOT_SET, Tier.NEUTRAL, DAY - 100);
+        state.poll(1, ONE, PatternState.NOT_SET, Tier.NEUTRAL, DAY);
+        assertEquals(1, state.log().entries().size(), "A day written by hand is that day's entry");
+    }
+
+    @Test
     void nobodyNearWritesNothing() {
         var state = woken();
         state.poll(0, ONE, PatternState.NOT_SET, Tier.NEUTRAL, 3 * DAY);
