@@ -19,6 +19,10 @@ public final class ShepherdPolicy {
     public static final int PROMPT_SHOWS = 3;
     /** A day between personal conversations, so one never lands on the heels of the last. */
     public static final int PERSONAL_GAP_TICKS = 24000;
+    /** She does not bring up the pit with someone already at it. */
+    public static final int PIT_PROMPT_BLOCKS = 96;
+    /** How near the husk she has to be to know it for what it is. */
+    public static final int NINE_SEEN_BLOCKS = 12;
     public static final int STRIP_HOLD_TICKS = 80;
     public static final int STRIP_FADE_TICKS = 20;
     public static final double ASK_BLOCKS = 2.5;

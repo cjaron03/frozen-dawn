@@ -80,7 +80,7 @@ class ShepherdDialogueDataTest {
     void everyConditionIsKnown() throws Exception {
         var nodes = nodes();
         Set<String> known = new HashSet<>(List.of("woke_in_vault", "wand_cradle", "wand_hand", "wand_other", "tier_silent", "tier_wary", "tier_above_wary", "tier_friendly", "tier_trusted", "tier_close",
-                "stage_noticing", "stage_walls", "quiet"));
+                "stage_noticing", "stage_walls", "quiet", "pit_open"));
         for (Node node : nodes.values()) {
             known.addAll(node.set());
             for (Response response : node.responses()) known.addAll(response.set());
@@ -275,5 +275,24 @@ class ShepherdDialogueDataTest {
             assertTrue(lines.containsKey("shepherd.boot.line." + line + ".right"), "line " + line);
         }
         assertEquals("STABILITY ABOVE.", lines.get("shepherd.boot.line." + (ShepherdBoot.LINE_COUNT - 1) + ".left"), "The motto stops there");
+    }
+
+    /** T2's Ask comes back to the same choice without itself, and each answer lands on the ground ref. */
+    @Test
+    void theOthersReturnsToItsChoice() throws Exception {
+        var nodes = nodes();
+        var slots = nodes.get("t2.want").responses().stream().map(Response::slot).toList();
+        assertEquals(List.of(ShepherdDialogue.Slot.KIND, ShepherdDialogue.Slot.BLUNT, ShepherdDialogue.Slot.SARCASTIC), slots);
+        for (String reply : List.of("t2.go", "t2.dead", "t2.twelve")) assertEquals("t2.mark", nodes.get(reply).next(), reply);
+        assertTrue(nodes.get("t2.mark").set().containsAll(List.of("nine_open", "t2_heard")));
+    }
+
+    /** Word for word from the script, by the owner's order: a slip here is not a rewrite anybody asked for. */
+    @Test
+    void theScriptsLinesStandAsWritten() throws Exception {
+        var lang = lang();
+        assertEquals("Then they stopped. One at a time. Nine was the last. Nine's last ping came from the Blast Pit.", lang.get("shepherd.t2.stopped").getAsString());
+        assertEquals("Cell's cracked. Memory's... empty. Not wiped. Wiped leaves marks. Empty. Like nobody was ever in there.", lang.get("shepherd.t2.site.empty").getAsString());
+        assertEquals("...Can we take its lamp? I don't want to leave it down here in the dark.", lang.get("shepherd.t2.site.lamp").getAsString());
     }
 }

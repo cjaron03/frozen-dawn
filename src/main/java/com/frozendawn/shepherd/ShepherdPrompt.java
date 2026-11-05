@@ -6,6 +6,7 @@ import com.frozendawn.event.PlayerTickHandler;
 import com.frozendawn.network.ShepherdPromptPayload;
 import com.frozendawn.shepherd.ShepherdAffinity.Tier;
 import com.frozendawn.shepherd.ShepherdSavedData.Stage;
+import com.frozendawn.world.BlastPitPlacement;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -33,11 +34,13 @@ import net.neoforged.neoforge.network.PacketDistributor;
 @EventBusSubscriber(modid = FrozenDawn.MOD_ID)
 public final class ShepherdPrompt {
     public static final String DOORS = "fm.doors", EXIT = "fm.exit";
-    public static final String THE_NAME = "t1.name";
+    public static final String THE_NAME = "t1.name", THE_OTHERS = "t2.others", AT_NINE = "t2.site";
     static final String PERSONAL_GAP = "personal_gap";
-    static final String FIRST_MEETING_DONE = "fm_done", DOORS_ASKED = "doors_asked", EXIT_ASKED = "exit_asked", NAME_ASKED = "t1_asked", ASKED_NAME = "asked_name";
+    static final String FIRST_MEETING_DONE = "fm_done", DOORS_ASKED = "doors_asked", EXIT_ASKED = "exit_asked", NAME_ASKED = "t1_asked", ASKED_NAME = "asked_name",
+            OTHERS_ASKED = "t2_asked", NINE_ASKED = "nine_asked";
     /** What each tier opens, in the order she brings it up. */
-    private static final List<Personal> PERSONAL = List.of(new Personal(Tier.FRIENDLY, THE_NAME, NAME_ASKED, (server, level, data, near) -> true));
+    private static final List<Personal> PERSONAL = List.of(new Personal(Tier.FRIENDLY, THE_NAME, NAME_ASKED, (server, level, data, near) -> true),
+            new Personal(Tier.FRIENDLY, THE_OTHERS, OTHERS_ASKED, ShepherdPrompt::awayFromThePit));
     /** A sprinter covers 1.4 blocks in this, so nobody crosses a box between looks. */
     private static final int CHECK_TICKS = 5;
     private static final long LONG_AGO = Long.MIN_VALUE / 2;
@@ -68,6 +71,7 @@ public final class ShepherdPrompt {
         var near = level.getPlayers(player -> !player.isSpectator() && player.distanceTo(she) <= ShepherdPolicy.HEARD_BLOCKS);
         if (near.isEmpty()) return;
         ask(server, data, near);
+        atNine(server, level, data, near, she);
         if (ShepherdReactions.quiet(data, server.overworld().getGameTime())) return;
         offer(server, level, data, near);
         show(server, level, data, near, she);
@@ -81,6 +85,20 @@ public final class ShepherdPrompt {
             if (!data.flag(DOORS_ASKED) && ShepherdPolicy.atLastDoor(at.getX(), at.getY(), at.getZ())) raise(data, DOORS_ASKED, DOORS);
             if (!data.flag(EXIT_ASKED) && ShepherdPolicy.atVaultExit(at.getX(), at.getY(), at.getZ())) raise(data, EXIT_ASKED, EXIT);
         }
+    }
+
+    /** Only with her there, and only if she would stand for it. Until then the husk is a dead unit and nothing else. */
+    private static void atNine(MinecraftServer server, ServerLevel level, ShepherdSavedData data, List<ServerPlayer> near, ShepherdEntity she) {
+        var husk = data.huskPos();
+        if (husk == null || data.flag(NINE_ASKED) || ShepherdTalk.live() || data.tier() == Tier.WARY || !she.blockPosition().closerThan(husk, ShepherdPolicy.NINE_SEEN_BLOCKS)) return;
+        if (calm(server, level, near)) raise(data, NINE_ASKED, AT_NINE);
+    }
+
+    /** T2 sends you there, so the pit has to be somewhere, and not where you are standing. */
+    private static boolean awayFromThePit(MinecraftServer server, ServerLevel level, ShepherdSavedData data, List<ServerPlayer> near) {
+        var pit = BlastPitPlacement.ensureBlastPitResolved(level);
+        return pit != null && near.stream().allMatch(player ->
+                ShepherdPolicy.groundBlocks(pit.getX() - player.getBlockX(), pit.getZ() - player.getBlockZ()) > ShepherdPolicy.PIT_PROMPT_BLOCKS);
     }
 
     /** A place prompt takes over from a waiting personal one, which is then not asked yet. */

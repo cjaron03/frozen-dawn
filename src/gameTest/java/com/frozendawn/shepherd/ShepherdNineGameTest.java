@@ -29,6 +29,7 @@ import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 public final class ShepherdNineGameTest {
     private static final BlockPos SPOT = new BlockPos(10, 4, 10), PIT = new BlockPos(10, 3, 10), NINE = PIT.offset(9, -2, 7);
     private static final int A_LOOK = 25;
+    private static final int ASK = 0, KIND = 1, BLUNT = 2, SARCASTIC = 3, CONTINUE = -1;
 
     private static void before(ServerLevel l) {
         ShepherdTestWorld.fresh(l);
@@ -58,6 +59,29 @@ public final class ShepherdNineGameTest {
     @AfterBatch(batch = "shepherd_nine_cell") public static void cellAfter(ServerLevel l) { after(l); }
     @BeforeBatch(batch = "shepherd_nine_sheet") public static void sheetBefore(ServerLevel l) { before(l); }
     @AfterBatch(batch = "shepherd_nine_sheet") public static void sheetAfter(ServerLevel l) { after(l); }
+
+    @BeforeBatch(batch = "shepherd_t2_opens") public static void t2OpensBefore(ServerLevel l) { before(l); }
+    @AfterBatch(batch = "shepherd_t2_opens") public static void t2OpensAfter(ServerLevel l) { after(l); }
+    @BeforeBatch(batch = "shepherd_t2_ask") public static void t2AskBefore(ServerLevel l) { before(l); }
+    @AfterBatch(batch = "shepherd_t2_ask") public static void t2AskAfter(ServerLevel l) { after(l); }
+    @BeforeBatch(batch = "shepherd_t2_pit") public static void t2PitBefore(ServerLevel l) { before(l); }
+    @AfterBatch(batch = "shepherd_t2_pit") public static void t2PitAfter(ServerLevel l) { after(l); }
+    @BeforeBatch(batch = "shepherd_t2_talk") public static void t2TalkBefore(ServerLevel l) { before(l); }
+    @AfterBatch(batch = "shepherd_t2_talk") public static void t2TalkAfter(ServerLevel l) { after(l); }
+    @BeforeBatch(batch = "shepherd_site_waits") public static void siteWaitsBefore(ServerLevel l) { before(l); }
+    @AfterBatch(batch = "shepherd_site_waits") public static void siteWaitsAfter(ServerLevel l) { after(l); }
+    @BeforeBatch(batch = "shepherd_site_wary") public static void siteWaryBefore(ServerLevel l) { before(l); }
+    @AfterBatch(batch = "shepherd_site_wary") public static void siteWaryAfter(ServerLevel l) { after(l); }
+    @BeforeBatch(batch = "shepherd_site_kind") public static void siteKindBefore(ServerLevel l) { before(l); }
+    @AfterBatch(batch = "shepherd_site_kind") public static void siteKindAfter(ServerLevel l) { after(l); }
+    @BeforeBatch(batch = "shepherd_site_scrap") public static void siteScrapBefore(ServerLevel l) { before(l); }
+    @AfterBatch(batch = "shepherd_site_scrap") public static void siteScrapAfter(ServerLevel l) { after(l); }
+    @BeforeBatch(batch = "shepherd_site_after") public static void siteAfterBefore(ServerLevel l) { before(l); }
+    @AfterBatch(batch = "shepherd_site_after") public static void siteAfterAfter(ServerLevel l) { after(l); }
+    @BeforeBatch(batch = "shepherd_site_closed") public static void siteClosedBefore(ServerLevel l) { before(l); }
+    @AfterBatch(batch = "shepherd_site_closed") public static void siteClosedAfter(ServerLevel l) { after(l); }
+    @BeforeBatch(batch = "shepherd_t2_wall") public static void t2WallBefore(ServerLevel l) { before(l); }
+    @AfterBatch(batch = "shepherd_t2_wall") public static void t2WallAfter(ServerLevel l) { after(l); }
 
     private static ShepherdSavedData data(GameTestHelper h) {
         return ShepherdSavedData.get(h.getLevel().getServer());
@@ -227,6 +251,276 @@ public final class ShepherdNineGameTest {
             h.assertTrue(data(h).affinity() == ShepherdAffinity.Deed.READ_LOG.score(), "The deed still counts: " + data(h).affinity());
             h.assertTrue(ShepherdReactions.said() == null, "The strip stays silent: " + ShepherdReactions.said());
             h.succeed();
+        });
+    }
+
+    private static void say(ServerPlayer player, int... slots) {
+        for (int slot : slots) ShepherdTalk.reply(player, ShepherdTalk.liveId(), slot);
+    }
+
+    private static void assertNode(GameTestHelper h, String node) {
+        h.assertTrue(node.equals(ShepherdTalk.liveNode()), "On " + node + ": " + ShepherdTalk.liveNode());
+    }
+
+    private static void assertPrompt(GameTestHelper h, String node) {
+        h.assertTrue(java.util.Objects.equals(node, data(h).promptNode()), "Waiting: " + data(h).promptNode());
+    }
+
+    private static int lamps(ServerPlayer player) {
+        return player.getInventory().countItem(ModItems.NINE_LAMP.get());
+    }
+
+    /** She is up and Friendly with T1 asked, a day clear of it, and the pit is a long way off. */
+    private static ShepherdEntity readyForT2(GameTestHelper h, ServerPlayer player) {
+        var she = met(h, player);
+        data(h).affinity(260);
+        data(h).flag("t1_asked", true);
+        ShepherdTestWorld.pitAt(h.getLevel(), player.blockPosition().offset(300, 0, -400));
+        return she;
+    }
+
+    /** Standing at the husk with her beside it, ready for the scene. */
+    private static ShepherdEntity atTheHusk(GameTestHelper h, ServerPlayer player, int score) {
+        husk(h);
+        player.setPos(h.absoluteVec(Vec3.atCenterOf(NINE.offset(-3, 1, -3))));
+        var she = met(h, player);
+        she.teleportTo(player.getX() + 1, player.getY() + 1, player.getZ());
+        data(h).affinity(score);
+        data(h).flag(ShepherdNine.OPEN, true);
+        data(h).flag("t2_asked", true);
+        data(h).flag("t1_asked", true);
+        return she;
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_t2_opens", timeoutTicks = 300)
+    public static void shepherdT2OpensThePit(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            var she = readyForT2(h, player);
+            h.startSequence()
+                    .thenWaitUntil(() -> assertPrompt(h, ShepherdPrompt.THE_OTHERS))
+                    .thenExecute(() -> {
+                        she.interact(player, InteractionHand.MAIN_HAND);
+                        assertNode(h, "t2.others");
+                        say(player, KIND);
+                        assertNode(h, "t2.go");
+                        h.assertTrue(data(h).affinity() == 275, "Scored: " + data(h).affinity());
+                        h.assertFalse(data(h).flag(ShepherdNine.OPEN), "Not until the ground ref");
+                        say(player, CONTINUE);
+                        assertNode(h, "t2.mark");
+                        h.assertTrue(data(h).flag(ShepherdNine.OPEN) && data(h).flag("t2_heard"), "Open");
+                        var pit = ShepherdTestWorld.pit(h.getLevel());
+                        var args = ShepherdTalk.liveSent().lines().getFirst().args();
+                        h.assertTrue(args.equals(java.util.List.of(String.valueOf(pit.getX()), String.valueOf(pit.getZ()))), "The ground ref: " + args);
+                    })
+                    .thenSucceed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_t2_ask", timeoutTicks = 300)
+    public static void shepherdAskAboutTheFindReturnsToTheChoice(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            readyForT2(h, player);
+            ShepherdTalk.start(player, "t2.others");
+            say(player, ASK);
+            assertNode(h, "t2.want");
+            say(player, ASK);
+            assertNode(h, "t2.want");
+            say(player, SARCASTIC);
+            assertNode(h, "t2.twelve");
+            say(player, CONTINUE);
+            assertNode(h, "t2.mark");
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_t2_pit", timeoutTicks = 300)
+    public static void shepherdNoT2AtThePit(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            readyForT2(h, player);
+            ShepherdTestWorld.pitAt(h.getLevel(), player.blockPosition().offset(60, 0, 40));
+            h.startSequence()
+                    .thenExecuteAfter(15, () -> {
+                        assertPrompt(h, null);
+                        ShepherdTestWorld.pitAt(h.getLevel(), player.blockPosition().offset(100, 0, 0));
+                    })
+                    .thenWaitUntil(() -> assertPrompt(h, ShepherdPrompt.THE_OTHERS))
+                    .thenExecute(() -> ShepherdTestWorld.pitAt(h.getLevel(), player.blockPosition().offset(90, 0, 0)))
+                    .thenWaitUntil(() -> assertPrompt(h, null))
+                    .thenSucceed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_t2_talk", timeoutTicks = 300)
+    public static void shepherdTalkSaysHowFarUntilSheHasSeenIt(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            var she = readyForT2(h, player);
+            data(h).flag(ShepherdNine.OPEN, true);
+            she.interact(player, InteractionHand.MAIN_HAND);
+            ShepherdTalk.action(player, ShepherdTalk.liveId(), ShepherdTalk.Action.TALK);
+            assertNode(h, "hub.talk.pit");
+            var args = ShepherdTalk.liveSent().lines().getFirst().args();
+            h.assertTrue(args.equals(java.util.List.of("500", "north-east")), "How far: " + args);
+            ShepherdTalk.close(player);
+            data(h).flag(ShepherdNine.SEEN, true);
+            she.interact(player, InteractionHand.MAIN_HAND);
+            ShepherdTalk.action(player, ShepherdTalk.liveId(), ShepherdTalk.Action.TALK);
+            h.assertFalse("hub.talk.pit".equals(ShepherdTalk.liveNode()), "Not once she has: " + ShepherdTalk.liveNode());
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_site_waits", timeoutTicks = 300)
+    public static void shepherdTheHuskWaitsForHer(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            var she = atTheHusk(h, player, 260);
+            var husk = data(h).huskPos();
+            data(h).waiting(true);
+            she.teleportTo(husk.getX() + 40, husk.getY() + 3, husk.getZ());
+            player.setPos(Vec3.atCenterOf(husk.above()).add(1, 0, 0));
+            h.startSequence()
+                    .thenExecuteAfter(15, () -> {
+                        ShepherdTestWorld.touch(h, husk, player);
+                        h.assertTrue(lamps(player) == 0, "It stays inert");
+                        h.assertTrue(h.getLevel().getBlockState(husk).getValue(ShepherdHuskBlock.LAMP), "With its lamp in");
+                        assertPrompt(h, null);
+                        data(h).waiting(false);
+                        she.teleportTo(husk.getX() + 3, husk.getY() + 3, husk.getZ());
+                    })
+                    .thenWaitUntil(() -> assertPrompt(h, ShepherdPrompt.AT_NINE))
+                    .thenSucceed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_site_wary", timeoutTicks = 300)
+    public static void shepherdNoSiteSceneAtWary(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            atTheHusk(h, player, -300);
+            h.startSequence()
+                    .thenExecuteAfter(15, () -> {
+                        assertPrompt(h, null);
+                        data(h).affinity(0);
+                    })
+                    .thenWaitUntil(() -> assertPrompt(h, ShepherdPrompt.AT_NINE))
+                    .thenSucceed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_site_kind", timeoutTicks = 300)
+    public static void shepherdKindRepliesHandOverTheLamp(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            atTheHusk(h, player, 260);
+            ShepherdTalk.start(player, ShepherdPrompt.AT_NINE);
+            h.assertTrue(data(h).flag(ShepherdNine.SEEN), "She has seen it");
+            h.assertTrue(ShepherdReactions.quiet(data(h), h.getLevel().getServer().overworld().getGameTime()), "The quiet starts here");
+            h.assertTrue(com.frozendawn.miller.MillerPattern.remembers(h.getLevel().getServer(), player.getUUID(), "nine_found"), "She keeps it");
+            say(player, KIND);
+            assertNode(h, "t2.kind");
+            h.assertTrue(lamps(player) == 1, "The lamp is in hand");
+            h.assertTrue(data(h).affinity() == 280, "Scored: " + data(h).affinity());
+            say(player, CONTINUE);
+            assertNode(h, "t2.sheet");
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_site_scrap", timeoutTicks = 300)
+    public static void shepherdScrapHandsOverNothing(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            atTheHusk(h, player, 260);
+            ShepherdTalk.start(player, ShepherdPrompt.AT_NINE);
+            say(player, BLUNT);
+            assertNode(h, "t2.scrap");
+            h.assertTrue(lamps(player) == 0, "Nothing handed over");
+            h.assertTrue(data(h).affinity() == 235, "Scored: " + data(h).affinity());
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_site_after", timeoutTicks = 300)
+    public static void shepherdScrapStillOpensTheHusk(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            atTheHusk(h, player, 260);
+            var husk = data(h).huskPos();
+            ShepherdTalk.start(player, ShepherdPrompt.AT_NINE);
+            say(player, BLUNT, CONTINUE);
+            h.assertFalse(ShepherdTalk.live(), "Over");
+            ShepherdTestWorld.touch(h, husk, player);
+            h.assertTrue(lamps(player) == 1 && data(h).flag(ShepherdNine.SHEET_TAKEN), "It gives them up to a hand");
+            h.assertTrue("shepherd.t2.thanks".equals(ShepherdReactions.said()), "Even on a quiet day: " + ShepherdReactions.said());
+            ShepherdTestWorld.touch(h, husk, player);
+            h.assertTrue(lamps(player) == 1, "Once");
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_site_closed", timeoutTicks = 300)
+    public static void shepherdAClosedSiteSceneResumes(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            var she = atTheHusk(h, player, 260);
+            data(h).promptNode(ShepherdPrompt.AT_NINE);
+            she.interact(player, InteractionHand.MAIN_HAND);
+            assertNode(h, ShepherdPrompt.AT_NINE);
+            long quietEnds = data(h).deedReady("nine_quiet");
+            ShepherdTalk.close(player);
+            h.startSequence()
+                    .thenExecuteAfter(5, () -> {
+                        she.interact(player, InteractionHand.MAIN_HAND);
+                        assertNode(h, ShepherdPrompt.AT_NINE);
+                        h.assertTrue(data(h).deedReady("nine_quiet") == quietEnds, "One quiet day");
+                        say(player, KIND);
+                        assertNode(h, "t2.kind");
+                        ShepherdTalk.close(player);
+                    })
+                    .thenExecuteAfter(5, () -> {
+                        she.interact(player, InteractionHand.MAIN_HAND);
+                        assertNode(h, "t2.kind");
+                        h.assertTrue(lamps(player) == 1, "One lamp");
+                        h.assertTrue(player.getInventory().countItem(ModItems.ORSA_DOCUMENT.get()) == 1, "One sheet");
+                        h.assertTrue(data(h).affinity() == 280, "Scored once: " + data(h).affinity());
+                    })
+                    .thenSucceed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_t2_wall", timeoutTicks = 800)
+    public static void shepherdKindRepliesReachExploitable(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            atTheHusk(h, player, 260);
+            var server = h.getLevel().getServer();
+            com.frozendawn.miller.MillerPattern.witness(server, com.frozendawn.miller.PatternLaws.EXPLOITABLE, 0);
+            Runnable day = () -> {
+                ShepherdTalk.close(player);
+                ShepherdReactions.skipDay(server);
+            };
+            ShepherdTalk.start(player, ShepherdPrompt.THE_NAME);
+            say(player, KIND);
+            day.run();
+            var poll = ShepherdReactions.POLL_TICKS + 10;
+            h.startSequence()
+                    .thenExecuteAfter(poll, () -> {
+                        ShepherdTalk.start(player, "t2.others");
+                        say(player, KIND);
+                        day.run();
+                    })
+                    .thenExecuteAfter(poll, () -> {
+                        ShepherdTalk.start(player, ShepherdPrompt.AT_NINE);
+                        say(player, KIND);
+                        day.run();
+                    })
+                    .thenExecuteAfter(poll, () -> h.assertTrue(com.frozendawn.miller.MillerPattern.snapshot(server).walls().contains(com.frozendawn.miller.PatternLaws.EXPLOITABLE),
+                            "Three kind replies, with nothing else behind them: " + com.frozendawn.miller.MillerPattern.snapshot(server).walls()))
+                    .thenSucceed();
         });
     }
 }

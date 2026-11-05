@@ -146,6 +146,226 @@
           "mood": "neutral"
         }
       ]
+    },
+    {
+      "id": "t2.others",
+      "lines": [
+        {
+          "line": "shepherd.t2.others",
+          "mood": "neutral"
+        },
+        {
+          "line": "shepherd.t2.stopped",
+          "mood": "sad"
+        },
+        {
+          "line": "shepherd.t2.nobody",
+          "mood": "thinking",
+          "if": "stage_noticing"
+        }
+      ],
+      "responses": [
+        {
+          "slot": "ask",
+          "label": "shepherd.t2.want.label",
+          "full": "shepherd.t2.want.full",
+          "next": "t2.want"
+        },
+        {
+          "slot": "kind",
+          "label": "shepherd.t2.go.label",
+          "next": "t2.go",
+          "affinity": 15
+        },
+        {
+          "slot": "blunt",
+          "label": "shepherd.t2.dead.label",
+          "full": "shepherd.t2.dead.full",
+          "next": "t2.dead"
+        },
+        {
+          "slot": "sarcastic",
+          "label": "shepherd.t2.twelve.label",
+          "next": "t2.twelve"
+        }
+      ]
+    },
+    {
+      "id": "t2.want",
+      "lines": [
+        {
+          "line": "shepherd.t2.want",
+          "mood": "neutral"
+        }
+      ],
+      "responses": [
+        {
+          "slot": "kind",
+          "label": "shepherd.t2.go.label",
+          "next": "t2.go",
+          "affinity": 15
+        },
+        {
+          "slot": "blunt",
+          "label": "shepherd.t2.dead.label",
+          "full": "shepherd.t2.dead.full",
+          "next": "t2.dead"
+        },
+        {
+          "slot": "sarcastic",
+          "label": "shepherd.t2.twelve.label",
+          "next": "t2.twelve"
+        }
+      ]
+    },
+    {
+      "id": "t2.go",
+      "lines": [
+        {
+          "line": "shepherd.t2.go.1",
+          "mood": "happy"
+        },
+        {
+          "line": "shepherd.t2.go.2",
+          "mood": "thinking"
+        }
+      ],
+      "next": "t2.mark"
+    },
+    {
+      "id": "t2.dead",
+      "lines": [
+        {
+          "line": "shepherd.t2.dead",
+          "mood": "sad"
+        }
+      ],
+      "next": "t2.mark"
+    },
+    {
+      "id": "t2.twelve",
+      "lines": [
+        {
+          "line": "shepherd.t2.twelve",
+          "mood": "amused"
+        }
+      ],
+      "next": "t2.mark"
+    },
+    {
+      "id": "t2.mark",
+      "set": [
+        "nine_open",
+        "t2_heard"
+      ],
+      "lines": [
+        {
+          "line": "shepherd.t2.mark",
+          "mood": "neutral",
+          "args": [
+            "pit_x",
+            "pit_z"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "t2.site",
+      "set": [
+        "nine_seen"
+      ],
+      "lines": [
+        {
+          "line": "shepherd.t2.site.nine",
+          "mood": "sad"
+        },
+        {
+          "line": "shepherd.t2.site.empty",
+          "mood": "sad"
+        },
+        {
+          "line": "shepherd.t2.site.lamp",
+          "mood": "sad"
+        }
+      ],
+      "responses": [
+        {
+          "slot": "ask",
+          "label": "shepherd.t2.talk.label",
+          "full": "shepherd.t2.talk.full",
+          "next": "t2.talk"
+        },
+        {
+          "slot": "kind",
+          "label": "shepherd.t2.kind.label",
+          "next": "t2.kind",
+          "affinity": 20
+        },
+        {
+          "slot": "blunt",
+          "label": "shepherd.t2.scrap.label",
+          "next": "t2.scrap",
+          "affinity": -25
+        }
+      ]
+    },
+    {
+      "id": "t2.talk",
+      "lines": [
+        {
+          "line": "shepherd.t2.talk",
+          "mood": "neutral"
+        }
+      ],
+      "responses": [
+        {
+          "slot": "kind",
+          "label": "shepherd.t2.kind.label",
+          "next": "t2.kind",
+          "affinity": 20
+        },
+        {
+          "slot": "blunt",
+          "label": "shepherd.t2.scrap.label",
+          "next": "t2.scrap",
+          "affinity": -25
+        }
+      ]
+    },
+    {
+      "id": "t2.kind",
+      "set": [
+        "nine_handover"
+      ],
+      "lines": [
+        {
+          "line": "shepherd.t2.kind",
+          "mood": "sad"
+        }
+      ],
+      "next": "t2.sheet"
+    },
+    {
+      "id": "t2.scrap",
+      "lines": [
+        {
+          "line": "shepherd.t2.scrap",
+          "mood": "unimpressed"
+        }
+      ]
+    },
+    {
+      "id": "t2.sheet",
+      "lines": [
+        {
+          "line": "shepherd.t2.sheet.1",
+          "mood": "thinking"
+        },
+        {
+          "line": "shepherd.t2.sheet.2",
+          "mood": "sad"
+        }
+      ]
     }
   ]
 }

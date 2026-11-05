@@ -171,6 +171,7 @@ public final class ShepherdTalk {
             case "tier_friendly" -> tier.atLeast(Tier.FRIENDLY);
             case "tier_trusted" -> tier.atLeast(Tier.TRUSTED);
             case "tier_close" -> tier.atLeast(Tier.CLOSE);
+            case "pit_open" -> ShepherdSavedData.get(server).flag(ShepherdNine.OPEN) && !ShepherdSavedData.get(server).flag(ShepherdNine.SEEN);
             case "quiet" -> ShepherdReactions.quiet(ShepherdSavedData.get(server), server.overworld().getGameTime());
             case "stage_noticing" -> MillerPattern.stage(server).compareTo(SelfModel.Stage.NOTICING) >= 0;
             case "stage_walls" -> MillerPattern.stage(server).compareTo(SelfModel.Stage.FINDING_WALLS) >= 0;
@@ -325,7 +326,10 @@ public final class ShepherdTalk {
         int earned = live.talk.affinityDelta() - live.affinityApplied;
         if (earned != 0) data.affinity(data.affinity() + earned);
         live.affinityApplied = live.talk.affinityDelta();
+        boolean firstAtNine = !data.flag(ShepherdNine.SEEN) && live.talk.flags().contains(ShepherdNine.SEEN);
         for (String flag : live.talk.flags()) data.flag(flag, true);
+        if (firstAtNine) ShepherdNine.arrived(live.player);
+        if (live.talk.flags().contains(ShepherdNine.HAND_OVER)) ShepherdNine.handOver(live.player);
         if (live.talk.flags().contains("profanity_heavy")) swearing(data, true);
         if (live.talk.flags().contains("profanity_mild")) swearing(data, false);
     }

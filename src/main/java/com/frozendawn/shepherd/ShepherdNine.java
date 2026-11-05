@@ -5,6 +5,7 @@ import com.frozendawn.data.OrsaStructureState;
 import com.frozendawn.init.ModBlocks;
 import com.frozendawn.init.ModItems;
 import com.frozendawn.init.ModSounds;
+import com.frozendawn.shepherd.ShepherdAffinity.Deed;
 import com.frozendawn.shepherd.ShepherdFace.Mood;
 import com.frozendawn.world.ReadyChunks;
 import java.util.function.Predicate;
@@ -32,6 +33,8 @@ public final class ShepherdNine {
     static final String OPEN = "nine_open";
     /** She has stood at it, so it has something to give. */
     static final String SEEN = "nine_seen";
+    /** A reply that lands on this means yes: take the lamp. */
+    static final String HAND_OVER = "nine_handover";
     /** The lamp and the sheet have come out of it. */
     public static final String SHEET_TAKEN = "nine_sheet_taken";
     static final String REGISTER = "tithonus_register";
@@ -88,6 +91,13 @@ public final class ShepherdNine {
         tag.putString("doc_type", REGISTER);
         sheet.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
         return sheet;
+    }
+
+    /** She has stood at it. It is the world's doing, not the speaker's, and the rest of the day is hers. */
+    static void arrived(ServerPlayer player) {
+        var server = player.getServer();
+        ShepherdReactions.saw(player, Deed.NINE_FOUND);
+        ShepherdReactions.quietFor(ShepherdSavedData.get(server), server.overworld().getGameTime());
     }
 
     /** Lamp and sheet, to this player, once. False if there is nothing left in it. */

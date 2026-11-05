@@ -19,9 +19,17 @@
     {
       "id": "hub.talk",
       "when": "tier_wary",
-      "else": "hub.talk.warm",
+      "else": "hub.talk.pit",
       "lines": [
         { "line": "shepherd.hub.talk.wary", "mood": "recording" }
+      ]
+    },
+    {
+      "id": "hub.talk.pit",
+      "when": "pit_open",
+      "else": "hub.talk.warm",
+      "lines": [
+        { "line": "shepherd.hub.talk.pit", "mood": "neutral", "args": ["pit_blocks", "pit_bearing"] }
       ]
     },
     {
