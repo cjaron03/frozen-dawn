@@ -150,10 +150,6 @@ public final class ShepherdAffinityGameTest {
     @AfterBatch(batch = "shepherd_ambient_silence") public static void silenceAmbientAfter(ServerLevel l) { after(l); }
     @BeforeBatch(batch = "shepherd_ambient_early") public static void earlyAmbientBefore(ServerLevel l) { before(l); }
     @AfterBatch(batch = "shepherd_ambient_early") public static void earlyAmbientAfter(ServerLevel l) { after(l); }
-    @BeforeBatch(batch = "shepherd_ambient_aurora") public static void auroraAmbientBefore(ServerLevel l) { before(l); }
-    @AfterBatch(batch = "shepherd_ambient_aurora") public static void auroraAmbientAfter(ServerLevel l) { after(l); }
-    @BeforeBatch(batch = "shepherd_aurora_pool") public static void auroraPoolBefore(ServerLevel l) { before(l); }
-    @AfterBatch(batch = "shepherd_aurora_pool") public static void auroraPoolAfter(ServerLevel l) { after(l); }
     @BeforeBatch(batch = "shepherd_ambient_blizzard") public static void blizzardAmbientBefore(ServerLevel l) { before(l); }
     @AfterBatch(batch = "shepherd_ambient_blizzard") public static void blizzardAmbientAfter(ServerLevel l) { after(l); }
     @BeforeBatch(batch = "shepherd_egg_war") public static void eggWarBefore(ServerLevel l) { before(l); }
@@ -1033,32 +1029,6 @@ public final class ShepherdAffinityGameTest {
                         h.assertTrue(ApocalypseState.get(h.getLevel().getServer()).getPhase() == 3, "The world's clock holds");
                         assertSaidFrom(h, Trigger.NIGHT);
                     })
-                    .thenSucceed();
-        });
-    }
-
-    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_ambient_aurora", timeoutTicks = 400, skyAccess = true)
-    public static void shepherdFromPhaseFourSheImaginesTheAurora(GameTestHelper h) {
-        ShepherdTestWorld.whenTicking(h, () -> {
-            nightIn(h, 4);
-            met(h, player(h));
-            h.succeedWhen(() -> {
-                h.assertTrue(ApocalypseState.get(h.getLevel().getServer()).getPhase() == 4, "The world's clock holds");
-                assertSaidFrom(h, Trigger.IMAGINED_AURORA);
-            });
-        });
-    }
-
-    /** The same night as the one where she imagines it: only having seen a real one is different. */
-    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_aurora_pool", timeoutTicks = 400, skyAccess = true)
-    public static void shepherdNoImaginedAuroraAfterARealOne(GameTestHelper h) {
-        ShepherdTestWorld.whenTicking(h, () -> {
-            nightIn(h, 4);
-            met(h, player(h));
-            ShepherdSavedData.get(h.getLevel().getServer()).flag("saw_aurora", true);
-            h.startSequence()
-                    .thenWaitUntil(() -> h.assertTrue(ShepherdReactions.said() != null, "Something is said"))
-                    .thenExecute(() -> h.assertTrue(!ShepherdReactions.said().contains("imagined_aurora"), "She has no need to: " + ShepherdReactions.said()))
                     .thenSucceed();
         });
     }

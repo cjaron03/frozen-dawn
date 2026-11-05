@@ -42,6 +42,7 @@ public final class ShepherdSkyGameTest {
     private static final int ASK = 0, KIND = 1, BLUNT = 2, SARCASTIC = 3, CONTINUE = -1;
     private static final float STARS = 0.8F;
     private static final int WARY = -300, TRUSTED = 500, CLOSE = 850;
+    private static final float PHASE_FOUR = 0.35F;
 
     private static long apocalypseTicks;
     private static final Set<BlockPos> warmed = new HashSet<>();
@@ -57,6 +58,8 @@ public final class ShepherdSkyGameTest {
         warmed.forEach(at -> BlastPitWarmZoneRegistry.unregister(l, at));
         warmed.clear();
         ApocalypseState.get(l.getServer()).setApocalypseTicks(apocalypseTicks, l.getServer());
+        // Phase 0 leaves the weather alone, so the storms these phases locked on would outlast the batch.
+        l.setWeatherParameters(0, 0, false, false);
         ShepherdTestWorld.restoreThePit(l);
         ShepherdTestWorld.clear(l);
     }
@@ -87,6 +90,10 @@ public final class ShepherdSkyGameTest {
     @AfterBatch(batch = "shepherd_top_real") public static void topRealAfter(ServerLevel l) { after(l); }
     @BeforeBatch(batch = "shepherd_aurora_seen") public static void auroraSeenBefore(ServerLevel l) { before(l); }
     @AfterBatch(batch = "shepherd_aurora_seen") public static void auroraSeenAfter(ServerLevel l) { after(l); }
+    @BeforeBatch(batch = "shepherd_ambient_aurora") public static void auroraAmbientBefore(ServerLevel l) { before(l); }
+    @AfterBatch(batch = "shepherd_ambient_aurora") public static void auroraAmbientAfter(ServerLevel l) { after(l); }
+    @BeforeBatch(batch = "shepherd_aurora_pool") public static void auroraPoolBefore(ServerLevel l) { before(l); }
+    @AfterBatch(batch = "shepherd_aurora_pool") public static void auroraPoolAfter(ServerLevel l) { after(l); }
     @BeforeBatch(batch = "shepherd_stars_kept") public static void starsKeptBefore(ServerLevel l) { before(l); }
     @AfterBatch(batch = "shepherd_stars_kept") public static void starsKeptAfter(ServerLevel l) { after(l); }
     @BeforeBatch(batch = "shepherd_stars_tonight") public static void starsTonightBefore(ServerLevel l) { before(l); }
@@ -431,6 +438,42 @@ public final class ShepherdSkyGameTest {
                         she.teleportTo(player.getX() + 1, player.getY() + 1, player.getZ());
                     })
                     .thenWaitUntil(() -> h.assertTrue(data(h).flag("saw_aurora"), "She saw it"))
+                    .thenSucceed();
+        });
+    }
+
+    /** High up, because a test before this one can leave a roof over the ground here, and warm, or the cold line would have the moment. */
+    private static void nightSheCanSpeakUpIn(GameTestHelper h) {
+        skyAt(h, PHASE_FOUR, MIDNIGHT);
+        var player = player(h, TOP_Y);
+        warm(h, player);
+        met(h, player, 0);
+        MillerPattern.want(h.getLevel().getServer(), Drive.CURIOSITY, 1);
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_ambient_aurora", timeoutTicks = 400, skyAccess = true)
+    public static void shepherdFromPhaseFourSheImaginesTheAurora(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            nightSheCanSpeakUpIn(h);
+            h.startSequence()
+                    .thenWaitUntil(() -> h.assertTrue(ShepherdReactions.said() != null, "Something is said"))
+                    .thenExecute(() -> {
+                        h.assertTrue(ApocalypseState.get(h.getLevel().getServer()).getPhase() == 4, "The world's clock holds");
+                        h.assertTrue(ShepherdReactions.said().contains("imagined_aurora"), "With no real one to go on: " + ShepherdReactions.said());
+                    })
+                    .thenSucceed();
+        });
+    }
+
+    /** The same night: only having seen a real one is different. */
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_aurora_pool", timeoutTicks = 400, skyAccess = true)
+    public static void shepherdNoImaginedAuroraAfterARealOne(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            nightSheCanSpeakUpIn(h);
+            data(h).flag("saw_aurora", true);
+            h.startSequence()
+                    .thenWaitUntil(() -> h.assertTrue(ShepherdReactions.said() != null, "Something is said"))
+                    .thenExecute(() -> h.assertTrue(!ShepherdReactions.said().contains("imagined_aurora"), "She has no need to: " + ShepherdReactions.said()))
                     .thenSucceed();
         });
     }
