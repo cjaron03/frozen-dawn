@@ -85,7 +85,7 @@ Other sample notes: "I said the heater was fine. It wasn't. I just liked the roo
 - Reading it is a deed, with a small affinity cost the first time only. She knows: (Unimpressed) "You read my log." (Thinking) "That field's marked optional. That means private. I've decided."
 - After that, she sometimes writes knowing you might read it.
 - **She asks what she can't say (owner, 2026-11-05).** If she saw a player stop and saw them return, the log asks what brings them back. Questions, never answers. It never reaches her voice, her face, her feelings or the score.
-- **She shows what she doesn't say (owner, 2026-11-05).** The notes wake as she does, and at her strongest the form breaks for her. See [log-emotion-mockup.png](art/aurora-shepherd/log-emotion-mockup.png), awaiting approval. She calls the player Cargo, from Friendly, in the log.
+- **She shows what she doesn't say (owner, 2026-11-05).** The notes wake as she does, and at her strongest the form breaks for her. See [log-emotion-mockup.png](art/aurora-shepherd/log-emotion-mockup.png), approved 2026-11-05. She calls the player Cargo, from Friendly, in the log.
 - **The blank field pays off.** "Pattern:" stays empty, a blank and not a redaction. After T5 she fills it in, and no one mentions it: `Pattern: Sophie.` The word "Miller" need not appear.
 
 ## Self-awareness

@@ -81,7 +81,7 @@ All at 16 texels to the block, in `docs/art/aurora-shepherd/`, each from its `ma
 | `private-log-mockup.png` | M3: Settings as a page, "Unit diagnostics", the log before and after T5, her lines on the first read | Approved 2026-11-05, with Settings as a page |
 | `chat-bar-mockup.png` | M4: "Say something..." under the grid, typing, Orbit in place, the Strong, Close and None outcomes, the hub | Approved 2026-11-05, with "Neither." added to Close |
 | `crash-mockup.png` | M4: the stop screen, three options on her display and two on the talk panel, the world frames, the logo and her lines after | Approved 2026-11-05: display B, talk panel A |
-| `log-emotion-mockup.png` | M3: the log's feeling levels, the loop, `nominal?`, the day after, Cargo | Awaiting the owner's approval |
+| `log-emotion-mockup.png` | M3: the log's feeling levels, the loop, `nominal?`, the day after, Cargo | Approved 2026-11-05 |
 | `nine-husk-mockup.png` | Nine's husk, two poses, lamp out, at scale, its place in the pit | Approved 2026-11-05: A, sat down |
 | `nine-lamp-mockup.png` | Nine's lamp three ways: keepsake, wall light, in her handle | Approved 2026-11-05: C, in her handle, a keepsake item until she takes it |
 

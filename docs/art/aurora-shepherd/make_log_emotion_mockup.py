@@ -1,4 +1,4 @@
-"""How her private log shows feeling, for slice M3, at Minecraft scale, for the owner's approval. 2026-11-05.
+"""How her private log shows feeling, for slice M3, at Minecraft scale. Approved 2026-11-05.
 
 She cannot cry, so the form does it for her. Text inside the form only: no shaking, no effects, nothing that could pass for
 the game failing or for her stop screen. GUI scale on the 480 by 270 grid, enlarged twice. Every note is a draft.
@@ -74,7 +74,7 @@ def main():
     img = Image.new('RGB', (w, h), C['bg'])
     d = ImageDraw.Draw(img)
     d.text((24, 16), 'AURORA: HOW THE LOG SHOWS FEELING (M3)', font=font(26), fill=C['glow'])
-    d.text((24, 52), 'She cannot cry, so the form does it for her. Text inside the form only. Awaiting the owner\'s approval. Every note is a draft.', font=font(15), fill=C['dim'])
+    d.text((24, 52), 'She cannot cry, so the form does it for her. Text inside the form only. Approved 2026-11-05. Every note is a draft.', font=font(15), fill=C['dim'])
     for i, (name, caption, args) in enumerate(FRAMES):
         x, y = 24 + (i % 2) * 984, 92 + (i // 2) * 610
         d.text((x, y), name, font=font(16), fill=C['glow'])

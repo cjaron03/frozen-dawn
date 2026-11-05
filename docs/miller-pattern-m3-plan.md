@@ -10,9 +10,9 @@
 
 **Spec:** [aurora-miller-pattern.md](aurora-miller-pattern.md), "Her private log" and Rulings 3, 4 and 13.
 
-**Mockups:** [private-log-mockup.png](art/aurora-shepherd/private-log-mockup.png), approved 2026-11-05. [log-emotion-mockup.png](art/aurora-shepherd/log-emotion-mockup.png), awaiting approval.
+**Mockups:** [private-log-mockup.png](art/aurora-shepherd/private-log-mockup.png), approved 2026-11-05. [log-emotion-mockup.png](art/aurora-shepherd/log-emotion-mockup.png), approved 2026-11-05.
 
-**Status:** gone through with the owner on 2026-11-05. Decided so far: one log per world, skipped days, the note order with blank Notes, Cargo, the player's return in the log only, and the feeling levels with all four breaks. Still to mark: Rulings 7 to 12, the emotion mockup and the lines. Nothing is built.
+**Status:** gone through with the owner on 2026-11-05. Decided so far: one log per world, skipped days, the note order with blank Notes, Cargo, the player's return in the log only, and the feeling levels with all four breaks. Both mockups are approved. Still to mark: Rulings 7 to 12 and the lines. Nothing is built.
 
 **Branch:** `feat/miller-m3` in `/Volumes/SSD/Work/frozen-dawn-miller-m3`, cut from `feat/maeve-director` once PR 159 has merged. PR into `feat/maeve-director`. It changes the save format, so the branch review runs on Opus.
 
