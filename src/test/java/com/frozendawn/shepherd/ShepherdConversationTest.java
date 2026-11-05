@@ -124,6 +124,11 @@ class ShepherdConversationTest {
     }
 
     @Test
+    void askingWhyHerNameLeavesItsFlag() throws IOException {
+        assertTrue(new ShepherdConversation(tree(), "fm.name.earn", NOTHING).flags().contains("asked_name"));
+    }
+
+    @Test
     void aStartThatRunsOutDoesNotOpen() {
         var nodes = Map.of("a", step("a", null, "never", null));
         assertFalse(ShepherdConversation.opens(nodes, "a", NOTHING));

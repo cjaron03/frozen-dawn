@@ -12,6 +12,7 @@ import com.frozendawn.shepherd.ShepherdAffinity.Deed;
 import com.frozendawn.shepherd.ShepherdFace.Mood;
 import com.frozendawn.shepherd.ShepherdSavedData.Stage;
 import com.frozendawn.shepherd.ShepherdTalk.Action;
+import java.util.Objects;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponents;
@@ -90,6 +91,22 @@ public final class ShepherdAffinityGameTest {
     @AfterBatch(batch = "shepherd_deed_talking") public static void talkingDeedAfter(ServerLevel l) { after(l); }
     @BeforeBatch(batch = "shepherd_deed_wary") public static void waryDeedBefore(ServerLevel l) { before(l); }
     @AfterBatch(batch = "shepherd_deed_wary") public static void waryDeedAfter(ServerLevel l) { after(l); }
+    @BeforeBatch(batch = "shepherd_name_friendly") public static void friendlyNameBefore(ServerLevel l) { before(l); }
+    @AfterBatch(batch = "shepherd_name_friendly") public static void friendlyNameAfter(ServerLevel l) { after(l); }
+    @BeforeBatch(batch = "shepherd_name_first") public static void firstNameBefore(ServerLevel l) { before(l); }
+    @AfterBatch(batch = "shepherd_name_first") public static void firstNameAfter(ServerLevel l) { after(l); }
+    @BeforeBatch(batch = "shepherd_name_wary") public static void waryNameBefore(ServerLevel l) { before(l); }
+    @AfterBatch(batch = "shepherd_name_wary") public static void waryNameAfter(ServerLevel l) { after(l); }
+    @BeforeBatch(batch = "shepherd_name_falling") public static void fallingNameBefore(ServerLevel l) { before(l); }
+    @AfterBatch(batch = "shepherd_name_falling") public static void fallingNameAfter(ServerLevel l) { after(l); }
+    @BeforeBatch(batch = "shepherd_name_withdrawn") public static void withdrawnNameBefore(ServerLevel l) { before(l); }
+    @AfterBatch(batch = "shepherd_name_withdrawn") public static void withdrawnNameAfter(ServerLevel l) { after(l); }
+    @BeforeBatch(batch = "shepherd_name_open") public static void openNameBefore(ServerLevel l) { before(l); }
+    @AfterBatch(batch = "shepherd_name_open") public static void openNameAfter(ServerLevel l) { after(l); }
+    @BeforeBatch(batch = "shepherd_name_knows") public static void knowsNameBefore(ServerLevel l) { before(l); }
+    @AfterBatch(batch = "shepherd_name_knows") public static void knowsNameAfter(ServerLevel l) { after(l); }
+    @BeforeBatch(batch = "shepherd_name_replay") public static void replayNameBefore(ServerLevel l) { before(l); }
+    @AfterBatch(batch = "shepherd_name_replay") public static void replayNameAfter(ServerLevel l) { after(l); }
 
     /** Some deeds move the world's clock on, so the phase comes back. */
     private static long apocalypseTicks;
@@ -496,6 +513,140 @@ public final class ShepherdAffinityGameTest {
                         assertScore(h, -305);
                     })
                     .thenExecuteAfter(2, () -> assertFace(h, she, Mood.RECORDING))
+                    .thenSucceed();
+        });
+    }
+
+    /** She is past her first meeting, {@code score} near a tier, and nothing else stands in the way. */
+    private static ShepherdEntity settled(GameTestHelper h, ServerPlayer player, int score) {
+        var she = awake(h, player);
+        data(h).flag(ShepherdPrompt.FIRST_MEETING_DONE, true);
+        data(h).affinity(score);
+        return she;
+    }
+
+    private static void assertPrompt(GameTestHelper h, String node) {
+        h.assertTrue(Objects.equals(node, data(h).promptNode()), "Waiting: " + data(h).promptNode());
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_name_friendly", timeoutTicks = 400)
+    public static void shepherdAtFriendlySheAsksAboutTheName(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            var she = settled(h, player, 260);
+            h.startSequence()
+                    .thenWaitUntil(() -> assertPrompt(h, ShepherdPrompt.THE_NAME))
+                    .thenExecute(() -> {
+                        she.interact(player, InteractionHand.MAIN_HAND);
+                        h.assertTrue(ShepherdPrompt.THE_NAME.equals(ShepherdTalk.liveNode()) || "t1.name.unasked".equals(ShepherdTalk.liveNode()), "On it: " + ShepherdTalk.liveNode());
+                        ShepherdTalk.reply(player, ShepherdTalk.liveId(), 1);
+                        h.assertTrue(data(h).promptNode() == null, "Spent");
+                        ShepherdTalk.reply(player, ShepherdTalk.liveId(), CONTINUE);
+                        h.assertTrue("t1.end".equals(ShepherdTalk.liveNode()), "To the end: " + ShepherdTalk.liveNode());
+                        ShepherdTalk.reply(player, ShepherdTalk.liveId(), CONTINUE);
+                    })
+                    .thenExecuteAfter(15, () -> {
+                        assertPrompt(h, null);
+                        h.assertTrue(data(h).affinity() == 280, "Her answer scored: " + data(h).affinity());
+                    })
+                    .thenSucceed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_name_first", timeoutTicks = 400)
+    public static void shepherdNotBeforeTheFirstMeetingIsDone(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            settled(h, player(h), 260);
+            data(h).flag(ShepherdPrompt.FIRST_MEETING_DONE, false);
+            h.startSequence().thenExecuteAfter(15, () -> assertPrompt(h, null)).thenSucceed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_name_wary", timeoutTicks = 400)
+    public static void shepherdAtWarySheOffersNothing(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            settled(h, player(h), -300);
+            h.startSequence().thenExecuteAfter(15, () -> assertPrompt(h, null)).thenSucceed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_name_falling", timeoutTicks = 400)
+    public static void shepherdAFallingScoreLeavesTheNameUnasked(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            settled(h, player(h), 240);
+            h.startSequence()
+                    .thenExecuteAfter(15, () -> {
+                        assertPrompt(h, null);
+                        h.assertTrue(!data(h).flag(ShepherdPrompt.NAME_ASKED), "Not used up");
+                        data(h).affinity(260);
+                    })
+                    .thenWaitUntil(() -> assertPrompt(h, ShepherdPrompt.THE_NAME))
+                    .thenSucceed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_name_withdrawn", timeoutTicks = 400)
+    public static void shepherdAFallingScoreWithdrawsTheWaitingName(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            settled(h, player(h), 260);
+            h.startSequence()
+                    .thenWaitUntil(() -> assertPrompt(h, ShepherdPrompt.THE_NAME))
+                    .thenExecute(() -> data(h).affinity(-300))
+                    .thenWaitUntil(() -> assertPrompt(h, null))
+                    .thenExecute(() -> data(h).affinity(260))
+                    .thenWaitUntil(() -> assertPrompt(h, ShepherdPrompt.THE_NAME))
+                    .thenSucceed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_name_open", timeoutTicks = 400)
+    public static void shepherdNotOverAnOpenScreen(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            var she = settled(h, player, 240);
+            she.interact(player, InteractionHand.MAIN_HAND);
+            data(h).affinity(260);
+            h.startSequence()
+                    .thenExecuteAfter(15, () -> {
+                        assertPrompt(h, null);
+                        ShepherdTalk.close(player);
+                    })
+                    .thenWaitUntil(() -> assertPrompt(h, ShepherdPrompt.THE_NAME))
+                    .thenSucceed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_name_knows", timeoutTicks = 400)
+    public static void shepherdTheNameKnowsIfYouAsked(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            awake(h, player);
+            ShepherdTalk.start(player, ShepherdPrompt.THE_NAME);
+            String never = ShepherdTalk.liveLines().getFirst();
+            ShepherdTalk.close(player);
+            data(h).resumeNode(null);
+            data(h).flag(ShepherdPrompt.ASKED_NAME, true);
+            ShepherdTalk.start(player, ShepherdPrompt.THE_NAME);
+            h.assertTrue(!never.equals(ShepherdTalk.liveLines().getFirst()), "The first line differs: " + never);
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_name_replay", timeoutTicks = 400)
+    public static void shepherdReplayEarnsTheNameAgain(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            settled(h, player(h), 260);
+            h.startSequence()
+                    .thenWaitUntil(() -> assertPrompt(h, ShepherdPrompt.THE_NAME))
+                    .thenExecute(() -> {
+                        command(h, "fd shepherd replay");
+                        h.assertTrue(!data(h).flag(ShepherdPrompt.NAME_ASKED), "Her asking goes with the rest");
+                        assertPrompt(h, null);
+                        data(h).resumeNode(null);
+                        data(h).flag(ShepherdPrompt.FIRST_MEETING_DONE, true);
+                        data(h).affinity(260);
+                    })
+                    .thenWaitUntil(() -> assertPrompt(h, ShepherdPrompt.THE_NAME))
                     .thenSucceed();
         });
     }

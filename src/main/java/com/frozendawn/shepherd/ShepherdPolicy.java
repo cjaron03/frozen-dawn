@@ -14,6 +14,7 @@ public final class ShepherdPolicy {
     public static final int HEARD_BLOCKS = 16;
     public static final int CALM_HOSTILE_BLOCKS = 24;
     public static final int CALM_HURT_TICKS = 600;
+    public static final float COLD_LINE_C = -10;
     public static final int PROMPT_REPEAT_TICKS = 1200;
     public static final int PROMPT_SHOWS = 3;
     public static final int STRIP_HOLD_TICKS = 80;
@@ -46,6 +47,11 @@ public final class ShepherdPolicy {
     public static boolean night(long dayTime) {
         long time = dayTime % DAY_TICKS;
         return time >= NIGHT_STARTS && time < NIGHT_ENDS;
+    }
+
+    /** Whether a personal conversation could land: nobody near her is freezing or short of air. */
+    public static boolean comfortable(float coldestResolved, boolean airFailing) {
+        return coldestResolved > COLD_LINE_C && !airFailing;
     }
 
     /** Hall-relative: the cot room's side of the last door, on the way out. */

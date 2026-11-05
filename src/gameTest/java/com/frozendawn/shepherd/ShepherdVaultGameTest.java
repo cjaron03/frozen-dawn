@@ -3,8 +3,10 @@ package com.frozendawn.shepherd;
 import static com.frozendawn.shepherd.ShepherdDockBlock.STATE;
 
 import com.frozendawn.FrozenDawn;
+import com.frozendawn.data.ApocalypseState;
 import com.frozendawn.data.HelionSiteState;
 import com.frozendawn.defense.TerminusLog;
+import com.frozendawn.event.PlayerTickHandler;
 import com.frozendawn.gametest.GameTestTemplates;
 import com.frozendawn.init.ModBlocks;
 import com.frozendawn.init.ModDataComponents;
@@ -43,17 +45,20 @@ public final class ShepherdVaultGameTest {
 
     private static final int ASK = 0, KIND = 1, CONTINUE = -1;
     private static BlockPos worldVault;
+    private static long apocalypseTicks;
 
     private static void before(ServerLevel l) {
         ShepherdTestWorld.fresh(l);
         var state = HelionSiteState.get(l.getServer());
         worldVault = state.vault();
         state.setVaultForTest(null);
+        apocalypseTicks = ApocalypseState.get(l.getServer()).getApocalypseTicks();
     }
 
     private static void after(ServerLevel l) {
         ShepherdTestWorld.clear(l);
         HelionSiteState.get(l.getServer()).setVaultForTest(worldVault);
+        ApocalypseState.get(l.getServer()).setApocalypseTicks(apocalypseTicks, l.getServer());
     }
 
     @BeforeBatch(batch = "shepherd_prompt_door") public static void doorBefore(ServerLevel l) { before(l); }
@@ -98,6 +103,16 @@ public final class ShepherdVaultGameTest {
     @AfterBatch(batch = "shepherd_ask_stranger") public static void strangerAfter(ServerLevel l) { after(l); }
     @BeforeBatch(batch = "shepherd_ask_click") public static void askClickBefore(ServerLevel l) { before(l); }
     @AfterBatch(batch = "shepherd_ask_click") public static void askClickAfter(ServerLevel l) { after(l); }
+    @BeforeBatch(batch = "shepherd_calm_farhit") public static void farhitCalmBefore(ServerLevel l) { before(l); }
+    @AfterBatch(batch = "shepherd_calm_farhit") public static void farhitCalmAfter(ServerLevel l) { after(l); }
+    @BeforeBatch(batch = "shepherd_calm_nearhit") public static void nearhitCalmBefore(ServerLevel l) { before(l); }
+    @AfterBatch(batch = "shepherd_calm_nearhit") public static void nearhitCalmAfter(ServerLevel l) { after(l); }
+    @BeforeBatch(batch = "shepherd_calm_place") public static void placeCalmBefore(ServerLevel l) { before(l); }
+    @AfterBatch(batch = "shepherd_calm_place") public static void placeCalmAfter(ServerLevel l) { after(l); }
+    @BeforeBatch(batch = "shepherd_calm_displaced") public static void displacedCalmBefore(ServerLevel l) { before(l); }
+    @AfterBatch(batch = "shepherd_calm_displaced") public static void displacedCalmAfter(ServerLevel l) { after(l); }
+    @BeforeBatch(batch = "shepherd_calm_cold") public static void coldCalmBefore(ServerLevel l) { before(l); }
+    @AfterBatch(batch = "shepherd_calm_cold") public static void coldCalmAfter(ServerLevel l) { after(l); }
     @BeforeBatch(batch = "shepherd_vault_reset") public static void resetBefore(ServerLevel l) { before(l); }
     @AfterBatch(batch = "shepherd_vault_reset") public static void resetAfter(ServerLevel l) { after(l); }
     @BeforeBatch(batch = "shepherd_vault_reset_awake") public static void awakeBefore(ServerLevel l) { before(l); }
@@ -582,6 +597,92 @@ public final class ShepherdVaultGameTest {
                         she.interact(player, InteractionHand.MAIN_HAND);
                         h.assertTrue(!she.asking(), "The talk takes over");
                     })
+                    .thenSucceed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_calm_farhit", timeoutTicks = 400)
+    public static void shepherdAHitOnAFarPlayerDoesNotDelayTheStrip(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var far = ShepherdTestWorld.onlinePlayer(h, h.absoluteVec(Vec3.atCenterOf(SPOT)).add(ShepherdPolicy.HEARD_BLOCKS + 10, 0, 0));
+            far.setGameMode(GameType.SURVIVAL);
+            far.hurt(h.getLevel().damageSources().genericKill(), 1);
+            readyToLeave(h, player(h));
+            h.succeedWhen(() -> h.assertTrue(ShepherdPrompt.shows() == 1, "The strip shows: " + ShepherdPrompt.shows()));
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_calm_nearhit", timeoutTicks = 400)
+    public static void shepherdAHitOnANearPlayerStillDelaysIt(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var near = ShepherdTestWorld.onlinePlayer(h, h.absoluteVec(Vec3.atCenterOf(SPOT)).add(0, 0, 3));
+            near.setGameMode(GameType.SURVIVAL);
+            near.hurt(h.getLevel().damageSources().genericKill(), 1);
+            readyToLeave(h, player(h));
+            h.startSequence()
+                    .thenWaitUntil(() -> assertAsked(h, ShepherdPrompt.DOORS))
+                    .thenExecuteAfter(15, () -> h.assertTrue(ShepherdPrompt.shows() == 0, "Not while a near player is hurt: " + ShepherdPrompt.shows()))
+                    .thenSucceed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_calm_place", timeoutTicks = 400)
+    public static void shepherdAPlacePromptGoesFirst(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            var she = metInTheVault(h, player);
+            data(h).flag(ShepherdPrompt.FIRST_MEETING_DONE, true);
+            data(h).promptNode(ShepherdPrompt.EXIT);
+            data(h).affinity(260);
+            h.startSequence()
+                    .thenExecuteAfter(15, () -> {
+                        h.assertTrue(ShepherdPrompt.EXIT.equals(data(h).promptNode()), "Not replaced: " + data(h).promptNode());
+                        she.interact(player, InteractionHand.MAIN_HAND);
+                        say(player, CONTINUE);
+                    })
+                    .thenWaitUntil(() -> assertAsked(h, ShepherdPrompt.THE_NAME))
+                    .thenSucceed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_calm_displaced", timeoutTicks = 400)
+    public static void shepherdAPlacePromptDoesNotLoseTheName(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            var she = readyToLeave(h, player);
+            data(h).flag(ShepherdPrompt.DOORS_ASKED, true);
+            data(h).affinity(260);
+            h.startSequence()
+                    .thenWaitUntil(() -> assertAsked(h, ShepherdPrompt.THE_NAME))
+                    .thenExecute(() -> onTheLanding(h))
+                    .thenWaitUntil(() -> assertAsked(h, ShepherdPrompt.EXIT))
+                    .thenExecute(() -> {
+                        she.interact(player, InteractionHand.MAIN_HAND);
+                        say(player, CONTINUE);
+                    })
+                    .thenWaitUntil(() -> assertAsked(h, ShepherdPrompt.THE_NAME))
+                    .thenSucceed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_calm_cold", timeoutTicks = 400)
+    public static void shepherdColdHoldsATierUpButNotAPlacePrompt(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var state = ApocalypseState.get(h.getLevel().getServer());
+            state.setApocalypseTicks((long) state.getTotalDays() * 24000, h.getLevel().getServer());
+            var player = ShepherdTestWorld.onlinePlayer(h, Vec3.atBottomCenterOf(h.absolutePos(SPOT).atY(120)));
+            var she = metInTheVault(h, player);
+            she.teleportTo(player.getX() + 1, player.getY() + 1, player.getZ());
+            data(h).flag(ShepherdPrompt.FIRST_MEETING_DONE, true);
+            data(h).affinity(260);
+            h.startSequence()
+                    .thenExecuteAfter(15, () -> {
+                        h.assertTrue(PlayerTickHandler.resolvedTemperature(player) <= ShepherdPolicy.COLD_LINE_C, "Cold: " + PlayerTickHandler.resolvedTemperature(player));
+                        h.assertTrue(data(h).promptNode() == null, "Too cold to get personal: " + data(h).promptNode());
+                        HelionSiteState.get(h.getLevel().getServer()).setVaultForTest(player.blockPosition().offset(-1, 14, 0));
+                        data(h).flag(ShepherdSavedData.WOKE_IN_VAULT, true);
+                    })
+                    .thenWaitUntil(() -> assertAsked(h, ShepherdPrompt.EXIT))
                     .thenSucceed();
         });
     }

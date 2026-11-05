@@ -131,4 +131,12 @@ class ShepherdPolicyTest {
         assertFalse(ShepherdPolicy.night(23000));
         assertTrue(ShepherdPolicy.night(ShepherdPolicy.DAY_TICKS * 3 + 18000));
     }
+
+    @Test
+    void comfortableNeedsWarmthAndAir() {
+        assertTrue(ShepherdPolicy.comfortable(-9.9F, false));
+        assertFalse(ShepherdPolicy.comfortable(-10, false));
+        assertFalse(ShepherdPolicy.comfortable(-10.1F, false));
+        assertFalse(ShepherdPolicy.comfortable(20, true));
+    }
 }

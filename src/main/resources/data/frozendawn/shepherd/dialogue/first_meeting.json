@@ -251,6 +251,9 @@
     },
     {
       "id": "fm.name.earn",
+      "set": [
+        "asked_name"
+      ],
       "lines": [
         {
           "line": "shepherd.fm.name.earn",
