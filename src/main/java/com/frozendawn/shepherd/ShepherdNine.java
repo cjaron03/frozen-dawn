@@ -127,7 +127,10 @@ public final class ShepherdNine {
     }
 
     private static void give(ServerPlayer player, ItemStack stack) {
-        if (!player.getInventory().add(stack)) player.drop(stack, false);
+        if (player.getInventory().add(stack)) return;
+        // Full hands, a long way out: there is no second lamp or sheet to come back for.
+        var dropped = player.drop(stack, false);
+        if (dropped != null) dropped.setUnlimitedLifetime();
     }
 
     private static boolean ours(ShepherdSavedData data, BlockPos pos) {

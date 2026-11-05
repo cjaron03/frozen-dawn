@@ -50,7 +50,8 @@ final class ShepherdTestWorld {
     }
 
     /** The world's pit, as it stood before a test moved it. */
-    private static BlockPos pitTarget, pitBuilt, pitMoved;
+    private static BlockPos pitTarget, pitBuilt;
+    private static final java.util.Set<BlockPos> pitsMoved = new java.util.HashSet<>();
     private static boolean pitPlaced;
 
     static void keepThePit(ServerLevel level) {
@@ -66,8 +67,8 @@ final class ShepherdTestWorld {
         state.setBlastPitPos(pitBuilt);
         state.setBlastPitPlaced(pitPlaced);
         // A built pit warms its ground, which would reach into some later test's area.
-        if (pitMoved != null) BlastPitWarmZoneRegistry.unregister(level, pitMoved);
-        pitMoved = null;
+        pitsMoved.forEach(pit -> BlastPitWarmZoneRegistry.unregister(level, pit));
+        pitsMoved.clear();
     }
 
     /** A pit that is planned here and not built, as at the start of a world. Nobody may be online, or the real placement would build it. */
@@ -80,7 +81,7 @@ final class ShepherdTestWorld {
 
     /** A pit standing here, as far as anyone can tell. Marked built, so the real placement leaves the test area alone. */
     static void pitAt(ServerLevel level, BlockPos pos) {
-        pitMoved = pos.immutable();
+        pitsMoved.add(pos.immutable());
         var state = OrsaStructureState.get(level.getServer());
         state.setBlastPitTargetPos(pos);
         state.setBlastPitPos(pos);

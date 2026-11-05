@@ -23,6 +23,8 @@ public final class ShepherdPolicy {
     public static final int PIT_PROMPT_BLOCKS = 96;
     /** How near the husk she has to be to know it for what it is. */
     public static final int NINE_SEEN_BLOCKS = 12;
+    /** Wider than {@link #NINE_SEEN_BLOCKS}, so her drifting on the line does not raise it again and again. */
+    public static final int NINE_LEFT_BLOCKS = 24;
     public static final int STRIP_HOLD_TICKS = 80;
     public static final int STRIP_FADE_TICKS = 20;
     public static final double ASK_BLOCKS = 2.5;

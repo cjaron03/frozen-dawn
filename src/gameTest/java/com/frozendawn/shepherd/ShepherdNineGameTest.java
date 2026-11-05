@@ -17,6 +17,10 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.material.PushReaction;
 import net.minecraft.world.phys.Vec3;
@@ -74,6 +78,14 @@ public final class ShepherdNineGameTest {
     @AfterBatch(batch = "shepherd_site_waits") public static void siteWaitsAfter(ServerLevel l) { after(l); }
     @BeforeBatch(batch = "shepherd_site_wary") public static void siteWaryBefore(ServerLevel l) { before(l); }
     @AfterBatch(batch = "shepherd_site_wary") public static void siteWaryAfter(ServerLevel l) { after(l); }
+    @BeforeBatch(batch = "shepherd_site_fell") public static void siteFellBefore(ServerLevel l) { before(l); }
+    @AfterBatch(batch = "shepherd_site_fell") public static void siteFellAfter(ServerLevel l) { after(l); }
+    @BeforeBatch(batch = "shepherd_site_away") public static void siteAwayBefore(ServerLevel l) { before(l); }
+    @AfterBatch(batch = "shepherd_site_away") public static void siteAwayAfter(ServerLevel l) { after(l); }
+    @BeforeBatch(batch = "shepherd_site_lost") public static void siteLostBefore(ServerLevel l) { before(l); }
+    @AfterBatch(batch = "shepherd_site_lost") public static void siteLostAfter(ServerLevel l) { after(l); }
+    @BeforeBatch(batch = "shepherd_nine_full") public static void nineFullBefore(ServerLevel l) { before(l); }
+    @AfterBatch(batch = "shepherd_nine_full") public static void nineFullAfter(ServerLevel l) { after(l); }
     @BeforeBatch(batch = "shepherd_site_kind") public static void siteKindBefore(ServerLevel l) { before(l); }
     @AfterBatch(batch = "shepherd_site_kind") public static void siteKindAfter(ServerLevel l) { after(l); }
     @BeforeBatch(batch = "shepherd_site_scrap") public static void siteScrapBefore(ServerLevel l) { before(l); }
@@ -409,6 +421,64 @@ public final class ShepherdNineGameTest {
                         data(h).affinity(0);
                     })
                     .thenWaitUntil(() -> assertPrompt(h, ShepherdPrompt.AT_NINE))
+                    .thenSucceed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_site_fell", timeoutTicks = 300)
+    public static void shepherdTheSiteSceneWaitsOutWary(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            atTheHusk(h, player(h), 0);
+            h.startSequence()
+                    .thenWaitUntil(() -> assertPrompt(h, ShepherdPrompt.AT_NINE))
+                    .thenExecute(() -> data(h).affinity(-300))
+                    .thenWaitUntil(() -> assertPrompt(h, null))
+                    .thenExecute(() -> data(h).affinity(0))
+                    .thenWaitUntil(() -> assertPrompt(h, ShepherdPrompt.AT_NINE))
+                    .thenSucceed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_site_away", timeoutTicks = 300)
+    public static void shepherdTheSiteSceneStaysAtTheSite(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            atTheHusk(h, player(h), 0);
+            var husk = data(h).huskPos();
+            h.startSequence()
+                    .thenWaitUntil(() -> assertPrompt(h, ShepherdPrompt.AT_NINE))
+                    .thenExecute(() -> data(h).huskPos(husk.offset(40, 0, 0)))
+                    .thenWaitUntil(() -> assertPrompt(h, null))
+                    .thenExecute(() -> data(h).huskPos(husk))
+                    .thenWaitUntil(() -> assertPrompt(h, ShepherdPrompt.AT_NINE))
+                    .thenSucceed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_site_lost", timeoutTicks = 300)
+    public static void shepherdALostSitePromptComesBack(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            atTheHusk(h, player(h), 0);
+            h.startSequence()
+                    .thenWaitUntil(() -> assertPrompt(h, ShepherdPrompt.AT_NINE))
+                    .thenExecute(() -> data(h).promptNode(null))
+                    .thenWaitUntil(() -> assertPrompt(h, ShepherdPrompt.AT_NINE))
+                    .thenSucceed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_nine_full", timeoutTicks = 200)
+    public static void shepherdAFullHandOverOutlastsTheDrop(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            husk(h);
+            var player = player(h);
+            player.setGameMode(GameType.SURVIVAL);
+            for (int slot = 0; slot < 36; slot++) player.getInventory().setItem(slot, new ItemStack(Items.STONE, 64));
+            h.assertTrue(ShepherdNine.handOver(player), "It hands over");
+            var dropped = h.getLevel().getEntitiesOfClass(ItemEntity.class, player.getBoundingBox().inflate(8));
+            h.assertTrue(dropped.size() == 2, "Lamp and sheet fall at their feet: " + dropped);
+            var ages = dropped.stream().map(ItemEntity::getAge).toList();
+            h.startSequence()
+                    .thenExecuteAfter(5, () -> h.assertTrue(dropped.stream().map(ItemEntity::getAge).toList().equals(ages), "Neither is on a clock"))
                     .thenSucceed();
         });
     }

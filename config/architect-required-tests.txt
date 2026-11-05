@@ -1156,3 +1156,7 @@ shepherdaclosedsitesceneresumes xml
 shepherdkindrepliesreachexploitable xml
 shepherdshetakesthelamp xml
 shepherdadockbuildsnosecondbody xml
+shepherdthesitescenewaitsoutwary xml
+shepherdthesitescenestaysatthesite xml
+shepherdalostsitepromptcomesback xml
+shepherdafullhandoveroutlaststhedrop xml

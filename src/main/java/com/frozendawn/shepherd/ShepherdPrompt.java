@@ -37,7 +37,7 @@ public final class ShepherdPrompt {
     public static final String THE_NAME = "t1.name", THE_OTHERS = "t2.others", AT_NINE = "t2.site";
     static final String PERSONAL_GAP = "personal_gap";
     static final String FIRST_MEETING_DONE = "fm_done", DOORS_ASKED = "doors_asked", EXIT_ASKED = "exit_asked", NAME_ASKED = "t1_asked", ASKED_NAME = "asked_name",
-            OTHERS_ASKED = "t2_asked", NINE_ASKED = "nine_asked";
+            OTHERS_ASKED = "t2_asked";
     /** What each tier opens, in the order she brings it up. */
     private static final List<Personal> PERSONAL = List.of(new Personal(Tier.FRIENDLY, THE_NAME, NAME_ASKED, (server, level, data, near) -> true),
             new Personal(Tier.FRIENDLY, THE_OTHERS, OTHERS_ASKED, ShepherdPrompt::awayFromThePit));
@@ -90,8 +90,13 @@ public final class ShepherdPrompt {
     /** Only with her there, and only if she would stand for it. Until then the husk is a dead unit and nothing else. */
     private static void atNine(MinecraftServer server, ServerLevel level, ShepherdSavedData data, List<ServerPlayer> near, ShepherdEntity she) {
         var husk = data.huskPos();
-        if (husk == null || data.flag(NINE_ASKED) || ShepherdTalk.live() || data.tier() == Tier.WARY || !she.blockPosition().closerThan(husk, ShepherdPolicy.NINE_SEEN_BLOCKS)) return;
-        if (calm(server, level, near)) raise(data, NINE_ASKED, AT_NINE);
+        if (husk == null || data.flag(ShepherdNine.SEEN) || ShepherdTalk.live()) return;
+        // Unanswered it is still only a thought at the site: it goes if she stops standing for it, or stops standing there.
+        if (AT_NINE.equals(data.promptNode())) {
+            if (data.tier() == Tier.WARY || !she.blockPosition().closerThan(husk, ShepherdPolicy.NINE_LEFT_BLOCKS)) data.promptNode(null);
+            return;
+        }
+        if (data.tier() != Tier.WARY && she.blockPosition().closerThan(husk, ShepherdPolicy.NINE_SEEN_BLOCKS) && calm(server, level, near)) raise(data, AT_NINE);
     }
 
     /** T2 sends you there, so the pit has to be somewhere, and not where you are standing. */
@@ -103,8 +108,12 @@ public final class ShepherdPrompt {
 
     /** A place prompt takes over from a waiting personal one, which is then not asked yet. */
     private static void raise(ShepherdSavedData data, String asked, String node) {
-        withdraw(data);
+        raise(data, node);
         data.flag(asked, true);
+    }
+
+    private static void raise(ShepherdSavedData data, String node) {
+        withdraw(data);
         data.promptNode(node);
         shows = 0;
         nextShow = 0;
