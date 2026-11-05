@@ -194,6 +194,12 @@ public final class ImpressionStore {
         told.add(who);
     }
 
+    /** {@code /fd shepherd log forget}: the first read again, for the lab. */
+    void forgetRead(UUID who) {
+        read.remove(who);
+        told.remove(who);
+    }
+
     /** Everyone she has a theory on, and what she makes of them. */
     Map<UUID, Map<Theory, Double>> all() {
         var all = new LinkedHashMap<UUID, Map<Theory, Double>>();

@@ -83,6 +83,13 @@ public final class MillerPattern {
         runtime.data.setDirty();
     }
 
+    /** {@code /fd shepherd log forget}. */
+    public static void forgetRead(MinecraftServer server, UUID who) {
+        var runtime = current(server);
+        runtime.state().impressions().forgetRead(who);
+        runtime.data.setDirty();
+    }
+
     /** {@code /fd shepherd log write}: an entry now, about this person, without waiting for the day to settle. */
     public static LogEntry writeDay(MinecraftServer server, UUID who, long lastTalk, Tier tier) {
         var runtime = current(server);
