@@ -23,6 +23,7 @@ public final class ShepherdPolicy {
     public static final int ASK_TICKS = 100;
     public static final int REACT_TICKS = 60;
     public static final int WATCH_BLOCKS = 16;
+    public static final int STILL_TICKS = 300, LOOK_TICKS = 100, CURIOUS_GAP_TICKS = 1200, CURIOUS_BLOCKS = 8, STILL_BLOCKS = 3;
     public static final int FLINCH_TICKS = 20;
     public static final int GLAD_TICKS = 40;
     public static final int GLAD_AWAY_TICKS = 1200;

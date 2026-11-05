@@ -89,7 +89,7 @@ public final class ShepherdPrompt {
         var waiting = waitingPersonal(data);
         if (waiting != null && !tier.atLeast(waiting.tier())) withdraw(data);
         if (data.promptNode() != null || data.resumeNode() != null || !data.flag(FIRST_MEETING_DONE)) return;
-        if (!ShepherdPolicy.calm(nearestHostile(level, near), sinceHurt(server, near))) return;
+        if (!calm(server, level, near)) return;
         if (!ShepherdPolicy.comfortable(coldest(near), near.stream().anyMatch(player -> PlayerTickHandler.airFailing(player.getUUID())))) return;
         for (var personal : PERSONAL) {
             if (!tier.atLeast(personal.tier()) || data.flag(personal.asked())) continue;
@@ -111,6 +111,11 @@ public final class ShepherdPrompt {
         if (waiting.node().equals(data.resumeNode())) data.resumeNode(null);
     }
 
+    /** Nothing hostile near them, and none of them hurt lately. */
+    static boolean calm(MinecraftServer server, ServerLevel level, List<ServerPlayer> near) {
+        return ShepherdPolicy.calm(nearestHostile(level, near), sinceHurt(server, near));
+    }
+
     private static float coldest(List<ServerPlayer> near) {
         float coldest = Float.MAX_VALUE;
         for (var player : near) coldest = Math.min(coldest, PlayerTickHandler.resolvedTemperature(player));
@@ -127,7 +132,7 @@ public final class ShepherdPrompt {
     private static void show(MinecraftServer server, ServerLevel level, ShepherdSavedData data, List<ServerPlayer> near, ShepherdEntity she) {
         int now = server.getTickCount();
         if (data.promptNode() == null || shows >= ShepherdPolicy.PROMPT_SHOWS || now < nextShow || ShepherdTalk.live()) return;
-        if (!ShepherdPolicy.calm(nearestHostile(level, near), sinceHurt(server, near))) return;
+        if (!calm(server, level, near)) return;
         for (var player : near) PacketDistributor.sendToPlayer(player, new ShepherdPromptPayload());
         if (near.contains(ShepherdEntity.followerIn(level))) she.askFor(ShepherdPolicy.ASK_TICKS);
         shows++;

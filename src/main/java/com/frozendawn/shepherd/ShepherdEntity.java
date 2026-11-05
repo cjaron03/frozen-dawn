@@ -5,6 +5,7 @@ import com.frozendawn.init.ModSounds;
 import com.frozendawn.shepherd.ShepherdAffinity.Tier;
 import com.frozendawn.shepherd.ShepherdFace.Mood;
 import java.util.EnumSet;
+import java.util.List;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -49,6 +50,8 @@ public final class ShepherdEntity extends PathfinderMob {
     private static final double ASK_BELOW_EYES = 0.3;
     private static final double ASK_SPEED = 0.7;
     private static final int WATCH_EVERY_TICKS = 5;
+    private static final int NOTHING_TO_SEE_TICKS = 40;
+    private static final double LOOK_FROM_BLOCKS = 1.5;
 
     private int rebootTicks;
     private int talkTicks;
@@ -56,6 +59,11 @@ public final class ShepherdEntity extends PathfinderMob {
     private int askTicks;
     private int reactTicks;
     private Mob watching;
+    /** Where her follower last stopped, and since when. */
+    private Vec3 stoodAt;
+    private long stoodSince;
+    private long nextLook;
+    private ShepherdCuriosity.Target lookingAt;
     /** Client only: the mood last drawn, and how much of the blink between two moods is left. */
     private Mood shownMood;
     private int moodBeat;
@@ -128,7 +136,8 @@ public final class ShepherdEntity extends PathfinderMob {
     }
 
     @Override protected void registerGoals() {
-        goalSelector.addGoal(0, new HoverGoal());
+        goalSelector.addGoal(0, new CuriosityGoal());
+        goalSelector.addGoal(1, new HoverGoal());
     }
 
     public Mood mood() {
@@ -159,6 +168,33 @@ public final class ShepherdEntity extends PathfinderMob {
     /** The hostile she has turned to, if any. */
     Mob watching() {
         return watching;
+    }
+
+    /** What she has wandered off to look at, if anything. */
+    ShepherdCuriosity.Target lookingAt() {
+        return lookingAt;
+    }
+
+    /** How long her follower has stayed put. */
+    long stoodFor() {
+        return stoodAt == null ? 0 : level().getGameTime() - stoodSince;
+    }
+
+    /** GameTest seam: fifteen real seconds is too long to wait on a gate, ten times over. */
+    void stillFor(int ticks) {
+        var player = follower();
+        stoodAt = player == null ? null : player.position();
+        stoodSince = level().getGameTime() - ticks;
+    }
+
+    private void trackFollower() {
+        var player = follower();
+        if (player == null) {
+            stoodAt = null;
+        } else if (stoodAt == null || player.position().distanceTo(stoodAt) >= ShepherdPolicy.STILL_BLOCKS) {
+            stoodAt = player.position();
+            stoodSince = level().getGameTime();
+        }
     }
 
     /** What she can see for herself, and only that. */
@@ -275,6 +311,7 @@ public final class ShepherdEntity extends PathfinderMob {
         if (talkTicks > 0 && --talkTicks == 0) entityData.set(DATA_TALKING, false);
         if (logoTicks > 0 && --logoTicks == 0) entityData.set(DATA_LOGO, false);
         watch(level);
+        trackFollower();
         if (askTicks > 0) askTicks--;
         if (reactTicks > 0) reactTicks--;
         if (ShepherdTalk.live() || reactTicks > 0) return;
@@ -364,6 +401,68 @@ public final class ShepherdEntity extends PathfinderMob {
         entityData.set(DATA_OFFLINE, offline);
         if (offline) entityData.set(DATA_MOOD, Mood.OFFLINE.ordinal());
         rebootTicks = tag.getInt("RebootTicks");
+    }
+
+    /**
+     * When the follower has stood still and things are calm, she drifts over to something near them, stops a block short
+     * and looks. Any reason to be back at their side ends it, and {@link HoverGoal} takes her there.
+     */
+    private final class CuriosityGoal extends Goal {
+        private int ticks, looked;
+
+        CuriosityGoal() {
+            setFlags(EnumSet.of(Flag.MOVE, Flag.LOOK));
+        }
+
+        /** Why she stays at their side, whatever there is to see. */
+        private boolean needed(ServerPlayer player) {
+            var server = getServer();
+            return player == null || ShepherdSavedData.get(server).waiting() || ShepherdSavedData.get(server).tier() == Tier.WARY
+                    || ShepherdTalk.live() || asking() || watching != null || stoodFor() < ShepherdPolicy.STILL_TICKS
+                    || !ShepherdPrompt.calm(server, (ServerLevel) level(), List.of(player));
+        }
+
+        @Override public boolean canUse() {
+            long now = level().getGameTime();
+            if (offline() || now < nextLook) return false;
+            var player = follower();
+            if (needed(player)) return false;
+            lookingAt = ShepherdCuriosity.find((ServerLevel) level(), player, ShepherdEntity.this);
+            if (lookingAt == null) nextLook = now + NOTHING_TO_SEE_TICKS;
+            return lookingAt != null;
+        }
+
+        @Override public boolean canContinueToUse() {
+            return !offline() && looked < ShepherdPolicy.LOOK_TICKS && ticks < ShepherdPolicy.LOOK_TICKS * 2
+                    && ShepherdCuriosity.stillThere((ServerLevel) level(), lookingAt) && !needed(follower());
+        }
+
+        @Override public boolean requiresUpdateEveryTick() {
+            return true;
+        }
+
+        @Override public void start() {
+            ticks = 0;
+            looked = 0;
+        }
+
+        @Override public void tick() {
+            ticks++;
+            var at = lookingAt.at();
+            getLookControl().setLookAt(at.x, at.y, at.z);
+            var away = position().subtract(at);
+            if (away.length() <= LOOK_FROM_BLOCKS + 0.5) {
+                looked++;
+            } else {
+                var spot = at.add(away.normalize().scale(LOOK_FROM_BLOCKS));
+                getMoveControl().setWantedPosition(spot.x, spot.y, spot.z, 0.5);
+            }
+        }
+
+        @Override public void stop() {
+            lookingAt = null;
+            nextLook = level().getGameTime() + ShepherdPolicy.CURIOUS_GAP_TICKS;
+        }
     }
 
     /** Stays beside the follower, a block off their ground, and catches up by teleport past the line. */
