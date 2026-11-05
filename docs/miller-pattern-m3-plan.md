@@ -12,7 +12,7 @@
 
 **Mockups:** [private-log-mockup.png](art/aurora-shepherd/private-log-mockup.png), approved 2026-11-05. [log-emotion-mockup.png](art/aurora-shepherd/log-emotion-mockup.png), approved 2026-11-05.
 
-**Status:** gone through with the owner on 2026-11-05. Decided so far: one log per world, skipped days, the note order with blank Notes, Cargo, the player's return in the log only, and the feeling levels with all four breaks. Both mockups are approved. Still to mark: Rulings 7 to 12 and the lines. Nothing is built.
+**Status:** gone through with the owner on 2026-11-05. Decided: one log per world, skipped days, the note order with blank Notes, Cargo, the player's return in the log only, the feeling levels with all four breaks, and Rulings 7 to 12 as written, with quicker days added. Both mockups and every ruling are settled; the lines are drafts to build with and mark at the pass. Nothing is built.
 
 **Branch:** `feat/miller-m3` in `/Volumes/SSD/Work/frozen-dawn-miller-m3`, cut from `feat/maeve-director` once PR 159 has merged. PR into `feat/maeve-director`. It changes the save format, so the branch review runs on Opus.
 
@@ -22,7 +22,7 @@ Owner, 2026-11-05. There is one of her, so she keeps one log, and any player can
 
 ## Rulings for the owner
 
-Rulings 1 to 6 and 13 to 17 are the owner's, 2026-11-05. Approving the plan accepts the rest unless you say otherwise.
+All are the owner's, 2026-11-05.
 
 1. **When she writes: when the day settles.** The entry lands with the day's evidence, at the first poll after 24,000 ticks with someone beside her, the same moment impressions settle. So she writes nothing on days nobody is near, and the log simply skips them. That fits Causal: she doesn't log what she didn't see.
 2. **No "write the log" urge.** The spec's table lists one. As an urge it would compete with speech and gain nothing, so writing is part of the settle.
@@ -64,6 +64,7 @@ Rulings 1 to 6 and 13 to 17 are the owner's, 2026-11-05. Approving the plan acce
     - After `nine_found`, the first `back` note is the one about Nine.
 16. **Feeling has three levels, and the form cries for her.** Normal is dry, with no `!`. High, a feeling at 0.6 or more, lets the punctuation go. Peak, at 0.8 or more or on `back` and `reunion` at Finding the walls and later, breaks the form: she loops, `LOOP DETECTED. Retrying.`, the note ends on `FIELD LIMIT REACHED.`, `Status:` reads `nominal?`, and the next entry is the quiet `after` note. Both numbers are for the owner's pass.
 17. **Text inside the form only.** No shaking, no effects, nothing that passes for the game failing or for the stop screen. Product never breaks.
+18. **Getting through a long log.** Left and right, the two buttons or the mouse wheel move a day, and holding a key repeats. Shift moves ten days, on keys and buttons alike. Home goes to the oldest entry and End to the newest. The layout does not change, only the hint. No list of days, since a list would point at the Peak entries.
 
 ## Lines to mark
 
@@ -71,7 +72,7 @@ Every line is a draft. Spec lines are marked as such; the rest are new. Keys sit
 
 **The form:** `CS-1 UNIT 4. DAILY STATUS. DAY %s.` / `Pattern:` / `Sophie.` / `Status:` / `nominal.` / `nominal?` / `Notes (optional):` / `NO ENTRIES.`
 
-**Screen:** `Settings`, `Language: mild`, `Language: off`, `Unit diagnostics`, `Keys 1-2 or click. Esc goes back.`, `Left and right for other days. Esc goes back.`
+**Screen:** `Settings`, `Language: mild`, `Language: off`, `Unit diagnostics`, `Keys 1-2 or click. Esc goes back.`, `Left and right, Shift for ten days. Esc goes back.`
 
 **The first read (spec):** (Unimpressed) "You read my log." (Thinking) "That field's marked optional. That means private. I've decided."
 
@@ -215,7 +216,7 @@ Each has its test in the task named.
 **Interfaces:** Produces
 - `Action.LANGUAGE`, `LOG`, `LOG_DONE` in place of `SETTINGS`. `Heard.Used` counts none of them.
 - `ShepherdLogPayload(int conversation, List<Page> pages)`, each page a day, a signed flag and a note key. All entries go at once, a few kilobytes at most, so paging needs no round trip.
-- `ShepherdScreen` gains `enum Page { TALK, SETTINGS, LOG }`, as the mockup draws them: the form on the BIOS panel, days on the row under it, newest first. Esc steps back one page. Everything that closes the talk screen closes these, unchanged. A node payload takes the screen back to `TALK`.
+- `ShepherdScreen` gains `enum Page { TALK, SETTINGS, LOG }`, as the mockup draws them: the form on the BIOS panel, days on the row under it, newest first. Esc steps back one page. Days move as Ruling 18 says. Everything that closes the talk screen closes these, unchanged. A node payload takes the screen back to `TALK`.
 
 - [ ] **Step 1: Write the failing GameTests.** `shepherdTheLogReachesTheScreen`, `shepherdLanguageStillSwaps`, `shepherdSettingsAreNotEvidence`, `shepherdNoLogDuringATalk`.
 - [ ] **Step 2: Run them.** Expected: FAIL.
