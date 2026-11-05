@@ -247,7 +247,7 @@ The dock at its place, sealed like the vault's other fittings and left as dressi
 
 ### S3: affinity
 
-Built on `feat/aurora-affinity`, from [aurora-shepherd-s3-plan.md](aurora-shepherd-s3-plan.md).
+Built on `feat/aurora-affinity`, from [aurora-shepherd-s3-plan.md](aurora-shepherd-s3-plan.md) and its addendum [aurora-shepherd-s3-lively.md](aurora-shepherd-s3-lively.md).
 
 Her score now means something. `ShepherdAffinity` holds the tiers and the table of deeds, and `ShepherdReactions.saw` is the one door a deed comes through: she must be awake, loaded, online and within 16 blocks of the player, and the deed's cooldown, kept in saved state, must have run. Then the score moves, her face reacts for three seconds, and the strip says her line. Nothing plays while the talk screen is open, though the score and cooldown still land. Every cooldown runs on game time, so sleeping does not shorten one.
 
@@ -259,7 +259,13 @@ She floats up in front of her follower on the Thinking face for 100 ticks when t
 
 Closed from S2's deferred minors: Esc or a hit losing `fm.exit`; a bad `when` throwing on the right-click; nothing moving her when she asks; a hit on any player delaying the strip. Still deferred: the two wording minors for S4, `fm.room` playing away from him, and the `shows()` GameTest timeouts.
 
-Debug: `/fd shepherd affinity <value>` and `/fd shepherd skipday`. Playtest: `tools/prepare_aurora_affinity_playtest.py`.
+The addendum makes her lively between deeds. Reactions have variants and never repeat their last line. She watches a visible hostile within 16 blocks, flinches when someone near is hurt, and is glad when you come back after a minute. When her follower stands still for 15 seconds she drifts to look at a chest, heater, terminal or passive animal within 8 blocks, and comes straight back if they move or a hostile shows.
+
+`ShepherdReactions.murmur` is the door for what she says unasked: idle commentary from `data/frozendawn/shepherd/ambient/`, each trigger with its own cooldown and a three-minute gap across all of them. Never at Wary, never over a conversation, only when calm. A reaction ignores the gap but restarts it. From phase 4 she imagines the aurora at night under open sky, outside a blizzard: rain cannot be the test, since `WeatherHandler` locks storms on from phase 2 to phase 6 mid.
+
+`ShepherdEggs` holds the nods to other games, the raw fish payoff for "Or what, Shepherd?", and the foreshadow by a Hearth. Once-only ones keep a flag, set only when the line played; daily ones a cooldown. The nods about trouble skip the calm test and the resupply code skips the gap too. "Eyes up, survivor." is on hold, because it repeats `message.frozendawn.ee.eyes_up`. Bleed-through lines stay in S4.
+
+Debug: `/fd shepherd affinity <value>`, `skipday`, `resetgap` and `hearthhere`. Playtest: `tools/prepare_aurora_affinity_playtest.py`.
 
 ## Verification
 
@@ -276,7 +282,7 @@ Nothing until a slice starts.
 
 ## Plan
 
-S1 is planned in [aurora-shepherd-plan.md](aurora-shepherd-plan.md), S2 in [aurora-shepherd-s2-plan.md](aurora-shepherd-s2-plan.md), S3 in [aurora-shepherd-s3-plan.md](aurora-shepherd-s3-plan.md).
+S1 is planned in [aurora-shepherd-plan.md](aurora-shepherd-plan.md), S2 in [aurora-shepherd-s2-plan.md](aurora-shepherd-s2-plan.md), S3 in [aurora-shepherd-s3-plan.md](aurora-shepherd-s3-plan.md) with the addendum [aurora-shepherd-s3-lively.md](aurora-shepherd-s3-lively.md).
 
 ## Status
 
@@ -305,3 +311,5 @@ Branch review on Opus: one real finding, the dock missing from `wither_immune` a
 2026-11-04: S2 merged as PR 151 (8f8d49d2). S3 built on `feat/aurora-affinity` in `/Volumes/SSD/Work/frozen-dawn-aurora-affinity`, from [aurora-shepherd-s3-plan.md](aurora-shepherd-s3-plan.md); the owner approved the plan and its twelve rulings. Active save: `run-lab/saves/Aurora Affinity Check`, from `tools/prepare_aurora_affinity_playtest.py`. Not yet seen by the owner, and the client has not been launched: the float-up, the reaction and recording strips, the Wary hub, the warmth's size, the pace to Friendly and every new line need the visual pass. No GameTest reaches `AIR_FAILING`, because the suffocation stage has no seam. New drafts for the owner to mark: `hub.talk`'s Wary and warm lines, the two Wary recordings, "Oh good. You remembered where you put me.", "You never asked about the name. I'm telling you anyway.", and two short reply labels, "Just a light in the sky." and "A screensaver?", with the script's words on hover because its labels overrun the slot.
 
 Found while building, not fixed: `gameTestQuick` sometimes hangs after "All N required tests passed", spinning in `ChunkMap.processUnloads` in `stopServer`. It happens without this slice's float-up code, on 2 of 5 runs of `shepherdthepromptstops`, `shepherdahostile` and `shepherdholdsstation` at 9663ced5. `shepherdHoldsStationBesideHerFollower` also timed out once running alone on a fresh server: its 200-tick timeout leaves little room after `whenTicking`.
+
+2026-11-04, the addendum: Tasks 7A to 7E and the playtest additions are built. Not yet seen by the owner: also judge whether curiosity charms or gets in the way, how often she talks, the variants, the nods and whether the foreshadow lands. The lab has no real Hearth: `[Hearth wall]` plays the line, and which Hearth records count has no test and no pass yet. `CLEAR_NIGHT` keeps its no-rain test, so storms mean it only plays in phases 0 and 1 and from phase 6 mid.
