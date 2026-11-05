@@ -102,7 +102,7 @@ public final class ShepherdScreen extends Screen {
     /** Wraps the whole line first, so a word never jumps down a row halfway through typing. */
     private void startLine(int alreadyTyped) {
         if (font == null) return;
-        String text = I18n.get(lines.get(line).key());
+        String text = I18n.get(lines.get(line).key(), lines.get(line).args().toArray());
         rows = new ArrayList<>();
         for (var row : font.getSplitter().splitLines(text, LINE_W, Style.EMPTY)) rows.add(row.getString());
         total = rows.stream().mapToInt(String::length).sum();

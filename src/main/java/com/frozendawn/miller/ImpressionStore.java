@@ -103,7 +103,7 @@ public final class ImpressionStore {
             case AIR_FAILING -> note(who, Theory.CAREFUL, false);
             case LEFT_BEHIND -> note(who, Theory.TALKS_TO_ME, false);
             case CALLED_SHEPHERD -> note(who, Theory.CALLS_ME_AURORA, false);
-            case CLEAR_NIGHT -> { }
+            case CLEAR_NIGHT, NINE_FOUND -> { }
         }
     }
 
@@ -169,6 +169,11 @@ public final class ImpressionStore {
             if (confidence(who, Theory.TALKS_TO_ME) >= SURE) return true;
         }
         return false;
+    }
+
+    /** Whether this person gave her a name and has talked with her more than they have used her. */
+    public boolean leansSomeone(UUID who) {
+        return named.contains(who) && confidence(who, Theory.TALKS_TO_ME) >= confidence(who, Theory.USES_ME);
     }
 
     /** Everyone she has a theory on, and what she makes of them. */

@@ -307,6 +307,10 @@ Verified headlessly: focus and urge, recall, walls said once, the slowing-down l
 
 2026-11-05: mockups for M3 and M4 drawn on `docs/miller-m3-m4-mockups`, all approved by the owner the same day, Rulings 13 to 15: [private-log-mockup.png](art/aurora-shepherd/private-log-mockup.png), [chat-bar-mockup.png](art/aurora-shepherd/chat-bar-mockup.png) and [crash-mockup.png](art/aurora-shepherd/crash-mockup.png). Nothing is built. The stop screen's copy does not fit her 8 by 6 display, and the longest line is 130 GUI pixels against the talk panel's 80, so the crash sheet draws options, and the owner took display B and talk panel A. Still drafts for the owner to mark: the 5 affinity, the half-block drop, the 28-tick wait, "Still optional.", "What happened?", "Neither." and the bar and Settings wording. M3 needs its own deed, since `READ_LOG` is the reward for ORSA documents.
 
+2026-11-05: S4a adds one appraisal, `NINE_FOUND`, which leaves her sad and counts as the world's doing, and `MillerPattern.stage` for dialogue conditions. See the Status in `aurora-shepherd.md`.
+
+2026-11-05: S4b adds `SelfModel.Lean` (NONE, SOMEONE, LEFT), set once at T5 and moving her to LEANING, and `PatternState` is at version 3. A save with no `lean` tag loads NONE. `Keepsakes.unspoken` exempts `NINE_FOUND`, and `Keepsake.day()` reads `ShepherdPolicy.day`. See the Status in `aurora-shepherd.md`.
+
 ## Sources
 
 - `MaeveDirector`, `ShepherdAffinity` and `ShepherdReactions` at c866cf02 on `feat/aurora-affinity`.

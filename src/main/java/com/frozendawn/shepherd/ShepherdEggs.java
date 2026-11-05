@@ -17,6 +17,7 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.ServerChatEvent;
 import net.neoforged.neoforge.event.entity.living.LivingEntityUseItemEvent;
 import net.neoforged.neoforge.event.level.ExplosionEvent;
+import net.neoforged.neoforge.event.tick.ServerTickEvent;
 
 /** The few things she says that are not about the moment. A once-only flag is only set when the line played, or a busy moment would spend it. */
 @EventBusSubscriber(modid = FrozenDawn.MOD_ID)
@@ -28,6 +29,10 @@ public final class ShepherdEggs {
     private static final String NARRATED = "fm_narrated";
     private static final String RESUPPLY_CODE = "down down up right";
     private static final String RESUPPLY_READY = "egg.resupply", RAW_FISH_READY = "egg.raw_fish";
+    private static final String FEWER = "said_fewer", FEWER_LINE = "shepherd.bleed.fewer", FEWER_ASIDE = "shepherd.bleed.fewer.aside";
+    private static final int FEWER_ASIDE_TICKS = 80;
+    /** When she takes it back. It need not outlive the server, and past a reload the word stands alone. */
+    private static long asideAt = ShepherdSavedData.NOT_SET;
 
     private ShepherdEggs() {}
 
@@ -70,6 +75,35 @@ public final class ShepherdEggs {
         if (!RESUPPLY_CODE.equalsIgnoreCase(event.getRawText().trim())) return;
         var player = event.getPlayer();
         player.getServer().execute(() -> daily(player, RESUPPLY_READY, () -> ShepherdReactions.answer(player.serverLevel(), RESUPPLY_LINE, Mood.UNIMPRESSED)));
+    }
+
+    /** A correction in a voice that is not hers. It says nothing of what they typed. */
+    @SubscribeEvent public static void corrected(ServerChatEvent event) {
+        if (!ShepherdPolicy.lessBeforeAPlural(event.getRawText())) return;
+        var player = event.getPlayer();
+        player.getServer().execute(() -> fewer(player));
+    }
+
+    private static void fewer(ServerPlayer player) {
+        if (ShepherdReactions.watching(player) == null) return;
+        var server = player.getServer();
+        once(ShepherdSavedData.get(server), FEWER, () -> {
+            boolean said = ShepherdReactions.answer(player.serverLevel(), FEWER_LINE, Mood.NEUTRAL);
+            if (said) asideAt = server.overworld().getGameTime() + FEWER_ASIDE_TICKS;
+            return said;
+        });
+    }
+
+    @SubscribeEvent public static void tick(ServerTickEvent.Post event) {
+        var server = event.getServer();
+        if (asideAt == ShepherdSavedData.NOT_SET || server.overworld().getGameTime() < asideAt) return;
+        asideAt = ShepherdSavedData.NOT_SET;
+        var she = ShepherdReactions.loaded(server);
+        if (she != null) ShepherdReactions.aside((ServerLevel) she.level(), FEWER_ASIDE, Mood.THINKING);
+    }
+
+    static void clearForTests() {
+        asideAt = ShepherdSavedData.NOT_SET;
     }
 
     @SubscribeEvent public static void ate(LivingEntityUseItemEvent.Finish event) {

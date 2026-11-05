@@ -108,8 +108,9 @@ public final class ShepherdBootGameTest {
         return data(h).entity() != null && h.getLevel().getEntity(data(h).entity()) instanceof ShepherdEntity body ? body : null;
     }
 
+    /** A cell pops out of the dock sideways and falls to the floor, which can carry it past four blocks. */
     private static boolean dropped(GameTestHelper h, BlockPos near, int joules) {
-        var items = h.getLevel().getEntitiesOfClass(ItemEntity.class, new AABB(near).inflate(4), item -> item.getItem().is(ModItems.POWER_CELL));
+        var items = h.getLevel().getEntitiesOfClass(ItemEntity.class, new AABB(near).inflate(8), item -> item.getItem().is(ModItems.POWER_CELL));
         return items.stream().anyMatch(item -> PowerCellItem.energy(item.getItem()) == joules);
     }
 

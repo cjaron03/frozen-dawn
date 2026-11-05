@@ -45,4 +45,13 @@ class ShepherdAmbientTest {
         assertTrue(parse("""
                 {"pools":[{"trigger":"night","cooldown":1,"mood":"neutral","variants":[]}]}""").isEmpty());
     }
+
+    @Test
+    void aPoolCanSayWhereSheHasGotTo() {
+        var pools = parse("""
+                {"pools":[{"trigger":"bleed","from":"walls","cooldown":100,"mood":"thinking","variants":[{"line":"a"}]},
+                {"trigger":"night","cooldown":100,"mood":"thinking","variants":[{"line":"b"}]}]}""");
+        assertEquals("walls", pools.getFirst().from());
+        assertNull(pools.getLast().from());
+    }
 }

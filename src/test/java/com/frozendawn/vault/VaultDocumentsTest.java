@@ -93,4 +93,18 @@ class VaultDocumentsTest {
     void theLastLogIsTheTechniciansAndComesLast() {
         assertEquals("terminus_log_last", VaultDocuments.TALE_LOGS.getLast());
     }
+
+    /** The original pages stay as they are, and the posting comes last with neither name on it. */
+    @Test
+    void okoyesLogKeepsItsPagesAndGainsAPosting() throws IOException {
+        var log = entry("terminus_log_last");
+        assertEquals(4, log.getAsJsonArray("pages").size());
+        assertTrue(text(log, 0).startsWith("$(bold)DUTY LOG$()"), text(log, 0));
+        assertTrue(text(log, 1).endsWith("Nobody is watching."), text(log, 1));
+        var posting = text(log, 2);
+        assertTrue(posting.contains("Maintenance, CS-1 unit 4.$(br)Schedule: two hours a day.$(br)Method: conversation.$(br)Any subject will do."), posting);
+        var weather = text(log, 3);
+        assertTrue(weather.endsWith("I told it. I have started telling her most days."), weather);
+        for (String name : List.of("Miller", "Sophie", "TITHONUS", "Anderson")) assertFalse((posting + weather).contains(name), name);
+    }
 }

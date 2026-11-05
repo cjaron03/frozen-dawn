@@ -19,6 +19,8 @@ public final class ShepherdAmbient {
     public enum Trigger {
         SILENCE,
         SLOW,
+        BLEED,
+        QUIET_OVER,
         NIGHT,
         COLD,
         AFTER_FIGHT,
@@ -38,7 +40,8 @@ public final class ShepherdAmbient {
         }
     }
 
-    public record Pool(Trigger trigger, int cooldownTicks, Mood mood, List<Say> variants) {}
+    /** {@code from} is the point in her picture of herself the pool belongs to, for a trigger that goes by it, and otherwise null. */
+    public record Pool(Trigger trigger, int cooldownTicks, Mood mood, List<Say> variants, String from) {}
 
     public static List<Pool> parse(JsonElement file) {
         var pools = new ArrayList<Pool>();
@@ -60,6 +63,7 @@ public final class ShepherdAmbient {
         }
         if (variants.isEmpty()) throw new IllegalArgumentException("No variants");
         var trigger = Trigger.valueOf(json.get("trigger").getAsString().toUpperCase(Locale.ROOT));
-        return new Pool(trigger, json.get("cooldown").getAsInt(), Mood.byName(json.get("mood").getAsString()), List.copyOf(variants));
+        return new Pool(trigger, json.get("cooldown").getAsInt(), Mood.byName(json.get("mood").getAsString()), List.copyOf(variants),
+                json.has("from") ? json.get("from").getAsString() : null);
     }
 }

@@ -14,7 +14,7 @@ import net.minecraft.nbt.Tag;
 
 /** Everything she carries, with no server in it. The same events at the same game times give the same state, to the bit. */
 final class PatternState {
-    static final int VERSION = 2;
+    static final int VERSION = 3;
     /** Bounded: she holds this many reasons and loses the oldest. */
     static final int MAX_HISTORY = 16;
     static final long NOT_SET = -1;

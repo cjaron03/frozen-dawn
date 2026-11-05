@@ -12,11 +12,13 @@ import net.neoforged.neoforge.network.codec.NeoForgeStreamCodecs;
 
 /** One node of a conversation, already resolved for the swearing setting. The client never holds a tree. */
 public record ShepherdNodePayload(int conversation, String node, List<Line> lines, List<Reply> replies, boolean canContinue, int logoTicks, int thinkTicks) implements CustomPacketPayload {
-    private static final int MAX_LINES = 16, MAX_REPLIES = 4;
+    private static final int MAX_LINES = 16, MAX_REPLIES = 4, MAX_ARGS = 4;
 
-    public record Line(String key, Mood mood) {
+    /** {@code args} are already worked out, as text for the line's slots. */
+    public record Line(String key, Mood mood, List<String> args) {
         static final StreamCodec<FriendlyByteBuf, Line> STREAM_CODEC = StreamCodec.composite(
-                ByteBufCodecs.STRING_UTF8, Line::key, NeoForgeStreamCodecs.enumCodec(Mood.class), Line::mood, Line::new);
+                ByteBufCodecs.STRING_UTF8, Line::key, NeoForgeStreamCodecs.enumCodec(Mood.class), Line::mood,
+                ByteBufCodecs.STRING_UTF8.apply(ByteBufCodecs.list(MAX_ARGS)), Line::args, Line::new);
     }
 
     public record Reply(int slot, String label, String full) {

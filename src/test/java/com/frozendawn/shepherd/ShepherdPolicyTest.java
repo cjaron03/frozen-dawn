@@ -146,4 +146,51 @@ class ShepherdPolicyTest {
         assertEquals(0, ShepherdPolicy.warmth(ShepherdPolicy.WARMTH_BLOCKS + 0.1, false));
         assertEquals(0, ShepherdPolicy.warmth(1, true));
     }
+
+    @Test
+    void theBearingNamesTheCompass() {
+        assertEquals("north", ShepherdPolicy.bearing(0, -100));
+        assertEquals("east", ShepherdPolicy.bearing(100, 0));
+        assertEquals("south-west", ShepherdPolicy.bearing(-100, 100));
+        assertEquals("north-east", ShepherdPolicy.bearing(70, -60));
+        assertEquals("north", ShepherdPolicy.bearing(10, -100), "Nearly north is north");
+    }
+
+    @Test
+    void theDistanceIsOnTheGround() {
+        assertEquals(500, ShepherdPolicy.groundBlocks(300, -400));
+    }
+
+    @Test
+    void starsDoNotShowBeforeHalfFade() {
+        assertFalse(ShepherdPolicy.starsShow(4, 0.40F), "Phase 4 has its storms");
+        assertFalse(ShepherdPolicy.starsShow(5, 0.60F), "Phase 5 draws no sky");
+        assertFalse(ShepherdPolicy.starsShow(6, 0.68F), "Nor does early phase 6");
+        assertFalse(ShepherdPolicy.starsShow(6, 0.72F), "They have only begun to fade in");
+        assertTrue(ShepherdPolicy.starsShow(6, 0.785F), "Half bright");
+        assertTrue(ShepherdPolicy.starsShow(6, 0.90F), "And on into the vacuum");
+    }
+
+    @Test
+    void offlineDaysIsNeverBelowTwo() {
+        assertEquals(2, ShepherdPolicy.offlineDays(ShepherdSavedData.NOT_SET), "A save that never wrote it down");
+        assertEquals(2, ShepherdPolicy.offlineDays(0));
+        assertEquals(2, ShepherdPolicy.offlineDays(15L * ShepherdPolicy.DAY_TICKS), "Woken on day 16");
+    }
+
+    @Test
+    void offlineDaysCountsFromTheWake() {
+        assertEquals(3, ShepherdPolicy.offlineDays(16L * ShepherdPolicy.DAY_TICKS), "Woken on day 17");
+        assertEquals(27, ShepherdPolicy.offlineDays(40L * ShepherdPolicy.DAY_TICKS + 12000), "Woken midway through day 41");
+    }
+
+    @Test
+    void onlyAPluralAfterLessCounts() {
+        assertTrue(ShepherdPolicy.lessBeforeAPlural("we have less sticks now"));
+        assertTrue(ShepherdPolicy.lessBeforeAPlural("LESS ZOMBIES"), "Whatever the case");
+        assertFalse(ShepherdPolicy.lessBeforeAPlural("less water"));
+        assertFalse(ShepherdPolicy.lessBeforeAPlural("unless things change"), "Not inside a word");
+        assertFalse(ShepherdPolicy.lessBeforeAPlural("fewer sticks"));
+        assertFalse(ShepherdPolicy.lessBeforeAPlural("less"));
+    }
 }

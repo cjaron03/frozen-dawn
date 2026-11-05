@@ -1,0 +1,7 @@
+{
+  "parent": "frozendawn:block/cs1_husk",
+  "textures": {
+    "particle": "frozendawn:block/cs1_husk_out",
+    "skin": "frozendawn:block/cs1_husk_out"
+  }
+}

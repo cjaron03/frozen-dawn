@@ -60,4 +60,17 @@ class AppraisalTest {
         drives.feed(Drive.SKY, 1, 0);
         assertEquals(0.5, Appraisal.scale(rule, drives, 0), 1e-12);
     }
+
+    @Test
+    void nineLeavesHerSad() {
+        var state = new PatternState();
+        var who = java.util.UUID.randomUUID();
+        state.appraise(who, com.frozendawn.shepherd.ShepherdAffinity.Deed.READ_LOG, 0);
+        long later = 40 * com.frozendawn.shepherd.ShepherdPolicy.DAY_TICKS;
+        double others = state.drives().value(Drive.OTHERS, later);
+        state.appraise(who, com.frozendawn.shepherd.ShepherdAffinity.Deed.NINE_FOUND, later);
+        assertEquals(com.frozendawn.shepherd.ShepherdFace.Mood.SAD, state.mood(later));
+        assertTrue(state.drives().value(Drive.OTHERS, later) < others, "Finding Nine feeds what she wanted to know");
+        assertTrue(state.keepsakes().of(who).stream().anyMatch(moment -> moment.kind().equals("nine_found")));
+    }
 }

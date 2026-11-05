@@ -3,7 +3,11 @@ package com.frozendawn.shepherd;
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.gametest.GameTestTemplates;
 import com.frozendawn.init.ModBlocks;
+import com.frozendawn.init.ModItems;
 import com.frozendawn.item.PowerCellItem;
+import com.frozendawn.miller.MillerPattern;
+import com.frozendawn.miller.PatternLaws;
+import com.frozendawn.miller.SelfModel;
 import com.frozendawn.shepherd.ShepherdDialogue.Line;
 import com.frozendawn.shepherd.ShepherdDialogue.Node;
 import com.frozendawn.shepherd.ShepherdFace.Mood;
@@ -13,14 +17,18 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.gametest.framework.AfterBatch;
 import net.minecraft.gametest.framework.BeforeBatch;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.gametest.GameTestHolder;
@@ -78,6 +86,15 @@ public final class ShepherdTalkGameTest {
     @AfterBatch(batch = "shepherd_talk_badwhen") public static void badWhenAfter(ServerLevel l) { ShepherdDialogues.load(shipped); ShepherdTestWorld.clear(l); }
     @BeforeBatch(batch = "shepherd_talk_nolines") public static void noLinesBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); shipped = ShepherdDialogues.nodes(); }
     @AfterBatch(batch = "shepherd_talk_nolines") public static void noLinesAfter(ServerLevel l) { ShepherdDialogues.load(shipped); ShepherdTestWorld.clear(l); }
+
+    @BeforeBatch(batch = "shepherd_talk_arg") public static void argBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); shipped = ShepherdDialogues.nodes(); ShepherdTestWorld.keepThePit(l); }
+    @AfterBatch(batch = "shepherd_talk_arg") public static void argAfter(ServerLevel l) { ShepherdTestWorld.restoreThePit(l); ShepherdDialogues.load(shipped); ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_talk_stage") public static void stageBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_talk_stage") public static void stageAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_talk_found") public static void foundBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_talk_found") public static void foundAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_talk_woke") public static void wokeBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_talk_woke") public static void wokeAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
 
     /** The real tree, while a test stands an edited datapack's node beside it. */
     private static Map<String, Node> shipped;
@@ -284,8 +301,8 @@ public final class ShepherdTalkGameTest {
             h.assertTrue(data(h).affinity() == 20, "15 and 10, then -5: " + data(h).affinity());
             h.assertTrue(data(h).flag("profanity_heavy") && data(h).heavy(), "The filter came off");
             var talk = ShepherdDialogues.nodes().get("hub.talk.plain");
-            h.assertTrue(ShepherdTalk.payload(1, talk, talk.lines(), true, 0, 0).lines().getFirst().key().equals(talk.lines().getFirst().heavyKey()), "Heavy swaps the key");
-            h.assertTrue(ShepherdTalk.payload(1, talk, talk.lines(), false, 0, 0).lines().getFirst().key().equals(talk.lines().getFirst().key()), "Mild does not");
+            h.assertTrue(ShepherdTalk.payload(1, talk, talk.lines(), true, 0, 0, arg -> arg).lines().getFirst().key().equals(talk.lines().getFirst().heavyKey()), "Heavy swaps the key");
+            h.assertTrue(ShepherdTalk.payload(1, talk, talk.lines(), false, 0, 0, arg -> arg).lines().getFirst().key().equals(talk.lines().getFirst().key()), "Mild does not");
             h.succeed();
         });
     }
@@ -431,6 +448,78 @@ public final class ShepherdTalkGameTest {
             ShepherdTalk.start(player, "fm.boot");
             h.assertTrue(she.mood() == Mood.RECORDING, "The recording plays first: " + she.mood());
             h.succeedWhen(() -> h.assertTrue(she.mood() == Mood.UNIMPRESSED, "Then she speaks for herself: " + she.mood()));
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_talk_arg", timeoutTicks = 400)
+    public static void shepherdAnArgumentReachesTheScreen(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            awake(h, player);
+            ShepherdTestWorld.pitAt(h.getLevel(), player.blockPosition().offset(300, 0, -400));
+            alsoLoad(new Node("test.arg", List.of(new Line("shepherd.hub.talk", null, Mood.NEUTRAL, null, List.of("pit_x", "pit_z", "pit_blocks", "pit_bearing"))),
+                    List.of(), null, List.of(), null, null));
+            ShepherdTalk.start(player, "test.arg");
+            var pit = ShepherdTestWorld.pit(h.getLevel());
+            var args = ShepherdTalk.liveSent().lines().getFirst().args();
+            h.assertTrue(args.equals(List.of(String.valueOf(pit.getX()), String.valueOf(pit.getZ()), "500", "north-east")), "Args: " + args);
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_talk_stage", timeoutTicks = 400)
+    public static void shepherdStageConditionsReadThePattern(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            awake(h, player);
+            h.assertTrue(MillerPattern.stage(h.getLevel().getServer()) == SelfModel.Stage.PRODUCT, "She starts a product");
+            h.assertFalse(ShepherdTalk.holds(player, "stage_noticing"), "Not noticing yet");
+            h.assertFalse(ShepherdTalk.holds(player, "stage_walls"), "No walls yet");
+            MillerPattern.witness(h.getLevel().getServer(), PatternLaws.LAGGED, 0);
+            h.assertTrue(ShepherdTalk.holds(player, "stage_noticing"), "That stage or later");
+            h.assertTrue(ShepherdTalk.holds(player, "stage_walls"), "At the walls");
+            h.assertTrue(ShepherdTalk.holds(player, "tier_above_wary"), "Neutral is above Wary");
+            data(h).affinity(-300);
+            h.assertFalse(ShepherdTalk.holds(player, "tier_above_wary"), "Wary is not");
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_talk_found", timeoutTicks = 400)
+    public static void shepherdFoundReadsTheSpeaker(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var reader = player(h);
+            var other = player(h);
+            awake(h, reader);
+            var tag = new CompoundTag();
+            tag.putString("doc_type", "terminus_log_last");
+            var document = new ItemStack(ModItems.ORSA_DOCUMENT.get());
+            document.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
+            reader.setItemInHand(InteractionHand.MAIN_HAND, document);
+            h.assertFalse(ShepherdTalk.holds(reader, "found:terminus_log_last"), "Not read yet");
+            document.use(h.getLevel(), reader, InteractionHand.MAIN_HAND);
+            h.assertTrue(ShepherdTalk.holds(reader, "found:terminus_log_last"), "The reader holds it");
+            h.assertFalse(ShepherdTalk.holds(other, "found:terminus_log_last"), "Nobody else does");
+            h.assertFalse(ShepherdTalk.holds(reader, "found:no_such_document"), "A document nobody filed");
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_talk_woke", timeoutTicks = 400)
+    public static void shepherdWakingRecordsWhen(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            h.assertTrue(data(h).wokeAt() == ShepherdSavedData.NOT_SET, "Not set before she wakes");
+            h.setBlock(SPOT, ModBlocks.CS1_DOCK.get());
+            var player = player(h);
+            player.setItemInHand(InteractionHand.MAIN_HAND, PowerCellItem.charged(1000));
+            long now = h.getLevel().getServer().overworld().getGameTime();
+            ShepherdTestWorld.boot(h, h.absolutePos(SPOT), player);
+            h.assertTrue(data(h).wokeAt() == now, "Woke at " + data(h).wokeAt());
+            var saved = data(h).save(new CompoundTag(), h.getLevel().registryAccess());
+            h.assertTrue(ShepherdSavedData.load(saved, h.getLevel().registryAccess()).wokeAt() == now, "It reloads");
+            saved.remove("wokeAt");
+            h.assertTrue(ShepherdSavedData.load(saved, h.getLevel().registryAccess()).wokeAt() == ShepherdSavedData.NOT_SET, "A former save has none");
+            h.succeed();
         });
     }
 }

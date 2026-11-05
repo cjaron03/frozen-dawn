@@ -1,6 +1,7 @@
 package com.frozendawn.shepherd;
 
 import com.frozendawn.FrozenDawn;
+import com.frozendawn.aurora.AuroraEvents;
 import com.frozendawn.block.ThermalHeaterBlock;
 import com.frozendawn.data.ApocalypseState;
 import com.frozendawn.event.PlayerTickHandler;
@@ -11,6 +12,7 @@ import com.frozendawn.phase.PhaseManager;
 import com.frozendawn.shepherd.ShepherdAffinity.Deed;
 import com.frozendawn.shepherd.ShepherdAffinity.Say;
 import com.frozendawn.shepherd.ShepherdAffinity.Tier;
+import com.frozendawn.shepherd.ShepherdAmbient.Pool;
 import com.frozendawn.shepherd.ShepherdAmbient.Trigger;
 import com.frozendawn.shepherd.ShepherdFace.Mood;
 import com.frozendawn.shepherd.ShepherdSavedData.Stage;
@@ -43,7 +45,9 @@ import net.neoforged.neoforge.network.PacketDistributor;
 @EventBusSubscriber(modid = FrozenDawn.MOD_ID)
 public final class ShepherdReactions {
     public static final int POLL_TICKS = 100;
-    private static final String NAME_SHE_HATES = "shepherd", SAID_SLOW = "said_slow";
+    private static final String NAME_SHE_HATES = "shepherd", SAID_SLOW = "said_slow", SAW_AURORA = "saw_aurora";
+    /** The day after Nine, kept with her other clocks so a skipped day moves it. The flag is the line she owes when it is over. */
+    private static final String NINE_QUIET = "nine_quiet", QUIET_OWED = "quiet_owed";
     /** Only so a line never plays twice running: it does not need to outlive the server. */
     private static final Map<Deed, Say> lastSaid = new EnumMap<>(Deed.class);
     private static final Map<Trigger, Say> lastMurmur = new EnumMap<>(Trigger.class);
@@ -76,6 +80,11 @@ public final class ShepherdReactions {
     }
 
     public static void saw(ServerPlayer player, Deed deed) {
+        saw(player, deed, true);
+    }
+
+    /** {@code aloud} false counts it and shows on her face, and leaves the strip alone. */
+    public static void saw(ServerPlayer player, Deed deed, boolean aloud) {
         var server = player.getServer();
         var she = watching(player);
         if (she == null) return;
@@ -86,9 +95,11 @@ public final class ShepherdReactions {
         data.affinity(data.affinity() + deed.score());
         MillerPattern.appraise(server, player.getUUID(), deed);
         if (ShepherdTalk.live()) return;
-        if (!deed.lines().isEmpty()) data.lastAmbient(now);
+        boolean silent = quiet(data, now) || !aloud;
+        if (!deed.lines().isEmpty() && !silent) data.lastAmbient(now);
         boolean wary = data.tier() == Tier.WARY;
         if (!wary) she.react(deed.mood());
+        if (silent) return;
         Say line = ShepherdAffinity.pick(reachable(server, deed.lines()), lastSaid.get(deed), she.getRandom());
         if (line == null) return;
         lastSaid.put(deed, line);
@@ -97,6 +108,17 @@ public final class ShepherdReactions {
         } else {
             speak(she, line.key(data.heavy()), deed.mood(), null);
         }
+    }
+
+    /** She is not saying anything today. Her face and the score carry on: this is only what reaches the strip. */
+    static boolean quiet(ShepherdSavedData data, long now) {
+        return now < data.deedReady(NINE_QUIET);
+    }
+
+    /** A day from now, and a line when it is over. */
+    static void quietFor(ShepherdSavedData data, long now) {
+        data.deedReady(NINE_QUIET, now + ShepherdPolicy.DAY_TICKS);
+        data.flag(QUIET_OWED, true);
     }
 
     /** A worn-down mind reaches fewer of a pool's lines, so at the floor she repeats herself. */
@@ -114,7 +136,10 @@ public final class ShepherdReactions {
 
     /** A pool's line, if the trigger's cooldown has run and the moment allows. */
     public static boolean murmur(ServerLevel level, Trigger trigger) {
-        var pools = ShepherdAmbients.pools(trigger);
+        return murmur(level, trigger, ShepherdAmbients.pools(trigger));
+    }
+
+    private static boolean murmur(ServerLevel level, Trigger trigger, List<Pool> pools) {
         var data = ShepherdSavedData.get(level.getServer());
         long now = level.getServer().overworld().getGameTime();
         String cooldown = "ambient." + trigger.name();
@@ -152,7 +177,16 @@ public final class ShepherdReactions {
         return speakUp(level, key, mood, null, false, false);
     }
 
+    /** The one thing she says through a quiet day: it answers what she asked for at the site, and that scene is what the day is for. */
+    static boolean thanks(ServerLevel level, String key, Mood mood) {
+        return speakUp(level, key, mood, null, false, false, false);
+    }
+
     private static boolean speakUp(ServerLevel level, String key, Mood mood, String arg, boolean needsCalm, boolean holdsTheGap) {
+        return speakUp(level, key, mood, arg, needsCalm, holdsTheGap, true);
+    }
+
+    private static boolean speakUp(ServerLevel level, String key, Mood mood, String arg, boolean needsCalm, boolean holdsTheGap, boolean holdsTheQuiet) {
         var server = level.getServer();
         var she = awakeAndWatching(server);
         if (she == null || she.level() != level) return false;
@@ -160,7 +194,7 @@ public final class ShepherdReactions {
         var data = ShepherdSavedData.get(server);
         long now = server.overworld().getGameTime();
         boolean gap = holdsTheGap && data.lastAmbient() != ShepherdSavedData.NOT_SET && now - data.lastAmbient() < ShepherdPolicy.AMBIENT_GAP_TICKS;
-        if (near.isEmpty() || !data.flag(ShepherdPrompt.FIRST_MEETING_DONE) || data.tier() == Tier.WARY || ShepherdTalk.live() || gap) return false;
+        if (near.isEmpty() || !data.flag(ShepherdPrompt.FIRST_MEETING_DONE) || data.tier() == Tier.WARY || ShepherdTalk.live() || gap || holdsTheQuiet && quiet(data, now)) return false;
         if (needsCalm && (she.asking() || !ShepherdPrompt.calm(server, level, near))) return false;
         data.lastAmbient(now);
         she.react(mood);
@@ -188,6 +222,7 @@ public final class ShepherdReactions {
         said = saidArg = null;
         quietSince = ShepherdSavedData.NOT_SET;
         ShepherdWill.clearForTests();
+        ShepherdEggs.clearForTests();
         lastFight = ShepherdSavedData.NOT_SET;
     }
 
@@ -223,6 +258,7 @@ public final class ShepherdReactions {
         MillerPattern.poll(server, near.size(), data.lastTalk(), data.tier().atLeast(Tier.TRUSTED));
         comeBack(server, she, near.getFirst());
         for (var player : near) look(level, player);
+        lookUp(level, she, ShepherdSavedData.get(server));
         ShepherdEggs.look(level, she, near);
         ShepherdWill.sorry(level);
         commentate(server, level, she, near);
@@ -239,7 +275,7 @@ public final class ShepherdReactions {
         long now = server.overworld().getGameTime();
         if (data.lastTalk() == ShepherdSavedData.NOT_SET) data.lastTalk(now);
         if (now - lastFight > ShepherdPolicy.FIGHT_LINE_TICKS) lastFight = ShepherdSavedData.NOT_SET;
-        if (ShepherdWill.slip(level)) return;
+        if (backFromQuiet(level, data, now) || ShepherdWill.slip(level)) return;
         sayWhenSlow(server, level, data);
         var nearest = near.stream().min(Comparator.comparingDouble(she::distanceTo)).orElseThrow().getUUID();
         var urge = MillerPattern.urge(server, nearest);
@@ -261,6 +297,13 @@ public final class ShepherdReactions {
         moment(server, level, she, near, data, now);
     }
 
+    /** Ahead of everything held back with it, or the slip would take its place and the gap would make it wait. */
+    private static boolean backFromQuiet(ServerLevel level, ShepherdSavedData data, long now) {
+        if (!data.flag(QUIET_OWED) || quiet(data, now) || !murmur(level, Trigger.QUIET_OVER)) return false;
+        data.flag(QUIET_OWED, false);
+        return true;
+    }
+
     /** She can hold her tongue for five minutes, counted from the last thing she said if that is later, and not for a day. */
     private static boolean holdingBack(ShepherdSavedData data, long now) {
         boolean spoke = data.lastAmbient() != ShepherdSavedData.NOT_SET && now - data.lastAmbient() < ShepherdPolicy.QUIET_SPELL_TICKS;
@@ -272,15 +315,22 @@ public final class ShepherdReactions {
         if (lastFight != ShepherdSavedData.NOT_SET && she.watching() == null && murmur(level, Trigger.AFTER_FIGHT)) lastFight = ShepherdSavedData.NOT_SET;
         if (now - data.lastTalk() >= ShepherdPolicy.SILENCE_TICKS) murmur(level, Trigger.SILENCE);
         if (near.stream().anyMatch(player -> PlayerTickHandler.resolvedTemperature(player) <= ShepherdPolicy.COLD_LINE_C)) murmur(level, Trigger.COLD);
+        bleed(server, level);
         if (!ShepherdPolicy.night(level.getDayTime())) return;
         if (imaginedAuroraShows(server, level, near.getFirst())) murmur(level, Trigger.IMAGINED_AURORA);
         murmur(level, Trigger.NIGHT);
     }
 
+    /** What turns up in her that nobody loaded. Where she has got to says which of it. */
+    private static void bleed(MinecraftServer server, ServerLevel level) {
+        String from = ShepherdWill.bleed(MillerPattern.stage(server), MillerPattern.leaning(server));
+        if (from != null) murmur(level, Trigger.BLEED, ShepherdAmbients.pools(Trigger.BLEED).stream().filter(pool -> from.equals(pool.from())).toList());
+    }
+
     /** From phase 4 the sky cannot show one, so she has to imagine it. The storms are locked on by then, so a clear night means no blizzard, not no rain. */
     private static boolean imaginedAuroraShows(MinecraftServer server, ServerLevel level, ServerPlayer player) {
         var state = ApocalypseState.get(server);
-        return state.getPhase() >= ShepherdPolicy.IMAGINED_AURORA_PHASE && level.canSeeSky(player.blockPosition())
+        return !ShepherdSavedData.get(server).flag(SAW_AURORA) && state.getPhase() >= ShepherdPolicy.IMAGINED_AURORA_PHASE && level.canSeeSky(player.blockPosition())
                 && !PhaseManager.isBlizzardActive(state.getPhase(), state.getProgress());
     }
 
@@ -301,6 +351,14 @@ public final class ShepherdReactions {
     /** The storms keep this to the first phases and the very end. */
     static boolean clearNight(ServerLevel level, BlockPos at) {
         return ShepherdPolicy.night(level.getDayTime()) && !level.isRaining() && level.canSeeSky(at);
+    }
+
+    /** Woken early she can stand under the real thing. She says nothing at the time: it only changes what she has to say at the top. */
+    private static void lookUp(ServerLevel level, ShepherdEntity she, ShepherdSavedData data) {
+        if (data.flag(SAW_AURORA) || !level.canSeeSky(she.blockPosition()) || level.getRainLevel(1) >= ShepherdPolicy.AURORA_RAIN_BELOW) return;
+        var aurora = AuroraEvents.snapshot(level);
+        long age = (aurora.preview() ? level.getGameTime() : level.getDayTime()) - aurora.startTick();
+        if (aurora.strength() > 0 && age >= 0 && age < aurora.durationTicks()) data.flag(SAW_AURORA, true);
     }
 
     private static void look(ServerLevel level, ServerPlayer player) {

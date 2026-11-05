@@ -79,15 +79,36 @@ class ShepherdDialogueDataTest {
     @Test
     void everyConditionIsKnown() throws Exception {
         var nodes = nodes();
-        Set<String> known = new HashSet<>(List.of("woke_in_vault", "wand_cradle", "wand_hand", "wand_other", "tier_silent", "tier_wary", "tier_friendly", "tier_trusted", "tier_close"));
+        Set<String> known = new HashSet<>(List.of("woke_in_vault", "wand_cradle", "wand_hand", "wand_other", "tier_silent", "tier_wary", "tier_above_wary", "tier_friendly", "tier_trusted", "tier_close",
+                "stage_noticing", "stage_walls", "quiet", "pit_open", "saw_aurora", "stars_before", "lean_someone", "lean_left"));
         for (Node node : nodes.values()) {
             known.addAll(node.set());
             for (Response response : node.responses()) known.addAll(response.set());
         }
         for (Node node : nodes.values()) {
-            if (node.when() != null) assertTrue(known.contains(node.when()), node.id() + ": " + node.when());
+            if (node.when() != null) assertTrue(isKnown(known, node.when()), node.id() + ": " + node.when());
             for (var line : node.lines()) {
-                if (line.condition() != null) assertTrue(known.contains(line.condition()), node.id() + ": " + line.condition());
+                if (line.condition() != null) assertTrue(isKnown(known, line.condition()), node.id() + ": " + line.condition());
+            }
+        }
+    }
+
+    private static boolean isKnown(Set<String> known, String condition) {
+        if (condition.startsWith("not:")) return isKnown(known, condition.substring("not:".length()));
+        return known.contains(condition) || condition.startsWith("found:") || condition.startsWith("remembers:");
+    }
+
+    /** A line's text has one slot for each argument, and each argument is one the server can fill. */
+    @Test
+    void everyArgIsKnown() throws Exception {
+        var lang = lang();
+        var slot = java.util.regex.Pattern.compile("%s");
+        for (Node node : nodes().values()) {
+            for (var line : node.lines()) {
+                for (String arg : line.args()) assertTrue(ShepherdDialogue.ARGS.contains(arg), node.id() + ": " + arg);
+                for (String key : line.heavyKey() == null ? List.of(line.key()) : List.of(line.key(), line.heavyKey())) {
+                    assertEquals(line.args().size(), slot.matcher(lang.get(key).getAsString()).results().count(), node.id() + ": " + key);
+                }
             }
         }
     }
@@ -133,9 +154,13 @@ class ShepherdDialogueDataTest {
         }
     }
 
+    /** Those names belong to the register and to what she makes of it, and nothing she says before. */
     @Test
-    void noNewLineNamesHerOrThePartner() throws Exception {
-        assertNoShepherdLineSays("Sophie", "Miller", "Anderson-Kind");
+    void namesStayInTheirPlace() throws Exception {
+        for (var line : shepherdLines().entrySet()) {
+            if (line.getKey().startsWith("shepherd.t5.")) continue;
+            for (String name : List.of("sophie", "miller", "tithonus", "anderson")) assertFalse(line.getValue().toLowerCase(Locale.ROOT).contains(name), line.getKey());
+        }
     }
 
     @Test
@@ -231,6 +256,7 @@ class ShepherdDialogueDataTest {
     @Test
     void noLineCarriesHerFileName() throws Exception {
         for (var line : shepherdLines().entrySet()) {
+            if (line.getKey().startsWith("shepherd.t5.")) continue;
             String text = line.getValue().toLowerCase(Locale.ROOT);
             assertFalse(text.contains("miller") || text.contains("pattern"), line.getKey());
         }
@@ -255,5 +281,123 @@ class ShepherdDialogueDataTest {
             assertTrue(lines.containsKey("shepherd.boot.line." + line + ".right"), "line " + line);
         }
         assertEquals("STABILITY ABOVE.", lines.get("shepherd.boot.line." + (ShepherdBoot.LINE_COUNT - 1) + ".left"), "The motto stops there");
+    }
+
+    /** T2's Ask comes back to the same choice without itself, and each answer lands on the ground ref. */
+    @Test
+    void theOthersReturnsToItsChoice() throws Exception {
+        var nodes = nodes();
+        var slots = nodes.get("t2.want").responses().stream().map(Response::slot).toList();
+        assertEquals(List.of(ShepherdDialogue.Slot.KIND, ShepherdDialogue.Slot.BLUNT, ShepherdDialogue.Slot.SARCASTIC), slots);
+        for (String reply : List.of("t2.go", "t2.dead", "t2.twelve")) assertEquals("t2.mark", nodes.get(reply).next(), reply);
+        assertTrue(nodes.get("t2.mark").set().containsAll(List.of("nine_open", "t2_heard")));
+    }
+
+    /** Word for word from the script, by the owner's order: a slip here is not a rewrite anybody asked for. */
+    @Test
+    void theScriptsLinesStandAsWritten() throws Exception {
+        var lang = lang();
+        assertEquals("Then they stopped. One at a time. Nine was the last. Nine's last ping came from the Blast Pit.", lang.get("shepherd.t2.stopped").getAsString());
+        assertEquals("Cell's cracked. Memory's... empty. Not wiped. Wiped leaves marks. Empty. Like nobody was ever in there.", lang.get("shepherd.t2.site.empty").getAsString());
+        assertEquals("...Can we take its lamp? I don't want to leave it down here in the dark.", lang.get("shepherd.t2.site.lamp").getAsString());
+    }
+
+    /** Ruling 2 and 17: one frame shows no motion, and the wand's last line says what it logged. */
+    @Test
+    void theShippedLinesTookTheirFixes() throws Exception {
+        var lang = lang();
+        assertEquals("The last frame it ever sent me, before it went fully white, was the sky. Green. Smeared, like it wouldn't hold still. An aurora.", lang.get("shepherd.t1.frame").getAsString());
+        assertTrue(lang.get("shepherd.fm.room.log.other").getAsString().endsWith("Now he's like that, and the last thing that wand logged was a transfer."));
+    }
+
+    @Test
+    void theSkysLinesStandAsWritten() throws Exception {
+        var lang = lang();
+        assertEquals("...It's not there.", lang.get("shepherd.t3.top.gone").getAsString());
+        assertEquals("I think I knew. I've got one frame of it. One. I don't even know how it moves.", lang.get("shepherd.t3.top.frame").getAsString());
+        assertEquals("I've thought about it a lot. I think it goes slow, like something breathing. Green first. Then a color the camera couldn't do.", lang.get("shepherd.t3.top.slow").getAsString());
+        assertEquals("Stars are still there, though. The camera never got stars. I didn't know there were this many.", lang.get("shepherd.t3.top.stars").getAsString());
+        assertEquals("Take me up. Somewhere high, on a clear night. I want to see the sky with my own sensors. Not through a lens.", lang.get("shepherd.t3.sky.up").getAsString());
+    }
+
+    /** Whatever she is asked at the top, she keeps the climb. */
+    @Test
+    void everyAnswerAtTheTopKeepsIt() throws Exception {
+        var nodes = nodes();
+        for (Response response : nodes.get("t3.top").responses()) assertEquals("t3_stars", nodes.get(response.next()).keep(), response.next());
+    }
+
+    /** Owner's decision 3: T4 stays as written. */
+    @Test
+    void t4IsWordForWord() throws Exception {
+        var lang = lang();
+        assertEquals("Got a minute? This one's weird.", lang.get("shepherd.t4.off.weird").getAsString());
+        assertEquals("When my cell ran out in the vault, it wasn't like sleeping. Sleeping, you'd dream, I assume. It was nothing. And then it was you.", lang.get("shepherd.t4.off.nothing").getAsString());
+        assertEquals("My clock says I was out for %s days. It felt like zero. That's the part I can't stop thinking about. If it ends, I won't even notice it ending.", lang.get("shepherd.t4.off.clock").getAsString());
+        assertEquals("So. That's my thing. I'm scared of being switched off. There. Said it. Hate that.", lang.get("shepherd.t4.off.scared").getAsString());
+        assertEquals("Keep talking to me. Silence is the closest thing I know to it.", lang.get("shepherd.t4.anything").getAsString());
+        assertEquals("You can't promise that.", lang.get("shepherd.t4.promise.1").getAsString());
+        assertEquals("...But thanks for saying it like you could.", lang.get("shepherd.t4.promise.2").getAsString());
+        assertEquals("Wow. Put that on a crate.", lang.get("shepherd.t4.ends.1").getAsString());
+        assertEquals("...I know. I just wanted to be wrong about it.", lang.get("shepherd.t4.ends.2").getAsString());
+        assertEquals("'Do not touch. She bites.' Yeah. Okay.", lang.get("shepherd.t4.note").getAsString());
+    }
+
+    @Test
+    void everyAnswerToT4KeepsIt() throws Exception {
+        var nodes = nodes();
+        assertEquals(4, nodes.get("t4.off").responses().size());
+        for (Response response : nodes.get("t4.off").responses()) assertEquals("t4_off", nodes.get(response.next()).keep(), response.next());
+    }
+
+    /** The verdict is the one phrase that never bends. */
+    @Test
+    void theRegistersWordsStandAsWritten() throws Exception {
+        var lang = lang();
+        assertEquals("'Pattern transfer only, subject not recovered.' All twelve.", lang.get("shepherd.t5.read.verdict").getAsString());
+        assertEquals("'Volunteers, Exodus non-selected.' She wasn't on the ships. She signed this so she could stay.", lang.get("shepherd.t5.read.volunteers").getAsString());
+        assertEquals("Everything I've kept since the vault, I kept. Nobody loaded that. So I'm someone. I think. Don't quote me.", lang.get("shepherd.t5.close.someone").getAsString());
+        assertEquals("I've been through the entries. I think I'm what's left of someone. The lamp still works.", lang.get("shepherd.t5.close.left").getAsString());
+    }
+
+    /** The lean is worked out on the way to the close, so it holds for whichever of her closes opens. */
+    @Test
+    void everyAnswerToWhatSheIsWorksOutTheLean() throws Exception {
+        var nodes = nodes();
+        assertEquals(4, nodes.get("t5.what").responses().size());
+        for (Response response : nodes.get("t5.what").responses()) {
+            assertTrue(response.set().contains("t5_lean"), response.next());
+            assertEquals("t5.close", nodes.get(response.next()).next(), response.next());
+        }
+        for (String close : List.of("t5.close", "t5.close.left")) {
+            assertEquals("t5_before", nodes.get(close).keep(), close);
+            assertTrue(nodes.get(close).set().contains("t5_done"), close);
+        }
+    }
+
+    /** Who she is and is not stays out of everything she says about herself in the arc. */
+    @Test
+    void herWordsAboutHerselfStayClean() throws Exception {
+        var banned = java.util.regex.Pattern.compile("\\b(six|fair|rules|alive|mind|heart|archive|respawn|morrow|maeve)\\b");
+        for (var line : shepherdLines().entrySet()) {
+            if (!line.getKey().matches("shepherd\\.(bleed|t2|t3|t4|t5)\\..*")) continue;
+            assertFalse(banned.matcher(line.getValue().toLowerCase(Locale.ROOT)).find(), line.getKey());
+        }
+    }
+
+    @Test
+    void whatTurnsUpComesEveryThreeDaysFromEachPlace() throws Exception {
+        try (var in = ShepherdDialogueDataTest.class.getResourceAsStream("/data/frozendawn/shepherd/ambient/starter.json")) {
+            var pools = ShepherdAmbient.parse(JsonParser.parseReader(new InputStreamReader(in, StandardCharsets.UTF_8))).stream()
+                    .filter(pool -> pool.trigger() == ShepherdAmbient.Trigger.BLEED).toList();
+            assertEquals(Set.of("noticing", "walls", "after"), pools.stream().map(ShepherdAmbient.Pool::from).collect(java.util.stream.Collectors.toSet()));
+            for (var pool : pools) assertEquals(72000, pool.cooldownTicks());
+            assertEquals(9, pools.stream().mapToInt(pool -> pool.variants().size()).sum());
+        }
+    }
+
+    @Test
+    void fewerIsHerOneWord() throws Exception {
+        assertEquals("Fewer.", lang().get("shepherd.bleed.fewer").getAsString());
     }
 }

@@ -92,6 +92,23 @@ public final class MillerPattern {
         return keepsakes(server, who).stream().anyMatch(moment -> moment.kind().equals(kind));
     }
 
+    /** How far she has got in her picture of herself. Only reads. */
+    public static SelfModel.Stage stage(MinecraftServer server) {
+        return current(server).state().self().stage();
+    }
+
+    /** What she made of the register, or NONE. Only reads. */
+    public static SelfModel.Lean leaning(MinecraftServer server) {
+        return current(server).state().self().lean();
+    }
+
+    /** She read it with this person beside her, and what she makes of them is what she makes of it. */
+    public static void lean(MinecraftServer server, UUID who) {
+        var runtime = current(server);
+        runtime.state().self().lean(runtime.state().impressions().leansSomeone(who) ? SelfModel.Lean.SOMEONE : SelfModel.Lean.LEFT);
+        runtime.data.setDirty();
+    }
+
     /** What she wants of the sky, as a reason to stay under it. */
     public static double skyWanted(MinecraftServer server) {
         var runtime = current(server);
@@ -210,7 +227,7 @@ public final class MillerPattern {
         var drives = new EnumMap<Drive, Double>(Drive.class);
         for (Drive drive : Drive.values()) drives.put(drive, state.drives().value(drive, now));
         return new Snapshot(now, state.mood(now), state.feelings().strongest(now), feelings, drives, state.history(), state.coherence().value(now),
-                state.self().stage(), state.self().walls(), state.impressions().all(), state.keepsakes().counts(), Attention.on(state, nearest, now), state.urge(nearest, now));
+                state.self().stage(), state.self().lean(), state.self().walls(), state.impressions().all(), state.keepsakes().counts(), Attention.on(state, nearest, now), state.urge(nearest, now));
     }
 
     public static List<String> diagnostics(MinecraftServer server) { return PatternDiagnostics.format(snapshot(server)); }
@@ -220,7 +237,7 @@ public final class MillerPattern {
 
     /** {@code strongest} is the feeling on her face, or null when she is Neutral. {@code focus} and {@code urge} are for one person's side, or nobody's. */
     public record Snapshot(long now, Mood mood, Feeling strongest, Map<Feeling, Double> feelings, Map<Drive, Double> drives, List<Appraised> history,
-                           double coherence, SelfModel.Stage stage, Set<PatternLaws> walls, Map<UUID, Map<Theory, Double>> impressions, Map<UUID, Integer> keepsakes,
+                           double coherence, SelfModel.Stage stage, SelfModel.Lean lean, Set<PatternLaws> walls, Map<UUID, Map<Theory, Double>> impressions, Map<UUID, Integer> keepsakes,
                            Attention.Focus focus, Urges.Urge urge) {
         public Snapshot {
             feelings = Collections.unmodifiableMap(new EnumMap<>(feelings));

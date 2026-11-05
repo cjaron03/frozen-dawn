@@ -197,6 +197,9 @@ public class ModItems {
     public static final DeferredItem<Item> EMPTY_ANTIMATTER_CAPSULE = ITEMS.registerItem("empty_antimatter_capsule", Item::new, new Item.Properties().stacksTo(16));
 
     public static final DeferredItem<BlockItem> CS1_DOCK = ITEMS.registerSimpleBlockItem("cs1_dock", ModBlocks.CS1_DOCK);
+    public static final DeferredItem<BlockItem> CS1_HUSK = ITEMS.registerSimpleBlockItem("cs1_husk", ModBlocks.CS1_HUSK);
+    public static final DeferredItem<com.frozendawn.item.NineLampItem> NINE_LAMP = ITEMS.register("nine_lamp",
+            () -> new com.frozendawn.item.NineLampItem(new Item.Properties().stacksTo(1).fireResistant()));
     public static final DeferredItem<com.frozendawn.item.PowerCellItem> POWER_CELL = ITEMS.register("power_cell", () -> new com.frozendawn.item.PowerCellItem(new Item.Properties()));
     public static final DeferredItem<com.frozendawn.item.TerminusItem> TERMINUS = ITEMS.register("terminus", () -> new com.frozendawn.item.TerminusItem(new Item.Properties()));
     public static final DeferredItem<com.frozendawn.item.SeverLashItem> SEVER_LASH = ITEMS.register("sever_lash", () -> new com.frozendawn.item.SeverLashItem(new Item.Properties()));
@@ -781,6 +784,9 @@ public class ModItems {
                         output.accept(ICARUS_CAPSULE_DOCK.get());
                         output.accept(POWER_CELL.get());
                         output.accept(CS1_DOCK.get());
+                        output.accept(CS1_HUSK.get());
+                        output.accept(NINE_LAMP.get());
+                        output.accept(com.frozendawn.shepherd.ShepherdNine.register());
                         output.accept(SEVER_LASH.get());
                         output.accept(LASH_EMITTER.get());
                         output.accept(TERMINUS.get());

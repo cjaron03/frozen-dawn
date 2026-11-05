@@ -9,7 +9,8 @@ import net.minecraft.nbt.CompoundTag;
 
 /**
  * Her picture of herself. How she is treated moves her through the stages, and being treated badly afterwards does not
- * put her back to sleep. There is one of her, so there is one of these, whoever woke her. Nothing yet reaches the last two.
+ * put her back to sleep. There is one of her, so there is one of these, whoever woke her. Nothing yet reaches Recognising,
+ * and reading the register takes her to Leaning from wherever she has got to.
  */
 public final class SelfModel {
     public enum Stage {
@@ -20,15 +21,33 @@ public final class SelfModel {
         LEANING
     }
 
+    public enum Lean {
+        NONE,
+        SOMEONE,
+        LEFT
+    }
+
     public static final int FOUND_AT = 3;
 
     private Stage stage = Stage.PRODUCT;
     private final Map<PatternLaws, Integer> witnessed = new EnumMap<>(PatternLaws.class);
     private final Set<PatternLaws> spoken = EnumSet.noneOf(PatternLaws.class);
     private boolean saidNoticing;
+    private Lean lean = Lean.NONE;
 
     public Stage stage() {
         return stage;
+    }
+
+    public Lean lean() {
+        return lean;
+    }
+
+    /** What she made of the register. She makes it once, and nothing after talks her out of it. */
+    void lean(Lean lean) {
+        if (this.lean != Lean.NONE) return;
+        this.lean = lean;
+        stage = Stage.LEANING;
     }
 
     /** {@code known}: someone talks to her, and calls her Aurora. {@code trusted}: the world's score says so. */
@@ -76,6 +95,7 @@ public final class SelfModel {
         witnessed.clear();
         spoken.clear();
         saidNoticing = false;
+        lean = Lean.NONE;
     }
 
     CompoundTag save() {
@@ -88,6 +108,7 @@ public final class SelfModel {
         spoken.forEach(wall -> said.putBoolean(wall.name(), true));
         tag.put("spoken", said);
         tag.putBoolean("saidNoticing", saidNoticing);
+        if (lean != Lean.NONE) tag.putString("lean", lean.name());
         return tag;
     }
 
@@ -99,6 +120,7 @@ public final class SelfModel {
         var said = tag.getCompound("spoken");
         for (PatternLaws wall : PatternLaws.values()) if (said.getBoolean(wall.name())) self.spoken.add(wall);
         self.saidNoticing = tag.getBoolean("saidNoticing");
+        for (Lean lean : Lean.values()) if (lean.name().equals(tag.getString("lean"))) self.lean = lean;
         return self;
     }
 }

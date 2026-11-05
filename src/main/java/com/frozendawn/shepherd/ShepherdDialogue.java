@@ -7,13 +7,21 @@ import com.google.gson.JsonObject;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 
 /** The dialogue file format. Text stays in lang keys; a file holds only structure, moods and scores. */
 public final class ShepherdDialogue {
+    /** What a line's {@code args} may ask for. The server works them out for whoever it is talking to. */
+    public static final Set<String> ARGS = Set.of("pit_x", "pit_z", "pit_blocks", "pit_bearing", "offline_days");
+
     private ShepherdDialogue() {}
 
-    /** One thing she says. {@code heavyKey} replaces {@code key} when swearing is on, and may be null. A null {@code condition} is always said. */
-    public record Line(String key, String heavyKey, Mood mood, String condition) {}
+    /** One thing she says. {@code heavyKey} replaces {@code key} when swearing is on, and may be null. A null {@code condition} is always said. {@code args} fill the text's slots, in order. */
+    public record Line(String key, String heavyKey, Mood mood, String condition, List<String> args) {
+        public Line(String key, String heavyKey, Mood mood, String condition) {
+            this(key, heavyKey, mood, condition, List.of());
+        }
+    }
 
     /** The four fixed reply positions, in screen order. */
     public enum Slot {
@@ -62,7 +70,7 @@ public final class ShepherdDialogue {
     }
 
     private static Line line(JsonObject json) {
-        return new Line(json.get("line").getAsString(), string(json, "heavy"), Mood.byName(json.get("mood").getAsString()), string(json, "if"));
+        return new Line(json.get("line").getAsString(), string(json, "heavy"), Mood.byName(json.get("mood").getAsString()), string(json, "if"), strings(json, "args"));
     }
 
     private static Response response(JsonObject json) {
