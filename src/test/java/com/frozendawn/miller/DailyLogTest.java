@@ -552,4 +552,55 @@ class DailyLogTest {
         assertEquals("read_her_log", state.keepsakes().of(ONE).getFirst().kind());
         assertEquals("read_her_log", state.keepsakes().due(ONE, 100 + 2 * DAY).kind(), "She can go back to it");
     }
+
+    private static void sweep(java.util.function.Supplier<DailyLog> fresh, Set<String> keys) {
+        for (Stage stage : Stage.values()) for (Tier tier : Tier.values()) for (int day = 1; day <= 12; day++) {
+            var days = new java.util.ArrayList<Today>();
+            days.add(today().unseenDays(9));
+            days.add(today().read());
+            days.add(today().coherence(0.6));
+            days.add(today().nineFound());
+            for (Feeling feeling : Feeling.values()) for (double strength : List.of(0.4, 0.7, 0.9)) days.add(today().feeling(feeling, strength));
+            for (Mark mark : Mark.values()) for (int backs = 1; backs <= 2; backs++) days.add(today().marks(mark).backs(backs).feeling(Feeling.FEAR, 0.7));
+            for (Mark mark : Mark.values()) for (int backs = 1; backs <= 2; backs++) days.add(today().marks(mark).backs(backs));
+            for (Deed deed : Deed.values()) days.add(today().deeds(deed));
+            for (var today : days) {
+                var log = fresh.get();
+                var note = log.write(today.on(day).at(stage).tier(tier).day()).note();
+                if (note != null) keys.add(note);
+                note = log.write(today().on(day + 1).at(stage).tier(tier).day()).note();
+                if (note != null) keys.add(note);
+            }
+        }
+    }
+
+    /** Any note the order can reach, against every note the lang file holds: no line missing, and none that can never play. */
+    @Test
+    void everyLogKindHasALine() throws Exception {
+        var keys = new java.util.TreeSet<String>();
+        sweep(DailyLog::new, keys);
+        sweep(DailyLogTest::filed, keys);
+        sweep(() -> {
+            var log = new DailyLog();
+            log.write(today().nineFound().day());
+            for (int i = 0; i < 3; i++) log.write(today().day());
+            return log;
+        }, keys);
+        sweep(() -> {
+            var log = filed();
+            log.write(today().at(Stage.FINDING_WALLS).marks(Mark.BACK).backs(1).day());
+            for (int i = 0; i < 3; i++) log.write(today().day());
+            return log;
+        }, keys);
+        sweep(() -> {
+            var log = new DailyLog();
+            log.write(today().feeling(Feeling.FEAR, 0.7).day());
+            return log;
+        }, keys);
+        try (var in = DailyLogTest.class.getResourceAsStream("/assets/frozendawn/lang/en_us.json")) {
+            var lang = com.google.gson.JsonParser.parseReader(new java.io.InputStreamReader(in, java.nio.charset.StandardCharsets.UTF_8)).getAsJsonObject();
+            var lines = new java.util.TreeSet<>(lang.keySet().stream().filter(key -> key.startsWith(NOTE)).toList());
+            assertEquals(lines, keys);
+        }
+    }
 }
