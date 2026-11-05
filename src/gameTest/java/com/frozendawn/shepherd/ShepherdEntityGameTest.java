@@ -57,6 +57,8 @@ public final class ShepherdEntityGameTest {
     @AfterBatch(batch = "shepherd_terminus") public static void terminusAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
     @BeforeBatch(batch = "shepherd_liftoff") public static void liftoffBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
     @AfterBatch(batch = "shepherd_liftoff") public static void liftoffAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_liftoff_up") public static void liftoffUpBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_liftoff_up") public static void liftoffUpAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
     @BeforeBatch(batch = "shepherd_boot_broken") public static void bootBrokenBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
     @AfterBatch(batch = "shepherd_boot_broken") public static void bootBrokenAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
     @BeforeBatch(batch = "shepherd_lamp") public static void lampBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
@@ -247,6 +249,18 @@ public final class ShepherdEntityGameTest {
             h.succeedWhen(() -> {
                 h.assertTrue(bodies(h) == 1, "Waiting for her to lift off");
                 h.assertTrue(h.getLevel().getBlockState(dock).getValue(ShepherdDockBlock.STATE) == DockState.EMPTY, "The dock is bare");
+            });
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_liftoff_up", timeoutTicks = 400)
+    public static void shepherdADockBuildsNoSecondBody(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var dock = wakeDock(h);
+            var she = ShepherdEntity.spawnFrom(h.getLevel(), dock.above(3), null);
+            h.succeedWhen(() -> {
+                h.assertTrue(h.getLevel().getBlockState(dock).getValue(ShepherdDockBlock.STATE) == DockState.EMPTY, "Waiting for the boot to run out");
+                h.assertTrue(she.getUUID().equals(ShepherdSavedData.get(h.getLevel().getServer()).entity()) && bodies(h) == 1, "She stays the one she was");
             });
         });
     }

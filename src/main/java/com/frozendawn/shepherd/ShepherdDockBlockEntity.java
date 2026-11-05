@@ -58,6 +58,8 @@ public final class ShepherdDockBlockEntity extends BlockEntity {
 
     private void liftOff() {
         bootTicks = 0;
+        // There is one of her: a boot that outlived her waking, or the world's reset, builds nothing.
+        if (ShepherdSavedData.get(level.getServer()).stage() != Stage.AWAKE || ShepherdReactions.loaded(level.getServer()) != null) return;
         ShepherdEntity.spawnFrom((ServerLevel) level, worldPosition.above(), waker);
         // A waker who has left, or is in trouble, finds the first meeting waiting on their next right-click.
         ShepherdBoot.liftedOff(level.getPlayerByUUID(waker));
