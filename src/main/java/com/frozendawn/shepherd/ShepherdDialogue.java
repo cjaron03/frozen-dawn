@@ -12,7 +12,7 @@ import java.util.Set;
 /** The dialogue file format. Text stays in lang keys; a file holds only structure, moods and scores. */
 public final class ShepherdDialogue {
     /** What a line's {@code args} may ask for. The server works them out for whoever it is talking to. */
-    public static final Set<String> ARGS = Set.of("pit_x", "pit_z", "pit_blocks", "pit_bearing");
+    public static final Set<String> ARGS = Set.of("pit_x", "pit_z", "pit_blocks", "pit_bearing", "offline_days");
 
     private ShepherdDialogue() {}
 

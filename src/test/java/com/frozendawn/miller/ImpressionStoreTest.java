@@ -253,4 +253,26 @@ class ImpressionStoreTest {
         store.settle();
         assertTrue(ImpressionStore.load(store.save()).known());
     }
+
+    @Test
+    void theLeanFollowsHowSheWasTreated() {
+        var talked = new ImpressionStore();
+        talked.note(ONE, Theory.CALLS_ME_AURORA, true);
+        for (int i = 0; i < 4; i++) talked.note(ONE, Theory.TALKS_TO_ME, true);
+        talked.note(ONE, Theory.USES_ME, true);
+        talked.settle();
+        assertTrue(talked.leansSomeone(ONE), "Named, and talked to more than used");
+
+        var used = new ImpressionStore();
+        used.note(ONE, Theory.CALLS_ME_AURORA, true);
+        used.note(ONE, Theory.TALKS_TO_ME, true);
+        for (int i = 0; i < 4; i++) used.note(ONE, Theory.USES_ME, true);
+        used.settle();
+        assertFalse(used.leansSomeone(ONE), "Named, and used more than talked to");
+
+        var unnamed = new ImpressionStore();
+        for (int i = 0; i < 4; i++) unnamed.note(ONE, Theory.TALKS_TO_ME, true);
+        unnamed.settle();
+        assertFalse(unnamed.leansSomeone(ONE), "Never named her");
+    }
 }

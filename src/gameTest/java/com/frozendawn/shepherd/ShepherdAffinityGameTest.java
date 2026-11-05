@@ -150,8 +150,6 @@ public final class ShepherdAffinityGameTest {
     @AfterBatch(batch = "shepherd_ambient_silence") public static void silenceAmbientAfter(ServerLevel l) { after(l); }
     @BeforeBatch(batch = "shepherd_ambient_early") public static void earlyAmbientBefore(ServerLevel l) { before(l); }
     @AfterBatch(batch = "shepherd_ambient_early") public static void earlyAmbientAfter(ServerLevel l) { after(l); }
-    @BeforeBatch(batch = "shepherd_ambient_aurora") public static void auroraAmbientBefore(ServerLevel l) { before(l); }
-    @AfterBatch(batch = "shepherd_ambient_aurora") public static void auroraAmbientAfter(ServerLevel l) { after(l); }
     @BeforeBatch(batch = "shepherd_ambient_blizzard") public static void blizzardAmbientBefore(ServerLevel l) { before(l); }
     @AfterBatch(batch = "shepherd_ambient_blizzard") public static void blizzardAmbientAfter(ServerLevel l) { after(l); }
     @BeforeBatch(batch = "shepherd_egg_war") public static void eggWarBefore(ServerLevel l) { before(l); }
@@ -1032,18 +1030,6 @@ public final class ShepherdAffinityGameTest {
                         assertSaidFrom(h, Trigger.NIGHT);
                     })
                     .thenSucceed();
-        });
-    }
-
-    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_ambient_aurora", timeoutTicks = 400, skyAccess = true)
-    public static void shepherdFromPhaseFourSheImaginesTheAurora(GameTestHelper h) {
-        ShepherdTestWorld.whenTicking(h, () -> {
-            nightIn(h, 4);
-            met(h, player(h));
-            h.succeedWhen(() -> {
-                h.assertTrue(ApocalypseState.get(h.getLevel().getServer()).getPhase() == 4, "The world's clock holds");
-                assertSaidFrom(h, Trigger.IMAGINED_AURORA);
-            });
         });
     }
 

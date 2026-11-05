@@ -304,6 +304,8 @@ Verified headlessly: focus and urge, recall, walls said once, the slowing-down l
 
 2026-11-05: S4a adds one appraisal, `NINE_FOUND`, which leaves her sad and counts as the world's doing, and `MillerPattern.stage` for dialogue conditions. See the Status in `aurora-shepherd.md`.
 
+2026-11-05: S4b adds `SelfModel.Lean` (NONE, SOMEONE, LEFT), set once at T5 and moving her to LEANING, and `PatternState` is at version 3. A save with no `lean` tag loads NONE. `Keepsakes.unspoken` exempts `NINE_FOUND`, and `Keepsake.day()` reads `ShepherdPolicy.day`. See the Status in `aurora-shepherd.md`.
+
 ## Sources
 
 - `MaeveDirector`, `ShepherdAffinity` and `ShepherdReactions` at c866cf02 on `feat/aurora-affinity`.

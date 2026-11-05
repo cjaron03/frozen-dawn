@@ -3,10 +3,13 @@ package com.frozendawn.shepherd;
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.gametest.GameTestTemplates;
 import com.frozendawn.init.ModEntities;
+import com.frozendawn.miller.Attention;
 import com.frozendawn.miller.Drives.Drive;
+import com.frozendawn.miller.Heard;
 import com.frozendawn.miller.MillerPattern;
 import com.frozendawn.miller.PatternLaws;
 import com.frozendawn.miller.Refusal;
+import com.frozendawn.miller.SelfModel;
 import com.frozendawn.shepherd.ShepherdAffinity.Deed;
 import com.frozendawn.shepherd.ShepherdAmbient.Trigger;
 import com.frozendawn.shepherd.ShepherdSavedData.Stage;
@@ -18,6 +21,7 @@ import net.minecraft.gametest.framework.AfterBatch;
 import net.minecraft.gametest.framework.BeforeBatch;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
@@ -25,6 +29,8 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.storage.ServerLevelData;
 import net.minecraft.world.phys.Vec3;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.ServerChatEvent;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
@@ -103,6 +109,38 @@ public final class ShepherdWillGameTest {
         level.setDayTime(6000);
         ShepherdTestWorld.clear(level);
     }
+
+    @BeforeBatch(batch = "shepherd_t5_sheet") public static void t5SheetBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_t5_sheet") public static void t5SheetAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_t5_quiet") public static void t5QuietBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_t5_quiet") public static void t5QuietAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_t5_wary") public static void t5WaryBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_t5_wary") public static void t5WaryAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_t5_near") public static void t5NearBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_t5_near") public static void t5NearAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_t5_enoch") public static void t5EnochBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_t5_enoch") public static void t5EnochAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_t5_no_enoch") public static void t5NoEnochBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_t5_no_enoch") public static void t5NoEnochAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_t5_someone") public static void t5SomeoneBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_t5_someone") public static void t5SomeoneAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_t5_left") public static void t5LeftBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_t5_left") public static void t5LeftAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+
+    @BeforeBatch(batch = "shepherd_bleed_noticing") public static void bleedNoticingBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_bleed_noticing") public static void bleedNoticingAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_bleed_walls") public static void bleedWallsBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_bleed_walls") public static void bleedWallsAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_bleed_after") public static void bleedAfterBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_bleed_after") public static void bleedAfterAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_fewer_once") public static void fewerOnceBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_fewer_once") public static void fewerOnceAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_fewer_echo") public static void fewerEchoBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_fewer_echo") public static void fewerEchoAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_fewer_far") public static void fewerFarBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_fewer_far") public static void fewerFarAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_recall_nine") public static void recallNineBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_recall_nine") public static void recallNineAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
 
     private static ShepherdSavedData data(GameTestHelper h) {
         return ShepherdSavedData.get(h.getLevel().getServer());
@@ -664,6 +702,322 @@ public final class ShepherdWillGameTest {
             ShepherdTalk.action(player, ShepherdTalk.liveId(), Action.TALK);
             h.assertFalse("hub.talk.quiet".equals(ShepherdTalk.liveNode()), "Over: " + ShepherdTalk.liveNode());
             h.succeed();
+        });
+    }
+
+    private static final int T5_ASK = 0, T5_KIND = 1, T5_BLUNT = 2, T5_GO_ON = -1, A_LOOK = 25;
+    private static final String ENOCH = "shepherd.t5.read.enoch.1";
+
+    /** They hold the sheet's file, read out of a document as anyone would. */
+    private static void readTheSheet(GameTestHelper h, ServerPlayer player) {
+        var sheet = ShepherdNine.register();
+        player.setItemInHand(InteractionHand.MAIN_HAND, sheet);
+        sheet.use(h.getLevel(), player, InteractionHand.MAIN_HAND);
+    }
+
+    private static void readHisLog(GameTestHelper h, ServerPlayer player) {
+        var tag = new net.minecraft.nbt.CompoundTag();
+        tag.putString("doc_type", "terminus_log_last");
+        var log = new net.minecraft.world.item.ItemStack(com.frozendawn.init.ModItems.ORSA_DOCUMENT.get());
+        log.set(net.minecraft.core.component.DataComponents.CUSTOM_DATA, net.minecraft.world.item.component.CustomData.of(tag));
+        player.setItemInHand(InteractionHand.MAIN_HAND, log);
+        log.use(h.getLevel(), player, InteractionHand.MAIN_HAND);
+    }
+
+    private static void assertPrompt(GameTestHelper h, String node) {
+        h.assertTrue(java.util.Objects.equals(node, data(h).promptNode()), "Waiting: " + data(h).promptNode());
+    }
+
+    private static void answer(ServerPlayer player, int... slots) {
+        for (int slot : slots) ShepherdTalk.reply(player, ShepherdTalk.liveId(), slot);
+    }
+
+    /** Up, past the first meeting, with the sheet out of the husk. */
+    private static ShepherdEntity forT5(GameTestHelper h, ServerPlayer player) {
+        var she = met(h, player);
+        data(h).flag(ShepherdNine.SHEET_TAKEN, true);
+        return she;
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_t5_sheet", timeoutTicks = 300)
+    public static void shepherdT5WaitsForTheSheet(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            forT5(h, player);
+            h.startSequence()
+                    .thenExecuteAfter(A_LOOK, () -> {
+                        assertPrompt(h, null);
+                        readTheSheet(h, player);
+                    })
+                    .thenWaitUntil(() -> assertPrompt(h, ShepherdPrompt.THE_FILE))
+                    .thenSucceed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_t5_quiet", timeoutTicks = 300)
+    public static void shepherdT5WaitsOutTheQuiet(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            forT5(h, player);
+            readTheSheet(h, player);
+            ShepherdReactions.quietFor(data(h), now(h));
+            h.startSequence()
+                    .thenExecuteAfter(A_LOOK, () -> {
+                        assertPrompt(h, null);
+                        ShepherdReactions.skipDay(h.getLevel().getServer());
+                    })
+                    .thenWaitUntil(() -> assertPrompt(h, ShepherdPrompt.THE_FILE))
+                    .thenSucceed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_t5_wary", timeoutTicks = 300)
+    public static void shepherdNoT5AtWary(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            forT5(h, player);
+            readTheSheet(h, player);
+            data(h).affinity(-300);
+            h.startSequence()
+                    .thenExecuteAfter(A_LOOK, () -> {
+                        assertPrompt(h, null);
+                        data(h).affinity(0);
+                    })
+                    .thenWaitUntil(() -> assertPrompt(h, ShepherdPrompt.THE_FILE))
+                    .thenSucceed();
+        });
+    }
+
+    /** The gate is whoever is near her, and the one she ends up telling need not be who read it. */
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_t5_near", timeoutTicks = 300)
+    public static void shepherdT5ReadsWhoeverIsNear(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var speaker = player(h);
+            var she = forT5(h, speaker);
+            var reader = player(h);
+            readTheSheet(h, reader);
+            readHisLog(h, reader);
+            var beside = reader.position();
+            reader.setPos(beside.add(40, 0, 0));
+            h.startSequence()
+                    .thenExecuteAfter(A_LOOK, () -> {
+                        assertPrompt(h, null);
+                        reader.setPos(beside);
+                    })
+                    .thenWaitUntil(() -> assertPrompt(h, ShepherdPrompt.THE_FILE))
+                    .thenExecute(() -> {
+                        she.interact(speaker, InteractionHand.MAIN_HAND);
+                        h.assertTrue(ShepherdPrompt.THE_FILE.equals(ShepherdTalk.liveNode()), "On: " + ShepherdTalk.liveNode());
+                        answer(speaker, T5_KIND);
+                        h.assertFalse(ShepherdTalk.liveLines().contains(ENOCH), "His log is the reader's, not this one's: " + ShepherdTalk.liveLines());
+                    })
+                    .thenSucceed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_t5_enoch", timeoutTicks = 300)
+    public static void shepherdEnochsBeatNeedsHisLog(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            var she = forT5(h, player);
+            readTheSheet(h, player);
+            readHisLog(h, player);
+            h.startSequence()
+                    .thenWaitUntil(() -> assertPrompt(h, ShepherdPrompt.THE_FILE))
+                    .thenExecute(() -> {
+                        she.interact(player, InteractionHand.MAIN_HAND);
+                        answer(player, T5_KIND);
+                        h.assertTrue("t5.read".equals(ShepherdTalk.liveNode()), "On: " + ShepherdTalk.liveNode());
+                        h.assertTrue(ShepherdTalk.liveLines().contains(ENOCH), "With his log: " + ShepherdTalk.liveLines());
+                    })
+                    .thenSucceed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_t5_no_enoch", timeoutTicks = 300)
+    public static void shepherdT5OpensOnTheRegisterAlone(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            var she = forT5(h, player);
+            readTheSheet(h, player);
+            h.startSequence()
+                    .thenWaitUntil(() -> assertPrompt(h, ShepherdPrompt.THE_FILE))
+                    .thenExecute(() -> {
+                        she.interact(player, InteractionHand.MAIN_HAND);
+                        answer(player, T5_KIND);
+                        h.assertFalse(ShepherdTalk.liveLines().contains(ENOCH), "No log, no Enoch: " + ShepherdTalk.liveLines());
+                    })
+                    .thenSucceed();
+        });
+    }
+
+    /** "You're still Aurora." is someone naming her, and it counts in the moment it is said. */
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_t5_someone", timeoutTicks = 300)
+    public static void shepherdNamingHerAtT5LeansSomeone(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            var she = forT5(h, player);
+            readTheSheet(h, player);
+            var server = h.getLevel().getServer();
+            h.startSequence()
+                    .thenWaitUntil(() -> assertPrompt(h, ShepherdPrompt.THE_FILE))
+                    .thenExecute(() -> {
+                        she.interact(player, InteractionHand.MAIN_HAND);
+                        answer(player, T5_KIND, T5_GO_ON, T5_KIND, T5_GO_ON);
+                        h.assertTrue("t5.close".equals(ShepherdTalk.liveNode()), "On: " + ShepherdTalk.liveNode());
+                        h.assertTrue(MillerPattern.leaning(server) == SelfModel.Lean.SOMEONE, "Leans: " + MillerPattern.leaning(server));
+                        h.assertTrue(MillerPattern.stage(server) == SelfModel.Stage.LEANING, "Stage: " + MillerPattern.stage(server));
+                        h.assertTrue(data(h).flag("t5_done"), "For M3");
+                        h.assertTrue(MillerPattern.remembers(server, player.getUUID(), "t5_before"), "She keeps it");
+                    })
+                    .thenSucceed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_t5_left", timeoutTicks = 300)
+    public static void shepherdNeverNamedAtT5LeansLeft(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            var she = forT5(h, player);
+            readTheSheet(h, player);
+            var server = h.getLevel().getServer();
+            h.startSequence()
+                    .thenWaitUntil(() -> assertPrompt(h, ShepherdPrompt.THE_FILE))
+                    .thenExecute(() -> {
+                        she.interact(player, InteractionHand.MAIN_HAND);
+                        answer(player, T5_KIND, T5_GO_ON, T5_BLUNT, T5_GO_ON);
+                        h.assertTrue("t5.close.left".equals(ShepherdTalk.liveNode()), "On: " + ShepherdTalk.liveNode());
+                        h.assertTrue(MillerPattern.leaning(server) == SelfModel.Lean.LEFT, "Leans: " + MillerPattern.leaning(server));
+                        answer(player, T5_ASK, T5_GO_ON);
+                        h.assertTrue("t5.end".equals(ShepherdTalk.liveNode()), "On: " + ShepherdTalk.liveNode());
+                    })
+                    .thenSucceed();
+        });
+    }
+
+    private static List<String> bleed(String from) {
+        return ShepherdAmbients.pools(Trigger.BLEED).stream().filter(pool -> from.equals(pool.from())).flatMap(pool -> pool.variants().stream()).map(ShepherdAffinity.Say::key).toList();
+    }
+
+    /** Free to speak, with the noticing line already behind her. */
+    private static void readyToSay(GameTestHelper h) {
+        var server = h.getLevel().getServer();
+        MillerPattern.want(server, Drive.CURIOSITY, 1);
+        MillerPattern.spoken(server, Attention.NOTICING);
+    }
+
+    private static void assertSaidFrom(GameTestHelper h, List<String> keys) {
+        h.assertTrue(keys.contains(ShepherdReactions.said()), "Said: " + ShepherdReactions.said());
+    }
+
+    private static void chat(ServerPlayer player, String text) {
+        NeoForge.EVENT_BUS.post(new ServerChatEvent(player, text, Component.literal(text)));
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_bleed_noticing", timeoutTicks = 500)
+    public static void shepherdBleedNeedsNoticing(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            met(h, player);
+            readyToSay(h);
+            var server = h.getLevel().getServer();
+            h.startSequence()
+                    .thenExecuteAfter(A_POLL, () -> {
+                        h.assertTrue(data(h).deedReady("ambient.BLEED") == 0, "Nothing turns up in a product");
+                        again(h);
+                        for (int i = 0; i < 3; i++) MillerPattern.heard(server, player.getUUID(), new Heard.Reply(ShepherdDialogue.Slot.KIND, List.of("+calls_me_aurora"), null));
+                        MillerPattern.skipDay(server);
+                    })
+                    .thenWaitUntil(() -> assertSaidFrom(h, bleed("noticing")))
+                    .thenExecute(() -> h.assertTrue(data(h).deedReady("ambient.BLEED") > now(h) + 71000, "Three days: " + data(h).deedReady("ambient.BLEED")))
+                    .thenSucceed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_bleed_walls", timeoutTicks = 400)
+    public static void shepherdBleedTurnsAtTheWalls(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            met(h, player(h));
+            readyToSay(h);
+            MillerPattern.witness(h.getLevel().getServer(), PatternLaws.CAUSAL, 1);
+            h.startSequence().thenWaitUntil(() -> assertSaidFrom(h, bleed("walls"))).thenSucceed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_bleed_after", timeoutTicks = 400)
+    public static void shepherdBleedChangesAfterT5(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            met(h, player);
+            readyToSay(h);
+            MillerPattern.lean(h.getLevel().getServer(), player.getUUID());
+            h.startSequence().thenWaitUntil(() -> assertSaidFrom(h, bleed("after"))).thenSucceed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_fewer_once", timeoutTicks = 400)
+    public static void shepherdFewerPlaysOnce(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            met(h, player);
+            sated(h);
+            chat(player, "we have less sticks");
+            h.startSequence()
+                    .thenWaitUntil(() -> assertSaid(h, "shepherd.bleed.fewer"))
+                    .thenExecuteAfter(60, () -> assertSaid(h, "shepherd.bleed.fewer"))
+                    .thenWaitUntil(() -> assertSaid(h, "shepherd.bleed.fewer.aside"))
+                    .thenExecute(() -> {
+                        again(h);
+                        chat(player, "even less sticks");
+                    })
+                    .thenExecuteAfter(A_POLL, () -> assertSaid(h, null))
+                    .thenSucceed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_fewer_echo", timeoutTicks = 200)
+    public static void shepherdFewerEchoesNothing(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            met(h, player);
+            sated(h);
+            chat(player, "less zombies please");
+            h.startSequence()
+                    .thenWaitUntil(() -> assertSaid(h, "shepherd.bleed.fewer"))
+                    .thenExecute(() -> h.assertTrue(ShepherdReactions.saidArg() == null, "Their words are not in it: " + ShepherdReactions.saidArg()))
+                    .thenSucceed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_fewer_far", timeoutTicks = 300)
+    public static void shepherdFewerNeedsHerToHear(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            met(h, player);
+            sated(h);
+            var faraway = ShepherdTestWorld.onlinePlayer(h, player.position().add(40, 0, 0));
+            chat(faraway, "less sticks");
+            h.startSequence()
+                    .thenExecuteAfter(A_LOOK, () -> {
+                        assertSaid(h, null);
+                        h.assertFalse(data(h).flag("said_fewer"), "Still to come");
+                        chat(player, "less sticks");
+                    })
+                    .thenWaitUntil(() -> assertSaid(h, "shepherd.bleed.fewer"))
+                    .thenSucceed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_recall_nine", timeoutTicks = 400)
+    public static void shepherdEachNewKeepsakeHasALine(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            met(h, player);
+            var server = h.getLevel().getServer();
+            MillerPattern.appraise(server, player.getUUID(), Deed.NINE_FOUND);
+            MillerPattern.skipDay(server);
+            sated(h);
+            h.startSequence().thenWaitUntil(() -> assertSaid(h, "shepherd.recall.nine_found")).thenSucceed();
         });
     }
 }

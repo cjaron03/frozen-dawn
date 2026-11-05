@@ -171,6 +171,11 @@ public final class ImpressionStore {
         return false;
     }
 
+    /** Whether this person gave her a name and has talked with her more than they have used her. */
+    public boolean leansSomeone(UUID who) {
+        return named.contains(who) && confidence(who, Theory.TALKS_TO_ME) >= confidence(who, Theory.USES_ME);
+    }
+
     /** Everyone she has a theory on, and what she makes of them. */
     Map<UUID, Map<Theory, Double>> all() {
         var all = new LinkedHashMap<UUID, Map<Theory, Double>>();

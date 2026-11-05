@@ -212,4 +212,13 @@ class KeepsakesTest {
     void aSaveWithNoKeepsakesLoadsEmpty() {
         assertEquals(new Keepsakes().save(), Keepsakes.load(new CompoundTag()).save());
     }
+
+    /** She says nothing at the husk. That is not the same as having nothing to say about it. */
+    @Test
+    void nineComesDueThoughSheWasSilentThere() {
+        var keepsakes = new Keepsakes();
+        var who = new java.util.UUID(0, 9);
+        keepsakes.keep(who, "nine_found", 0.6, 0);
+        assertEquals("nine_found", keepsakes.due(who, com.frozendawn.shepherd.ShepherdPolicy.DAY_TICKS).kind());
+    }
 }
