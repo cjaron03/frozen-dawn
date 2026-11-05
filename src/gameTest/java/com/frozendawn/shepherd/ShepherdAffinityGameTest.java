@@ -25,8 +25,11 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.monster.Zombie;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.CustomData;
+import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.storage.ServerLevelData;
 import net.minecraft.world.phys.Vec3;
@@ -111,6 +114,18 @@ public final class ShepherdAffinityGameTest {
     @AfterBatch(batch = "shepherd_skip_day") public static void skipAfter(ServerLevel l) { after(l); }
     @BeforeBatch(batch = "shepherd_react_heavy") public static void heavyBefore(ServerLevel l) { before(l); }
     @AfterBatch(batch = "shepherd_react_heavy") public static void heavyAfter(ServerLevel l) { after(l); }
+    @BeforeBatch(batch = "shepherd_face_watch") public static void watchFaceBefore(ServerLevel l) { before(l); }
+    @AfterBatch(batch = "shepherd_face_watch") public static void watchFaceAfter(ServerLevel l) { after(l); }
+    @BeforeBatch(batch = "shepherd_face_wall") public static void wallFaceBefore(ServerLevel l) { before(l); }
+    @AfterBatch(batch = "shepherd_face_wall") public static void wallFaceAfter(ServerLevel l) { after(l); }
+    @BeforeBatch(batch = "shepherd_face_flinch") public static void flinchFaceBefore(ServerLevel l) { before(l); }
+    @AfterBatch(batch = "shepherd_face_flinch") public static void flinchFaceAfter(ServerLevel l) { after(l); }
+    @BeforeBatch(batch = "shepherd_face_glad") public static void gladFaceBefore(ServerLevel l) { before(l); }
+    @AfterBatch(batch = "shepherd_face_glad") public static void gladFaceAfter(ServerLevel l) { after(l); }
+    @BeforeBatch(batch = "shepherd_face_wary") public static void waryFaceBefore(ServerLevel l) { before(l); }
+    @AfterBatch(batch = "shepherd_face_wary") public static void waryFaceAfter(ServerLevel l) { after(l); }
+    @BeforeBatch(batch = "shepherd_face_free") public static void freeFaceBefore(ServerLevel l) { before(l); }
+    @AfterBatch(batch = "shepherd_face_free") public static void freeFaceAfter(ServerLevel l) { after(l); }
 
     /** Some deeds move the world's clock on, so the phase comes back. */
     private static long apocalypseTicks;
@@ -692,6 +707,95 @@ public final class ShepherdAffinityGameTest {
             }
             h.assertTrue(heard, "The heavy form plays");
             h.succeed();
+        });
+    }
+
+    private static Zombie zombieBeside(GameTestHelper h) {
+        return h.spawnWithNoFreeWill(EntityType.ZOMBIE, new Vec3(16.5, 4, 10.5));
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_face_watch", timeoutTicks = 400)
+    public static void shepherdSheWatchesAHostile(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var she = awake(h, player(h));
+            var zombie = zombieBeside(h);
+            h.startSequence()
+                    .thenWaitUntil(() -> h.assertTrue(she.watching() == zombie, "Turned to it"))
+                    .thenExecute(() -> assertFace(h, she, Mood.ALARMED))
+                    .thenExecute(zombie::discard)
+                    .thenWaitUntil(() -> h.assertTrue(she.watching() == null, "It has gone"))
+                    .thenWaitUntil(() -> assertFace(h, she, Mood.NEUTRAL))
+                    .thenSucceed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_face_wall", timeoutTicks = 400)
+    public static void shepherdSheDoesNotWatchThroughAWall(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var she = awake(h, player(h));
+            she.setNoAi(true);
+            for (int y = 0; y <= 9; y++) for (int z = 2; z <= 18; z++) h.setBlock(new BlockPos(14, y, z), Blocks.STONE);
+            zombieBeside(h);
+            h.startSequence()
+                    .thenExecuteAfter(15, () -> {
+                        h.assertTrue(she.watching() == null, "She saw nothing");
+                        assertFace(h, she, Mood.NEUTRAL);
+                    })
+                    .thenSucceed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_face_flinch", timeoutTicks = 400)
+    public static void shepherdSheFlinchesWhenYouAreHurt(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            player.setGameMode(GameType.SURVIVAL);
+            var she = awake(h, player);
+            h.startSequence()
+                    .thenExecuteAfter(2, () -> {
+                        player.hurt(h.getLevel().damageSources().genericKill(), 1);
+                        assertFace(h, she, Mood.ALARMED);
+                    })
+                    .thenExecuteAfter(ShepherdPolicy.FLINCH_TICKS + 5, () -> assertFace(h, she, Mood.NEUTRAL))
+                    .thenSucceed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_face_glad", timeoutTicks = 400)
+    public static void shepherdSheIsGladYouAreBack(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var she = awake(h, player(h));
+            data(h).lastNear(clock(h) - ShepherdPolicy.GLAD_AWAY_TICKS - ShepherdReactions.POLL_TICKS);
+            h.succeedWhen(() -> assertFace(h, she, Mood.HAPPY));
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_face_wary", timeoutTicks = 400)
+    public static void shepherdAtWarySheLooksButHerFaceHolds(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var she = awake(h, player(h));
+            data(h).affinity(-300);
+            var zombie = zombieBeside(h);
+            h.startSequence()
+                    .thenWaitUntil(() -> h.assertTrue(she.watching() == zombie, "Turned to it"))
+                    .thenExecuteAfter(2, () -> assertFace(h, she, Mood.RECORDING))
+                    .thenSucceed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_face_free", timeoutTicks = 400)
+    public static void shepherdFacesMoveNoScore(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            player.setGameMode(GameType.SURVIVAL);
+            var she = awake(h, player);
+            zombieBeside(h);
+            data(h).lastNear(clock(h) - ShepherdPolicy.GLAD_AWAY_TICKS - ShepherdReactions.POLL_TICKS);
+            h.startSequence()
+                    .thenWaitUntil(() -> h.assertTrue(she.watching() != null, "Turned to it"))
+                    .thenExecute(() -> player.hurt(h.getLevel().damageSources().genericKill(), 1))
+                    .thenExecuteAfter(ShepherdReactions.POLL_TICKS + 5, () -> assertScore(h, 0))
+                    .thenSucceed();
         });
     }
 }

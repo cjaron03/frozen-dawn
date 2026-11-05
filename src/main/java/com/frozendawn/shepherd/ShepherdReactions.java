@@ -22,6 +22,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.ServerChatEvent;
+import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
 import net.neoforged.neoforge.event.server.ServerStoppingEvent;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
@@ -49,14 +50,14 @@ public final class ShepherdReactions {
     }
 
     /** Offline she sees nothing, and an unloaded body has no sensors. */
-    private static ShepherdEntity watching(MinecraftServer server) {
+    private static ShepherdEntity awakeAndWatching(MinecraftServer server) {
         var she = loaded(server);
         return she == null || she.offline() ? null : she;
     }
 
     public static void saw(ServerPlayer player, Deed deed) {
         var server = player.getServer();
-        var she = watching(server);
+        var she = awakeAndWatching(server);
         if (she == null || she.level() != player.level() || player.distanceTo(she) > ShepherdPolicy.HEARD_BLOCKS) return;
         var data = ShepherdSavedData.get(server);
         long now = server.overworld().getGameTime();
@@ -110,22 +111,27 @@ public final class ShepherdReactions {
     @SubscribeEvent public static void tick(ServerTickEvent.Post event) {
         var server = event.getServer();
         if (server.getTickCount() % POLL_TICKS != 0) return;
-        var she = watching(server);
+        var she = awakeAndWatching(server);
         if (she == null) return;
         var level = (ServerLevel) she.level();
         var near = near(level, she);
         if (near.isEmpty()) return;
-        comeBack(server, near.getFirst());
+        comeBack(server, she, near.getFirst());
         for (var player : near) look(level, player);
     }
 
     /** Her clock on you runs only while she can see someone, so being gone a day is one gap in it. */
-    private static void comeBack(MinecraftServer server, ServerPlayer player) {
+    private static void comeBack(MinecraftServer server, ShepherdEntity she, ServerPlayer player) {
         var data = ShepherdSavedData.get(server);
         long now = server.overworld().getGameTime();
         long last = data.lastNear();
         data.lastNear(now);
-        if (last != ShepherdSavedData.NOT_SET && now - last >= ShepherdPolicy.DAY_TICKS) saw(player, Deed.LEFT_BEHIND);
+        if (last == ShepherdSavedData.NOT_SET) return;
+        if (now - last >= ShepherdPolicy.DAY_TICKS) {
+            saw(player, Deed.LEFT_BEHIND);
+        } else if (now - last >= ShepherdPolicy.GLAD_AWAY_TICKS && data.tier() != Tier.WARY) {
+            she.react(Mood.HAPPY, ShepherdPolicy.GLAD_TICKS);
+        }
     }
 
     private static void look(ServerLevel level, ServerPlayer player) {
@@ -147,6 +153,13 @@ public final class ShepherdReactions {
             if (state.getBlock() instanceof ThermalHeaterBlock && !state.getValue(ThermalHeaterBlock.LIT)) return true;
         }
         return false;
+    }
+
+    @SubscribeEvent public static void flinch(LivingDamageEvent.Post event) {
+        if (!(event.getEntity() instanceof ServerPlayer player)) return;
+        var she = awakeAndWatching(player.getServer());
+        if (she == null || she.level() != player.level() || player.distanceTo(she) > ShepherdPolicy.HEARD_BLOCKS) return;
+        if (ShepherdSavedData.get(player.getServer()).tier() != Tier.WARY) she.react(Mood.ALARMED, ShepherdPolicy.FLINCH_TICKS);
     }
 
     @SubscribeEvent public static void chat(ServerChatEvent event) {

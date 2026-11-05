@@ -18,6 +18,7 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.MoverType;
 import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
@@ -26,6 +27,7 @@ import net.minecraft.world.entity.ai.control.FlyingMoveControl;
 import net.minecraft.world.entity.ai.goal.Goal;
 import net.minecraft.world.entity.ai.navigation.FlyingPathNavigation;
 import net.minecraft.world.entity.ai.navigation.PathNavigation;
+import net.minecraft.world.entity.monster.Enemy;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
@@ -46,12 +48,14 @@ public final class ShepherdEntity extends PathfinderMob {
     private static final double SETTLED_SQR = 0.25;
     private static final double ASK_BELOW_EYES = 0.3;
     private static final double ASK_SPEED = 0.7;
+    private static final int WATCH_EVERY_TICKS = 5;
 
     private int rebootTicks;
     private int talkTicks;
     private int logoTicks;
     private int askTicks;
     private int reactTicks;
+    private Mob watching;
     /** Client only: the mood last drawn, and how much of the blink between two moods is left. */
     private Mood shownMood;
     private int moodBeat;
@@ -143,9 +147,39 @@ public final class ShepherdEntity extends PathfinderMob {
 
     /** Her face answers what she just saw, then goes back. A conversation keeps her face to itself. */
     public void react(Mood mood) {
+        react(mood, ShepherdPolicy.REACT_TICKS);
+    }
+
+    void react(Mood mood, int ticks) {
         if (ShepherdTalk.live()) return;
-        reactTicks = ShepherdPolicy.REACT_TICKS;
+        reactTicks = ticks;
         setMood(mood);
+    }
+
+    /** The hostile she has turned to, if any. */
+    Mob watching() {
+        return watching;
+    }
+
+    /** What she can see for herself, and only that. */
+    private Mob nearestHostile(ServerLevel level) {
+        Mob nearest = null;
+        for (var mob : level.getEntitiesOfClass(Mob.class, getBoundingBox().inflate(ShepherdPolicy.WATCH_BLOCKS), mob -> mob instanceof Enemy && mob.isAlive())) {
+            if (distanceTo(mob) <= ShepherdPolicy.WATCH_BLOCKS && (nearest == null || distanceTo(mob) < distanceTo(nearest)) && hasLineOfSight(mob)) nearest = mob;
+        }
+        return nearest;
+    }
+
+    private void watch(ServerLevel level) {
+        if (offline()) {
+            watching = null;
+            return;
+        }
+        if (tickCount % WATCH_EVERY_TICKS == 0) watching = nearestHostile(level);
+        if (watching != null && !watching.isAlive()) watching = null;
+        if (watching == null || asking()) return;
+        getLookControl().setLookAt(watching, 30, 30);
+        if (reactTicks <= 1 && ShepherdSavedData.get(level.getServer()).tier() != Tier.WARY) react(Mood.ALARMED, 2);
     }
 
     public boolean offline() {
@@ -240,6 +274,7 @@ public final class ShepherdEntity extends PathfinderMob {
         if (offline() && --rebootTicks <= 0) reboot();
         if (talkTicks > 0 && --talkTicks == 0) entityData.set(DATA_TALKING, false);
         if (logoTicks > 0 && --logoTicks == 0) entityData.set(DATA_LOGO, false);
+        watch(level);
         if (askTicks > 0) askTicks--;
         if (reactTicks > 0) reactTicks--;
         if (ShepherdTalk.live() || reactTicks > 0) return;
@@ -354,7 +389,7 @@ public final class ShepherdEntity extends PathfinderMob {
         @Override public void tick() {
             var player = target();
             if (player == null) return;
-            getLookControl().setLookAt(player, 30, 30);
+            if (watching == null || asking()) getLookControl().setLookAt(player, 30, 30);
             double distance = distanceTo(player);
             var away = position().subtract(player.position()).multiply(1, 0, 1);
             var spot = asking() ? askSpot(player, away)

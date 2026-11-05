@@ -22,6 +22,10 @@ public final class ShepherdPolicy {
     public static final double ASK_BLOCKS = 2.5;
     public static final int ASK_TICKS = 100;
     public static final int REACT_TICKS = 60;
+    public static final int WATCH_BLOCKS = 16;
+    public static final int FLINCH_TICKS = 20;
+    public static final int GLAD_TICKS = 40;
+    public static final int GLAD_AWAY_TICKS = 1200;
     public static final int DAY_TICKS = 24000;
     public static final int NIGHT_STARTS = 13000, NIGHT_ENDS = 23000;
     public static final float WARM_SHELTER_C = 10, FROZEN_C = -25;
