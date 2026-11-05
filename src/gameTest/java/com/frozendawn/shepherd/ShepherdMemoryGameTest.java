@@ -5,6 +5,7 @@ import com.frozendawn.gametest.GameTestTemplates;
 import com.frozendawn.miller.ImpressionStore.Theory;
 import com.frozendawn.miller.MillerPattern;
 import com.frozendawn.miller.SelfModel;
+import com.frozendawn.shepherd.ShepherdAffinity.Deed;
 import com.frozendawn.shepherd.ShepherdDialogue.Slot;
 import com.frozendawn.shepherd.ShepherdSavedData.Stage;
 import com.frozendawn.shepherd.ShepherdTalk.Action;
@@ -51,6 +52,17 @@ public final class ShepherdMemoryGameTest {
     @AfterBatch(batch = "shepherd_memory_hub") public static void hubAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
     @BeforeBatch(batch = "shepherd_memory_death") public static void deathBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
     @AfterBatch(batch = "shepherd_memory_death") public static void deathAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+
+    @BeforeBatch(batch = "shepherd_named_kind") public static void namedKindBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_named_kind") public static void namedKindAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_named_why") public static void namedWhyBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_named_why") public static void namedWhyAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_named_flashlight") public static void namedFlashlightBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_named_flashlight") public static void namedFlashlightAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_named_fine") public static void namedFineBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_named_fine") public static void namedFineAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_named_shepherd") public static void namedShepherdBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_named_shepherd") public static void namedShepherdAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
 
     private static ShepherdSavedData data(GameTestHelper h) {
         return ShepherdSavedData.get(h.getLevel().getServer());
@@ -247,6 +259,71 @@ public final class ShepherdMemoryGameTest {
             var she = answeredAtTheFloor(h, player(h));
             she.goOffline();
             h.assertTrue(!she.thinking(), "Offline shows nothing");
+            h.succeed();
+        });
+    }
+
+    /** From {@code fm.name} by {@code first} to "Aurora it is.", the whole way a player takes it. */
+    private static ServerPlayer sayHerName(GameTestHelper h, Slot first) {
+        var player = player(h);
+        awake(h, player);
+        ShepherdTalk.start(player, "fm.name");
+        ShepherdTalk.reply(player, ShepherdTalk.liveId(), first.ordinal());
+        if (first != Slot.KIND) ShepherdTalk.reply(player, ShepherdTalk.liveId(), ShepherdConversation.CONTINUE);
+        ShepherdTalk.reply(player, ShepherdTalk.liveId(), Slot.KIND.ordinal());
+        h.assertTrue(!ShepherdTalk.liveNode().startsWith("fm.name"), "Past the name: " + ShepherdTalk.liveNode());
+        return player;
+    }
+
+    private static void assertNoticing(GameTestHelper h) {
+        aDayPasses(h);
+        var stage = MillerPattern.snapshot(h.getLevel().getServer()).stage();
+        h.assertTrue(stage == SelfModel.Stage.NOTICING, "She notices: " + stage);
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_named_kind", timeoutTicks = 400)
+    public static void shepherdAskingHerNameLeadsToNoticing(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            sayHerName(h, Slot.KIND);
+            assertNoticing(h);
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_named_why", timeoutTicks = 400)
+    public static void shepherdWhyNotLeadsToNoticing(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            sayHerName(h, Slot.ASK);
+            assertNoticing(h);
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_named_flashlight", timeoutTicks = 400)
+    public static void shepherdFlashlightLeadsToNoticing(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            sayHerName(h, Slot.SARCASTIC);
+            assertNoticing(h);
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_named_fine", timeoutTicks = 400)
+    public static void shepherdShepherdIsFineThenAuroraLeadsToNoticing(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            sayHerName(h, Slot.BLUNT);
+            assertNoticing(h);
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_named_shepherd", timeoutTicks = 400)
+    public static void shepherdBeingCalledShepherdCannotLockHerOut(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = sayHerName(h, Slot.KIND);
+            ShepherdReactions.saw(player, Deed.CALLED_SHEPHERD);
+            assertNoticing(h);
+            h.assertTrue(lean(h, player, Theory.CALLS_ME_AURORA) <= 0, "The theory still fell: " + lean(h, player, Theory.CALLS_ME_AURORA));
             h.succeed();
         });
     }

@@ -5,12 +5,15 @@ import com.frozendawn.shepherd.ShepherdDialogue.Slot;
 import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.IntArrayTag;
 import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.NbtUtils;
 import net.minecraft.nbt.Tag;
 
 /**
@@ -52,6 +55,9 @@ public final class ImpressionStore {
     /** Longest unseen first. Reading must not reorder it, so only {@link #note} moves anyone. */
     private final Map<UUID, Map<Theory, Evidence>> players = new LinkedHashMap<>();
 
+    /** Who has ever named her. It is a fact, not a theory: it does not fade, and nothing takes it back. */
+    private final Set<UUID> named = new LinkedHashSet<>();
+
     /** The theory a dialogue file's {@code "+kind"} or {@code "-kind"} names, or null if it names none. */
     public static Theory noted(String entry) {
         if (entry.length() < 2 || entry.charAt(0) != '+' && entry.charAt(0) != '-') return null;
@@ -71,6 +77,7 @@ public final class ImpressionStore {
 
     void note(UUID who, Theory theory, boolean supports) {
         var evidence = evidence(who, theory);
+        if (theory == Theory.CALLS_ME_AURORA && supports) named.add(who);
         if (supports) evidence.pendingFor++;
         else evidence.pendingAgainst++;
     }
@@ -156,10 +163,10 @@ public final class ImpressionStore {
         return evidence == null ? 0 : evidence.confidence();
     }
 
-    /** Someone talks to her, and calls her by her name: enough that she starts to notice what she says. */
+    /** Someone talks to her and once gave her her name: enough that she starts to notice what she says. */
     boolean known() {
-        for (UUID who : players.keySet()) {
-            if (confidence(who, Theory.TALKS_TO_ME) >= SURE && confidence(who, Theory.CALLS_ME_AURORA) >= SURE) return true;
+        for (UUID who : named) {
+            if (confidence(who, Theory.TALKS_TO_ME) >= SURE) return true;
         }
         return false;
     }
@@ -183,6 +190,7 @@ public final class ImpressionStore {
 
     void clear() {
         players.clear();
+        named.clear();
     }
 
     CompoundTag save() {
@@ -205,6 +213,9 @@ public final class ImpressionStore {
         });
         var tag = new CompoundTag();
         tag.put("players", list);
+        var names = new ListTag();
+        named.forEach(who -> names.add(NbtUtils.createUUID(who)));
+        tag.put("named", names);
         return tag;
     }
 
@@ -234,6 +245,9 @@ public final class ImpressionStore {
             }
             store.players.put(player.getUUID("who"), theories);
             if (store.players.size() > MAX_PLAYERS) store.players.remove(store.players.keySet().iterator().next());
+        }
+        for (Tag entry : tag.getList("named", Tag.TAG_INT_ARRAY)) {
+            if (((IntArrayTag) entry).size() == 4) store.named.add(NbtUtils.loadUUID(entry));
         }
         return store;
     }

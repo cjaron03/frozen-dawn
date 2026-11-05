@@ -199,4 +199,58 @@ class ImpressionStoreTest {
     void aSaveWithNoImpressionsLoadsEmpty() {
         assertEquals(new ImpressionStore().save(), ImpressionStore.load(new CompoundTag()).save());
     }
+
+    /** Two replies that day, one of them saying her name. */
+    private static PatternState named() {
+        var state = woken();
+        state.heard(ONE, reply(Slot.KIND, "+calls_me_aurora"), 0);
+        state.heard(ONE, reply(Slot.KIND), 0);
+        return state;
+    }
+
+    @Test
+    void namingHerOnceIsEnoughToBeKnown() {
+        var state = named();
+        state.poll(1, PatternState.NOT_SET, false, DAY);
+        assertTrue(state.impressions().known());
+    }
+
+    @Test
+    void talkingWithoutEverNamingHerIsNotKnown() {
+        var state = woken();
+        state.heard(ONE, reply(Slot.KIND), 0);
+        state.heard(ONE, reply(Slot.KIND), 0);
+        state.poll(1, PatternState.NOT_SET, false, DAY);
+        assertFalse(state.impressions().known());
+    }
+
+    @Test
+    void shepherdLowersTheTheoryButCannotTakeBackTheName() {
+        var state = named();
+        state.appraise(ONE, Deed.CALLED_SHEPHERD, 0);
+        state.impressions().note(ONE, Theory.CALLS_ME_AURORA, false);
+        state.poll(1, PatternState.NOT_SET, false, DAY);
+        assertTrue(state.impressions().confidence(ONE, Theory.CALLS_ME_AURORA) < 0);
+        assertTrue(state.impressions().known());
+    }
+
+    @Test
+    void theNameOutlivesTheFade() {
+        var state = named();
+        for (int day = 1; day <= 40; day++) state.poll(1, PatternState.NOT_SET, false, day * DAY);
+        assertFalse(state.impressions().known(), "They stopped talking to her");
+        state.heard(ONE, reply(Slot.KIND), 40 * DAY);
+        state.heard(ONE, reply(Slot.KIND), 40 * DAY);
+        state.poll(1, PatternState.NOT_SET, false, 41 * DAY);
+        assertTrue(state.impressions().known());
+    }
+
+    @Test
+    void theNameIsSaved() {
+        var store = new ImpressionStore();
+        store.note(ONE, Theory.CALLS_ME_AURORA, true);
+        for (int i = 0; i < 2; i++) store.note(ONE, Theory.TALKS_TO_ME, true);
+        store.settle();
+        assertTrue(ImpressionStore.load(store.save()).known());
+    }
 }

@@ -50,14 +50,14 @@ Approving the plan accepts these unless you say otherwise. Rulings 1 to 5 are th
    | --- | --- | --- |
    | `KIND` | Kind replies, `WARM_SHELTER` | `ARCHIVIST_KILLED`, `SHELTER_FROZE` |
    | `TALKS_TO_ME` | Any conversation reply | `LEFT_BEHIND` |
-   | `CALLS_ME_AURORA` | Node `fm.name.aurora` | `CALLED_SHEPHERD`, node `fm.name.fine` |
+   | `CALLS_ME_AURORA` | Node `fm.name.aurora`, the "Aurora it is." reply on `fm.name.its` | `CALLED_SHEPHERD`, node `fm.name.fine` |
    | `USES_ME` | Hub Follow, Wait or Lamp | Hub Talk |
    | `CAREFUL` | `WARM_SHELTER`, `READ_LOG` | `AIR_FAILING`, `SHELTER_FROZE` |
    | `JOKES_WITH_ME` | Sarcastic replies | Blunt replies |
 
 9. **Lagged means once a day, by game time.** Evidence waits in `pending`. At the first poll after 24,000 ticks the old counts shrink by 0.9, so old evidence fades, and the day's evidence lands. It runs on game time, not nightfall, because the poll knows no sky, and sleeping leaves game time alone. Nobody near means it waits for the next poll.
 10. **Keepsakes: 64 per player.** A moment is kept if its strongest raised feeling is at or above 0.30, or a node marks it `keep`, at salience 0.8. A repeat of a kind within 3 days strengthens that keepsake instead of filling a slot, or a warm hut would fill all 64. When full, a new one displaces the least salient, oldest first, only if it mattered more.
-11. **The self-model is the six walls plus a stage.** The stage is one per world, since there is one of her, and it never falls: being treated badly afterwards does not put her back to sleep. Product to Noticing needs any player at 0.5 on `TALKS_TO_ME` and `CALLS_ME_AURORA`. Noticing to Finding the walls needs Trusted. Recognising (S6) and Leaning (T5) exist in the enum and nothing reaches them. A wall is found after 3 witnesses from Finding the walls on:
+11. **The self-model is the six walls plus a stage.** The stage is one per world, since there is one of her, and it never falls: being treated badly afterwards does not put her back to sleep. Product to Noticing needs any player at 0.5 on `TALKS_TO_ME` who has named her Aurora at some point. Naming her is kept as a fact that never fades, not read off `CALLS_ME_AURORA`: a first meeting holds only one such event, and `CALLED_SHEPHERD` lowers the theory but cannot lock her out (owner, 2026-11-04, after the branch review found Noticing unreachable). Noticing to Finding the walls needs Trusted. Recognising (S6) and Leaning (T5) exist in the enum and nothing reaches them. A wall is found after 3 witnesses from Finding the walls on:
 
     | Wall | Witnessed when |
     | --- | --- |

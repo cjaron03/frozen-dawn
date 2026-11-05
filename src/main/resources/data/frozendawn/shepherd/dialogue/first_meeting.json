@@ -248,7 +248,10 @@
         {
           "slot": "kind",
           "label": "shepherd.fm.name.settled.label",
-          "next": "fm.room"
+          "next": "fm.room",
+          "noted": [
+            "+calls_me_aurora"
+          ]
         }
       ]
     },

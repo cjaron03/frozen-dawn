@@ -23,7 +23,8 @@ public final class ShepherdDialogue {
         SARCASTIC
     }
 
-    public record Response(Slot slot, String label, String full, String next, int affinity, List<String> set) {}
+    /** {@code noted} is what saying this tells her, as a node's is what arriving there does. */
+    public record Response(Slot slot, String label, String full, String next, int affinity, List<String> set, List<String> noted) {}
 
     /**
      * A node with no responses continues to {@code next} on a click, or ends the conversation if that is null.
@@ -69,7 +70,7 @@ public final class ShepherdDialogue {
         String full = string(json, "full");
         Slot slot = Slot.valueOf(json.get("slot").getAsString().toUpperCase(Locale.ROOT));
         int affinity = json.has("affinity") ? json.get("affinity").getAsInt() : 0;
-        return new Response(slot, label, full != null ? full : label, json.get("next").getAsString(), affinity, strings(json, "set"));
+        return new Response(slot, label, full != null ? full : label, json.get("next").getAsString(), affinity, strings(json, "set"), strings(json, "noted"));
     }
 
     private static String string(JsonObject json, String name) {

@@ -214,6 +214,9 @@ class ShepherdDialogueDataTest {
     void everyNoteNamesATheory() throws Exception {
         for (Node node : nodes().values()) {
             for (String note : node.noted()) assertNotNull(ImpressionStore.noted(note), node.id() + ": " + note);
+            for (var response : node.responses()) {
+                for (String note : response.noted()) assertNotNull(ImpressionStore.noted(note), node.id() + ": " + note);
+            }
         }
     }
 
