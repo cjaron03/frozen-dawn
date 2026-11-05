@@ -109,6 +109,8 @@ public final class ShepherdAffinityGameTest {
     @AfterBatch(batch = "shepherd_name_replay") public static void replayNameAfter(ServerLevel l) { after(l); }
     @BeforeBatch(batch = "shepherd_skip_day") public static void skipBefore(ServerLevel l) { before(l); }
     @AfterBatch(batch = "shepherd_skip_day") public static void skipAfter(ServerLevel l) { after(l); }
+    @BeforeBatch(batch = "shepherd_react_heavy") public static void heavyBefore(ServerLevel l) { before(l); }
+    @AfterBatch(batch = "shepherd_react_heavy") public static void heavyAfter(ServerLevel l) { after(l); }
 
     /** Some deeds move the world's clock on, so the phase comes back. */
     private static long apocalypseTicks;
@@ -670,6 +672,25 @@ public final class ShepherdAffinityGameTest {
             she.teleportTo(player.getX() + ShepherdPolicy.HEARD_BLOCKS + 5, player.getY(), player.getZ());
             command(h, "fd shepherd skipday");
             h.assertTrue(data(h).lastNear() == last - ShepherdPolicy.DAY_TICKS, "Out of sight, the day counts as gone");
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_react_heavy", timeoutTicks = 400)
+    public static void shepherdHeavySwapsAReactionLine(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            awake(h, player);
+            data(h).heavy(true);
+            var swears = Deed.AIR_FAILING.lines().stream().filter(say -> say.heavyKey() != null).findFirst().orElseThrow();
+            boolean heard = false;
+            for (int i = 0; i < 60; i++) {
+                data(h).deedReady(Deed.AIR_FAILING.name(), 0);
+                ShepherdReactions.saw(player, Deed.AIR_FAILING);
+                h.assertTrue(!swears.key().equals(ShepherdReactions.said()), "Never the mild form");
+                heard |= swears.heavyKey().equals(ShepherdReactions.said());
+            }
+            h.assertTrue(heard, "The heavy form plays");
             h.succeed();
         });
     }

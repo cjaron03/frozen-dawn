@@ -34,6 +34,7 @@ final class ShepherdTestWorld {
     static void clear(ServerLevel level) {
         ShepherdTalk.clearForTests();
         ShepherdPrompt.clearForTests();
+        ShepherdReactions.clearForTests();
         ShepherdSavedData.get(level.getServer()).clearForTests();
         // A body left in a test area that has stopped ticking would never get to remove itself.
         for (var body : level.getEntities(ModEntities.CS1_UNIT.get(), e -> true)) body.discard();

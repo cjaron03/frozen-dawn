@@ -112,11 +112,14 @@ class ShepherdDialogueDataTest {
     }
 
     @Test
-    void everyDeedLineHasALangEntry() throws Exception {
+    void everyDeedVariantHasALangEntry() throws Exception {
         var lang = lang();
         List<String> keys = new ArrayList<>(List.of(ShepherdAffinity.WARY_LIKED, ShepherdAffinity.WARY_DISLIKED));
         for (var deed : ShepherdAffinity.Deed.values()) {
-            if (deed.line() != null) keys.add(deed.line());
+            for (var say : deed.lines()) {
+                keys.add(say.key());
+                if (say.heavyKey() != null) keys.add(say.heavyKey());
+            }
         }
         for (String key : keys) assertTrue(lang.has(key) && !lang.get(key).getAsString().isBlank(), key);
     }

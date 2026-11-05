@@ -5,13 +5,16 @@ import com.frozendawn.block.ThermalHeaterBlock;
 import com.frozendawn.event.PlayerTickHandler;
 import com.frozendawn.network.ShepherdLinePayload;
 import com.frozendawn.shepherd.ShepherdAffinity.Deed;
+import com.frozendawn.shepherd.ShepherdAffinity.Say;
 import com.frozendawn.shepherd.ShepherdAffinity.Tier;
 import com.frozendawn.shepherd.ShepherdFace.Mood;
 import com.frozendawn.shepherd.ShepherdSavedData.Stage;
 import com.frozendawn.world.HeaterRegistry;
 import com.frozendawn.world.TemperatureManager;
+import java.util.EnumMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
@@ -19,6 +22,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.ServerChatEvent;
+import net.neoforged.neoforge.event.server.ServerStoppingEvent;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
 
@@ -30,6 +34,9 @@ import net.neoforged.neoforge.network.PacketDistributor;
 public final class ShepherdReactions {
     public static final int POLL_TICKS = 100;
     private static final String NAME_SHE_HATES = "shepherd";
+    /** Only so a line never plays twice running: it does not need to outlive the server. */
+    private static final Map<Deed, Say> lastSaid = new EnumMap<>(Deed.class);
+    private static String said;
 
     private ShepherdReactions() {}
 
@@ -59,10 +66,35 @@ public final class ShepherdReactions {
         if (ShepherdTalk.live()) return;
         boolean wary = data.tier() == Tier.WARY;
         if (!wary) she.react(deed.mood());
-        if (deed.line() == null) return;
-        var line = wary ? new ShepherdLinePayload(deed.liked() ? ShepherdAffinity.WARY_LIKED : ShepherdAffinity.WARY_DISLIKED, Mood.RECORDING)
-                : new ShepherdLinePayload(deed.line(), deed.mood());
+        Say line = ShepherdAffinity.pick(deed.lines(), lastSaid.get(deed), she.getRandom());
+        if (line == null) return;
+        lastSaid.put(deed, line);
+        if (wary) {
+            speak(she, deed.liked() ? ShepherdAffinity.WARY_LIKED : ShepherdAffinity.WARY_DISLIKED, Mood.RECORDING);
+        } else {
+            speak(she, line.key(data.heavy()), deed.mood());
+        }
+    }
+
+    /** Everyone who can hear her gets the strip. */
+    private static void speak(ShepherdEntity she, String key, Mood mood) {
+        said = key;
+        var line = new ShepherdLinePayload(key, mood);
         for (var heard : near((ServerLevel) she.level(), she)) PacketDistributor.sendToPlayer(heard, line);
+    }
+
+    /** The last key she said, for GameTests: a strip has nothing on the server to read back. */
+    static String said() {
+        return said;
+    }
+
+    static void clearForTests() {
+        lastSaid.clear();
+        said = null;
+    }
+
+    @SubscribeEvent public static void stopping(ServerStoppingEvent event) {
+        clearForTests();
     }
 
     private static List<ServerPlayer> near(ServerLevel level, ShepherdEntity she) {

@@ -3,7 +3,10 @@ package com.frozendawn.shepherd;
 import static org.junit.jupiter.api.Assertions.*;
 
 import com.frozendawn.shepherd.ShepherdAffinity.Deed;
+import com.frozendawn.shepherd.ShepherdAffinity.Say;
 import com.frozendawn.shepherd.ShepherdAffinity.Tier;
+import java.util.List;
+import net.minecraft.util.RandomSource;
 import org.junit.jupiter.api.Test;
 
 class ShepherdAffinityTest {
@@ -34,5 +37,23 @@ class ShepherdAffinityTest {
             assertTrue(Math.abs(deed.score()) >= 5 && Math.abs(deed.score()) <= 25, deed.name());
             assertEquals(deed.score() > 0, deed.liked(), deed.name());
         }
+    }
+
+    @Test
+    void aDeedNeverRepeatsItsLastLine() {
+        var lines = Deed.WARM_SHELTER.lines();
+        var random = RandomSource.create(1);
+        Say last = lines.getFirst();
+        for (int i = 0; i < 100; i++) {
+            Say next = ShepherdAffinity.pick(lines, last, random);
+            assertNotEquals(last, next);
+            last = next;
+        }
+    }
+
+    @Test
+    void aSingleLineDeedStillSpeaks() {
+        var only = List.of(new Say("a", null));
+        assertEquals(only.getFirst(), ShepherdAffinity.pick(only, only.getFirst(), RandomSource.create(1)));
     }
 }
