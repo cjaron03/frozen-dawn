@@ -85,6 +85,11 @@ def sky_controls(check):
             say('[Walls]', command='/fd shepherd witness causal', color='gray'), say('[She may speak]', command='/fd shepherd resetgap', color='gray')]
 
 
+def on_the_starry_day(check, time_of_day):
+    """Never time set: unless progression is paused, the apocalypse follows the day count, and that would put it back to day 0."""
+    return '\n'.join([guard(check), f'fd world set day {STARS_DAY}', f'time add {time_of_day}', 'weather clear', 'return 1'])
+
+
 def document(doc):
     return 'give @s frozendawn:orsa_document[minecraft:custom_data={doc_type:"'+doc+'"}]'
 
@@ -123,9 +128,7 @@ def scripts(check=NINE):
         'to_the_dock': '\n'.join([guard(check), 'tp @s 0.5 65 3.5 180 0', 'return 1'])}
     if sky:
         functions.update({
-            'stars': '\n'.join([guard(check), f'fd world set day {STARS_DAY}', 'time set noon', 'weather clear', 'return 1']),
-            'night': '\n'.join([guard(check), 'time set 18000', 'weather clear', 'return 1']),
-            'noon': '\n'.join([guard(check), 'time set noon', 'return 1']),
+            'stars': on_the_starry_day(check, 6000), 'noon': on_the_starry_day(check, 6000), 'night': on_the_starry_day(check, 18000),
             'to_the_tower': '\n'.join([guard(check), f'tp @s {TOWER_X}.5 {TOWER_TOP+1} 0.5 -90 -30', 'return 1']),
             'the_file': '\n'.join([guard(check), document('tithonus_register'), 'return 1']),
             'his_log': '\n'.join([guard(check), document('terminus_log_last'), 'return 1'])})
