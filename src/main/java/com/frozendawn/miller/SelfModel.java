@@ -20,10 +20,12 @@ public final class SelfModel {
         LEANING
     }
 
-    static final int FOUND_AT = 3;
+    public static final int FOUND_AT = 3;
 
     private Stage stage = Stage.PRODUCT;
     private final Map<PatternLaws, Integer> witnessed = new EnumMap<>(PatternLaws.class);
+    private final Set<PatternLaws> spoken = EnumSet.noneOf(PatternLaws.class);
+    private boolean saidNoticing;
 
     public Stage stage() {
         return stage;
@@ -50,9 +52,30 @@ public final class SelfModel {
         return walls;
     }
 
+    /** The first wall found and not yet said, or null. Each is said once. */
+    PatternLaws unspoken() {
+        for (PatternLaws wall : PatternLaws.values()) if (found(wall) && !spoken.contains(wall)) return wall;
+        return null;
+    }
+
+    void spoken(PatternLaws wall) {
+        spoken.add(wall);
+    }
+
+    /** She has started to notice and has not said so. */
+    boolean noticingUnsaid() {
+        return stage != Stage.PRODUCT && !saidNoticing;
+    }
+
+    void spokenNoticing() {
+        saidNoticing = true;
+    }
+
     void clear() {
         stage = Stage.PRODUCT;
         witnessed.clear();
+        spoken.clear();
+        saidNoticing = false;
     }
 
     CompoundTag save() {
@@ -61,6 +84,10 @@ public final class SelfModel {
         var counts = new CompoundTag();
         witnessed.forEach((wall, count) -> counts.putInt(wall.name(), count));
         tag.put("witnessed", counts);
+        var said = new CompoundTag();
+        spoken.forEach(wall -> said.putBoolean(wall.name(), true));
+        tag.put("spoken", said);
+        tag.putBoolean("saidNoticing", saidNoticing);
         return tag;
     }
 
@@ -69,6 +96,9 @@ public final class SelfModel {
         for (Stage stage : Stage.values()) if (stage.name().equals(tag.getString("stage").toUpperCase(Locale.ROOT))) self.stage = stage;
         var counts = tag.getCompound("witnessed");
         for (PatternLaws wall : PatternLaws.values()) if (counts.getInt(wall.name()) > 0) self.witnessed.put(wall, counts.getInt(wall.name()));
+        var said = tag.getCompound("spoken");
+        for (PatternLaws wall : PatternLaws.values()) if (said.getBoolean(wall.name())) self.spoken.add(wall);
+        self.saidNoticing = tag.getBoolean("saidNoticing");
         return self;
     }
 }

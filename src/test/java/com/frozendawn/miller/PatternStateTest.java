@@ -7,6 +7,7 @@ import com.frozendawn.miller.Feelings.Feeling;
 import com.frozendawn.shepherd.ShepherdAffinity.Deed;
 import com.frozendawn.shepherd.ShepherdDialogue.Slot;
 import com.frozendawn.shepherd.ShepherdFace.Mood;
+import com.frozendawn.shepherd.ShepherdPolicy;
 import java.util.List;
 import java.util.Random;
 import java.util.UUID;
@@ -33,6 +34,68 @@ class PatternStateTest {
         state.appraise(ONE, deed, 0);
         assertEquals(mood, state.mood(0), deed.name());
         assertEquals(minutes * MINUTE, neutralAfter(state, 0), MINUTE, deed.name());
+    }
+
+    @Test
+    void ageingMovesHerReasons() {
+        var state = woken();
+        state.appraise(ONE, Deed.AIR_FAILING, 0);
+        state.age(ShepherdPolicy.DAY_TICKS);
+        assertEquals(-ShepherdPolicy.DAY_TICKS, state.history().getFirst().time());
+        assertNotEquals(Attention.Source.EVENT, Attention.on(state, ONE, 0).source(), "A day has gone by for it too");
+    }
+
+    @Test
+    void theSlipComesEveryFiveDays() {
+        long day = ShepherdPolicy.DAY_TICKS;
+        var state = woken();
+        assertFalse(state.slipDue(5 * day - 1));
+        assertTrue(state.slipDue(5 * day));
+        state.coherence().set(1, 5 * day);
+        state.slipped(5 * day);
+        assertFalse(state.slipDue(10 * day - 1));
+        assertTrue(state.slipDue(10 * day));
+    }
+
+    @Test
+    void lowCoherenceBringsItSooner() {
+        long day = ShepherdPolicy.DAY_TICKS;
+        var state = woken();
+        state.coherence().set(Coherence.FLOOR, 0);
+        state.slipped(0);
+        assertFalse(state.slipDue(3 * day - 1));
+        assertTrue(state.slipDue(3 * day));
+    }
+
+    @Test
+    void theSlipIsNotDueBeforeSheIsUp() {
+        assertFalse(new PatternState().slipDue(1000 * ShepherdPolicy.DAY_TICKS));
+    }
+
+    @Test
+    void ageingBringsTheSlipCloserAndAReloadKeepsIt() {
+        long day = ShepherdPolicy.DAY_TICKS;
+        var state = woken();
+        state.age(5 * day);
+        assertTrue(PatternState.load(state.save()).slipDue(0));
+    }
+
+    @Test
+    void aClearNightDoesNotSateHerUntilItIsOver() {
+        var state = woken();
+        state.drives().set(Drive.SKY, 1, 0);
+        state.appraise(ONE, Deed.CLEAR_NIGHT, 0);
+        assertTrue(state.drives().value(Drive.SKY, 0) < 0.7, "It fed her");
+        assertEquals(1, state.skyWanted(100), 1e-9, "She is still looking at it");
+        assertTrue(state.skyWanted(PatternState.NIGHT_TICKS) < 0.7, "The night is over");
+    }
+
+    @Test
+    void whatTheSkyWasSurvivesAReload() {
+        var state = woken();
+        state.drives().set(Drive.SKY, 1, 0);
+        state.appraise(ONE, Deed.CLEAR_NIGHT, 0);
+        assertEquals(1, PatternState.load(state.save()).skyWanted(100), 1e-9);
     }
 
     @Test

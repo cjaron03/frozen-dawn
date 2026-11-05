@@ -41,6 +41,12 @@ public final class Drives {
         values.put(drive, new Fading(Math.max(0, value(drive, now) - amount), now));
     }
 
+    /** {@code /fd shepherd want}: this want at exactly this, from now. */
+    void set(Drive drive, double value, long now) {
+        begin(now);
+        values.put(drive, new Fading(Math.max(0, Math.min(1, value)), now));
+    }
+
     void age(long ticks) {
         values.replaceAll((drive, value) -> value.aged(ticks));
     }

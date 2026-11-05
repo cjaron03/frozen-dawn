@@ -215,7 +215,7 @@ Rules for the crash:
 
 ## The boot sequence
 
-Approved 2026-11-04, for M2a, drawn in [boot-sequence-mockup.png](art/aurora-shepherd/boot-sequence-mockup.png). Built in M2a; the owner has not seen it yet.
+Approved 2026-11-04, for M2a, drawn in [boot-sequence-mockup.png](art/aurora-shepherd/boot-sequence-mockup.png). Built in M2a; the owner passed it on 2026-11-04.
 
 1. **The choice.** A right-click with a charged cell seats it in the dock. The light stays red, her display stays black, and the screen offers Boot or Leave. She is still dormant.
 2. **Leave.** Leave, Esc, walking 8 blocks off, being hurt or a hostile on you all close the screen, and she stays dark for as long as nobody boots her. The cell stays seated, so a later right-click offers the choice again.
@@ -280,6 +280,27 @@ Deferred minors: a vault reset silently destroys a seated cell (op-only); a runn
 Verified headlessly: the boot flow, memory, save, determinism and the delay's timing. Needs the owner's eyes: the choice, the BIOS pace, the seated dock, the cursor, the indicator at play distance, and whether the delay reads as thought.
 
 2026-11-04, the owner's pass in `Aurora Boot Check`: "looks good and the thinking indicator made it feel like she was thinking. i liked it". The owner asked for the list of what to expect before describing it, so this is a judgement against that list, not a blind description. The save reached Noticing through real play, with 2 keepsakes and `TALKS_TO_ME` at 0.714, and the log held no errors.
+
+2026-11-05, M2b handback: built on `feat/miller-m2b` in `/Volumes/SSD/Work/frozen-dawn-miller-m2b` from [miller-pattern-m2-plan.md](miller-pattern-m2-plan.md), Tasks 8 to 11. `Attention` and `Urges` under `com.frozendawn.miller`; recalled keepsakes, wall lines, the slowing-down line, refusal, silence below -600 and the recording slip, with the lines and the slip in `ShepherdWill`. New commands: `/fd shepherd want`, `witness` and `slip`; `why` now names her focus and urge. `architectVerify` passed at fe382a31 (1,179 GameTests, 969 required Architect cases). `architectMonkey` has not run on this branch, since no Architect code changed. Active save: `run-lab/saves/Aurora Will Check`, from `tools/prepare_miller_will_playtest.py`.
+
+Where the build departs from the plan, each because the plan's numbers failed in real play:
+
+- Only Stay quiet holds back S3's lines, and for at most five minutes. Look and Approach leave her voice free. Read literally, Curiosity passes 0.55 within three minutes and COLD, NIGHT, SILENCE and AFTER_FIGHT would have stopped for good.
+- A poll that picks Look feeds Curiosity by 0.01, as presence feeds Company, or Look would outscore Speak for ever. Look clears the wait before her next look; it does not gate `CuriosityGoal`.
+- A due keepsake or an unspoken wall outranks a drive, since storms keep Sky unfed for most of the game.
+- A due keepsake's strength is its salience, not half of it, or only the two 0.8 keeps would ever pass Stay quiet. A keepsake is due once it is a day old, one a day per person, and rests three days for each time she has gone back.
+- Refusal reads what she wanted of the sky when tonight's clear sky first fed her, since one look feeds Sky by 0.6. She never refuses at Wary. After "You go. I'll catch up." she follows when the clear night is over, and that wait is not `LEFT_BEHIND`.
+- `shepherd.self.noticing` plays once, ahead of any wall.
+
+Three recall lines are new drafts the owner has not seen, added because the plan's test covers every deed with lines: `read_log`, `shelter_froze`, `called_shepherd`.
+
+Branch review on Opus: no critical findings, five important, all but one fixed with a failing test first. Refusal in her own voice at Wary; "I'll catch up" being false and then punished; recall locking onto the top three lines; a read log muting S3 for a day; `age()` skipping her reasons (reviewer's minor, raised here because it broke a Global Constraint). Not fixed: `shepherd.wall.exploitable` cannot be found in ordinary play yet, because only two nodes after the first meeting take a Kind reply, against three witnesses. It waits for S4's replies; `[Wall found]` reaches it.
+
+Deferred minors: `Refused` is one slot, so two players refused in turn each get a fresh refusal; a refuse and yield notes `USES_ME` twice; the apology replaces the voice line about 8 characters short of its cut-off; `{day}` is game time, so a sleeper hears a lower day; both refusals are rare by construction, since she must be parked and Sky must have built for days.
+
+Verified headlessly: focus and urge, recall, walls said once, the slowing-down line, Look and Approach, S3's gap, refusal and its yield, silence, the slip and its apology, save and reload. Needs the owner's eyes: how often she speaks now, whether refusal charms or annoys, every new line, and how the apology lands on the voice.
+
+2026-11-05, the owner's pass in `Aurora Will Check`, in their words: she speaks "pretty regualar without spamming" under `tick sprint 500`; "everything looked good", with her looking at a chest and saying "I'm not snooping. I'm auditing."; the recording "played and then she cut in"; all six wall lines fired. No refusal came at first, because she was following the whole time and a refusal needs her parked. Told the steps, the owner saw both give way on the second ask: "yea she refused lol". The log held no errors. Still open: whether a refusal is too hidden behind telling her to Wait.
 
 ## Sources
 

@@ -8,6 +8,7 @@ import com.frozendawn.gametest.GameTestTemplates;
 import com.frozendawn.init.ModBlocks;
 import com.frozendawn.init.ModEntities;
 import com.frozendawn.init.ModItems;
+import com.frozendawn.miller.Drives.Drive;
 import com.frozendawn.miller.MillerPattern;
 import com.frozendawn.phase.PhaseManager;
 import com.frozendawn.shepherd.ShepherdAffinity.Deed;
@@ -870,7 +871,9 @@ public final class ShepherdAffinityGameTest {
         });
     }
 
+    /** Wanting something, since staying quiet would hold back what these tests are about. */
     private static ShepherdEntity met(GameTestHelper h, ServerPlayer player) {
+        MillerPattern.want(h.getLevel().getServer(), Drive.CURIOSITY, 1);
         return settled(h, player, 0);
     }
 

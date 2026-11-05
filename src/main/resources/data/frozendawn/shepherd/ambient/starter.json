@@ -99,6 +99,26 @@
       ]
     },
     {
+      "trigger": "slow",
+      "cooldown": 24000,
+      "mood": "thinking",
+      "variants": [
+        {
+          "line": "shepherd.ambient.slow.1"
+        }
+      ]
+    },
+    {
+      "trigger": "slow",
+      "cooldown": 24000,
+      "mood": "unimpressed",
+      "variants": [
+        {
+          "line": "shepherd.ambient.slow.2"
+        }
+      ]
+    },
+    {
       "trigger": "looked_terminal",
       "cooldown": 6000,
       "mood": "neutral",

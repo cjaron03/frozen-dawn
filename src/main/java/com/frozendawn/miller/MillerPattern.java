@@ -10,6 +10,7 @@ import java.util.Collections;
 import java.util.EnumMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -57,6 +58,61 @@ public final class MillerPattern {
         return current(server).state().impressions().confidence(who, theory);
     }
 
+    /** The one thing on her mind, with this person beside her. Only reads. */
+    public static Attention.Focus focus(MinecraftServer server, UUID nearest) {
+        var runtime = current(server);
+        return Attention.on(runtime.state(), nearest, runtime.now());
+    }
+
+    /** What she wants to do about it. Only reads. */
+    public static Urges.Urge urge(MinecraftServer server, UUID nearest) {
+        var runtime = current(server);
+        return runtime.state().urge(nearest, runtime.now());
+    }
+
+    /** The moment she would go back to with this person, or null. Only reads. */
+    public static Keepsake due(MinecraftServer server, UUID who) {
+        var runtime = current(server);
+        return runtime.state().keepsakes().due(who, runtime.now());
+    }
+
+    /** She went back to it, which strengthens it. */
+    public static void recall(MinecraftServer server, UUID who) {
+        var runtime = current(server);
+        runtime.state().keepsakes().recall(who, runtime.now());
+        runtime.data.setDirty();
+    }
+
+    public static List<Keepsake> keepsakes(MinecraftServer server, UUID who) {
+        return current(server).state().keepsakes().of(who);
+    }
+
+    /** Whether she holds a moment of this kind with this person. A keepsake, because her reasons only go back sixteen. */
+    public static boolean remembers(MinecraftServer server, UUID who, String kind) {
+        return keepsakes(server, who).stream().anyMatch(moment -> moment.kind().equals(kind));
+    }
+
+    /** What she wants of the sky, as a reason to stay under it. */
+    public static double skyWanted(MinecraftServer server) {
+        var runtime = current(server);
+        return runtime.state().skyWanted(runtime.now());
+    }
+
+    /** She said what the focus named. {@code key} is a wall in lower case or {@link Attention#NOTICING}. */
+    public static void spoken(MinecraftServer server, String key) {
+        var runtime = current(server);
+        if (Attention.NOTICING.equals(key)) runtime.state().self().spokenNoticing();
+        else runtime.state().self().spoken(PatternLaws.valueOf(key.toUpperCase(Locale.ROOT)));
+        runtime.data.setDirty();
+    }
+
+    /** The urge to look was acted on. */
+    public static void looked(MinecraftServer server) {
+        var runtime = current(server);
+        runtime.state().looked(runtime.now());
+        runtime.data.setDirty();
+    }
+
     /** How long a reply waits, in half laps of her thinking indicator: 0, 1 or 2. */
     public static int halfLaps(MinecraftServer server) {
         var runtime = current(server);
@@ -73,6 +129,41 @@ public final class MillerPattern {
     public static void setCoherence(MinecraftServer server, double value) {
         var runtime = current(server);
         runtime.state().coherence().set(value, runtime.now());
+        runtime.data.setDirty();
+    }
+
+    /** {@code /fd shepherd want}, for looking at what a want does. */
+    public static void want(MinecraftServer server, Drive drive, double value) {
+        var runtime = current(server);
+        runtime.state().drives().set(drive, value, runtime.now());
+        runtime.data.setDirty();
+    }
+
+    /** {@code /fd shepherd witness}: she has reached the walls and has seen this one this many times. */
+    public static void witness(MinecraftServer server, PatternLaws wall, int times) {
+        var runtime = current(server);
+        runtime.state().self().look(true, true);
+        for (int i = 0; i < times; i++) runtime.state().self().witness(wall);
+        runtime.data.setDirty();
+    }
+
+    /** Whether the recording is due to cut in. Only reads. */
+    public static boolean slipDue(MinecraftServer server) {
+        var runtime = current(server);
+        return runtime.state().slipDue(runtime.now());
+    }
+
+    /** It cut in, so the next one starts counting from here. */
+    public static void slipped(MinecraftServer server) {
+        var runtime = current(server);
+        runtime.state().slipped(runtime.now());
+        runtime.data.setDirty();
+    }
+
+    /** {@code /fd shepherd slip}: due at the next poll. */
+    public static void slipNow(MinecraftServer server) {
+        var runtime = current(server);
+        runtime.state().slipNow(runtime.now());
         runtime.data.setDirty();
     }
 
@@ -101,26 +192,36 @@ public final class MillerPattern {
     public static void onServerStopped(MinecraftServer server) { PatternRuntime.stopped(server); }
 
     public static Snapshot snapshot(MinecraftServer server) {
+        return snapshot(server, null);
+    }
+
+    private static Snapshot snapshot(MinecraftServer server, UUID nearest) {
         var runtime = current(server);
-        return snapshot(runtime.state(), runtime.now());
+        return snapshot(runtime.state(), nearest, runtime.now());
     }
 
     static Snapshot snapshot(PatternState state, long now) {
+        return snapshot(state, null, now);
+    }
+
+    static Snapshot snapshot(PatternState state, UUID nearest, long now) {
         var feelings = new EnumMap<Feeling, Double>(Feeling.class);
         for (Feeling feeling : Feeling.values()) feelings.put(feeling, state.feelings().value(feeling, now));
         var drives = new EnumMap<Drive, Double>(Drive.class);
         for (Drive drive : Drive.values()) drives.put(drive, state.drives().value(drive, now));
         return new Snapshot(now, state.mood(now), state.feelings().strongest(now), feelings, drives, state.history(), state.coherence().value(now),
-                state.self().stage(), state.self().walls(), state.impressions().all(), state.keepsakes().counts());
+                state.self().stage(), state.self().walls(), state.impressions().all(), state.keepsakes().counts(), Attention.on(state, nearest, now), state.urge(nearest, now));
     }
 
     public static List<String> diagnostics(MinecraftServer server) { return PatternDiagnostics.format(snapshot(server)); }
-    public static List<String> explain(MinecraftServer server) { return PatternDiagnostics.explain(snapshot(server)); }
+    /** {@code nearest} is whose side she is asked at, which may be nobody: a keepsake is only on her mind beside its person. */
+    public static List<String> explain(MinecraftServer server, UUID nearest) { return PatternDiagnostics.explain(snapshot(server, nearest)); }
     public static List<String> mind(MinecraftServer server) { return PatternDiagnostics.mind(snapshot(server)); }
 
-    /** {@code strongest} is the feeling on her face, or null when she is Neutral. */
+    /** {@code strongest} is the feeling on her face, or null when she is Neutral. {@code focus} and {@code urge} are for one person's side, or nobody's. */
     public record Snapshot(long now, Mood mood, Feeling strongest, Map<Feeling, Double> feelings, Map<Drive, Double> drives, List<Appraised> history,
-                           double coherence, SelfModel.Stage stage, Set<PatternLaws> walls, Map<UUID, Map<Theory, Double>> impressions, Map<UUID, Integer> keepsakes) {
+                           double coherence, SelfModel.Stage stage, Set<PatternLaws> walls, Map<UUID, Map<Theory, Double>> impressions, Map<UUID, Integer> keepsakes,
+                           Attention.Focus focus, Urges.Urge urge) {
         public Snapshot {
             feelings = Collections.unmodifiableMap(new EnumMap<>(feelings));
             drives = Collections.unmodifiableMap(new EnumMap<>(drives));

@@ -13,6 +13,11 @@ public record Appraised(long time, UUID who, String deed, Map<Feeling, Double> r
         raised = raised.isEmpty() ? Map.of() : Collections.unmodifiableMap(new EnumMap<>(raised));
     }
 
+    /** As if {@code ticks} more had passed. */
+    Appraised aged(long ticks) {
+        return new Appraised(time - ticks, who, deed, raised);
+    }
+
     CompoundTag save() {
         var tag = new CompoundTag();
         tag.putLong("time", time);

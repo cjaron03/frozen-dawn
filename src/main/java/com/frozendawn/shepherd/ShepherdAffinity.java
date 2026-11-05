@@ -8,6 +8,8 @@ import net.minecraft.util.RandomSource;
 /** What her score means and what moves it, as pure logic. */
 public final class ShepherdAffinity {
     private static final int FRIENDLY_AT = 250, TRUSTED_AT = 500, CLOSE_AT = 850, WARY_BELOW = -250;
+    /** Below this she gives you only a recording. It reads the shared score, and the score climbing back ends it. */
+    public static final int SILENT_BELOW = -600;
 
     private static final int MINUTE = 1200, DAY = ShepherdPolicy.DAY_TICKS;
     /** At Wary a reaction is a recording. Which one depends only on whether she minded. */

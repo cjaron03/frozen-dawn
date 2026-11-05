@@ -12,6 +12,19 @@ import net.minecraft.nbt.CompoundTag;
 import org.junit.jupiter.api.Test;
 
 class SelfModelTest {
+    @Test
+    void aWallIsSaidOnceAndThatLastsAReload() {
+        var self = new SelfModel();
+        self.look(true, true);
+        for (int i = 0; i < SelfModel.FOUND_AT; i++) self.witness(PatternLaws.LEGIBLE);
+        assertEquals(PatternLaws.LEGIBLE, self.unspoken());
+        self.spoken(PatternLaws.LEGIBLE);
+        self.spokenNoticing();
+        var loaded = SelfModel.load(self.save());
+        assertNull(loaded.unspoken());
+        assertFalse(loaded.noticingUnsaid());
+    }
+
     private static final UUID ONE = new UUID(0, 1);
     private static final long DAY = 24000;
 

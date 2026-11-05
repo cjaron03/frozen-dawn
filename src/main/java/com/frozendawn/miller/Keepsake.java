@@ -1,9 +1,15 @@
 package com.frozendawn.miller;
 
+import com.frozendawn.shepherd.ShepherdPolicy;
 import net.minecraft.nbt.CompoundTag;
 
 /** One moment she held on to. {@code recalled} counts how often she has gone back to it, and {@code recalledAt} means nothing until she has. */
 public record Keepsake(long time, String kind, double salience, int recalled, long recalledAt) {
+    /** The day it happened, as she says it. */
+    public long day() {
+        return Math.max(1, Math.floorDiv(time, ShepherdPolicy.DAY_TICKS) + 1);
+    }
+
     Keepsake strengthened(double gain) {
         return new Keepsake(time, kind, salience + (1 - salience) * gain, recalled, recalledAt);
     }

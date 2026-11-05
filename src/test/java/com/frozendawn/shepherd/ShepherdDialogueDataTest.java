@@ -79,7 +79,7 @@ class ShepherdDialogueDataTest {
     @Test
     void everyConditionIsKnown() throws Exception {
         var nodes = nodes();
-        Set<String> known = new HashSet<>(List.of("woke_in_vault", "wand_cradle", "wand_hand", "wand_other", "tier_wary", "tier_friendly", "tier_trusted", "tier_close"));
+        Set<String> known = new HashSet<>(List.of("woke_in_vault", "wand_cradle", "wand_hand", "wand_other", "tier_silent", "tier_wary", "tier_friendly", "tier_trusted", "tier_close"));
         for (Node node : nodes.values()) {
             known.addAll(node.set());
             for (Response response : node.responses()) known.addAll(response.set());
@@ -149,7 +149,7 @@ class ShepherdDialogueDataTest {
         try (var in = ShepherdDialogueDataTest.class.getResourceAsStream("/data/frozendawn/shepherd/ambient/starter.json")) {
             assertNotNull(in);
             var pools = ShepherdAmbient.parse(JsonParser.parseReader(new InputStreamReader(in, StandardCharsets.UTF_8)));
-            assertEquals(ShepherdAmbient.Trigger.values().length, pools.size(), "one pool for every trigger");
+            assertEquals(ShepherdAmbient.Trigger.values().length, pools.stream().map(ShepherdAmbient.Pool::trigger).distinct().count(), "a pool for every trigger");
             for (var pool : pools) {
                 for (var say : pool.variants()) {
                     assertTrue(lang.has(say.key()), say.key());
