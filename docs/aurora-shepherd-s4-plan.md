@@ -14,7 +14,7 @@
 
 **Mockups:** [nine-husk-mockup.png](art/aurora-shepherd/nine-husk-mockup.png), [nine-lamp-mockup.png](art/aurora-shepherd/nine-lamp-mockup.png).
 
-**Status:** draft for the owner, 2026-11-05. Nothing is built. Stop here for approval.
+**Status:** draft for the owner, 2026-11-05. T3's timing is decided; the rulings below are open. Nothing is built. Stop here for approval.
 
 **Branch:** `feat/aurora-s4` in `/Volumes/SSD/Work/frozen-dawn-aurora-s4`, cut from `feat/maeve-director` at a0b77afa. S4b cuts `feat/aurora-s4b` after S4a merges. PR into `feat/maeve-director`.
 
@@ -32,7 +32,7 @@ Fix 5 says T3 waits out phase 5, early phase 6 and any storm. The code makes tha
 | B: she asks from phase 4 and waits | "Take me up", then 50 days when going up does nothing. It reads as a bug | Needs "not tonight" lines for the whole wait |
 | C: a break in the storm | A rare clear night in phase 4 | Changes `WeatherHandler` and the permanent storms, and every system tuned to them |
 
-The plan is written for A. Fix 5's assumption survives all three: real auroras end at phase 3.
+**Decided: A, owner, 2026-11-05 ("When stars show").** She asks once the stars are there, not from phase 4. Fix 5's assumption stands: real auroras end at phase 3.
 
 ## Rulings for the owner
 
