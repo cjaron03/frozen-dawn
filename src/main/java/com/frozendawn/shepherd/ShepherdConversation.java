@@ -24,9 +24,14 @@ public final class ShepherdConversation {
     public ShepherdConversation(Map<String, Node> nodes, String start, Predicate<String> holds) {
         this.nodes = nodes;
         this.holds = holds;
-        current = arrive(start);
+        current = arrive(nodes, start, holds);
         if (current == null) throw new IllegalArgumentException("No dialogue node " + start);
         flags.addAll(current.set());
+    }
+
+    /** Whether a walk from {@code start} has anywhere to stand. The constructor refuses one that does not. */
+    public static boolean opens(Map<String, Node> nodes, String start, Predicate<String> holds) {
+        return arrive(nodes, start, holds) != null;
     }
 
     public Node current() {
@@ -58,7 +63,7 @@ public final class ShepherdConversation {
 
     /** A next that has gone missing, say from an edited datapack, ends the talk instead of stranding it. */
     private void move(String next) {
-        Node node = arrive(next);
+        Node node = arrive(nodes, next, holds);
         if (node == null) {
             finished = true;
             return;
@@ -68,7 +73,7 @@ public final class ShepherdConversation {
     }
 
     /** Where {@code id} really leads, past any node that does not hold. Null if that runs out, or an edited datapack makes it circle. */
-    private Node arrive(String id) {
+    private static Node arrive(Map<String, Node> nodes, String id, Predicate<String> holds) {
         Node node = id == null ? null : nodes.get(id);
         for (int hops = 0; node != null && node.when() != null && !holds.test(node.when()); hops++) {
             if (hops == nodes.size()) return null;

@@ -105,7 +105,7 @@ public final class ShepherdScreen extends Screen {
     }
 
     private boolean spoken() {
-        return !hub && !typing() && line == lines.size() - 1;
+        return !hub && !typing() && line >= lines.size() - 1;
     }
 
     private Mood mood() {

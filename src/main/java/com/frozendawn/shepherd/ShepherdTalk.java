@@ -8,6 +8,7 @@ import com.frozendawn.shepherd.ShepherdDialogue.Line;
 import com.frozendawn.shepherd.ShepherdDialogue.Node;
 import com.frozendawn.shepherd.ShepherdFace.Mood;
 import java.util.List;
+import java.util.function.Predicate;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Mob;
@@ -79,10 +80,13 @@ public final class ShepherdTalk {
         String waiting = waitingNode(data);
         if (waiting == null) {
             showHub();
-        } else {
-            if (waiting.equals(data.promptNode())) live.fromPrompt = waiting;
-            begin(waiting, false);
+            return;
         }
+        if (waiting.equals(data.promptNode())) live.fromPrompt = waiting;
+        if (begin(waiting, false)) return;
+        if (waiting.equals(data.resumeNode())) data.resumeNode(null);
+        if (waiting.equals(data.promptNode())) data.promptNode(null);
+        showHub();
     }
 
     /** A node that has gone missing, say from an edited datapack, is dropped here. */
@@ -103,17 +107,21 @@ public final class ShepherdTalk {
         var id = ShepherdSavedData.get(player.getServer()).entity();
         if (id == null || !(player.serverLevel().getEntity(id) instanceof ShepherdEntity she) || she.offline()) return;
         live = new Live(player, she);
-        begin(node, false);
+        if (!begin(node, false)) live = null;
     }
 
-    private static void begin(String node, boolean fromHub) {
+    /** False, with nothing changed, if an edited datapack leaves the walk nowhere to stand. */
+    private static boolean begin(String node, boolean fromHub) {
         var player = live.player;
-        live.talk = new ShepherdConversation(ShepherdDialogues.nodes(), node, condition -> holds(player, condition));
+        Predicate<String> holds = condition -> holds(player, condition);
+        if (!ShepherdConversation.opens(ShepherdDialogues.nodes(), node, holds)) return false;
+        live.talk = new ShepherdConversation(ShepherdDialogues.nodes(), node, holds);
         live.fromHub = fromHub;
         live.affinityApplied = 0;
         settle();
         if (FIRST_MEETING.equals(node)) live.she.showLogo();
         send();
+        return true;
     }
 
     /** The dialogue files' conditions: where the wand is, or else a saved flag. */
@@ -226,7 +234,7 @@ public final class ShepherdTalk {
 
     private static void showMood() {
         if (live.unimpressedTicks > 0) return;
-        live.she.setMood(live.talk == null ? Mood.NEUTRAL : live.lines.get(live.line).mood());
+        live.she.setMood(live.talk == null || live.lines.isEmpty() ? Mood.NEUTRAL : live.lines.get(live.line).mood());
     }
 
     static ShepherdNodePayload payload(int conversation, Node node, List<Line> said, boolean heavy, int logoTicks) {

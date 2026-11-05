@@ -4,9 +4,14 @@ import com.frozendawn.FrozenDawn;
 import com.frozendawn.gametest.GameTestTemplates;
 import com.frozendawn.init.ModBlocks;
 import com.frozendawn.item.PowerCellItem;
+import com.frozendawn.shepherd.ShepherdDialogue.Line;
+import com.frozendawn.shepherd.ShepherdDialogue.Node;
 import com.frozendawn.shepherd.ShepherdFace.Mood;
 import com.frozendawn.shepherd.ShepherdSavedData.Stage;
 import com.frozendawn.shepherd.ShepherdTalk.Action;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.AfterBatch;
@@ -70,6 +75,20 @@ public final class ShepherdTalkGameTest {
 
     @BeforeBatch(batch = "shepherd_talk_replay") public static void replayBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
     @AfterBatch(batch = "shepherd_talk_replay") public static void replayAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+
+    @BeforeBatch(batch = "shepherd_talk_badwhen") public static void badWhenBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); shipped = ShepherdDialogues.nodes(); }
+    @AfterBatch(batch = "shepherd_talk_badwhen") public static void badWhenAfter(ServerLevel l) { ShepherdDialogues.load(shipped); ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_talk_nolines") public static void noLinesBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); shipped = ShepherdDialogues.nodes(); }
+    @AfterBatch(batch = "shepherd_talk_nolines") public static void noLinesAfter(ServerLevel l) { ShepherdDialogues.load(shipped); ShepherdTestWorld.clear(l); }
+
+    /** The real tree, while a test stands an edited datapack's node beside it. */
+    private static Map<String, Node> shipped;
+
+    private static void alsoLoad(Node node) {
+        var nodes = new HashMap<>(shipped);
+        nodes.put(node.id(), node);
+        ShepherdDialogues.load(nodes);
+    }
 
     private static ShepherdSavedData data(GameTestHelper h) {
         return ShepherdSavedData.get(h.getLevel().getServer());
@@ -193,6 +212,36 @@ public final class ShepherdTalkGameTest {
             ShepherdTalk.reply(player, id, KIND);
             h.assertTrue(!ShepherdTalk.live() && data(h).affinity() == 0, "And a late reply lands nowhere");
             h.assertTrue("fm.boot".equals(data(h).resumeNode()), "The first meeting can still be resumed");
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_talk_badwhen", timeoutTicks = 400)
+    public static void shepherdABadWhenFallsBackToTheHub(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            var she = awake(h, player);
+            alsoLoad(new Node("test.bad", List.of(), List.of(), null, List.of(), "never", null));
+            data(h).promptNode("test.bad");
+            rightClick(she, player);
+            h.assertTrue(ShepherdTalk.live() && ShepherdTalk.liveNode() == null, "The hub instead: " + ShepherdTalk.liveNode());
+            h.assertTrue(data(h).promptNode() == null, "It is dropped: " + data(h).promptNode());
+            ShepherdTalk.close(player);
+            rightClick(she, player);
+            h.assertTrue(ShepherdTalk.live(), "She can still be talked to");
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_talk_nolines", timeoutTicks = 400)
+    public static void shepherdANodeWithNoLinesToSayDoesNotThrow(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            awake(h, player);
+            var said = new Line("x", null, Mood.SAD, "never");
+            alsoLoad(new Node("test.silent", List.of(said), List.of(), null, List.of(), null, null));
+            ShepherdTalk.start(player, "test.silent");
+            h.assertTrue("test.silent".equals(ShepherdTalk.liveNode()), "It opens: " + ShepherdTalk.liveNode());
             h.succeed();
         });
     }

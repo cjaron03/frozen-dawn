@@ -124,6 +124,25 @@ class ShepherdConversationTest {
     }
 
     @Test
+    void aStartThatRunsOutDoesNotOpen() {
+        var nodes = Map.of("a", step("a", null, "never", null));
+        assertFalse(ShepherdConversation.opens(nodes, "a", NOTHING));
+        assertFalse(ShepherdConversation.opens(nodes, "missing", NOTHING));
+    }
+
+    @Test
+    void aStartThatHoldsOpens() {
+        var nodes = Map.of("a", step("a", null, "never", "b"), "b", step("b", null, null, null));
+        assertTrue(ShepherdConversation.opens(nodes, "a", NOTHING));
+    }
+
+    @Test
+    void aStartThatLoopsDoesNotOpen() {
+        var nodes = Map.of("a", step("a", null, "never", "b"), "b", step("b", null, "never", "a"));
+        assertFalse(ShepherdConversation.opens(nodes, "a", NOTHING));
+    }
+
+    @Test
     void aLoopOfElsesEndsTheTalk() {
         var nodes = Map.of("a", step("a", "b", null, null), "b", step("b", null, "never", "c"), "c", step("c", null, "never", "b"));
         var talk = new ShepherdConversation(nodes, "a", NOTHING);
