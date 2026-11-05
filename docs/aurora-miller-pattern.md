@@ -215,7 +215,7 @@ Rules for the crash:
 
 ## The boot sequence
 
-Approved 2026-11-04, for M2a, drawn in [boot-sequence-mockup.png](art/aurora-shepherd/boot-sequence-mockup.png). Not yet built.
+Approved 2026-11-04, for M2a, drawn in [boot-sequence-mockup.png](art/aurora-shepherd/boot-sequence-mockup.png). Built in M2a; the owner has not seen it yet.
 
 1. **The choice.** A right-click with a charged cell seats it in the dock. The light stays red, her display stays black, and the screen offers Boot or Leave. She is still dormant.
 2. **Leave.** Leave, Esc, walking 8 blocks off, being hurt or a hostile on you all close the screen, and she stays dark for as long as nobody boots her. The cell stays seated, so a later right-click offers the choice again.
@@ -270,6 +270,14 @@ Branch review on Opus: no critical findings. Fixed: a talk from before the state
 2026-11-04, the owner's pass in `Aurora Feelings Check`: "yea looked good", then "clear night isnt doing anytihng, but everything else worked". Her save showed `CLEAR_NIGHT` had counted: it is the one deed with no line, and the next deed followed 2.5 seconds later. Told that, the owner accepted it and asked for the PR. No idle was reported as clashing with a mood. `architectVerify` passed at e4403288 (1,117 GameTests); only docs have changed since. `architectMonkey` has not run on this branch, since no Architect code changed.
 
 2026-11-04: the owner approved [miller-pattern-m2-plan.md](miller-pattern-m2-plan.md) as recommended, with M2 split into M2a and M2b. Nothing is built. Worktree `/Volumes/SSD/Work/frozen-dawn-miller-m2`, branch `feat/miller-m2`, from `feat/maeve-director` at 3611f195.
+
+2026-11-04, M2a handback: built on `feat/miller-m2` from [miller-pattern-m2-plan.md](miller-pattern-m2-plan.md), Tasks 1 to 6. The boot sequence; `ImpressionStore`, `Keepsakes`, `SelfModel` and coherence under `com.frozendawn.miller`, with `/fd shepherd mind` and `coherence`; the thinking indicator. `architectVerify` passed at ffcc390a (1,154 GameTests, 944 required Architect cases). `architectMonkey` has not run on this branch, since no Architect code changed. Active save: `run-lab/saves/Aurora Boot Check`, from `tools/prepare_miller_m2_playtest.py`.
+
+Branch review on Opus: no critical findings, two important. Fixed: a replay's lines could leave a screen nothing closed, so nobody opens her while the lines run and Esc comes back long after they are over. Noticing could not be reached in a real game, since the first meeting holds one naming and the theory needed two; by the owner's ruling, naming her is now a kept fact that never fades, the "Aurora it is." reply counts on every path, and `CALLED_SHEPHERD` lowers the theory without locking her out. Ruling 11 records it. A player who takes "Why Aurora?" from `fm.name.its` never says it, so never counts. `terminusLeavesNoDropsBeforeTheHeartFalls` was narrowed to its own sword: the new batches moved it beside an O2 Canister left by an earlier batch.
+
+Deferred minors: a vault reset silently destroys a seated cell (op-only); a running thought can be overwritten by `thinkFor(0)` or a reopen of the same length, on her body only; a cell seats with a refuse click when another choice is open anywhere, which is recoverable; `[Skip a day]` beside her counts as a Causal witness.
+
+Verified headlessly: the boot flow, memory, save, determinism and the delay's timing. Needs the owner's eyes: the choice, the BIOS pace, the seated dock, the cursor, the indicator at play distance, and whether the delay reads as thought.
 
 ## Sources
 
