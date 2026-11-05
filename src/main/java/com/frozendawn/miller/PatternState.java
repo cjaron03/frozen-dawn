@@ -6,6 +6,7 @@ import com.frozendawn.shepherd.ShepherdFace.Mood;
 import com.frozendawn.shepherd.ShepherdPolicy;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -27,6 +28,7 @@ final class PatternState {
     /** The last conversation already counted, so a poll or a reload cannot count it twice. */
     private long heardTalk = NOT_SET;
     private ImpressionStore impressions = new ImpressionStore();
+    private Keepsakes keepsakes = new Keepsakes();
     /** When the day's evidence next lands. It runs on game time, because the poll knows no sky. */
     private long settleAt = UNARMED;
 
@@ -34,6 +36,7 @@ final class PatternState {
     Feelings feelings() { return feelings; }
     List<Appraised> history() { return List.copyOf(history); }
     ImpressionStore impressions() { return impressions; }
+    Keepsakes keepsakes() { return keepsakes; }
 
     void appraise(UUID who, Deed deed, long now) {
         drives.begin(now);
@@ -43,6 +46,7 @@ final class PatternState {
         var raised = Appraisal.intensities(rule, Appraisal.scale(rule, drives, now));
         raised.forEach((feeling, intensity) -> feelings.raise(feeling, intensity, now));
         if (rule.drive() != null && rule.feeds() != 0) drives.feed(rule.drive(), rule.feeds(), now);
+        keepsakes.keep(who, deed.name().toLowerCase(Locale.ROOT), raised.values().stream().max(Double::compare).orElse(0.0), now);
         history.add(new Appraised(now, who, deed.name(), raised));
         if (history.size() > MAX_HISTORY) history.removeFirst();
     }
@@ -51,6 +55,7 @@ final class PatternState {
     void heard(UUID who, Heard heard, long now) {
         arm(now);
         impressions.heard(who, heard);
+        if (heard instanceof Heard.Reply reply && reply.keep() != null) keepsakes.keep(who, reply.keep(), Keepsakes.NAMED_SALIENCE, now);
     }
 
     private void arm(long now) {
@@ -82,6 +87,7 @@ final class PatternState {
     void age(long ticks) {
         drives.age(ticks);
         feelings.age(ticks);
+        keepsakes.age(ticks);
         if (settleAt != UNARMED) settleAt -= ticks;
     }
 
@@ -91,6 +97,7 @@ final class PatternState {
         history.clear();
         heardTalk = NOT_SET;
         impressions.clear();
+        keepsakes.clear();
         settleAt = UNARMED;
     }
 
@@ -104,6 +111,7 @@ final class PatternState {
         tag.put("history", list);
         tag.putLong("heardTalk", heardTalk);
         tag.put("impressions", impressions.save());
+        tag.put("keepsakes", keepsakes.save());
         if (settleAt != UNARMED) tag.putLong("settleAt", settleAt);
         return tag;
     }
@@ -120,6 +128,7 @@ final class PatternState {
         while (state.history.size() > MAX_HISTORY) state.history.removeFirst();
         if (tag.contains("heardTalk")) state.heardTalk = tag.getLong("heardTalk");
         state.impressions = ImpressionStore.load(tag.getCompound("impressions"));
+        state.keepsakes = Keepsakes.load(tag.getCompound("keepsakes"));
         if (tag.contains("settleAt")) state.settleAt = tag.getLong("settleAt");
         return state;
     }
