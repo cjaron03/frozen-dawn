@@ -71,6 +71,7 @@ public final class ShepherdSavedData extends SavedData {
     public void lamp(boolean lamp) { this.lamp = lamp; setDirty(); }
     public int affinity() { return affinity; }
     public void affinity(int affinity) { this.affinity = Mth.clamp(affinity, -MAX_AFFINITY, MAX_AFFINITY); setDirty(); }
+    public ShepherdAffinity.Tier tier() { return ShepherdAffinity.of(affinity); }
     public boolean flag(String flag) { return flags.contains(flag); }
     public void flag(String flag, boolean on) { if (on ? flags.add(flag) : flags.remove(flag)) setDirty(); }
     public String resumeNode() { return resumeNode; }
@@ -115,7 +116,7 @@ public final class ShepherdSavedData extends SavedData {
         lines.add("stage=" + stage + " entity=" + entity);
         lines.add("dimension=" + (dimension == null ? null : dimension.location()) + " lastPos=" + (lastPos == null ? null : lastPos.toShortString()));
         lines.add("follower=" + follower + " waiting=" + waiting + " lamp=" + lamp);
-        lines.add("affinity=" + affinity + " heavy=" + heavy + " resumeNode=" + resumeNode + " promptNode=" + promptNode);
+        lines.add("affinity=" + affinity + " tier=" + tier() + " heavy=" + heavy + " resumeNode=" + resumeNode + " promptNode=" + promptNode);
         lines.add("flags=" + new TreeSet<>(flags));
         return lines;
     }

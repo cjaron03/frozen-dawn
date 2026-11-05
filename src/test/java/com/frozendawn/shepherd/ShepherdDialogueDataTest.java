@@ -78,7 +78,7 @@ class ShepherdDialogueDataTest {
     @Test
     void everyConditionIsKnown() throws Exception {
         var nodes = nodes();
-        Set<String> known = new HashSet<>(List.of("woke_in_vault", "wand_cradle", "wand_hand", "wand_other"));
+        Set<String> known = new HashSet<>(List.of("woke_in_vault", "wand_cradle", "wand_hand", "wand_other", "tier_wary", "tier_friendly", "tier_trusted", "tier_close"));
         for (Node node : nodes.values()) {
             known.addAll(node.set());
             for (Response response : node.responses()) known.addAll(response.set());

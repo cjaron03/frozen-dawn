@@ -2,6 +2,7 @@ package com.frozendawn.shepherd;
 
 import com.frozendawn.init.ModEntities;
 import com.frozendawn.init.ModSounds;
+import com.frozendawn.shepherd.ShepherdAffinity.Tier;
 import com.frozendawn.shepherd.ShepherdFace.Mood;
 import java.util.EnumSet;
 import java.util.UUID;
@@ -134,6 +135,11 @@ public final class ShepherdEntity extends PathfinderMob {
         if (!offline()) entityData.set(DATA_MOOD, mood.ordinal());
     }
 
+    /** The face she goes back to. Server side only: the score lives there. */
+    public void rest() {
+        setMood(ShepherdSavedData.get(getServer()).tier() == Tier.WARY ? Mood.RECORDING : Mood.NEUTRAL);
+    }
+
     public boolean offline() {
         return entityData.get(DATA_OFFLINE);
     }
@@ -165,7 +171,6 @@ public final class ShepherdEntity extends PathfinderMob {
 
     /** Floats up in front of her follower and holds there thinking, while the strip asks. Zero lets her drop back. */
     public void askFor(int ticks) {
-        if (ticks > 0) setMood(Mood.THINKING);
         askTicks = ticks;
     }
 
@@ -203,7 +208,7 @@ public final class ShepherdEntity extends PathfinderMob {
 
     private void reboot() {
         entityData.set(DATA_OFFLINE, false);
-        entityData.set(DATA_MOOD, Mood.NEUTRAL.ordinal());
+        rest();
         setHealth(getMaxHealth());
         setNoGravity(true);
     }
@@ -226,7 +231,13 @@ public final class ShepherdEntity extends PathfinderMob {
         if (offline() && --rebootTicks <= 0) reboot();
         if (talkTicks > 0 && --talkTicks == 0) entityData.set(DATA_TALKING, false);
         if (logoTicks > 0 && --logoTicks == 0) entityData.set(DATA_LOGO, false);
-        if (askTicks > 0 && --askTicks == 0) setMood(Mood.NEUTRAL);
+        if (askTicks > 0) askTicks--;
+        if (ShepherdTalk.live()) return;
+        if (asking()) {
+            setMood(Mood.THINKING);
+        } else {
+            rest();
+        }
     }
 
     @Override public boolean hurt(DamageSource source, float amount) {

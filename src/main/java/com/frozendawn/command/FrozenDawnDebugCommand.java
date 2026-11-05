@@ -102,7 +102,8 @@ final class FrozenDawnDebugCommand {
                     "/fd uplink dump (archive progress, cooldown, signal sites, pressure and supply drops)");
             case "shepherd" -> List.of(
                     "/fd shepherd dump (stage, last position, follower, affinity, flags and the node she would resume)",
-                    "/fd shepherd replay (clear her score and flags and restart the first meeting on the next right-click)");
+                    "/fd shepherd replay (clear her score and flags and restart the first meeting on the next right-click)",
+                    "/fd shepherd affinity <value> (set her score, -1000 to 1000)");
             case "terminus" -> List.of(
                     "/fd terminus status | restore (clears your toll) | due (half a heart back now) | turned <true|false> (the world's log)",
                     "/fd terminus vault place (a new site and vault 32 blocks ahead) | reset | status | fight start | fight round|pull|burn <1-3> | fight clock <seconds>",

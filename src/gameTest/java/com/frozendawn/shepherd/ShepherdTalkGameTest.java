@@ -335,7 +335,7 @@ public final class ShepherdTalkGameTest {
             var she = awake(h, player);
             rightClick(she, player);
             ShepherdTalk.action(player, ShepherdTalk.liveId(), Action.TALK);
-            h.assertTrue("hub.talk".equals(ShepherdTalk.liveNode()), "Talk speaks: " + ShepherdTalk.liveNode());
+            h.assertTrue("hub.talk.plain".equals(ShepherdTalk.liveNode()), "Talk speaks: " + ShepherdTalk.liveNode());
             say(player, CONTINUE);
             h.assertTrue(ShepherdTalk.live() && ShepherdTalk.liveNode() == null, "And returns to the hub");
             h.assertTrue(data(h).resumeNode() == null, "A hub talk leaves nothing to resume");

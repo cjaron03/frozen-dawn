@@ -4,6 +4,7 @@ import com.frozendawn.FrozenDawn;
 import com.frozendawn.network.ShepherdClosePayload;
 import com.frozendawn.network.ShepherdHubPayload;
 import com.frozendawn.network.ShepherdNodePayload;
+import com.frozendawn.shepherd.ShepherdAffinity.Tier;
 import com.frozendawn.shepherd.ShepherdDialogue.Line;
 import com.frozendawn.shepherd.ShepherdDialogue.Node;
 import com.frozendawn.shepherd.ShepherdFace.Mood;
@@ -125,9 +126,14 @@ public final class ShepherdTalk {
         return true;
     }
 
-    /** The dialogue files' conditions: where the wand is, or else a saved flag. */
+    /** The dialogue files' conditions: her tier, where the wand is, or else a saved flag. */
     private static boolean holds(ServerPlayer player, String condition) {
+        var tier = ShepherdSavedData.get(player.getServer()).tier();
         return switch (condition) {
+            case "tier_wary" -> tier == Tier.WARY;
+            case "tier_friendly" -> tier.atLeast(Tier.FRIENDLY);
+            case "tier_trusted" -> tier.atLeast(Tier.TRUSTED);
+            case "tier_close" -> tier.atLeast(Tier.CLOSE);
             case "wand_cradle" -> ShepherdWand.of(player) == ShepherdWand.Where.CRADLE;
             case "wand_hand" -> ShepherdWand.of(player) == ShepherdWand.Where.HAND;
             case "wand_other" -> ShepherdWand.of(player) == ShepherdWand.Where.OTHER;
@@ -235,7 +241,11 @@ public final class ShepherdTalk {
 
     private static void showMood() {
         if (live.unimpressedTicks > 0) return;
-        live.she.setMood(live.talk == null || live.lines.isEmpty() ? Mood.NEUTRAL : live.lines.get(live.line).mood());
+        if (live.talk == null || live.lines.isEmpty()) {
+            live.she.rest();
+        } else {
+            live.she.setMood(live.lines.get(live.line).mood());
+        }
     }
 
     static ShepherdNodePayload payload(int conversation, Node node, List<Line> said, boolean heavy, int logoTicks) {
@@ -250,7 +260,7 @@ public final class ShepherdTalk {
         var over = live;
         live = null;
         over.she.talkFor(0);
-        over.she.setMood(Mood.NEUTRAL);
+        over.she.rest();
         if (tellClient && !over.player.hasDisconnected()) PacketDistributor.sendToPlayer(over.player, new ShepherdClosePayload());
     }
 
