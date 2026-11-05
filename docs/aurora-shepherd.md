@@ -78,7 +78,7 @@ All at 16 texels to the block, in `docs/art/aurora-shepherd/`, each from its `ma
 | `ambient-lines-mockup.png` | Ambient line, callout, "Got a minute?", recording voice during play | Approved "Build as drawn" |
 | `boot-sequence-mockup.png` | The cell seated, Boot and Leave, BIOS lines, logo and first line, frame by frame | Approved 2026-11-04, for M2a; replaces `dock-mockup.png`'s cell-in state |
 | `thinking-indicator-mockup.png` | Three indicators on her display, and how her eyes settle | Approved: A, Orbit, with her eyes going back into place |
-| `nine-husk-mockup.png` | Nine's husk, two poses, lamp out, at scale, its place in the pit | For the owner, 2026-11-05 |
+| `nine-husk-mockup.png` | Nine's husk, two poses, lamp out, at scale, its place in the pit | Approved 2026-11-05: A, sat down |
 | `nine-lamp-mockup.png` | Nine's lamp three ways: keepsake, wall light, in her handle | Approved 2026-11-05: C, in her handle, a keepsake item until she takes it |
 
 **Body.** About 12 texels wide, 10 tall and 10 deep, 18 wide across the ducts, with a carry handle on top. Front display 8 by 6 texels, lamp strip above it, heater grille underneath, a duct each side. She hovers about one block off the ground.
