@@ -76,6 +76,8 @@ All at 16 texels to the block, in `docs/art/aurora-shepherd/`, each from its `ma
 | `flame-and-faces-mockup.png` | Pilot-blue flame under the heater port; Amused, Sad, Alarmed, Thinking redrawn | Approved: flame B, all four faces; Unimpressed and Happy stay as first drawn |
 | `boot-and-idle-mockup.png` | First-boot ORSA logo on her display and talk screen; five idle expressions and the rare eye roll | Approved: logo B in her green, build all |
 | `ambient-lines-mockup.png` | Ambient line, callout, "Got a minute?", recording voice during play | Approved "Build as drawn" |
+| `boot-sequence-mockup.png` | The cell seated, Boot and Leave, BIOS lines, logo and first line, frame by frame | Approved 2026-11-04, for M2a; replaces `dock-mockup.png`'s cell-in state |
+| `thinking-indicator-mockup.png` | Three indicators on her display, and how her eyes settle | Approved: A, Orbit, with her eyes going back into place |
 
 **Body.** About 12 texels wide, 10 tall and 10 deep, 18 wide across the ducts, with a carry handle on top. Front display 8 by 6 texels, lamp strip above it, heater grille underneath, a duct each side. She hovers about one block off the ground.
 
@@ -109,6 +111,8 @@ The script was written against the Terminus spec and predates the vault as built
 The dock holds her as a block until she wakes. Right-clicking it with a Power Cell holding any charge (`PowerCellItem.energy` above zero) spends the cell, turns the light green and opens the talk screen on `fm.boot`. An empty cell is refused with a dry click. The cell is gone: no charge bar and no upkeep, so she can never be switched off by neglect, which is what keeps T4 unfounded.
 
 In the vault the dock stands at hall-relative (103, floor + 1, -3), beside the technician at (102, -3), facing south. The locker's spare is the cell he never got to fit, and a player can use their own instead. Two gold puzzle doors shut behind the player and open from the vault side, so anyone without a cell would otherwise redo both rooms at low health.
+
+**Approved for M2a, not yet built:** the cell is seated, not spent, and the player chooses Boot or Leave on a black screen. Leave keeps her dark with the cell in the slot. Boot spends it and runs BIOS lines before the logo. Other docks that go dark give their cell back. See "The boot sequence" in [aurora-miller-pattern.md](aurora-miller-pattern.md).
 
 The vault is the only way to meet her, by the owner's decision. Its hiding place means some players never will, and most will meet her late, which is why fix 6 matters and why the pre-Maeve callouts may be heard less than the rest.
 
@@ -319,3 +323,5 @@ Found while building, not fixed: `gameTestQuick` sometimes hangs after "All N re
 2026-11-04, the owner's visual pass on the Aurora Affinity Check: first meeting and nods "looks good"; at Friendly "she walked up to me and told me why she chose auroa"; Wary "gives me like a cold repsonse"; curiosity "she did, and then gave me a eyebrow rasie lol", and "the sheep thing worked"; "hut worked fine"; warmth "worked"; the blizzard "stayed silent"; how often she talks "seems ok, but i kept dying lol". The aurora, fight and swarm lines played. The zombies burned at noon before she noticed them, so the lab's now wear helmets.
 
 2026-11-04: the inner state under her is built on `feat/miller-pattern`; see the Status of [aurora-miller-pattern.md](aurora-miller-pattern.md). Her resting face now shows what she feels instead of always Neutral, and her idles play on every resting mood. Affinity, tiers and `ShepherdSavedData` are unchanged.
+
+2026-11-04: the owner approved the M2 plan, [miller-pattern-m2-plan.md](miller-pattern-m2-plan.md), which adds the boot sequence in slice M2a. Nothing is built.
