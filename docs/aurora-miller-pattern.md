@@ -245,6 +245,12 @@ S4 can run after M2, so its personal arc uses the real system. This is Architect
 9. **Refusal: decided, owner, 2026-11-04.** Things she doesn't want to do, and silence if she hates you enough.
 10. **The door test: kept, owner, 2026-11-04.** Needs the one-scene reset of door 1.
 
+## Status
+
+2026-11-04: the owner approved [miller-pattern-m1-plan.md](miller-pattern-m1-plan.md) with Ruling 2 reversed: her idle expressions play on every resting mood. M0 reported in [aurora-intent-trial.md](aurora-intent-trial.md): `potion-base-8M` at int8 recommended, with no option clearing every mark. M1 built on `feat/miller-pattern` in `/Volumes/SSD/Work/frozen-dawn-miller-pattern`: drives, appraisal and feelings under `com.frozendawn.miller`, saved as `frozendawn_shepherd_state`, with `/fd shepherd state`, `why`, `saw` and `feel`. Her feelings set the face she rests on. Active save: `run-lab/saves/Aurora Feelings Check`, from `tools/prepare_miller_pattern_playtest.py`. Not yet seen by the owner, and the client has not been launched: each mood at rest, the idles on each, how long each feeling holds, and whether Hope sharing Thinking with her asking face reads wrong. An idle that clashes with a mood is a look question for that pass.
+
+Branch review on Opus: no critical findings. Fixed: a talk from before the state counting as a conversation; a save from a newer build being overwritten, since the game swallows a load that throws; `feel` leaving other feelings on her face. `MaeveSavedData` has the same overwrite flaw and stays as it is, since MACS is WIP. Deferred minors: a clock behind a stored time freezes a feeling, and a hand-edited time is not checked on load; `Appraised.load` leaves its values unclamped, which only diagnostics read; `/fd shepherd saw` is silent on a cooldown, and the lab menu says so instead.
+
 ## Sources
 
 - `MaeveDirector`, `ShepherdAffinity` and `ShepherdReactions` at c866cf02 on `feat/aurora-affinity`.
