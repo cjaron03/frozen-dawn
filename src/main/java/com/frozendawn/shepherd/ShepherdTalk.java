@@ -221,7 +221,8 @@ public final class ShepherdTalk {
     private static void send() {
         var data = data();
         var node = live.talk.current();
-        if (!live.fromHub) data.resumeNode(node.responses().isEmpty() && node.next() == null ? null : node.id());
+        // An unspent prompt resumes by its own id, whichever node it opened on, or it would stop being that prompt.
+        if (!live.fromHub) data.resumeNode(node.responses().isEmpty() && node.next() == null ? null : live.fromPrompt != null ? live.fromPrompt : node.id());
         int logo = live.she.logoTicks();
         live.lines = live.talk.lines();
         live.line = 0;

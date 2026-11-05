@@ -44,8 +44,8 @@ public final class ShepherdReactions {
     private static final Map<Deed, Say> lastSaid = new EnumMap<>(Deed.class);
     private static final Map<Trigger, Say> lastMurmur = new EnumMap<>(Trigger.class);
     private static String said;
-    /** Someone near her has been in a fight she has not remarked on. */
-    private static boolean fought;
+    /** When someone near her was last in a fight she has not remarked on. */
+    private static long lastFight = ShepherdSavedData.NOT_SET;
 
     private ShepherdReactions() {}
 
@@ -114,7 +114,7 @@ public final class ShepherdReactions {
         return true;
     }
 
-    /** Something she says unasked: never at Wary or over a conversation, only when things are calm, and not within the gap of her last line. */
+    /** Something she says unasked: never before she has met you, at Wary or over a conversation, only when things are calm and she is not asking, and not within the gap of her last line. */
     public static boolean murmur(ServerLevel level, String key, Mood mood) {
         return speakUp(level, key, mood, true, true);
     }
@@ -137,7 +137,8 @@ public final class ShepherdReactions {
         var data = ShepherdSavedData.get(server);
         long now = server.overworld().getGameTime();
         boolean gap = holdsTheGap && data.lastAmbient() != ShepherdSavedData.NOT_SET && now - data.lastAmbient() < ShepherdPolicy.AMBIENT_GAP_TICKS;
-        if (near.isEmpty() || data.tier() == Tier.WARY || ShepherdTalk.live() || gap || needsCalm && !ShepherdPrompt.calm(server, level, near)) return false;
+        if (near.isEmpty() || !data.flag(ShepherdPrompt.FIRST_MEETING_DONE) || data.tier() == Tier.WARY || ShepherdTalk.live() || gap) return false;
+        if (needsCalm && (she.asking() || !ShepherdPrompt.calm(server, level, near))) return false;
         data.lastAmbient(now);
         she.react(mood);
         speak(she, key, mood);
@@ -153,7 +154,7 @@ public final class ShepherdReactions {
         lastSaid.clear();
         lastMurmur.clear();
         said = null;
-        fought = false;
+        lastFight = ShepherdSavedData.NOT_SET;
     }
 
     @SubscribeEvent public static void stopping(ServerStoppingEvent event) {
@@ -189,7 +190,8 @@ public final class ShepherdReactions {
         var data = ShepherdSavedData.get(server);
         long now = server.overworld().getGameTime();
         if (data.lastTalk() == ShepherdSavedData.NOT_SET) data.lastTalk(now);
-        if (fought && she.watching() == null && murmur(level, Trigger.AFTER_FIGHT)) fought = false;
+        if (now - lastFight > ShepherdPolicy.FIGHT_LINE_TICKS) lastFight = ShepherdSavedData.NOT_SET;
+        if (lastFight != ShepherdSavedData.NOT_SET && she.watching() == null && murmur(level, Trigger.AFTER_FIGHT)) lastFight = ShepherdSavedData.NOT_SET;
         if (now - data.lastTalk() >= ShepherdPolicy.SILENCE_TICKS) murmur(level, Trigger.SILENCE);
         if (near.stream().anyMatch(player -> PlayerTickHandler.resolvedTemperature(player) <= ShepherdPolicy.COLD_LINE_C)) murmur(level, Trigger.COLD);
         if (!ShepherdPolicy.night(level.getDayTime())) return;
@@ -244,12 +246,14 @@ public final class ShepherdReactions {
         var she = watching(player);
         if (she == null) return;
         if (ShepherdSavedData.get(player.getServer()).tier() != Tier.WARY) she.react(Mood.ALARMED, ShepherdPolicy.FLINCH_TICKS);
-        if (event.getSource().getEntity() instanceof Enemy) fought = true;
+        if (event.getSource().getEntity() instanceof Enemy) lastFight = player.getServer().overworld().getGameTime();
     }
 
+    /** A fight someone died in is one she never mentions: she does not know they came back. */
     @SubscribeEvent public static void killed(LivingDeathEvent event) {
+        if (event.getEntity() instanceof ServerPlayer) lastFight = ShepherdSavedData.NOT_SET;
         if (!(event.getEntity() instanceof Enemy) || !(event.getSource().getEntity() instanceof ServerPlayer player)) return;
-        if (watching(player) != null) fought = true;
+        if (watching(player) != null) lastFight = player.getServer().overworld().getGameTime();
     }
 
     @SubscribeEvent public static void chat(ServerChatEvent event) {

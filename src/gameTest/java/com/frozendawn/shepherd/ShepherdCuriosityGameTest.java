@@ -23,6 +23,8 @@ import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 public final class ShepherdCuriosityGameTest {
     private static final BlockPos SPOT = new BlockPos(10, 4, 10), CHEST = new BlockPos(15, 4, 10);
 
+    @BeforeBatch(batch = "shepherd_curious_stranger") public static void strangerBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_curious_stranger") public static void strangerAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
     @BeforeBatch(batch = "shepherd_curious_line") public static void lineBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
     @AfterBatch(batch = "shepherd_curious_line") public static void lineAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
     @BeforeBatch(batch = "shepherd_curious_chest") public static void chestBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
@@ -56,6 +58,7 @@ public final class ShepherdCuriosityGameTest {
 
     private static ShepherdEntity awake(GameTestHelper h, ServerPlayer player) {
         data(h).stage(Stage.AWAKE);
+        data(h).flag(ShepherdPrompt.FIRST_MEETING_DONE, true);
         return ShepherdEntity.spawnFrom(h.getLevel(), h.absolutePos(SPOT), player.getUUID());
     }
 
@@ -180,6 +183,17 @@ public final class ShepherdCuriosityGameTest {
                     .thenWaitUntil(() -> assertLooking(h, she))
                     .thenWaitUntil(() -> assertNotLooking(h, she))
                     .thenExecute(() -> h.assertTrue(keys.contains(ShepherdReactions.said()), "She says something: " + ShepherdReactions.said()))
+                    .thenSucceed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_curious_stranger", timeoutTicks = 400)
+    public static void shepherdNotBeforeTheFirstMeeting(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var she = withAChest(h, player(h));
+            data(h).flag(ShepherdPrompt.FIRST_MEETING_DONE, false);
+            h.startSequence()
+                    .thenExecuteAfter(20, () -> assertNotLooking(h, she))
                     .thenSucceed();
         });
     }

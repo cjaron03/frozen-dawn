@@ -418,7 +418,8 @@ public final class ShepherdEntity extends PathfinderMob {
         /** Why she stays at their side, whatever there is to see. */
         private boolean needed(ServerPlayer player) {
             var server = getServer();
-            return player == null || ShepherdSavedData.get(server).waiting() || ShepherdSavedData.get(server).tier() == Tier.WARY
+            var data = ShepherdSavedData.get(server);
+            return player == null || !data.flag(ShepherdPrompt.FIRST_MEETING_DONE) || data.waiting() || data.tier() == Tier.WARY
                     || ShepherdTalk.live() || asking() || watching != null || stoodFor() < ShepherdPolicy.STILL_TICKS
                     || !ShepherdPrompt.calm(server, (ServerLevel) level(), List.of(player));
         }

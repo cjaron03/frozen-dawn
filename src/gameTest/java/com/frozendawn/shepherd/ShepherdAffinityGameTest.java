@@ -41,6 +41,7 @@ import java.util.List;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
+import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.event.entity.living.LivingEntityUseItemEvent;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
@@ -175,6 +176,24 @@ public final class ShepherdAffinityGameTest {
     @AfterBatch(batch = "shepherd_lore_erased") public static void loreErasedAfter(ServerLevel l) { after(l); }
     @BeforeBatch(batch = "shepherd_egg_replay") public static void eggReplayBefore(ServerLevel l) { before(l); }
     @AfterBatch(batch = "shepherd_egg_replay") public static void eggReplayAfter(ServerLevel l) { after(l); }
+    @BeforeBatch(batch = "shepherd_fix_unasked") public static void fixUnaskedBefore(ServerLevel l) { before(l); }
+    @AfterBatch(batch = "shepherd_fix_unasked") public static void fixUnaskedAfter(ServerLevel l) { after(l); }
+    @BeforeBatch(batch = "shepherd_fix_withdrawn") public static void fixWithdrawnBefore(ServerLevel l) { before(l); }
+    @AfterBatch(batch = "shepherd_fix_withdrawn") public static void fixWithdrawnAfter(ServerLevel l) { after(l); }
+    @BeforeBatch(batch = "shepherd_fix_died") public static void fixDiedBefore(ServerLevel l) { before(l); }
+    @AfterBatch(batch = "shepherd_fix_died") public static void fixDiedAfter(ServerLevel l) { after(l); }
+    @BeforeBatch(batch = "shepherd_fix_stale") public static void fixStaleBefore(ServerLevel l) { before(l); }
+    @AfterBatch(batch = "shepherd_fix_stale") public static void fixStaleAfter(ServerLevel l) { after(l); }
+    @BeforeBatch(batch = "shepherd_fix_residents") public static void fixResidentsBefore(ServerLevel l) { before(l); }
+    @AfterBatch(batch = "shepherd_fix_residents") public static void fixResidentsAfter(ServerLevel l) { after(l); }
+    @BeforeBatch(batch = "shepherd_fix_hunted") public static void fixHuntedBefore(ServerLevel l) { before(l); }
+    @AfterBatch(batch = "shepherd_fix_hunted") public static void fixHuntedAfter(ServerLevel l) { after(l); }
+    @BeforeBatch(batch = "shepherd_fix_asking") public static void fixAskingBefore(ServerLevel l) { before(l); }
+    @AfterBatch(batch = "shepherd_fix_asking") public static void fixAskingAfter(ServerLevel l) { after(l); }
+    @BeforeBatch(batch = "shepherd_fix_stranger") public static void fixStrangerBefore(ServerLevel l) { before(l); }
+    @AfterBatch(batch = "shepherd_fix_stranger") public static void fixStrangerAfter(ServerLevel l) { after(l); }
+    @BeforeBatch(batch = "shepherd_fix_skipday") public static void fixSkipdayBefore(ServerLevel l) { before(l); }
+    @AfterBatch(batch = "shepherd_fix_skipday") public static void fixSkipdayAfter(ServerLevel l) { after(l); }
 
     /** Some deeds move the world's clock on, so the phase comes back. */
     private static long apocalypseTicks;
@@ -848,6 +867,10 @@ public final class ShepherdAffinityGameTest {
         });
     }
 
+    private static ShepherdEntity met(GameTestHelper h, ServerPlayer player) {
+        return settled(h, player, 0);
+    }
+
     private static void assertSaidFrom(GameTestHelper h, Trigger trigger) {
         var keys = ShepherdAmbients.pools(trigger).stream().flatMap(pool -> pool.variants().stream()).map(ShepherdAffinity.Say::key).toList();
         h.assertTrue(keys.contains(ShepherdReactions.said()), trigger + ": " + ShepherdReactions.said());
@@ -857,7 +880,7 @@ public final class ShepherdAffinityGameTest {
     public static void shepherdAFightEarnsALine(GameTestHelper h) {
         ShepherdTestWorld.whenTicking(h, () -> {
             var player = player(h);
-            awake(h, player);
+            met(h, player);
             var zombie = zombieBeside(h);
             zombie.hurt(h.getLevel().damageSources().playerAttack(player), 1000);
             h.succeedWhen(() -> assertSaidFrom(h, Trigger.AFTER_FIGHT));
@@ -867,7 +890,7 @@ public final class ShepherdAffinityGameTest {
     @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_ambient_gap", timeoutTicks = 400)
     public static void shepherdTheGapHolds(GameTestHelper h) {
         ShepherdTestWorld.whenTicking(h, () -> {
-            awake(h, player(h));
+            met(h, player(h));
             h.assertTrue(ShepherdReactions.murmur(h.getLevel(), Trigger.LOOKED_HEATER), "The first speaks");
             h.assertTrue(!ShepherdReactions.murmur(h.getLevel(), Trigger.LOOKED_STORAGE), "The second waits");
             data(h).lastAmbient(clock(h) - ShepherdPolicy.AMBIENT_GAP_TICKS);
@@ -880,7 +903,7 @@ public final class ShepherdAffinityGameTest {
     public static void shepherdAReactionIgnoresTheGap(GameTestHelper h) {
         ShepherdTestWorld.whenTicking(h, () -> {
             var player = player(h);
-            awake(h, player);
+            met(h, player);
             ShepherdReactions.murmur(h.getLevel(), Trigger.LOOKED_HEATER);
             String murmured = ShepherdReactions.said();
             ShepherdReactions.saw(player, Deed.CALLED_SHEPHERD);
@@ -892,7 +915,7 @@ public final class ShepherdAffinityGameTest {
     @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_ambient_wary", timeoutTicks = 400)
     public static void shepherdNoCommentaryAtWary(GameTestHelper h) {
         ShepherdTestWorld.whenTicking(h, () -> {
-            awake(h, player(h));
+            met(h, player(h));
             data(h).affinity(-300);
             h.assertTrue(!ShepherdReactions.murmur(h.getLevel(), Trigger.LOOKED_HEATER), "She keeps it formal");
             h.succeed();
@@ -903,7 +926,7 @@ public final class ShepherdAffinityGameTest {
     public static void shepherdNoCommentaryWhileTalking(GameTestHelper h) {
         ShepherdTestWorld.whenTicking(h, () -> {
             var player = player(h);
-            var she = awake(h, player);
+            var she = met(h, player);
             she.interact(player, InteractionHand.MAIN_HAND);
             h.assertTrue(!ShepherdReactions.murmur(h.getLevel(), Trigger.LOOKED_HEATER), "She is silent while the screen is open");
             h.succeed();
@@ -913,7 +936,7 @@ public final class ShepherdAffinityGameTest {
     @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_ambient_silence", timeoutTicks = 400)
     public static void shepherdSheSpeaksUpAfterALongSilence(GameTestHelper h) {
         ShepherdTestWorld.whenTicking(h, () -> {
-            awake(h, player(h));
+            met(h, player(h));
             data(h).lastTalk(clock(h) - ShepherdPolicy.SILENCE_TICKS);
             h.succeedWhen(() -> assertSaidFrom(h, Trigger.SILENCE));
         });
@@ -931,7 +954,7 @@ public final class ShepherdAffinityGameTest {
     public static void shepherdNoImaginedAuroraBeforePhaseFour(GameTestHelper h) {
         ShepherdTestWorld.whenTicking(h, () -> {
             nightIn(h, 3);
-            awake(h, player(h));
+            met(h, player(h));
             h.startSequence()
                     .thenWaitUntil(() -> h.assertTrue(ShepherdReactions.said() != null, "Something is said"))
                     .thenExecute(() -> {
@@ -946,7 +969,7 @@ public final class ShepherdAffinityGameTest {
     public static void shepherdFromPhaseFourSheImaginesTheAurora(GameTestHelper h) {
         ShepherdTestWorld.whenTicking(h, () -> {
             nightIn(h, 4);
-            awake(h, player(h));
+            met(h, player(h));
             h.succeedWhen(() -> {
                 h.assertTrue(ApocalypseState.get(h.getLevel().getServer()).getPhase() == 4, "The world's clock holds");
                 assertSaidFrom(h, Trigger.IMAGINED_AURORA);
@@ -958,7 +981,7 @@ public final class ShepherdAffinityGameTest {
     public static void shepherdNoImaginedAuroraInABlizzard(GameTestHelper h) {
         ShepherdTestWorld.whenTicking(h, () -> {
             nightIn(h, 5);
-            awake(h, player(h));
+            met(h, player(h));
             h.startSequence()
                     .thenWaitUntil(() -> h.assertTrue(ShepherdReactions.said() != null, "Something is said"))
                     .thenExecute(() -> {
@@ -1009,7 +1032,7 @@ public final class ShepherdAffinityGameTest {
     @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_egg_war", timeoutTicks = 400)
     public static void shepherdSheNamesTheWarOnce(GameTestHelper h) {
         ShepherdTestWorld.whenTicking(h, () -> {
-            awake(h, player(h));
+            met(h, player(h));
             architectBeside(h);
             assertOnce(h, ShepherdEggs.ARCHITECT_LINE);
         });
@@ -1018,7 +1041,7 @@ public final class ShepherdAffinityGameTest {
     @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_egg_swarm", timeoutTicks = 400)
     public static void shepherdFourHostilesEarnALineOnce(GameTestHelper h) {
         ShepherdTestWorld.whenTicking(h, () -> {
-            awake(h, player(h));
+            met(h, player(h));
             zombies(h, ShepherdPolicy.SWARM_HOSTILES);
             assertOnce(h, ShepherdEggs.SWARM_LINE);
         });
@@ -1027,7 +1050,7 @@ public final class ShepherdAffinityGameTest {
     @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_egg_three", timeoutTicks = 400)
     public static void shepherdFewerThanFourHostilesSayNothing(GameTestHelper h) {
         ShepherdTestWorld.whenTicking(h, () -> {
-            awake(h, player(h));
+            met(h, player(h));
             zombies(h, ShepherdPolicy.SWARM_HOSTILES - 1);
             h.startSequence()
                     .thenExecuteAfter(ShepherdReactions.POLL_TICKS + 10, () -> h.assertTrue(ShepherdReactions.said() == null, "Said: " + ShepherdReactions.said()))
@@ -1038,7 +1061,7 @@ public final class ShepherdAffinityGameTest {
     @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_egg_boom", timeoutTicks = 400)
     public static void shepherdAnExplosionEarnsALineOnce(GameTestHelper h) {
         ShepherdTestWorld.whenTicking(h, () -> {
-            awake(h, player(h));
+            met(h, player(h));
             boom(h);
             assertSaid(h, ShepherdEggs.EXPLOSION_LINE);
             ShepherdReactions.clearForTests();
@@ -1053,7 +1076,7 @@ public final class ShepherdAffinityGameTest {
     public static void shepherdTheResupplyCodeIsAnsweredOnceADay(GameTestHelper h) {
         ShepherdTestWorld.whenTicking(h, () -> {
             var player = player(h);
-            awake(h, player);
+            met(h, player);
             data(h).lastAmbient(clock(h));
             say(player, "Down Down Up Right");
             h.startSequence()
@@ -1076,7 +1099,7 @@ public final class ShepherdAffinityGameTest {
     @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_egg_part", timeoutTicks = 400)
     public static void shepherdFiveMinutesStillPlaysTheRecordingOnce(GameTestHelper h) {
         ShepherdTestWorld.whenTicking(h, () -> {
-            var she = awake(h, player(h));
+            var she = met(h, player(h));
             she.stillFor(ShepherdPolicy.YOUR_PART_TICKS);
             assertOnce(h, ShepherdEggs.YOUR_PART_LINE);
         });
@@ -1086,7 +1109,7 @@ public final class ShepherdAffinityGameTest {
     public static void shepherdRawFishIsNarratedOnceADay(GameTestHelper h) {
         ShepherdTestWorld.whenTicking(h, () -> {
             var player = player(h);
-            awake(h, player);
+            met(h, player);
             data(h).flag("fm_narrated", true);
             eat(player, Items.COOKED_COD);
             h.assertTrue(ShepherdReactions.said() == null, "Cooked is fine");
@@ -1107,7 +1130,7 @@ public final class ShepherdAffinityGameTest {
     public static void shepherdNoNarrationWithoutTheReply(GameTestHelper h) {
         ShepherdTestWorld.whenTicking(h, () -> {
             var player = player(h);
-            awake(h, player);
+            met(h, player);
             eat(player, Items.COD);
             h.assertTrue(ShepherdReactions.said() == null, "Said: " + ShepherdReactions.said());
             h.succeed();
@@ -1118,7 +1141,7 @@ public final class ShepherdAffinityGameTest {
     public static void shepherdTheWallIsHeldOnce(GameTestHelper h) {
         ShepherdTestWorld.whenTicking(h, () -> {
             var player = player(h);
-            awake(h, player);
+            met(h, player);
             ShepherdEggs.wall(h.getLevel(), List.of(player), List.of(player.blockPosition().east(ShepherdPolicy.WALL_BLOCKS - 1)), false);
             assertSaid(h, ShepherdEggs.WALL_LINE);
             ShepherdReactions.clearForTests();
@@ -1133,7 +1156,7 @@ public final class ShepherdAffinityGameTest {
     public static void shepherdTheWallNeedsAHearth(GameTestHelper h) {
         ShepherdTestWorld.whenTicking(h, () -> {
             var player = player(h);
-            awake(h, player);
+            met(h, player);
             ShepherdEggs.wall(h.getLevel(), List.of(player), List.of(), false);
             ShepherdEggs.wall(h.getLevel(), List.of(player), List.of(player.blockPosition().east(ShepherdPolicy.WALL_BLOCKS)), false);
             h.assertTrue(ShepherdReactions.said() == null, "Said: " + ShepherdReactions.said());
@@ -1145,7 +1168,7 @@ public final class ShepherdAffinityGameTest {
     public static void shepherdTheWallStopsOnceMaeveIsErased(GameTestHelper h) {
         ShepherdTestWorld.whenTicking(h, () -> {
             var player = player(h);
-            awake(h, player);
+            met(h, player);
             ShepherdEggs.wall(h.getLevel(), List.of(player), List.of(player.blockPosition()), true);
             h.assertTrue(ShepherdReactions.said() == null, "Said: " + ShepherdReactions.said());
             h.succeed();
@@ -1156,7 +1179,7 @@ public final class ShepherdAffinityGameTest {
     public static void shepherdReplayResetsTheEggs(GameTestHelper h) {
         ShepherdTestWorld.whenTicking(h, () -> {
             var player = player(h);
-            awake(h, player);
+            met(h, player);
             boom(h);
             assertSaid(h, ShepherdEggs.EXPLOSION_LINE);
             say(player, "down down up right");
@@ -1169,6 +1192,132 @@ public final class ShepherdAffinityGameTest {
                         h.assertTrue(data(h).lastAmbient() == ShepherdSavedData.NOT_SET, "The gap goes");
                     })
                     .thenSucceed();
+        });
+    }
+
+    private static void assertNothingSaidAfterAPoll(GameTestHelper h) {
+        h.startSequence()
+                .thenExecuteAfter(ShepherdReactions.POLL_TICKS + 10, () -> h.assertTrue(ShepherdReactions.said() == null, "Said: " + ShepherdReactions.said()))
+                .thenSucceed();
+    }
+
+    private static void killAZombie(GameTestHelper h, ServerPlayer player) {
+        zombieBeside(h).hurt(h.getLevel().damageSources().playerAttack(player), 1000);
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_fix_unasked", timeoutTicks = 400)
+    public static void shepherdTheUnaskedNameSurvivesAnEarlyClose(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            var she = settled(h, player, 260);
+            h.startSequence()
+                    .thenWaitUntil(() -> assertPrompt(h, ShepherdPrompt.THE_NAME))
+                    .thenExecute(() -> {
+                        she.interact(player, InteractionHand.MAIN_HAND);
+                        h.assertTrue("t1.name.unasked".equals(ShepherdTalk.liveNode()), "Unasked: " + ShepherdTalk.liveNode());
+                        ShepherdTalk.close(player);
+                        she.interact(player, InteractionHand.MAIN_HAND);
+                        ShepherdTalk.reply(player, ShepherdTalk.liveId(), 1);
+                        assertPrompt(h, null);
+                    })
+                    .thenSucceed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_fix_withdrawn", timeoutTicks = 400)
+    public static void shepherdAnUnaskedNameClosedEarlyCanStillBeWithdrawn(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            var she = settled(h, player, 260);
+            h.startSequence()
+                    .thenWaitUntil(() -> assertPrompt(h, ShepherdPrompt.THE_NAME))
+                    .thenExecute(() -> {
+                        she.interact(player, InteractionHand.MAIN_HAND);
+                        ShepherdTalk.close(player);
+                        data(h).affinity(0);
+                    })
+                    .thenWaitUntil(() -> assertPrompt(h, null))
+                    .thenExecute(() -> h.assertTrue(data(h).resumeNode() == null, "Nothing left to resume: " + data(h).resumeNode()))
+                    .thenSucceed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_fix_died", timeoutTicks = 400)
+    public static void shepherdNoFightLineAfterADeath(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            met(h, player);
+            killAZombie(h, player);
+            NeoForge.EVENT_BUS.post(new LivingDeathEvent(player, h.getLevel().damageSources().generic()));
+            assertNothingSaidAfterAPoll(h);
+        });
+    }
+
+    /** A test's clock is game time, so a wound clock would run a timed step at once, before any poll: this counts real ticks. */
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_fix_stale", timeoutTicks = 4000)
+    public static void shepherdAnOldFightIsLeftAlone(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            met(h, player);
+            killAZombie(h, player);
+            int[] ticks = {0};
+            h.startSequence()
+                    .thenExecute(() -> wind(h, clock(h) + ShepherdPolicy.FIGHT_LINE_TICKS + 1))
+                    .thenWaitUntil(() -> h.assertTrue(++ticks[0] > ShepherdReactions.POLL_TICKS + 10, "A poll has run"))
+                    .thenExecute(() -> h.assertTrue(ShepherdReactions.said() == null, "Said: " + ShepherdReactions.said()))
+                    .thenSucceed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_fix_residents", timeoutTicks = 400)
+    public static void shepherdTheWallIsNotPutOffByResidents(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            met(h, player);
+            zombieBeside(h);
+            ShepherdEggs.wall(h.getLevel(), List.of(player), List.of(player.blockPosition()), false);
+            assertSaid(h, ShepherdEggs.WALL_LINE);
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_fix_hunted", timeoutTicks = 400)
+    public static void shepherdNoWallMidFight(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            met(h, player);
+            zombieBeside(h).setTarget(player);
+            ShepherdEggs.wall(h.getLevel(), List.of(player), List.of(player.blockPosition()), false);
+            h.assertTrue(ShepherdReactions.said() == null, "Said: " + ShepherdReactions.said());
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_fix_asking", timeoutTicks = 400)
+    public static void shepherdNoCommentaryOverHerAsking(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            met(h, player(h)).askFor(100);
+            h.assertTrue(!ShepherdReactions.murmur(h.getLevel(), Trigger.LOOKED_HEATER), "The strip is hers already");
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_fix_stranger", timeoutTicks = 400)
+    public static void shepherdNoCommentaryBeforeTheFirstMeeting(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            awake(h, player(h));
+            h.assertTrue(!ShepherdReactions.murmur(h.getLevel(), Trigger.LOOKED_HEATER), "She has not introduced herself");
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_fix_skipday", timeoutTicks = 400)
+    public static void shepherdASkippedDayCountsAsSilence(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            met(h, player(h));
+            data(h).lastTalk(clock(h));
+            command(h, "fd shepherd skipday");
+            h.succeedWhen(() -> assertSaidFrom(h, Trigger.SILENCE));
         });
     }
 }

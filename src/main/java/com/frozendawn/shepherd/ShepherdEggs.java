@@ -46,9 +46,9 @@ public final class ShepherdEggs {
 
     /** Takes the centers so a GameTest or a flat lab need not place a Hearth, which other tests count on being unplaced. */
     public static void wall(ServerLevel level, List<ServerPlayer> near, List<BlockPos> hearths, boolean maeveErased) {
-        if (maeveErased) return;
+        if (maeveErased || !ShepherdPrompt.unhunted(level.getServer(), level, near)) return;
         boolean close = near.stream().anyMatch(player -> hearths.stream().anyMatch(center -> player.blockPosition().closerThan(center, ShepherdPolicy.WALL_BLOCKS)));
-        if (close) once(ShepherdSavedData.get(level.getServer()), WALL, () -> ShepherdReactions.murmur(level, WALL_LINE, Mood.THINKING));
+        if (close) once(ShepherdSavedData.get(level.getServer()), WALL, () -> ShepherdReactions.blurt(level, WALL_LINE, Mood.THINKING));
     }
 
     private static void once(ShepherdSavedData data, String flag, BooleanSupplier say) {

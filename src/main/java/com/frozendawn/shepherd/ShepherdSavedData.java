@@ -117,6 +117,7 @@ public final class ShepherdSavedData extends SavedData {
     public void skipDay(boolean seen) {
         deeds.replaceAll((deed, ready) -> ready - ShepherdPolicy.DAY_TICKS);
         if (!seen && lastNear != NOT_SET) lastNear -= ShepherdPolicy.DAY_TICKS;
+        if (lastTalk != NOT_SET) lastTalk -= ShepherdPolicy.DAY_TICKS;
         setDirty();
     }
 

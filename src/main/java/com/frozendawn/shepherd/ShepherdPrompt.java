@@ -116,6 +116,12 @@ public final class ShepherdPrompt {
         return ShepherdPolicy.calm(nearestHostile(level, near), sinceHurt(server, near));
     }
 
+    /** Nobody near is being hunted or was hurt lately. A hostile about its own business does not count: at a Hearth there is always one in sight. */
+    static boolean unhunted(MinecraftServer server, ServerLevel level, List<ServerPlayer> near) {
+        return ShepherdPolicy.calm(Double.MAX_VALUE, sinceHurt(server, near)) && near.stream().allMatch(player -> level.getEntitiesOfClass(
+                Mob.class, player.getBoundingBox().inflate(ShepherdPolicy.CALM_HOSTILE_BLOCKS), mob -> mob instanceof Enemy && mob.getTarget() == player).isEmpty());
+    }
+
     private static float coldest(List<ServerPlayer> near) {
         float coldest = Float.MAX_VALUE;
         for (var player : near) coldest = Math.min(coldest, PlayerTickHandler.resolvedTemperature(player));
