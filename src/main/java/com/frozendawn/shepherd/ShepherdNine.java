@@ -37,6 +37,8 @@ public final class ShepherdNine {
     static final String HAND_OVER = "nine_handover";
     /** The lamp and the sheet have come out of it. */
     public static final String SHEET_TAKEN = "nine_sheet_taken";
+    /** It rides in her handle. */
+    static final String LAMP_WORN = "nine_lamp_worn";
     static final String REGISTER = "tithonus_register";
     private static final String THANKS = "shepherd.t2.thanks", CELL_LINE = "shepherd.t2.cell";
     private static final int CHECK_TICKS = 20;
@@ -112,6 +114,15 @@ public final class ShepherdNine {
         if (state.is(ModBlocks.CS1_HUSK.get())) level.setBlockAndUpdate(husk, state.setValue(ShepherdHuskBlock.LAMP, false));
         give(player, new ItemStack(ModItems.NINE_LAMP.get()));
         give(player, register());
+        return true;
+    }
+
+    /** Right-clicked with the lamp in hand. She takes it, for good, and it does not light. An unfinished conversation comes first: it is what lands the lamp in that hand. True if she did. */
+    static boolean takeLamp(ShepherdEntity she, ServerPlayer player, ItemStack lamp) {
+        var data = ShepherdSavedData.get(player.getServer());
+        if (!lamp.is(ModItems.NINE_LAMP) || data.flag(LAMP_WORN) || she.offline() || ShepherdTalk.live() || data.resumeNode() != null) return false;
+        data.flag(LAMP_WORN, true);
+        lamp.shrink(1);
         return true;
     }
 

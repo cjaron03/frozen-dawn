@@ -26,12 +26,16 @@ public final class ShepherdModel extends HierarchicalModel<ShepherdEntity> {
 
     private final ModelPart root;
     private final ModelPart lantern;
+    /** Nine's lamp, which only she carries: a model on a dock never shows it. */
+    private final ModelPart nineLamp;
     /** Layers from the grille down, each drawn only as tall as the flame is on this tick. */
     private final ModelPart[] flame = new ModelPart[ShepherdFace.FLAME_FRAMES];
 
     public ShepherdModel(ModelPart root) {
         this.root = root;
         lantern = root.getChild("lantern");
+        nineLamp = root.getChild("nine_lamp");
+        nineLamp.visible = false;
         for (int i = 0; i < flame.length; i++) flame[i] = root.getChild("flame" + i);
     }
 
@@ -52,6 +56,7 @@ public final class ShepherdModel extends HierarchicalModel<ShepherdEntity> {
         box(cubes, 20, 30, 9, 12, 4, 10, 15, 5);
         box(cubes, 24, 30, 2, 15, 4, 10, 16, 5);
         mesh.getRoot().addOrReplaceChild("lantern", cubes, PartPose.ZERO);
+        mesh.getRoot().addOrReplaceChild("nine_lamp", box(CubeListBuilder.create(), 44, 0, 3, 12, 3, 9, 15, 6), PartPose.ZERO);
         mesh.getRoot().addOrReplaceChild("flame0", box(CubeListBuilder.create(), 0, 34, 4, -1, 3, 8, 0, 7), PartPose.ZERO);
         var second = box(CubeListBuilder.create(), 16, 34, 4, -2, 4, 8, -1, 6);
         mesh.getRoot().addOrReplaceChild("flame1", box(second, 28, 34, 5, -2, 3, 7, -1, 7), PartPose.ZERO);
@@ -63,6 +68,7 @@ public final class ShepherdModel extends HierarchicalModel<ShepherdEntity> {
     /** The body alone; the flame is drawn by {@link #renderFlame}, full bright. */
     @Override public void renderToBuffer(PoseStack pose, VertexConsumer buffer, int light, int overlay, int color) {
         lantern.render(pose, buffer, light, overlay, color);
+        nineLamp.render(pose, buffer, light, overlay, color);
     }
 
     public void renderFlame(PoseStack pose, VertexConsumer buffer, int height) {
@@ -74,5 +80,6 @@ public final class ShepherdModel extends HierarchicalModel<ShepherdEntity> {
     }
 
     @Override public void setupAnim(ShepherdEntity entity, float limbSwing, float limbSwingAmount, float ageInTicks, float netHeadYaw, float headPitch) {
+        nineLamp.visible = entity.lampWorn();
     }
 }

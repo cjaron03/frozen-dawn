@@ -9,7 +9,7 @@ from make_body_directions import C, lantern
 from make_flame_and_faces_mockup import flame
 import make_dock_mockup  # noqa: F401, adds the dock's colors to C
 from make_nine_husk_mockup import upright
-from make_nine_lamp_mockup import ICON, ICON_COLORS
+from make_nine_lamp_mockup import ICON, ICON_COLORS, carried
 
 HERE = Path(__file__).resolve().parent
 TEXTURES = HERE.parents[2] / 'src/main/resources/assets/frozendawn/textures'
@@ -71,6 +71,7 @@ BOXES = [
     (16, 30, 2, 12, 4, 3, 15, 5),     # handle posts
     (20, 30, 9, 12, 4, 10, 15, 5),
     (24, 30, 2, 15, 4, 10, 16, 5),    # handle bar
+    (44, 0, 3, 12, 3, 9, 15, 6),      # Nine's lamp, in the handle; drawn only once she has it
     (0, 34, 4, -1, 3, 8, 0, 7),       # flame, from the grille down; pilot blue, the owner's pick
     (16, 34, 4, -2, 4, 8, -1, 6),
     (28, 34, 5, -2, 3, 7, -1, 7),
@@ -81,7 +82,7 @@ BOXES = [
 
 def unit():
     """Her skin, on Minecraft's unfolded cube layout. The display stays dark: the face is drawn over it, full bright."""
-    body = lantern()
+    body = carried()
     for x in range(2, 10):
         for y in range(4, 10):
             body.v[(x, y, 9)] = 'screen'

@@ -60,6 +60,8 @@ public final class ShepherdNineGameTest {
     @BeforeBatch(batch = "shepherd_nine_sheet") public static void sheetBefore(ServerLevel l) { before(l); }
     @AfterBatch(batch = "shepherd_nine_sheet") public static void sheetAfter(ServerLevel l) { after(l); }
 
+    @BeforeBatch(batch = "shepherd_nine_handle") public static void handleBefore(ServerLevel l) { before(l); }
+    @AfterBatch(batch = "shepherd_nine_handle") public static void handleAfter(ServerLevel l) { after(l); }
     @BeforeBatch(batch = "shepherd_t2_opens") public static void t2OpensBefore(ServerLevel l) { before(l); }
     @AfterBatch(batch = "shepherd_t2_opens") public static void t2OpensAfter(ServerLevel l) { after(l); }
     @BeforeBatch(batch = "shepherd_t2_ask") public static void t2AskBefore(ServerLevel l) { before(l); }
@@ -521,6 +523,35 @@ public final class ShepherdNineGameTest {
                     .thenExecuteAfter(poll, () -> h.assertTrue(com.frozendawn.miller.MillerPattern.snapshot(server).walls().contains(com.frozendawn.miller.PatternLaws.EXPLOITABLE),
                             "Three kind replies, with nothing else behind them: " + com.frozendawn.miller.MillerPattern.snapshot(server).walls()))
                     .thenSucceed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_nine_handle", timeoutTicks = 300)
+    public static void shepherdSheTakesTheLamp(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            var she = met(h, player);
+            int lit = data(h).lamp() ? 1 : 0;
+            var mood = she.mood();
+            var lamp = new net.minecraft.world.item.ItemStack(ModItems.NINE_LAMP.get());
+            player.setItemInHand(InteractionHand.MAIN_HAND, lamp);
+            she.interact(player, InteractionHand.MAIN_HAND);
+            h.assertTrue(lamp.isEmpty(), "Spent");
+            h.assertFalse(ShepherdTalk.live(), "Taken, not a conversation");
+            h.assertTrue(data(h).flag(ShepherdNine.LAMP_WORN), "Hers now");
+            h.assertTrue((data(h).lamp() ? 1 : 0) == lit && she.mood() == mood, "Her lamp and her display are as they were");
+            var saved = data(h).save(new net.minecraft.nbt.CompoundTag(), h.getLevel().registryAccess());
+            h.assertTrue(ShepherdSavedData.load(saved, h.getLevel().registryAccess()).flag(ShepherdNine.LAMP_WORN), "It reloads");
+            h.startSequence()
+                    .thenWaitUntil(() -> h.assertTrue(she.lampWorn(), "Her body shows it"))
+                    .thenExecute(() -> {
+                        she.discard();
+                        data(h).entity(null);
+                    })
+                    .thenExecuteAfter(1, () -> {
+                        var rebuilt = ShepherdEntity.spawnFrom(h.getLevel(), h.absolutePos(SPOT), player.getUUID());
+                        h.startSequence().thenWaitUntil(() -> h.assertTrue(rebuilt.lampWorn(), "A rebuilt body still has it")).thenSucceed();
+                    });
         });
     }
 }

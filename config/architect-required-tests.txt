@@ -1154,3 +1154,5 @@ shepherdscraphandsovernothing xml
 shepherdscrapstillopensthehusk xml
 shepherdaclosedsitesceneresumes xml
 shepherdkindrepliesreachexploitable xml
+shepherdshetakesthelamp xml
+shepherdadockbuildsnosecondbody xml
