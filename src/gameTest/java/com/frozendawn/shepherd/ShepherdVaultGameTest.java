@@ -90,6 +90,14 @@ public final class ShepherdVaultGameTest {
     @AfterBatch(batch = "shepherd_prompt_resume") public static void promptResumeAfter(ServerLevel l) { after(l); }
     @BeforeBatch(batch = "shepherd_prompt_newer") public static void newerBefore(ServerLevel l) { before(l); }
     @AfterBatch(batch = "shepherd_prompt_newer") public static void newerAfter(ServerLevel l) { after(l); }
+    @BeforeBatch(batch = "shepherd_ask_float") public static void floatBefore(ServerLevel l) { before(l); }
+    @AfterBatch(batch = "shepherd_ask_float") public static void floatAfter(ServerLevel l) { after(l); }
+    @BeforeBatch(batch = "shepherd_ask_drop") public static void dropBefore(ServerLevel l) { before(l); }
+    @AfterBatch(batch = "shepherd_ask_drop") public static void dropAfter(ServerLevel l) { after(l); }
+    @BeforeBatch(batch = "shepherd_ask_stranger") public static void strangerBefore(ServerLevel l) { before(l); }
+    @AfterBatch(batch = "shepherd_ask_stranger") public static void strangerAfter(ServerLevel l) { after(l); }
+    @BeforeBatch(batch = "shepherd_ask_click") public static void askClickBefore(ServerLevel l) { before(l); }
+    @AfterBatch(batch = "shepherd_ask_click") public static void askClickAfter(ServerLevel l) { after(l); }
     @BeforeBatch(batch = "shepherd_vault_reset") public static void resetBefore(ServerLevel l) { before(l); }
     @AfterBatch(batch = "shepherd_vault_reset") public static void resetAfter(ServerLevel l) { after(l); }
     @BeforeBatch(batch = "shepherd_vault_reset_awake") public static void awakeBefore(ServerLevel l) { before(l); }
@@ -502,6 +510,79 @@ public final class ShepherdVaultGameTest {
             say(player, ASK);
             h.assertTrue(ShepherdPrompt.EXIT.equals(data(h).promptNode()), "The prompt is not what was answered: " + data(h).promptNode());
             h.succeed();
+        });
+    }
+
+    /** A player facing +z in the open, with her 2.5 blocks behind them and a prompt waiting. */
+    private static ServerPlayer facingSouth(GameTestHelper h) {
+        var player = ShepherdTestWorld.onlinePlayer(h, h.absoluteVec(new Vec3(10.5, 3, 10.5)));
+        player.setYRot(0);
+        player.setYHeadRot(0);
+        return player;
+    }
+
+    private static ShepherdEntity behind(GameTestHelper h, ServerPlayer player) {
+        var she = metInTheVault(h, player);
+        she.teleportTo(player.getX(), player.getY() + 1, player.getZ() - 2.5);
+        data(h).promptNode(ShepherdPrompt.EXIT);
+        return she;
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_ask_float", timeoutTicks = 400)
+    public static void shepherdSheFloatsUpWhenSheAsks(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = facingSouth(h);
+            var she = behind(h, player);
+            h.startSequence()
+                    .thenWaitUntil(() -> h.assertTrue(she.asking(), "She starts to ask"))
+                    .thenExecute(() -> h.assertTrue(she.mood() == ShepherdFace.Mood.THINKING, "On her thinking face: " + she.mood()))
+                    .thenExecuteAfter(60, () -> {
+                        var front = player.getEyePosition().add(0, -0.3, ShepherdPolicy.ASK_BLOCKS);
+                        h.assertTrue(she.position().distanceTo(front) <= 1.5, "In front of them: " + she.position().subtract(front));
+                    })
+                    .thenSucceed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_ask_drop", timeoutTicks = 400)
+    public static void shepherdSheDropsBackAfterAsking(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = facingSouth(h);
+            var she = behind(h, player);
+            h.startSequence()
+                    .thenWaitUntil(() -> h.assertTrue(she.asking(), "She starts to ask"))
+                    .thenWaitUntil(() -> h.assertTrue(!she.asking(), "And stops"))
+                    .thenExecute(() -> h.assertTrue(she.mood() == ShepherdFace.Mood.NEUTRAL, "Her face comes back: " + she.mood()))
+                    .thenWaitUntil(() -> h.assertTrue(Math.abs(she.getY() - player.getY() - 1) < 0.6 && she.distanceTo(player) < 3.5, "Back at her hover: " + she.position().subtract(player.position())))
+                    .thenSucceed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_ask_stranger", timeoutTicks = 400)
+    public static void shepherdSheDoesNotFloatToAStranger(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = facingSouth(h);
+            var she = behind(h, player);
+            data(h).follower(UUID.randomUUID());
+            h.startSequence()
+                    .thenWaitUntil(() -> h.assertTrue(ShepherdPrompt.shows() == 1, "The strip shows: " + ShepherdPrompt.shows()))
+                    .thenExecute(() -> h.assertTrue(!she.asking(), "She stays where she is"))
+                    .thenSucceed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_ask_click", timeoutTicks = 400)
+    public static void shepherdRightClickingEndsTheAsk(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = facingSouth(h);
+            var she = behind(h, player);
+            h.startSequence()
+                    .thenWaitUntil(() -> h.assertTrue(she.asking(), "She starts to ask"))
+                    .thenExecute(() -> {
+                        she.interact(player, InteractionHand.MAIN_HAND);
+                        h.assertTrue(!she.asking(), "The talk takes over");
+                    })
+                    .thenSucceed();
         });
     }
 

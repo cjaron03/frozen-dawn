@@ -18,6 +18,8 @@ public final class ShepherdPolicy {
     public static final int PROMPT_SHOWS = 3;
     public static final int STRIP_HOLD_TICKS = 80;
     public static final int STRIP_FADE_TICKS = 20;
+    public static final double ASK_BLOCKS = 2.5;
+    public static final int ASK_TICKS = 100;
 
     private ShepherdPolicy() {}
 

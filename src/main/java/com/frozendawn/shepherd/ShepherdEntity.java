@@ -43,10 +43,13 @@ public final class ShepherdEntity extends PathfinderMob {
     private static final double AIR_DRAG = 0.91;
     /** Close enough to her spot to stop thrusting, or she saws back and forth across it. */
     private static final double SETTLED_SQR = 0.25;
+    private static final double ASK_BELOW_EYES = 0.3;
+    private static final double ASK_SPEED = 0.7;
 
     private int rebootTicks;
     private int talkTicks;
     private int logoTicks;
+    private int askTicks;
     /** Client only: the mood last drawn, and how much of the blink between two moods is left. */
     private Mood shownMood;
     private int moodBeat;
@@ -160,6 +163,16 @@ public final class ShepherdEntity extends PathfinderMob {
         return logoTicks;
     }
 
+    /** Floats up in front of her follower and holds there thinking, while the strip asks. Zero lets her drop back. */
+    public void askFor(int ticks) {
+        if (ticks > 0) setMood(Mood.THINKING);
+        askTicks = ticks;
+    }
+
+    public boolean asking() {
+        return askTicks > 0;
+    }
+
     public boolean moodBeat() {
         return moodBeat > 0;
     }
@@ -179,6 +192,7 @@ public final class ShepherdEntity extends PathfinderMob {
         if (offline()) return;
         talkFor(0);
         logoTicks = 0;
+        askTicks = 0;
         entityData.set(DATA_LOGO, false);
         entityData.set(DATA_MOOD, Mood.OFFLINE.ordinal());
         entityData.set(DATA_OFFLINE, true);
@@ -212,6 +226,7 @@ public final class ShepherdEntity extends PathfinderMob {
         if (offline() && --rebootTicks <= 0) reboot();
         if (talkTicks > 0 && --talkTicks == 0) entityData.set(DATA_TALKING, false);
         if (logoTicks > 0 && --logoTicks == 0) entityData.set(DATA_LOGO, false);
+        if (askTicks > 0 && --askTicks == 0) setMood(Mood.NEUTRAL);
     }
 
     @Override public boolean hurt(DamageSource source, float amount) {
@@ -321,7 +336,8 @@ public final class ShepherdEntity extends PathfinderMob {
             getLookControl().setLookAt(player, 30, 30);
             double distance = distanceTo(player);
             var away = position().subtract(player.position()).multiply(1, 0, 1);
-            var spot = player.position().add(away.lengthSqr() < 1e-4 ? new Vec3(HOVER_BLOCKS, 0, 0) : away.normalize().scale(HOVER_BLOCKS)).add(0, HOVER_HEIGHT, 0);
+            var spot = asking() ? askSpot(player, away)
+                    : player.position().add(away.lengthSqr() < 1e-4 ? new Vec3(HOVER_BLOCKS, 0, 0) : away.normalize().scale(HOVER_BLOCKS)).add(0, HOVER_HEIGHT, 0);
             if (distance > ShepherdPolicy.TELEPORT_BLOCKS) {
                 getNavigation().stop();
                 var room = roomBeside(player, spot);
@@ -333,8 +349,17 @@ public final class ShepherdEntity extends PathfinderMob {
                 }
             } else {
                 getNavigation().stop();
-                if (position().distanceToSqr(spot) > SETTLED_SQR) getMoveControl().setWantedPosition(spot.x, spot.y, spot.z, 0.5);
+                if (position().distanceToSqr(spot) > SETTLED_SQR) getMoveControl().setWantedPosition(spot.x, spot.y, spot.z, asking() ? ASK_SPEED : 0.5);
             }
+        }
+
+        /** Eye level in front of them. From behind she goes round their shoulder, not through their head. */
+        private Vec3 askSpot(ServerPlayer player, Vec3 away) {
+            var ahead = Vec3.directionFromRotation(0, player.getYRot());
+            var side = new Vec3(-ahead.z, 0, ahead.x);
+            if (away.dot(side) < 0) side = side.scale(-1);
+            var eyes = player.getEyePosition().subtract(0, ASK_BELOW_EYES, 0);
+            return roomBeside(player, eyes.add((away.dot(ahead) < 0 ? side : ahead).scale(ShepherdPolicy.ASK_BLOCKS)));
         }
     }
 }

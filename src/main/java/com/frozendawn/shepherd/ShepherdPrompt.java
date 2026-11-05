@@ -48,7 +48,7 @@ public final class ShepherdPrompt {
         var near = level.getPlayers(player -> !player.isSpectator() && player.distanceTo(she) <= ShepherdPolicy.HEARD_BLOCKS);
         if (near.isEmpty()) return;
         ask(server, data, near);
-        show(server, level, data, near);
+        show(server, level, data, near, she);
     }
 
     private static void ask(MinecraftServer server, ShepherdSavedData data, List<ServerPlayer> near) {
@@ -68,11 +68,12 @@ public final class ShepherdPrompt {
         nextShow = 0;
     }
 
-    private static void show(MinecraftServer server, ServerLevel level, ShepherdSavedData data, List<ServerPlayer> near) {
+    private static void show(MinecraftServer server, ServerLevel level, ShepherdSavedData data, List<ServerPlayer> near, ShepherdEntity she) {
         int now = server.getTickCount();
         if (data.promptNode() == null || shows >= ShepherdPolicy.PROMPT_SHOWS || now < nextShow || ShepherdTalk.live()) return;
         if (!ShepherdPolicy.calm(nearestHostile(level, near), now - lastHurt)) return;
         for (var player : near) PacketDistributor.sendToPlayer(player, new ShepherdPromptPayload());
+        if (near.contains(ShepherdEntity.followerIn(level))) she.askFor(ShepherdPolicy.ASK_TICKS);
         shows++;
         nextShow = now + repeat;
     }

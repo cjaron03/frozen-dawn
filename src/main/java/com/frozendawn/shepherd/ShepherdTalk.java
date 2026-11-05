@@ -57,6 +57,7 @@ public final class ShepherdTalk {
         Live(ServerPlayer player, ShepherdEntity she) {
             this.player = player;
             this.she = she;
+            she.askFor(0);
         }
     }
 
