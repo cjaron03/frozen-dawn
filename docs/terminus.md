@@ -331,7 +331,9 @@ Unprompted report: "good." Then: "whats next? the puzzle in helion? i want the r
   hour (`CanContinueSleepingEvent`). The fade is vanilla's sleep overlay, which reaches about 86% dark, not black.
 - Technician: a block with a renderer, not an entity, on the player model with `textures/entity/vault_technician.png`.
 - Cradle: gives the wand as found; the forks stay empty. Desk: gives the manifest and name review once. Locker: a
-  vanilla barrel holding the five duty logs.
+  vanilla barrel holding the five duty logs and, in slot 14, a charged Power Cell, the one loose item.
+- Dock: `vault_cs1_dock` at (103, floor + 1, -3), beside the technician, facing south, sealed. See `aurora-shepherd.md`.
+  The reset puts it back, Dark if she is awake, and leaves her saved state alone.
 - Clock: `VaultClock`, one a second off the game clock from a seed-set start, past zero back to 99:59:59.
 - Sound: `block.vault.grind`, a 0.55 s grain every half second while anything moves, heard to 24 blocks.
 - Documents (`VaultDocuments`, Field Manual entries under ORSA intel): Drain Schedule, Vault Manifest, Name Review, duty

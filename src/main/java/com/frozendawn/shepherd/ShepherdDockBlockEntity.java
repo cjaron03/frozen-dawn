@@ -1,6 +1,7 @@
 package com.frozendawn.shepherd;
 
 import com.frozendawn.init.ModBlockEntities;
+import com.frozendawn.init.ModBlocks;
 import com.frozendawn.init.ModSounds;
 import com.frozendawn.shepherd.ShepherdDockBlock.DockState;
 import com.frozendawn.shepherd.ShepherdSavedData.Stage;
@@ -29,6 +30,7 @@ public final class ShepherdDockBlockEntity extends BlockEntity {
     public void wake(ServerPlayer waker) {
         var data = ShepherdSavedData.get(waker.getServer());
         data.stage(Stage.AWAKE);
+        data.flag(ShepherdSavedData.WOKE_IN_VAULT, getBlockState().is(ModBlocks.VAULT_CS1_DOCK.get()));
         data.resumeNode(ShepherdTalk.FIRST_MEETING);
         bootTicks = BOOT_TICKS;
         this.waker = waker.getUUID();

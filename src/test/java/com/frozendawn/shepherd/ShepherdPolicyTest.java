@@ -75,4 +75,51 @@ class ShepherdPolicyTest {
         data.affinity(-5000);
         assertEquals(-1000, data.affinity());
     }
+
+    @Test
+    void calmNeedsNoHostileAndNoRecentHurt() {
+        assertTrue(ShepherdPolicy.calm(24.1, 600));
+        assertFalse(ShepherdPolicy.calm(24, 600), "A hostile at the line is within it");
+        assertFalse(ShepherdPolicy.calm(100, 599), "Hurt in the last 30 seconds");
+    }
+
+    @Test
+    void theDoorBoxCoversTheCotRoomSide() {
+        assertTrue(ShepherdPolicy.atLastDoor(96, -14, -3));
+        assertTrue(ShepherdPolicy.atLastDoor(100, -11, 3));
+        assertFalse(ShepherdPolicy.atLastDoor(95, -14, 0), "The Morgue's door");
+        assertFalse(ShepherdPolicy.atLastDoor(101, -14, 0), "Still in the vault");
+        assertFalse(ShepherdPolicy.atLastDoor(98, -14, 4));
+        assertFalse(ShepherdPolicy.atLastDoor(98, -15, 0));
+        assertFalse(ShepherdPolicy.atLastDoor(98, -10, 0));
+    }
+
+    @Test
+    void theExitBoxCoversTheLadder() {
+        assertTrue(ShepherdPolicy.atVaultExit(-2, -14, -2), "The landing");
+        assertTrue(ShepherdPolicy.atVaultExit(0, 0, 0), "The top of the ladder");
+        assertFalse(ShepherdPolicy.atVaultExit(3, -14, 0), "Door 1");
+        assertFalse(ShepherdPolicy.atVaultExit(0, 1, 0), "Out in the hall");
+        assertFalse(ShepherdPolicy.atVaultExit(0, -15, 0));
+        assertFalse(ShepherdPolicy.atVaultExit(0, -14, 3));
+    }
+
+    @Test
+    void theStripTypesAtTalkSpeed() {
+        assertEquals(0, ShepherdPolicy.typedChars(0, 13));
+        assertEquals(0, ShepherdPolicy.typedChars(1, 13));
+        assertEquals(1, ShepherdPolicy.typedChars(2, 13));
+        assertEquals(13, ShepherdPolicy.typedChars(26, 13));
+        assertEquals(13, ShepherdPolicy.typedChars(500, 13), "It stops at the end of the line");
+    }
+
+    @Test
+    void theStripHoldsThenFades() {
+        int typed = 13 * ShepherdPolicy.TICKS_PER_CHAR, held = typed + ShepherdPolicy.STRIP_HOLD_TICKS;
+        assertEquals(1, ShepherdPolicy.stripAlpha(0, 13));
+        assertEquals(1, ShepherdPolicy.stripAlpha(held, 13), "Solid for the whole hold");
+        assertEquals(0.5F, ShepherdPolicy.stripAlpha(held + ShepherdPolicy.STRIP_FADE_TICKS / 2, 13), 1e-5);
+        assertEquals(0, ShepherdPolicy.stripAlpha(held + ShepherdPolicy.STRIP_FADE_TICKS, 13));
+        assertEquals(0, ShepherdPolicy.stripAlpha(held + 500, 13), "Gone stays gone");
+    }
 }

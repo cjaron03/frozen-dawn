@@ -16,12 +16,7 @@ final class OrsaHudPanel {
 
     static int draw(GuiGraphics graphics, int x, int y, int width, int height,
             int accent, int border, int badge) {
-        graphics.fill(x + 1, y, x + width - 1, y + height, BACKGROUND);
-        graphics.fill(x, y + 1, x + width, y + height - 1, BACKGROUND);
-        graphics.fill(x, y + 1, x + 2, y + height - 1, accent);
-        graphics.fill(x + 1, y, x + width - 1, y + 1, alpha(border, 210));
-        graphics.fill(x + 1, y + height - 1, x + width - 1, y + height, alpha(border, 160));
-        graphics.fill(x + width - 1, y + 1, x + width, y + height - 1, alpha(border, 185));
+        frame(graphics, x, y, width, height, accent, border);
         int badgeX = x + 8;
         OrsaLogoRenderer.drawTinted(graphics, badgeX, y + (height - 8) / 2, 8,
                 FastColor.ARGB32.red(badge) / 255.0F,
@@ -29,6 +24,16 @@ final class OrsaHudPanel {
                 FastColor.ARGB32.blue(badge) / 255.0F,
                 FastColor.ARGB32.alpha(badge) / 255.0F);
         return x + TEXT_INSET;
+    }
+
+    /** The panel with nothing in it. */
+    static void frame(GuiGraphics graphics, int x, int y, int width, int height, int accent, int border) {
+        graphics.fill(x + 1, y, x + width - 1, y + height, BACKGROUND);
+        graphics.fill(x, y + 1, x + width, y + height - 1, BACKGROUND);
+        graphics.fill(x, y + 1, x + 2, y + height - 1, accent);
+        graphics.fill(x + 1, y, x + width - 1, y + 1, alpha(border, 210));
+        graphics.fill(x + 1, y + height - 1, x + width - 1, y + height, alpha(border, 160));
+        graphics.fill(x + width - 1, y + 1, x + width, y + height - 1, alpha(border, 185));
     }
 
     private static int alpha(int color, int alpha) {

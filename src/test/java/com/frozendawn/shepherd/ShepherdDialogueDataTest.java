@@ -51,6 +51,7 @@ class ShepherdDialogueDataTest {
     private static List<String> exits(Node node) {
         List<String> exits = new ArrayList<>(node.responses().stream().map(Response::next).toList());
         if (node.next() != null) exits.add(node.next());
+        if (node.otherwise() != null) exits.add(node.otherwise());
         return exits;
     }
 
@@ -60,6 +61,33 @@ class ShepherdDialogueDataTest {
         assertTrue(nodes.containsKey("fm.boot"));
         for (Node node : nodes.values()) {
             for (String next : exits(node)) assertTrue(nodes.containsKey(next), node.id() + " -> " + next);
+        }
+    }
+
+    @Test
+    void everyWhenHasAnElse() throws Exception {
+        for (Node node : nodes().values()) assertEquals(node.when() != null, node.otherwise() != null, node.id());
+    }
+
+    /** With every condition false a node must still have something to say. */
+    @Test
+    void everyNodeHasALineWithNoCondition() throws Exception {
+        for (Node node : nodes().values()) assertTrue(node.lines().stream().anyMatch(line -> line.condition() == null), node.id());
+    }
+
+    @Test
+    void everyConditionIsKnown() throws Exception {
+        var nodes = nodes();
+        Set<String> known = new HashSet<>(List.of("woke_in_vault", "wand_cradle", "wand_hand", "wand_other"));
+        for (Node node : nodes.values()) {
+            known.addAll(node.set());
+            for (Response response : node.responses()) known.addAll(response.set());
+        }
+        for (Node node : nodes.values()) {
+            if (node.when() != null) assertTrue(known.contains(node.when()), node.id() + ": " + node.when());
+            for (var line : node.lines()) {
+                if (line.condition() != null) assertTrue(known.contains(line.condition()), node.id() + ": " + line.condition());
+            }
         }
     }
 

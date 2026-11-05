@@ -2,6 +2,9 @@ package com.frozendawn.vault;
 
 import com.frozendawn.data.HelionSiteState;
 import com.frozendawn.init.ModBlocks;
+import com.frozendawn.item.PowerCellItem;
+import com.frozendawn.shepherd.ShepherdDockBlock;
+import com.frozendawn.shepherd.ShepherdSavedData;
 import com.frozendawn.vault.VaultDressingBlock.Kind;
 import com.frozendawn.vault.VaultMarkBlock.Mark;
 import com.frozendawn.world.HelionSiteBuilder;
@@ -36,7 +39,9 @@ public final class TerminusVaultBuilder {
     public static final int REACH = 107;
     public static final BlockPos GRATE = new BlockPos(0, 1, 0), DOOR = new BlockPos(3, CEILING, 0), BRIDGE = new BlockPos(5, FLOOR - 1, 0),
             LAST_DOOR = new BlockPos(100, CEILING, 0), CLOCK = new BlockPos(100, CEILING - 1, 0), CRADLE = new BlockPos(105, FLOOR + 1, 0),
-            DESK = new BlockPos(101, FLOOR + 1, 3), LOCKER = new BlockPos(103, FLOOR + 1, 3);
+            DESK = new BlockPos(101, FLOOR + 1, 3), LOCKER = new BlockPos(103, FLOOR + 1, 3), DOCK = new BlockPos(103, FLOOR + 1, -3);
+    /** The cell he never got to fit, after the logs. */
+    public static final int SPARE_CELL_SLOT = 14;
     /** The Watch Floor: Argus in the ceiling over the Custodian's mark, a gate each end, the ledge a purge throws you back to. */
     public static final BlockPos ARGUS = new BlockPos(28, CEILING, 0), WEST_DOOR = new BlockPos(17, CEILING, 0), EAST_DOOR = new BlockPos(40, CEILING, 0),
             CUSTODIAN = new BlockPos(28, LOWER_FLOOR + 1, 0), LEDGE = new BlockPos(16, FLOOR + 1, 0), SEAL_ORDER = new BlockPos(18, FLOOR + 1, -7);
@@ -286,16 +291,25 @@ public final class TerminusVaultBuilder {
     private static void vault(ServerLevel l, BlockPos c) {
         l.setBlock(c.offset(CRADLE), ModBlocks.VAULT_CRADLE.get().defaultBlockState(), 2);
         l.setBlock(c.offset(DESK), ModBlocks.VAULT_DESK.get().defaultBlockState(), 2);
+        dock(l, c.offset(DOCK));
         l.setBlock(c.offset(LOCKER), Blocks.BARREL.defaultBlockState(), 2);
         if (l.getBlockEntity(c.offset(LOCKER)) instanceof BarrelBlockEntity barrel) {
             var logs = VaultDocuments.inTheLocker();
             for (int i = 0; i < logs.size(); i++) barrel.setItem(i * 2 + 4, logs.get(i));
+            barrel.setItem(SPARE_CELL_SLOT, PowerCellItem.charged(PowerCellItem.CAPACITY_JOULES));
             barrel.setChanged();
         }
         // Just enough light that the viewport has something to show.
         for (int x : new int[] {102, 104}) l.setBlock(c.offset(x, CEILING - 1, 0), Blocks.LIGHT.defaultBlockState().setValue(net.minecraft.world.level.block.LightBlock.LEVEL, 3), 2);
         l.setBlock(c.offset(CLOCK), ModBlocks.VAULT_CLOCK.get().defaultBlockState(), 2);
         if (l.getBlockEntity(c.offset(CLOCK)) instanceof VaultClockBlockEntity clock) clock.setStart(VaultClock.start(l.getSeed()));
+    }
+
+    /** Her dock, beside the technician. Awake, she is not on it, and the state says so at once rather than on its next tick. */
+    public static void dock(ServerLevel l, BlockPos at) {
+        boolean awake = ShepherdSavedData.get(l.getServer()).stage() == ShepherdSavedData.Stage.AWAKE;
+        l.setBlock(at, ModBlocks.VAULT_CS1_DOCK.get().defaultBlockState().setValue(ShepherdDockBlock.FACING, Direction.SOUTH)
+                .setValue(ShepherdDockBlock.STATE, awake ? ShepherdDockBlock.DockState.DARK : ShepherdDockBlock.DockState.FOUND), 2);
     }
 
     /** Sealed as everyone fled: bands and stencils on the walls, what they dropped on the floors. No loot in any of it. */
@@ -369,6 +383,7 @@ public final class TerminusVaultBuilder {
         if (l.getBlockEntity(hall.offset(LAST_DOOR).offset(VaultMechanismBlockEntity.TECHNICIAN)) instanceof VaultTechnicianBlockEntity technician) technician.reset();
         if (l.getBlockEntity(hall.offset(CRADLE)) instanceof VaultCradleBlockEntity cradle) cradle.reset();
         l.setBlock(hall.offset(DESK), ModBlocks.VAULT_DESK.get().defaultBlockState(), 2);
+        dock(l, hall.offset(DOCK));
         if (l.getBlockEntity(hall.offset(ARGUS)) instanceof VaultArgusBlockEntity argus) argus.reset(l);
         if (l.getBlockEntity(hall.offset(RECORDER)) instanceof VaultRecorderBlockEntity recorder) recorder.reset();
         if (l.getBlockEntity(hall.offset(VITALS)) instanceof VaultVitalsBlockEntity vitals) vitals.reset();

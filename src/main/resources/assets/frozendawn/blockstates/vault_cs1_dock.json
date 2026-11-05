@@ -1,0 +1,64 @@
+{
+  "variants": {
+    "facing=south,state=found": {
+      "model": "frozendawn:block/cs1_dock_found"
+    },
+    "facing=south,state=boot": {
+      "model": "frozendawn:block/cs1_dock_boot"
+    },
+    "facing=south,state=empty": {
+      "model": "frozendawn:block/cs1_dock_empty"
+    },
+    "facing=south,state=dark": {
+      "model": "frozendawn:block/cs1_dock_dark"
+    },
+    "facing=west,state=found": {
+      "model": "frozendawn:block/cs1_dock_found",
+      "y": 90
+    },
+    "facing=west,state=boot": {
+      "model": "frozendawn:block/cs1_dock_boot",
+      "y": 90
+    },
+    "facing=west,state=empty": {
+      "model": "frozendawn:block/cs1_dock_empty",
+      "y": 90
+    },
+    "facing=west,state=dark": {
+      "model": "frozendawn:block/cs1_dock_dark",
+      "y": 90
+    },
+    "facing=north,state=found": {
+      "model": "frozendawn:block/cs1_dock_found",
+      "y": 180
+    },
+    "facing=north,state=boot": {
+      "model": "frozendawn:block/cs1_dock_boot",
+      "y": 180
+    },
+    "facing=north,state=empty": {
+      "model": "frozendawn:block/cs1_dock_empty",
+      "y": 180
+    },
+    "facing=north,state=dark": {
+      "model": "frozendawn:block/cs1_dock_dark",
+      "y": 180
+    },
+    "facing=east,state=found": {
+      "model": "frozendawn:block/cs1_dock_found",
+      "y": 270
+    },
+    "facing=east,state=boot": {
+      "model": "frozendawn:block/cs1_dock_boot",
+      "y": 270
+    },
+    "facing=east,state=empty": {
+      "model": "frozendawn:block/cs1_dock_empty",
+      "y": 270
+    },
+    "facing=east,state=dark": {
+      "model": "frozendawn:block/cs1_dock_dark",
+      "y": 270
+    }
+  }
+}

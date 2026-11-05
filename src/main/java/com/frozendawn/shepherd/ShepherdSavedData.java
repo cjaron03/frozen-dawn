@@ -29,6 +29,8 @@ import net.minecraft.world.level.saveddata.SavedData;
 public final class ShepherdSavedData extends SavedData {
     private static final String DATA_NAME = FrozenDawn.MOD_ID + "_shepherd";
     private static final int MAX_AFFINITY = 1000;
+    /** She came up on the vault's dock, so the vault's lines are hers to say. */
+    public static final String WOKE_IN_VAULT = "woke_in_vault";
 
     public enum Stage {
         DORMANT,
@@ -46,6 +48,7 @@ public final class ShepherdSavedData extends SavedData {
     private final Set<String> flags = new HashSet<>();
     private String resumeNode;
     private boolean heavy;
+    private String promptNode;
 
     public static ShepherdSavedData get(MinecraftServer server) {
         return server.overworld().getDataStorage().computeIfAbsent(
@@ -74,13 +77,18 @@ public final class ShepherdSavedData extends SavedData {
     public void resumeNode(String node) { resumeNode = node; setDirty(); }
     public boolean heavy() { return heavy; }
     public void heavy(boolean heavy) { this.heavy = heavy; setDirty(); }
+    public String promptNode() { return promptNode; }
+    public void promptNode(String node) { promptNode = node; setDirty(); }
 
-    /** Back to the moment she woke: everything the first meeting earned goes, and she starts it again. */
+    /** Back to the moment she woke: everything the first meeting earned goes, and she starts it again. Where she woke stays true. */
     void replayFirstMeeting() {
+        boolean vault = flag(WOKE_IN_VAULT);
         affinity = 0;
         flags.clear();
+        if (vault) flags.add(WOKE_IN_VAULT);
         heavy = false;
         resumeNode = ShepherdTalk.FIRST_MEETING;
+        promptNode = null;
         setDirty();
     }
 
@@ -97,6 +105,7 @@ public final class ShepherdSavedData extends SavedData {
         flags.clear();
         resumeNode = null;
         heavy = false;
+        promptNode = null;
         setDirty();
     }
 
@@ -106,7 +115,7 @@ public final class ShepherdSavedData extends SavedData {
         lines.add("stage=" + stage + " entity=" + entity);
         lines.add("dimension=" + (dimension == null ? null : dimension.location()) + " lastPos=" + (lastPos == null ? null : lastPos.toShortString()));
         lines.add("follower=" + follower + " waiting=" + waiting + " lamp=" + lamp);
-        lines.add("affinity=" + affinity + " heavy=" + heavy + " resumeNode=" + resumeNode);
+        lines.add("affinity=" + affinity + " heavy=" + heavy + " resumeNode=" + resumeNode + " promptNode=" + promptNode);
         lines.add("flags=" + new TreeSet<>(flags));
         return lines;
     }
@@ -126,6 +135,7 @@ public final class ShepherdSavedData extends SavedData {
         for (Tag flag : tag.getList("flags", Tag.TAG_STRING)) data.flags.add(flag.getAsString());
         if (tag.contains("resumeNode")) data.resumeNode = tag.getString("resumeNode");
         data.heavy = tag.getBoolean("heavy");
+        if (tag.contains("promptNode")) data.promptNode = tag.getString("promptNode");
         return data;
     }
 
@@ -143,6 +153,7 @@ public final class ShepherdSavedData extends SavedData {
         tag.put("flags", list);
         if (resumeNode != null) tag.putString("resumeNode", resumeNode);
         tag.putBoolean("heavy", heavy);
+        if (promptNode != null) tag.putString("promptNode", promptNode);
         return tag;
     }
 }

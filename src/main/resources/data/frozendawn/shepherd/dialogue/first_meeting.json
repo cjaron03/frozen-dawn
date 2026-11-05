@@ -224,7 +224,7 @@
         {
           "slot": "kind",
           "label": "shepherd.fm.name.settled.label",
-          "next": "fm.end"
+          "next": "fm.room"
         }
       ]
     },
@@ -245,7 +245,7 @@
         {
           "slot": "kind",
           "label": "shepherd.fm.name.settled.label",
-          "next": "fm.end"
+          "next": "fm.room"
         }
       ]
     },
@@ -257,7 +257,7 @@
           "mood": "thinking"
         }
       ],
-      "next": "fm.end"
+      "next": "fm.room"
     },
     {
       "id": "fm.end",
@@ -293,6 +293,9 @@
           "line": "shepherd.fm.end.deal",
           "mood": "happy"
         }
+      ],
+      "set": [
+        "fm_done"
       ]
     },
     {
@@ -302,6 +305,9 @@
           "line": "shepherd.fm.end.follow",
           "mood": "neutral"
         }
+      ],
+      "set": [
+        "fm_done"
       ]
     },
     {
@@ -310,6 +316,169 @@
         {
           "line": "shepherd.fm.end.or",
           "mood": "unimpressed"
+        }
+      ],
+      "set": [
+        "fm_done"
+      ]
+    },
+    {
+      "id": "fm.room",
+      "when": "woke_in_vault",
+      "else": "fm.end",
+      "lines": [
+        {
+          "line": "shepherd.fm.room.him",
+          "mood": "sad"
+        },
+        {
+          "line": "shepherd.fm.room.log.cradle",
+          "mood": "sad",
+          "if": "wand_cradle"
+        },
+        {
+          "line": "shepherd.fm.room.log.hand",
+          "mood": "sad",
+          "if": "wand_hand"
+        },
+        {
+          "line": "shepherd.fm.room.log.other",
+          "mood": "sad",
+          "if": "wand_other"
+        }
+      ],
+      "responses": [
+        {
+          "slot": "ask",
+          "label": "shepherd.fm.room.where.label",
+          "next": "fm.room.where",
+          "set": [
+            "asked_transfer"
+          ]
+        },
+        {
+          "slot": "kind",
+          "label": "shepherd.fm.room.sorry.label",
+          "next": "fm.room.sorry",
+          "affinity": 10
+        },
+        {
+          "slot": "blunt",
+          "label": "shepherd.fm.room.wand.label",
+          "next": "fm.room.wand"
+        },
+        {
+          "slot": "sarcastic",
+          "label": "shepherd.fm.room.fall.label",
+          "next": "fm.room.fall",
+          "affinity": -10
+        }
+      ]
+    },
+    {
+      "id": "fm.room.where",
+      "lines": [
+        {
+          "line": "shepherd.fm.room.where",
+          "mood": "thinking"
+        }
+      ],
+      "next": "fm.end"
+    },
+    {
+      "id": "fm.room.sorry",
+      "lines": [
+        {
+          "line": "shepherd.fm.room.sorry",
+          "mood": "sad"
+        }
+      ],
+      "next": "fm.end"
+    },
+    {
+      "id": "fm.room.wand",
+      "lines": [
+        {
+          "line": "shepherd.fm.room.wand",
+          "mood": "unimpressed"
+        }
+      ],
+      "next": "fm.end"
+    },
+    {
+      "id": "fm.room.fall",
+      "lines": [
+        {
+          "line": "shepherd.fm.room.fall",
+          "mood": "unimpressed"
+        }
+      ],
+      "next": "fm.end"
+    },
+    {
+      "id": "fm.doors",
+      "lines": [
+        {
+          "line": "shepherd.fm.doors",
+          "mood": "thinking"
+        }
+      ],
+      "responses": [
+        {
+          "slot": "ask",
+          "label": "shepherd.fm.doors.count.label",
+          "next": "fm.doors.count"
+        },
+        {
+          "slot": "kind",
+          "label": "shepherd.fm.doors.counts.label",
+          "next": "fm.doors.counts",
+          "affinity": 10
+        },
+        {
+          "slot": "sarcastic",
+          "label": "shepherd.fm.doors.personal.label",
+          "next": "fm.doors.personal"
+        }
+      ]
+    },
+    {
+      "id": "fm.doors.count",
+      "lines": [
+        {
+          "line": "shepherd.fm.doors.count",
+          "mood": "neutral"
+        }
+      ]
+    },
+    {
+      "id": "fm.doors.counts",
+      "lines": [
+        {
+          "line": "shepherd.fm.doors.counts.sweet",
+          "mood": "happy"
+        },
+        {
+          "line": "shepherd.fm.doors.counts.pretend",
+          "mood": "unimpressed"
+        }
+      ]
+    },
+    {
+      "id": "fm.doors.personal",
+      "lines": [
+        {
+          "line": "shepherd.fm.doors.personal",
+          "mood": "unimpressed"
+        }
+      ]
+    },
+    {
+      "id": "fm.exit",
+      "lines": [
+        {
+          "line": "shepherd.fm.exit",
+          "mood": "neutral"
         }
       ]
     }

@@ -55,6 +55,23 @@ class VaultDocumentsTest {
     }
 
     @Test
+    void theManifestListsTheUnit() throws IOException {
+        assertTrue(text(entry(VaultDocuments.MANIFEST), 1).contains("Item: TR-0 Terminus, one$(br)Item: CS-1 unit 4, one$(br)Issuing division:"), "Her row, above the blanks");
+    }
+
+    @Test
+    void theLastLogIsEnochs() throws IOException {
+        var log = text(entry("terminus_log_last"), 0);
+        assertTrue(log.contains("Okoye, E."), log);
+        assertFalse(log.contains("Okoye, A."), log);
+    }
+
+    @Test
+    void haleCountsTheUnit() throws IOException {
+        assertTrue(text(entry("terminus_log_security"), 1).contains("CS-1 unit"), "Nothing down here but the cradle, the unit and them");
+    }
+
+    @Test
     void theClueReadsAsTheOwnerSawIt() throws IOException {
         var sheet = text(entry(VaultDocuments.DRAIN_SCHEDULE), 0);
         assertTrue(sheet.contains("Floor drains drawn: 5$(br)Floor drains in hall: 4"), sheet);

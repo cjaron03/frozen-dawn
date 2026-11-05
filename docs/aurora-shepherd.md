@@ -1,6 +1,6 @@
 # Aurora, ORSA CS-1 "Shepherd"
 
-Companion and dialogue system. Slice S1 is built on `feat/aurora-shepherd`, creative only; see Status. PR 147 (the Terminus Vault) merged on 2026-11-04 as b333ece9, so the vault is on `feat/maeve-director`.
+Companion and dialogue system. Slice S1, creative only, merged as PR 149. Slice S2, in the vault, is built on `feat/aurora-vault`; see Status. PR 147 (the Terminus Vault) merged on 2026-11-04 as b333ece9, so the vault is on `feat/maeve-director`.
 
 Sources: Notion, Frozen Dawn / Backlog, "Aurora (ORSA CS-1 "Shepherd") — Companion and Dialogue System" and its child "Aurora — Dialogue Script v1" (both 2026-11-04). Those pages hold the character and every line, and carry the fixes below as of 2026-11-04. This file is the tracked handoff: what was settled against the built game, the art, and the slices.
 
@@ -260,7 +260,7 @@ Nothing until a slice starts.
 
 ## Plan
 
-S1 is planned in [aurora-shepherd-plan.md](aurora-shepherd-plan.md).
+S1 is planned in [aurora-shepherd-plan.md](aurora-shepherd-plan.md), S2 in [aurora-shepherd-s2-plan.md](aurora-shepherd-s2-plan.md).
 
 ## Status
 
@@ -279,3 +279,9 @@ Draft for the owner to mark: `hub.talk`, the one line her hub's Talk has in S1, 
 2026-11-04, the owner's rulings on the deferred minors: her face and flame drawing while invisible stays deferred; her eyes following the cursor onto empty slots stays as it is, because the owner likes it. New on PR 149: on `fm.boot` her display and the talk screen show the ORSA logo for 64 ticks with the terminal's boot sound, in her own green, and the line waits for it. Her body now moves through a node's moods at the same 80 ticks per line, so it shows Recording during the recording line. On Neutral, while quiet, she shows five idle expressions and, about once in ten minutes, an eye roll. The talk screen's idle motion is seeded by the conversation. `/fd shepherd replay` also replays the logo, and walking away from `fm.boot` and coming back shows it again.
 
 2026-11-04: the owner's pass on the boot logo and idle expressions: "looks good". `architectVerify` passed at a1ac8f32 (976 tests). S1 is ready for the owner's merge decision on PR 149; S2 waits for it.
+
+2026-11-04: S1 merged as PR 149 (b82a0bc2). S2 built on `feat/aurora-vault` in `/Volumes/SSD/Work/frozen-dawn-aurora-vault`, from [aurora-shepherd-s2-plan.md](aurora-shepherd-s2-plan.md); the owner approved the plan and its ten rulings. The dock in the vault is `vault_cs1_dock`, the same dock under the vault's sealed properties, and waking on it sets `woke_in_vault`. Dialogue nodes can carry `when` and `else`, and lines `if`. `ShepherdPrompt` holds one waiting conversation in saved state, and `ShepherdPromptStrip` draws it. Calm in S2 is only no hostile within 24 blocks and no damage in 30 seconds. Active save: `run-lab/saves/Aurora Vault Check`, from `tools/prepare_aurora_vault_playtest.py`. Not yet seen by the owner, and the client has not been launched: how the dock and strip look, the prompt's rhythm and the draft lines all need the visual pass.
+
+Branch review on Opus: one real finding, the dock missing from `wither_immune` and `dragon_immune`, fixed with a failing test first. Deferred minors for the owner: "Transferred where?" is still offered after the third log line, which never says transfer; Esc or a hit right after the right-click loses `fm.exit` for good, since it has no replies to resume on; `fm.room` plays wherever she is if the first meeting is resumed away from him; a hit on any player delays the strip, not just one near her; nothing moves her when she asks, though the spec says she floats up; "the number on that wand has moved" is loose in a turned world where the wand still reads 1; a bad `when` with no `else` in an edited datapack throws on the right-click, since only JUnit guards the shipped data; the `shows()` GameTests would time out if a mob escaped a neighbouring test.
+
+2026-11-04: the owner's pass on S2 in `Aurora Vault Check`: "wow ok it worked great." The saved state after the pass shows her awake with `woke_in_vault`, `fm_done`, `doors_asked` and `exit_asked` set, and the client log has no errors. The owner reached the landing by its button, not on foot. The deferred minors above stand. S2 is ready for a PR into `feat/maeve-director`; `architectMonkey` has not run on it.

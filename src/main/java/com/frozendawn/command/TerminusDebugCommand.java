@@ -71,7 +71,7 @@ final class TerminusDebugCommand {
                             var player = c.getSource().getPlayerOrException();
                             var hall = HelionSiteState.get(c.getSource().getServer()).vault();
                             if (hall != null) TerminusVaultBuilder.reset(c.getSource().getServer().overworld(), hall);
-                            player.sendSystemMessage(Component.literal(hall == null ? "No Terminus Vault in this world" : "Terminus Vault reset: doors shut, bridge in, wand back"));
+                            player.sendSystemMessage(Component.literal(hall == null ? "No Terminus Vault in this world" : "Terminus Vault reset: doors shut, bridge in, wand and dock back"));
                             return 1;
                         }))
                         .then(Commands.literal("fight")
