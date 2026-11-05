@@ -12,9 +12,9 @@
 
 **Mockups:** [boot-sequence-mockup.png](art/aurora-shepherd/boot-sequence-mockup.png), [thinking-indicator-mockup.png](art/aurora-shepherd/thinking-indicator-mockup.png).
 
-**Status:** approved by the owner, 2026-11-04: two slices, every ruling as recommended, both mockups, and the draft lines to build with. Ruling 6 carries the owner's addition, that her eyes go back into place. M2a is built on `feat/miller-m2` and waits on the owner's pass; M2b is not started.
+**Status:** approved by the owner, 2026-11-04: two slices, every ruling as recommended, both mockups, and the draft lines to build with. Ruling 6 carries the owner's addition, that her eyes go back into place. M2a passed and merged as PR 154. M2b is built on `feat/miller-m2b` and waits on the owner's pass; the build's departures from this plan are in the spec's Status.
 
-**Branch:** `feat/miller-m2` in `/Volumes/SSD/Work/frozen-dawn-miller-m2`, cut from `feat/maeve-director` at 3611f195. PR into `feat/maeve-director`.
+**Branch:** M2a was `feat/miller-m2`. M2b is `feat/miller-m2b` in `/Volumes/SSD/Work/frozen-dawn-miller-m2b`, cut from `feat/maeve-director` at f61d8494. PR into `feat/maeve-director`.
 
 ## The one thing to decide first
 
