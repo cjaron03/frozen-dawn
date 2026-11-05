@@ -4,6 +4,7 @@ import com.frozendawn.FrozenDawn;
 import com.frozendawn.block.ThermalHeaterBlock;
 import com.frozendawn.data.ApocalypseState;
 import com.frozendawn.event.PlayerTickHandler;
+import com.frozendawn.miller.MillerPattern;
 import com.frozendawn.network.ShepherdLinePayload;
 import com.frozendawn.phase.PhaseManager;
 import com.frozendawn.shepherd.ShepherdAffinity.Deed;
@@ -28,6 +29,7 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.ServerChatEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
+import net.neoforged.neoforge.event.server.ServerStoppedEvent;
 import net.neoforged.neoforge.event.server.ServerStoppingEvent;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
@@ -78,6 +80,7 @@ public final class ShepherdReactions {
         if (now < data.deedReady(deed.name())) return;
         data.deedReady(deed.name(), now + deed.cooldownTicks());
         data.affinity(data.affinity() + deed.score());
+        MillerPattern.appraise(server, player.getUUID(), deed);
         if (ShepherdTalk.live()) return;
         if (!deed.lines().isEmpty()) data.lastAmbient(now);
         boolean wary = data.tier() == Tier.WARY;
@@ -161,6 +164,10 @@ public final class ShepherdReactions {
         clearForTests();
     }
 
+    @SubscribeEvent public static void stopped(ServerStoppedEvent event) {
+        MillerPattern.onServerStopped(event.getServer());
+    }
+
     private static List<ServerPlayer> near(ServerLevel level, ShepherdEntity she) {
         return level.getPlayers(player -> !player.isSpectator() && player.distanceTo(she) <= ShepherdPolicy.HEARD_BLOCKS);
     }
@@ -169,6 +176,7 @@ public final class ShepherdReactions {
     public static void skipDay(MinecraftServer server) {
         var she = loaded(server);
         ShepherdSavedData.get(server).skipDay(she != null && !near((ServerLevel) she.level(), she).isEmpty());
+        MillerPattern.skipDay(server);
     }
 
     @SubscribeEvent public static void tick(ServerTickEvent.Post event) {
@@ -179,6 +187,7 @@ public final class ShepherdReactions {
         var level = (ServerLevel) she.level();
         var near = near(level, she);
         if (near.isEmpty()) return;
+        MillerPattern.poll(server, near.size(), ShepherdSavedData.get(server).lastTalk());
         comeBack(server, she, near.getFirst());
         for (var player : near) look(level, player);
         ShepherdEggs.look(level, she, near);

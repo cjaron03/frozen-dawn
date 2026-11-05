@@ -1,6 +1,7 @@
 package com.frozendawn.shepherd;
 
 import com.frozendawn.FrozenDawn;
+import com.frozendawn.miller.MillerPattern;
 import com.frozendawn.network.ShepherdClosePayload;
 import com.frozendawn.network.ShepherdHubPayload;
 import com.frozendawn.network.ShepherdNodePayload;
@@ -272,6 +273,7 @@ public final class ShepherdTalk {
         if (data.stage() != ShepherdSavedData.Stage.AWAKE) return false;
         if (live != null) end(true);
         data.replayFirstMeeting();
+        MillerPattern.reset(server);
         return true;
     }
 
