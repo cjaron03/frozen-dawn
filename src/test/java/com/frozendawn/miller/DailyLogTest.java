@@ -1,0 +1,359 @@
+package com.frozendawn.miller;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+import com.frozendawn.miller.DailyLog.Day;
+import com.frozendawn.miller.Feelings.Feeling;
+import com.frozendawn.miller.SelfModel.Stage;
+import com.frozendawn.shepherd.ShepherdAffinity.Deed;
+import com.frozendawn.shepherd.ShepherdAffinity.Tier;
+import com.frozendawn.shepherd.ShepherdPolicy;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Set;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import org.junit.jupiter.api.Test;
+
+class DailyLogTest {
+    private static final String NOTE = "shepherd.log.note.";
+    private static final long DAY = ShepherdPolicy.DAY_TICKS;
+
+    /** A day with nothing in it, to be filled in by each test. */
+    private static final class Today {
+        long number = 1;
+        boolean signed, read, nineFound;
+        Stage stage = Stage.NOTICING;
+        Tier tier = Tier.NEUTRAL;
+        double coherence = 1, strength;
+        Feeling strongest;
+        Set<Mark> marks = EnumSet.noneOf(Mark.class);
+        Set<Deed> deeds = EnumSet.noneOf(Deed.class);
+        int backs;
+        long unseen;
+
+        Today on(long number) { this.number = number; return this; }
+        Today at(Stage stage) { this.stage = stage; return this; }
+        Today tier(Tier tier) { this.tier = tier; return this; }
+        Today coherence(double coherence) { this.coherence = coherence; return this; }
+        Today feeling(Feeling feeling, double strength) { strongest = feeling; this.strength = strength; return this; }
+        Today marks(Mark... marks) { this.marks = EnumSet.copyOf(List.of(marks)); return this; }
+        Today deeds(Deed... deeds) { this.deeds = EnumSet.copyOf(List.of(deeds)); return this; }
+        Today backs(int backs) { this.backs = backs; return this; }
+        Today unseenDays(long days) { unseen = days * DAY; return this; }
+        Today signed() { signed = true; return this; }
+        Today read() { read = true; return this; }
+        Today nineFound() { nineFound = true; return this; }
+
+        Day day() {
+            return new Day((number - 1) * DAY, signed, stage, tier, coherence, strongest, strength, marks, deeds, backs, unseen, read, nineFound);
+        }
+    }
+
+    private static Today today() {
+        return new Today();
+    }
+
+    private static String note(DailyLog log, Today today) {
+        var note = log.write(today.day()).note();
+        return note == null ? null : note.substring(NOTE.length());
+    }
+
+    private static String note(Today today) {
+        return note(new DailyLog(), today);
+    }
+
+    private static DailyLog filed() {
+        var log = new DailyLog();
+        assertEquals("cargo.1", note(log, today().tier(Tier.FRIENDLY)));
+        return log;
+    }
+
+    @Test
+    void aNoteFollowsTheOrder() {
+        var all = today().tier(Tier.TRUSTED).on(4).read().coherence(0.6).feeling(Feeling.FEAR, 0.7).unseenDays(6).nineFound().backs(1)
+                .marks(Mark.COLD, Mark.FIGHT, Mark.CLOSE_CALL, Mark.BACK).deeds(Deed.AIR_FAILING, Deed.ARCHIVIST_KILLED, Deed.WARM_SHELTER, Deed.CLEAR_NIGHT);
+        var log = filed();
+        var written = new java.util.ArrayList<String>();
+        for (int i = 0; i < 4; i++) written.add(note(log, all).split("\\.")[0]);
+        assertEquals(List.of("back", "reunion", "nine_found", "fear"), written, "Each rests, so the next in the order takes the day");
+    }
+
+    @Test
+    void aBadDayFollowsItsOwnOrder() {
+        assertEquals("archivist_killed.1", note(today().deeds(Deed.CALLED_SHEPHERD, Deed.LEFT_BEHIND, Deed.ARCHIVIST_KILLED)));
+        assertEquals("left_behind.1", note(today().deeds(Deed.CALLED_SHEPHERD, Deed.LEFT_BEHIND)));
+    }
+
+    @Test
+    void aKindRestsForThreeEntries() {
+        var log = new DailyLog();
+        var cold = today().at(Stage.NOTICING).marks(Mark.COLD);
+        assertEquals("cold.noticing", note(log, cold));
+        assertNull(note(log, cold));
+        assertNull(note(log, cold));
+        assertNull(note(log, cold));
+        assertEquals("cold.noticing", note(log, cold), "Three entries have gone by");
+    }
+
+    @Test
+    void noFitLeavesNotesBlank() {
+        assertNull(note(today()));
+        assertNull(note(today().at(Stage.PRODUCT).feeling(Feeling.JOY, 0.9).read()), "Feelings wait for Noticing, and it is not a fourth day");
+    }
+
+    @Test
+    void theVariantComesFromTheDay() {
+        var seen = new java.util.ArrayList<String>();
+        for (long day : List.of(12L, 4L, 8L)) seen.add(note(today().on(day).read()));
+        assertEquals(List.of("knows.1", "knows.2", "knows.3"), seen, "The day over the three variants");
+        assertEquals("knows.2", note(today().on(4).read()), "The same day gives the same note");
+    }
+
+    @Test
+    void knowsWaitsForEveryFourthDay() {
+        assertNull(note(today().on(5).read()));
+        assertNull(note(today().on(4)), "Nobody has read it");
+    }
+
+    @Test
+    void coherenceNarrowsTheVariants() {
+        assertEquals("knows.1", note(today().on(4).read().coherence(0.3)), "At the floor she repeats herself");
+        assertEquals("knows.1", note(today().on(8).read().coherence(0.3)));
+        assertEquals("knows.3", note(today().on(8).read().coherence(1)));
+    }
+
+    @Test
+    void slowNeedsHerSlow() {
+        assertEquals("slow.1", note(today().on(2).coherence(0.69)));
+        assertNull(note(today().on(2).coherence(0.7)));
+    }
+
+    @Test
+    void theFirstSignedEntryHasNoNote() {
+        var log = new DailyLog();
+        var cold = today().marks(Mark.COLD);
+        assertFalse(log.write(cold.day()).signed());
+        var first = log.write(today().deeds(Deed.AIR_FAILING).signed().day());
+        assertTrue(first.signed());
+        assertNull(first.note(), "Nothing draws the eye to it");
+        assertEquals("air_failing.1", note(log, today().deeds(Deed.AIR_FAILING).signed()));
+    }
+
+    @Test
+    void anUnsignedEntryStaysBlank() {
+        var log = new DailyLog();
+        assertFalse(log.write(today().day()).signed());
+        log.write(today().signed().day());
+        assertFalse(log.entries().getLast().signed(), "Earlier days are never rewritten");
+        assertTrue(log.entries().getFirst().signed());
+    }
+
+    @Test
+    void eachStageHasItsVoice() {
+        assertEquals("cold.product", note(today().at(Stage.PRODUCT).marks(Mark.COLD)));
+        assertEquals("cold.noticing", note(today().at(Stage.NOTICING).marks(Mark.COLD)));
+        assertEquals("cold.walls", note(today().at(Stage.FINDING_WALLS).marks(Mark.COLD)));
+        assertEquals("fight.product", note(today().at(Stage.PRODUCT).marks(Mark.FIGHT)));
+        assertEquals("fight.noticing", note(today().at(Stage.NOTICING).marks(Mark.FIGHT)));
+        assertEquals("fight.walls", note(today().at(Stage.LEANING).marks(Mark.FIGHT)), "Finding the walls and later");
+        assertEquals("back.product", note(today().at(Stage.PRODUCT).marks(Mark.BACK).backs(1)));
+        assertEquals("back.noticing", note(today().at(Stage.NOTICING).marks(Mark.BACK).backs(1)));
+        assertEquals("back.walls", note(today().at(Stage.FINDING_WALLS).marks(Mark.BACK).backs(1)));
+    }
+
+    @Test
+    void theGapNeedsNoticing() {
+        assertEquals("warm_shelter.product", note(today().at(Stage.PRODUCT).deeds(Deed.WARM_SHELTER)));
+        assertEquals("warm_shelter.noticing", note(today().at(Stage.NOTICING).deeds(Deed.WARM_SHELTER)));
+        assertEquals("warm_shelter.walls", note(today().at(Stage.RECOGNISING).deeds(Deed.WARM_SHELTER)));
+    }
+
+    @Test
+    void aFeelingTakesTheNoteAtHigh() {
+        assertEquals("fear.high", note(today().feeling(Feeling.FEAR, 0.6).marks(Mark.COLD)));
+        assertEquals("joy.high", note(today().feeling(Feeling.JOY, 0.79)));
+        assertEquals("guilt.1", note(today().feeling(Feeling.GUILT, 0.7)), "Only some have words of their own at High");
+        assertEquals("cold.noticing", note(today().feeling(Feeling.FEAR, 0.59).marks(Mark.COLD)), "Below High the day's events come first");
+        assertEquals("fear.1", note(today().feeling(Feeling.FEAR, 0.59)), "The mockup's Normal: dry, and last in the order");
+        assertNull(note(today().at(Stage.PRODUCT).feeling(Feeling.FEAR, 0.59)));
+    }
+
+    @Test
+    void peakCracksTheStatus() {
+        var peak = new DailyLog().write(today().feeling(Feeling.DISTRESS, 0.8).day());
+        assertTrue(peak.cracked());
+        assertEquals(NOTE + "distress.peak", peak.note());
+        assertFalse(new DailyLog().write(today().feeling(Feeling.DISTRESS, 0.79).day()).cracked());
+        assertTrue(new DailyLog().write(today().at(Stage.FINDING_WALLS).marks(Mark.BACK).backs(1).day()).cracked());
+        assertTrue(filed().write(today().at(Stage.FINDING_WALLS).tier(Tier.FRIENDLY).unseenDays(5).day()).cracked());
+    }
+
+    @Test
+    void aReunionNeedsDaysAwayAndFriendly() {
+        assertEquals("reunion.high", note(today().tier(Tier.FRIENDLY).unseenDays(5)));
+        assertNotEquals("reunion.high", note(today().tier(Tier.FRIENDLY).unseenDays(4)));
+        assertNull(note(today().tier(Tier.NEUTRAL).unseenDays(9)));
+        assertFalse(new DailyLog().write(today().tier(Tier.FRIENDLY).unseenDays(5).day()).cracked(), "Below the walls it is High");
+    }
+
+    @Test
+    void theDayAfterAPeakIsQuiet() {
+        var log = new DailyLog();
+        log.write(today().feeling(Feeling.FEAR, 0.9).day());
+        assertEquals("after.2", note(log, today().on(1).feeling(Feeling.JOY, 0.9).marks(Mark.COLD)), "The day over the two variants");
+        assertFalse(log.entries().getFirst().cracked(), "Status is back as if nothing happened");
+    }
+
+    @Test
+    void productNeverBreaks() {
+        var log = new DailyLog();
+        var entry = log.write(today().at(Stage.PRODUCT).tier(Tier.FRIENDLY).feeling(Feeling.DISTRESS, 1).marks(Mark.BACK).backs(1).unseenDays(9).day());
+        assertFalse(entry.cracked());
+        assertEquals(NOTE + "back.product", entry.note());
+        var closeCall = log.write(today().at(Stage.PRODUCT).feeling(Feeling.FEAR, 1).marks(Mark.CLOSE_CALL).day());
+        assertEquals(NOTE + "close_call.1", closeCall.note(), "No exclamation mark at Product");
+    }
+
+    @Test
+    void aCloseCallNeedsThemUp() {
+        assertEquals("close_call.1", note(today().marks(Mark.CLOSE_CALL)));
+        assertNull(note(today().marks(Mark.CLOSE_CALL, Mark.STOPPED)), "They did not get up");
+    }
+
+    @Test
+    void cargoIsFiledOnce() {
+        var log = new DailyLog();
+        assertEquals("cargo.1", note(log, today().tier(Tier.FRIENDLY)));
+        for (int i = 0; i < 4; i++) log.write(today().day());
+        assertNull(note(log, today().tier(Tier.FRIENDLY)));
+        var reloaded = DailyLog.load(log.save());
+        assertNull(note(reloaded, today().tier(Tier.FRIENDLY)), "Once per world, across a reload");
+    }
+
+    @Test
+    void cargoIsOnlyUsedInNotesWrittenForIt() {
+        var log = filed();
+        for (int i = 0; i < 3; i++) log.write(today().day());
+        assertEquals("cold.cargo", note(log, today().on(3).marks(Mark.COLD)), "The day over two variants");
+        assertEquals("trusted.cargo", note(filed(), today().on(3).tier(Tier.TRUSTED)));
+        assertEquals("cold.noticing", note(new DailyLog(), today().on(3).marks(Mark.COLD)), "Not before it is filed");
+        assertEquals("trusted.1", note(filed(), today().on(2).tier(Tier.TRUSTED)));
+    }
+
+    @Test
+    void theFirstBackAfterNineIsAboutNine() {
+        var log = new DailyLog();
+        assertEquals("nine_found.1", note(log, today().nineFound()));
+        log.write(today().day());
+        log.write(today().day());
+        log.write(today().day());
+        assertEquals("back.nine", note(log, today().at(Stage.FINDING_WALLS).marks(Mark.BACK).backs(1)));
+        for (int i = 0; i < 3; i++) log.write(today().day());
+        assertEquals("back.walls", note(log, today().at(Stage.FINDING_WALLS).marks(Mark.BACK).backs(2)), "Only the first");
+    }
+
+    @Test
+    void nineStaysOutOfTheFlatForm() {
+        var log = new DailyLog();
+        log.write(today().at(Stage.PRODUCT).nineFound().day());
+        for (int i = 0; i < 3; i++) log.write(today().day());
+        assertEquals("back.product", note(log, today().at(Stage.PRODUCT).marks(Mark.BACK).backs(1)));
+    }
+
+    @Test
+    void sheBreaksOverTheReturnOnce() {
+        var log = filed();
+        var back = today().at(Stage.FINDING_WALLS).marks(Mark.BACK).backs(2);
+        assertEquals("back.walls", note(log, back));
+        for (int i = 0; i < 3; i++) log.write(today().day());
+        var entry = log.write(back.day());
+        assertEquals(NOTE + "back.again", entry.note());
+        assertFalse(entry.cracked(), "As the mockup draws it");
+    }
+
+    @Test
+    void backAgainNeedsTheName() {
+        var log = new DailyLog();
+        assertEquals("back.noticing", note(log, today().marks(Mark.BACK).backs(2)));
+    }
+
+    @Test
+    void theOldestGoesAtTheCap() {
+        var log = new DailyLog();
+        for (int i = 1; i <= DailyLog.MAX + 1; i++) log.write(today().on(i).day());
+        assertEquals(DailyLog.MAX, log.entries().size());
+        assertEquals(DailyLog.MAX + 1, log.entries().getFirst().day(), "Newest first");
+        assertEquals(2, log.entries().getLast().day());
+    }
+
+    @Test
+    void ageMovesEveryEntry() {
+        var log = new DailyLog();
+        log.write(today().on(4).day());
+        log.write(today().on(6).day());
+        log.age(DAY);
+        assertEquals(List.of(5L, 3L), log.entries().stream().map(LogEntry::day).toList());
+    }
+
+    @Test
+    void saveAndLoadKeepEveryEntry() {
+        var log = new DailyLog();
+        log.write(today().on(3).marks(Mark.COLD).day());
+        log.write(today().on(4).feeling(Feeling.FEAR, 0.9).signed().day());
+        log.write(today().on(5).signed().feeling(Feeling.FEAR, 0.9).day());
+        assertEquals(log.entries(), DailyLog.load(log.save()).entries());
+        assertEquals(log.save(), DailyLog.load(log.save()).save());
+    }
+
+    @Test
+    void aDamagedEntryIsDropped() {
+        var log = new DailyLog();
+        log.write(today().on(3).marks(Mark.COLD).day());
+        var tag = log.save();
+        var entries = tag.getList("entries", CompoundTag.TAG_COMPOUND);
+        entries.add(new CompoundTag());
+        var wrong = new CompoundTag();
+        wrong.putLong("time", 0);
+        wrong.putString("note", "shepherd.wall.lagged");
+        entries.add(wrong);
+        assertEquals(1, DailyLog.load(tag).entries().size());
+    }
+
+    @Test
+    void anOverlongSaveLosesItsOldest() {
+        var entries = new ListTag();
+        for (int i = 0; i <= DailyLog.MAX; i++) entries.add(new LogEntry(i * DAY, false, false, null).save());
+        var tag = new CompoundTag();
+        tag.put("entries", entries);
+        var loaded = DailyLog.load(tag).entries();
+        assertEquals(DailyLog.MAX, loaded.size());
+        assertEquals(DailyLog.MAX + 1, loaded.getFirst().day());
+    }
+
+    @Test
+    void aVersionThreeSaveLoadsWithAnEmptyLog() {
+        var state = new PatternState();
+        state.self().lean(SelfModel.Lean.SOMEONE);
+        var tag = state.save();
+        assertEquals(4, tag.getInt("dataVersion"));
+        tag.putInt("dataVersion", 3);
+        tag.remove("log");
+        var loaded = PatternState.load(tag);
+        assertTrue(loaded.log().entries().isEmpty());
+        var first = loaded.log().write(today().signed().deeds(Deed.AIR_FAILING).day());
+        assertTrue(first.signed());
+        assertNull(first.note(), "A world past T5 signs its next entry with blank Notes");
+    }
+
+    @Test
+    void theStateCarriesTheLog() {
+        var state = new PatternState();
+        state.log().write(today().on(3).marks(Mark.COLD).day());
+        assertEquals(state.log().entries(), PatternState.load(state.save()).log().entries());
+        state.age(DAY);
+        assertEquals(2, state.log().entries().getFirst().day());
+        state.clear();
+        assertTrue(state.log().entries().isEmpty());
+    }
+}

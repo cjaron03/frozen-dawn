@@ -14,7 +14,7 @@ import net.minecraft.nbt.Tag;
 
 /** Everything she carries, with no server in it. The same events at the same game times give the same state, to the bit. */
 final class PatternState {
-    static final int VERSION = 3;
+    static final int VERSION = 4;
     /** Bounded: she holds this many reasons and loses the oldest. */
     static final int MAX_HISTORY = 16;
     static final long NOT_SET = -1;
@@ -40,6 +40,7 @@ final class PatternState {
     private long nextSlip = UNARMED;
     /** What she wanted of the sky when a clear night last fed it, and when. Null until one has. */
     private Fading nightSky;
+    private DailyLog log = new DailyLog();
 
     Drives drives() { return drives; }
     Feelings feelings() { return feelings; }
@@ -48,6 +49,7 @@ final class PatternState {
     Keepsakes keepsakes() { return keepsakes; }
     SelfModel self() { return self; }
     Coherence coherence() { return coherence; }
+    DailyLog log() { return log; }
 
     void appraise(UUID who, Deed deed, long now) {
         drives.begin(now);
@@ -158,6 +160,7 @@ final class PatternState {
         if (seenAt != UNARMED) seenAt -= ticks;
         if (nightSky != null) nightSky = nightSky.aged(ticks);
         if (nextSlip != UNARMED) nextSlip -= ticks;
+        log.age(ticks);
     }
 
     void clear() {
@@ -171,6 +174,7 @@ final class PatternState {
         coherence.clear();
         settleAt = seenAt = nextSlip = UNARMED;
         nightSky = null;
+        log.clear();
     }
 
     CompoundTag save() {
@@ -190,6 +194,7 @@ final class PatternState {
         if (seenAt != UNARMED) tag.putLong("seenAt", seenAt);
         if (nightSky != null) tag.put("nightSky", nightSky.save());
         if (nextSlip != UNARMED) tag.putLong("nextSlip", nextSlip);
+        tag.put("log", log.save());
         return tag;
     }
 
@@ -212,6 +217,7 @@ final class PatternState {
         if (tag.contains("seenAt")) state.seenAt = tag.getLong("seenAt");
         if (tag.contains("nightSky")) state.nightSky = Fading.load(tag.getCompound("nightSky"));
         if (tag.contains("nextSlip")) state.nextSlip = tag.getLong("nextSlip");
+        state.log = DailyLog.load(tag.getCompound("log"));
         return state;
     }
 }

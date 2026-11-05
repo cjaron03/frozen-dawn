@@ -352,8 +352,8 @@ class PatternStateTest {
     }
 
     @Test
-    void thisSaveIsVersionThree() {
-        assertEquals(3, PatternState.VERSION);
+    void thisSaveIsVersionFour() {
+        assertEquals(4, PatternState.VERSION);
     }
 
     @Test
