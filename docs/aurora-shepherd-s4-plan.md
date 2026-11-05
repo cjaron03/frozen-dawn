@@ -14,7 +14,7 @@
 
 **Mockups:** [nine-husk-mockup.png](art/aurora-shepherd/nine-husk-mockup.png), [nine-lamp-mockup.png](art/aurora-shepherd/nine-lamp-mockup.png).
 
-**Status:** draft for the owner, 2026-11-05. T3's timing is decided; the rulings below are open. Nothing is built. Stop here for approval.
+**Status:** approved by the owner, 2026-11-05: T3 waits for the stars, Ruling 4 is C, Ruling 5 is A, and every other ruling as recommended, with both mockups. Ruling 3's flag and Ruling 19's silent strip are in, and Okoye's log keeps its `READ_LOG` lines. The lines stay drafts until marked. Nothing is built.
 
 **Branch:** `feat/aurora-s4` in `/Volumes/SSD/Work/frozen-dawn-aurora-s4`, cut from `feat/maeve-director` at a0b77afa. S4b cuts `feat/aurora-s4b` after S4a merges. PR into `feat/maeve-director`.
 
@@ -34,9 +34,9 @@ Fix 5 says T3 waits out phase 5, early phase 6 and any storm. The code makes tha
 
 **Decided: A, owner, 2026-11-05 ("When stars show").** She asks once the stars are there, not from phase 4. Fix 5's assumption stands: real auroras end at phase 3.
 
-## Rulings for the owner
+## Rulings
 
-Approving the plan accepts these unless you say otherwise.
+All accepted by the owner, 2026-11-05.
 
 1. **Two slices.** S4a, Nine: the engine, T2, the husk, the lamp, the quiet day. S4b, the rest: T3, T4, T5, the files, bleed-through. Each has its own pass and Opus review, since S4b changes the Pattern's save format.
 2. **T1's "Moving." changes.** The shipped line says "Green. Moving." of one frame, and T3 says "I don't even know how it moves." Proposed: "Green. Smeared, like it wouldn't hold still." It lands in S4b with T3.
