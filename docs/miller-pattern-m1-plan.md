@@ -21,7 +21,7 @@
 Approving the plan accepts these unless you say otherwise.
 
 1. **Feelings set her resting face only.** Reaction faces and line moods stay authored, because a line and its mood were written together. So she reacts as now for 3 seconds, then rests on what she feels until it fades to Neutral. Wary still rests on Recording, Offline on Offline, asking on Thinking, and a conversation keeps her face.
-2. **A cost to look at in the pass:** her five idle expressions and the eye roll only run on Neutral, so they stop while she rests on anything else.
+2. **Her idle expressions and eye roll play on every resting mood (owner, 2026-11-04, reversing this plan's first draft).** Only a face she rests on gets them: Recording and Offline stay without, a conversation keeps her face as now, and a 3-second reaction has none. If an idle clashes with a mood, that is a look question for the owner's pass, not one to settle alone.
 3. **Which feeling shows which face.** The strongest feeling at or above 0.30 wins; below that she is Neutral. Recording and Offline are states, not feelings, so feelings reach six of the nine `Mood` values, plus Neutral.
 
    | Feeling | Mood | Half-life, ticks | Why |
@@ -254,11 +254,12 @@ Package `com.frozendawn.miller`. Tests in `src/test/java/com/frozendawn/miller/`
 ### Task 6: Her resting face
 
 **Files:**
-- Modify: `src/main/java/com/frozendawn/shepherd/ShepherdEntity.java:153` (`rest`)
+- Modify: `src/main/java/com/frozendawn/shepherd/ShepherdEntity.java:153` (`rest`, `setMood`), `ShepherdFace.java:69` (`motion`), `src/main/java/com/frozendawn/client/ShepherdRenderer.java:46`
+- Test: `src/test/java/com/frozendawn/shepherd/ShepherdFaceTest.java`
 - Modify: `src/gameTest/java/com/frozendawn/shepherd/ShepherdAffinityGameTest.java`, `ShepherdVaultGameTest.java`, only where Step 3 says
 - Test: `ShepherdFeelingsGameTest.java`
 
-**Interfaces:** `rest()` becomes `setMood(wary ? Mood.RECORDING : MillerPattern.restingMood(getServer()))`. It runs every tick; the read is seven `StrictMath.pow` calls, so no cache.
+**Interfaces:** `rest()` becomes `setMood(wary ? Mood.RECORDING : MillerPattern.restingMood(getServer()))`. It runs every tick; the read is seven `StrictMath.pow` calls, so no cache. A synced `DATA_RESTING` boolean says the face came from `rest()`: `boolean resting()` on the entity, true after `rest()`, false after any other `setMood` or a reaction. `ShepherdFace.motion(Mood, int age, int seed, boolean resting)` plays idles when `resting` or Neutral; the three-argument form stays as today, so `ShepherdScreen` and a conversation change nothing.
 
 - [ ] **Step 1: Write the failing GameTests.**
   - `shepherdRestsOnWhatSheFeels`: `saw(ARCHIVIST_KILLED)`; after the reaction, her face is Sad.
@@ -267,6 +268,8 @@ Package `com.frozendawn.miller`. Tests in `src/test/java/com/frozendawn/miller/`
   - `shepherdAskingStaysThinking`: a raised prompt with joy high shows Thinking.
   - `shepherdATalkKeepsHerFace`: joy high, a conversation shows the line's mood.
   - `shepherdRebootsOntoHerFeeling`.
+  - `shepherdIsRestingOnlyWhenSheRests`: `resting()` is true after she settles, false during a reaction and during a talk.
+  - JUnit `idlesPlayOnEveryRestingMood`: every mood but Recording and Offline shows every expression and the roll with `resting` true; `noIdlesOnRecordingOrOffline`; `noIdlesOffNeutralWhenNotResting`.
 - [ ] **Step 2: Run them.** Expected: FAIL.
 - [ ] **Step 3: Change `rest()`, then run every Shepherd test.** `./gradlew gameTestQuick -PfdTests=shepherd --console=plain`. Seven assertions pin Neutral: `ShepherdVaultGameTest.java:570`, `ShepherdAffinityGameTest.java:259, 358, 579, 795, 810, 827`. Those after a flinch or a glad return should still pass, since neither comes through `saw`. Any that follows a deed changes by design: move it to the feeling it now shows, naming the deed in the commit. Change no other test.
 - [ ] **Step 4: Run them again.** Expected: PASS.
