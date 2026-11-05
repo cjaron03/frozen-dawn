@@ -78,7 +78,7 @@ class ShepherdDialogueDataTest {
     @Test
     void everyConditionIsKnown() throws Exception {
         var nodes = nodes();
-        Set<String> known = new HashSet<>(List.of("woke_in_vault", "wand_cradle", "wand_hand", "wand_other"));
+        Set<String> known = new HashSet<>(List.of("woke_in_vault", "wand_cradle", "wand_hand", "wand_other", "tier_wary", "tier_friendly", "tier_trusted", "tier_close"));
         for (Node node : nodes.values()) {
             known.addAll(node.set());
             for (Response response : node.responses()) known.addAll(response.set());
@@ -107,6 +107,53 @@ class ShepherdDialogueDataTest {
             }
             for (String key : keys) {
                 assertTrue(lang.has(key) && !lang.get(key).getAsString().isBlank(), node.id() + ": " + key);
+            }
+        }
+    }
+
+    @Test
+    void everyDeedVariantHasALangEntry() throws Exception {
+        var lang = lang();
+        List<String> keys = new ArrayList<>(List.of(ShepherdAffinity.WARY_LIKED, ShepherdAffinity.WARY_DISLIKED));
+        for (var deed : ShepherdAffinity.Deed.values()) {
+            for (var say : deed.lines()) {
+                keys.add(say.key());
+                if (say.heavyKey() != null) keys.add(say.heavyKey());
+            }
+        }
+        for (String key : keys) assertTrue(lang.has(key) && !lang.get(key).getAsString().isBlank(), key);
+    }
+
+    private static void assertNoShepherdLineSays(String... words) throws Exception {
+        for (var line : lang().entrySet()) {
+            if (!line.getKey().startsWith("shepherd.")) continue;
+            String text = line.getValue().getAsString().toLowerCase(java.util.Locale.ROOT);
+            for (String word : words) assertFalse(text.contains(word.toLowerCase(java.util.Locale.ROOT)), line.getKey());
+        }
+    }
+
+    @Test
+    void noNewLineNamesHerOrThePartner() throws Exception {
+        assertNoShepherdLineSays("Sophie", "Miller", "Anderson-Kind");
+    }
+
+    @Test
+    void noNodNamesItsGame() throws Exception {
+        assertNoShepherdLineSays("Destiny", "Subnautica", "Helldivers", "game");
+    }
+
+    @Test
+    void everyAmbientKeyHasALangEntry() throws Exception {
+        var lang = lang();
+        try (var in = ShepherdDialogueDataTest.class.getResourceAsStream("/data/frozendawn/shepherd/ambient/starter.json")) {
+            assertNotNull(in);
+            var pools = ShepherdAmbient.parse(JsonParser.parseReader(new InputStreamReader(in, StandardCharsets.UTF_8)));
+            assertEquals(ShepherdAmbient.Trigger.values().length, pools.size(), "one pool for every trigger");
+            for (var pool : pools) {
+                for (var say : pool.variants()) {
+                    assertTrue(lang.has(say.key()), say.key());
+                    if (say.heavyKey() != null) assertTrue(lang.has(say.heavyKey()), say.heavyKey());
+                }
             }
         }
     }

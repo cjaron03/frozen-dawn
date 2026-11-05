@@ -2,9 +2,14 @@ package com.frozendawn.shepherd;
 
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.data.HelionSiteState;
+import com.frozendawn.event.PlayerTickHandler;
 import com.frozendawn.network.ShepherdPromptPayload;
+import com.frozendawn.shepherd.ShepherdAffinity.Tier;
 import com.frozendawn.shepherd.ShepherdSavedData.Stage;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -22,19 +27,26 @@ import net.neoforged.neoforge.network.PacketDistributor;
  * "Got a minute?": a conversation she wants to have, waiting for a right-click. Only {@link ShepherdSavedData#promptNode()}
  * is kept; how often the strip has shown is not, so a reload shows it afresh. She asks at the last door and at the vault's
  * exit, once each, only if she was woken in the vault, the first meeting is over and she is there to say it.
+ * A tier-up is not an event: at a calm moment she looks at the score as it stands and asks the first {@link #PERSONAL}
+ * conversation she has not asked, so a reload or a falling score needs no bookkeeping.
  */
 @EventBusSubscriber(modid = FrozenDawn.MOD_ID)
 public final class ShepherdPrompt {
     public static final String DOORS = "fm.doors", EXIT = "fm.exit";
-    static final String FIRST_MEETING_DONE = "fm_done", DOORS_ASKED = "doors_asked", EXIT_ASKED = "exit_asked";
+    public static final String THE_NAME = "t1.name";
+    static final String FIRST_MEETING_DONE = "fm_done", DOORS_ASKED = "doors_asked", EXIT_ASKED = "exit_asked", NAME_ASKED = "t1_asked", ASKED_NAME = "asked_name";
+    /** What each tier opens, in the order she brings it up. */
+    private static final List<Personal> PERSONAL = List.of(new Personal(Tier.FRIENDLY, THE_NAME, NAME_ASKED));
     /** A sprinter covers 1.4 blocks in this, so nobody crosses a box between looks. */
     private static final int CHECK_TICKS = 5;
     private static final long LONG_AGO = Long.MIN_VALUE / 2;
 
+    private record Personal(Tier tier, String node, String asked) {}
+
     private static int shows;
     private static int nextShow;
     private static int repeat = ShepherdPolicy.PROMPT_REPEAT_TICKS;
-    private static long lastHurt = LONG_AGO;
+    private static final Map<UUID, Long> lastHurt = new HashMap<>();
 
     private ShepherdPrompt() {}
 
@@ -48,7 +60,8 @@ public final class ShepherdPrompt {
         var near = level.getPlayers(player -> !player.isSpectator() && player.distanceTo(she) <= ShepherdPolicy.HEARD_BLOCKS);
         if (near.isEmpty()) return;
         ask(server, data, near);
-        show(server, level, data, near);
+        offer(server, level, data, near);
+        show(server, level, data, near, she);
     }
 
     private static void ask(MinecraftServer server, ShepherdSavedData data, List<ServerPlayer> near) {
@@ -61,18 +74,73 @@ public final class ShepherdPrompt {
         }
     }
 
+    /** A place prompt takes over from a waiting personal one, which is then not asked yet. */
     private static void raise(ShepherdSavedData data, String asked, String node) {
+        withdraw(data);
         data.flag(asked, true);
         data.promptNode(node);
         shows = 0;
         nextShow = 0;
     }
 
-    private static void show(MinecraftServer server, ServerLevel level, ShepherdSavedData data, List<ServerPlayer> near) {
+    private static void offer(MinecraftServer server, ServerLevel level, ShepherdSavedData data, List<ServerPlayer> near) {
+        if (ShepherdTalk.live()) return;
+        var tier = data.tier();
+        var waiting = waitingPersonal(data);
+        if (waiting != null && !tier.atLeast(waiting.tier())) withdraw(data);
+        if (data.promptNode() != null || data.resumeNode() != null || !data.flag(FIRST_MEETING_DONE)) return;
+        if (!calm(server, level, near)) return;
+        if (!ShepherdPolicy.comfortable(coldest(near), near.stream().anyMatch(player -> PlayerTickHandler.airFailing(player.getUUID())))) return;
+        for (var personal : PERSONAL) {
+            if (!tier.atLeast(personal.tier()) || data.flag(personal.asked())) continue;
+            raise(data, personal.asked(), personal.node());
+            return;
+        }
+    }
+
+    private static Personal waitingPersonal(ShepherdSavedData data) {
+        return PERSONAL.stream().filter(personal -> personal.node().equals(data.promptNode())).findFirst().orElse(null);
+    }
+
+    /** Not while it is on someone's screen: it is being said, so it has been asked. */
+    private static void withdraw(ShepherdSavedData data) {
+        var waiting = waitingPersonal(data);
+        if (waiting == null || ShepherdTalk.live()) return;
+        data.flag(waiting.asked(), false);
+        data.promptNode(null);
+        if (waiting.node().equals(data.resumeNode())) data.resumeNode(null);
+    }
+
+    /** Nothing hostile near them, and none of them hurt lately. */
+    static boolean calm(MinecraftServer server, ServerLevel level, List<ServerPlayer> near) {
+        return ShepherdPolicy.calm(nearestHostile(level, near), sinceHurt(server, near));
+    }
+
+    /** Nobody near is being hunted or was hurt lately. A hostile about its own business does not count: at a Hearth there is always one in sight. */
+    static boolean unhunted(MinecraftServer server, ServerLevel level, List<ServerPlayer> near) {
+        return ShepherdPolicy.calm(Double.MAX_VALUE, sinceHurt(server, near)) && near.stream().allMatch(player -> level.getEntitiesOfClass(
+                Mob.class, player.getBoundingBox().inflate(ShepherdPolicy.CALM_HOSTILE_BLOCKS), mob -> mob instanceof Enemy && mob.getTarget() == player).isEmpty());
+    }
+
+    private static float coldest(List<ServerPlayer> near) {
+        float coldest = Float.MAX_VALUE;
+        for (var player : near) coldest = Math.min(coldest, PlayerTickHandler.resolvedTemperature(player));
+        return coldest;
+    }
+
+    /** Only someone she can see counts: a fight across the map is none of her business. */
+    private static long sinceHurt(MinecraftServer server, List<ServerPlayer> near) {
+        long latest = LONG_AGO;
+        for (var player : near) latest = Math.max(latest, lastHurt.getOrDefault(player.getUUID(), LONG_AGO));
+        return server.getTickCount() - latest;
+    }
+
+    private static void show(MinecraftServer server, ServerLevel level, ShepherdSavedData data, List<ServerPlayer> near, ShepherdEntity she) {
         int now = server.getTickCount();
         if (data.promptNode() == null || shows >= ShepherdPolicy.PROMPT_SHOWS || now < nextShow || ShepherdTalk.live()) return;
-        if (!ShepherdPolicy.calm(nearestHostile(level, near), now - lastHurt)) return;
+        if (!calm(server, level, near)) return;
         for (var player : near) PacketDistributor.sendToPlayer(player, new ShepherdPromptPayload());
+        if (near.contains(ShepherdEntity.followerIn(level))) she.askFor(ShepherdPolicy.ASK_TICKS);
         shows++;
         nextShow = now + repeat;
     }
@@ -88,7 +156,7 @@ public final class ShepherdPrompt {
     }
 
     @SubscribeEvent public static void hurt(LivingDamageEvent.Post event) {
-        if (event.getEntity() instanceof ServerPlayer player) lastHurt = player.getServer().getTickCount();
+        if (event.getEntity() instanceof ServerPlayer player) lastHurt.put(player.getUUID(), (long) player.getServer().getTickCount());
     }
 
     @SubscribeEvent public static void stopping(ServerStoppingEvent event) {
@@ -108,6 +176,6 @@ public final class ShepherdPrompt {
         shows = 0;
         nextShow = 0;
         repeat = ShepherdPolicy.PROMPT_REPEAT_TICKS;
-        lastHurt = LONG_AGO;
+        lastHurt.clear();
     }
 }

@@ -20,16 +20,21 @@ import net.neoforged.neoforge.common.util.FakePlayer;
  * leaves nothing behind: a stage left at AWAKE would bring her back into the next batch's test area.
  */
 final class ShepherdTestWorld {
+    private static final long NOON = 6000;
+
     private ShepherdTestWorld() {}
 
     static void fresh(ServerLevel level) {
         GameTestReporting.installReporter(level);
         clear(level);
+        // A clear night or a warm room is a deed she would score in a test about something else.
+        level.setDayTime(NOON);
     }
 
     static void clear(ServerLevel level) {
         ShepherdTalk.clearForTests();
         ShepherdPrompt.clearForTests();
+        ShepherdReactions.clearForTests();
         ShepherdSavedData.get(level.getServer()).clearForTests();
         // A body left in a test area that has stopped ticking would never get to remove itself.
         for (var body : level.getEntities(ModEntities.CS1_UNIT.get(), e -> true)) body.discard();

@@ -2,6 +2,7 @@ package com.frozendawn.shepherd;
 
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.defense.Terminus;
+import com.frozendawn.event.PlayerTickHandler;
 import com.frozendawn.gametest.GameTestTemplates;
 import com.frozendawn.init.ModBlocks;
 import com.frozendawn.init.ModEntities;
@@ -10,6 +11,7 @@ import com.frozendawn.item.PowerCellItem;
 import com.frozendawn.shepherd.ShepherdDockBlock.DockState;
 import com.frozendawn.shepherd.ShepherdSavedData.Stage;
 import com.frozendawn.vault.VaultWatch;
+import com.frozendawn.world.HeaterRegistry;
 import java.util.ArrayList;
 import java.util.UUID;
 import net.minecraft.commands.arguments.EntityAnchorArgument;
@@ -62,6 +64,10 @@ public final class ShepherdEntityGameTest {
     @BeforeBatch(batch = "shepherd_lamp") public static void lampBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
     @AfterBatch(batch = "shepherd_lamp") public static void lampAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
 
+    @BeforeBatch(batch = "shepherd_warmth") public static void warmthBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_warmth") public static void warmthAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_no_heater") public static void noHeaterBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_no_heater") public static void noHeaterAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
     @BeforeBatch(batch = "shepherd_station") public static void stationBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
     @AfterBatch(batch = "shepherd_station") public static void stationAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
     @BeforeBatch(batch = "shepherd_stranded") public static void strandedBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
@@ -284,6 +290,34 @@ public final class ShepherdEntityGameTest {
                 h.assertTrue(she.distanceTo(player) < 4, "Beside her follower: " + she.distanceTo(player));
                 h.succeed();
             });
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_warmth", timeoutTicks = 400)
+    public static void shepherdSheWarmsANearPlayer(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = ShepherdTestWorld.onlinePlayer(h, h.absoluteVec(Vec3.atCenterOf(SPOT)).add(2, 0, 0));
+            float alone = PlayerTickHandler.resolvedTemperature(player);
+            var she = awake(h, player);
+            float beside = PlayerTickHandler.resolvedTemperature(player);
+            h.assertTrue(Math.abs(beside - alone - ShepherdPolicy.WARMTH_C) < 0.01, "Warmer by her: " + (beside - alone));
+            she.setNoAi(true);
+            she.teleportTo(player.getX() + ShepherdPolicy.WARMTH_BLOCKS + 1, player.getY(), player.getZ());
+            h.assertTrue(Math.abs(PlayerTickHandler.resolvedTemperature(player) - alone) < 0.01, "Not from over there");
+            she.teleportTo(player.getX() + 1, player.getY(), player.getZ());
+            she.goOffline();
+            h.assertTrue(Math.abs(PlayerTickHandler.resolvedTemperature(player) - alone) < 0.01, "Not while she is Offline");
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_no_heater", timeoutTicks = 400)
+    public static void shepherdSheIsNoHeater(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = ShepherdTestWorld.onlinePlayer(h, h.absoluteVec(Vec3.atCenterOf(SPOT)).add(2, 0, 0));
+            var she = awake(h, player);
+            h.assertTrue(HeaterRegistry.nearby(h.getLevel(), she.blockPosition(), ShepherdPolicy.WARMTH_BLOCKS, 1).isEmpty(), "Mimics and Hunters have nothing to find");
+            h.succeed();
         });
     }
 

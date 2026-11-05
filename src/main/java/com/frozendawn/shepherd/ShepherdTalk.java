@@ -4,10 +4,12 @@ import com.frozendawn.FrozenDawn;
 import com.frozendawn.network.ShepherdClosePayload;
 import com.frozendawn.network.ShepherdHubPayload;
 import com.frozendawn.network.ShepherdNodePayload;
+import com.frozendawn.shepherd.ShepherdAffinity.Tier;
 import com.frozendawn.shepherd.ShepherdDialogue.Line;
 import com.frozendawn.shepherd.ShepherdDialogue.Node;
 import com.frozendawn.shepherd.ShepherdFace.Mood;
 import java.util.List;
+import java.util.function.Predicate;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Mob;
@@ -43,6 +45,8 @@ public final class ShepherdTalk {
         /** Null while the hub is showing. */
         ShepherdConversation talk;
         boolean fromHub;
+        /** The prompt this was opened from, which stays waiting until an answer shows it was heard. */
+        String fromPrompt;
         boolean hurt;
         int affinityApplied;
         int unimpressedTicks;
@@ -54,6 +58,8 @@ public final class ShepherdTalk {
         Live(ServerPlayer player, ShepherdEntity she) {
             this.player = player;
             this.she = she;
+            she.askFor(0);
+            ShepherdSavedData.get(player.getServer()).lastTalk(player.serverLevel().getGameTime());
         }
     }
 
@@ -73,12 +79,17 @@ public final class ShepherdTalk {
             return;
         }
         live = new Live(player, she);
-        String waiting = waitingNode(data());
+        var data = data();
+        String waiting = waitingNode(data);
         if (waiting == null) {
             showHub();
-        } else {
-            begin(waiting, false);
+            return;
         }
+        if (waiting.equals(data.promptNode())) live.fromPrompt = waiting;
+        if (begin(waiting, false)) return;
+        if (waiting.equals(data.resumeNode())) data.resumeNode(null);
+        if (waiting.equals(data.promptNode())) data.promptNode(null);
+        showHub();
     }
 
     /** A node that has gone missing, say from an edited datapack, is dropped here. */
@@ -89,8 +100,9 @@ public final class ShepherdTalk {
             data.resumeNode(null);
         }
         String prompt = data.promptNode();
+        if (prompt == null || nodes.containsKey(prompt)) return prompt;
         data.promptNode(null);
-        return nodes.containsKey(prompt == null ? "" : prompt) ? prompt : null;
+        return null;
     }
 
     public static void start(ServerPlayer player, String node) {
@@ -98,22 +110,31 @@ public final class ShepherdTalk {
         var id = ShepherdSavedData.get(player.getServer()).entity();
         if (id == null || !(player.serverLevel().getEntity(id) instanceof ShepherdEntity she) || she.offline()) return;
         live = new Live(player, she);
-        begin(node, false);
+        if (!begin(node, false)) live = null;
     }
 
-    private static void begin(String node, boolean fromHub) {
+    /** False, with nothing changed, if an edited datapack leaves the walk nowhere to stand. */
+    private static boolean begin(String node, boolean fromHub) {
         var player = live.player;
-        live.talk = new ShepherdConversation(ShepherdDialogues.nodes(), node, condition -> holds(player, condition));
+        Predicate<String> holds = condition -> holds(player, condition);
+        if (!ShepherdConversation.opens(ShepherdDialogues.nodes(), node, holds)) return false;
+        live.talk = new ShepherdConversation(ShepherdDialogues.nodes(), node, holds);
         live.fromHub = fromHub;
         live.affinityApplied = 0;
         settle();
         if (FIRST_MEETING.equals(node)) live.she.showLogo();
         send();
+        return true;
     }
 
-    /** The dialogue files' conditions: where the wand is, or else a saved flag. */
+    /** The dialogue files' conditions: her tier, where the wand is, or else a saved flag. */
     private static boolean holds(ServerPlayer player, String condition) {
+        var tier = ShepherdSavedData.get(player.getServer()).tier();
         return switch (condition) {
+            case "tier_wary" -> tier == Tier.WARY;
+            case "tier_friendly" -> tier.atLeast(Tier.FRIENDLY);
+            case "tier_trusted" -> tier.atLeast(Tier.TRUSTED);
+            case "tier_close" -> tier.atLeast(Tier.CLOSE);
             case "wand_cradle" -> ShepherdWand.of(player) == ShepherdWand.Where.CRADLE;
             case "wand_hand" -> ShepherdWand.of(player) == ShepherdWand.Where.HAND;
             case "wand_other" -> ShepherdWand.of(player) == ShepherdWand.Where.OTHER;
@@ -127,6 +148,7 @@ public final class ShepherdTalk {
 
     public static void reply(ServerPlayer player, int conversation, int slot) {
         if (!speaking(player, conversation) || live.talk == null || !live.talk.answer(slot)) return;
+        spendPrompt();
         settle();
         if (!live.talk.finished()) {
             send();
@@ -135,6 +157,13 @@ public final class ShepherdTalk {
         } else {
             end(true);
         }
+    }
+
+    /** A newer prompt raised while this one was on screen is not the one that was answered. */
+    private static void spendPrompt() {
+        var data = data();
+        if (live.fromPrompt != null && live.fromPrompt.equals(data.promptNode())) data.promptNode(null);
+        live.fromPrompt = null;
     }
 
     public static void action(ServerPlayer player, int conversation, Action action) {
@@ -192,7 +221,8 @@ public final class ShepherdTalk {
     private static void send() {
         var data = data();
         var node = live.talk.current();
-        if (!live.fromHub) data.resumeNode(node.responses().isEmpty() && node.next() == null ? null : node.id());
+        // An unspent prompt resumes by its own id, whichever node it opened on, or it would stop being that prompt.
+        if (!live.fromHub) data.resumeNode(node.responses().isEmpty() && node.next() == null ? null : live.fromPrompt != null ? live.fromPrompt : node.id());
         int logo = live.she.logoTicks();
         live.lines = live.talk.lines();
         live.line = 0;
@@ -213,7 +243,11 @@ public final class ShepherdTalk {
 
     private static void showMood() {
         if (live.unimpressedTicks > 0) return;
-        live.she.setMood(live.talk == null ? Mood.NEUTRAL : live.lines.get(live.line).mood());
+        if (live.talk == null || live.lines.isEmpty()) {
+            live.she.rest();
+        } else {
+            live.she.setMood(live.lines.get(live.line).mood());
+        }
     }
 
     static ShepherdNodePayload payload(int conversation, Node node, List<Line> said, boolean heavy, int logoTicks) {
@@ -228,7 +262,7 @@ public final class ShepherdTalk {
         var over = live;
         live = null;
         over.she.talkFor(0);
-        over.she.setMood(Mood.NEUTRAL);
+        over.she.rest();
         if (tellClient && !over.player.hasDisconnected()) PacketDistributor.sendToPlayer(over.player, new ShepherdClosePayload());
     }
 

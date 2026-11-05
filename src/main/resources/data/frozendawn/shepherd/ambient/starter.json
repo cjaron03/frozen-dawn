@@ -1,0 +1,122 @@
+{
+  "pools": [
+    {
+      "trigger": "silence",
+      "cooldown": 24000,
+      "mood": "neutral",
+      "variants": [
+        {
+          "line": "shepherd.ambient.silence.1"
+        },
+        {
+          "line": "shepherd.ambient.silence.2"
+        },
+        {
+          "line": "shepherd.ambient.silence.3"
+        }
+      ]
+    },
+    {
+      "trigger": "night",
+      "cooldown": 24000,
+      "mood": "neutral",
+      "variants": [
+        {
+          "line": "shepherd.ambient.night.1"
+        },
+        {
+          "line": "shepherd.ambient.night.2"
+        }
+      ]
+    },
+    {
+      "trigger": "cold",
+      "cooldown": 6000,
+      "mood": "neutral",
+      "variants": [
+        {
+          "line": "shepherd.ambient.cold.1"
+        },
+        {
+          "line": "shepherd.ambient.cold.2"
+        }
+      ]
+    },
+    {
+      "trigger": "after_fight",
+      "cooldown": 3600,
+      "mood": "neutral",
+      "variants": [
+        {
+          "line": "shepherd.ambient.after_fight.1",
+          "heavy": "shepherd.ambient.after_fight.1.heavy"
+        },
+        {
+          "line": "shepherd.ambient.after_fight.2"
+        }
+      ]
+    },
+    {
+      "trigger": "imagined_aurora",
+      "cooldown": 24000,
+      "mood": "thinking",
+      "variants": [
+        {
+          "line": "shepherd.ambient.imagined_aurora.1"
+        },
+        {
+          "line": "shepherd.ambient.imagined_aurora.2"
+        },
+        {
+          "line": "shepherd.ambient.imagined_aurora.3"
+        }
+      ]
+    },
+    {
+      "trigger": "looked_storage",
+      "cooldown": 6000,
+      "mood": "neutral",
+      "variants": [
+        {
+          "line": "shepherd.ambient.looked_storage.1"
+        },
+        {
+          "line": "shepherd.ambient.looked_storage.2"
+        }
+      ]
+    },
+    {
+      "trigger": "looked_heater",
+      "cooldown": 6000,
+      "mood": "neutral",
+      "variants": [
+        {
+          "line": "shepherd.ambient.looked_heater.1"
+        },
+        {
+          "line": "shepherd.ambient.looked_heater.2"
+        }
+      ]
+    },
+    {
+      "trigger": "looked_terminal",
+      "cooldown": 6000,
+      "mood": "neutral",
+      "variants": [
+        {
+          "line": "shepherd.ambient.looked_terminal.1"
+        }
+      ]
+    },
+    {
+      "trigger": "looked_animal",
+      "cooldown": 6000,
+      "mood": "neutral",
+      "variants": [
+        {
+          "line": "shepherd.ambient.looked_animal.1"
+        }
+      ]
+    }
+  ]
+}

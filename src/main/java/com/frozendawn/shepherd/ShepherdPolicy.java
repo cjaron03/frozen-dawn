@@ -14,10 +14,29 @@ public final class ShepherdPolicy {
     public static final int HEARD_BLOCKS = 16;
     public static final int CALM_HOSTILE_BLOCKS = 24;
     public static final int CALM_HURT_TICKS = 600;
+    public static final float COLD_LINE_C = -10;
     public static final int PROMPT_REPEAT_TICKS = 1200;
     public static final int PROMPT_SHOWS = 3;
     public static final int STRIP_HOLD_TICKS = 80;
     public static final int STRIP_FADE_TICKS = 20;
+    public static final double ASK_BLOCKS = 2.5;
+    public static final int ASK_TICKS = 100;
+    public static final int REACT_TICKS = 60;
+    public static final int AMBIENT_GAP_TICKS = 3600, SILENCE_TICKS = 24000;
+    public static final int IMAGINED_AURORA_PHASE = 4;
+    public static final int FIGHT_LINE_TICKS = 2400;
+    public static final int SWARM_HOSTILES = 4, YOUR_PART_TICKS = 6000, WALL_BLOCKS = 32;
+    public static final int WATCH_BLOCKS = 16;
+    public static final int STILL_TICKS = 300, LOOK_TICKS = 100, CURIOUS_GAP_TICKS = 1200, CURIOUS_BLOCKS = 8, STILL_BLOCKS = 3;
+    public static final int FLINCH_TICKS = 20;
+    public static final int GLAD_TICKS = 40;
+    public static final int GLAD_AWAY_TICKS = 1200;
+    public static final int DAY_TICKS = 24000;
+    public static final int NIGHT_STARTS = 13000, NIGHT_ENDS = 23000;
+    public static final float WARM_SHELTER_C = 10, FROZEN_C = -25;
+    public static final int WARM_HEATER_BLOCKS = 16, FROZEN_HEATER_BLOCKS = 8;
+    public static final int WARMTH_BLOCKS = 4;
+    public static final float WARMTH_C = 5f;
 
     private ShepherdPolicy() {}
 
@@ -34,6 +53,21 @@ public final class ShepherdPolicy {
     /** Whether she would interrupt: nothing hostile in range and nobody hurt lately. */
     public static boolean calm(double nearestHostile, long ticksSinceHurt) {
         return nearestHostile > CALM_HOSTILE_BLOCKS && ticksSinceHurt >= CALM_HURT_TICKS;
+    }
+
+    public static boolean night(long dayTime) {
+        long time = dayTime % DAY_TICKS;
+        return time >= NIGHT_STARTS && time < NIGHT_ENDS;
+    }
+
+    /** What her heater port gives someone this far away. */
+    public static float warmth(double distance, boolean offline) {
+        return !offline && distance <= WARMTH_BLOCKS ? WARMTH_C : 0;
+    }
+
+    /** Whether a personal conversation could land: nobody near her is freezing or short of air. */
+    public static boolean comfortable(float coldestResolved, boolean airFailing) {
+        return coldestResolved > COLD_LINE_C && !airFailing;
     }
 
     /** Hall-relative: the cot room's side of the last door, on the way out. */

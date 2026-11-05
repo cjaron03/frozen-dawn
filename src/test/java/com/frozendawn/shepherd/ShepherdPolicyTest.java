@@ -122,4 +122,28 @@ class ShepherdPolicyTest {
         assertEquals(0, ShepherdPolicy.stripAlpha(held + ShepherdPolicy.STRIP_FADE_TICKS, 13));
         assertEquals(0, ShepherdPolicy.stripAlpha(held + 500, 13), "Gone stays gone");
     }
+
+    @Test
+    void nightIsTheDarkPartOfTheDay() {
+        assertFalse(ShepherdPolicy.night(12999));
+        assertTrue(ShepherdPolicy.night(13000));
+        assertTrue(ShepherdPolicy.night(22999));
+        assertFalse(ShepherdPolicy.night(23000));
+        assertTrue(ShepherdPolicy.night(ShepherdPolicy.DAY_TICKS * 3 + 18000));
+    }
+
+    @Test
+    void comfortableNeedsWarmthAndAir() {
+        assertTrue(ShepherdPolicy.comfortable(-9.9F, false));
+        assertFalse(ShepherdPolicy.comfortable(-10, false));
+        assertFalse(ShepherdPolicy.comfortable(-10.1F, false));
+        assertFalse(ShepherdPolicy.comfortable(20, true));
+    }
+
+    @Test
+    void warmthStopsAtItsEdgeAndWhenOffline() {
+        assertEquals(ShepherdPolicy.WARMTH_C, ShepherdPolicy.warmth(ShepherdPolicy.WARMTH_BLOCKS, false));
+        assertEquals(0, ShepherdPolicy.warmth(ShepherdPolicy.WARMTH_BLOCKS + 0.1, false));
+        assertEquals(0, ShepherdPolicy.warmth(1, true));
+    }
 }

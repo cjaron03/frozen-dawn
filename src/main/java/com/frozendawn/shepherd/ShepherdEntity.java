@@ -2,8 +2,10 @@ package com.frozendawn.shepherd;
 
 import com.frozendawn.init.ModEntities;
 import com.frozendawn.init.ModSounds;
+import com.frozendawn.shepherd.ShepherdAffinity.Tier;
 import com.frozendawn.shepherd.ShepherdFace.Mood;
 import java.util.EnumSet;
+import java.util.List;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -17,6 +19,7 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.MoverType;
 import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
@@ -25,6 +28,7 @@ import net.minecraft.world.entity.ai.control.FlyingMoveControl;
 import net.minecraft.world.entity.ai.goal.Goal;
 import net.minecraft.world.entity.ai.navigation.FlyingPathNavigation;
 import net.minecraft.world.entity.ai.navigation.PathNavigation;
+import net.minecraft.world.entity.monster.Enemy;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
@@ -43,10 +47,23 @@ public final class ShepherdEntity extends PathfinderMob {
     private static final double AIR_DRAG = 0.91;
     /** Close enough to her spot to stop thrusting, or she saws back and forth across it. */
     private static final double SETTLED_SQR = 0.25;
+    private static final double ASK_BELOW_EYES = 0.3;
+    private static final double ASK_SPEED = 0.7;
+    private static final int WATCH_EVERY_TICKS = 5;
+    private static final int NOTHING_TO_SEE_TICKS = 40;
+    private static final double LOOK_FROM_BLOCKS = 1.5;
 
     private int rebootTicks;
     private int talkTicks;
     private int logoTicks;
+    private int askTicks;
+    private int reactTicks;
+    private Mob watching;
+    /** Where her follower last stopped, and since when. */
+    private Vec3 stoodAt;
+    private long stoodSince;
+    private long nextLook;
+    private ShepherdCuriosity.Target lookingAt;
     /** Client only: the mood last drawn, and how much of the blink between two moods is left. */
     private Mood shownMood;
     private int moodBeat;
@@ -119,7 +136,8 @@ public final class ShepherdEntity extends PathfinderMob {
     }
 
     @Override protected void registerGoals() {
-        goalSelector.addGoal(0, new HoverGoal());
+        goalSelector.addGoal(0, new CuriosityGoal());
+        goalSelector.addGoal(1, new HoverGoal());
     }
 
     public Mood mood() {
@@ -129,6 +147,75 @@ public final class ShepherdEntity extends PathfinderMob {
     /** Offline shows nothing, whatever a conversation last asked for. */
     public void setMood(Mood mood) {
         if (!offline()) entityData.set(DATA_MOOD, mood.ordinal());
+    }
+
+    /** The face she goes back to. Server side only: the score lives there. */
+    public void rest() {
+        setMood(ShepherdSavedData.get(getServer()).tier() == Tier.WARY ? Mood.RECORDING : Mood.NEUTRAL);
+    }
+
+    /** Her face answers what she just saw, then goes back. A conversation keeps her face to itself. */
+    public void react(Mood mood) {
+        react(mood, ShepherdPolicy.REACT_TICKS);
+    }
+
+    void react(Mood mood, int ticks) {
+        if (ShepherdTalk.live()) return;
+        reactTicks = ticks;
+        setMood(mood);
+    }
+
+    /** The hostile she has turned to, if any. */
+    Mob watching() {
+        return watching;
+    }
+
+    /** What she has wandered off to look at, if anything. */
+    ShepherdCuriosity.Target lookingAt() {
+        return lookingAt;
+    }
+
+    /** How long her follower has stayed put. */
+    long stoodFor() {
+        return stoodAt == null ? 0 : level().getGameTime() - stoodSince;
+    }
+
+    /** GameTest seam: fifteen real seconds is too long to wait on a gate, ten times over. */
+    void stillFor(int ticks) {
+        var player = follower();
+        stoodAt = player == null ? null : player.position();
+        stoodSince = level().getGameTime() - ticks;
+    }
+
+    private void trackFollower() {
+        var player = follower();
+        if (player == null) {
+            stoodAt = null;
+        } else if (stoodAt == null || player.position().distanceTo(stoodAt) >= ShepherdPolicy.STILL_BLOCKS) {
+            stoodAt = player.position();
+            stoodSince = level().getGameTime();
+        }
+    }
+
+    /** What she can see for herself, and only that. */
+    private Mob nearestHostile(ServerLevel level) {
+        Mob nearest = null;
+        for (var mob : level.getEntitiesOfClass(Mob.class, getBoundingBox().inflate(ShepherdPolicy.WATCH_BLOCKS), mob -> mob instanceof Enemy && mob.isAlive())) {
+            if (distanceTo(mob) <= ShepherdPolicy.WATCH_BLOCKS && (nearest == null || distanceTo(mob) < distanceTo(nearest)) && hasLineOfSight(mob)) nearest = mob;
+        }
+        return nearest;
+    }
+
+    private void watch(ServerLevel level) {
+        if (offline()) {
+            watching = null;
+            return;
+        }
+        if (tickCount % WATCH_EVERY_TICKS == 0) watching = nearestHostile(level);
+        if (watching != null && !watching.isAlive()) watching = null;
+        if (watching == null || asking()) return;
+        getLookControl().setLookAt(watching, 30, 30);
+        if (reactTicks <= 1 && ShepherdSavedData.get(level.getServer()).tier() != Tier.WARY) react(Mood.ALARMED, 2);
     }
 
     public boolean offline() {
@@ -160,6 +247,15 @@ public final class ShepherdEntity extends PathfinderMob {
         return logoTicks;
     }
 
+    /** Floats up in front of her follower and holds there thinking, while the strip asks. Zero lets her drop back. */
+    public void askFor(int ticks) {
+        askTicks = ticks;
+    }
+
+    public boolean asking() {
+        return askTicks > 0;
+    }
+
     public boolean moodBeat() {
         return moodBeat > 0;
     }
@@ -179,6 +275,8 @@ public final class ShepherdEntity extends PathfinderMob {
         if (offline()) return;
         talkFor(0);
         logoTicks = 0;
+        askTicks = 0;
+        reactTicks = 0;
         entityData.set(DATA_LOGO, false);
         entityData.set(DATA_MOOD, Mood.OFFLINE.ordinal());
         entityData.set(DATA_OFFLINE, true);
@@ -189,7 +287,7 @@ public final class ShepherdEntity extends PathfinderMob {
 
     private void reboot() {
         entityData.set(DATA_OFFLINE, false);
-        entityData.set(DATA_MOOD, Mood.NEUTRAL.ordinal());
+        rest();
         setHealth(getMaxHealth());
         setNoGravity(true);
     }
@@ -212,6 +310,16 @@ public final class ShepherdEntity extends PathfinderMob {
         if (offline() && --rebootTicks <= 0) reboot();
         if (talkTicks > 0 && --talkTicks == 0) entityData.set(DATA_TALKING, false);
         if (logoTicks > 0 && --logoTicks == 0) entityData.set(DATA_LOGO, false);
+        watch(level);
+        trackFollower();
+        if (askTicks > 0) askTicks--;
+        if (reactTicks > 0) reactTicks--;
+        if (ShepherdTalk.live() || reactTicks > 0) return;
+        if (asking()) {
+            setMood(Mood.THINKING);
+        } else {
+            rest();
+        }
     }
 
     @Override public boolean hurt(DamageSource source, float amount) {
@@ -295,6 +403,72 @@ public final class ShepherdEntity extends PathfinderMob {
         rebootTicks = tag.getInt("RebootTicks");
     }
 
+    /**
+     * When the follower has stood still and things are calm, she drifts over to something near them, stops a block short
+     * and looks. Any reason to be back at their side ends it, and {@link HoverGoal} takes her there.
+     */
+    private final class CuriosityGoal extends Goal {
+        private int ticks, looked;
+        private ShepherdAmbient.Trigger saw;
+
+        CuriosityGoal() {
+            setFlags(EnumSet.of(Flag.MOVE, Flag.LOOK));
+        }
+
+        /** Why she stays at their side, whatever there is to see. */
+        private boolean needed(ServerPlayer player) {
+            var server = getServer();
+            var data = ShepherdSavedData.get(server);
+            return player == null || !data.flag(ShepherdPrompt.FIRST_MEETING_DONE) || data.waiting() || data.tier() == Tier.WARY
+                    || ShepherdTalk.live() || asking() || watching != null || stoodFor() < ShepherdPolicy.STILL_TICKS
+                    || !ShepherdPrompt.calm(server, (ServerLevel) level(), List.of(player));
+        }
+
+        @Override public boolean canUse() {
+            long now = level().getGameTime();
+            if (offline() || now < nextLook) return false;
+            var player = follower();
+            if (needed(player)) return false;
+            lookingAt = ShepherdCuriosity.find((ServerLevel) level(), player, ShepherdEntity.this);
+            if (lookingAt == null) nextLook = now + NOTHING_TO_SEE_TICKS;
+            else saw = ShepherdAmbient.Trigger.looked(lookingAt.kind());
+            return lookingAt != null;
+        }
+
+        @Override public boolean canContinueToUse() {
+            return !offline() && looked < ShepherdPolicy.LOOK_TICKS && ticks < ShepherdPolicy.LOOK_TICKS * 2
+                    && ShepherdCuriosity.stillThere((ServerLevel) level(), lookingAt) && !needed(follower());
+        }
+
+        @Override public boolean requiresUpdateEveryTick() {
+            return true;
+        }
+
+        @Override public void start() {
+            ticks = 0;
+            looked = 0;
+        }
+
+        @Override public void tick() {
+            ticks++;
+            var at = lookingAt.at();
+            getLookControl().setLookAt(at.x, at.y, at.z);
+            var away = position().subtract(at);
+            if (away.length() <= LOOK_FROM_BLOCKS + 0.5) {
+                looked++;
+            } else {
+                var spot = at.add(away.normalize().scale(LOOK_FROM_BLOCKS));
+                getMoveControl().setWantedPosition(spot.x, spot.y, spot.z, 0.5);
+            }
+        }
+
+        @Override public void stop() {
+            lookingAt = null;
+            if (looked >= ShepherdPolicy.LOOK_TICKS) ShepherdReactions.murmur((ServerLevel) level(), saw);
+            nextLook = level().getGameTime() + ShepherdPolicy.CURIOUS_GAP_TICKS;
+        }
+    }
+
     /** Stays beside the follower, a block off their ground, and catches up by teleport past the line. */
     private final class HoverGoal extends Goal {
         private int repath;
@@ -318,10 +492,11 @@ public final class ShepherdEntity extends PathfinderMob {
         @Override public void tick() {
             var player = target();
             if (player == null) return;
-            getLookControl().setLookAt(player, 30, 30);
+            if (watching == null || asking()) getLookControl().setLookAt(player, 30, 30);
             double distance = distanceTo(player);
             var away = position().subtract(player.position()).multiply(1, 0, 1);
-            var spot = player.position().add(away.lengthSqr() < 1e-4 ? new Vec3(HOVER_BLOCKS, 0, 0) : away.normalize().scale(HOVER_BLOCKS)).add(0, HOVER_HEIGHT, 0);
+            var spot = asking() ? askSpot(player, away)
+                    : player.position().add(away.lengthSqr() < 1e-4 ? new Vec3(HOVER_BLOCKS, 0, 0) : away.normalize().scale(HOVER_BLOCKS)).add(0, HOVER_HEIGHT, 0);
             if (distance > ShepherdPolicy.TELEPORT_BLOCKS) {
                 getNavigation().stop();
                 var room = roomBeside(player, spot);
@@ -333,8 +508,17 @@ public final class ShepherdEntity extends PathfinderMob {
                 }
             } else {
                 getNavigation().stop();
-                if (position().distanceToSqr(spot) > SETTLED_SQR) getMoveControl().setWantedPosition(spot.x, spot.y, spot.z, 0.5);
+                if (position().distanceToSqr(spot) > SETTLED_SQR) getMoveControl().setWantedPosition(spot.x, spot.y, spot.z, asking() ? ASK_SPEED : 0.5);
             }
+        }
+
+        /** Eye level in front of them. From behind she goes round their shoulder, not through their head. */
+        private Vec3 askSpot(ServerPlayer player, Vec3 away) {
+            var ahead = Vec3.directionFromRotation(0, player.getYRot());
+            var side = new Vec3(-ahead.z, 0, ahead.x);
+            if (away.dot(side) < 0) side = side.scale(-1);
+            var eyes = player.getEyePosition().subtract(0, ASK_BELOW_EYES, 0);
+            return roomBeside(player, eyes.add((away.dot(ahead) < 0 ? side : ahead).scale(ShepherdPolicy.ASK_BLOCKS)));
         }
     }
 }

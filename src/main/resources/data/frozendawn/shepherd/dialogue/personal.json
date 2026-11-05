@@ -1,0 +1,151 @@
+{
+  "nodes": [
+    {
+      "id": "t1.name",
+      "when": "asked_name",
+      "else": "t1.name.unasked",
+      "lines": [
+        {
+          "line": "shepherd.t1.name",
+          "mood": "thinking"
+        },
+        {
+          "line": "shepherd.t1.camera",
+          "mood": "thinking"
+        },
+        {
+          "line": "shepherd.t1.frame",
+          "mood": "thinking"
+        },
+        {
+          "line": "shepherd.t1.took",
+          "mood": "thinking"
+        }
+      ],
+      "responses": [
+        {
+          "slot": "ask",
+          "label": "shepherd.t1.why.label",
+          "next": "t1.why"
+        },
+        {
+          "slot": "kind",
+          "label": "shepherd.t1.good.label",
+          "next": "t1.good",
+          "affinity": 20
+        },
+        {
+          "slot": "blunt",
+          "label": "shepherd.t1.light.label",
+          "full": "shepherd.t1.light.full",
+          "next": "t1.light",
+          "affinity": -10
+        },
+        {
+          "slot": "sarcastic",
+          "label": "shepherd.t1.screensaver.label",
+          "full": "shepherd.t1.screensaver.full",
+          "next": "t1.screensaver",
+          "affinity": 10
+        }
+      ]
+    },
+    {
+      "id": "t1.name.unasked",
+      "lines": [
+        {
+          "line": "shepherd.t1.name.unasked",
+          "mood": "thinking"
+        },
+        {
+          "line": "shepherd.t1.camera",
+          "mood": "thinking"
+        },
+        {
+          "line": "shepherd.t1.frame",
+          "mood": "thinking"
+        },
+        {
+          "line": "shepherd.t1.took",
+          "mood": "thinking"
+        }
+      ],
+      "responses": [
+        {
+          "slot": "ask",
+          "label": "shepherd.t1.why.label",
+          "next": "t1.why"
+        },
+        {
+          "slot": "kind",
+          "label": "shepherd.t1.good.label",
+          "next": "t1.good",
+          "affinity": 20
+        },
+        {
+          "slot": "blunt",
+          "label": "shepherd.t1.light.label",
+          "full": "shepherd.t1.light.full",
+          "next": "t1.light",
+          "affinity": -10
+        },
+        {
+          "slot": "sarcastic",
+          "label": "shepherd.t1.screensaver.label",
+          "full": "shepherd.t1.screensaver.full",
+          "next": "t1.screensaver",
+          "affinity": 10
+        }
+      ]
+    },
+    {
+      "id": "t1.why",
+      "lines": [
+        {
+          "line": "shepherd.t1.why",
+          "mood": "thinking"
+        }
+      ],
+      "next": "t1.end"
+    },
+    {
+      "id": "t1.good",
+      "lines": [
+        {
+          "line": "shepherd.t1.good",
+          "mood": "happy"
+        }
+      ],
+      "next": "t1.end"
+    },
+    {
+      "id": "t1.light",
+      "lines": [
+        {
+          "line": "shepherd.t1.light",
+          "mood": "unimpressed"
+        }
+      ],
+      "next": "t1.end"
+    },
+    {
+      "id": "t1.screensaver",
+      "lines": [
+        {
+          "line": "shepherd.t1.screensaver",
+          "mood": "amused"
+        }
+      ],
+      "next": "t1.end"
+    },
+    {
+      "id": "t1.end",
+      "lines": [
+        {
+          "line": "shepherd.t1.end",
+          "mood": "neutral"
+        }
+      ]
+    }
+  ]
+}

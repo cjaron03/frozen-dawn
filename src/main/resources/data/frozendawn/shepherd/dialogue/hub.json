@@ -2,6 +2,22 @@
   "nodes": [
     {
       "id": "hub.talk",
+      "when": "tier_wary",
+      "else": "hub.talk.warm",
+      "lines": [
+        { "line": "shepherd.hub.talk.wary", "mood": "recording" }
+      ]
+    },
+    {
+      "id": "hub.talk.warm",
+      "when": "tier_friendly",
+      "else": "hub.talk.plain",
+      "lines": [
+        { "line": "shepherd.hub.talk.warm", "mood": "neutral" }
+      ]
+    },
+    {
+      "id": "hub.talk.plain",
       "lines": [
         { "line": "shepherd.hub.talk", "heavy": "shepherd.hub.talk.heavy", "mood": "thinking" }
       ]
