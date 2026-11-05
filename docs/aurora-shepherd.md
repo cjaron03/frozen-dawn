@@ -78,6 +78,8 @@ All at 16 texels to the block, in `docs/art/aurora-shepherd/`, each from its `ma
 | `ambient-lines-mockup.png` | Ambient line, callout, "Got a minute?", recording voice during play | Approved "Build as drawn" |
 | `boot-sequence-mockup.png` | The cell seated, Boot and Leave, BIOS lines, logo and first line, frame by frame | Approved 2026-11-04, for M2a; replaces `dock-mockup.png`'s cell-in state |
 | `thinking-indicator-mockup.png` | Three indicators on her display, and how her eyes settle | Approved: A, Orbit, with her eyes going back into place |
+| `nine-husk-mockup.png` | Nine's husk, two poses, lamp out, at scale, its place in the pit | For the owner, 2026-11-05 |
+| `nine-lamp-mockup.png` | Nine's lamp three ways: keepsake, wall light, in her handle | For the owner, 2026-11-05 |
 
 **Body.** About 12 texels wide, 10 tall and 10 deep, 18 wide across the ducts, with a carry handle on top. Front display 8 by 6 texels, lamp strip above it, heater grille underneath, a duct each side. She hovers about one block off the ground.
 
@@ -87,7 +89,7 @@ All at 16 texels to the block, in `docs/art/aurora-shepherd/`, each from its `ma
 
 **Ambient lines.** A strip centered above the action bar, because the temperature and air panels hold the top left and status effects the top right. It uses the `OrsaHudPanel` colors with her face where the badge goes, a green edge, amber for a callout. Heard within 16 blocks. A line types out, holds 4 seconds and fades over 1 (my call). One at a time, and a callout replaces whatever is showing.
 
-**Still owed, each before its slice:** Nine's husk, Nine's lamp, and the hub if it differs from the talk grid.
+**Still owed, each before its slice:** the hub if it differs from the talk grid.
 
 ## The eight fixes
 
@@ -284,7 +286,7 @@ Nothing until a slice starts.
 
 ## Plan
 
-S1 is planned in [aurora-shepherd-plan.md](aurora-shepherd-plan.md), S2 in [aurora-shepherd-s2-plan.md](aurora-shepherd-s2-plan.md), S3 in [aurora-shepherd-s3-plan.md](aurora-shepherd-s3-plan.md) with the addendum [aurora-shepherd-s3-lively.md](aurora-shepherd-s3-lively.md).
+S1 is planned in [aurora-shepherd-plan.md](aurora-shepherd-plan.md), S2 in [aurora-shepherd-s2-plan.md](aurora-shepherd-s2-plan.md), S3 in [aurora-shepherd-s3-plan.md](aurora-shepherd-s3-plan.md) with the addendum [aurora-shepherd-s3-lively.md](aurora-shepherd-s3-lively.md). S4 is drafted in [aurora-shepherd-s4-plan.md](aurora-shepherd-s4-plan.md), with its lines and files in [aurora-s4-lines.md](aurora-s4-lines.md).
 
 ## Status
 
@@ -325,3 +327,5 @@ Found while building, not fixed: `gameTestQuick` sometimes hangs after "All N re
 2026-11-04: the owner approved the M2 plan, [miller-pattern-m2-plan.md](miller-pattern-m2-plan.md), which adds the boot sequence in slice M2a. Nothing is built.
 
 2026-11-04: the boot sequence built in M2a on `feat/miller-m2`, with the seated dock and the thinking indicator. `architectVerify` passed at ffcc390a (1,154 GameTests). Active save: `run-lab/saves/Aurora Boot Check`. Headless only so far; the owner's pass is next. Details in the Status of [aurora-miller-pattern.md](aurora-miller-pattern.md).
+
+2026-11-05: S4 prepared on `feat/aurora-s4` in `/Volumes/SSD/Work/frozen-dawn-aurora-s4`, cut from `feat/maeve-director` at a0b77afa with PR 155 merged. Mockups, line drafts, the TITHONUS files and the plan are for the owner to mark. Nothing is built, and no `architectVerify` has run, since only docs changed. The first decision is T3: the code shows no stars until about day 94 of 120.
