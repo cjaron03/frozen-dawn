@@ -44,8 +44,8 @@ public final class ShepherdEggs {
         wall(level, near, hearths.hearths().stream().filter(ReturnedHearthSavedData.HearthRecord::structurePlaced).map(ReturnedHearthSavedData.HearthRecord::center).toList(), hearths.maeveErased());
     }
 
-    /** Takes the centers so a GameTest need not place a Hearth, which other tests count on being unplaced. */
-    static void wall(ServerLevel level, List<ServerPlayer> near, List<BlockPos> hearths, boolean maeveErased) {
+    /** Takes the centers so a GameTest or a flat lab need not place a Hearth, which other tests count on being unplaced. */
+    public static void wall(ServerLevel level, List<ServerPlayer> near, List<BlockPos> hearths, boolean maeveErased) {
         if (maeveErased) return;
         boolean close = near.stream().anyMatch(player -> hearths.stream().anyMatch(center -> player.blockPosition().closerThan(center, ShepherdPolicy.WALL_BLOCKS)));
         if (close) once(ShepherdSavedData.get(level.getServer()), WALL, () -> ShepherdReactions.murmur(level, WALL_LINE, Mood.THINKING));

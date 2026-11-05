@@ -1,10 +1,13 @@
 package com.frozendawn.command;
 
+import com.frozendawn.data.ReturnedHearthSavedData;
+import com.frozendawn.shepherd.ShepherdEggs;
 import com.frozendawn.shepherd.ShepherdReactions;
 import com.frozendawn.shepherd.ShepherdSavedData;
 import com.frozendawn.shepherd.ShepherdTalk;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+import java.util.List;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 
@@ -28,6 +31,16 @@ final class ShepherdDebugCommand {
                 .then(Commands.literal("skipday").executes(c -> {
                     ShepherdReactions.skipDay(c.getSource().getServer());
                     FrozenDawnCommandOutput.item(c.getSource(), "her cooldowns and clock are a day on");
+                    return 1;
+                }))
+                .then(Commands.literal("resetgap").executes(c -> {
+                    ShepherdSavedData.get(c.getSource().getServer()).lastAmbient(ShepherdSavedData.NOT_SET);
+                    FrozenDawnCommandOutput.item(c.getSource(), "she may speak up at the next poll");
+                    return 1;
+                }))
+                .then(Commands.literal("hearthhere").executes(c -> {
+                    var player = c.getSource().getPlayerOrException();
+                    ShepherdEggs.wall(player.serverLevel(), List.of(player), List.of(player.blockPosition()), ReturnedHearthSavedData.get(c.getSource().getServer()).maeveErased());
                     return 1;
                 }))
                 .then(Commands.literal("affinity").then(Commands.argument("value", IntegerArgumentType.integer(-1000, 1000)).executes(c -> {
