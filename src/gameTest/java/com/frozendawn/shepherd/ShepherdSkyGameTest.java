@@ -41,7 +41,7 @@ public final class ShepherdSkyGameTest {
     private static final int TOP_Y = 112, BELOW_THE_TOP_Y = 100, A_LOOK = 25, MIDNIGHT = 18000, NOON = 6000;
     private static final int ASK = 0, KIND = 1, BLUNT = 2, SARCASTIC = 3, CONTINUE = -1;
     private static final float STARS = 0.8F;
-    private static final int TRUSTED = 500;
+    private static final int TRUSTED = 500, CLOSE = 850;
 
     private static long apocalypseTicks;
     private static final Set<BlockPos> warmed = new HashSet<>();
@@ -87,6 +87,11 @@ public final class ShepherdSkyGameTest {
     @AfterBatch(batch = "shepherd_stars_kept") public static void starsKeptAfter(ServerLevel l) { after(l); }
     @BeforeBatch(batch = "shepherd_stars_tonight") public static void starsTonightBefore(ServerLevel l) { before(l); }
     @AfterBatch(batch = "shepherd_stars_tonight") public static void starsTonightAfter(ServerLevel l) { after(l); }
+
+    @BeforeBatch(batch = "shepherd_t4_first") public static void t4FirstBefore(ServerLevel l) { before(l); }
+    @AfterBatch(batch = "shepherd_t4_first") public static void t4FirstAfter(ServerLevel l) { after(l); }
+    @BeforeBatch(batch = "shepherd_t4_days") public static void t4DaysBefore(ServerLevel l) { before(l); }
+    @AfterBatch(batch = "shepherd_t4_days") public static void t4DaysAfter(ServerLevel l) { after(l); }
 
     private static ShepherdSavedData data(GameTestHelper h) {
         return ShepherdSavedData.get(h.getLevel().getServer());
@@ -398,6 +403,41 @@ public final class ShepherdSkyGameTest {
                     .thenExecute(() -> {
                         she.interact(player, InteractionHand.MAIN_HAND);
                         h.assertTrue(ShepherdTalk.liveLines().contains("shepherd.t3.top.stars"), "Her lines: " + ShepherdTalk.liveLines());
+                    })
+                    .thenSucceed();
+        });
+    }
+
+    /** Nothing in it needs the sky, so a Close world with no stars yet does not wait for them. */
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_t4_first", timeoutTicks = 300)
+    public static void shepherdT4CanComeBeforeT3(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            skyAt(h, 0.02F, NOON);
+            var player = ShepherdTestWorld.onlinePlayer(h, h.absoluteVec(Vec3.atCenterOf(SPOT)).add(1, 0, 0));
+            met(h, player, CLOSE);
+            h.startSequence()
+                    .thenWaitUntil(() -> assertPrompt(h, ShepherdPrompt.THE_SWITCH))
+                    .thenExecute(() -> h.assertFalse(data(h).flag("t3_asked"), "The sky is passed over, not spent"))
+                    .thenSucceed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_t4_days", timeoutTicks = 300)
+    public static void shepherdT4SaysHowLongSheWasOut(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            skyAt(h, 0.02F, NOON);
+            var player = ShepherdTestWorld.onlinePlayer(h, h.absoluteVec(Vec3.atCenterOf(SPOT)).add(1, 0, 0));
+            var she = met(h, player, CLOSE);
+            data(h).wokeAt(40L * ShepherdPolicy.DAY_TICKS);
+            h.startSequence()
+                    .thenWaitUntil(() -> assertPrompt(h, ShepherdPrompt.THE_SWITCH))
+                    .thenExecute(() -> {
+                        she.interact(player, InteractionHand.MAIN_HAND);
+                        var clock = ShepherdTalk.liveSent().lines().get(2);
+                        h.assertTrue(clock.args().equals(List.of("27")), "The days: " + clock.args());
+                        say(player, KIND);
+                        h.assertTrue(data(h).affinity() == CLOSE + 30, "Scored: " + data(h).affinity());
+                        h.assertTrue(MillerPattern.remembers(h.getLevel().getServer(), player.getUUID(), "t4_off"), "She keeps it");
                     })
                     .thenSucceed();
         });

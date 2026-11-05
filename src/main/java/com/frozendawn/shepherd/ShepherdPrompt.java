@@ -36,15 +36,16 @@ import net.neoforged.neoforge.network.PacketDistributor;
 @EventBusSubscriber(modid = FrozenDawn.MOD_ID)
 public final class ShepherdPrompt {
     public static final String DOORS = "fm.doors", EXIT = "fm.exit";
-    public static final String THE_NAME = "t1.name", THE_OTHERS = "t2.others", AT_NINE = "t2.site", THE_SKY = "t3.sky", AT_THE_TOP = "t3.top";
+    public static final String THE_NAME = "t1.name", THE_OTHERS = "t2.others", AT_NINE = "t2.site", THE_SKY = "t3.sky", AT_THE_TOP = "t3.top", THE_SWITCH = "t4.off";
     static final String PERSONAL_GAP = "personal_gap";
     static final String FIRST_MEETING_DONE = "fm_done", DOORS_ASKED = "doors_asked", EXIT_ASKED = "exit_asked", NAME_ASKED = "t1_asked", ASKED_NAME = "asked_name",
-            OTHERS_ASKED = "t2_asked", SKY_ASKED = "t3_asked", SKY_LATER = "t3_later", GOING_UP = "t3_going", BEEN_UP = "t3_top";
+            OTHERS_ASKED = "t2_asked", SKY_ASKED = "t3_asked", SKY_LATER = "t3_later", GOING_UP = "t3_going", BEEN_UP = "t3_top", SWITCH_ASKED = "t4_asked";
     private static final String SKY_AGAIN = "t3_again";
     /** What each tier opens, in the order she brings it up. */
     private static final List<Personal> PERSONAL = List.of(new Personal(Tier.FRIENDLY, THE_NAME, NAME_ASKED, (server, level, data, near) -> true),
             new Personal(Tier.FRIENDLY, THE_OTHERS, OTHERS_ASKED, ShepherdPrompt::awayFromThePit),
-            new Personal(Tier.TRUSTED, THE_SKY, SKY_ASKED, ShepherdPrompt::starsAreOut));
+            new Personal(Tier.TRUSTED, THE_SKY, SKY_ASKED, ShepherdPrompt::starsAreOut),
+            new Personal(Tier.CLOSE, THE_SWITCH, SWITCH_ASKED, (server, level, data, near) -> true));
     /** A sprinter covers 1.4 blocks in this, so nobody crosses a box between looks. */
     private static final int CHECK_TICKS = 5;
     private static final long LONG_AGO = Long.MIN_VALUE / 2;

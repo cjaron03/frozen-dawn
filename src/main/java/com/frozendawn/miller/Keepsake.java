@@ -7,7 +7,7 @@ import net.minecraft.nbt.CompoundTag;
 public record Keepsake(long time, String kind, double salience, int recalled, long recalledAt) {
     /** The day it happened, as she says it. */
     public long day() {
-        return Math.max(1, Math.floorDiv(time, ShepherdPolicy.DAY_TICKS) + 1);
+        return ShepherdPolicy.day(time);
     }
 
     Keepsake strengthened(double gain) {

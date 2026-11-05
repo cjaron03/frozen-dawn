@@ -321,4 +321,27 @@ class ShepherdDialogueDataTest {
         var nodes = nodes();
         for (Response response : nodes.get("t3.top").responses()) assertEquals("t3_stars", nodes.get(response.next()).keep(), response.next());
     }
+
+    /** Owner's decision 3: T4 stays as written. */
+    @Test
+    void t4IsWordForWord() throws Exception {
+        var lang = lang();
+        assertEquals("Got a minute? This one's weird.", lang.get("shepherd.t4.off.weird").getAsString());
+        assertEquals("When my cell ran out in the vault, it wasn't like sleeping. Sleeping, you'd dream, I assume. It was nothing. And then it was you.", lang.get("shepherd.t4.off.nothing").getAsString());
+        assertEquals("My clock says I was out for %s days. It felt like zero. That's the part I can't stop thinking about. If it ends, I won't even notice it ending.", lang.get("shepherd.t4.off.clock").getAsString());
+        assertEquals("So. That's my thing. I'm scared of being switched off. There. Said it. Hate that.", lang.get("shepherd.t4.off.scared").getAsString());
+        assertEquals("Keep talking to me. Silence is the closest thing I know to it.", lang.get("shepherd.t4.anything").getAsString());
+        assertEquals("You can't promise that.", lang.get("shepherd.t4.promise.1").getAsString());
+        assertEquals("...But thanks for saying it like you could.", lang.get("shepherd.t4.promise.2").getAsString());
+        assertEquals("Wow. Put that on a crate.", lang.get("shepherd.t4.ends.1").getAsString());
+        assertEquals("...I know. I just wanted to be wrong about it.", lang.get("shepherd.t4.ends.2").getAsString());
+        assertEquals("'Do not touch. She bites.' Yeah. Okay.", lang.get("shepherd.t4.note").getAsString());
+    }
+
+    @Test
+    void everyAnswerToT4KeepsIt() throws Exception {
+        var nodes = nodes();
+        assertEquals(4, nodes.get("t4.off").responses().size());
+        for (Response response : nodes.get("t4.off").responses()) assertEquals("t4_off", nodes.get(response.next()).keep(), response.next());
+    }
 }

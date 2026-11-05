@@ -203,6 +203,7 @@ public final class ShepherdTalk {
 
     /** What a line's argument comes to, for the one she is talking to. The ground ref is read fresh: the target can be rerolled until the pit is built. */
     private static String arg(ServerPlayer player, String token) {
+        if ("offline_days".equals(token)) return String.valueOf(ShepherdPolicy.offlineDays(ShepherdSavedData.get(player.getServer()).wokeAt()));
         var pit = BlastPitPlacement.ensureBlastPitResolved(player.getServer().overworld());
         if (pit == null) return NO_REF;
         int dx = pit.getX() - player.getBlockX(), dz = pit.getZ() - player.getBlockZ();

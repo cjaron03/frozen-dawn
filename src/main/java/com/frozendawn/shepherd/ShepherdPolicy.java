@@ -48,6 +48,7 @@ public final class ShepherdPolicy {
     public static final int DAY_TICKS = 24000;
     /** "We don't have time." She lets it go for this long. */
     public static final int SKY_AGAIN_TICKS = 3 * DAY_TICKS;
+    public static final int ENOCH_DAYS = 14, OFFLINE_DAYS_FLOOR = 2;
     public static final int NIGHT_STARTS = 13000, NIGHT_ENDS = 23000;
     public static final float WARM_SHELTER_C = 10, FROZEN_C = -25;
     public static final int WARM_HEATER_BLOCKS = 16, FROZEN_HEATER_BLOCKS = 8;
@@ -73,6 +74,16 @@ public final class ShepherdPolicy {
     public static boolean beforeTheStars(long apocalypseTicks, int totalDays) {
         int day = (int) Math.floorDiv(apocalypseTicks, (long) DAY_TICKS);
         return !PhaseManager.isPhase6MidOrLater(PhaseManager.getPhase(day, totalDays), PhaseManager.getProgress(day, totalDays));
+    }
+
+    /** The day a game time falls on, as she says it. */
+    public static long day(long gameTime) {
+        return Math.max(1, Math.floorDiv(gameTime, DAY_TICKS) + 1);
+    }
+
+    /** How long her clock says she was out: Enoch's weeks off the day she woke. Never fewer than two, so it stays "days". */
+    public static int offlineDays(long wokeAt) {
+        return (int) Math.max(OFFLINE_DAYS_FLOOR, day(wokeAt) - ENOCH_DAYS);
     }
 
     public static int groundBlocks(int dx, int dz) {

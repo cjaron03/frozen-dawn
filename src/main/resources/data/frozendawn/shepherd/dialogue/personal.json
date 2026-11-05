@@ -573,6 +573,106 @@
           "mood": "amused"
         }
       ]
+    },
+    {
+      "id": "t4.off",
+      "lines": [
+        {
+          "line": "shepherd.t4.off.weird",
+          "mood": "neutral"
+        },
+        {
+          "line": "shepherd.t4.off.nothing",
+          "mood": "neutral"
+        },
+        {
+          "line": "shepherd.t4.off.clock",
+          "mood": "neutral",
+          "args": [
+            "offline_days"
+          ]
+        },
+        {
+          "line": "shepherd.t4.off.scared",
+          "mood": "sad"
+        }
+      ],
+      "responses": [
+        {
+          "slot": "ask",
+          "label": "shepherd.t4.anything.label",
+          "full": "shepherd.t4.anything.full",
+          "next": "t4.anything"
+        },
+        {
+          "slot": "kind",
+          "label": "shepherd.t4.promise.label",
+          "full": "shepherd.t4.promise.full",
+          "next": "t4.promise",
+          "affinity": 30
+        },
+        {
+          "slot": "blunt",
+          "label": "shepherd.t4.ends.label",
+          "next": "t4.ends",
+          "affinity": -10
+        },
+        {
+          "slot": "sarcastic",
+          "label": "shepherd.t4.note.label",
+          "full": "shepherd.t4.note.full",
+          "next": "t4.note",
+          "affinity": 15
+        }
+      ]
+    },
+    {
+      "id": "t4.anything",
+      "keep": "t4_off",
+      "lines": [
+        {
+          "line": "shepherd.t4.anything",
+          "mood": "thinking"
+        }
+      ]
+    },
+    {
+      "id": "t4.promise",
+      "keep": "t4_off",
+      "lines": [
+        {
+          "line": "shepherd.t4.promise.1",
+          "mood": "sad"
+        },
+        {
+          "line": "shepherd.t4.promise.2",
+          "mood": "happy"
+        }
+      ]
+    },
+    {
+      "id": "t4.ends",
+      "keep": "t4_off",
+      "lines": [
+        {
+          "line": "shepherd.t4.ends.1",
+          "mood": "unimpressed"
+        },
+        {
+          "line": "shepherd.t4.ends.2",
+          "mood": "sad"
+        }
+      ]
+    },
+    {
+      "id": "t4.note",
+      "keep": "t4_off",
+      "lines": [
+        {
+          "line": "shepherd.t4.note",
+          "mood": "amused"
+        }
+      ]
     }
   ]
 }

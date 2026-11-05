@@ -170,4 +170,17 @@ class ShepherdPolicyTest {
         assertTrue(ShepherdPolicy.starsShow(6, 0.785F), "Half bright");
         assertTrue(ShepherdPolicy.starsShow(6, 0.90F), "And on into the vacuum");
     }
+
+    @Test
+    void offlineDaysIsNeverBelowTwo() {
+        assertEquals(2, ShepherdPolicy.offlineDays(ShepherdSavedData.NOT_SET), "A save that never wrote it down");
+        assertEquals(2, ShepherdPolicy.offlineDays(0));
+        assertEquals(2, ShepherdPolicy.offlineDays(15L * ShepherdPolicy.DAY_TICKS), "Woken on day 16");
+    }
+
+    @Test
+    void offlineDaysCountsFromTheWake() {
+        assertEquals(3, ShepherdPolicy.offlineDays(16L * ShepherdPolicy.DAY_TICKS), "Woken on day 17");
+        assertEquals(27, ShepherdPolicy.offlineDays(40L * ShepherdPolicy.DAY_TICKS + 12000), "Woken midway through day 41");
+    }
 }
