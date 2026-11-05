@@ -189,6 +189,7 @@
     },
     {
       "id": "fm.name.fine",
+      "noted": ["-calls_me_aurora"],
       "lines": [
         {
           "line": "shepherd.fm.name.fine",
@@ -209,6 +210,8 @@
     },
     {
       "id": "fm.name.aurora",
+      "noted": ["+calls_me_aurora"],
+      "keep": "named",
       "lines": [
         {
           "line": "shepherd.fm.name.aurora",
@@ -240,12 +243,18 @@
         {
           "slot": "ask",
           "label": "shepherd.fm.name.earn.label",
-          "next": "fm.name.earn"
+          "next": "fm.name.earn",
+          "noted": [
+            "+calls_me_aurora"
+          ]
         },
         {
           "slot": "kind",
           "label": "shepherd.fm.name.settled.label",
-          "next": "fm.room"
+          "next": "fm.room",
+          "noted": [
+            "+calls_me_aurora"
+          ]
         }
       ]
     },
@@ -264,6 +273,7 @@
     },
     {
       "id": "fm.end",
+      "keep": "first_meeting",
       "lines": [
         {
           "line": "shepherd.fm.end",

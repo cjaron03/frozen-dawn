@@ -40,7 +40,8 @@ class PatternDiagnosticsTest {
         var state = new PatternState();
         state.appraise(WHO, Deed.ARCHIVIST_KILLED, 0);
         var full = snapshot(state, 0);
-        var lines = PatternDiagnostics.explain(new MillerPattern.Snapshot(full.now(), full.mood(), full.strongest(), full.feelings(), full.drives(), List.of()));
+        var lines = PatternDiagnostics.explain(new MillerPattern.Snapshot(full.now(), full.mood(), full.strongest(), full.feelings(), full.drives(), List.of(),
+                full.coherence(), full.stage(), full.walls(), full.impressions(), full.keepsakes()));
         assertFalse(anyHolds(lines, "CAUSE", "ARCHIVIST_KILLED"), lines.toString());
         assertTrue(anyHolds(lines, "No retained event"), lines.toString());
     }
@@ -57,15 +58,29 @@ class PatternDiagnosticsTest {
     @Test
     void nothingShownCarriesHerFileName() {
         var state = new PatternState();
-        state.poll(1, 10, 20);
+        state.poll(1, 10, false, 20);
         for (Deed deed : Deed.values()) state.appraise(WHO, deed, 100);
+        state.poll(1, 10, false, 24100);
         var lines = new java.util.ArrayList<>(PatternDiagnostics.format(snapshot(state, 100)));
         lines.addAll(PatternDiagnostics.explain(snapshot(state, 100)));
+        lines.addAll(PatternDiagnostics.mind(snapshot(state, 100)));
+        lines.addAll(PatternDiagnostics.mind(snapshot(new PatternState(), 100)));
         lines.addAll(PatternDiagnostics.explain(snapshot(new PatternState(), 100)));
         for (String line : lines) {
             String lower = line.toLowerCase(Locale.ROOT);
             assertFalse(lower.contains("miller") || lower.contains("pattern"), line);
         }
+    }
+
+    @Test
+    void mindShowsWhatSheHolds() {
+        var state = new PatternState();
+        state.poll(1, PatternState.NOT_SET, false, 0);
+        state.appraise(WHO, Deed.ARCHIVIST_KILLED, 0);
+        state.poll(1, PatternState.NOT_SET, false, 24000);
+        var lines = PatternDiagnostics.mind(snapshot(state, 24000));
+        assertTrue(anyHolds(lines, "coherence=", "stage=PRODUCT"), lines.toString());
+        assertTrue(anyHolds(lines, WHO.toString(), "keepsakes=1", "KIND=-0.333"), lines.toString());
     }
 
     @Test

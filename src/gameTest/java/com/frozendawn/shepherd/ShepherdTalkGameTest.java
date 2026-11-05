@@ -13,7 +13,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.AfterBatch;
 import net.minecraft.gametest.framework.BeforeBatch;
 import net.minecraft.gametest.framework.GameTest;
@@ -23,7 +22,6 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.GameType;
-import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
@@ -119,8 +117,7 @@ public final class ShepherdTalkGameTest {
             var dock = h.absolutePos(SPOT);
             var player = player(h);
             player.setItemInHand(InteractionHand.MAIN_HAND, PowerCellItem.charged(1000));
-            h.getLevel().getBlockState(dock).useItemOn(player.getMainHandItem(), h.getLevel(), player, InteractionHand.MAIN_HAND,
-                    new BlockHitResult(dock.getCenter(), Direction.UP, dock, false));
+            ShepherdTestWorld.boot(h, dock, player);
             h.succeedWhen(() -> h.assertTrue("fm.boot".equals(ShepherdTalk.liveNode()), "On fm.boot: " + ShepherdTalk.liveNode()));
         });
     }
@@ -287,8 +284,8 @@ public final class ShepherdTalkGameTest {
             h.assertTrue(data(h).affinity() == 20, "15 and 10, then -5: " + data(h).affinity());
             h.assertTrue(data(h).flag("profanity_heavy") && data(h).heavy(), "The filter came off");
             var talk = ShepherdDialogues.nodes().get("hub.talk.plain");
-            h.assertTrue(ShepherdTalk.payload(1, talk, talk.lines(), true, 0).lines().getFirst().key().equals(talk.lines().getFirst().heavyKey()), "Heavy swaps the key");
-            h.assertTrue(ShepherdTalk.payload(1, talk, talk.lines(), false, 0).lines().getFirst().key().equals(talk.lines().getFirst().key()), "Mild does not");
+            h.assertTrue(ShepherdTalk.payload(1, talk, talk.lines(), true, 0, 0).lines().getFirst().key().equals(talk.lines().getFirst().heavyKey()), "Heavy swaps the key");
+            h.assertTrue(ShepherdTalk.payload(1, talk, talk.lines(), false, 0, 0).lines().getFirst().key().equals(talk.lines().getFirst().key()), "Mild does not");
             h.succeed();
         });
     }
@@ -374,8 +371,8 @@ public final class ShepherdTalkGameTest {
             h.assertTrue(data(h).affinity() == 0 && !data(h).heavy(), "Score and swearing are back to the start");
             h.assertTrue(!data(h).flag("used_flashlight") && !data(h).flag("profanity_heavy"), "Her flags are cleared");
             rightClick(she, player);
-            h.assertTrue("fm.boot".equals(ShepherdTalk.liveNode()), "The next right-click is the first meeting: " + ShepherdTalk.liveNode());
-            h.succeed();
+            ShepherdBoot.answer(player, true);
+            h.succeedWhen(() -> h.assertTrue("fm.boot".equals(ShepherdTalk.liveNode()), "The next right-click is the first meeting: " + ShepherdTalk.liveNode()));
         });
     }
 

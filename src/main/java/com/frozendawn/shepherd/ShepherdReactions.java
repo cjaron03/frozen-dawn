@@ -85,7 +85,7 @@ public final class ShepherdReactions {
         if (!deed.lines().isEmpty()) data.lastAmbient(now);
         boolean wary = data.tier() == Tier.WARY;
         if (!wary) she.react(deed.mood());
-        Say line = ShepherdAffinity.pick(deed.lines(), lastSaid.get(deed), she.getRandom());
+        Say line = ShepherdAffinity.pick(reachable(server, deed.lines()), lastSaid.get(deed), she.getRandom());
         if (line == null) return;
         lastSaid.put(deed, line);
         if (wary) {
@@ -93,6 +93,11 @@ public final class ShepherdReactions {
         } else {
             speak(she, line.key(data.heavy()), deed.mood());
         }
+    }
+
+    /** A worn-down mind reaches fewer of a pool's lines, so at the floor she repeats herself. */
+    private static List<Say> reachable(MinecraftServer server, List<Say> lines) {
+        return lines.subList(0, MillerPattern.variety(server, lines.size()));
     }
 
     /** Everyone who can hear her gets the strip. */
@@ -110,7 +115,7 @@ public final class ShepherdReactions {
         String cooldown = "ambient." + trigger.name();
         if (pools.isEmpty() || now < data.deedReady(cooldown)) return false;
         var pool = pools.get(level.getRandom().nextInt(pools.size()));
-        Say line = ShepherdAffinity.pick(pool.variants(), lastMurmur.get(trigger), level.getRandom());
+        Say line = ShepherdAffinity.pick(reachable(level.getServer(), pool.variants()), lastMurmur.get(trigger), level.getRandom());
         if (!murmur(level, line.key(data.heavy()), pool.mood())) return false;
         lastMurmur.put(trigger, line);
         data.deedReady(cooldown, now + pool.cooldownTicks());
@@ -187,7 +192,8 @@ public final class ShepherdReactions {
         var level = (ServerLevel) she.level();
         var near = near(level, she);
         if (near.isEmpty()) return;
-        MillerPattern.poll(server, near.size(), ShepherdSavedData.get(server).lastTalk());
+        var data = ShepherdSavedData.get(server);
+        MillerPattern.poll(server, near.size(), data.lastTalk(), data.tier().atLeast(Tier.TRUSTED));
         comeBack(server, she, near.getFirst());
         for (var player : near) look(level, player);
         ShepherdEggs.look(level, she, near);

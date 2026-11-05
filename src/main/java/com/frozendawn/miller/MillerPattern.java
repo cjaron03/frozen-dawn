@@ -2,20 +2,23 @@ package com.frozendawn.miller;
 
 import com.frozendawn.miller.Drives.Drive;
 import com.frozendawn.miller.Feelings.Feeling;
+import com.frozendawn.miller.ImpressionStore.Theory;
 import com.frozendawn.shepherd.ShepherdAffinity.Deed;
 import com.frozendawn.shepherd.ShepherdFace.Mood;
 import com.frozendawn.shepherd.ShepherdPolicy;
 import java.util.Collections;
 import java.util.EnumMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import net.minecraft.server.MinecraftServer;
 
 /**
  * What runs under her, the counterpart to {@link com.frozendawn.maeve.MaeveDirector}. It decides what she feels, never
  * what she says: her words stay authored. It knows only what comes through
- * {@link com.frozendawn.shepherd.ShepherdReactions#saw} and the poll, and scans nothing itself.
+ * {@link com.frozendawn.shepherd.ShepherdReactions#saw}, {@link #heard} and the poll, and scans nothing itself.
  */
 public final class MillerPattern {
     private MillerPattern() { }
@@ -29,10 +32,17 @@ public final class MillerPattern {
         runtime.data.setDirty();
     }
 
-    /** The 100-tick poll, with what it already knows. */
-    public static void poll(MinecraftServer server, int near, long lastTalk) {
+    /** Her hearing, as {@code saw} is her seeing: what someone said or asked of her, for what she makes of them. */
+    public static void heard(MinecraftServer server, UUID who, Heard heard) {
         var runtime = current(server);
-        runtime.state().poll(near, lastTalk, runtime.now());
+        runtime.state().heard(who, heard, runtime.now());
+        runtime.data.setDirty();
+    }
+
+    /** The 100-tick poll, with what it already knows. */
+    public static void poll(MinecraftServer server, int near, long lastTalk, boolean trusted) {
+        var runtime = current(server);
+        runtime.state().poll(near, lastTalk, trusted, runtime.now());
         runtime.data.setDirty();
     }
 
@@ -40,6 +50,30 @@ public final class MillerPattern {
     public static Mood restingMood(MinecraftServer server) {
         var runtime = current(server);
         return runtime.state().mood(runtime.now());
+    }
+
+    /** How sure she is of this about them, from -1 to 1. */
+    public static double confidence(MinecraftServer server, UUID who, Theory theory) {
+        return current(server).state().impressions().confidence(who, theory);
+    }
+
+    /** How long a reply waits, in half laps of her thinking indicator: 0, 1 or 2. */
+    public static int halfLaps(MinecraftServer server) {
+        var runtime = current(server);
+        return runtime.state().coherence().halfLaps(runtime.now());
+    }
+
+    /** How many of a pool's first lines she can reach right now. */
+    public static int variety(MinecraftServer server, int lines) {
+        var runtime = current(server);
+        return runtime.state().coherence().variety(lines, runtime.now());
+    }
+
+    /** {@code /fd shepherd coherence}, for looking at a slow reply. */
+    public static void setCoherence(MinecraftServer server, double value) {
+        var runtime = current(server);
+        runtime.state().coherence().set(value, runtime.now());
+        runtime.data.setDirty();
     }
 
     /** {@code /fd shepherd skipday}: a day has gone by for her too. */
@@ -76,18 +110,24 @@ public final class MillerPattern {
         for (Feeling feeling : Feeling.values()) feelings.put(feeling, state.feelings().value(feeling, now));
         var drives = new EnumMap<Drive, Double>(Drive.class);
         for (Drive drive : Drive.values()) drives.put(drive, state.drives().value(drive, now));
-        return new Snapshot(now, state.mood(now), state.feelings().strongest(now), feelings, drives, state.history());
+        return new Snapshot(now, state.mood(now), state.feelings().strongest(now), feelings, drives, state.history(), state.coherence().value(now),
+                state.self().stage(), state.self().walls(), state.impressions().all(), state.keepsakes().counts());
     }
 
     public static List<String> diagnostics(MinecraftServer server) { return PatternDiagnostics.format(snapshot(server)); }
     public static List<String> explain(MinecraftServer server) { return PatternDiagnostics.explain(snapshot(server)); }
+    public static List<String> mind(MinecraftServer server) { return PatternDiagnostics.mind(snapshot(server)); }
 
     /** {@code strongest} is the feeling on her face, or null when she is Neutral. */
-    public record Snapshot(long now, Mood mood, Feeling strongest, Map<Feeling, Double> feelings, Map<Drive, Double> drives, List<Appraised> history) {
+    public record Snapshot(long now, Mood mood, Feeling strongest, Map<Feeling, Double> feelings, Map<Drive, Double> drives, List<Appraised> history,
+                           double coherence, SelfModel.Stage stage, Set<PatternLaws> walls, Map<UUID, Map<Theory, Double>> impressions, Map<UUID, Integer> keepsakes) {
         public Snapshot {
             feelings = Collections.unmodifiableMap(new EnumMap<>(feelings));
             drives = Collections.unmodifiableMap(new EnumMap<>(drives));
             history = List.copyOf(history);
+            walls = Set.copyOf(walls);
+            impressions = Collections.unmodifiableMap(new LinkedHashMap<>(impressions));
+            keepsakes = Collections.unmodifiableMap(new LinkedHashMap<>(keepsakes));
         }
     }
 }

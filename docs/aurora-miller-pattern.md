@@ -213,20 +213,34 @@ Rules for the crash:
 - Her motto line "I'm not reading the rest" stays as written. It now reads differently to anyone who has crashed her.
 - It needs a mockup before it is built.
 
+## The boot sequence
+
+Approved 2026-11-04, for M2a, drawn in [boot-sequence-mockup.png](art/aurora-shepherd/boot-sequence-mockup.png). Built in M2a; the owner has not seen it yet.
+
+1. **The choice.** A right-click with a charged cell seats it in the dock. The light stays red, her display stays black, and the screen offers Boot or Leave. She is still dormant.
+2. **Leave.** Leave, Esc, walking 8 blocks off, being hurt or a hostile on you all close the screen, and she stays dark for as long as nobody boots her. The cell stays seated, so a later right-click offers the choice again.
+3. **The BIOS.** Boot spends the cell and turns the light green. Eleven lines run on the talk screen, one every 8 ticks, with a cursor texel on her display, because her 8 by 6 display cannot hold text.
+4. **The logo.** She lifts off, and the logo plays as built, then `fm.boot`.
+
+**Where it plays:** first wake and `/fd shepherd replay` only. Everything after Boot is committed, so she can never be left off once awake and T4 stays unfounded. Reboots stay as they are, with no logo. M4's crash recovery plays the logo alone, and so does coming back to an unfinished `fm.boot`.
+
+**The reference.** The BIOS ends on `STABILITY ABOVE.` and stops. The whole motto is on the uplink, so a player who has heard it finishes the line, and nobody points that out. The word itself appears nowhere.
+
 ## Slices
 
 | # | Slice | Depends on |
 | --- | --- | --- |
 | M0 | The embeddings trial | Nothing |
 | M1 | `MillerPattern` core: temperament, drives, appraisal, feelings, diagnostics | S3 merged |
-| M2 | Impressions, keepsakes, the self-model, attention, urges, coherence, refusal, the recording, the thinking indicator | M1, mockup |
+| M2a | The boot sequence, impressions, keepsakes, the self-model, coherence, the thinking indicator | M1, mockups |
+| M2b | Attention, urges, recalled keepsakes, wall lines, refusal, the recording | M2a |
 | M3 | The private log | M2, mockup |
 | M4 | The chat bar, intents and the crash | M0, M2, mockups |
 | M5 | Writing: intents and lines, starting with the ORSA topics | M4, S4 |
 
 Recognising Maeve lands in S6, which still needs the owner's approval before anything is copied into MACS.
 
-S4 can run after M2, so its personal arc uses the real system. This is Architect-scale work. It needs the Opus review on each slice, since it changes save data and a shared system.
+S4 can run after M2b, so its personal arc uses the real system. This is Architect-scale work. It needs the Opus review on each slice, since it changes save data and a shared system.
 
 **The real cost is the writing.** Expect several hundred new lines, plus the 8 to 15 phrasings for each intent.
 
@@ -244,6 +258,8 @@ S4 can run after M2, so its personal arc uses the real system. This is Architect
 8. **Self-awareness, the lean and the six walls: added, owner, 2026-11-04.** Kindness wakes her; the recording is really rare; refusal is the biggest hallmark.
 9. **Refusal: decided, owner, 2026-11-04.** Things she doesn't want to do, and silence if she hates you enough.
 10. **The door test: kept, owner, 2026-11-04.** Needs the one-scene reset of door 1.
+11. **The boot sequence: added and approved, owner, 2026-11-04.** Boot or Leave, BIOS lines, then the logo, with the motto cut off as the reference.
+12. **The thinking indicator: Orbit, owner, 2026-11-04.** Her two dots circle, and when it finishes her eyes go back into place naturally. See [thinking-indicator-mockup.png](art/aurora-shepherd/thinking-indicator-mockup.png).
 
 ## Status
 
@@ -252,6 +268,18 @@ S4 can run after M2, so its personal arc uses the real system. This is Architect
 Branch review on Opus: no critical findings. Fixed: a talk from before the state counting as a conversation; a save from a newer build being overwritten, since the game swallows a load that throws; `feel` leaving other feelings on her face. `MaeveSavedData` has the same overwrite flaw and stays as it is, since MACS is WIP. Deferred minors: a clock behind a stored time freezes a feeling, and a hand-edited time is not checked on load; `Appraised.load` leaves its values unclamped, which only diagnostics read; `/fd shepherd saw` is silent on a cooldown, and the lab menu says so instead.
 
 2026-11-04, the owner's pass in `Aurora Feelings Check`: "yea looked good", then "clear night isnt doing anytihng, but everything else worked". Her save showed `CLEAR_NIGHT` had counted: it is the one deed with no line, and the next deed followed 2.5 seconds later. Told that, the owner accepted it and asked for the PR. No idle was reported as clashing with a mood. `architectVerify` passed at e4403288 (1,117 GameTests); only docs have changed since. `architectMonkey` has not run on this branch, since no Architect code changed.
+
+2026-11-04: the owner approved [miller-pattern-m2-plan.md](miller-pattern-m2-plan.md) as recommended, with M2 split into M2a and M2b. Nothing is built. Worktree `/Volumes/SSD/Work/frozen-dawn-miller-m2`, branch `feat/miller-m2`, from `feat/maeve-director` at 3611f195.
+
+2026-11-04, M2a handback: built on `feat/miller-m2` from [miller-pattern-m2-plan.md](miller-pattern-m2-plan.md), Tasks 1 to 6. The boot sequence; `ImpressionStore`, `Keepsakes`, `SelfModel` and coherence under `com.frozendawn.miller`, with `/fd shepherd mind` and `coherence`; the thinking indicator. `architectVerify` passed at ffcc390a (1,154 GameTests, 944 required Architect cases). `architectMonkey` has not run on this branch, since no Architect code changed. Active save: `run-lab/saves/Aurora Boot Check`, from `tools/prepare_miller_m2_playtest.py`.
+
+Branch review on Opus: no critical findings, two important. Fixed: a replay's lines could leave a screen nothing closed, so nobody opens her while the lines run and Esc comes back long after they are over. Noticing could not be reached in a real game, since the first meeting holds one naming and the theory needed two; by the owner's ruling, naming her is now a kept fact that never fades, the "Aurora it is." reply counts on every path, and `CALLED_SHEPHERD` lowers the theory without locking her out. Ruling 11 records it. "Why Aurora?" on `fm.name.its` counts too (owner, 2026-11-05): asking about her name should not lock a curious player out of Noticing. `terminusLeavesNoDropsBeforeTheHeartFalls` was narrowed to its own sword: the new batches moved it beside an O2 Canister left by an earlier batch.
+
+Deferred minors: a vault reset silently destroys a seated cell (op-only); a running thought can be overwritten by `thinkFor(0)` or a reopen of the same length, on her body only; a cell seats with a refuse click when another choice is open anywhere, which is recoverable; `[Skip a day]` beside her counts as a Causal witness.
+
+Verified headlessly: the boot flow, memory, save, determinism and the delay's timing. Needs the owner's eyes: the choice, the BIOS pace, the seated dock, the cursor, the indicator at play distance, and whether the delay reads as thought.
+
+2026-11-04, the owner's pass in `Aurora Boot Check`: "looks good and the thinking indicator made it feel like she was thinking. i liked it". The owner asked for the list of what to expect before describing it, so this is a judgement against that list, not a blind description. The save reached Noticing through real play, with 2 keepsakes and `TALKS_TO_ME` at 0.714, and the log held no errors.
 
 ## Sources
 

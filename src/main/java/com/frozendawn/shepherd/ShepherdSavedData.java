@@ -34,6 +34,8 @@ public final class ShepherdSavedData extends SavedData {
     private static final int MAX_AFFINITY = 1000;
     /** She came up on the vault's dock, so the vault's lines are hers to say. */
     public static final String WOKE_IN_VAULT = "woke_in_vault";
+    /** A replay is waiting on the choice, so the next right-click offers Boot before anything else. */
+    public static final String BOOT_WAITING = "boot_waiting";
     /** {@link #lastNear()} before anyone has been seen beside her. */
     public static final long NOT_SET = -1;
 
@@ -105,6 +107,7 @@ public final class ShepherdSavedData extends SavedData {
         affinity = 0;
         flags.clear();
         if (vault) flags.add(WOKE_IN_VAULT);
+        flags.add(BOOT_WAITING);
         heavy = false;
         resumeNode = ShepherdTalk.FIRST_MEETING;
         promptNode = null;

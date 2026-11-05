@@ -1,6 +1,7 @@
 package com.frozendawn.shepherd;
 
 import com.frozendawn.FrozenDawn;
+import com.frozendawn.miller.Heard;
 import com.frozendawn.miller.MillerPattern;
 import com.frozendawn.network.ShepherdClosePayload;
 import com.frozendawn.network.ShepherdHubPayload;
@@ -8,7 +9,9 @@ import com.frozendawn.network.ShepherdNodePayload;
 import com.frozendawn.shepherd.ShepherdAffinity.Tier;
 import com.frozendawn.shepherd.ShepherdDialogue.Line;
 import com.frozendawn.shepherd.ShepherdDialogue.Node;
+import com.frozendawn.shepherd.ShepherdDialogue.Slot;
 import com.frozendawn.shepherd.ShepherdFace.Mood;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Predicate;
 import net.minecraft.server.MinecraftServer;
@@ -55,6 +58,8 @@ public final class ShepherdTalk {
         List<Line> lines = List.of();
         /** Her body has no typed text to follow, so it moves through a node's lines on a fixed count. */
         int line, lineTicks;
+        /** How long the line on screen waited before it started. */
+        int thinkTicks;
 
         Live(ServerPlayer player, ShepherdEntity she) {
             this.player = player;
@@ -79,6 +84,11 @@ public final class ShepherdTalk {
             }
             return;
         }
+        if (ShepherdSavedData.get(player.getServer()).flag(ShepherdSavedData.BOOT_WAITING)) {
+            ShepherdBoot.offer(player, she);
+            return;
+        }
+        if (she.bootDisplay() != ShepherdEntity.BOOT_NONE) return;
         live = new Live(player, she);
         var data = data();
         String waiting = waitingNode(data);
@@ -149,6 +159,7 @@ public final class ShepherdTalk {
 
     public static void reply(ServerPlayer player, int conversation, int slot) {
         if (!speaking(player, conversation) || live.talk == null || !live.talk.answer(slot)) return;
+        hear(slot);
         spendPrompt();
         settle();
         if (!live.talk.finished()) {
@@ -160,6 +171,17 @@ public final class ShepherdTalk {
         }
     }
 
+    /** What the reply told her about the speaker, and what the node it led to has to add. */
+    private static void hear(int slot) {
+        var tone = slot == ShepherdConversation.CONTINUE ? null : Slot.values()[slot];
+        var node = live.talk.finished() ? null : live.talk.current();
+        var noted = new ArrayList<>(live.talk.said());
+        if (node != null) noted.addAll(node.noted());
+        String keep = node == null ? null : node.keep();
+        if (tone == null && noted.isEmpty() && keep == null) return;
+        MillerPattern.heard(live.player.getServer(), live.player.getUUID(), new Heard.Reply(tone, noted, keep));
+    }
+
     /** A newer prompt raised while this one was on screen is not the one that was answered. */
     private static void spendPrompt() {
         var data = data();
@@ -169,6 +191,7 @@ public final class ShepherdTalk {
 
     public static void action(ServerPlayer player, int conversation, Action action) {
         if (!speaking(player, conversation) || live.talk != null) return;
+        MillerPattern.heard(player.getServer(), player.getUUID(), new Heard.Used(action));
         var data = data();
         switch (action) {
             case TALK -> {
@@ -227,10 +250,19 @@ public final class ShepherdTalk {
         int logo = live.she.logoTicks();
         live.lines = live.talk.lines();
         live.line = 0;
-        live.lineTicks = logo + TALK_TICKS_PER_LINE;
+        live.thinkTicks = thinkTicks(logo);
+        int wait = logo + live.thinkTicks;
+        live.lineTicks = wait + TALK_TICKS_PER_LINE;
         showMood();
-        live.she.talkFor(logo + TALK_TICKS_PER_LINE * live.lines.size());
-        PacketDistributor.sendToPlayer(live.player, payload(live.id, node, live.lines, data.heavy(), logo));
+        live.she.talkFor(wait + TALK_TICKS_PER_LINE * live.lines.size());
+        live.she.thinkFor(live.thinkTicks);
+        PacketDistributor.sendToPlayer(live.player, payload(live.id, node, live.lines, data.heavy(), logo, live.thinkTicks));
+    }
+
+    /** She takes a moment when her coherence is low. The logo is its own wait, and a recording has nobody in it to think. */
+    private static int thinkTicks(int logo) {
+        boolean recording = !live.lines.isEmpty() && live.lines.getFirst().mood() == Mood.RECORDING;
+        return logo > 0 || live.lines.isEmpty() || recording ? 0 : ShepherdFace.thinkingTicks(MillerPattern.halfLaps(live.player.getServer()));
     }
 
     private static void showHub() {
@@ -251,12 +283,12 @@ public final class ShepherdTalk {
         }
     }
 
-    static ShepherdNodePayload payload(int conversation, Node node, List<Line> said, boolean heavy, int logoTicks) {
+    static ShepherdNodePayload payload(int conversation, Node node, List<Line> said, boolean heavy, int logoTicks, int thinkTicks) {
         var lines = said.stream().map(line -> new ShepherdNodePayload.Line(
                 heavy && line.heavyKey() != null ? line.heavyKey() : line.key(), line.mood())).toList();
         var replies = node.responses().stream().map(response -> new ShepherdNodePayload.Reply(
                 response.slot().ordinal(), response.label(), response.full())).toList();
-        return new ShepherdNodePayload(conversation, node.id(), lines, replies, replies.isEmpty(), logoTicks);
+        return new ShepherdNodePayload(conversation, node.id(), lines, replies, replies.isEmpty(), logoTicks, thinkTicks);
     }
 
     private static void end(boolean tellClient) {
@@ -272,6 +304,7 @@ public final class ShepherdTalk {
         var data = ShepherdSavedData.get(server);
         if (data.stage() != ShepherdSavedData.Stage.AWAKE) return false;
         if (live != null) end(true);
+        ShepherdBoot.stop();
         data.replayFirstMeeting();
         MillerPattern.reset(server);
         return true;
@@ -281,8 +314,7 @@ public final class ShepherdTalk {
         if (live != null) end(true);
     }
 
-    private static double nearestHostileOnSpeaker() {
-        var player = live.player;
+    static double nearestHostileOn(ServerPlayer player) {
         double nearest = Double.MAX_VALUE;
         for (var mob : player.level().getEntitiesOfClass(Mob.class, player.getBoundingBox().inflate(ShepherdPolicy.DANGER_RANGE), mob -> mob.getTarget() == player)) {
             nearest = Math.min(nearest, mob.distanceTo(player));
@@ -301,7 +333,7 @@ public final class ShepherdTalk {
         var player = live.player;
         var she = live.she;
         boolean gone = player.isRemoved() || player.hasDisconnected() || she.isRemoved() || she.offline() || player.level() != she.level();
-        if (gone || ShepherdPolicy.talkMustClose(player.distanceTo(she), live.hurt, nearestHostileOnSpeaker())) end(true);
+        if (gone || ShepherdPolicy.talkMustClose(player.distanceTo(she), live.hurt, nearestHostileOn(player))) end(true);
     }
 
     @SubscribeEvent public static void damaged(LivingDamageEvent.Post event) {
@@ -316,6 +348,10 @@ public final class ShepherdTalk {
         return live != null;
     }
 
+    static boolean speakingTo(ServerPlayer player) {
+        return live != null && live.player == player;
+    }
+
     static int liveId() {
         return live == null ? 0 : live.id;
     }
@@ -323,6 +359,11 @@ public final class ShepherdTalk {
     /** The node on screen, or null on the hub or when nobody is talking. */
     static String liveNode() {
         return live == null || live.talk == null ? null : live.talk.current().id();
+    }
+
+    /** How long the line on screen was made to wait. */
+    static int liveThinkTicks() {
+        return live == null ? 0 : live.thinkTicks;
     }
 
     /** The keys on screen. */

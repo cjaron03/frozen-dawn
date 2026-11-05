@@ -16,6 +16,7 @@ public final class ShepherdConversation {
     private final Map<String, Node> nodes;
     private final Predicate<String> holds;
     private final Set<String> flags = new HashSet<>();
+    private List<String> said = List.of();
     private Node current;
     private int affinityDelta;
     private boolean finished;
@@ -43,11 +44,17 @@ public final class ShepherdConversation {
         return current.lines().stream().filter(line -> line.condition() == null || holds.test(line.condition())).toList();
     }
 
+    /** What the last answer itself told her, apart from where it led. */
+    public List<String> said() {
+        return said;
+    }
+
     /** A slot's ordinal, or {@link #CONTINUE}. False, with nothing changed, on anything the node does not offer. */
     public boolean answer(int slotOrContinue) {
         if (finished) return false;
         if (slotOrContinue == CONTINUE) {
             if (!current.responses().isEmpty()) return false;
+            said = List.of();
             move(current.next());
             return true;
         }
@@ -55,6 +62,7 @@ public final class ShepherdConversation {
             if (response.slot().ordinal() != slotOrContinue) continue;
             affinityDelta += response.affinity();
             flags.addAll(response.set());
+            said = response.noted();
             move(response.next());
             return true;
         }

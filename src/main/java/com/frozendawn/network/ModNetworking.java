@@ -16,6 +16,7 @@ import com.frozendawn.homo.HeartMaeveErasureManager;
 import com.frozendawn.homo.MasterArchitectFourthWallManager;
 import com.frozendawn.lore.ThaevenLoreManager;
 import com.frozendawn.lore.ThaevenRecordId;
+import com.frozendawn.shepherd.ShepherdBoot;
 import com.frozendawn.shepherd.ShepherdTalk;
 import com.frozendawn.entity.UndoneEntity;
 import com.frozendawn.world.RocketLaunchManager;
@@ -56,6 +57,12 @@ public class ModNetworking {
         registrar.playToServer(ShepherdActionPayload.TYPE, ShepherdActionPayload.STREAM_CODEC,
                 (payload, context) -> context.enqueueWork(() -> {
                     if (context.player() instanceof ServerPlayer sp) ShepherdTalk.action(sp, payload.conversation(), payload.action());
+                }));
+        registrar.playToClient(ShepherdBootOfferPayload.TYPE, ShepherdBootOfferPayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(ClientHandlers::handleShepherdBootOffer));
+        registrar.playToServer(ShepherdBootAnswerPayload.TYPE, ShepherdBootAnswerPayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(() -> {
+                    if (context.player() instanceof ServerPlayer sp) ShepherdBoot.answer(sp, payload.boot());
                 }));
         registrar.playBidirectional(ShepherdClosePayload.TYPE, ShepherdClosePayload.STREAM_CODEC,
                 (payload, context) -> context.enqueueWork(() -> {

@@ -15,6 +15,7 @@ import com.frozendawn.shepherd.ShepherdTalk.Action;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.resources.language.I18n;
@@ -27,11 +28,16 @@ import org.lwjgl.glfw.GLFW;
 /** Her talk screen and hub, as talk-screen-mockup.png draws them: everything is placed on the mockup's 480 by 270 grid. */
 public final class ShepherdScreen extends Screen {
     private static final int GRID_W = 480, GRID_H = 270, TOP_MARGIN = 8;
-    private static final int TEXT = 0xFFE1E6E4, GLOW = 0xFF7DF2C0, GLOW2 = 0xFF3AA984, DIM = 0xFF8C969C;
-    private static final int STEEL = 0xFF5D666D, SHELL2 = 0xFFAEB2AD, SCUFF = 0xFF8C918E, LAMP = 0xFFF6F4D8;
-    private static final int PANEL = 0xFF0E1216, SLOT = 0xFF12161B, SLOT_HOVER = 0xFF1E2C2A, EMPTY = 0x8012161B, SAY = 0xFF0A0D10, VEIL = 0x73060809;
-    private static final int LINE_X = 92, LINE_Y = 103, LINE_W = 295, LINE_STEP = 10;
-    private static final int SLOT_X = 84, SLOT_Y = 144, SLOT_DX = 158, SLOT_DY = 28, SLOT_W = 153, SLOT_H = 23;
+    static final int TEXT = 0xFFE1E6E4, GLOW = 0xFF7DF2C0, GLOW2 = 0xFF3AA984, DIM = 0xFF8C969C;
+    static final int STEEL = 0xFF5D666D;
+    private static final int SHELL2 = 0xFFAEB2AD, SCUFF = 0xFF8C918E, LAMP = 0xFFF6F4D8;
+    static final int PANEL = 0xFF0E1216, VEIL = 0x73060809;
+    private static final int SLOT = 0xFF12161B, SLOT_HOVER = 0xFF1E2C2A, EMPTY = 0x8012161B, SAY = 0xFF0A0D10;
+    static final int LINE_X = 92;
+    private static final int LINE_Y = 103, LINE_W = 295, LINE_STEP = 10;
+    static final int SLOT_X = 84, SLOT_Y = 144, SLOT_DX = 158, SLOT_DY = 28, SLOT_W = 153, SLOT_H = 23;
+    /** Her display on the shell, and how large one texel draws. */
+    static final int FACE_X = 200, FACE_Y = 18, FACE_SCALE = 10;
     private static final int SETTINGS_X = 84, SETTINGS_Y = 202, SETTINGS_W = 150, SETTINGS_H = 14;
 
     private int conversation;
@@ -46,6 +52,8 @@ public final class ShepherdScreen extends Screen {
     private Mood shownMood;
     private int moodBeat;
     private int logoTicks;
+    /** The wait this line was sent with, and how much of it is left. */
+    private int thinkTicks, thinkLeft;
 
     public ShepherdScreen() {
         super(CommonComponents.EMPTY);
@@ -58,6 +66,7 @@ public final class ShepherdScreen extends Screen {
         replies = payload.replies();
         canContinue = payload.canContinue();
         logoTicks = payload.logoTicks();
+        thinkTicks = thinkLeft = payload.thinkTicks();
         line = 0;
         startLine();
     }
@@ -73,6 +82,7 @@ public final class ShepherdScreen extends Screen {
         canContinue = false;
         rows = List.of();
         total = typed = 0;
+        thinkLeft = 0;
     }
 
     /** The server ended it, so there is nothing to tell the server back. */
@@ -138,6 +148,11 @@ public final class ShepherdScreen extends Screen {
             logoTicks--;
             return;
         }
+        if (thinkLeft > 0) {
+            // The same blink as a change of mood, even if the mood did not change: it takes her into the line's face.
+            if (--thinkLeft == 0) moodBeat = ShepherdFace.MOOD_BEAT_TICKS;
+            return;
+        }
         if (!typing()) return;
         if (++charTicks < ShepherdPolicy.TICKS_PER_CHAR) return;
         charTicks = 0;
@@ -145,23 +160,32 @@ public final class ShepherdScreen extends Screen {
         if (typed % ShepherdPolicy.BLIP_EVERY == 0) minecraft.getSoundManager().play(SimpleSoundInstance.forUI(ModSounds.SHEPHERD_BLIP.get(), 1, 0.5F));
     }
 
-    private int ox() {
+    /** Where the mockup's grid starts on a screen this wide. */
+    static int gridX(int width) {
         return (width - GRID_W) / 2;
     }
 
-    private int oy() {
+    static int gridY(int height) {
         return Math.max(-TOP_MARGIN, (height - GRID_H) / 2);
+    }
+
+    private int ox() {
+        return gridX(width);
+    }
+
+    private int oy() {
+        return gridY(height);
     }
 
     private boolean inside(double mx, double my, int x, int y, int w, int h) {
         return mx >= ox() + x && mx < ox() + x + w && my >= oy() + y && my < oy() + y + h;
     }
 
-    private static int slotX(int slot) {
+    static int slotX(int slot) {
         return SLOT_X + slot % 2 * SLOT_DX;
     }
 
-    private static int slotY(int slot) {
+    static int slotY(int slot) {
         return SLOT_Y + slot / 2 * SLOT_DY;
     }
 
@@ -190,7 +214,7 @@ public final class ShepherdScreen extends Screen {
 
     /** A click finishes a typing line; the next moves on to her next line, then continues. */
     private void advance() {
-        if (logoTicks > 0) return;
+        if (logoTicks > 0 || thinkLeft > 0) return;
         if (typing()) {
             typed = total;
         } else if (line < lines.size() - 1) {
@@ -246,9 +270,28 @@ public final class ShepherdScreen extends Screen {
         g.fill(0, 0, width, height, VEIL);
     }
 
+    /** {@code ox, oy} are the grid's corner on screen; everything else is on the grid. */
+    static void panel(GuiGraphics g, int ox, int oy, int x, int y, int w, int h, int fill, int edge) {
+        g.fill(ox + x, oy + y, ox + x + w, oy + y + h, fill);
+        g.renderOutline(ox + x, oy + y, w, h, edge);
+    }
+
     private void panel(GuiGraphics g, int x, int y, int w, int h, int fill, int edge) {
-        g.fill(ox() + x, oy() + y, ox() + x + w, oy() + y + h, fill);
-        g.renderOutline(ox() + x, oy() + y, w, h, edge);
+        panel(g, ox(), oy(), x, y, w, h, fill, edge);
+    }
+
+    /** Her body around the display, and the lamp strip over it. */
+    static void shell(GuiGraphics g, int ox, int oy) {
+        panel(g, ox, oy, 194, 12, 92, 70, SHELL2, SCUFF);
+        g.fill(ox + 202, oy + 8, ox + 278, oy + 12, LAMP);
+    }
+
+    static void button(GuiGraphics g, Font font, int ox, int oy, int slot, String tone, String label, boolean hover) {
+        int x = slotX(slot), y = slotY(slot);
+        panel(g, ox, oy, x, y, SLOT_W, SLOT_H, hover ? SLOT_HOVER : SLOT, hover ? GLOW : STEEL);
+        g.drawString(font, String.valueOf(slot + 1), ox + x + 5, oy + y + 7, GLOW, false);
+        if (!tone.isEmpty()) g.drawString(font, tone, ox + x + 16, oy + y + 2, DIM, false);
+        g.drawString(font, label, ox + x + 16, oy + y + (tone.isEmpty() ? 7 : 12), TEXT, false);
     }
 
     private void text(GuiGraphics g, String value, int x, int y, int color) {
@@ -273,10 +316,13 @@ public final class ShepherdScreen extends Screen {
 
     /** Her eyes go to the reply you are on: the grid's left column, or its right. */
     private void drawFace(GuiGraphics g, int hover) {
-        panel(g, 194, 12, 92, 70, SHELL2, SCUFF);
-        g.fill(ox() + 202, oy() + 8, ox() + 278, oy() + 12, LAMP);
+        shell(g, ox(), oy());
         if (logoTicks > 0) {
-            ShepherdFaceRenderer.drawLogo(g, ShepherdFace.logoFrame(age), ox() + 200, oy() + 18, 10);
+            ShepherdFaceRenderer.drawLogo(g, ShepherdFace.logoFrame(age), ox() + FACE_X, oy() + FACE_Y, FACE_SCALE);
+            return;
+        }
+        if (thinkLeft > 0) {
+            ShepherdFaceRenderer.draw(g, ShepherdFace.thinking(thinkTicks - thinkLeft, thinkTicks), 0, false, 0, ox() + FACE_X, oy() + FACE_Y, FACE_SCALE);
             return;
         }
         Mood mood = mood();
@@ -284,7 +330,7 @@ public final class ShepherdScreen extends Screen {
         boolean looking = hover >= 0 && (hub || spoken()) && mood != Mood.RECORDING && mood != Mood.THINKING;
         int eyes = looking ? (hover % 2 == 0 ? -1 : 1) : motion.eyeShift();
         var cells = motion.cells(mood, looking || typing());
-        ShepherdFaceRenderer.draw(g, cells, mouth(), motion.blink() || moodBeat > 0, eyes, ox() + 200, oy() + 18, 10);
+        ShepherdFaceRenderer.draw(g, cells, mouth(), motion.blink() || moodBeat > 0, eyes, ox() + FACE_X, oy() + FACE_Y, FACE_SCALE);
     }
 
     private void drawLine(GuiGraphics g) {
@@ -314,11 +360,7 @@ public final class ShepherdScreen extends Screen {
     }
 
     private void drawSlot(GuiGraphics g, int slot, String tone, String label, boolean hover) {
-        int x = slotX(slot), y = slotY(slot);
-        panel(g, x, y, SLOT_W, SLOT_H, hover ? SLOT_HOVER : SLOT, hover ? GLOW : STEEL);
-        text(g, String.valueOf(slot + 1), x + 5, y + 7, GLOW);
-        if (!tone.isEmpty()) text(g, tone, x + 16, y + 2, DIM);
-        text(g, label, x + 16, tone.isEmpty() ? y + 7 : y + 12, TEXT);
+        button(g, font, ox(), oy(), slot, tone, label, hover);
     }
 
     private void drawSaid(GuiGraphics g, String full) {

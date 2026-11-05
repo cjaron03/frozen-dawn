@@ -2,8 +2,10 @@ package com.frozendawn.miller;
 
 import com.frozendawn.shepherd.ShepherdFace.Mood;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 /** Bounded operator text. A player with cheats can read this, so it says CS-1 and never carries her file's name. */
 final class PatternDiagnostics {
@@ -36,6 +38,21 @@ final class PatternDiagnostics {
         }
         lines.add("A reaction, a conversation, asking, Wary and Offline all take her face over this.");
         for (var law : PatternLaws.values()) lines.add(law + ": " + law.meaning());
+        return List.copyOf(lines);
+    }
+
+    /** What she holds: coherence, how far she has woken, and what she makes of each person. */
+    static List<String> mind(MillerPattern.Snapshot snapshot) {
+        var lines = new ArrayList<String>();
+        lines.add(header(snapshot));
+        lines.add(String.format(Locale.ROOT, "coherence=%.3f stage=%s walls=%s", snapshot.coherence(), snapshot.stage(), snapshot.walls().stream().sorted().toList()));
+        var people = new LinkedHashSet<>(snapshot.impressions().keySet());
+        people.addAll(snapshot.keepsakes().keySet());
+        for (var who : people) {
+            var line = new StringBuilder(who + " keepsakes=" + snapshot.keepsakes().getOrDefault(who, 0));
+            snapshot.impressions().getOrDefault(who, Map.of()).forEach((theory, lean) -> line.append(String.format(Locale.ROOT, " %s=%.3f", theory, lean)));
+            lines.add(line.toString());
+        }
         return List.copyOf(lines);
     }
 

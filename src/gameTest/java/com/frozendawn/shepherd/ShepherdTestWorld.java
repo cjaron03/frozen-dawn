@@ -7,12 +7,15 @@ import com.frozendawn.miller.MillerPattern;
 import com.mojang.authlib.GameProfile;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ClientInformation;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.GameType;
+import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.common.util.FakePlayer;
 
@@ -34,6 +37,7 @@ final class ShepherdTestWorld {
 
     static void clear(ServerLevel level) {
         ShepherdTalk.clearForTests();
+        ShepherdBoot.clearForTests();
         ShepherdPrompt.clearForTests();
         ShepherdReactions.clearForTests();
         ShepherdSavedData.get(level.getServer()).clearForTests();
@@ -55,6 +59,24 @@ final class ShepherdTestWorld {
         var player = new FakePlayer(level, new GameProfile(UUID.randomUUID(), "shepherd_user"));
         player.setPos(pos.getCenter());
         return player;
+    }
+
+    /** A right-click on a dock with what is in the main hand. */
+    static void use(GameTestHelper h, BlockPos dock, ServerPlayer player) {
+        var level = h.getLevel();
+        var hit = new BlockHitResult(dock.getCenter(), Direction.UP, dock, false);
+        level.getBlockState(dock).useItemOn(player.getMainHandItem(), level, player, InteractionHand.MAIN_HAND, hit);
+    }
+
+    /** A right-click on a dock with nothing in hand. */
+    static void touch(GameTestHelper h, BlockPos dock, ServerPlayer player) {
+        h.getLevel().getBlockState(dock).useWithoutItem(h.getLevel(), player, new BlockHitResult(dock.getCenter(), Direction.UP, dock, false));
+    }
+
+    /** Seats what is in hand and answers the choice with Boot. */
+    static void boot(GameTestHelper h, BlockPos dock, ServerPlayer player) {
+        use(h, dock, player);
+        ShepherdBoot.answer(player, true);
     }
 
     /** In the level for real, so she can find them. The test framework takes them out again when the test ends. */

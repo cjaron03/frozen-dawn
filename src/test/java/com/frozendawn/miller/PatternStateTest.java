@@ -5,7 +5,9 @@ import static org.junit.jupiter.api.Assertions.*;
 import com.frozendawn.miller.Drives.Drive;
 import com.frozendawn.miller.Feelings.Feeling;
 import com.frozendawn.shepherd.ShepherdAffinity.Deed;
+import com.frozendawn.shepherd.ShepherdDialogue.Slot;
 import com.frozendawn.shepherd.ShepherdFace.Mood;
+import java.util.List;
 import java.util.Random;
 import java.util.UUID;
 import java.util.function.Consumer;
@@ -22,7 +24,7 @@ class PatternStateTest {
 
     private static PatternState woken() {
         var state = new PatternState();
-        state.poll(0, PatternState.NOT_SET, 0);
+        state.poll(0, PatternState.NOT_SET, false, 0);
         return state;
     }
 
@@ -97,8 +99,14 @@ class PatternStateTest {
             var deed = Deed.values()[random.nextInt(Deed.values().length)];
             int near = random.nextInt(3);
             long talk = random.nextInt(4) == 0 ? now - 10 : PatternState.NOT_SET;
+            boolean trusted = random.nextBoolean();
+            var tone = Slot.values()[random.nextInt(Slot.values().length)];
+            boolean spoken = random.nextInt(3) == 0;
             if (step < from) continue;
-            if (poll) state.poll(near, talk, now); else state.appraise(step % 2 == 0 ? ONE : TWO, deed, now);
+            var who = step % 2 == 0 ? ONE : TWO;
+            if (poll) state.poll(near, talk, trusted, now);
+            else if (spoken) state.heard(who, new Heard.Reply(tone, List.of("+calls_me_aurora"), "named"), now);
+            else state.appraise(who, deed, now);
             between.accept(now);
         }
     }
@@ -122,6 +130,13 @@ class PatternStateTest {
             for (Feeling feeling : Feeling.values()) read.feelings().value(feeling, t + 500);
             for (Drive drive : Drive.values()) read.drives().value(drive, t + 500);
             read.history();
+            read.keepsakes().of(ONE);
+            read.impressions().confidence(TWO, ImpressionStore.Theory.KIND);
+            read.coherence().value(t + 500);
+            read.coherence().halfLaps(t);
+            read.coherence().variety(3, t);
+            read.self().found(PatternLaws.LAGGED);
+            MillerPattern.snapshot(read, t);
         });
         assertEquals(plain.save(), read.save());
     }
@@ -140,7 +155,7 @@ class PatternStateTest {
     @Test
     void aSaveWithNoStateStartsAtRest() {
         var state = PatternState.load(new CompoundTag());
-        state.poll(0, PatternState.NOT_SET, 10_000_000);
+        state.poll(0, PatternState.NOT_SET, false, 10_000_000);
         for (Drive drive : Drive.values()) assertEquals(0.5, state.drives().value(drive, 10_000_000), 1e-9, drive.name());
         assertEquals(Mood.NEUTRAL, state.mood(10_000_000));
     }
@@ -148,15 +163,15 @@ class PatternStateTest {
     @Test
     void aTalkFromBeforeTheStateIsNotAConversation() {
         var state = PatternState.load(new CompoundTag());
-        state.poll(1, 5_000_000, 10_000_000);
+        state.poll(1, 5_000_000, false, 10_000_000);
         assertEquals(0.49, state.drives().value(Drive.COMPANY, 10_000_000), 1e-9);
     }
 
     @Test
     void theClockSeededInTheSameTickIsNotAConversation() {
         var state = new PatternState();
-        state.poll(1, PatternState.NOT_SET, 1000);
-        state.poll(1, 1000, 1100);
+        state.poll(1, PatternState.NOT_SET, false, 1000);
+        state.poll(1, 1000, false, 1100);
         assertTrue(state.drives().value(Drive.COMPANY, 1100) > 0.47, "Company: " + state.drives().value(Drive.COMPANY, 1100));
     }
 
@@ -192,13 +207,13 @@ class PatternStateTest {
     @Test
     void aConversationCountsOnce() {
         var once = woken();
-        once.poll(0, 50, 100);
+        once.poll(0, 50, false, 100);
         double fed = once.drives().value(Drive.COMPANY, 100);
         var state = woken();
-        state.poll(0, 50, 100);
-        state.poll(0, 50, 100);
+        state.poll(0, 50, false, 100);
+        state.poll(0, 50, false, 100);
         state = PatternState.load(state.save());
-        state.poll(0, 50, 100);
+        state.poll(0, 50, false, 100);
         assertEquals(fed, state.drives().value(Drive.COMPANY, 100), 1e-12);
         assertTrue(fed < 0.45);
     }
@@ -206,7 +221,7 @@ class PatternStateTest {
     @Test
     void companyFallsWithSomeoneNearAndRisesAlone() {
         var state = woken();
-        for (long t = 100; t <= 2000; t += 100) state.poll(1, PatternState.NOT_SET, t);
+        for (long t = 100; t <= 2000; t += 100) state.poll(1, PatternState.NOT_SET, false, t);
         double near = state.drives().value(Drive.COMPANY, 2000);
         assertTrue(near < 0.5);
         assertTrue(state.drives().value(Drive.COMPANY, 20000) > near);
@@ -241,6 +256,59 @@ class PatternStateTest {
         aged.age(24000);
         for (Feeling feeling : Feeling.values()) assertEquals(waited.feelings().value(feeling, 24000), aged.feelings().value(feeling, 0), 1e-12);
         for (Drive drive : Drive.values()) assertEquals(waited.drives().value(drive, 24000), aged.drives().value(drive, 0), 1e-12);
+        assertEquals(waited.coherence().value(24000), aged.coherence().value(0), 1e-12);
+        assertEquals(waited.keepsakes().of(ONE).getFirst().time() - 24000, aged.keepsakes().of(ONE).getFirst().time());
+        aged.poll(1, PatternState.NOT_SET, false, 0);
+        assertTrue(aged.impressions().confidence(ONE, ImpressionStore.Theory.KIND) < 0, "A skipped day settles too");
+    }
+
+    /** The tag M1 wrote: drives, feelings, history and the last conversation, and nothing of what she has since learned to hold. */
+    private static CompoundTag versionOne() {
+        var state = woken();
+        state.appraise(ONE, Deed.READ_LOG, 100);
+        var tag = state.save();
+        for (String key : List.of("impressions", "keepsakes", "self", "coherence", "settleAt", "seenAt")) tag.remove(key);
+        tag.putInt("dataVersion", 1);
+        return tag;
+    }
+
+    @Test
+    void aVersionOneSaveLoadsAtRest() {
+        long later = 10_000_000;
+        var state = PatternState.load(versionOne());
+        assertEquals(1, state.history().size(), "What she had stays");
+        assertEquals(List.of(), state.keepsakes().of(ONE));
+        assertEquals(0, state.impressions().confidence(ONE, ImpressionStore.Theory.CAREFUL));
+        assertEquals(SelfModel.Stage.PRODUCT, state.self().stage());
+        assertEquals(1, state.coherence().value(later), "Not slowed by a silence she was never built to count");
+        state.poll(1, PatternState.NOT_SET, true, later);
+        assertEquals(1, state.coherence().value(later));
+        assertEquals(0, state.coherence().halfLaps(later), "No delay");
+        assertEquals(SelfModel.Stage.PRODUCT, state.self().stage(), "No stage jump");
+        assertEquals(PatternState.VERSION, state.save().getInt("dataVersion"));
+    }
+
+    @Test
+    void thisSaveIsVersionTwo() {
+        assertEquals(2, PatternState.VERSION);
+    }
+
+    /** The same day, with her worn down in one and not the other. */
+    private static PatternState livedThrough(double coherence) {
+        var state = woken();
+        state.coherence().set(coherence, 0);
+        script(state, 0, 200, t -> { });
+        return state;
+    }
+
+    @Test
+    void coherenceLeavesEverythingElseAlone() {
+        var whole = livedThrough(1);
+        var worn = livedThrough(Coherence.FLOOR);
+        assertEquals(whole.keepsakes().save(), worn.keepsakes().save());
+        assertEquals(whole.impressions().save(), worn.impressions().save());
+        assertEquals(whole.self().save(), worn.self().save());
+        assertEquals(whole.feelings().save(), worn.feelings().save());
     }
 
     @Test
