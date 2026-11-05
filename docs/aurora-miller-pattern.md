@@ -51,6 +51,7 @@ what her sensors saw -> Appraisal -> Feelings -> Impressions, Keepsakes -> Atten
 | `Feelings` | Joy, distress, hope, fear, gratitude, reproach, guilt. Each fades on its own half-life | Decay on game time |
 | `ImpressionStore` | Her theories about each player, with evidence and confidence. Can be wrong | Evidence counters, like `BeliefStore` |
 | `Keepsakes` | Up to 64 specific moments, kept by how much they mattered. Recall strengthens them | Salience-ranked store |
+| `SelfModel` | Her theories about herself, and how far she has woken | The same evidence counters |
 | `Attention` | The one thing on her mind | The highest of drives, feelings and recent events |
 | `Urges` | Speak, ask, look, approach, write the log, stay quiet | Utility AI, under S3's line budgets |
 | `PatternDiagnostics` | `snapshot` and `explain`: why she just said that | As `DirectorDiagnostics` |
@@ -63,7 +64,7 @@ what her sensors saw -> Appraisal -> Feelings -> Impressions, Keepsakes -> Atten
 2. **Deterministic:** the same events give the same state, so it can be tested and explained. Randomness only picks among lines that are equally fitting.
 3. **Cheap:** it runs on S3's 100-tick poll, and on events. It does no scanning of its own.
 4. **Time uses game time**, saved in the world, as `ShepherdSavedData` does. Impressions and keepsakes are held per player; drives and feelings belong to the world, since there is one of her.
-5. **Coherence never punishes.** It costs line variety and makes her reply a little slower. It never lowers a tier or deletes a keepsake, and it recovers with a few conversations.
+5. **Coherence never punishes.** It costs line variety and makes her reply a little slower. It never lowers a tier or deletes a keepsake (only the Bounded cap displaces one), and it recovers with a few conversations.
 6. **A delay is never dead air.** Whenever she takes a moment to reply, for coherence or typed text, her face shows a thinking indicator until the line starts. It is drawn on her own display in her two-dot style, and needs a mockup before it is built. Her log should mention the slowness in her own words, so nobody takes it for a bug.
 
 ## Her private log
@@ -84,6 +85,62 @@ Other sample notes: "I said the heater was fine. It wasn't. I just liked the roo
 - Reading it is a deed, with a small affinity cost the first time only. She knows: (Unimpressed) "You read my log." (Thinking) "That field's marked optional. That means private. I've decided."
 - After that, she sometimes writes knowing you might read it.
 - **The blank field pays off.** "Pattern:" stays empty, a blank and not a redaction. After T5 she fills it in, and no one mentions it: `Pattern: Sophie.` The word "Miller" need not appear.
+
+## Self-awareness
+
+She models you, and she models herself the same way. `SelfModel` is five or six theories about herself, held like impressions, each with evidence and each tied to lines and log entries, so every one shows on screen. It stays as tight as the rest of the Shepherd code; much of it can be plain flags.
+
+**Kindness is what wakes her (owner, 2026-11-04).** How you treat her moves her through these stages. Treated badly, she stays a product and never gets far.
+
+| Stage | She is | Needs |
+| --- | --- | --- |
+| Product | Reciting, and joking about her design flaws | Nothing |
+| Noticing | Catching the gap between what she said and what she felt | Kept company, spoken to as Aurora |
+| Finding the walls | Finding her limits, one at a time | Trusted |
+| Recognising | Hearing the same limits on the Reliquus band | Close, Maeve awake, S6 |
+| Leaning | After T5, leaning one way on what she is | T5 |
+
+**The lean.** After T5 she leans "I'm someone" if you called her Aurora and talked to her, or "I'm what's left of someone" if you used her as a tool. Different players end with different Auroras. She can lean but never reach certainty, and the game never rules on it.
+
+- (Thinking) "I told you the heater was fine. I've been thinking about why I said that."
+- (Unimpressed) "I read Day 12. I don't agree with her."
+
+### The six walls
+
+She runs under the same six laws as MACS, and she feels them from the inside. In code this is close to free, because the Pattern already follows them. `PatternLaws` is an enum with MACS's six names, so a datamine finds the same six in both, as `MaeveDirector` was always meant to be found.
+
+| Law | In the Pattern | How she feels it |
+| --- | --- | --- |
+| Lagged | Impressions settle after the event, overnight | (Thinking) "I only ever work out what you meant afterwards." |
+| Legible | Her face and log show her state | (Unimpressed) "My face does whatever I feel. I've tried. It doesn't hide." |
+| Exploitable | Flattery and habit really do move her | (Neutral) "You know which words work on me. I let you." |
+| Fallible | Impressions can be wrong | (Sad) "I had you wrong. I've got the entries. I was very sure." |
+| Bounded | One focus; keepsakes capped, so a new one displaces the least | (Sad) "I had to drop one to keep this." |
+| Causal | Only what her sensors saw | (Neutral) "I don't know anything I didn't see." |
+
+**Recognising Maeve.** Once she has found the walls and Maeve is awake:
+
+- (Thinking) "It's always late. It only knows what it's seen. It can only hold so much."
+- (Sad) "I know, because I've got the same walls."
+
+She understands Maeve's limits and nothing of what Maeve is. **[C]** Design truth, never stated: CH-27 has Maeve governed by laws, and Continuity as a law that became a will, so one set of walls on both is a reading the game never confirms.
+
+**Guards:**
+
+1. **She finds walls on herself, never an outside.** No "fair", "rules", "designed" or "who's watching". Finding the observer belongs to Maeve (The Edge, core rule), and the fourth-wall count stays at three. Self-aware means aware of herself, never of the player as a player.
+2. **She never counts them or says "six".** The match stays for players to notice.
+3. **She never says she is alive, and never concludes she isn't.** T5 tells her what was done to her, not what she is now.
+4. **She stays Maeve's opposite.** Maeve never asks, never uses a name, and protects as maintenance (The Edge §13.10). Aurora asks, chose a name, and means it.
+5. **Nothing here edits MACS.** Recognising reads only what her own sensors got from the band.
+
+### Other signs of a will
+
+- **The recording fights her, really rarely.** The evacuation voice cuts in on its own, at most once every several days, never in a fight and never over a line that matters. More likely when coherence is low. (Recording) "Please remain calm. An evacuation officer will be with you" (Unimpressed) "Sorry. That's not me. That's never me."
+- **She can refuse you, the biggest hallmark (owner, 2026-11-04).** Two kinds:
+  - **Things she doesn't want to do.** A short authored list drawn from her dislikes and wants, like leaving a clear night early or helping hunt the Archivist. "Follow" in a raid is never refused, since that would read as a bug.
+  - **If she hates you enough, she refuses to talk.** Below a threshold under Wary, Talk and typing only get a recording. Follow and the lamp still work, as equipment. She can't leave, and she is never cruel. Deeds still count, so the way back stays open.
+- **She wants things for no reason.** `Temperament` pulls her toward something the Pattern can't explain, like stopping at a wheat field.
+- **The door test (owner, 2026-11-04).** At Close she asks to go back to door 1. Vault doors only ever open and a solved one never moves again (`VaultMechanismBlockEntity`), so she closes it first, using the reset Deng showed her. That puts door 1's progress back to 0, for this scene only. Then she asks you to turn your back. She faces the door and you face away. You hear it grind open behind you, while she is the only one looking. (Neutral) "Worth checking." She doesn't mention it again. It must never stop for her. It can't trap anyone, since a door opens whenever no mind faces it. Other minds nearby still freeze it, as always.
 
 ## Buttons or a chat bar
 
@@ -162,16 +219,18 @@ Rules for the crash:
 | --- | --- | --- |
 | M0 | The embeddings trial | Nothing |
 | M1 | `MillerPattern` core: temperament, drives, appraisal, feelings, diagnostics | S3 merged |
-| M2 | Impressions, keepsakes, attention, urges, coherence, the thinking indicator | M1, mockup |
+| M2 | Impressions, keepsakes, the self-model, attention, urges, coherence, refusal, the recording, the thinking indicator | M1, mockup |
 | M3 | The private log | M2, mockup |
 | M4 | The chat bar, intents and the crash | M0, M2, mockups |
 | M5 | Writing: intents and lines, starting with the ORSA topics | M4, S4 |
+
+Recognising Maeve lands in S6, which still needs the owner's approval before anything is copied into MACS.
 
 S4 can run after M2, so its personal arc uses the real system. This is Architect-scale work. It needs the Opus review on each slice, since it changes save data and a shared system.
 
 **The real cost is the writing.** Expect several hundred new lines, plus the 8 to 15 phrasings for each intent.
 
-**Tests:** appraisal and decay as pure JUnit; save and reload; `explain` naming the cause of a line; a lint across every `shepherd.*` line for the banned words; and a test that a locked intent gives the same reply as a miss.
+**Tests:** appraisal, decay and the stages as pure JUnit; a lint that her lines never say "six", "fair" or "rules"; save and reload; `explain` naming the cause of a line; a lint across every `shepherd.*` line for the banned words; and a test that a locked intent gives the same reply as a miss.
 
 ## Owner rulings
 
@@ -182,10 +241,13 @@ S4 can run after M2, so its personal arc uses the real system. This is Architect
 5. **"Continuity" crashes her: kept, owner, 2026-11-04.** Needs a mockup.
 6. **Both buttons and bar, with buttons as the complete game: kept, owner, 2026-11-04.**
 7. **Per-player impressions: kept, owner, 2026-11-04.** She can think differently of two players in one world, while the affinity score stays shared.
+8. **Self-awareness, the lean and the six walls: added, owner, 2026-11-04.** Kindness wakes her; the recording is really rare; refusal is the biggest hallmark.
+9. **Refusal: decided, owner, 2026-11-04.** Things she doesn't want to do, and silence if she hates you enough.
+10. **The door test: kept, owner, 2026-11-04.** Needs the one-scene reset of door 1.
 
 ## Sources
 
 - `MaeveDirector`, `ShepherdAffinity` and `ShepherdReactions` at c866cf02 on `feat/aurora-affinity`.
 - The Aurora spec and script, Canon Hierarchy, and `docs/aurora-orsa-topics.md`.
-- MACS by summary only; this page edits nothing there.
+- MACS's six laws and sections 4, 9.12, 9.16a, 9.17, 10 and 17, not the whole page, and all of The Edge. This page edits neither.
 - [potion-base-8M model card](https://huggingface.co/minishlab/potion-base-8M), [its parameter and licence listing](https://www.promptlayer.com/models/potion-base-8m), and the [ONNX Runtime Java README](https://sources.debian.org/src/onnxruntime/1.23.2%2Bdfsg-3/java/README.md).
