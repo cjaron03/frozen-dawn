@@ -8,7 +8,9 @@ import com.frozendawn.gametest.GameTestTemplates;
 import com.frozendawn.init.ModBlocks;
 import com.frozendawn.init.ModEntities;
 import com.frozendawn.init.ModItems;
+import com.frozendawn.phase.PhaseManager;
 import com.frozendawn.shepherd.ShepherdAffinity.Deed;
+import com.frozendawn.shepherd.ShepherdAmbient.Trigger;
 import com.frozendawn.shepherd.ShepherdFace.Mood;
 import com.frozendawn.shepherd.ShepherdSavedData.Stage;
 import com.frozendawn.shepherd.ShepherdTalk.Action;
@@ -126,6 +128,24 @@ public final class ShepherdAffinityGameTest {
     @AfterBatch(batch = "shepherd_face_wary") public static void waryFaceAfter(ServerLevel l) { after(l); }
     @BeforeBatch(batch = "shepherd_face_free") public static void freeFaceBefore(ServerLevel l) { before(l); }
     @AfterBatch(batch = "shepherd_face_free") public static void freeFaceAfter(ServerLevel l) { after(l); }
+    @BeforeBatch(batch = "shepherd_ambient_fight") public static void fightAmbientBefore(ServerLevel l) { before(l); }
+    @AfterBatch(batch = "shepherd_ambient_fight") public static void fightAmbientAfter(ServerLevel l) { after(l); }
+    @BeforeBatch(batch = "shepherd_ambient_gap") public static void gapAmbientBefore(ServerLevel l) { before(l); }
+    @AfterBatch(batch = "shepherd_ambient_gap") public static void gapAmbientAfter(ServerLevel l) { after(l); }
+    @BeforeBatch(batch = "shepherd_ambient_reaction") public static void reactionAmbientBefore(ServerLevel l) { before(l); }
+    @AfterBatch(batch = "shepherd_ambient_reaction") public static void reactionAmbientAfter(ServerLevel l) { after(l); }
+    @BeforeBatch(batch = "shepherd_ambient_wary") public static void waryAmbientBefore(ServerLevel l) { before(l); }
+    @AfterBatch(batch = "shepherd_ambient_wary") public static void waryAmbientAfter(ServerLevel l) { after(l); }
+    @BeforeBatch(batch = "shepherd_ambient_talk") public static void talkAmbientBefore(ServerLevel l) { before(l); }
+    @AfterBatch(batch = "shepherd_ambient_talk") public static void talkAmbientAfter(ServerLevel l) { after(l); }
+    @BeforeBatch(batch = "shepherd_ambient_silence") public static void silenceAmbientBefore(ServerLevel l) { before(l); }
+    @AfterBatch(batch = "shepherd_ambient_silence") public static void silenceAmbientAfter(ServerLevel l) { after(l); }
+    @BeforeBatch(batch = "shepherd_ambient_early") public static void earlyAmbientBefore(ServerLevel l) { before(l); }
+    @AfterBatch(batch = "shepherd_ambient_early") public static void earlyAmbientAfter(ServerLevel l) { after(l); }
+    @BeforeBatch(batch = "shepherd_ambient_aurora") public static void auroraAmbientBefore(ServerLevel l) { before(l); }
+    @AfterBatch(batch = "shepherd_ambient_aurora") public static void auroraAmbientAfter(ServerLevel l) { after(l); }
+    @BeforeBatch(batch = "shepherd_ambient_blizzard") public static void blizzardAmbientBefore(ServerLevel l) { before(l); }
+    @AfterBatch(batch = "shepherd_ambient_blizzard") public static void blizzardAmbientAfter(ServerLevel l) { after(l); }
 
     /** Some deeds move the world's clock on, so the phase comes back. */
     private static long apocalypseTicks;
@@ -795,6 +815,127 @@ public final class ShepherdAffinityGameTest {
                     .thenWaitUntil(() -> h.assertTrue(she.watching() != null, "Turned to it"))
                     .thenExecute(() -> player.hurt(h.getLevel().damageSources().genericKill(), 1))
                     .thenExecuteAfter(ShepherdReactions.POLL_TICKS + 5, () -> assertScore(h, 0))
+                    .thenSucceed();
+        });
+    }
+
+    private static void assertSaidFrom(GameTestHelper h, Trigger trigger) {
+        var keys = ShepherdAmbients.pools(trigger).stream().flatMap(pool -> pool.variants().stream()).map(ShepherdAffinity.Say::key).toList();
+        h.assertTrue(keys.contains(ShepherdReactions.said()), trigger + ": " + ShepherdReactions.said());
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_ambient_fight", timeoutTicks = 400)
+    public static void shepherdAFightEarnsALine(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            awake(h, player);
+            var zombie = zombieBeside(h);
+            zombie.hurt(h.getLevel().damageSources().playerAttack(player), 1000);
+            h.succeedWhen(() -> assertSaidFrom(h, Trigger.AFTER_FIGHT));
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_ambient_gap", timeoutTicks = 400)
+    public static void shepherdTheGapHolds(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            awake(h, player(h));
+            h.assertTrue(ShepherdReactions.murmur(h.getLevel(), Trigger.LOOKED_HEATER), "The first speaks");
+            h.assertTrue(!ShepherdReactions.murmur(h.getLevel(), Trigger.LOOKED_STORAGE), "The second waits");
+            data(h).lastAmbient(clock(h) - ShepherdPolicy.AMBIENT_GAP_TICKS);
+            h.assertTrue(ShepherdReactions.murmur(h.getLevel(), Trigger.LOOKED_STORAGE), "Then it can");
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_ambient_reaction", timeoutTicks = 400)
+    public static void shepherdAReactionIgnoresTheGap(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            awake(h, player);
+            ShepherdReactions.murmur(h.getLevel(), Trigger.LOOKED_HEATER);
+            String murmured = ShepherdReactions.said();
+            ShepherdReactions.saw(player, Deed.CALLED_SHEPHERD);
+            h.assertTrue(!murmured.equals(ShepherdReactions.said()), "A reaction still plays: " + ShepherdReactions.said());
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_ambient_wary", timeoutTicks = 400)
+    public static void shepherdNoCommentaryAtWary(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            awake(h, player(h));
+            data(h).affinity(-300);
+            h.assertTrue(!ShepherdReactions.murmur(h.getLevel(), Trigger.LOOKED_HEATER), "She keeps it formal");
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_ambient_talk", timeoutTicks = 400)
+    public static void shepherdNoCommentaryWhileTalking(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            var she = awake(h, player);
+            she.interact(player, InteractionHand.MAIN_HAND);
+            h.assertTrue(!ShepherdReactions.murmur(h.getLevel(), Trigger.LOOKED_HEATER), "She is silent while the screen is open");
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_ambient_silence", timeoutTicks = 400)
+    public static void shepherdSheSpeaksUpAfterALongSilence(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            awake(h, player(h));
+            data(h).lastTalk(clock(h) - ShepherdPolicy.SILENCE_TICKS);
+            h.succeedWhen(() -> assertSaidFrom(h, Trigger.SILENCE));
+        });
+    }
+
+    /** A test's roof hides the sky unless it asks for it. */
+    private static void nightIn(GameTestHelper h, int phase) {
+        var state = ApocalypseState.get(h.getLevel().getServer());
+        long day = PhaseManager.getPhaseStartDay(phase, state.getTotalDays());
+        h.getLevel().setDayTime(day * 24000 + 18000);
+        state.setApocalypseTicks(h.getLevel().getDayTime(), h.getLevel().getServer());
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_ambient_early", timeoutTicks = 400, skyAccess = true)
+    public static void shepherdNoImaginedAuroraBeforePhaseFour(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            nightIn(h, 3);
+            awake(h, player(h));
+            h.startSequence()
+                    .thenWaitUntil(() -> h.assertTrue(ShepherdReactions.said() != null, "Something is said"))
+                    .thenExecute(() -> {
+                        h.assertTrue(ApocalypseState.get(h.getLevel().getServer()).getPhase() == 3, "The world's clock holds");
+                        assertSaidFrom(h, Trigger.NIGHT);
+                    })
+                    .thenSucceed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_ambient_aurora", timeoutTicks = 400, skyAccess = true)
+    public static void shepherdFromPhaseFourSheImaginesTheAurora(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            nightIn(h, 4);
+            awake(h, player(h));
+            h.succeedWhen(() -> {
+                h.assertTrue(ApocalypseState.get(h.getLevel().getServer()).getPhase() == 4, "The world's clock holds");
+                assertSaidFrom(h, Trigger.IMAGINED_AURORA);
+            });
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_ambient_blizzard", timeoutTicks = 400, skyAccess = true)
+    public static void shepherdNoImaginedAuroraInABlizzard(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            nightIn(h, 5);
+            awake(h, player(h));
+            h.startSequence()
+                    .thenWaitUntil(() -> h.assertTrue(ShepherdReactions.said() != null, "Something is said"))
+                    .thenExecute(() -> {
+                        h.assertTrue(ApocalypseState.get(h.getLevel().getServer()).getPhase() == 5, "The world's clock holds");
+                        h.assertTrue(!ShepherdReactions.said().contains("imagined_aurora"), "Not through that: " + ShepherdReactions.said());
+                    })
                     .thenSucceed();
         });
     }

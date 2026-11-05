@@ -2,11 +2,14 @@ package com.frozendawn.shepherd;
 
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.block.ThermalHeaterBlock;
+import com.frozendawn.data.ApocalypseState;
 import com.frozendawn.event.PlayerTickHandler;
 import com.frozendawn.network.ShepherdLinePayload;
+import com.frozendawn.phase.PhaseManager;
 import com.frozendawn.shepherd.ShepherdAffinity.Deed;
 import com.frozendawn.shepherd.ShepherdAffinity.Say;
 import com.frozendawn.shepherd.ShepherdAffinity.Tier;
+import com.frozendawn.shepherd.ShepherdAmbient.Trigger;
 import com.frozendawn.shepherd.ShepherdFace.Mood;
 import com.frozendawn.shepherd.ShepherdSavedData.Stage;
 import com.frozendawn.world.HeaterRegistry;
@@ -19,10 +22,12 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.monster.Enemy;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.ServerChatEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
+import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.event.server.ServerStoppingEvent;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
@@ -37,7 +42,10 @@ public final class ShepherdReactions {
     private static final String NAME_SHE_HATES = "shepherd";
     /** Only so a line never plays twice running: it does not need to outlive the server. */
     private static final Map<Deed, Say> lastSaid = new EnumMap<>(Deed.class);
+    private static final Map<Trigger, Say> lastMurmur = new EnumMap<>(Trigger.class);
     private static String said;
+    /** Someone near her has been in a fight she has not remarked on. */
+    private static boolean fought;
 
     private ShepherdReactions() {}
 
@@ -65,6 +73,7 @@ public final class ShepherdReactions {
         data.deedReady(deed.name(), now + deed.cooldownTicks());
         data.affinity(data.affinity() + deed.score());
         if (ShepherdTalk.live()) return;
+        if (!deed.lines().isEmpty()) data.lastAmbient(now);
         boolean wary = data.tier() == Tier.WARY;
         if (!wary) she.react(deed.mood());
         Say line = ShepherdAffinity.pick(deed.lines(), lastSaid.get(deed), she.getRandom());
@@ -84,6 +93,37 @@ public final class ShepherdReactions {
         for (var heard : near((ServerLevel) she.level(), she)) PacketDistributor.sendToPlayer(heard, line);
     }
 
+    /** A pool's line, if the trigger's cooldown has run and the moment allows. */
+    public static boolean murmur(ServerLevel level, Trigger trigger) {
+        var pools = ShepherdAmbients.pools(trigger);
+        var data = ShepherdSavedData.get(level.getServer());
+        long now = level.getServer().overworld().getGameTime();
+        String cooldown = "ambient." + trigger.name();
+        if (pools.isEmpty() || now < data.deedReady(cooldown)) return false;
+        var pool = pools.get(level.getRandom().nextInt(pools.size()));
+        Say line = ShepherdAffinity.pick(pool.variants(), lastMurmur.get(trigger), level.getRandom());
+        if (!murmur(level, line.key(data.heavy()), pool.mood())) return false;
+        lastMurmur.put(trigger, line);
+        data.deedReady(cooldown, now + pool.cooldownTicks());
+        return true;
+    }
+
+    /** Something she says unasked: never at Wary or over a conversation, only when things are calm, and not within the gap of her last line. */
+    public static boolean murmur(ServerLevel level, String key, Mood mood) {
+        var server = level.getServer();
+        var she = awakeAndWatching(server);
+        if (she == null || she.level() != level) return false;
+        var near = near(level, she);
+        var data = ShepherdSavedData.get(server);
+        long now = server.overworld().getGameTime();
+        boolean gap = data.lastAmbient() != ShepherdSavedData.NOT_SET && now - data.lastAmbient() < ShepherdPolicy.AMBIENT_GAP_TICKS;
+        if (near.isEmpty() || data.tier() == Tier.WARY || ShepherdTalk.live() || gap || !ShepherdPrompt.calm(server, level, near)) return false;
+        data.lastAmbient(now);
+        she.react(mood);
+        speak(she, key, mood);
+        return true;
+    }
+
     /** The last key she said, for GameTests: a strip has nothing on the server to read back. */
     static String said() {
         return said;
@@ -91,7 +131,9 @@ public final class ShepherdReactions {
 
     static void clearForTests() {
         lastSaid.clear();
+        lastMurmur.clear();
         said = null;
+        fought = false;
     }
 
     @SubscribeEvent public static void stopping(ServerStoppingEvent event) {
@@ -118,6 +160,27 @@ public final class ShepherdReactions {
         if (near.isEmpty()) return;
         comeBack(server, she, near.getFirst());
         for (var player : near) look(level, player);
+        commentate(server, level, she, near);
+    }
+
+    /** The first of these the moment allows. The gap keeps it to one. */
+    private static void commentate(MinecraftServer server, ServerLevel level, ShepherdEntity she, List<ServerPlayer> near) {
+        var data = ShepherdSavedData.get(server);
+        long now = server.overworld().getGameTime();
+        if (data.lastTalk() == ShepherdSavedData.NOT_SET) data.lastTalk(now);
+        if (fought && she.watching() == null && murmur(level, Trigger.AFTER_FIGHT)) fought = false;
+        if (now - data.lastTalk() >= ShepherdPolicy.SILENCE_TICKS) murmur(level, Trigger.SILENCE);
+        if (near.stream().anyMatch(player -> PlayerTickHandler.resolvedTemperature(player) <= ShepherdPolicy.COLD_LINE_C)) murmur(level, Trigger.COLD);
+        if (!ShepherdPolicy.night(level.getDayTime())) return;
+        if (imaginedAuroraShows(server, level, near.getFirst())) murmur(level, Trigger.IMAGINED_AURORA);
+        murmur(level, Trigger.NIGHT);
+    }
+
+    /** From phase 4 the sky cannot show one, so she has to imagine it. The storms are locked on by then, so a clear night means no blizzard, not no rain. */
+    private static boolean imaginedAuroraShows(MinecraftServer server, ServerLevel level, ServerPlayer player) {
+        var state = ApocalypseState.get(server);
+        return state.getPhase() >= ShepherdPolicy.IMAGINED_AURORA_PHASE && level.canSeeSky(player.blockPosition())
+                && !PhaseManager.isBlizzardActive(state.getPhase(), state.getProgress());
     }
 
     /** Her clock on you runs only while she can see someone, so being gone a day is one gap in it. */
@@ -160,6 +223,13 @@ public final class ShepherdReactions {
         var she = awakeAndWatching(player.getServer());
         if (she == null || she.level() != player.level() || player.distanceTo(she) > ShepherdPolicy.HEARD_BLOCKS) return;
         if (ShepherdSavedData.get(player.getServer()).tier() != Tier.WARY) she.react(Mood.ALARMED, ShepherdPolicy.FLINCH_TICKS);
+        if (event.getSource().getEntity() instanceof Enemy) fought = true;
+    }
+
+    @SubscribeEvent public static void killed(LivingDeathEvent event) {
+        if (!(event.getEntity() instanceof Enemy) || !(event.getSource().getEntity() instanceof ServerPlayer player)) return;
+        var she = awakeAndWatching(player.getServer());
+        if (she != null && she.level() == player.level() && player.distanceTo(she) <= ShepherdPolicy.HEARD_BLOCKS) fought = true;
     }
 
     @SubscribeEvent public static void chat(ServerChatEvent event) {

@@ -57,6 +57,8 @@ public final class ShepherdSavedData extends SavedData {
     /** When each deed may next count, by name, in game time. Saved, so a relog cannot farm one. */
     private final Map<String, Long> deeds = new HashMap<>();
     private long lastNear = NOT_SET;
+    /** When she last spoke up unasked, and when anyone last talked to her. */
+    private long lastAmbient = NOT_SET, lastTalk = NOT_SET;
 
     public static ShepherdSavedData get(MinecraftServer server) {
         return server.overworld().getDataStorage().computeIfAbsent(
@@ -92,6 +94,10 @@ public final class ShepherdSavedData extends SavedData {
     public void deedReady(String deed, long gameTime) { deeds.put(deed, gameTime); setDirty(); }
     public long lastNear() { return lastNear; }
     public void lastNear(long gameTime) { lastNear = gameTime; setDirty(); }
+    public long lastAmbient() { return lastAmbient; }
+    public void lastAmbient(long gameTime) { lastAmbient = gameTime; setDirty(); }
+    public long lastTalk() { return lastTalk; }
+    public void lastTalk(long gameTime) { lastTalk = gameTime; setDirty(); }
 
     /** Back to the moment she woke: everything the first meeting earned goes, and she starts it again. Where she woke stays true. */
     void replayFirstMeeting() {
@@ -103,7 +109,7 @@ public final class ShepherdSavedData extends SavedData {
         resumeNode = ShepherdTalk.FIRST_MEETING;
         promptNode = null;
         deeds.clear();
-        lastNear = NOT_SET;
+        lastNear = lastAmbient = lastTalk = NOT_SET;
         setDirty();
     }
 
@@ -129,7 +135,7 @@ public final class ShepherdSavedData extends SavedData {
         heavy = false;
         promptNode = null;
         deeds.clear();
-        lastNear = NOT_SET;
+        lastNear = lastAmbient = lastTalk = NOT_SET;
         setDirty();
     }
 
@@ -141,7 +147,7 @@ public final class ShepherdSavedData extends SavedData {
         lines.add("follower=" + follower + " waiting=" + waiting + " lamp=" + lamp);
         lines.add("affinity=" + affinity + " tier=" + tier() + " heavy=" + heavy + " resumeNode=" + resumeNode + " promptNode=" + promptNode);
         lines.add("flags=" + new TreeSet<>(flags));
-        lines.add("deeds=" + new TreeMap<>(deeds) + " lastNear=" + lastNear);
+        lines.add("deeds=" + new TreeMap<>(deeds) + " lastNear=" + lastNear + " lastAmbient=" + lastAmbient + " lastTalk=" + lastTalk);
         return lines;
     }
 
@@ -164,6 +170,8 @@ public final class ShepherdSavedData extends SavedData {
         var deeds = tag.getCompound("deeds");
         for (String deed : deeds.getAllKeys()) data.deeds.put(deed, deeds.getLong(deed));
         if (tag.contains("lastNear")) data.lastNear = tag.getLong("lastNear");
+        if (tag.contains("lastAmbient")) data.lastAmbient = tag.getLong("lastAmbient");
+        if (tag.contains("lastTalk")) data.lastTalk = tag.getLong("lastTalk");
         return data;
     }
 
@@ -186,6 +194,8 @@ public final class ShepherdSavedData extends SavedData {
         deeds.forEach(ready::putLong);
         tag.put("deeds", ready);
         if (lastNear != NOT_SET) tag.putLong("lastNear", lastNear);
+        if (lastAmbient != NOT_SET) tag.putLong("lastAmbient", lastAmbient);
+        if (lastTalk != NOT_SET) tag.putLong("lastTalk", lastTalk);
         return tag;
     }
 }

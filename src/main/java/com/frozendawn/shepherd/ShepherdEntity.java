@@ -409,6 +409,7 @@ public final class ShepherdEntity extends PathfinderMob {
      */
     private final class CuriosityGoal extends Goal {
         private int ticks, looked;
+        private ShepherdAmbient.Trigger saw;
 
         CuriosityGoal() {
             setFlags(EnumSet.of(Flag.MOVE, Flag.LOOK));
@@ -429,6 +430,7 @@ public final class ShepherdEntity extends PathfinderMob {
             if (needed(player)) return false;
             lookingAt = ShepherdCuriosity.find((ServerLevel) level(), player, ShepherdEntity.this);
             if (lookingAt == null) nextLook = now + NOTHING_TO_SEE_TICKS;
+            else saw = ShepherdAmbient.Trigger.looked(lookingAt.kind());
             return lookingAt != null;
         }
 
@@ -461,6 +463,7 @@ public final class ShepherdEntity extends PathfinderMob {
 
         @Override public void stop() {
             lookingAt = null;
+            if (looked >= ShepherdPolicy.LOOK_TICKS) ShepherdReactions.murmur((ServerLevel) level(), saw);
             nextLook = level().getGameTime() + ShepherdPolicy.CURIOUS_GAP_TICKS;
         }
     }

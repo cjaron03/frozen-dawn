@@ -125,6 +125,22 @@ class ShepherdDialogueDataTest {
     }
 
     @Test
+    void everyAmbientKeyHasALangEntry() throws Exception {
+        var lang = lang();
+        try (var in = ShepherdDialogueDataTest.class.getResourceAsStream("/data/frozendawn/shepherd/ambient/starter.json")) {
+            assertNotNull(in);
+            var pools = ShepherdAmbient.parse(JsonParser.parseReader(new InputStreamReader(in, StandardCharsets.UTF_8)));
+            assertEquals(ShepherdAmbient.Trigger.values().length, pools.size(), "one pool for every trigger");
+            for (var pool : pools) {
+                for (var say : pool.variants()) {
+                    assertTrue(lang.has(say.key()), say.key());
+                    if (say.heavyKey() != null) assertTrue(lang.has(say.heavyKey()), say.heavyKey());
+                }
+            }
+        }
+    }
+
+    @Test
     void noSlotTwice() throws Exception {
         for (Node node : nodes().values()) {
             Set<ShepherdDialogue.Slot> slots = new HashSet<>();

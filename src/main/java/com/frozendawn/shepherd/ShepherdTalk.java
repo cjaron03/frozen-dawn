@@ -59,6 +59,7 @@ public final class ShepherdTalk {
             this.player = player;
             this.she = she;
             she.askFor(0);
+            ShepherdSavedData.get(player.getServer()).lastTalk(player.serverLevel().getGameTime());
         }
     }
 

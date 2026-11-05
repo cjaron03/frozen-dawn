@@ -23,6 +23,8 @@ import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 public final class ShepherdCuriosityGameTest {
     private static final BlockPos SPOT = new BlockPos(10, 4, 10), CHEST = new BlockPos(15, 4, 10);
 
+    @BeforeBatch(batch = "shepherd_curious_line") public static void lineBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_curious_line") public static void lineAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
     @BeforeBatch(batch = "shepherd_curious_chest") public static void chestBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
     @AfterBatch(batch = "shepherd_curious_chest") public static void chestAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
     @BeforeBatch(batch = "shepherd_curious_moving") public static void movingBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
@@ -166,6 +168,19 @@ public final class ShepherdCuriosityGameTest {
             var she = withAChest(h, player(h));
             data(h).affinity(-300);
             h.startSequence().thenExecuteAfter(40, () -> assertNotLooking(h, she)).thenSucceed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_curious_line", timeoutTicks = 400)
+    public static void shepherdLookingAtAChestEarnsALine(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var she = withAChest(h, player(h));
+            var keys = ShepherdAmbients.pools(ShepherdAmbient.Trigger.LOOKED_STORAGE).stream().flatMap(pool -> pool.variants().stream()).map(ShepherdAffinity.Say::key).toList();
+            h.startSequence()
+                    .thenWaitUntil(() -> assertLooking(h, she))
+                    .thenWaitUntil(() -> assertNotLooking(h, she))
+                    .thenExecute(() -> h.assertTrue(keys.contains(ShepherdReactions.said()), "She says something: " + ShepherdReactions.said()))
+                    .thenSucceed();
         });
     }
 
