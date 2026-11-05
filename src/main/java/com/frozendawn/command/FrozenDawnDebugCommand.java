@@ -103,6 +103,8 @@ final class FrozenDawnDebugCommand {
             case "shepherd" -> List.of(
                     "/fd shepherd dump (stage, last position, follower, affinity, flags and the node she would resume)",
                     "/fd shepherd state (her feelings and drives) | why (what her resting face comes from)",
+                    "/fd shepherd mind (coherence, stage, walls found, and what she makes of each person)",
+                    "/fd shepherd coherence <0-1> (set her coherence, to see a slow reply; her floor is 0.3)",
                     "/fd shepherd saw <deed> (a deed through the real door: cooldown and range apply)",
                     "/fd shepherd feel <feeling> (a feeling at its fullest, to look at her face)",
                     "/fd shepherd replay (clear her score and flags and restart the first meeting on the next right-click)",

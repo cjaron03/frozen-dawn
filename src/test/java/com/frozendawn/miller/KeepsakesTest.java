@@ -123,7 +123,7 @@ class KeepsakesTest {
     @Test
     void aDeedIsKeptAtTheMostItRaised() {
         var state = new PatternState();
-        state.poll(1, PatternState.NOT_SET, 0);
+        state.poll(1, PatternState.NOT_SET, false, 0);
         state.appraise(ONE, Deed.ARCHIVIST_KILLED, 0);
         var moment = state.keepsakes().of(ONE).getFirst();
         assertEquals("archivist_killed", moment.kind());

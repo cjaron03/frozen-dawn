@@ -18,13 +18,13 @@ class ImpressionStoreTest {
 
     private static PatternState woken() {
         var state = new PatternState();
-        state.poll(1, PatternState.NOT_SET, 0);
+        state.poll(1, PatternState.NOT_SET, false, 0);
         return state;
     }
 
     /** A day on: the settle has run. */
     private static double leanAfterADay(PatternState state, Theory theory) {
-        state.poll(1, PatternState.NOT_SET, DAY);
+        state.poll(1, PatternState.NOT_SET, false, DAY);
         return state.impressions().confidence(ONE, theory);
     }
 
@@ -49,11 +49,11 @@ class ImpressionStoreTest {
         var state = woken();
         state.impressions().note(ONE, Theory.KIND, true);
         assertEquals(0, state.impressions().confidence(ONE, Theory.KIND));
-        state.poll(1, PatternState.NOT_SET, DAY - 1);
+        state.poll(1, PatternState.NOT_SET, false, DAY - 1);
         assertEquals(0, state.impressions().confidence(ONE, Theory.KIND), "Not before the day is out");
-        state.poll(0, PatternState.NOT_SET, DAY);
+        state.poll(0, PatternState.NOT_SET, false, DAY);
         assertEquals(0, state.impressions().confidence(ONE, Theory.KIND), "Nobody near, so it waits");
-        state.poll(1, PatternState.NOT_SET, DAY);
+        state.poll(1, PatternState.NOT_SET, false, DAY);
         assertEquals(1.0 / 3, state.impressions().confidence(ONE, Theory.KIND), 1e-12);
     }
 

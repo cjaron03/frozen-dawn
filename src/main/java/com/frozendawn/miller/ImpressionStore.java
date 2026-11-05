@@ -156,6 +156,25 @@ public final class ImpressionStore {
         return evidence == null ? 0 : evidence.confidence();
     }
 
+    /** Someone talks to her, and calls her by her name: enough that she starts to notice what she says. */
+    boolean known() {
+        for (UUID who : players.keySet()) {
+            if (confidence(who, Theory.TALKS_TO_ME) >= SURE && confidence(who, Theory.CALLS_ME_AURORA) >= SURE) return true;
+        }
+        return false;
+    }
+
+    /** Everyone she has a theory on, and what she makes of them. */
+    Map<UUID, Map<Theory, Double>> all() {
+        var all = new LinkedHashMap<UUID, Map<Theory, Double>>();
+        players.forEach((who, theories) -> {
+            var leans = new EnumMap<Theory, Double>(Theory.class);
+            theories.forEach((theory, evidence) -> leans.put(theory, evidence.confidence()));
+            all.put(who, leans);
+        });
+        return all;
+    }
+
     double evidenceFor(UUID who, Theory theory) {
         var theories = players.get(who);
         var evidence = theories == null ? null : theories.get(theory);

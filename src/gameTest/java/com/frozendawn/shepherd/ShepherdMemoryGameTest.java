@@ -4,6 +4,7 @@ import com.frozendawn.FrozenDawn;
 import com.frozendawn.gametest.GameTestTemplates;
 import com.frozendawn.miller.ImpressionStore.Theory;
 import com.frozendawn.miller.MillerPattern;
+import com.frozendawn.miller.SelfModel;
 import com.frozendawn.shepherd.ShepherdDialogue.Slot;
 import com.frozendawn.shepherd.ShepherdSavedData.Stage;
 import com.frozendawn.shepherd.ShepherdTalk.Action;
@@ -26,6 +27,10 @@ import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 public final class ShepherdMemoryGameTest {
     private static final BlockPos SPOT = new BlockPos(10, 4, 10);
 
+    @BeforeBatch(batch = "shepherd_memory_replay") public static void replayBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_memory_replay") public static void replayAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_memory_tier") public static void tierBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_memory_tier") public static void tierAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
     @BeforeBatch(batch = "shepherd_memory_answer") public static void answerBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
     @AfterBatch(batch = "shepherd_memory_answer") public static void answerAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
     @BeforeBatch(batch = "shepherd_memory_named") public static void namedBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
@@ -52,7 +57,7 @@ public final class ShepherdMemoryGameTest {
     private static void aDayPasses(GameTestHelper h) {
         var server = h.getLevel().getServer();
         MillerPattern.skipDay(server);
-        MillerPattern.poll(server, 1, data(h).lastTalk());
+        MillerPattern.poll(server, 1, data(h).lastTalk(), false);
     }
 
     private static double lean(GameTestHelper h, ServerPlayer player, Theory theory) {
@@ -112,6 +117,45 @@ public final class ShepherdMemoryGameTest {
             h.assertTrue(player.isDeadOrDying(), "They died beside her");
             aDayPasses(h);
             for (Theory theory : Theory.values()) h.assertTrue(lean(h, player, theory) == 0, "A death is never evidence: " + theory);
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_memory_replay", timeoutTicks = 400)
+    public static void shepherdReplayClearsHerMemory(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            awake(h, player);
+            var server = h.getLevel().getServer();
+            ShepherdReactions.saw(player, ShepherdAffinity.Deed.ARCHIVIST_KILLED);
+            aDayPasses(h);
+            MillerPattern.setCoherence(server, 0.3);
+            h.assertTrue(lean(h, player, Theory.KIND) < 0, "She has a theory");
+            h.assertTrue(MillerPattern.snapshot(server).keepsakes().get(player.getUUID()) == 1, "And a keepsake");
+            h.assertTrue(ShepherdTalk.replay(server), "She is awake to replay");
+            var mind = MillerPattern.snapshot(server);
+            h.assertTrue(lean(h, player, Theory.KIND) == 0 && mind.keepsakes().isEmpty() && mind.impressions().isEmpty(), "Her memory starts over");
+            h.assertTrue(mind.coherence() == 1 && mind.stage() == SelfModel.Stage.PRODUCT && mind.walls().isEmpty(), "As she woke");
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_memory_tier", timeoutTicks = 400)
+    public static void shepherdCoherenceDoesNotTouchHerTier(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            awake(h, player);
+            var server = h.getLevel().getServer();
+            data(h).affinity(600);
+            ShepherdReactions.saw(player, ShepherdAffinity.Deed.READ_LOG);
+            int score = data(h).affinity();
+            var kept = MillerPattern.snapshot(server).keepsakes();
+            MillerPattern.setCoherence(server, 0.3);
+            MillerPattern.skipDay(server);
+            MillerPattern.poll(server, 1, data(h).lastTalk(), data(h).tier().atLeast(ShepherdAffinity.Tier.TRUSTED));
+            h.assertTrue(MillerPattern.halfLaps(server) == 2, "She is slow");
+            h.assertTrue(data(h).affinity() == score && data(h).tier() == ShepherdAffinity.Tier.TRUSTED, "Slow is all she is: " + data(h).affinity());
+            h.assertTrue(MillerPattern.snapshot(server).keepsakes().equals(kept), "And she has lost nothing");
             h.succeed();
         });
     }

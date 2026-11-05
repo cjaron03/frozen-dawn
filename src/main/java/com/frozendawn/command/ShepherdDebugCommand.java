@@ -8,6 +8,7 @@ import com.frozendawn.shepherd.ShepherdEggs;
 import com.frozendawn.shepherd.ShepherdReactions;
 import com.frozendawn.shepherd.ShepherdSavedData;
 import com.frozendawn.shepherd.ShepherdTalk;
+import com.mojang.brigadier.arguments.DoubleArgumentType;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import java.util.List;
@@ -51,6 +52,12 @@ final class ShepherdDebugCommand {
         return Commands.literal("shepherd").requires(source -> source.hasPermission(2))
                 .then(Commands.literal("state").executes(c -> lines(c.getSource(), MillerPattern.diagnostics(c.getSource().getServer()))))
                 .then(Commands.literal("why").executes(c -> lines(c.getSource(), MillerPattern.explain(c.getSource().getServer()))))
+                .then(Commands.literal("mind").executes(c -> lines(c.getSource(), MillerPattern.mind(c.getSource().getServer()))))
+                .then(Commands.literal("coherence").then(Commands.argument("value", DoubleArgumentType.doubleArg(0, 1)).executes(c -> {
+                    MillerPattern.setCoherence(c.getSource().getServer(), DoubleArgumentType.getDouble(c, "value"));
+                    FrozenDawnCommandOutput.item(c.getSource(), "coherence=" + MillerPattern.snapshot(c.getSource().getServer()).coherence());
+                    return 1;
+                })))
                 .then(saw())
                 .then(feel())
                 .then(Commands.literal("dump").executes(c -> {

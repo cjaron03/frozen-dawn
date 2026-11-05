@@ -905,6 +905,8 @@ shepherdananswerisheard xml
 shepherdanamedplayerisnoted xml
 shepherdhubactionsarenoted xml
 shepherdaplayersdeathleavesnoimpression xml
+shepherdreplayclearshermemory xml
+shepherdcoherencedoesnottouchhertier xml
 shepherdlethaldamagegoesofflinenotdead xml
 shepherdkillcommandgoesofflinenotdead xml
 shepherdvoidreturnshertoherfollower xml
