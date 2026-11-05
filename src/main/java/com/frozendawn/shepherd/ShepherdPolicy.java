@@ -17,6 +17,8 @@ public final class ShepherdPolicy {
     public static final float COLD_LINE_C = -10;
     public static final int PROMPT_REPEAT_TICKS = 1200;
     public static final int PROMPT_SHOWS = 3;
+    /** A day between personal conversations, so one never lands on the heels of the last. */
+    public static final int PERSONAL_GAP_TICKS = 24000;
     public static final int STRIP_HOLD_TICKS = 80;
     public static final int STRIP_FADE_TICKS = 20;
     public static final double ASK_BLOCKS = 2.5;
@@ -38,7 +40,19 @@ public final class ShepherdPolicy {
     public static final int WARMTH_BLOCKS = 4;
     public static final float WARMTH_C = 5f;
 
+    private static final String[] BEARINGS = {"north", "north-east", "east", "south-east", "south", "south-west", "west", "north-west"};
+
     private ShepherdPolicy() {}
+
+    /** The compass word for a way of going: +x east, +z south, as the game has it. */
+    public static String bearing(int dx, int dz) {
+        double turns = StrictMath.atan2(dx, -dz) / (2 * StrictMath.PI);
+        return BEARINGS[Math.floorMod((int) StrictMath.round(turns * BEARINGS.length), BEARINGS.length)];
+    }
+
+    public static int groundBlocks(int dx, int dz) {
+        return (int) StrictMath.round(StrictMath.sqrt((double) dx * dx + (double) dz * dz));
+    }
 
     public static int typedChars(int age, int length) {
         return Math.min(length, age / TICKS_PER_CHAR);

@@ -2,6 +2,7 @@ package com.frozendawn.shepherd;
 
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.entity.ArchivistEntity;
+import com.frozendawn.miller.SelfModel;
 import com.frozendawn.miller.Heard;
 import com.frozendawn.miller.MillerPattern;
 import com.frozendawn.miller.Refusal;
@@ -13,10 +14,13 @@ import com.frozendawn.shepherd.ShepherdDialogue.Line;
 import com.frozendawn.shepherd.ShepherdDialogue.Node;
 import com.frozendawn.shepherd.ShepherdDialogue.Slot;
 import com.frozendawn.shepherd.ShepherdFace.Mood;
+import com.frozendawn.world.BlastPitPlacement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.function.Predicate;
+import java.util.function.UnaryOperator;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -38,6 +42,9 @@ public final class ShepherdTalk {
     private static final String HUB_TALK = "hub.talk.silent";
     private static final int UNIMPRESSED_TICKS = 40;
     private static final int TALK_TICKS_PER_LINE = 80;
+    private static final String FOUND = "found:", REMEMBERS = "remembers:";
+    /** The ground ref when there is no pit to give one for, as {@code TowerArchive} writes it. */
+    private static final String NO_REF = "---";
 
     public enum Action {
         TALK,
@@ -64,6 +71,8 @@ public final class ShepherdTalk {
         int line, lineTicks;
         /** How long the line on screen waited before it started. */
         int thinkTicks;
+        /** What the client was last sent. */
+        ShepherdNodePayload sent;
 
         Live(ServerPlayer player, ShepherdEntity she) {
             this.player = player;
@@ -148,19 +157,45 @@ public final class ShepherdTalk {
         return true;
     }
 
-    /** The dialogue files' conditions: her tier, where the wand is, or else a saved flag. */
-    private static boolean holds(ServerPlayer player, String condition) {
-        var tier = ShepherdSavedData.get(player.getServer()).tier();
+    /** The dialogue files' conditions: her tier, how far she has got, where the wand is, what this speaker has read or she holds of them, or else a saved flag. */
+    static boolean holds(ServerPlayer player, String condition) {
+        var server = player.getServer();
+        if (condition.startsWith(FOUND)) return found(player, condition.substring(FOUND.length()));
+        if (condition.startsWith(REMEMBERS)) return MillerPattern.remembers(server, player.getUUID(), condition.substring(REMEMBERS.length()));
+        var tier = ShepherdSavedData.get(server).tier();
         return switch (condition) {
             case "tier_silent" -> ShepherdSavedData.get(player.getServer()).affinity() < ShepherdAffinity.SILENT_BELOW;
             case "tier_wary" -> tier == Tier.WARY;
+            case "tier_above_wary" -> tier != Tier.WARY;
             case "tier_friendly" -> tier.atLeast(Tier.FRIENDLY);
             case "tier_trusted" -> tier.atLeast(Tier.TRUSTED);
             case "tier_close" -> tier.atLeast(Tier.CLOSE);
+            case "stage_noticing" -> MillerPattern.stage(server).compareTo(SelfModel.Stage.NOTICING) >= 0;
+            case "stage_walls" -> MillerPattern.stage(server).compareTo(SelfModel.Stage.FINDING_WALLS) >= 0;
             case "wand_cradle" -> ShepherdWand.of(player) == ShepherdWand.Where.CRADLE;
             case "wand_hand" -> ShepherdWand.of(player) == ShepherdWand.Where.HAND;
             case "wand_other" -> ShepherdWand.of(player) == ShepherdWand.Where.OTHER;
             default -> ShepherdSavedData.get(player.getServer()).flag(condition);
+        };
+    }
+
+    /** Whether this player has filed that document. The advancement is the record, and it is theirs alone. */
+    private static boolean found(ServerPlayer player, String doc) {
+        var holder = player.getServer().getAdvancements().get(ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "found_" + doc));
+        return holder != null && player.getAdvancements().getOrStartProgress(holder).isDone();
+    }
+
+    /** What a line's argument comes to, for the one she is talking to. The ground ref is read fresh: the target can be rerolled until the pit is built. */
+    private static String arg(ServerPlayer player, String token) {
+        var pit = BlastPitPlacement.ensureBlastPitResolved(player.getServer().overworld());
+        if (pit == null) return NO_REF;
+        int dx = pit.getX() - player.getBlockX(), dz = pit.getZ() - player.getBlockZ();
+        return switch (token) {
+            case "pit_x" -> String.valueOf(pit.getX());
+            case "pit_z" -> String.valueOf(pit.getZ());
+            case "pit_blocks" -> String.valueOf(ShepherdPolicy.groundBlocks(dx, dz));
+            case "pit_bearing" -> ShepherdPolicy.bearing(dx, dz);
+            default -> NO_REF;
         };
     }
 
@@ -307,7 +342,9 @@ public final class ShepherdTalk {
         showMood();
         live.she.talkFor(wait + TALK_TICKS_PER_LINE * live.lines.size());
         live.she.thinkFor(live.thinkTicks);
-        PacketDistributor.sendToPlayer(live.player, payload(live.id, node, live.lines, data.heavy(), logo, live.thinkTicks));
+        var player = live.player;
+        live.sent = payload(live.id, node, live.lines, data.heavy(), logo, live.thinkTicks, token -> arg(player, token));
+        PacketDistributor.sendToPlayer(player, live.sent);
     }
 
     /** She takes a moment when her coherence is low. The logo is its own wait, and a recording has nobody in it to think. */
@@ -334,9 +371,9 @@ public final class ShepherdTalk {
         }
     }
 
-    static ShepherdNodePayload payload(int conversation, Node node, List<Line> said, boolean heavy, int logoTicks, int thinkTicks) {
+    static ShepherdNodePayload payload(int conversation, Node node, List<Line> said, boolean heavy, int logoTicks, int thinkTicks, UnaryOperator<String> arg) {
         var lines = said.stream().map(line -> new ShepherdNodePayload.Line(
-                heavy && line.heavyKey() != null ? line.heavyKey() : line.key(), line.mood())).toList();
+                heavy && line.heavyKey() != null ? line.heavyKey() : line.key(), line.mood(), line.args().stream().map(arg).toList())).toList();
         var replies = node.responses().stream().map(response -> new ShepherdNodePayload.Reply(
                 response.slot().ordinal(), response.label(), response.full())).toList();
         return new ShepherdNodePayload(conversation, node.id(), lines, replies, replies.isEmpty(), logoTicks, thinkTicks);
@@ -411,6 +448,11 @@ public final class ShepherdTalk {
     /** The node on screen, or null on the hub or when nobody is talking. */
     static String liveNode() {
         return live == null || live.talk == null ? null : live.talk.current().id();
+    }
+
+    /** What the client was last sent, or null. */
+    static ShepherdNodePayload liveSent() {
+        return live == null ? null : live.sent;
     }
 
     /** How long the line on screen was made to wait. */

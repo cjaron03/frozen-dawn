@@ -1,9 +1,11 @@
 package com.frozendawn.shepherd;
 
+import com.frozendawn.data.OrsaStructureState;
 import com.frozendawn.gametest.GameTestPlayers;
 import com.frozendawn.gametest.GameTestReporting;
 import com.frozendawn.init.ModEntities;
 import com.frozendawn.miller.MillerPattern;
+import com.frozendawn.world.BlastPitPlacement;
 import com.mojang.authlib.GameProfile;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
@@ -44,6 +46,36 @@ final class ShepherdTestWorld {
         MillerPattern.reset(level.getServer());
         // A body left in a test area that has stopped ticking would never get to remove itself.
         for (var body : level.getEntities(ModEntities.CS1_UNIT.get(), e -> true)) body.discard();
+    }
+
+    /** The world's pit, as it stood before a test moved it. */
+    private static BlockPos pitTarget, pitBuilt;
+    private static boolean pitPlaced;
+
+    static void keepThePit(ServerLevel level) {
+        var state = OrsaStructureState.get(level.getServer());
+        pitTarget = state.getBlastPitTargetPos();
+        pitBuilt = state.getBlastPitPos();
+        pitPlaced = state.isBlastPitPlaced();
+    }
+
+    static void restoreThePit(ServerLevel level) {
+        var state = OrsaStructureState.get(level.getServer());
+        state.setBlastPitTargetPos(pitTarget);
+        state.setBlastPitPos(pitBuilt);
+        state.setBlastPitPlaced(pitPlaced);
+    }
+
+    /** A pit standing here, as far as anyone can tell. Marked built, so the real placement leaves the test area alone. */
+    static void pitAt(ServerLevel level, BlockPos pos) {
+        var state = OrsaStructureState.get(level.getServer());
+        state.setBlastPitTargetPos(pos);
+        state.setBlastPitPos(pos);
+        state.setBlastPitPlaced(true);
+    }
+
+    static BlockPos pit(ServerLevel level) {
+        return BlastPitPlacement.ensureBlastPitResolved(level);
     }
 
     /** A test can start before its chunk ticks entities, and she counts ticks. */

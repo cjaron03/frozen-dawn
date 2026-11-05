@@ -42,6 +42,7 @@ public final class ShepherdDockBlockEntity extends BlockEntity {
     void wake(ServerPlayer waker) {
         var data = ShepherdSavedData.get(waker.getServer());
         data.stage(Stage.AWAKE);
+        data.wokeAt(waker.getServer().overworld().getGameTime());
         data.flag(ShepherdSavedData.WOKE_IN_VAULT, getBlockState().is(ModBlocks.VAULT_CS1_DOCK.get()));
         data.resumeNode(ShepherdTalk.FIRST_MEETING);
         cell = ItemStack.EMPTY;

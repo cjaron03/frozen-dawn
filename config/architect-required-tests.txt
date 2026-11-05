@@ -1121,3 +1121,10 @@ shepherdatalktakestheplaceofsorry xml
 shepherdcatchesupwhenthenightisover xml
 shepherdwaryhasnoopinions xml
 shepherdquiethasitslimit xml
+shepherdanargumentreachesthescreen xml
+shepherdstageconditionsreadthepattern xml
+shepherdfoundreadsthespeaker xml
+shepherdwakingrecordswhen xml
+shepherdnextpersonalwaitsaday xml
+shepherdanunreadyentryispassedover xml
+shepherdawaitingentrythatlapsesiswithdrawn xml

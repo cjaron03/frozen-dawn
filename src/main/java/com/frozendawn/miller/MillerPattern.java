@@ -92,6 +92,11 @@ public final class MillerPattern {
         return keepsakes(server, who).stream().anyMatch(moment -> moment.kind().equals(kind));
     }
 
+    /** How far she has got in her picture of herself. Only reads. */
+    public static SelfModel.Stage stage(MinecraftServer server) {
+        return current(server).state().self().stage();
+    }
+
     /** What she wants of the sky, as a reason to stay under it. */
     public static double skyWanted(MinecraftServer server) {
         var runtime = current(server);

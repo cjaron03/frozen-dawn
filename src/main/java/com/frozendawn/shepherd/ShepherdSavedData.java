@@ -61,6 +61,8 @@ public final class ShepherdSavedData extends SavedData {
     private long lastNear = NOT_SET;
     /** When she last spoke up unasked, and when anyone last talked to her. */
     private long lastAmbient = NOT_SET, lastTalk = NOT_SET;
+    /** When she was first booted, in game time. */
+    private long wokeAt = NOT_SET;
 
     public static ShepherdSavedData get(MinecraftServer server) {
         return server.overworld().getDataStorage().computeIfAbsent(
@@ -100,6 +102,8 @@ public final class ShepherdSavedData extends SavedData {
     public void lastAmbient(long gameTime) { lastAmbient = gameTime; setDirty(); }
     public long lastTalk() { return lastTalk; }
     public void lastTalk(long gameTime) { lastTalk = gameTime; setDirty(); }
+    public long wokeAt() { return wokeAt; }
+    public void wokeAt(long gameTime) { wokeAt = gameTime; setDirty(); }
 
     /** Back to the moment she woke: everything the first meeting earned goes, and she starts it again. Where she woke stays true. */
     void replayFirstMeeting() {
@@ -139,7 +143,7 @@ public final class ShepherdSavedData extends SavedData {
         heavy = false;
         promptNode = null;
         deeds.clear();
-        lastNear = lastAmbient = lastTalk = NOT_SET;
+        lastNear = lastAmbient = lastTalk = wokeAt = NOT_SET;
         setDirty();
     }
 
@@ -151,7 +155,7 @@ public final class ShepherdSavedData extends SavedData {
         lines.add("follower=" + follower + " waiting=" + waiting + " lamp=" + lamp);
         lines.add("affinity=" + affinity + " tier=" + tier() + " heavy=" + heavy + " resumeNode=" + resumeNode + " promptNode=" + promptNode);
         lines.add("flags=" + new TreeSet<>(flags));
-        lines.add("deeds=" + new TreeMap<>(deeds) + " lastNear=" + lastNear + " lastAmbient=" + lastAmbient + " lastTalk=" + lastTalk);
+        lines.add("deeds=" + new TreeMap<>(deeds) + " lastNear=" + lastNear + " lastAmbient=" + lastAmbient + " lastTalk=" + lastTalk + " wokeAt=" + wokeAt);
         return lines;
     }
 
@@ -176,6 +180,7 @@ public final class ShepherdSavedData extends SavedData {
         if (tag.contains("lastNear")) data.lastNear = tag.getLong("lastNear");
         if (tag.contains("lastAmbient")) data.lastAmbient = tag.getLong("lastAmbient");
         if (tag.contains("lastTalk")) data.lastTalk = tag.getLong("lastTalk");
+        if (tag.contains("wokeAt")) data.wokeAt = tag.getLong("wokeAt");
         return data;
     }
 
@@ -200,6 +205,7 @@ public final class ShepherdSavedData extends SavedData {
         if (lastNear != NOT_SET) tag.putLong("lastNear", lastNear);
         if (lastAmbient != NOT_SET) tag.putLong("lastAmbient", lastAmbient);
         if (lastTalk != NOT_SET) tag.putLong("lastTalk", lastTalk);
+        if (wokeAt != NOT_SET) tag.putLong("wokeAt", wokeAt);
         return tag;
     }
 }

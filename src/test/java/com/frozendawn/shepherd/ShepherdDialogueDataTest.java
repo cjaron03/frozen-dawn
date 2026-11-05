@@ -79,15 +79,35 @@ class ShepherdDialogueDataTest {
     @Test
     void everyConditionIsKnown() throws Exception {
         var nodes = nodes();
-        Set<String> known = new HashSet<>(List.of("woke_in_vault", "wand_cradle", "wand_hand", "wand_other", "tier_silent", "tier_wary", "tier_friendly", "tier_trusted", "tier_close"));
+        Set<String> known = new HashSet<>(List.of("woke_in_vault", "wand_cradle", "wand_hand", "wand_other", "tier_silent", "tier_wary", "tier_above_wary", "tier_friendly", "tier_trusted", "tier_close",
+                "stage_noticing", "stage_walls", "quiet"));
         for (Node node : nodes.values()) {
             known.addAll(node.set());
             for (Response response : node.responses()) known.addAll(response.set());
         }
         for (Node node : nodes.values()) {
-            if (node.when() != null) assertTrue(known.contains(node.when()), node.id() + ": " + node.when());
+            if (node.when() != null) assertTrue(isKnown(known, node.when()), node.id() + ": " + node.when());
             for (var line : node.lines()) {
-                if (line.condition() != null) assertTrue(known.contains(line.condition()), node.id() + ": " + line.condition());
+                if (line.condition() != null) assertTrue(isKnown(known, line.condition()), node.id() + ": " + line.condition());
+            }
+        }
+    }
+
+    private static boolean isKnown(Set<String> known, String condition) {
+        return known.contains(condition) || condition.startsWith("found:") || condition.startsWith("remembers:");
+    }
+
+    /** A line's text has one slot for each argument, and each argument is one the server can fill. */
+    @Test
+    void everyArgIsKnown() throws Exception {
+        var lang = lang();
+        var slot = java.util.regex.Pattern.compile("%s");
+        for (Node node : nodes().values()) {
+            for (var line : node.lines()) {
+                for (String arg : line.args()) assertTrue(ShepherdDialogue.ARGS.contains(arg), node.id() + ": " + arg);
+                for (String key : line.heavyKey() == null ? List.of(line.key()) : List.of(line.key(), line.heavyKey())) {
+                    assertEquals(line.args().size(), slot.matcher(lang.get(key).getAsString()).results().count(), node.id() + ": " + key);
+                }
             }
         }
     }

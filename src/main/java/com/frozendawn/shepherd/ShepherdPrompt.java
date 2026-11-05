@@ -34,15 +34,23 @@ import net.neoforged.neoforge.network.PacketDistributor;
 public final class ShepherdPrompt {
     public static final String DOORS = "fm.doors", EXIT = "fm.exit";
     public static final String THE_NAME = "t1.name";
+    static final String PERSONAL_GAP = "personal_gap";
     static final String FIRST_MEETING_DONE = "fm_done", DOORS_ASKED = "doors_asked", EXIT_ASKED = "exit_asked", NAME_ASKED = "t1_asked", ASKED_NAME = "asked_name";
     /** What each tier opens, in the order she brings it up. */
-    private static final List<Personal> PERSONAL = List.of(new Personal(Tier.FRIENDLY, THE_NAME, NAME_ASKED));
+    private static final List<Personal> PERSONAL = List.of(new Personal(Tier.FRIENDLY, THE_NAME, NAME_ASKED, (server, level, data, near) -> true));
     /** A sprinter covers 1.4 blocks in this, so nobody crosses a box between looks. */
     private static final int CHECK_TICKS = 5;
     private static final long LONG_AGO = Long.MIN_VALUE / 2;
 
-    private record Personal(Tier tier, String node, String asked) {}
+    /** Whether a conversation can land now, whatever the tier says. One that cannot is passed over, not given up on. */
+    @FunctionalInterface
+    interface Ready {
+        boolean test(MinecraftServer server, ServerLevel level, ShepherdSavedData data, List<ServerPlayer> near);
+    }
 
+    record Personal(Tier tier, String node, String asked, Ready ready) {}
+
+    private static List<Personal> personal = PERSONAL;
     private static int shows;
     private static int nextShow;
     private static int repeat = ShepherdPolicy.PROMPT_REPEAT_TICKS;
@@ -86,20 +94,24 @@ public final class ShepherdPrompt {
     private static void offer(MinecraftServer server, ServerLevel level, ShepherdSavedData data, List<ServerPlayer> near) {
         if (ShepherdTalk.live()) return;
         var tier = data.tier();
+        long now = server.overworld().getGameTime();
         var waiting = waitingPersonal(data);
-        if (waiting != null && !tier.atLeast(waiting.tier())) withdraw(data);
-        if (data.promptNode() != null || data.resumeNode() != null || !data.flag(FIRST_MEETING_DONE)) return;
+        if (waiting != null && !(tier.atLeast(waiting.tier()) && waiting.ready().test(server, level, data, near))) withdraw(data);
+        // While one waits the day has not started: it runs from when she is answered.
+        if (waitingPersonal(data) != null) data.deedReady(PERSONAL_GAP, now + ShepherdPolicy.PERSONAL_GAP_TICKS);
+        if (data.promptNode() != null || data.resumeNode() != null || !data.flag(FIRST_MEETING_DONE) || now < data.deedReady(PERSONAL_GAP)) return;
         if (!calm(server, level, near)) return;
         if (!ShepherdPolicy.comfortable(coldest(near), near.stream().anyMatch(player -> PlayerTickHandler.airFailing(player.getUUID())))) return;
-        for (var personal : PERSONAL) {
-            if (!tier.atLeast(personal.tier()) || data.flag(personal.asked())) continue;
-            raise(data, personal.asked(), personal.node());
+        for (var entry : personal) {
+            if (!tier.atLeast(entry.tier()) || data.flag(entry.asked()) || !entry.ready().test(server, level, data, near)) continue;
+            raise(data, entry.asked(), entry.node());
+            data.deedReady(PERSONAL_GAP, now + ShepherdPolicy.PERSONAL_GAP_TICKS);
             return;
         }
     }
 
     private static Personal waitingPersonal(ShepherdSavedData data) {
-        return PERSONAL.stream().filter(personal -> personal.node().equals(data.promptNode())).findFirst().orElse(null);
+        return personal.stream().filter(entry -> entry.node().equals(data.promptNode())).findFirst().orElse(null);
     }
 
     /** Not while it is on someone's screen: it is being said, so it has been asked. */
@@ -108,6 +120,7 @@ public final class ShepherdPrompt {
         if (waiting == null || ShepherdTalk.live()) return;
         data.flag(waiting.asked(), false);
         data.promptNode(null);
+        data.deedReady(PERSONAL_GAP, 0);
         if (waiting.node().equals(data.resumeNode())) data.resumeNode(null);
     }
 
@@ -172,7 +185,13 @@ public final class ShepherdPrompt {
         repeat = ticks;
     }
 
+    /** GameTest seam: the list as it will one day stand. */
+    static void personal(List<Personal> entries) {
+        personal = entries;
+    }
+
     static void clearForTests() {
+        personal = PERSONAL;
         shows = 0;
         nextShow = 0;
         repeat = ShepherdPolicy.PROMPT_REPEAT_TICKS;
