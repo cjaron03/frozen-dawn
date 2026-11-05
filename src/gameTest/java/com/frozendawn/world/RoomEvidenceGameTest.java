@@ -64,7 +64,13 @@ public final class RoomEvidenceGameTest {
     @BeforeBatch(batch="room_large_region") public static void largeReport(ServerLevel l){GameTestReporting.installReporter(l);}
     @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="room_delayed_frontier",timeoutTicks=200)
     public static void roomDelayedFrontierBreachFindsSkyWithoutRecordedExterior(GameTestHelper h){preserved(h,()->{
-        var l=h.getLevel();var origin=h.absolutePos(new BlockPos(64,2,64));box(l,origin,24);
+        var l=h.getLevel();var origin=h.absolutePos(new BlockPos(64,2,64));
+        try{breachDelayedFrontier(h,origin);}
+        finally{unbox(l,origin,24);uncorridor(l,origin);settleLight(l,origin,origin.offset(105,0,25));}
+        assertOpenSky(h,origin,origin.offset(25,0,25));
+    });}
+    private static void breachDelayedFrontier(GameTestHelper h,BlockPos origin){
+        var l=h.getLevel();box(l,origin,24);
         var center=origin.offset(12,12,12);long clock=l.getGameTime();
         RoomAtmosphere.RoomView room=null;
         for(int i=0;i<100&&room==null;i++){time(l,clock+i);RoomAtmosphere.tickLevel(l);room=RoomAtmosphere.view(l,center);}
@@ -90,14 +96,13 @@ public final class RoomEvidenceGameTest {
         h.assertTrue(open&&ticks>1,"A later frontier slice discovers the real sky exit");
         h.assertFalse(RoomAtmosphere.hasAir(l,center),"Verified exterior connection vents the original room after delayed discovery");
         h.assertTrue(RoomAirState.get(l).isDepleted(previous)&&RoomIdentityState.get(l).at(center).id()==id,"Breach depletes gas while retaining dormant historical membership identity");
-    });}
+    }
     @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="room_large_region",timeoutTicks=200)
     public static void roomLargeCellRegionBreachRequiresBoundaryEvidenceAtHardCap(GameTestHelper h){preserved(h,()->{
         var l=h.getLevel();var origin=h.absolutePos(new BlockPos(64,2,64));var caveOrigin=origin.east(4);
         try{breachLargeRegion(h,origin,caveOrigin);}
         finally{unbox(l,origin,3);unbox(l,caveOrigin,52);settleLight(l,origin,caveOrigin.offset(53,0,53));}
-        for(int x=0;x<=53;x++)for(int z=0;z<=53;z++)h.assertTrue(l.canSeeSky(caveOrigin.offset(x,0,z)),"The cave leaves open sky for the batches placed here later");
-        for(int x=0;x<=4;x++)for(int z=0;z<=4;z++)h.assertTrue(l.canSeeSky(origin.offset(x,0,z)),"The base leaves open sky for the batches placed here later");
+        assertOpenSky(h,caveOrigin,caveOrigin.offset(53,0,53));assertOpenSky(h,origin,origin.offset(4,0,4));
     });}
     private static void breachLargeRegion(GameTestHelper h,BlockPos origin,BlockPos caveOrigin){
         var l=h.getLevel();box(l,origin,3);
@@ -131,6 +136,12 @@ public final class RoomEvidenceGameTest {
     private static void unbox(ServerLevel l,BlockPos origin,int interior){
         int side=interior+1;
         for(int x=0;x<=side;x++)for(int y=0;y<=side;y++)for(int z=0;z<=side;z++)l.setBlock(origin.offset(x,y,z),Blocks.AIR.defaultBlockState(),2);
+    }
+    private static void uncorridor(ServerLevel l,BlockPos origin){
+        for(int x=26;x<=105;x++)for(int y=11;y<=13;y++)for(int z=11;z<=13;z++)if(y==12||z==12)l.setBlock(origin.offset(x,y,z),Blocks.AIR.defaultBlockState(),2);
+    }
+    private static void assertOpenSky(GameTestHelper h,BlockPos from,BlockPos to){
+        for(var at:BlockPos.betweenClosed(from,to))h.assertTrue(h.getLevel().canSeeSky(at),"Open sky is left for the batches placed here later, at "+at);
     }
     /** Sky light is worked out off-thread in real time, so a batch placed here next could still read this roof's shadow. */
     private static void settleLight(ServerLevel l,BlockPos from,BlockPos to){
