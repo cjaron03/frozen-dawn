@@ -49,6 +49,13 @@ public final class MillerPattern {
         runtime.data.setDirty();
     }
 
+    /** {@code /fd shepherd feel}: a feeling at its fullest, for looking at a face. Not something she saw, so it leaves no reason behind. */
+    public static void feel(MinecraftServer server, Feeling feeling) {
+        var runtime = current(server);
+        runtime.state().feelings().raise(feeling, 1, runtime.now());
+        runtime.data.setDirty();
+    }
+
     /** Back to the moment she woke, for a replay of the first meeting and between GameTests. */
     public static void reset(MinecraftServer server) {
         var runtime = current(server);

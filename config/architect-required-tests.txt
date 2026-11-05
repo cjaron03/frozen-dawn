@@ -1058,3 +1058,4 @@ shepherdaskingstaysthinking xml
 shepherdatalkkeepsherface xml
 shepherdisrestingonlywhensherests xml
 shepherdrebootsontoherfeeling xml
+shepherdthefeelcommandshowsaface xml

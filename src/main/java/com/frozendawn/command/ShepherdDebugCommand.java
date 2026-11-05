@@ -1,6 +1,7 @@
 package com.frozendawn.command;
 
 import com.frozendawn.data.ReturnedHearthSavedData;
+import com.frozendawn.miller.Feelings.Feeling;
 import com.frozendawn.miller.MillerPattern;
 import com.frozendawn.shepherd.ShepherdAffinity.Deed;
 import com.frozendawn.shepherd.ShepherdEggs;
@@ -35,11 +36,23 @@ final class ShepherdDebugCommand {
         return saw;
     }
 
+    private static LiteralArgumentBuilder<CommandSourceStack> feel() {
+        var feel = Commands.literal("feel");
+        for (Feeling feeling : Feeling.values()) {
+            feel.then(Commands.literal(feeling.name().toLowerCase(Locale.ROOT)).executes(c -> {
+                MillerPattern.feel(c.getSource().getServer(), feeling);
+                return 1;
+            }));
+        }
+        return feel;
+    }
+
     static LiteralArgumentBuilder<CommandSourceStack> commands() {
         return Commands.literal("shepherd").requires(source -> source.hasPermission(2))
                 .then(Commands.literal("state").executes(c -> lines(c.getSource(), MillerPattern.diagnostics(c.getSource().getServer()))))
                 .then(Commands.literal("why").executes(c -> lines(c.getSource(), MillerPattern.explain(c.getSource().getServer()))))
                 .then(saw())
+                .then(feel())
                 .then(Commands.literal("dump").executes(c -> {
                     FrozenDawnCommandOutput.heading(c.getSource(), "CS-1 Shepherd");
                     for (var line : ShepherdSavedData.get(c.getSource().getServer()).describe())

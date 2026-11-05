@@ -65,6 +65,8 @@ public final class ShepherdFeelingsGameTest {
     @AfterBatch(batch = "shepherd_feel_resting") public static void restingAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
     @BeforeBatch(batch = "shepherd_feel_reboot") public static void rebootBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
     @AfterBatch(batch = "shepherd_feel_reboot") public static void rebootAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_feel_command") public static void commandBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_feel_command") public static void commandAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
 
     private static ShepherdSavedData data(GameTestHelper h) {
         return ShepherdSavedData.get(h.getLevel().getServer());
@@ -329,6 +331,22 @@ public final class ShepherdFeelingsGameTest {
             h.startSequence()
                     .thenWaitUntil(() -> h.assertTrue(!she.offline(), "Waiting for the reboot"))
                     .thenExecute(() -> assertFace(h, she, Mood.SAD))
+                    .thenSucceed();
+        });
+    }
+
+    /** Amused cannot be reached on demand by deeds, and the owner's pass has to see every face. */
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_feel_command", timeoutTicks = 400)
+    public static void shepherdTheFeelCommandShowsAFace(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var she = awake(h, player(h));
+            var server = h.getLevel().getServer();
+            server.getCommands().performPrefixedCommand(server.createCommandSourceStack().withSuppressedOutput(), "fd shepherd feel gratitude");
+            h.startSequence()
+                    .thenExecuteAfter(3, () -> {
+                        assertFace(h, she, Mood.AMUSED);
+                        h.assertTrue(inner(h).history().isEmpty(), "It is no event she saw");
+                    })
                     .thenSucceed();
         });
     }
