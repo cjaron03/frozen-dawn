@@ -1,6 +1,14 @@
 {
   "nodes": [
     {
+      "id": "hub.talk.quiet",
+      "when": "quiet",
+      "else": "hub.talk.silent",
+      "lines": [
+        { "line": "shepherd.hub.talk.quiet", "mood": "sad" }
+      ]
+    },
+    {
       "id": "hub.talk.silent",
       "when": "tier_silent",
       "else": "hub.talk",

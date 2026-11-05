@@ -2192,6 +2192,8 @@
   "shepherd.refuse.archivist": "Not for this one. Find your own way to it.",
   "shepherd.refuse.archivist.yield": "Fine. I'm not watching.",
   "shepherd.hub.talk.warm": "Nothing to report. Around here I'll take that.",
+  "shepherd.hub.talk.quiet": "Not today.",
+  "shepherd.ambient.quiet_over.1": "Okay. I'm okay. What did I miss?",
   "shepherd.fm.boot.recording": "ORSA Civilian Support Unit CS-1, online. Please remain calm. An evacuation officer will be with you shortly.",
   "shepherd.fm.boot.hi": "...That's a recording. It plays on its own. Nobody's coming. Hi.",
   "shepherd.fm.boot.who.label": "Who are you?",

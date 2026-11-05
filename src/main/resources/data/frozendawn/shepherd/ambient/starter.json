@@ -99,6 +99,16 @@
       ]
     },
     {
+      "trigger": "quiet_over",
+      "cooldown": 0,
+      "mood": "neutral",
+      "variants": [
+        {
+          "line": "shepherd.ambient.quiet_over.1"
+        }
+      ]
+    },
+    {
       "trigger": "slow",
       "cooldown": 24000,
       "mood": "thinking",

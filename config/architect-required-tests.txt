@@ -1128,3 +1128,9 @@ shepherdwakingrecordswhen xml
 shepherdnextpersonalwaitsaday xml
 shepherdanunreadyentryispassedover xml
 shepherdawaitingentrythatlapsesiswithdrawn xml
+shepherdquietholdsthestrip xml
+shepherdquietkeepsaonceonlyline xml
+shepherdquietholdsprompts xml
+shepherdquietendswithaline xml
+shepherdskipdayendsthequiet xml
+shepherdquiettalksaysnottoday xml

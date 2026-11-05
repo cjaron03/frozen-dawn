@@ -34,9 +34,22 @@ import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 public final class ShepherdWillGameTest {
     private static final BlockPos SPOT = new BlockPos(10, 4, 10), CHEST = new BlockPos(15, 4, 10);
     private static final int A_POLL = ShepherdReactions.POLL_TICKS + 10;
+    private static final String QUIET_OVER = "shepherd.ambient.quiet_over.1";
 
     @BeforeBatch(batch = "shepherd_will_quiet") public static void quietBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
     @AfterBatch(batch = "shepherd_will_quiet") public static void quietAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_nine_quiet_strip") public static void nineQuietStripBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_nine_quiet_strip") public static void nineQuietStripAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_nine_quiet_once") public static void nineQuietOnceBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_nine_quiet_once") public static void nineQuietOnceAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_nine_quiet_prompts") public static void nineQuietPromptsBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_nine_quiet_prompts") public static void nineQuietPromptsAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_nine_quiet_ends") public static void nineQuietEndsBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_nine_quiet_ends") public static void nineQuietEndsAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_nine_quiet_skip") public static void nineQuietSkipBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_nine_quiet_skip") public static void nineQuietSkipAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_nine_quiet_talk") public static void nineQuietTalkBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_nine_quiet_talk") public static void nineQuietTalkAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
     @BeforeBatch(batch = "shepherd_will_recall") public static void recallBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
     @AfterBatch(batch = "shepherd_will_recall") public static void recallAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
     @BeforeBatch(batch = "shepherd_will_wall") public static void wallBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
@@ -530,6 +543,127 @@ public final class ShepherdWillGameTest {
                     })
                     .thenExecuteAfter(2 * A_POLL, () -> assertSaid(h, VOICE))
                     .thenSucceed();
+        });
+    }
+
+    private static long now(GameTestHelper h) {
+        return h.getLevel().getServer().overworld().getGameTime();
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_nine_quiet_strip", timeoutTicks = 600)
+    public static void shepherdQuietHoldsTheStrip(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            var she = met(h, player);
+            ShepherdReactions.quietFor(data(h), now(h));
+            int score = data(h).affinity();
+            ShepherdReactions.saw(player, Deed.CALLED_SHEPHERD);
+            assertSaid(h, null);
+            h.assertTrue(data(h).affinity() == score + Deed.CALLED_SHEPHERD.score(), "The score still moves: " + data(h).affinity());
+            h.assertTrue(she.mood() == Deed.CALLED_SHEPHERD.mood(), "Her face still shows it: " + she.mood());
+            h.assertTrue(data(h).lastAmbient() == ShepherdSavedData.NOT_SET, "Nothing was said, so no gap starts");
+            h.assertFalse(ShepherdReactions.murmur(h.getLevel(), Trigger.SILENCE), "No unasked line");
+            MillerPattern.slipNow(h.getLevel().getServer());
+            h.startSequence()
+                    .thenExecuteAfter(A_POLL, () -> {
+                        assertSaid(h, null);
+                        h.assertTrue(MillerPattern.slipDue(h.getLevel().getServer()), "The slip is held, not spent");
+                    })
+                    .thenSucceed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_nine_quiet_once", timeoutTicks = 400)
+    public static void shepherdQuietKeepsAOnceOnlyLine(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            met(h, player);
+            ShepherdReactions.quietFor(data(h), now(h));
+            var near = List.of(player);
+            var hearth = List.of(player.blockPosition());
+            ShepherdEggs.wall(h.getLevel(), near, hearth, false);
+            assertSaid(h, null);
+            h.assertFalse(data(h).flag(ShepherdEggs.WALL), "Not spent on a line nobody heard");
+            ShepherdReactions.skipDay(h.getLevel().getServer());
+            ShepherdEggs.wall(h.getLevel(), near, hearth, false);
+            assertSaid(h, ShepherdEggs.WALL_LINE);
+            h.assertTrue(data(h).flag(ShepherdEggs.WALL), "It played after");
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_nine_quiet_prompts", timeoutTicks = 800)
+    public static void shepherdQuietHoldsPrompts(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            var she = met(h, player);
+            data(h).affinity(260);
+            ShepherdPrompt.repeatEvery(10);
+            ShepherdReactions.quietFor(data(h), now(h));
+            h.startSequence()
+                    .thenExecuteAfter(15, () -> {
+                        h.assertTrue(data(h).promptNode() == null, "Nothing new is raised: " + data(h).promptNode());
+                        data(h).promptNode(ShepherdPrompt.THE_NAME);
+                    })
+                    .thenExecuteAfter(15, () -> {
+                        h.assertTrue(ShepherdPrompt.shows() == 0, "One waiting does not show");
+                        she.interact(player, InteractionHand.MAIN_HAND);
+                        h.assertTrue(ShepherdTalk.live() && ShepherdTalk.liveNode() == null, "A right-click is the hub: " + ShepherdTalk.liveNode());
+                        ShepherdTalk.close(player);
+                        ShepherdReactions.skipDay(h.getLevel().getServer());
+                    })
+                    .thenWaitUntil(() -> h.assertTrue(ShepherdPrompt.shows() > 0, "It shows once she is back"))
+                    .thenSucceed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_nine_quiet_ends", timeoutTicks = 600)
+    public static void shepherdQuietEndsWithALine(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            met(h, player(h));
+            sated(h);
+            ShepherdReactions.quietFor(data(h), now(h));
+            h.startSequence()
+                    .thenExecuteAfter(A_POLL, () -> {
+                        assertSaid(h, null);
+                        ShepherdReactions.skipDay(h.getLevel().getServer());
+                    })
+                    .thenWaitUntil(() -> assertSaid(h, QUIET_OVER))
+                    .thenExecute(() -> again(h))
+                    .thenExecuteAfter(A_POLL, () -> h.assertFalse(QUIET_OVER.equals(ShepherdReactions.said()), "Once"))
+                    .thenSucceed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_nine_quiet_skip", timeoutTicks = 400)
+    public static void shepherdSkipDayEndsTheQuiet(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            met(h, player(h));
+            ShepherdReactions.quietFor(data(h), now(h));
+            h.assertTrue(ShepherdReactions.quiet(data(h), now(h)), "Quiet");
+            h.assertTrue(ShepherdReactions.quiet(data(h), now(h) + ShepherdPolicy.DAY_TICKS - 1), "All day");
+            h.assertFalse(ShepherdReactions.quiet(data(h), now(h) + ShepherdPolicy.DAY_TICKS), "And no more");
+            ShepherdReactions.skipDay(h.getLevel().getServer());
+            h.assertFalse(ShepherdReactions.quiet(data(h), now(h)), "The day has gone by her clocks");
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_nine_quiet_talk", timeoutTicks = 400)
+    public static void shepherdQuietTalkSaysNotToday(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            var she = met(h, player);
+            ShepherdReactions.quietFor(data(h), now(h));
+            she.interact(player, InteractionHand.MAIN_HAND);
+            ShepherdTalk.action(player, ShepherdTalk.liveId(), Action.TALK);
+            h.assertTrue("hub.talk.quiet".equals(ShepherdTalk.liveNode()), "Talk: " + ShepherdTalk.liveNode());
+            ShepherdTalk.close(player);
+            ShepherdReactions.skipDay(h.getLevel().getServer());
+            she.interact(player, InteractionHand.MAIN_HAND);
+            ShepherdTalk.action(player, ShepherdTalk.liveId(), Action.TALK);
+            h.assertFalse("hub.talk.quiet".equals(ShepherdTalk.liveNode()), "Over: " + ShepherdTalk.liveNode());
+            h.succeed();
         });
     }
 }

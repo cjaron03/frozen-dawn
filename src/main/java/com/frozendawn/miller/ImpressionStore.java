@@ -103,7 +103,7 @@ public final class ImpressionStore {
             case AIR_FAILING -> note(who, Theory.CAREFUL, false);
             case LEFT_BEHIND -> note(who, Theory.TALKS_TO_ME, false);
             case CALLED_SHEPHERD -> note(who, Theory.CALLS_ME_AURORA, false);
-            case CLEAR_NIGHT -> { }
+            case CLEAR_NIGHT, NINE_FOUND -> { }
         }
     }
 

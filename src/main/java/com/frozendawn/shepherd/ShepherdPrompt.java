@@ -68,6 +68,7 @@ public final class ShepherdPrompt {
         var near = level.getPlayers(player -> !player.isSpectator() && player.distanceTo(she) <= ShepherdPolicy.HEARD_BLOCKS);
         if (near.isEmpty()) return;
         ask(server, data, near);
+        if (ShepherdReactions.quiet(data, server.overworld().getGameTime())) return;
         offer(server, level, data, near);
         show(server, level, data, near, she);
     }

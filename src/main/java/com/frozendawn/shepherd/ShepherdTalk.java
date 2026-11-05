@@ -39,7 +39,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 @EventBusSubscriber(modid = FrozenDawn.MOD_ID)
 public final class ShepherdTalk {
     public static final String FIRST_MEETING = "fm.boot";
-    private static final String HUB_TALK = "hub.talk.silent";
+    private static final String HUB_TALK = "hub.talk.quiet";
     private static final int UNIMPRESSED_TICKS = 40;
     private static final int TALK_TICKS_PER_LINE = 80;
     private static final String FOUND = "found:", REMEMBERS = "remembers:";
@@ -130,6 +130,7 @@ public final class ShepherdTalk {
             data.resumeNode(null);
         }
         String prompt = data.promptNode();
+        if (prompt != null && ShepherdReactions.quiet(data, live.player.getServer().overworld().getGameTime())) return null;
         if (prompt == null || nodes.containsKey(prompt)) return prompt;
         data.promptNode(null);
         return null;
@@ -170,6 +171,7 @@ public final class ShepherdTalk {
             case "tier_friendly" -> tier.atLeast(Tier.FRIENDLY);
             case "tier_trusted" -> tier.atLeast(Tier.TRUSTED);
             case "tier_close" -> tier.atLeast(Tier.CLOSE);
+            case "quiet" -> ShepherdReactions.quiet(ShepherdSavedData.get(server), server.overworld().getGameTime());
             case "stage_noticing" -> MillerPattern.stage(server).compareTo(SelfModel.Stage.NOTICING) >= 0;
             case "stage_walls" -> MillerPattern.stage(server).compareTo(SelfModel.Stage.FINDING_WALLS) >= 0;
             case "wand_cradle" -> ShepherdWand.of(player) == ShepherdWand.Where.CRADLE;

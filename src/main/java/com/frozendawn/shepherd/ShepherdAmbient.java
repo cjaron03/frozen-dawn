@@ -19,6 +19,7 @@ public final class ShepherdAmbient {
     public enum Trigger {
         SILENCE,
         SLOW,
+        QUIET_OVER,
         NIGHT,
         COLD,
         AFTER_FIGHT,
