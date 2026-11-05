@@ -93,10 +93,17 @@ public final class RoomEvidenceGameTest {
     });}
     @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="room_large_region",timeoutTicks=200)
     public static void roomLargeCellRegionBreachRequiresBoundaryEvidenceAtHardCap(GameTestHelper h){preserved(h,()->{
-        var l=h.getLevel();var origin=h.absolutePos(new BlockPos(64,2,64));box(l,origin,3);
+        var l=h.getLevel();var origin=h.absolutePos(new BlockPos(64,2,64));var caveOrigin=origin.east(4);
+        try{breachLargeRegion(h,origin,caveOrigin);}
+        finally{unbox(l,origin,3);unbox(l,caveOrigin,52);settleLight(l,origin,caveOrigin.offset(53,0,53));}
+        for(int x=0;x<=53;x++)for(int z=0;z<=53;z++)h.assertTrue(l.canSeeSky(caveOrigin.offset(x,0,z)),"The cave leaves open sky for the batches placed here later");
+        for(int x=0;x<=4;x++)for(int z=0;z<=4;z++)h.assertTrue(l.canSeeSky(origin.offset(x,0,z)),"The base leaves open sky for the batches placed here later");
+    });}
+    private static void breachLargeRegion(GameTestHelper h,BlockPos origin,BlockPos caveOrigin){
+        var l=h.getLevel();box(l,origin,3);
         var center=origin.offset(2,2,2);var room=RoomAtmosphere.view(l,center);
         h.assertTrue(room!=null&&room.geometry().cells().size()==27&&RoomAtmosphere.hasAir(l,center),"Guard: independent small base starts sealed with gas");
-        var previous=room.geometry().cells();var caveOrigin=origin.east(4);box(l,caveOrigin,52);
+        var previous=room.geometry().cells();box(l,caveOrigin,52);
         var entry=origin.offset(5,2,2);var hole=origin.offset(4,2,2);
         h.assertTrue(52*52*52==140608&&52*52*52>131072,"This is a genuinely large-cell region beyond the scanner hard cap, not a narrow distance-only corridor");
         h.assertFalse(RoomAtmosphere.knownExteriorAt(l,entry),"Covered cave has no pre-recorded exterior witness");
@@ -113,13 +120,25 @@ public final class RoomEvidenceGameTest {
         h.assertTrue(open&&peak==131072,"Actual large region reaches the cell hard cap before boundary-backed reservoir handling");
         h.assertFalse(RoomAtmosphere.knownExteriorAt(l,entry),"This branch uses a real breach and current-phase reservoir evidence, not a hidden sky witness");
         h.assertTrue(!RoomAtmosphere.hasAir(l,center)&&RoomAirState.get(l).isDepleted(previous),"Late-phase lower-pressure reservoir vents the breached base");
-    });}
+    }
     private static void box(ServerLevel l,BlockPos origin,int interior){
         int side=interior+1;
         for(int x=0;x<=side;x++)for(int y=0;y<=side;y++)for(int z=0;z<=side;z++){
             boolean wall=x==0||y==0||z==0||x==side||y==side||z==side;
             l.setBlock(origin.offset(x,y,z),(wall?Blocks.STONE:Blocks.AIR).defaultBlockState(),2);
         }
+    }
+    private static void unbox(ServerLevel l,BlockPos origin,int interior){
+        int side=interior+1;
+        for(int x=0;x<=side;x++)for(int y=0;y<=side;y++)for(int z=0;z<=side;z++)l.setBlock(origin.offset(x,y,z),Blocks.AIR.defaultBlockState(),2);
+    }
+    /** Sky light is worked out off-thread in real time, so a batch placed here next could still read this roof's shadow. */
+    private static void settleLight(ServerLevel l,BlockPos from,BlockPos to){
+        var light=l.getChunkSource().getLightEngine();var pending=new ArrayList<java.util.concurrent.CompletableFuture<?>>();
+        for(int x=(from.getX()>>4)-1;x<=(to.getX()>>4)+1;x++)for(int z=(from.getZ()>>4)-1;z<=(to.getZ()>>4)+1;z++)pending.add(light.waitForPendingTasks(x,z));
+        var settled=java.util.concurrent.CompletableFuture.allOf(pending.toArray(java.util.concurrent.CompletableFuture[]::new)).orTimeout(30,java.util.concurrent.TimeUnit.SECONDS);
+        l.getServer().managedBlock(()->{light.tryScheduleUpdate();return settled.isDone();});
+        settled.join();
     }
     private static void time(ServerLevel l,long tick){((net.minecraft.world.level.storage.ServerLevelData)l.getLevelData()).setGameTime(tick);}
     private static void preserved(GameTestHelper h,Runnable body){
