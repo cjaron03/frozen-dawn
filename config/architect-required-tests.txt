@@ -1175,3 +1175,11 @@ shepherdstarslinereadsthekeepsake xml
 shepherdtonightisnotthenightsheremembers xml
 shepherdt4cancomebeforet3 xml
 shepherdt4sayshowlongshewasout xml
+shepherdt5waitsforthesheet xml
+shepherdt5waitsoutthequiet xml
+shepherdnot5atwary xml
+shepherdt5readswhoeverisnear xml
+shepherdenochsbeatneedshislog xml
+shepherdt5opensontheregisteralone xml
+shepherdnamingheratt5leanssomeone xml
+shepherdnevernamedatt5leansleft xml

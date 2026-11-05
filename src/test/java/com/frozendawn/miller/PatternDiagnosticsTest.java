@@ -49,7 +49,7 @@ class PatternDiagnosticsTest {
         state.appraise(WHO, Deed.ARCHIVIST_KILLED, 0);
         var full = snapshot(state, 0);
         var lines = PatternDiagnostics.explain(new MillerPattern.Snapshot(full.now(), full.mood(), full.strongest(), full.feelings(), full.drives(), List.of(),
-                full.coherence(), full.stage(), full.walls(), full.impressions(), full.keepsakes(), full.focus(), full.urge()));
+                full.coherence(), full.stage(), full.lean(), full.walls(), full.impressions(), full.keepsakes(), full.focus(), full.urge()));
         assertFalse(anyHolds(lines, "CAUSE", "ARCHIVIST_KILLED"), lines.toString());
         assertTrue(anyHolds(lines, "No retained event"), lines.toString());
     }

@@ -44,7 +44,7 @@ public final class ShepherdTalk {
     private static final int UNIMPRESSED_TICKS = 40;
     private static final int TALK_TICKS_PER_LINE = 80;
     private static final String FOUND = "found:", REMEMBERS = "remembers:", NOT = "not:";
-    private static final String CLEAR_NIGHT = "clear_night";
+    private static final String CLEAR_NIGHT = "clear_night", LEAN = "t5_lean";
     /** The ground ref when there is no pit to give one for, as {@code TowerArchive} writes it. */
     private static final String NO_REF = "---";
 
@@ -177,6 +177,8 @@ public final class ShepherdTalk {
             case "pit_open" -> ShepherdSavedData.get(server).flag(ShepherdNine.OPEN) && !ShepherdSavedData.get(server).flag(ShepherdNine.SEEN);
             case "quiet" -> ShepherdReactions.quiet(ShepherdSavedData.get(server), server.overworld().getGameTime());
             case "stars_before" -> starsBefore(player);
+            case "lean_someone" -> MillerPattern.leaning(server) == SelfModel.Lean.SOMEONE;
+            case "lean_left" -> MillerPattern.leaning(server) == SelfModel.Lean.LEFT;
             case "stage_noticing" -> MillerPattern.stage(server).compareTo(SelfModel.Stage.NOTICING) >= 0;
             case "stage_walls" -> MillerPattern.stage(server).compareTo(SelfModel.Stage.FINDING_WALLS) >= 0;
             case "wand_cradle" -> ShepherdWand.of(player) == ShepherdWand.Where.CRADLE;
@@ -345,6 +347,7 @@ public final class ShepherdTalk {
         if (firstAtNine) ShepherdNine.arrived(live.player);
         if (live.talk.flags().contains(ShepherdNine.HAND_OVER)) ShepherdNine.handOver(live.player);
         if (live.talk.flags().contains(ShepherdPrompt.SKY_LATER)) ShepherdPrompt.askAboutTheSkyLater(data, live.player.getServer().overworld().getGameTime());
+        if (live.talk.flags().contains(LEAN)) MillerPattern.lean(live.player.getServer(), live.player.getUUID());
         if (live.talk.flags().contains("profanity_heavy")) swearing(data, true);
         if (live.talk.flags().contains("profanity_mild")) swearing(data, false);
     }

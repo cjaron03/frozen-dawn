@@ -182,4 +182,47 @@ class SelfModelTest {
         assertEquals(Stage.FINDING_WALLS, loaded.stage());
         assertEquals(state.self().save(), loaded.save());
     }
+
+    @Test
+    void leaningComesFromAnyStage() {
+        var fresh = new SelfModel();
+        fresh.lean(SelfModel.Lean.LEFT);
+        assertEquals(Stage.LEANING, fresh.stage(), "From Product");
+        var walls = new SelfModel();
+        walls.look(true, true);
+        walls.lean(SelfModel.Lean.SOMEONE);
+        assertEquals(Stage.LEANING, walls.stage(), "From Finding the walls");
+    }
+
+    @Test
+    void theLeanIsSetOnce() {
+        var self = new SelfModel();
+        self.lean(SelfModel.Lean.SOMEONE);
+        self.lean(SelfModel.Lean.LEFT);
+        assertEquals(SelfModel.Lean.SOMEONE, self.lean());
+    }
+
+    @Test
+    void theLeanSurvivesAReload() {
+        var self = new SelfModel();
+        self.lean(SelfModel.Lean.LEFT);
+        var loaded = SelfModel.load(self.save());
+        assertEquals(SelfModel.Lean.LEFT, loaded.lean());
+        assertEquals(Stage.LEANING, loaded.stage());
+    }
+
+    @Test
+    void aFormerSaveLoadsWithNoLean() {
+        var tag = new SelfModel().save();
+        tag.remove("lean");
+        assertEquals(SelfModel.Lean.NONE, SelfModel.load(tag).lean());
+    }
+
+    @Test
+    void wallsStillCountOnceSheLeans() {
+        var self = new SelfModel();
+        self.lean(SelfModel.Lean.LEFT);
+        for (int i = 0; i < SelfModel.FOUND_AT; i++) self.witness(PatternLaws.BOUNDED);
+        assertTrue(self.found(PatternLaws.BOUNDED));
+    }
 }

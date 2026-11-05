@@ -201,10 +201,10 @@ public final class ShepherdSkyGameTest {
             var roof = player.blockPosition().above(3);
             h.getLevel().setBlockAndUpdate(roof, Blocks.STONE.defaultBlockState());
             h.startSequence()
-                    .thenExecuteAfter(A_LOOK, () -> {
-                        assertNoPrompt(h, "Not by day");
-                        skyAt(h, STARS, MIDNIGHT);
-                    })
+                    .thenExecuteAfter(A_LOOK, () -> assertNoPrompt(h, "Not by day"))
+                    // Open sky is read from the light, and a new roof's shadow takes its time.
+                    .thenWaitUntil(() -> h.assertFalse(h.getLevel().canSeeSky(player.blockPosition()), "Waiting for the shadow"))
+                    .thenExecute(() -> skyAt(h, STARS, MIDNIGHT))
                     .thenExecuteAfter(A_LOOK, () -> {
                         assertNoPrompt(h, "Not under a roof");
                         h.getLevel().setBlockAndUpdate(roof, Blocks.AIR.defaultBlockState());
@@ -335,7 +335,6 @@ public final class ShepherdSkyGameTest {
     public static void shepherdSeesARealAuroraUnderOpenSky(GameTestHelper h) {
         ShepherdTestWorld.whenTicking(h, () -> {
             var level = h.getLevel();
-            ApocalypseState.get(level.getServer()).setApocalypseTicks(auroraTime(h), level.getServer());
             level.setWeatherParameters(24000, 0, false, false);
             var player = player(h, TOP_Y);
             var she = met(h, player, TRUSTED);
@@ -344,6 +343,9 @@ public final class ShepherdSkyGameTest {
             var roof = BlockPos.betweenClosedStream(over.offset(-8, 0, -8), over.offset(8, 0, 8)).map(BlockPos::immutable).toList();
             roof.forEach(at -> level.setBlockAndUpdate(at, Blocks.STONE.defaultBlockState()));
             h.startSequence()
+                    // Open sky is read from the light, and a new roof's shadow takes its time.
+                    .thenWaitUntil(() -> h.assertFalse(level.canSeeSky(she.blockPosition()), "Waiting for the shadow"))
+                    .thenExecute(() -> ApocalypseState.get(level.getServer()).setApocalypseTicks(auroraTime(h), level.getServer()))
                     .thenExecuteAfter(ShepherdReactions.POLL_TICKS + 10, () -> {
                         h.assertFalse(data(h).flag("saw_aurora"), "Nothing through a roof");
                         roof.forEach(at -> level.setBlockAndUpdate(at, Blocks.AIR.defaultBlockState()));

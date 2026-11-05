@@ -352,8 +352,24 @@ class PatternStateTest {
     }
 
     @Test
-    void thisSaveIsVersionTwo() {
-        assertEquals(2, PatternState.VERSION);
+    void thisSaveIsVersionThree() {
+        assertEquals(3, PatternState.VERSION);
+    }
+
+    @Test
+    void aVersionTwoSaveLoadsWithNoLean() {
+        var tag = woken().save();
+        tag.putInt("dataVersion", 2);
+        assertEquals(SelfModel.Lean.NONE, PatternState.load(tag).self().lean());
+    }
+
+    @Test
+    void theLeanComesBackWithHer() {
+        var state = woken();
+        state.self().lean(SelfModel.Lean.SOMEONE);
+        var loaded = PatternState.load(state.save());
+        assertEquals(SelfModel.Lean.SOMEONE, loaded.self().lean());
+        assertEquals(SelfModel.Stage.LEANING, loaded.self().stage());
     }
 
     /** The same day, with her worn down in one and not the other. */

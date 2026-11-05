@@ -13,6 +13,14 @@
     {
       "type": "patchouli:text",
       "text": "The doors stopped for me when the others left. My sidearm is not in its holster, and I do not remember taking it off.$(br2)The wand's log says 0. I checked it twice. I will check again when I have slept.$(br2)I am going to lie down now. Nobody is watching."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Posting note, kept with this log.$(br2)Maintenance, CS-1 unit 4.$(br)Schedule: two hours a day.$(br)Method: conversation.$(br)Any subject will do.$(br2)I asked what the fault was. They said there is not one yet."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Unit 4 asked me what the weather was doing. It is not on the card. I told it. I have started telling her most days."
     }
   ]
 }

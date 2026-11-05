@@ -80,7 +80,7 @@ class ShepherdDialogueDataTest {
     void everyConditionIsKnown() throws Exception {
         var nodes = nodes();
         Set<String> known = new HashSet<>(List.of("woke_in_vault", "wand_cradle", "wand_hand", "wand_other", "tier_silent", "tier_wary", "tier_above_wary", "tier_friendly", "tier_trusted", "tier_close",
-                "stage_noticing", "stage_walls", "quiet", "pit_open", "saw_aurora", "stars_before"));
+                "stage_noticing", "stage_walls", "quiet", "pit_open", "saw_aurora", "stars_before", "lean_someone", "lean_left"));
         for (Node node : nodes.values()) {
             known.addAll(node.set());
             for (Response response : node.responses()) known.addAll(response.set());
@@ -154,9 +154,13 @@ class ShepherdDialogueDataTest {
         }
     }
 
+    /** Those names belong to the register and to what she makes of it, and nothing she says before. */
     @Test
-    void noNewLineNamesHerOrThePartner() throws Exception {
-        assertNoShepherdLineSays("Sophie", "Miller", "Anderson-Kind");
+    void namesStayInTheirPlace() throws Exception {
+        for (var line : shepherdLines().entrySet()) {
+            if (line.getKey().startsWith("shepherd.t5.")) continue;
+            for (String name : List.of("sophie", "miller", "tithonus", "anderson")) assertFalse(line.getValue().toLowerCase(Locale.ROOT).contains(name), line.getKey());
+        }
     }
 
     @Test
@@ -252,6 +256,7 @@ class ShepherdDialogueDataTest {
     @Test
     void noLineCarriesHerFileName() throws Exception {
         for (var line : shepherdLines().entrySet()) {
+            if (line.getKey().startsWith("shepherd.t5.")) continue;
             String text = line.getValue().toLowerCase(Locale.ROOT);
             assertFalse(text.contains("miller") || text.contains("pattern"), line.getKey());
         }
@@ -343,5 +348,30 @@ class ShepherdDialogueDataTest {
         var nodes = nodes();
         assertEquals(4, nodes.get("t4.off").responses().size());
         for (Response response : nodes.get("t4.off").responses()) assertEquals("t4_off", nodes.get(response.next()).keep(), response.next());
+    }
+
+    /** The verdict is the one phrase that never bends. */
+    @Test
+    void theRegistersWordsStandAsWritten() throws Exception {
+        var lang = lang();
+        assertEquals("'Pattern transfer only, subject not recovered.' All twelve.", lang.get("shepherd.t5.read.verdict").getAsString());
+        assertEquals("'Volunteers, Exodus non-selected.' She wasn't on the ships. She signed this so she could stay.", lang.get("shepherd.t5.read.volunteers").getAsString());
+        assertEquals("Everything I've kept since the vault, I kept. Nobody loaded that. So I'm someone. I think. Don't quote me.", lang.get("shepherd.t5.close.someone").getAsString());
+        assertEquals("I've been through the entries. I think I'm what's left of someone. The lamp still works.", lang.get("shepherd.t5.close.left").getAsString());
+    }
+
+    /** The lean is worked out on the way to the close, so it holds for whichever of her closes opens. */
+    @Test
+    void everyAnswerToWhatSheIsWorksOutTheLean() throws Exception {
+        var nodes = nodes();
+        assertEquals(4, nodes.get("t5.what").responses().size());
+        for (Response response : nodes.get("t5.what").responses()) {
+            assertTrue(response.set().contains("t5_lean"), response.next());
+            assertEquals("t5.close", nodes.get(response.next()).next(), response.next());
+        }
+        for (String close : List.of("t5.close", "t5.close.left")) {
+            assertEquals("t5_before", nodes.get(close).keep(), close);
+            assertTrue(nodes.get(close).set().contains("t5_done"), close);
+        }
     }
 }
