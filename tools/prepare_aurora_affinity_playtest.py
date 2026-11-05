@@ -29,6 +29,8 @@ MANUAL = 'give @s patchouli:guide_book[patchouli:book="frozendawn:frozen_dawn_gu
 CELL = 'item replace entity @s hotbar.1 with frozendawn:power_cell[frozendawn:cell_joules=500000]'
 BASE = 'tp @s 0.5 65 3.5 180 0'
 WARM_X, COLD_X = 15, -15
+# A helmet, so a zombie lasts long enough at noon for her to notice it.
+HELMET = '{ArmorItems:[{},{},{},{id:"minecraft:leather_helmet",count:1}]}'
 
 
 def tell(text, function=None, color='aqua', command=None):
@@ -105,8 +107,8 @@ def scripts():
         'archivist': '\n'.join([GUARD, 'execute at @s run summon frozendawn:archivist ^ ^ ^5', 'return 1']),
         'night': '\n'.join([GUARD, 'time set midnight', 'weather clear', 'return 1']),
         'day': '\n'.join([GUARD, 'time set noon', 'return 1']),
-        'zombie': '\n'.join([GUARD, 'execute at @s run summon minecraft:zombie ^ ^ ^6', 'return 1']),
-        'zombies': '\n'.join([GUARD, *[f'execute at @s run summon minecraft:zombie ^{x} ^ ^7' for x in (-3, -1, 1, 3)], 'return 1']),
+        'zombie': '\n'.join([GUARD, f'execute at @s run summon minecraft:zombie ^ ^ ^6 {HELMET}', 'return 1']),
+        'zombies': '\n'.join([GUARD, *[f'execute at @s run summon minecraft:zombie ^{x} ^ ^7 {HELMET}' for x in (-3, -1, 1, 3)], 'return 1']),
         'skeleton': '\n'.join([GUARD, 'execute at @s run summon minecraft:skeleton ^ ^ ^8', 'return 1']),
         'returned': '\n'.join([GUARD, 'execute at @s run summon frozendawn:returned ^ ^ ^8', 'return 1']),
         'architect': '\n'.join([GUARD, 'execute at @s run summon frozendawn:architect ^ ^ ^8 {NoAI:1b}', 'return 1']),
