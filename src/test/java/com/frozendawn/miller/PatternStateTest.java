@@ -7,6 +7,7 @@ import com.frozendawn.miller.Feelings.Feeling;
 import com.frozendawn.shepherd.ShepherdAffinity.Deed;
 import com.frozendawn.shepherd.ShepherdDialogue.Slot;
 import com.frozendawn.shepherd.ShepherdFace.Mood;
+import com.frozendawn.shepherd.ShepherdPolicy;
 import java.util.List;
 import java.util.Random;
 import java.util.UUID;
@@ -33,6 +34,41 @@ class PatternStateTest {
         state.appraise(ONE, deed, 0);
         assertEquals(mood, state.mood(0), deed.name());
         assertEquals(minutes * MINUTE, neutralAfter(state, 0), MINUTE, deed.name());
+    }
+
+    @Test
+    void theSlipComesEveryFiveDays() {
+        long day = ShepherdPolicy.DAY_TICKS;
+        var state = woken();
+        assertFalse(state.slipDue(5 * day - 1));
+        assertTrue(state.slipDue(5 * day));
+        state.coherence().set(1, 5 * day);
+        state.slipped(5 * day);
+        assertFalse(state.slipDue(10 * day - 1));
+        assertTrue(state.slipDue(10 * day));
+    }
+
+    @Test
+    void lowCoherenceBringsItSooner() {
+        long day = ShepherdPolicy.DAY_TICKS;
+        var state = woken();
+        state.coherence().set(Coherence.FLOOR, 0);
+        state.slipped(0);
+        assertFalse(state.slipDue(3 * day - 1));
+        assertTrue(state.slipDue(3 * day));
+    }
+
+    @Test
+    void theSlipIsNotDueBeforeSheIsUp() {
+        assertFalse(new PatternState().slipDue(1000 * ShepherdPolicy.DAY_TICKS));
+    }
+
+    @Test
+    void ageingBringsTheSlipCloserAndAReloadKeepsIt() {
+        long day = ShepherdPolicy.DAY_TICKS;
+        var state = woken();
+        state.age(5 * day);
+        assertTrue(PatternState.load(state.save()).slipDue(0));
     }
 
     @Test

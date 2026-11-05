@@ -68,6 +68,17 @@ public final class ShepherdWillGameTest {
     @BeforeBatch(batch = "shepherd_silent_deeds") public static void silentDeedsBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
     @AfterBatch(batch = "shepherd_silent_deeds") public static void silentDeedsAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
 
+    @BeforeBatch(batch = "shepherd_slip_fight") public static void slipFightBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_slip_fight") public static void slipFightAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_slip_talk") public static void slipTalkBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_slip_talk") public static void slipTalkAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_slip_wary") public static void slipWaryBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_slip_wary") public static void slipWaryAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_slip_sorry") public static void slipSorryBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_slip_sorry") public static void slipSorryAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_slip_instead") public static void slipInsteadBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_slip_instead") public static void slipInsteadAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+
     private static void afterNight(ServerLevel level) {
         level.setDayTime(6000);
         ShepherdTestWorld.clear(level);
@@ -389,6 +400,76 @@ public final class ShepherdWillGameTest {
             talk(player);
             h.assertTrue(ShepherdTalk.liveLines().equals(List.of("shepherd.hub.talk.wary")), "The climb back ends it: " + ShepherdTalk.liveLines());
             h.succeed();
+        });
+    }
+
+    private static final String VOICE = "shepherd.slip.voice", SORRY = "shepherd.slip.sorry";
+
+    private static void assertHeldBack(GameTestHelper h) {
+        h.assertTrue(!VOICE.equals(ShepherdReactions.said()), "It waits");
+        h.assertTrue(MillerPattern.slipDue(h.getLevel().getServer()), "And stays due");
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_slip_fight", timeoutTicks = 400)
+    public static void shepherdNeverSlipsInAFight(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            met(h, player(h));
+            h.spawnWithNoFreeWill(EntityType.ZOMBIE, new Vec3(16.5, 4, 10.5));
+            MillerPattern.slipNow(h.getLevel().getServer());
+            h.startSequence().thenExecuteAfter(A_POLL, () -> assertHeldBack(h)).thenSucceed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_slip_talk", timeoutTicks = 400)
+    public static void shepherdNeverSlipsOverATalk(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            met(h, player).interact(player, InteractionHand.MAIN_HAND);
+            MillerPattern.slipNow(h.getLevel().getServer());
+            h.startSequence().thenExecuteAfter(A_POLL, () -> assertHeldBack(h)).thenSucceed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_slip_wary", timeoutTicks = 400)
+    public static void shepherdNeverSlipsAtWary(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            met(h, player(h));
+            data(h).affinity(-300);
+            MillerPattern.slipNow(h.getLevel().getServer());
+            h.startSequence().thenExecuteAfter(A_POLL, () -> assertHeldBack(h)).thenSucceed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_slip_sorry", timeoutTicks = 400)
+    public static void shepherdSaysSorryAfter(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            met(h, player(h));
+            sated(h);
+            var server = h.getLevel().getServer();
+            MillerPattern.slipNow(server);
+            h.startSequence()
+                    .thenWaitUntil(() -> assertSaid(h, VOICE))
+                    .thenExecute(() -> h.assertTrue(!MillerPattern.slipDue(server), "It has played"))
+                    .thenWaitUntil(() -> assertSaid(h, SORRY))
+                    .thenSucceed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_slip_instead", timeoutTicks = 500)
+    public static void shepherdATalkTakesThePlaceOfSorry(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            var she = met(h, player);
+            sated(h);
+            MillerPattern.slipNow(h.getLevel().getServer());
+            h.startSequence()
+                    .thenWaitUntil(() -> assertSaid(h, VOICE))
+                    .thenExecute(() -> {
+                        she.interact(player, InteractionHand.MAIN_HAND);
+                        ShepherdTalk.close(player);
+                    })
+                    .thenExecuteAfter(2 * A_POLL, () -> assertSaid(h, VOICE))
+                    .thenSucceed();
         });
     }
 }

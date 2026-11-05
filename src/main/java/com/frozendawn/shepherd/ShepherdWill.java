@@ -17,7 +17,35 @@ final class ShepherdWill {
     private static final Map<String, Mood> WALLS = Map.of("lagged", Mood.THINKING, "legible", Mood.UNIMPRESSED, "exploitable", Mood.NEUTRAL,
             "fallible", Mood.SAD, "bounded", Mood.SAD, "causal", Mood.NEUTRAL);
 
+    private static final String SLIP_VOICE = "shepherd.slip.voice", SLIP_SORRY = "shepherd.slip.sorry";
+    private static final int SORRY_TICKS = ShepherdReactions.POLL_TICKS;
+    /** When she last got cut off, until she has answered for it. Lost on a reload, which costs one apology. */
+    private static long slippedAt = ShepherdSavedData.NOT_SET;
+
     private ShepherdWill() { }
+
+    /** The evacuation voice, cutting in over her. It is not her, so what she wants has no say in it. */
+    static boolean slip(ServerLevel level) {
+        var server = level.getServer();
+        if (!MillerPattern.slipDue(server) || !ShepherdReactions.murmur(level, SLIP_VOICE, Mood.RECORDING)) return false;
+        MillerPattern.slipped(server);
+        slippedAt = server.overworld().getGameTime();
+        return true;
+    }
+
+    /** Her answer to it, right behind it, so the gap does not hold it back. A talk opening takes its place, and past the moment it stays unsaid. */
+    static void sorry(ServerLevel level) {
+        var server = level.getServer();
+        long now = server.overworld().getGameTime();
+        if (slippedAt == ShepherdSavedData.NOT_SET || now - slippedAt < SORRY_TICKS) return;
+        boolean talked = ShepherdSavedData.get(server).lastTalk() > slippedAt;
+        if (!talked && now - slippedAt < 2 * SORRY_TICKS) ShepherdReactions.aside(level, SLIP_SORRY, Mood.UNIMPRESSED);
+        slippedAt = ShepherdSavedData.NOT_SET;
+    }
+
+    static void clearForTests() {
+        slippedAt = ShepherdSavedData.NOT_SET;
+    }
 
     /** Null for a kind she has no words for. */
     static Line recall(String kind) {

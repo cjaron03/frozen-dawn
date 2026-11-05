@@ -139,6 +139,11 @@ public final class ShepherdReactions {
         return speakUp(level, key, mood, null, false, true);
     }
 
+    /** A line that belongs to the one before it: calm still holds it back, and the gap does not. */
+    static boolean aside(ServerLevel level, String key, Mood mood) {
+        return speakUp(level, key, mood, null, true, false);
+    }
+
     /** A line someone asked for: she does not make them wait. */
     static boolean answer(ServerLevel level, String key, Mood mood) {
         return speakUp(level, key, mood, null, false, false);
@@ -173,6 +178,7 @@ public final class ShepherdReactions {
         lastSaid.clear();
         lastMurmur.clear();
         said = saidArg = null;
+        ShepherdWill.clearForTests();
         lastFight = ShepherdSavedData.NOT_SET;
     }
 
@@ -208,6 +214,7 @@ public final class ShepherdReactions {
         comeBack(server, she, near.getFirst());
         for (var player : near) look(level, player);
         ShepherdEggs.look(level, she, near);
+        ShepherdWill.sorry(level);
         commentate(server, level, she, near);
     }
 
@@ -222,6 +229,7 @@ public final class ShepherdReactions {
         long now = server.overworld().getGameTime();
         if (data.lastTalk() == ShepherdSavedData.NOT_SET) data.lastTalk(now);
         if (now - lastFight > ShepherdPolicy.FIGHT_LINE_TICKS) lastFight = ShepherdSavedData.NOT_SET;
+        if (ShepherdWill.slip(level)) return;
         sayWhenSlow(server, level, data);
         var nearest = near.stream().min(Comparator.comparingDouble(she::distanceTo)).orElseThrow().getUUID();
         switch (MillerPattern.urge(server, nearest)) {

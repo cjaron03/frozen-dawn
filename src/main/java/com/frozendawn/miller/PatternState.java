@@ -36,6 +36,8 @@ final class PatternState {
     private Coherence coherence = new Coherence();
     /** When anyone was last beside her. */
     private long seenAt = UNARMED;
+    /** When the recording next cuts in over her. */
+    private long nextSlip = UNARMED;
     /** What she wanted of the sky when a clear night last fed it, and when. Null until one has. */
     private Fading nightSky;
 
@@ -75,6 +77,7 @@ final class PatternState {
     private void arm(long now) {
         if (settleAt == UNARMED) settleAt = now + ShepherdPolicy.DAY_TICKS;
         coherence.begin(now);
+        if (nextSlip == UNARMED) slipped(now);
     }
 
     /** {@code near}, {@code lastTalk} and {@code trusted} are what the poll already knows: nothing here looks at the world. */
@@ -117,6 +120,23 @@ final class PatternState {
         drives.feed(Drive.CURIOSITY, PRESENCE_FEEDS, now);
     }
 
+    boolean slipDue(long now) {
+        return nextSlip != UNARMED && now >= nextSlip;
+    }
+
+    /** Five days to the next, down to three at the coherence floor, as she is at the moment it plays. */
+    void slipped(long now) {
+        nextSlip = now + slipInterval(now);
+    }
+
+    void slipNow(long now) {
+        nextSlip = now;
+    }
+
+    private long slipInterval(long now) {
+        return (long) (ShepherdPolicy.DAY_TICKS * (3 + 2 * (coherence.value(now) - Coherence.FLOOR) / (1 - Coherence.FLOOR)));
+    }
+
     /** What she wants of the sky. One look at a clear night feeds it, but she goes on wanting that night until it is over. */
     double skyWanted(long now) {
         double wanted = drives.value(Drive.SKY, now);
@@ -136,6 +156,7 @@ final class PatternState {
         if (settleAt != UNARMED) settleAt -= ticks;
         if (seenAt != UNARMED) seenAt -= ticks;
         if (nightSky != null) nightSky = nightSky.aged(ticks);
+        if (nextSlip != UNARMED) nextSlip -= ticks;
     }
 
     void clear() {
@@ -147,7 +168,7 @@ final class PatternState {
         keepsakes.clear();
         self.clear();
         coherence.clear();
-        settleAt = seenAt = UNARMED;
+        settleAt = seenAt = nextSlip = UNARMED;
         nightSky = null;
     }
 
@@ -167,6 +188,7 @@ final class PatternState {
         if (settleAt != UNARMED) tag.putLong("settleAt", settleAt);
         if (seenAt != UNARMED) tag.putLong("seenAt", seenAt);
         if (nightSky != null) tag.put("nightSky", nightSky.save());
+        if (nextSlip != UNARMED) tag.putLong("nextSlip", nextSlip);
         return tag;
     }
 
@@ -188,6 +210,7 @@ final class PatternState {
         if (tag.contains("settleAt")) state.settleAt = tag.getLong("settleAt");
         if (tag.contains("seenAt")) state.seenAt = tag.getLong("seenAt");
         if (tag.contains("nightSky")) state.nightSky = Fading.load(tag.getCompound("nightSky"));
+        if (tag.contains("nextSlip")) state.nextSlip = tag.getLong("nextSlip");
         return state;
     }
 }

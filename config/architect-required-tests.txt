@@ -1113,3 +1113,8 @@ shepherdwillnothuntthequietone xml
 shepherdbelowthelineonlyrecords xml
 shepherdsilentstillworksasequipment xml
 shepherddeedsstillcountinsilence xml
+shepherdneverslipsinafight xml
+shepherdneverslipsoveratalk xml
+shepherdneverslipsatwary xml
+shepherdsayssorryafter xml
+shepherdatalktakestheplaceofsorry xml

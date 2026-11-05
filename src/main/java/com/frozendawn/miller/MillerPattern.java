@@ -147,6 +147,26 @@ public final class MillerPattern {
         runtime.data.setDirty();
     }
 
+    /** Whether the recording is due to cut in. Only reads. */
+    public static boolean slipDue(MinecraftServer server) {
+        var runtime = current(server);
+        return runtime.state().slipDue(runtime.now());
+    }
+
+    /** It cut in, so the next one starts counting from here. */
+    public static void slipped(MinecraftServer server) {
+        var runtime = current(server);
+        runtime.state().slipped(runtime.now());
+        runtime.data.setDirty();
+    }
+
+    /** {@code /fd shepherd slip}: due at the next poll. */
+    public static void slipNow(MinecraftServer server) {
+        var runtime = current(server);
+        runtime.state().slipNow(runtime.now());
+        runtime.data.setDirty();
+    }
+
     /** {@code /fd shepherd skipday}: a day has gone by for her too. */
     public static void skipDay(MinecraftServer server) {
         var runtime = current(server);

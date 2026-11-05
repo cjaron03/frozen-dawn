@@ -2318,6 +2318,8 @@
   "shepherd.recall.read_log": "Day %s, you stopped to read what somebody left. Nobody has to do that.",
   "shepherd.recall.shelter_froze": "Day %s. That room froze with you in it. I kept the temperature.",
   "shepherd.recall.called_shepherd": "Day %s, you used the other name. I've filed it.",
+  "shepherd.slip.voice": "Please remain calm. An evacuation officer will be with you",
+  "shepherd.slip.sorry": "Sorry. That's not me. That's never me.",
   "shepherd.self.noticing": "I told you the heater was fine. I've been thinking about why I said that.",
   "shepherd.wall.lagged": "I only ever work out what you meant afterwards.",
   "shepherd.wall.legible": "My face does whatever I feel. I've tried. It doesn't hide.",

@@ -105,6 +105,11 @@ final class ShepherdDebugCommand {
                     FrozenDawnCommandOutput.item(c.getSource(), "her cooldowns and clock are a day on");
                     return 1;
                 }))
+                .then(Commands.literal("slip").executes(c -> {
+                    MillerPattern.slipNow(c.getSource().getServer());
+                    FrozenDawnCommandOutput.item(c.getSource(), "the recording is due at the next poll");
+                    return 1;
+                }))
                 .then(Commands.literal("resetgap").executes(c -> {
                     ShepherdSavedData.get(c.getSource().getServer()).lastAmbient(ShepherdSavedData.NOT_SET);
                     FrozenDawnCommandOutput.item(c.getSource(), "she may speak up at the next poll");
