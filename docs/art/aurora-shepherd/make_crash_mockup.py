@@ -1,4 +1,4 @@
-"""Aurora's crash, slice M4, frame by frame, at Minecraft scale, for the owner's approval. 2026-11-05.
+"""Aurora's crash, slice M4, frame by frame, at Minecraft scale. Approved 2026-11-05: display B, talk panel A.
 
 Her body is voxels at 16 texels to the block; her display is the 8 by 6 texel grid. Talk-screen frames are at GUI scale on the
 480 by 270 grid, enlarged twice. The stop screen's copy is fixed by docs/aurora-miller-pattern.md. Measured against Minecraft's
@@ -174,7 +174,7 @@ def stage(kind):
 BODY_OPTIONS = [
     ('A  SAD FACE ONLY', [A_FACE], 'The whole 8 by 6 is the mark. Nothing else fits, so nothing else shows.',
      'Strongest at play distance. Plainest. Only the talk panel carries the words.'),
-    ('B  SAD FACE AND TEXT SHAPE (MY PICK)', [B_GREEK], 'A smaller mark over a row of mid blue: the shape of writing, none of the words.',
+    ('B  SAD FACE AND TEXT SHAPE (PICKED)', [B_GREEK], 'A smaller mark over a row of mid blue: the shape of writing, none of the words.',
      'Reads as a stop screen, not a mood, and does not pretend to be legible. Mark loses size.'),
     ('C  THE CODE CRAWLS', [A_FACE, crawl(5), crawl(17), crawl(33)], 'The sad face, then 0x0000000A crawls by once, a texel every 2 ticks: 4.8 seconds.',
      'The only real copy that can fit. All four lines would need 26 seconds, so only the code. Readable up close at best.'),
@@ -188,7 +188,7 @@ WORLD = [
 ]
 FRAMES = [
     ('1  THE WORD', 'word', 'Checked before matching, on Enter. No Orbit: she does not hear it. The bar clears in the same tick.'),
-    ('2  STOP SCREEN, PANEL OPTION A (MY PICK)', 'dense', 'All the copy at once, in a small hand font, 3 by 5 cells. Her panel only. Her line panel and slots are empty, the bar dead.'),
+    ('2  STOP SCREEN, PANEL OPTION A (PICKED)', 'dense', 'All the copy at once, in a small hand font, 3 by 5 cells. Her panel only. Her line panel and slots are empty, the bar dead.'),
     ('3  PANEL OPTION B, FIRST PAGE', 'page0', "Minecraft's own font at real size. The longest line is 130 pixels and the panel 80, so the copy wraps to more rows than one page holds."),
     ('4  PANEL OPTION B, SECOND PAGE', 'page1', 'Pages swap every 2 seconds for the eight. Easier to read, less like a stop screen.'),
     ('5  THE LOGO', 'logo', 'After eight seconds. The logo alone, 64 ticks, as M2a left room for. No BIOS, nothing typed.'),
@@ -203,9 +203,9 @@ def main():
     img = Image.new('RGB', (w, h), C['bg'])
     d = ImageDraw.Draw(img)
     d.text((24, 16), 'AURORA: THE CRASH (M4)', font=font(26), fill=C['glow'])
-    d.text((24, 52), 'On her display and the talk face panel only. The world keeps running and the player\'s screen never changes. Awaiting the owner\'s approval.', font=font(15), fill=C['dim'])
+    d.text((24, 52), 'On her display and the talk face panel only. The world keeps running and the player\'s screen never changes. Approved 2026-11-05.', font=font(15), fill=C['dim'])
 
-    d.text((24, 92), 'WHAT FITS ON HER 8 BY 6 DISPLAY: THE COPY DOES NOT. THREE OPTIONS, OWNER TO PICK', font=font(17), fill=C['text'])
+    d.text((24, 92), 'WHAT FITS ON HER 8 BY 6 DISPLAY: THE COPY DOES NOT. THE OWNER PICKED B', font=font(17), fill=C['text'])
     for i, (name, faces, how, verdict) in enumerate(BODY_OPTIONS):
         y = 122 + i * 268
         d.rectangle([24, y, 1968, y + 256], fill=C['panel'])
@@ -243,7 +243,7 @@ def main():
         d.text((x + 8, y + 6), name, font=font(13), fill=WHITE if color == C['stop'] else (10, 12, 14))
         x += ticks * 3 + 3
     d.text((x + 16, y + 6), 'If the talk screen is closed by then, her line plays on the ambient strip.', font=font(14), fill=C['text'])
-    d.text((24, y + 40), 'At Wary she has no voice of her own, so these three lines cannot play. DRAFT: the logo, then the recording "ORSA Civilian Support Unit CS-1, online."', font=font(14), fill=C['text'])
+    d.text((24, y + 40), 'At Wary she has no voice of her own, so these three lines cannot play. Instead: the logo, then the recording "ORSA Civilian Support Unit CS-1, online."', font=font(14), fill=C['text'])
     img.save(HERE / 'crash-mockup.png')
 
 

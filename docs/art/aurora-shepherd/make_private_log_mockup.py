@@ -1,4 +1,4 @@
-"""Aurora's private log, slice M3, at Minecraft scale, for the owner's approval. 2026-11-05.
+"""Aurora's private log, slice M3, at Minecraft scale. Approved 2026-11-05, with Settings as a page.
 
 Talk-screen frames are at GUI scale: one pixel here is one GUI pixel on the 480 by 270 grid, enlarged twice, in a bitmap
 font, the same grid `ShepherdScreen` draws on. Every word not quoted from docs/aurora-miller-pattern.md is a draft.
@@ -108,7 +108,7 @@ def main():
     img = Image.new('RGB', (w, h), C['bg'])
     d = ImageDraw.Draw(img)
     d.text((24, 16), 'AURORA: HER PRIVATE LOG (M3)', font=font(26), fill=C['glow'])
-    d.text((24, 52), 'GUI scale, the talk screen grid, enlarged twice. Awaiting the owner\'s approval. Nothing here is built.', font=font(15), fill=C['dim'])
+    d.text((24, 52), 'GUI scale, the talk screen grid, enlarged twice. Approved 2026-11-05. Nothing here is built.', font=font(15), fill=C['dim'])
     for i, (name, kind, caption) in enumerate(FRAMES):
         x, y = 24 + (i % 2) * 984, 92 + (i // 2) * 610
         d.text((x, y), name, font=font(16), fill=C['glow'])

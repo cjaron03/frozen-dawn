@@ -1,4 +1,4 @@
-"""Aurora's chat bar, slice M4, at Minecraft scale, for the owner's approval. 2026-11-05.
+"""Aurora's chat bar, slice M4, at Minecraft scale. Approved 2026-11-05, with "Neither." added to Close.
 
 GUI scale: one pixel here is one GUI pixel on the 480 by 270 grid `ShepherdScreen` draws on, enlarged twice, in a bitmap font.
 The buttons stay the complete game: the bar is added under the four slots and nothing is taken away. Her lines are quoted from
@@ -92,7 +92,8 @@ def frame(kind):
         line(d, 'AURORA', 'You mean Kevin, or are we just saying things now?')
         slot(d, 0, 'Who is Kevin?')
         slot(d, 1, 'What happened?')
-        empty(d, 2, 3)
+        empty(d, 2)
+        slot(d, 3, 'Neither.')
         bar(d)
         text(d, (84, 240), HINT, C['dim'])
     elif kind == 'none':
@@ -122,7 +123,7 @@ FRAMES = [
     ('3  TYPING', 'typing', 'Bright edge and a cursor. The keys now go to the bar, so 1 to 4 type. The buttons stay live under the mouse.'),
     ('4  SHE WORKS IT OUT', 'thinking', 'Orbit on her display, as approved. Slots empty, her panel empty, your words dim in the bar until she starts.'),
     ('5  STRONG', 'strong', 'What the button opens, the same node. Typed "whats orsa": the recording line, then this one. The bar clears.'),
-    ('6  CLOSE', 'close', 'She checks, and the slots hold her two best guesses, no tone labels, as a menu. A locked topic is never a guess.'),
+    ('6  CLOSE', 'close', 'Her two best guesses, no tone labels, and "Neither." (DRAFT), which goes to None. Never a locked topic.'),
     ('7  NONE', 'none', 'A dry miss line, and the slots show what is on her mind. A locked topic gets this same reply.'),
     ('8  THE HUB (CHANGED)', 'hub', 'The bar sits at the same height on every screen, so Settings moves down one row, 18 pixels.'),
 ]
@@ -133,7 +134,7 @@ def main():
     img = Image.new('RGB', (w, h), C['bg'])
     d = ImageDraw.Draw(img)
     d.text((24, 16), 'AURORA: THE CHAT BAR (M4)', font=font(26), fill=C['glow'])
-    d.text((24, 52), 'GUI scale, the talk screen grid, enlarged twice. Buttons stay the complete game; the bar is an addition. Awaiting the owner\'s approval.', font=font(15), fill=C['dim'])
+    d.text((24, 52), 'GUI scale, the talk screen grid, enlarged twice. Buttons stay the complete game; the bar is an addition. Approved 2026-11-05.', font=font(15), fill=C['dim'])
     for i, (name, kind, caption) in enumerate(FRAMES):
         x, y = 24 + (i % 2) * 984, 92 + (i // 2) * 610
         d.text((x, y), name, font=font(16), fill=C['glow'])
