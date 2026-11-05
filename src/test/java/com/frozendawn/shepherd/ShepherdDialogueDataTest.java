@@ -124,6 +124,24 @@ class ShepherdDialogueDataTest {
         for (String key : keys) assertTrue(lang.has(key) && !lang.get(key).getAsString().isBlank(), key);
     }
 
+    private static void assertNoShepherdLineSays(String... words) throws Exception {
+        for (var line : lang().entrySet()) {
+            if (!line.getKey().startsWith("shepherd.")) continue;
+            String text = line.getValue().getAsString().toLowerCase(java.util.Locale.ROOT);
+            for (String word : words) assertFalse(text.contains(word.toLowerCase(java.util.Locale.ROOT)), line.getKey());
+        }
+    }
+
+    @Test
+    void noNewLineNamesHerOrThePartner() throws Exception {
+        assertNoShepherdLineSays("Sophie", "Miller", "Anderson-Kind");
+    }
+
+    @Test
+    void noNodNamesItsGame() throws Exception {
+        assertNoShepherdLineSays("Destiny", "Subnautica", "Helldivers", "game");
+    }
+
     @Test
     void everyAmbientKeyHasALangEntry() throws Exception {
         var lang = lang();

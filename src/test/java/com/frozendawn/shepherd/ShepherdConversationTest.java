@@ -129,6 +129,11 @@ class ShepherdConversationTest {
     }
 
     @Test
+    void askingOrWhatLeavesTheNarrationFlag() throws IOException {
+        assertTrue(new ShepherdConversation(tree(), "fm.end.or", NOTHING).flags().contains("fm_narrated"));
+    }
+
+    @Test
     void aStartThatRunsOutDoesNotOpen() {
         var nodes = Map.of("a", step("a", null, "never", null));
         assertFalse(ShepherdConversation.opens(nodes, "a", NOTHING));

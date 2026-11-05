@@ -24,6 +24,7 @@ public final class ShepherdPolicy {
     public static final int REACT_TICKS = 60;
     public static final int AMBIENT_GAP_TICKS = 3600, SILENCE_TICKS = 24000;
     public static final int IMAGINED_AURORA_PHASE = 4;
+    public static final int SWARM_HOSTILES = 4, YOUR_PART_TICKS = 6000, WALL_BLOCKS = 32;
     public static final int WATCH_BLOCKS = 16;
     public static final int STILL_TICKS = 300, LOOK_TICKS = 100, CURIOUS_GAP_TICKS = 1200, CURIOUS_BLOCKS = 8, STILL_BLOCKS = 3;
     public static final int FLINCH_TICKS = 20;

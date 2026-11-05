@@ -63,10 +63,16 @@ public final class ShepherdReactions {
         return she == null || she.offline() ? null : she;
     }
 
+    /** Her, if she is in a position to notice this player. */
+    static ShepherdEntity watching(ServerPlayer player) {
+        var she = awakeAndWatching(player.getServer());
+        return she == null || she.level() != player.level() || player.distanceTo(she) > ShepherdPolicy.HEARD_BLOCKS ? null : she;
+    }
+
     public static void saw(ServerPlayer player, Deed deed) {
         var server = player.getServer();
-        var she = awakeAndWatching(server);
-        if (she == null || she.level() != player.level() || player.distanceTo(she) > ShepherdPolicy.HEARD_BLOCKS) return;
+        var she = watching(player);
+        if (she == null) return;
         var data = ShepherdSavedData.get(server);
         long now = server.overworld().getGameTime();
         if (now < data.deedReady(deed.name())) return;
@@ -110,14 +116,28 @@ public final class ShepherdReactions {
 
     /** Something she says unasked: never at Wary or over a conversation, only when things are calm, and not within the gap of her last line. */
     public static boolean murmur(ServerLevel level, String key, Mood mood) {
+        return speakUp(level, key, mood, true, true);
+    }
+
+    /** A line about the trouble itself: waiting for calm would miss it. */
+    static boolean blurt(ServerLevel level, String key, Mood mood) {
+        return speakUp(level, key, mood, false, true);
+    }
+
+    /** A line someone asked for: she does not make them wait. */
+    static boolean answer(ServerLevel level, String key, Mood mood) {
+        return speakUp(level, key, mood, false, false);
+    }
+
+    private static boolean speakUp(ServerLevel level, String key, Mood mood, boolean needsCalm, boolean holdsTheGap) {
         var server = level.getServer();
         var she = awakeAndWatching(server);
         if (she == null || she.level() != level) return false;
         var near = near(level, she);
         var data = ShepherdSavedData.get(server);
         long now = server.overworld().getGameTime();
-        boolean gap = data.lastAmbient() != ShepherdSavedData.NOT_SET && now - data.lastAmbient() < ShepherdPolicy.AMBIENT_GAP_TICKS;
-        if (near.isEmpty() || data.tier() == Tier.WARY || ShepherdTalk.live() || gap || !ShepherdPrompt.calm(server, level, near)) return false;
+        boolean gap = holdsTheGap && data.lastAmbient() != ShepherdSavedData.NOT_SET && now - data.lastAmbient() < ShepherdPolicy.AMBIENT_GAP_TICKS;
+        if (near.isEmpty() || data.tier() == Tier.WARY || ShepherdTalk.live() || gap || needsCalm && !ShepherdPrompt.calm(server, level, near)) return false;
         data.lastAmbient(now);
         she.react(mood);
         speak(she, key, mood);
@@ -160,6 +180,7 @@ public final class ShepherdReactions {
         if (near.isEmpty()) return;
         comeBack(server, she, near.getFirst());
         for (var player : near) look(level, player);
+        ShepherdEggs.look(level, she, near);
         commentate(server, level, she, near);
     }
 
@@ -220,16 +241,15 @@ public final class ShepherdReactions {
 
     @SubscribeEvent public static void flinch(LivingDamageEvent.Post event) {
         if (!(event.getEntity() instanceof ServerPlayer player)) return;
-        var she = awakeAndWatching(player.getServer());
-        if (she == null || she.level() != player.level() || player.distanceTo(she) > ShepherdPolicy.HEARD_BLOCKS) return;
+        var she = watching(player);
+        if (she == null) return;
         if (ShepherdSavedData.get(player.getServer()).tier() != Tier.WARY) she.react(Mood.ALARMED, ShepherdPolicy.FLINCH_TICKS);
         if (event.getSource().getEntity() instanceof Enemy) fought = true;
     }
 
     @SubscribeEvent public static void killed(LivingDeathEvent event) {
         if (!(event.getEntity() instanceof Enemy) || !(event.getSource().getEntity() instanceof ServerPlayer player)) return;
-        var she = awakeAndWatching(player.getServer());
-        if (she != null && she.level() == player.level() && player.distanceTo(she) <= ShepherdPolicy.HEARD_BLOCKS) fought = true;
+        if (watching(player) != null) fought = true;
     }
 
     @SubscribeEvent public static void chat(ServerChatEvent event) {

@@ -322,7 +322,8 @@
         }
       ],
       "set": [
-        "fm_done"
+        "fm_done",
+        "fm_narrated"
       ]
     },
     {

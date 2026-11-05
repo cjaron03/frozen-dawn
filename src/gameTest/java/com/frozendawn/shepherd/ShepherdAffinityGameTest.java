@@ -37,6 +37,11 @@ import net.minecraft.world.level.storage.ServerLevelData;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.ServerChatEvent;
+import java.util.List;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.level.Level;
+import net.neoforged.neoforge.event.entity.living.LivingEntityUseItemEvent;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
@@ -146,6 +151,30 @@ public final class ShepherdAffinityGameTest {
     @AfterBatch(batch = "shepherd_ambient_aurora") public static void auroraAmbientAfter(ServerLevel l) { after(l); }
     @BeforeBatch(batch = "shepherd_ambient_blizzard") public static void blizzardAmbientBefore(ServerLevel l) { before(l); }
     @AfterBatch(batch = "shepherd_ambient_blizzard") public static void blizzardAmbientAfter(ServerLevel l) { after(l); }
+    @BeforeBatch(batch = "shepherd_egg_war") public static void eggWarBefore(ServerLevel l) { before(l); }
+    @AfterBatch(batch = "shepherd_egg_war") public static void eggWarAfter(ServerLevel l) { after(l); }
+    @BeforeBatch(batch = "shepherd_egg_swarm") public static void eggSwarmBefore(ServerLevel l) { before(l); }
+    @AfterBatch(batch = "shepherd_egg_swarm") public static void eggSwarmAfter(ServerLevel l) { after(l); }
+    @BeforeBatch(batch = "shepherd_egg_three") public static void eggThreeBefore(ServerLevel l) { before(l); }
+    @AfterBatch(batch = "shepherd_egg_three") public static void eggThreeAfter(ServerLevel l) { after(l); }
+    @BeforeBatch(batch = "shepherd_egg_boom") public static void eggBoomBefore(ServerLevel l) { before(l); }
+    @AfterBatch(batch = "shepherd_egg_boom") public static void eggBoomAfter(ServerLevel l) { after(l); }
+    @BeforeBatch(batch = "shepherd_egg_resupply") public static void eggResupplyBefore(ServerLevel l) { before(l); }
+    @AfterBatch(batch = "shepherd_egg_resupply") public static void eggResupplyAfter(ServerLevel l) { after(l); }
+    @BeforeBatch(batch = "shepherd_egg_part") public static void eggPartBefore(ServerLevel l) { before(l); }
+    @AfterBatch(batch = "shepherd_egg_part") public static void eggPartAfter(ServerLevel l) { after(l); }
+    @BeforeBatch(batch = "shepherd_egg_fish") public static void eggFishBefore(ServerLevel l) { before(l); }
+    @AfterBatch(batch = "shepherd_egg_fish") public static void eggFishAfter(ServerLevel l) { after(l); }
+    @BeforeBatch(batch = "shepherd_egg_nofish") public static void eggNofishBefore(ServerLevel l) { before(l); }
+    @AfterBatch(batch = "shepherd_egg_nofish") public static void eggNofishAfter(ServerLevel l) { after(l); }
+    @BeforeBatch(batch = "shepherd_lore_wall") public static void loreWallBefore(ServerLevel l) { before(l); }
+    @AfterBatch(batch = "shepherd_lore_wall") public static void loreWallAfter(ServerLevel l) { after(l); }
+    @BeforeBatch(batch = "shepherd_lore_none") public static void loreNoneBefore(ServerLevel l) { before(l); }
+    @AfterBatch(batch = "shepherd_lore_none") public static void loreNoneAfter(ServerLevel l) { after(l); }
+    @BeforeBatch(batch = "shepherd_lore_erased") public static void loreErasedBefore(ServerLevel l) { before(l); }
+    @AfterBatch(batch = "shepherd_lore_erased") public static void loreErasedAfter(ServerLevel l) { after(l); }
+    @BeforeBatch(batch = "shepherd_egg_replay") public static void eggReplayBefore(ServerLevel l) { before(l); }
+    @AfterBatch(batch = "shepherd_egg_replay") public static void eggReplayAfter(ServerLevel l) { after(l); }
 
     /** Some deeds move the world's clock on, so the phase comes back. */
     private static long apocalypseTicks;
@@ -935,6 +964,209 @@ public final class ShepherdAffinityGameTest {
                     .thenExecute(() -> {
                         h.assertTrue(ApocalypseState.get(h.getLevel().getServer()).getPhase() == 5, "The world's clock holds");
                         h.assertTrue(!ShepherdReactions.said().contains("imagined_aurora"), "Not through that: " + ShepherdReactions.said());
+                    })
+                    .thenSucceed();
+        });
+    }
+
+    /** Its line plays, then does not play again however long the gap has run. */
+    private static void assertOnce(GameTestHelper h, String line) {
+        h.startSequence()
+                .thenWaitUntil(() -> assertSaid(h, line))
+                .thenExecute(() -> {
+                    ShepherdReactions.clearForTests();
+                    data(h).lastAmbient(ShepherdSavedData.NOT_SET);
+                })
+                .thenExecuteAfter(ShepherdReactions.POLL_TICKS + 10, () -> h.assertTrue(!line.equals(ShepherdReactions.said()), "Only once"))
+                .thenSucceed();
+    }
+
+    private static void assertSaid(GameTestHelper h, String line) {
+        h.assertTrue(line.equals(ShepherdReactions.said()), "Said: " + ShepherdReactions.said());
+    }
+
+    private static void architectBeside(GameTestHelper h) {
+        h.spawnWithNoFreeWill(ModEntities.ARCHITECT.get(), new Vec3(16.5, 4, 10.5));
+    }
+
+    private static void zombies(GameTestHelper h, int count) {
+        for (int i = 0; i < count; i++) h.spawnWithNoFreeWill(EntityType.ZOMBIE, new Vec3(14.5 + i, 4, 10.5));
+    }
+
+    private static void boom(GameTestHelper h) {
+        var at = h.absoluteVec(Vec3.atCenterOf(SPOT));
+        h.getLevel().explode(null, at.x, at.y, at.z, 1, Level.ExplosionInteraction.NONE);
+    }
+
+    private static void say(ServerPlayer player, String text) {
+        NeoForge.EVENT_BUS.post(new ServerChatEvent(player, text, Component.literal(text)));
+    }
+
+    private static void eat(ServerPlayer player, Item food) {
+        NeoForge.EVENT_BUS.post(new LivingEntityUseItemEvent.Finish(player, new ItemStack(food), 0, ItemStack.EMPTY));
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_egg_war", timeoutTicks = 400)
+    public static void shepherdSheNamesTheWarOnce(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            awake(h, player(h));
+            architectBeside(h);
+            assertOnce(h, ShepherdEggs.ARCHITECT_LINE);
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_egg_swarm", timeoutTicks = 400)
+    public static void shepherdFourHostilesEarnALineOnce(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            awake(h, player(h));
+            zombies(h, ShepherdPolicy.SWARM_HOSTILES);
+            assertOnce(h, ShepherdEggs.SWARM_LINE);
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_egg_three", timeoutTicks = 400)
+    public static void shepherdFewerThanFourHostilesSayNothing(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            awake(h, player(h));
+            zombies(h, ShepherdPolicy.SWARM_HOSTILES - 1);
+            h.startSequence()
+                    .thenExecuteAfter(ShepherdReactions.POLL_TICKS + 10, () -> h.assertTrue(ShepherdReactions.said() == null, "Said: " + ShepherdReactions.said()))
+                    .thenSucceed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_egg_boom", timeoutTicks = 400)
+    public static void shepherdAnExplosionEarnsALineOnce(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            awake(h, player(h));
+            boom(h);
+            assertSaid(h, ShepherdEggs.EXPLOSION_LINE);
+            ShepherdReactions.clearForTests();
+            data(h).lastAmbient(ShepherdSavedData.NOT_SET);
+            boom(h);
+            h.assertTrue(ShepherdReactions.said() == null, "Only once");
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_egg_resupply", timeoutTicks = 400)
+    public static void shepherdTheResupplyCodeIsAnsweredOnceADay(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            awake(h, player);
+            data(h).lastAmbient(clock(h));
+            say(player, "Down Down Up Right");
+            h.startSequence()
+                    .thenWaitUntil(() -> assertSaid(h, ShepherdEggs.RESUPPLY_LINE))
+                    .thenExecute(() -> {
+                        ShepherdReactions.clearForTests();
+                        say(player, "down down up right");
+                    })
+                    .thenIdle(5)
+                    .thenExecute(() -> h.assertTrue(ShepherdReactions.said() == null, "Once a day"))
+                    .thenExecute(() -> {
+                        ShepherdSavedData.get(h.getLevel().getServer()).deedReady("egg.resupply", clock(h));
+                        say(player, "down down up right");
+                    })
+                    .thenWaitUntil(() -> assertSaid(h, ShepherdEggs.RESUPPLY_LINE))
+                    .thenSucceed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_egg_part", timeoutTicks = 400)
+    public static void shepherdFiveMinutesStillPlaysTheRecordingOnce(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var she = awake(h, player(h));
+            she.stillFor(ShepherdPolicy.YOUR_PART_TICKS);
+            assertOnce(h, ShepherdEggs.YOUR_PART_LINE);
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_egg_fish", timeoutTicks = 400)
+    public static void shepherdRawFishIsNarratedOnceADay(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            awake(h, player);
+            data(h).flag("fm_narrated", true);
+            eat(player, Items.COOKED_COD);
+            h.assertTrue(ShepherdReactions.said() == null, "Cooked is fine");
+            eat(player, Items.COD);
+            assertSaid(h, ShepherdEggs.RAW_FISH_LINE);
+            ShepherdReactions.clearForTests();
+            data(h).lastAmbient(ShepherdSavedData.NOT_SET);
+            eat(player, Items.SALMON);
+            h.assertTrue(ShepherdReactions.said() == null, "Once a day");
+            data(h).deedReady("egg.raw_fish", clock(h));
+            eat(player, Items.SALMON);
+            assertSaid(h, ShepherdEggs.RAW_FISH_LINE);
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_egg_nofish", timeoutTicks = 400)
+    public static void shepherdNoNarrationWithoutTheReply(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            awake(h, player);
+            eat(player, Items.COD);
+            h.assertTrue(ShepherdReactions.said() == null, "Said: " + ShepherdReactions.said());
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_lore_wall", timeoutTicks = 400)
+    public static void shepherdTheWallIsHeldOnce(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            awake(h, player);
+            ShepherdEggs.wall(h.getLevel(), List.of(player), List.of(player.blockPosition().east(ShepherdPolicy.WALL_BLOCKS - 1)), false);
+            assertSaid(h, ShepherdEggs.WALL_LINE);
+            ShepherdReactions.clearForTests();
+            data(h).lastAmbient(ShepherdSavedData.NOT_SET);
+            ShepherdEggs.wall(h.getLevel(), List.of(player), List.of(player.blockPosition()), false);
+            h.assertTrue(ShepherdReactions.said() == null, "Only once");
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_lore_none", timeoutTicks = 400)
+    public static void shepherdTheWallNeedsAHearth(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            awake(h, player);
+            ShepherdEggs.wall(h.getLevel(), List.of(player), List.of(), false);
+            ShepherdEggs.wall(h.getLevel(), List.of(player), List.of(player.blockPosition().east(ShepherdPolicy.WALL_BLOCKS)), false);
+            h.assertTrue(ShepherdReactions.said() == null, "Said: " + ShepherdReactions.said());
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_lore_erased", timeoutTicks = 400)
+    public static void shepherdTheWallStopsOnceMaeveIsErased(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            awake(h, player);
+            ShepherdEggs.wall(h.getLevel(), List.of(player), List.of(player.blockPosition()), true);
+            h.assertTrue(ShepherdReactions.said() == null, "Said: " + ShepherdReactions.said());
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_egg_replay", timeoutTicks = 400)
+    public static void shepherdReplayResetsTheEggs(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            awake(h, player);
+            boom(h);
+            assertSaid(h, ShepherdEggs.EXPLOSION_LINE);
+            say(player, "down down up right");
+            h.startSequence()
+                    .thenWaitUntil(() -> assertSaid(h, ShepherdEggs.RESUPPLY_LINE))
+                    .thenExecute(() -> {
+                        command(h, "fd shepherd replay");
+                        h.assertTrue(!data(h).flag(ShepherdEggs.EXPLOSION), "The flag goes");
+                        h.assertTrue(clock(h) >= data(h).deedReady("egg.resupply"), "The day goes");
+                        h.assertTrue(data(h).lastAmbient() == ShepherdSavedData.NOT_SET, "The gap goes");
                     })
                     .thenSucceed();
         });

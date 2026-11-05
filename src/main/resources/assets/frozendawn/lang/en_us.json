@@ -2276,6 +2276,13 @@
   "shepherd.ambient.looked_heater.2": "We don't talk, but we understand each other.",
   "shepherd.ambient.looked_terminal.1": "Still running. Some of us just don't know when to stop.",
   "shepherd.ambient.looked_animal.1": "It doesn't know. Good for it.",
+  "shepherd.egg.architect": "Whether we wanted it or not, we've stepped into a war. I'd like to know with what.",
+  "shepherd.egg.swarm": "Detecting multiple hostile lifeforms in the region. Are you certain whatever you're doing is worth it?",
+  "shepherd.egg.explosion": "For the record, this Aurora has not exploded.",
+  "shepherd.egg.resupply": "Resupply is not coming. Nobody's coming. I've told you this.",
+  "shepherd.egg.your_part": "Are you doing your part? ...That's a recording. It plays on its own.",
+  "shepherd.egg.raw_fish": "Please remain calm. The survivor is eating raw fish.",
+  "shepherd.lore.lattice": "That wall isn't built. It's being held. I don't know by what, and I don't want to be here when it lets go.",
   "shepherd.prompt": "Got a minute?",
   "shepherd.prompt.hint": "Right-click her",
   "shepherd.fm.exit": "Before we go up. There are things up there that take buildings apart. Tall. Blue eyes. Very good at their jobs. I'll tell you what I see."
