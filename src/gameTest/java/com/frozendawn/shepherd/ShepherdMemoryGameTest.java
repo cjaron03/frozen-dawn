@@ -61,6 +61,8 @@ public final class ShepherdMemoryGameTest {
     @AfterBatch(batch = "shepherd_named_flashlight") public static void namedFlashlightAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
     @BeforeBatch(batch = "shepherd_named_fine") public static void namedFineBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
     @AfterBatch(batch = "shepherd_named_fine") public static void namedFineAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_named_earn") public static void namedEarnBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_named_earn") public static void namedEarnAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
     @BeforeBatch(batch = "shepherd_named_shepherd") public static void namedShepherdBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
     @AfterBatch(batch = "shepherd_named_shepherd") public static void namedShepherdAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
 
@@ -312,6 +314,22 @@ public final class ShepherdMemoryGameTest {
     public static void shepherdShepherdIsFineThenAuroraLeadsToNoticing(GameTestHelper h) {
         ShepherdTestWorld.whenTicking(h, () -> {
             sayHerName(h, Slot.BLUNT);
+            assertNoticing(h);
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_named_earn", timeoutTicks = 400)
+    public static void shepherdWhyAuroraLeadsToNoticing(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            awake(h, player);
+            ShepherdTalk.start(player, "fm.name");
+            ShepherdTalk.reply(player, ShepherdTalk.liveId(), Slot.ASK.ordinal());
+            ShepherdTalk.reply(player, ShepherdTalk.liveId(), ShepherdConversation.CONTINUE);
+            h.assertTrue("fm.name.its".equals(ShepherdTalk.liveNode()), "On her name: " + ShepherdTalk.liveNode());
+            ShepherdTalk.reply(player, ShepherdTalk.liveId(), Slot.ASK.ordinal());
+            h.assertTrue("fm.name.earn".equals(ShepherdTalk.liveNode()), "Asked why: " + ShepherdTalk.liveNode());
             assertNoticing(h);
             h.succeed();
         });

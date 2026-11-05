@@ -243,7 +243,10 @@
         {
           "slot": "ask",
           "label": "shepherd.fm.name.earn.label",
-          "next": "fm.name.earn"
+          "next": "fm.name.earn",
+          "noted": [
+            "+calls_me_aurora"
+          ]
         },
         {
           "slot": "kind",

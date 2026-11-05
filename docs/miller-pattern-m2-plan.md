@@ -50,7 +50,7 @@ Approving the plan accepts these unless you say otherwise. Rulings 1 to 5 are th
    | --- | --- | --- |
    | `KIND` | Kind replies, `WARM_SHELTER` | `ARCHIVIST_KILLED`, `SHELTER_FROZE` |
    | `TALKS_TO_ME` | Any conversation reply | `LEFT_BEHIND` |
-   | `CALLS_ME_AURORA` | Node `fm.name.aurora`, the "Aurora it is." reply on `fm.name.its` | `CALLED_SHEPHERD`, node `fm.name.fine` |
+   | `CALLS_ME_AURORA` | Node `fm.name.aurora`, the "Aurora it is." and "Why Aurora?" replies on `fm.name.its` | `CALLED_SHEPHERD`, node `fm.name.fine` |
    | `USES_ME` | Hub Follow, Wait or Lamp | Hub Talk |
    | `CAREFUL` | `WARM_SHELTER`, `READ_LOG` | `AIR_FAILING`, `SHELTER_FROZE` |
    | `JOKES_WITH_ME` | Sarcastic replies | Blunt replies |
