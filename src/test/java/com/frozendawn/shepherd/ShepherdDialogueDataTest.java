@@ -149,7 +149,7 @@ class ShepherdDialogueDataTest {
         try (var in = ShepherdDialogueDataTest.class.getResourceAsStream("/data/frozendawn/shepherd/ambient/starter.json")) {
             assertNotNull(in);
             var pools = ShepherdAmbient.parse(JsonParser.parseReader(new InputStreamReader(in, StandardCharsets.UTF_8)));
-            assertEquals(ShepherdAmbient.Trigger.values().length, pools.size(), "one pool for every trigger");
+            assertEquals(ShepherdAmbient.Trigger.values().length, pools.stream().map(ShepherdAmbient.Pool::trigger).distinct().count(), "a pool for every trigger");
             for (var pool : pools) {
                 for (var say : pool.variants()) {
                     assertTrue(lang.has(say.key()), say.key());

@@ -37,7 +37,7 @@ final class PatternDiagnostics {
             if (causes.isEmpty()) lines.add("No retained event raised " + feeling + "; its reasons have been dropped.");
         }
         var focus = snapshot.focus();
-        lines.add(String.format(Locale.ROOT, "FOCUS %s %s=%.3f", focus.source(), focus.key(), focus.strength()));
+        lines.add(String.format(Locale.ROOT, "FOCUS %s %s=%.3f URGE %s", focus.source(), focus.key(), focus.strength(), snapshot.urge()));
         lines.add("A reaction, a conversation, asking, Wary and Offline all take her face over this.");
         for (var law : PatternLaws.values()) lines.add(law + ": " + law.meaning());
         return List.copyOf(lines);

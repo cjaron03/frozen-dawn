@@ -364,7 +364,7 @@ public final class ClientHandlers {
     }
 
     public static void handleShepherdLine(ShepherdLinePayload payload) {
-        com.frozendawn.client.ShepherdPromptStrip.say(payload.key(), payload.mood());
+        com.frozendawn.client.ShepherdPromptStrip.say(payload.key(), payload.mood(), payload.arg());
     }
 
     public static void handleShepherdClose() {

@@ -30,24 +30,24 @@ public final class ShepherdPromptStrip {
 
     /** "Got a minute?" */
     public static void show() {
-        start("shepherd.prompt", Mood.THINKING);
+        start("shepherd.prompt", Mood.THINKING, null);
         prompt = true;
     }
 
     /** A line of hers, which replaces whatever is showing. */
-    public static void say(String key, Mood mood) {
-        start(key, mood);
+    public static void say(String key, Mood mood, String arg) {
+        start(key, mood, arg);
     }
 
     /** Wraps the whole line first, so a word never jumps down a row halfway through typing. */
-    private static void start(String key, Mood mood) {
+    private static void start(String key, Mood mood, String arg) {
         var minecraft = Minecraft.getInstance();
         started = minecraft.level == null ? NONE : minecraft.level.getGameTime();
         typed = 0;
         face = mood;
         prompt = false;
         rows = new ArrayList<>();
-        for (var row : minecraft.font.getSplitter().splitLines(I18n.get(key), ROW_WIDTH, Style.EMPTY)) rows.add(row.getString());
+        for (var row : minecraft.font.getSplitter().splitLines(arg == null ? I18n.get(key) : I18n.get(key, arg), ROW_WIDTH, Style.EMPTY)) rows.add(row.getString());
         length = rows.stream().mapToInt(String::length).sum();
     }
 

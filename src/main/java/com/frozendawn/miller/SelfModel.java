@@ -20,7 +20,7 @@ public final class SelfModel {
         LEANING
     }
 
-    static final int FOUND_AT = 3;
+    public static final int FOUND_AT = 3;
 
     private Stage stage = Stage.PRODUCT;
     private final Map<PatternLaws, Integer> witnessed = new EnumMap<>(PatternLaws.class);

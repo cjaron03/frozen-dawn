@@ -50,6 +50,9 @@ public final class ShepherdEntity extends PathfinderMob {
     /** What her display shows for a replay's boot: her own face, nothing, or the BIOS cursor. */
     public static final byte BOOT_NONE = 0, BOOT_DARK = 1, BOOT_CURSOR = 2;
     private static final double HOVER_BLOCKS = 2.5;
+    /** How near she drifts when she wants company, and for how long. */
+    static final double CLOSE_BLOCKS = 1.75;
+    static final int CLOSE_TICKS = 200;
     private static final double HOVER_HEIGHT = 1;
     private static final double AIR_DRAG = 0.91;
     /** Close enough to her spot to stop thrusting, or she saws back and forth across it. */
@@ -71,7 +74,7 @@ public final class ShepherdEntity extends PathfinderMob {
     /** Where her follower last stopped, and since when. */
     private Vec3 stoodAt;
     private long stoodSince;
-    private long nextLook;
+    private long nextLook, closeUntil;
     private ShepherdCuriosity.Target lookingAt;
     /** Client only: the mood last drawn, and how much of the blink between two moods is left. */
     private Mood shownMood;
@@ -203,6 +206,21 @@ public final class ShepherdEntity extends PathfinderMob {
     /** What she has wandered off to look at, if anything. */
     ShepherdCuriosity.Target lookingAt() {
         return lookingAt;
+    }
+
+    /** How far off she hovers just now. */
+    double hoverBlocks() {
+        return level().getGameTime() < closeUntil ? CLOSE_BLOCKS : HOVER_BLOCKS;
+    }
+
+    /** She wants company: she comes in a little, for a while. */
+    void drawClose() {
+        closeUntil = level().getGameTime() + CLOSE_TICKS;
+    }
+
+    /** She wants a look: the wait since the last one does not hold her. */
+    void curious() {
+        nextLook = Math.min(nextLook, level().getGameTime());
     }
 
     /** How long her follower has stayed put. */
@@ -576,12 +594,12 @@ public final class ShepherdEntity extends PathfinderMob {
             double distance = distanceTo(player);
             var away = position().subtract(player.position()).multiply(1, 0, 1);
             var spot = asking() ? askSpot(player, away)
-                    : player.position().add(away.lengthSqr() < 1e-4 ? new Vec3(HOVER_BLOCKS, 0, 0) : away.normalize().scale(HOVER_BLOCKS)).add(0, HOVER_HEIGHT, 0);
+                    : player.position().add(away.lengthSqr() < 1e-4 ? new Vec3(hoverBlocks(), 0, 0) : away.normalize().scale(hoverBlocks())).add(0, HOVER_HEIGHT, 0);
             if (distance > ShepherdPolicy.TELEPORT_BLOCKS) {
                 getNavigation().stop();
                 var room = roomBeside(player, spot);
                 teleportTo(room.x, room.y, room.z);
-            } else if (distance > HOVER_BLOCKS + 1) {
+            } else if (distance > hoverBlocks() + 1) {
                 if (--repath <= 0) {
                     repath = 10;
                     getNavigation().moveTo(spot.x, spot.y, spot.z, 1);

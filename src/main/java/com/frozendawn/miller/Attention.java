@@ -22,7 +22,7 @@ public final class Attention {
 
     /** Her first look at herself, which comes before any wall. */
     public static final String NOTICING = "noticing";
-    static final double DRIVE_WEIGHT = 0.6, KEEPSAKE_WEIGHT = 0.5, WALL_STRENGTH = 0.5;
+    static final double DRIVE_WEIGHT = 0.6, WALL_STRENGTH = 0.5;
 
     private Attention() { }
 
@@ -44,7 +44,7 @@ public final class Attention {
 
     private static Focus keepsake(PatternState state, UUID nearest, long now) {
         var due = nearest == null ? null : state.keepsakes().due(nearest, now);
-        return due == null ? null : new Focus(Source.KEEPSAKE, due.kind(), KEEPSAKE_WEIGHT * due.salience());
+        return due == null ? null : new Focus(Source.KEEPSAKE, due.kind(), due.salience());
     }
 
     private static Focus wall(PatternState state) {

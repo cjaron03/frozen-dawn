@@ -107,6 +107,8 @@ final class FrozenDawnDebugCommand {
                     "/fd shepherd coherence <0-1> (set her coherence, to see a slow reply; her floor is 0.3)",
                     "/fd shepherd saw <deed> (a deed through the real door: cooldown and range apply)",
                     "/fd shepherd feel <feeling> (a feeling at its fullest, to look at her face)",
+                    "/fd shepherd want <drive> <0-1> (set a want, to see what she does about it)",
+                    "/fd shepherd witness <wall> (bring her to the walls and have her find this one)",
                     "/fd shepherd replay (clear her score and flags and restart the first meeting on the next right-click)",
                     "/fd shepherd affinity <value> (set her score, -1000 to 1000)",
                     "/fd shepherd skipday (run her cooldowns, and if nobody is near her, her clock on you, a day on)",

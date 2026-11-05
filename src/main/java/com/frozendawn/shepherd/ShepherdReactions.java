@@ -15,6 +15,7 @@ import com.frozendawn.shepherd.ShepherdFace.Mood;
 import com.frozendawn.shepherd.ShepherdSavedData.Stage;
 import com.frozendawn.world.HeaterRegistry;
 import com.frozendawn.world.TemperatureManager;
+import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Locale;
@@ -41,11 +42,11 @@ import net.neoforged.neoforge.network.PacketDistributor;
 @EventBusSubscriber(modid = FrozenDawn.MOD_ID)
 public final class ShepherdReactions {
     public static final int POLL_TICKS = 100;
-    private static final String NAME_SHE_HATES = "shepherd";
+    private static final String NAME_SHE_HATES = "shepherd", SAID_SLOW = "said_slow";
     /** Only so a line never plays twice running: it does not need to outlive the server. */
     private static final Map<Deed, Say> lastSaid = new EnumMap<>(Deed.class);
     private static final Map<Trigger, Say> lastMurmur = new EnumMap<>(Trigger.class);
-    private static String said;
+    private static String said, saidArg;
     /** When someone near her was last in a fight she has not remarked on. */
     private static long lastFight = ShepherdSavedData.NOT_SET;
 
@@ -89,9 +90,9 @@ public final class ShepherdReactions {
         if (line == null) return;
         lastSaid.put(deed, line);
         if (wary) {
-            speak(she, deed.liked() ? ShepherdAffinity.WARY_LIKED : ShepherdAffinity.WARY_DISLIKED, Mood.RECORDING);
+            speak(she, deed.liked() ? ShepherdAffinity.WARY_LIKED : ShepherdAffinity.WARY_DISLIKED, Mood.RECORDING, null);
         } else {
-            speak(she, line.key(data.heavy()), deed.mood());
+            speak(she, line.key(data.heavy()), deed.mood(), null);
         }
     }
 
@@ -101,9 +102,10 @@ public final class ShepherdReactions {
     }
 
     /** Everyone who can hear her gets the strip. */
-    private static void speak(ShepherdEntity she, String key, Mood mood) {
+    private static void speak(ShepherdEntity she, String key, Mood mood, String arg) {
         said = key;
-        var line = new ShepherdLinePayload(key, mood);
+        saidArg = arg;
+        var line = new ShepherdLinePayload(key, mood, arg);
         for (var heard : near((ServerLevel) she.level(), she)) PacketDistributor.sendToPlayer(heard, line);
     }
 
@@ -124,20 +126,25 @@ public final class ShepherdReactions {
 
     /** Something she says unasked: never before she has met you, at Wary or over a conversation, only when things are calm and she is not asking, and not within the gap of her last line. */
     public static boolean murmur(ServerLevel level, String key, Mood mood) {
-        return speakUp(level, key, mood, true, true);
+        return murmur(level, key, mood, null);
+    }
+
+    /** {@code arg} fills the line's one slot, or is null. */
+    static boolean murmur(ServerLevel level, String key, Mood mood, String arg) {
+        return speakUp(level, key, mood, arg, true, true);
     }
 
     /** A line about the trouble itself: waiting for calm would miss it. */
     static boolean blurt(ServerLevel level, String key, Mood mood) {
-        return speakUp(level, key, mood, false, true);
+        return speakUp(level, key, mood, null, false, true);
     }
 
     /** A line someone asked for: she does not make them wait. */
     static boolean answer(ServerLevel level, String key, Mood mood) {
-        return speakUp(level, key, mood, false, false);
+        return speakUp(level, key, mood, null, false, false);
     }
 
-    private static boolean speakUp(ServerLevel level, String key, Mood mood, boolean needsCalm, boolean holdsTheGap) {
+    private static boolean speakUp(ServerLevel level, String key, Mood mood, String arg, boolean needsCalm, boolean holdsTheGap) {
         var server = level.getServer();
         var she = awakeAndWatching(server);
         if (she == null || she.level() != level) return false;
@@ -149,7 +156,7 @@ public final class ShepherdReactions {
         if (needsCalm && (she.asking() || !ShepherdPrompt.calm(server, level, near))) return false;
         data.lastAmbient(now);
         she.react(mood);
-        speak(she, key, mood);
+        speak(she, key, mood, arg);
         return true;
     }
 
@@ -158,10 +165,14 @@ public final class ShepherdReactions {
         return said;
     }
 
+    static String saidArg() {
+        return saidArg;
+    }
+
     static void clearForTests() {
         lastSaid.clear();
         lastMurmur.clear();
-        said = null;
+        said = saidArg = null;
         lastFight = ShepherdSavedData.NOT_SET;
     }
 
@@ -200,12 +211,37 @@ public final class ShepherdReactions {
         commentate(server, level, she, near);
     }
 
-    /** The first of these the moment allows. The gap keeps it to one. */
+    /** The first time she is slow she says so, so nobody takes it for a bug. Staying quiet does not hold this one back. */
+    private static void sayWhenSlow(MinecraftServer server, ServerLevel level, ShepherdSavedData data) {
+        if (MillerPattern.halfLaps(server) > 0 && !data.flag(SAID_SLOW) && murmur(level, Trigger.SLOW)) data.flag(SAID_SLOW, true);
+    }
+
+    /** She asks what she wants first. Only staying quiet holds back what the moment offers: the body's urges leave her voice free. */
     private static void commentate(MinecraftServer server, ServerLevel level, ShepherdEntity she, List<ServerPlayer> near) {
         var data = ShepherdSavedData.get(server);
         long now = server.overworld().getGameTime();
         if (data.lastTalk() == ShepherdSavedData.NOT_SET) data.lastTalk(now);
         if (now - lastFight > ShepherdPolicy.FIGHT_LINE_TICKS) lastFight = ShepherdSavedData.NOT_SET;
+        sayWhenSlow(server, level, data);
+        var nearest = near.stream().min(Comparator.comparingDouble(she::distanceTo)).orElseThrow().getUUID();
+        switch (MillerPattern.urge(server, nearest)) {
+            case STAY_QUIET -> {
+                return;
+            }
+            case SPEAK -> {
+                if (ShepherdWill.say(level, nearest)) return;
+            }
+            case LOOK -> {
+                she.curious();
+                MillerPattern.looked(server);
+            }
+            case APPROACH -> she.drawClose();
+        }
+        moment(server, level, she, near, data, now);
+    }
+
+    /** The first of these the moment allows. The gap keeps it to one. */
+    private static void moment(MinecraftServer server, ServerLevel level, ShepherdEntity she, List<ServerPlayer> near, ShepherdSavedData data, long now) {
         if (lastFight != ShepherdSavedData.NOT_SET && she.watching() == null && murmur(level, Trigger.AFTER_FIGHT)) lastFight = ShepherdSavedData.NOT_SET;
         if (now - data.lastTalk() >= ShepherdPolicy.SILENCE_TICKS) murmur(level, Trigger.SILENCE);
         if (near.stream().anyMatch(player -> PlayerTickHandler.resolvedTemperature(player) <= ShepherdPolicy.COLD_LINE_C)) murmur(level, Trigger.COLD);

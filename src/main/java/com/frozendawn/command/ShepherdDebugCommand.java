@@ -1,8 +1,11 @@
 package com.frozendawn.command;
 
 import com.frozendawn.data.ReturnedHearthSavedData;
+import com.frozendawn.miller.Drives.Drive;
 import com.frozendawn.miller.Feelings.Feeling;
 import com.frozendawn.miller.MillerPattern;
+import com.frozendawn.miller.PatternLaws;
+import com.frozendawn.miller.SelfModel;
 import com.frozendawn.shepherd.ShepherdAffinity.Deed;
 import com.frozendawn.shepherd.ShepherdEggs;
 import com.frozendawn.shepherd.ShepherdReactions;
@@ -37,6 +40,30 @@ final class ShepherdDebugCommand {
         return saw;
     }
 
+    private static LiteralArgumentBuilder<CommandSourceStack> want() {
+        var want = Commands.literal("want");
+        for (Drive drive : Drive.values()) {
+            want.then(Commands.literal(drive.name().toLowerCase(Locale.ROOT)).then(Commands.argument("value", DoubleArgumentType.doubleArg(0, 1)).executes(c -> {
+                MillerPattern.want(c.getSource().getServer(), drive, DoubleArgumentType.getDouble(c, "value"));
+                FrozenDawnCommandOutput.item(c.getSource(), drive + "=" + DoubleArgumentType.getDouble(c, "value"));
+                return 1;
+            })));
+        }
+        return want;
+    }
+
+    private static LiteralArgumentBuilder<CommandSourceStack> witness() {
+        var witness = Commands.literal("witness");
+        for (PatternLaws wall : PatternLaws.values()) {
+            witness.then(Commands.literal(wall.name().toLowerCase(Locale.ROOT)).executes(c -> {
+                MillerPattern.witness(c.getSource().getServer(), wall, SelfModel.FOUND_AT);
+                FrozenDawnCommandOutput.item(c.getSource(), "found " + wall);
+                return 1;
+            }));
+        }
+        return witness;
+    }
+
     private static LiteralArgumentBuilder<CommandSourceStack> feel() {
         var feel = Commands.literal("feel");
         for (Feeling feeling : Feeling.values()) {
@@ -51,13 +78,15 @@ final class ShepherdDebugCommand {
     static LiteralArgumentBuilder<CommandSourceStack> commands() {
         return Commands.literal("shepherd").requires(source -> source.hasPermission(2))
                 .then(Commands.literal("state").executes(c -> lines(c.getSource(), MillerPattern.diagnostics(c.getSource().getServer()))))
-                .then(Commands.literal("why").executes(c -> lines(c.getSource(), MillerPattern.explain(c.getSource().getServer()))))
+                .then(Commands.literal("why").executes(c -> lines(c.getSource(), MillerPattern.explain(c.getSource().getServer(), c.getSource().getPlayer() == null ? null : c.getSource().getPlayer().getUUID()))))
                 .then(Commands.literal("mind").executes(c -> lines(c.getSource(), MillerPattern.mind(c.getSource().getServer()))))
                 .then(Commands.literal("coherence").then(Commands.argument("value", DoubleArgumentType.doubleArg(0, 1)).executes(c -> {
                     MillerPattern.setCoherence(c.getSource().getServer(), DoubleArgumentType.getDouble(c, "value"));
                     FrozenDawnCommandOutput.item(c.getSource(), "coherence=" + MillerPattern.snapshot(c.getSource().getServer()).coherence());
                     return 1;
                 })))
+                .then(want())
+                .then(witness())
                 .then(saw())
                 .then(feel())
                 .then(Commands.literal("dump").executes(c -> {

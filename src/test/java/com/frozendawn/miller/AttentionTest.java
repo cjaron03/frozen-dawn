@@ -76,7 +76,7 @@ class AttentionTest {
     }
 
     @Test
-    void aDueKeepsakeIsHalfItsSalience() {
+    void aDueKeepsakeIsAsStrongAsItMattered() {
         var state = woken();
         state.keepsakes().keep(ONE, "named", Keepsakes.NAMED_SALIENCE, 0);
         state.drives().feed(Drive.CURIOSITY, 1, DAY);
@@ -87,7 +87,7 @@ class AttentionTest {
         var focus = Attention.on(state, ONE, DAY);
         assertEquals(Source.KEEPSAKE, focus.source());
         assertEquals("named", focus.key());
-        assertEquals(0.4, focus.strength(), 1e-9);
+        assertEquals(Keepsakes.NAMED_SALIENCE, focus.strength(), 1e-9);
     }
 
     @Test
@@ -121,7 +121,7 @@ class AttentionTest {
     @Test
     void aLongingLeavesRoomForAMemory() {
         var state = woken();
-        state.keepsakes().keep(ONE, "named", Keepsakes.NAMED_SALIENCE, 0);
+        state.keepsakes().keep(ONE, "warm_shelter", 0.36, 0);
         long weekOfStorms = 14 * DAY;
         assertTrue(state.drives().value(Drive.SKY, weekOfStorms) * Attention.DRIVE_WEIGHT > 0.5, "Sky is what she wants most");
         assertEquals(Source.KEEPSAKE, Attention.on(state, ONE, weekOfStorms).source());

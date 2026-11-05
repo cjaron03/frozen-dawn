@@ -1097,3 +1097,12 @@ shepherdatalkkeepsherface xml
 shepherdisrestingonlywhensherests xml
 shepherdrebootsontoherfeeling xml
 shepherdthefeelcommandshowsaface xml
+shepherdstayingquietmeanssilence xml
+shepherdrecallsakeepsake xml
+shepherdsaysawallonce xml
+shepherdneversaysawallunfound xml
+shepherdsayssheisslowonce xml
+shepherdlookswhencurious xml
+shepherdincuriouskeepsthegap xml
+shepherddriftscloserwhenlonely xml
+shepherdholdsthegapstill xml
