@@ -302,6 +302,8 @@ Verified headlessly: focus and urge, recall, walls said once, the slowing-down l
 
 2026-11-05, the owner's pass in `Aurora Will Check`, in their words: she speaks "pretty regualar without spamming" under `tick sprint 500`; "everything looked good", with her looking at a chest and saying "I'm not snooping. I'm auditing."; the recording "played and then she cut in"; all six wall lines fired. No refusal came at first, because she was following the whole time and a refusal needs her parked. Told the steps, the owner saw both give way on the second ask: "yea she refused lol". The log held no errors. Still open: whether a refusal is too hidden behind telling her to Wait.
 
+2026-11-05: mockups for M3 and M4 drawn on `docs/miller-m3-m4-mockups`, all awaiting the owner's approval: [private-log-mockup.png](art/aurora-shepherd/private-log-mockup.png), [chat-bar-mockup.png](art/aurora-shepherd/chat-bar-mockup.png) and [crash-mockup.png](art/aurora-shepherd/crash-mockup.png). Nothing is built. The stop screen's copy does not fit her 8 by 6 display, and the longest line is 130 GUI pixels against the talk panel's 80, so the crash sheet draws options for the owner to pick.
+
 ## Sources
 
 - `MaeveDirector`, `ShepherdAffinity` and `ShepherdReactions` at c866cf02 on `feat/aurora-affinity`.
