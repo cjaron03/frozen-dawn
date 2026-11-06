@@ -24,6 +24,9 @@ class IntentIndexTest {
     private static final Intent HELLO = new Intent("hello", "chat.hello", null, null, null, List.of());
     private static final int ACCEPTED_TOP_ONE = 59, ACCEPTED_TOP_TWO = 66;
     private static final Predicate<String> ALL = condition -> true, NONE = condition -> false;
+    /** The topics M5 writes, and what M4's fresh set must go on reading as locked. */
+    private static final Set<String> TOPICS = Set.of("how_you_know", "gift_shop", "seventh_floor", "safety_bulletin", "penguin", "kevin_volunteer", "deng", "anand", "varga", "hale", "the_book",
+            "enoch", "recall_date", "cascade_report", "session_14b", "directive_7c", "who_ran_vault");
 
     private static JsonElement file(String path) throws IOException {
         try (var in = IntentIndexTest.class.getResourceAsStream(path)) {
@@ -99,6 +102,16 @@ class IntentIndexTest {
             var match = index.judge(lang.get(intent.label()).getAsString(), ALL);
             assertEquals(Band.STRONG, match.band(), intent.id());
             assertEquals(intent, match.first());
+        }
+    }
+
+    /** A word of filler must not start a story, whichever topics are open. This reads the rank, so it holds with the topics locked or not. */
+    @Test void fillerOpensNoTopic() throws IOException {
+        var index = index();
+        for (String line : List.of("ok", "ok ok ok ok", "stay here", "tell me a story")) {
+            var ranked = index.rank(line);
+            boolean strong = ranked.firstScore() >= IntentIndex.STRONG && ranked.firstScore() - ranked.secondScore() >= IntentIndex.LEAD;
+            assertFalse(strong && TOPICS.contains(ranked.first().id()), String.format("%s -> %s %.3f, %s %.3f", line, ranked.first().id(), ranked.firstScore(), ranked.second().id(), ranked.secondScore()));
         }
     }
 

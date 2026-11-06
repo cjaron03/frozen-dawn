@@ -78,11 +78,11 @@
     },
     {
       "id": "the_book",
-      "examples": ["What's the book?", "Tell me about the book.", "What's the deathwand thing?", "Why is it called a deathwand?", "Where does the deathwand name come from?", "Was there a book in the rec room?", "What did Enoch read to you?", "Did you finish the book?", "What book did the crew pass around?", "Why did the stores stop lending that book?"]
+      "examples": ["What's the book?", "What is that book about?", "What's the deathwand thing?", "Why is it called a deathwand?", "Where does the deathwand name come from?", "Was there a book in the rec room?", "What did Enoch read to you?", "Did you finish the book?", "What book did the crew pass around?", "Why did the stores stop lending that book?"]
     },
     {
       "id": "enoch",
-      "examples": ["Tell me about Enoch.", "Who was Enoch?", "Who is Enoch Okoye?", "Who was the man in the chair?", "Who used to talk to you?", "Why did Enoch stay?", "Did you know the technician?", "Why didn't Okoye leave?", "How long did he stay with you?", "Who is the man next to your dock?"]
+      "examples": ["Tell me about Enoch.", "Who was Enoch?", "Who is Enoch Okoye?", "Who was the man in the chair?", "Who used to talk to you?", "Why did Enoch stay?", "Did you know the technician?", "Why didn't Enoch leave?", "How long did Enoch stay with you?", "Who is the man next to your dock?"]
     },
     {
       "id": "recall_date",
