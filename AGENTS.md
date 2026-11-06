@@ -6,17 +6,19 @@ Before working, identify the owning checkout, branch, HEAD and current changes. 
 
 ## Workflow
 
-1. Each feature gets its own branch and worktree, cut from `feat/maeve-director` unless the owner names another base.
+1. Each feature gets its own branch and worktree, cut from `feat/maeve-director` unless the owner names another base. One feature, one worktree, one session: the session starts in that worktree and works there, with no second worktree beside it.
 2. The agent implements and verifies headlessly: tests first, then the full `architectVerify`.
 3. The owner does the visual pass. The agent prepares the feature's playtest world, launches the lab client (below) and reads the logs; the owner plays and reports what they see.
 4. Fix what the pass finds, then offer a PR. The owner approves every merge; a passing gate or replay is not approval.
-5. After the PR merges, ask whether to remove the branch's worktree and its build output, and separately whether to delete or keep its playtest worlds (they are git-ignored, so removal loses them). Never remove a worktree that has uncommitted changes, untracked files or unpushed commits unless the owner says that work can go.
+5. After the PR merges, ask whether to remove the branch's worktree and its build output, along with any app-made worktree the work left under `.claude/worktrees/`, and separately whether to delete or keep its playtest worlds (they are git-ignored, so removal loses them). Never remove a worktree that has uncommitted changes, untracked files or unpushed commits unless the owner says that work can go.
 
 Keep every change tightly scoped so it leaves no clutter. Tests cover behavior the change adds or could break, not its implementation line by line; skip tests that only mirror a small, reversible change. Playtest scripts, lab-bridge functions and debug commands belong to one feature: one `tools/prepare_<feature>_playtest.py`, functions under that feature's own namespace, and no edits to other features' fixtures. Remove scaffolding the feature no longer uses.
 
 Anything judged by look or feel gets a mockup the owner approves before it is built, drawn at Minecraft scale (16 pixels per block, blocky geometry), not smooth vector art. Smooth sketches misjudge how a model reads in game.
 
 The main checkout `/Volumes/SSD/Work/frozen-dawn` holds the owner's work in progress: agents never edit, stage or switch branches in it. Each agent's worktree goes on the SSD at `/Volumes/SSD/Work/frozen-dawn-<feature>`, never on the internal drive, and is removed after its merge as in step 5.
+
+A session belongs to its worktree: one started inside another session's worktree is archived with it. So a session that must outlive the work beside it gets its own worktree. Plans, specs and mockups run from `/Volumes/SSD/Work/frozen-dawn-planning`, a long-lived worktree that is never removed, on a branch per plan, one session at a time; a second planning session at the same moment gets its own worktree.
 
 New content starts creative-only: its first slice is creative tab and `/give` only, with no recipes, loot or world generation, so the owner can playtest and iterate. Recipes and progression come in a later slice.
 
