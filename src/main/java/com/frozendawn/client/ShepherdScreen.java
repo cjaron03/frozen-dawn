@@ -70,6 +70,7 @@ public final class ShepherdScreen extends Screen {
     private ShepherdChatBar bar;
     /** The key that opened the bar also arrives as a character, which is not something typed. */
     private boolean swallowChar;
+    private boolean stopped;
 
     public ShepherdScreen() {
         super(CommonComponents.EMPTY);
@@ -77,6 +78,7 @@ public final class ShepherdScreen extends Screen {
 
     public void show(ShepherdNodePayload payload) {
         conversation = payload.conversation();
+        stopped = false;
         page = Page.TALK;
         hub = false;
         lines = payload.lines();
@@ -92,6 +94,7 @@ public final class ShepherdScreen extends Screen {
 
     public void show(ShepherdHubPayload payload) {
         conversation = payload.conversation();
+        stopped = false;
         hub = true;
         waiting = payload.waiting();
         lamp = payload.lamp();
@@ -106,6 +109,20 @@ public final class ShepherdScreen extends Screen {
         if (bar != null) bar.close();
         line = 0;
         if (!lines.isEmpty()) startLine();
+    }
+
+    /** Her panel goes blue and everything under it empties until the server says what she says on the way back. */
+    public void stop() {
+        stopped = true;
+        page = Page.TALK;
+        lines = List.of();
+        replies = List.of();
+        canContinue = false;
+        rows = List.of();
+        total = typed = 0;
+        thinkLeft = logoTicks = 0;
+        hub = false;
+        bar.close();
     }
 
     public void show(ShepherdLogPayload payload) {
@@ -154,7 +171,7 @@ public final class ShepherdScreen extends Screen {
 
     /** It takes the keys only once she has finished: while she types or thinks it stays shut, as the slots do. */
     private boolean barLive() {
-        return page == Page.TALK && logoTicks == 0 && thinkLeft == 0 && (hub ? hubReady() : spoken());
+        return page == Page.TALK && !stopped && logoTicks == 0 && thinkLeft == 0 && (hub ? hubReady() : spoken());
     }
 
     private Mood mood() {
@@ -275,7 +292,7 @@ public final class ShepherdScreen extends Screen {
 
     /** A click finishes a typing line; the next moves on to her next line, then continues. */
     private void advance() {
-        if (logoTicks > 0 || thinkLeft > 0) return;
+        if (stopped || logoTicks > 0 || thinkLeft > 0) return;
         if (typing()) {
             typed = total;
         } else if (line < lines.size() - 1) {

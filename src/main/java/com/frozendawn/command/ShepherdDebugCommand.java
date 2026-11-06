@@ -109,6 +109,7 @@ final class ShepherdDebugCommand {
         return Commands.literal("shepherd").requires(source -> source.hasPermission(2))
                 .then(Commands.literal("state").executes(c -> lines(c.getSource(), MillerPattern.diagnostics(c.getSource().getServer()))))
                 .then(Commands.literal("why").executes(c -> lines(c.getSource(), MillerPattern.explain(c.getSource().getServer(), c.getSource().getPlayer() == null ? null : c.getSource().getPlayer().getUUID()))))
+                .then(Commands.literal("crash").executes(c -> ShepherdTalk.crash(c.getSource().getPlayerOrException()) ? 1 : 0))
                 .then(Commands.literal("hear").then(Commands.argument("text", StringArgumentType.greedyString()).executes(c ->
                         lines(c.getSource(), ShepherdTalk.hearing(c.getSource().getPlayerOrException(), StringArgumentType.getString(c, "text"))))))
                 .then(Commands.literal("mind").executes(c -> lines(c.getSource(), MillerPattern.mind(c.getSource().getServer()))))

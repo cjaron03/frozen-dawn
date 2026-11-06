@@ -179,6 +179,38 @@
         { "line": "shepherd.chat.alive", "mood": "unimpressed" }
       ],
       "next": "orsa.after"
+    },
+    {
+      "id": "crash.wary",
+      "when": "tier_wary",
+      "else": "crash.after",
+      "lines": [
+        { "line": "shepherd.crash.wary", "mood": "recording" }
+      ]
+    },
+    {
+      "id": "crash.after",
+      "when": "remembers:t4_off",
+      "else": "crash.again",
+      "lines": [
+        { "line": "shepherd.crash.after.1", "mood": "thinking" },
+        { "line": "shepherd.crash.after.2", "mood": "neutral" }
+      ]
+    },
+    {
+      "id": "crash.again",
+      "when": "crash_seen",
+      "else": "crash.first",
+      "lines": [
+        { "line": "shepherd.crash.again", "mood": "thinking" }
+      ]
+    },
+    {
+      "id": "crash.first",
+      "set": ["crash_seen"],
+      "lines": [
+        { "line": "shepherd.crash.first", "mood": "neutral" }
+      ]
     }
   ]
 }

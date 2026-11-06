@@ -48,6 +48,8 @@ public class ModNetworking {
                 (payload, context) -> context.enqueueWork(ClientHandlers::handleShepherdPrompt));
         registrar.playToClient(ShepherdLinePayload.TYPE, ShepherdLinePayload.STREAM_CODEC,
                 (payload, context) -> context.enqueueWork(() -> ClientHandlers.handleShepherdLine(payload)));
+        registrar.playToClient(ShepherdCrashPayload.TYPE, ShepherdCrashPayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(ClientHandlers::handleShepherdCrash));
         registrar.playToClient(ShepherdHubPayload.TYPE, ShepherdHubPayload.STREAM_CODEC,
                 (payload, context) -> context.enqueueWork(() -> ClientHandlers.handleShepherdHub(payload)));
         registrar.playToClient(ShepherdLogPayload.TYPE, ShepherdLogPayload.STREAM_CODEC,

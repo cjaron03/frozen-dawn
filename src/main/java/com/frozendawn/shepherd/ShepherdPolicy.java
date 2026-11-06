@@ -10,6 +10,9 @@ public final class ShepherdPolicy {
     public static final int MAX_HEALTH = 40;
     public static final int TELEPORT_BLOCKS = 24;
     public static final int REBOOT_TICKS = 2400;
+    /** The word: the stop screen, then the logo. Her drop is drawn, so it never moves her. */
+    public static final int CRASH_TICKS = 160, CRASH_DROP_TICKS = 10;
+    public static final float CRASH_DROP_BLOCKS = 0.5F;
     public static final int TALK_RANGE = 8;
     public static final int DANGER_RANGE = 12;
     public static final int TICKS_PER_CHAR = 2;

@@ -354,6 +354,11 @@ public final class ClientHandlers {
         shepherdScreen().show(payload);
     }
 
+    /** The screen stays, and she is gone from it. One closed in the meantime has gone for good. */
+    public static void handleShepherdCrash() {
+        if (Minecraft.getInstance().screen instanceof com.frozendawn.client.ShepherdScreen screen) screen.stop();
+    }
+
     /** Only onto a screen that asked for it: one closed in the meantime has gone for good. */
     public static void handleShepherdLog(ShepherdLogPayload payload) {
         if (Minecraft.getInstance().screen instanceof com.frozendawn.client.ShepherdScreen screen) screen.show(payload);
