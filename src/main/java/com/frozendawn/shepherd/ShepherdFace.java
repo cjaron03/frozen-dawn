@@ -2,6 +2,7 @@ package com.frozendawn.shepherd;
 
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 /** Her face and her flame, as pure logic: lit texels on the 8 by 6 display, and how they move from tick to tick. */
 public final class ShepherdFace {
@@ -170,6 +171,46 @@ public final class ShepherdFace {
         @Override public boolean dim(int x, int y) {
             return !bothLit && on(dimX, dimY, x, y);
         }
+    }
+
+    /** Display B from crash-mockup.png, on blue: '#' her bright texels, '+' the mid blue, the rest plain blue. */
+    public static final Cells STOP = new Cells() {
+        private static final String[] ROWS = {".#...#..", "....#...", "....#...", ".#...#..", "........", ".++++++."};
+
+        @Override public boolean lit(int x, int y) {
+            return ROWS[y].charAt(x) == '#';
+        }
+
+        @Override public boolean dim(int x, int y) {
+            return ROWS[y].charAt(x) == '+';
+        }
+    };
+
+    /** What the talk panel says, a row each, in the 3 by 5 hand font. */
+    public static final List<String> STOP_ROWS = List.of("shepherd.stop.unit", "shepherd.stop.stopped", "shepherd.stop.calm", "shepherd.stop.code", "shepherd.stop.number");
+    public static final int GLYPH_ROWS = 5, GLYPH_STEP = 4;
+    private static final Map<Character, String> GLYPHS = Map.ofEntries(
+            Map.entry('A', ".#. #.# ### #.# #.#"), Map.entry('C', "### #.. #.. #.. ###"), Map.entry('D', "##. #.# #.# #.# ##."), Map.entry('E', "### #.. ##. #.. ###"),
+            Map.entry('H', "#.# #.# ### #.# #.#"), Map.entry('I', "### .#. .#. .#. ###"), Map.entry('L', "#.. #.. #.. #.. ###"), Map.entry('M', "#.# ### ### #.# #.#"),
+            Map.entry('N', "##. #.# #.# #.# #.#"), Map.entry('O', "### #.# #.# #.# ###"), Map.entry('P', "### #.# ### #.. #.."), Map.entry('R', "##. #.# ##. #.# #.#"),
+            Map.entry('S', "### #.. ### ..# ###"), Map.entry('T', "### .#. .#. .#. .#."), Map.entry('U', "#.# #.# #.# #.# ###"), Map.entry('0', ".#. #.# #.# #.# .#."),
+            Map.entry('1', ".#. ##. .#. .#. ###"), Map.entry('4', "#.# #.# ### ..# ..#"), Map.entry('-', "... ... ### ... ..."), Map.entry('.', "... ... ... ... .#."),
+            Map.entry('x', "... ... #.# .#. #.#"), Map.entry(' ', "... ... ... ... ..."));
+
+    /** A character's rows in the hand font, or nothing for one it does not have. */
+    public static List<String> glyph(char c) {
+        String rows = GLYPHS.get(c);
+        return rows == null ? List.of() : List.of(rows.split(" "));
+    }
+
+    /** How far she has sunk, {@code age} ticks into the crash: down fast, held through the stop, up through the logo. It is drawn, so nothing has to path. */
+    public static float crashDrop(float age) {
+        if (age < ShepherdPolicy.CRASH_DROP_TICKS) {
+            float fell = age / ShepherdPolicy.CRASH_DROP_TICKS;
+            return ShepherdPolicy.CRASH_DROP_BLOCKS * fell * (2 - fell);
+        }
+        if (age <= ShepherdPolicy.CRASH_TICKS) return ShepherdPolicy.CRASH_DROP_BLOCKS;
+        return ShepherdPolicy.CRASH_DROP_BLOCKS * Math.max(0, 1 - (age - ShepherdPolicy.CRASH_TICKS) / LOGO_TICKS);
     }
 
     /** Layers of flame on this tick: a restless flicker, with a short sputter out now and then. */

@@ -481,19 +481,26 @@ public final class ShepherdScreen extends Screen {
             for (int slot = 0; slot < 4; slot++) drawReply(g, slot, spoken() ? reply(slot) : null, hover == slot);
             if (said != null) drawSaid(g, I18n.get(said.full()));
         }
-        bar.draw(g, font, ox(), oy(), mx, my, partial, barLive() && insideBar(mx, my), false);
-        text(g, hint(), SLOT_X, said != null ? HINT_UNDER_SAID_Y : HINT_Y, DIM);
+        boolean moreToSay = hub && line < lines.size() - 1;
+        bar.draw(g, font, ox(), oy(), mx, my, partial, barLive() && insideBar(mx, my), stopped || logoTicks > 0 || moreToSay);
+        text(g, hint(moreToSay), SLOT_X, said != null ? HINT_UNDER_SAID_Y : HINT_Y, DIM);
     }
 
-    private String hint() {
+    private String hint(boolean moreToSay) {
+        if (stopped) return I18n.get("shepherd.screen.stopped");
+        if (logoTicks > 0) return "";
         if (bar.open()) return I18n.get("shepherd.screen.typing");
-        if (!hub && spoken() && canContinue) return I18n.get("shepherd.screen.continue");
+        if (moreToSay || !hub && spoken() && canContinue) return I18n.get("shepherd.screen.continue");
         return I18n.get("shepherd.screen.hint", minecraft.options.keyChat.getTranslatedKeyMessage().getString());
     }
 
     /** Her eyes go to the reply you are on: the grid's left column, or its right. */
     private void drawFace(GuiGraphics g, int hover) {
         shell(g, ox(), oy());
+        if (stopped) {
+            ShepherdStopPanel.draw(g, ox() + FACE_X, oy() + FACE_Y);
+            return;
+        }
         if (logoTicks > 0) {
             ShepherdFaceRenderer.drawLogo(g, ShepherdFace.logoFrame(age), ox() + FACE_X, oy() + FACE_Y, FACE_SCALE);
             return;
@@ -512,6 +519,7 @@ public final class ShepherdScreen extends Screen {
 
     private void drawLine(GuiGraphics g) {
         panel(g, 84, 88, 312, 49, PANEL, STEEL);
+        if (stopped) return;
         boolean settings = page == Page.SETTINGS;
         text(g, I18n.get(settings ? "shepherd.screen.settings" : "shepherd.screen.name"), LINE_X, 92, settings ? DIM : GLOW);
         int left = typed, y = LINE_Y, cursorX = LINE_X, cursorY = LINE_Y;

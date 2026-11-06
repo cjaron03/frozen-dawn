@@ -31,6 +31,7 @@ public final class ShepherdRenderer extends MobRenderer<ShepherdEntity, Shepherd
         entity.yBodyRot = entity.yHeadRot;
         entity.yBodyRotO = entity.yHeadRotO;
         pose.pushPose();
+        if (entity.crashed()) pose.translate(0, -ShepherdFace.crashDrop(entity.crashAge() + partial), 0);
         if (!entity.offline()) pose.translate(0, Mth.sin((entity.tickCount + partial) * BOB_SPEED) * BOB_HEIGHT, 0);
         super.render(entity, yaw, partial, pose, buffers, light);
         pose.popPose();
@@ -46,7 +47,9 @@ public final class ShepherdRenderer extends MobRenderer<ShepherdEntity, Shepherd
             Mood mood = entity.mood();
             var motion = ShepherdFace.motion(mood, entity.tickCount, entity.getId(), entity.resting());
             int mouth = entity.talking() ? ShepherdFace.talkingMouth(entity.tickCount) : 0;
-            if (entity.bootDisplay() != ShepherdEntity.BOOT_NONE) {
+            if (entity.crashed() && entity.offline()) {
+                ShepherdFaceRenderer.drawStop(pose, buffers);
+            } else if (entity.bootDisplay() != ShepherdEntity.BOOT_NONE) {
                 boolean cursor = entity.bootDisplay() == ShepherdEntity.BOOT_CURSOR && entity.tickCount / ShepherdBoot.LINE_TICKS % 2 == 0;
                 ShepherdFaceRenderer.drawOnModel(pose, buffers, cursor ? ShepherdBoot.cursor() : Mood.OFFLINE, 0, false, 0);
             } else if (entity.logo()) {

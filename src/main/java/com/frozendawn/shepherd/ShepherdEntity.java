@@ -42,6 +42,7 @@ public final class ShepherdEntity extends PathfinderMob {
     private static final EntityDataAccessor<Integer> DATA_MOOD = SynchedEntityData.defineId(ShepherdEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Boolean> DATA_OFFLINE = SynchedEntityData.defineId(ShepherdEntity.class, EntityDataSerializers.BOOLEAN);
     /** The word took her down: from the stop screen until the logo ends. */
+    private int crashAge;
     private static final EntityDataAccessor<Boolean> DATA_CRASH = SynchedEntityData.defineId(ShepherdEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Boolean> DATA_TALKING = SynchedEntityData.defineId(ShepherdEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Boolean> DATA_LOGO = SynchedEntityData.defineId(ShepherdEntity.class, EntityDataSerializers.BOOLEAN);
@@ -400,6 +401,11 @@ public final class ShepherdEntity extends PathfinderMob {
         return entityData.get(DATA_CRASH);
     }
 
+    /** Client only: how long since she went down, for the drop. */
+    public int crashAge() {
+        return crashAge;
+    }
+
     /** Lamp and flame come back with the logo, and the talk hears of it. */
     private void afterCrash() {
         entityData.set(DATA_OFFLINE, false);
@@ -423,6 +429,9 @@ public final class ShepherdEntity extends PathfinderMob {
                 if (shownMood != null) moodBeat = ShepherdFace.MOOD_BEAT_TICKS;
                 shownMood = mood();
             }
+            // Joining mid-way, or the moment she comes back: the logo always starts at the same point.
+            if (!crashed()) crashAge = 0;
+            else crashAge = offline() ? crashAge + 1 : Math.max(crashAge, ShepherdPolicy.CRASH_TICKS) + 1;
             if (thinking()) {
                 thinkAge++;
             } else if (thinkAge > 0) {
