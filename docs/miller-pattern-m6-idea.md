@@ -1,13 +1,13 @@
 # Miller Pattern M6: the idea
 
-**Status:** the owner's idea and its order, recorded 2026-11-06 during the M5 pass. Not a plan. No mockups, lines or tasks yet: the owner said to finish M5 first.
+**Status:** the owner's idea and its order, recorded 2026-11-06 during the M5 pass. Not a plan. The owner asked to start the face mockups early and picked from them the same day. No lines or tasks yet: the rest waits for M5.
 
 ## Order
 
 1. **M5 finishes first:** the owner's pass, the log sort, the PR and the merge. M6 is planned against M5 as shipped.
-2. **A new face for ORSA-scripted answers,** replacing the `RECORDING` face (two dim eyes). The owner wants "something besides just those two eyes".
+2. **A new face for ORSA-scripted answers,** replacing the `RECORDING` face (two dim eyes). The owner wants "something besides just those two eyes". Picked 2026-11-06: A, Voice trace, in `docs/art/aurora-shepherd/orsa-face-mockup.png`. A flat line at rest, moving only while the recording plays.
 3. **At Close, she greets the player first on right-click,** with exclamation points if warranted, calls them Cargo aloud, and says "dont make it weird". Those are the owner's words; the final line needs their mark.
-4. **Two or three more facial expressions.**
+4. **Two or three more facial expressions.** Picked 2026-11-06: Beaming, Flustered and Grim, in `docs/art/aurora-shepherd/new-expressions-mockup.png`. The owner also asked for smooth transitions between her faces and the voice trace, and picked Flow in `docs/art/aurora-shepherd/face-transitions-mockup.gif`: texels slide to their new places over 2 to 4 ticks, replacing the blink on a mood change.
 5. **Several more responses, for the Frozen Dawn mobs marked in the manual.** The Threats section has Frostbitten, Frostmite, Hollow and Returned. The M5 plan left the Returned's topics for S5, so the owner must decide that one.
 6. **Asking her for advice on items listed in the manual.** Suggested start: the mobs plus about a dozen items, chosen from the owner's typed log, not all 166 entries.
 
