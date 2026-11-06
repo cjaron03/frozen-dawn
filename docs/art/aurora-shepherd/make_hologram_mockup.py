@@ -227,6 +227,11 @@ def hooded():
     part(cells, -2, 16, -2, 2, 17, 1, 'glow2')
     part(cells, -2, 12, 2, 2, 15, 3, 'holo2')  # The dark inside the hood. No face.
     part(cells, -1, 8, 5, 1, 10, 7, 'glow')  # What it holds out.
+    for left in (-11, -7):  # The file's number, floating beside it. Drawn, never said.
+        for y, row in enumerate(('###', '#.#', '###', '#..', '###')):
+            for x, texel in enumerate(row):
+                if texel == '#':
+                    cells[(left + x, 11 + y, 0)] = 'glow'
     return cells
 
 
@@ -251,7 +256,7 @@ def egg_sheet():
     img = Image.new('RGB', (1000, 640), C['bg'])
     d = ImageDraw.Draw(img)
     d.text((24, 16), 'AURORA M6: THE EGG', font=font(22), fill=C['text'])
-    d.text((24, 46), 'On the second projection, the figure flickers to this for a moment. Half size, on one knee, in her greens. Motion is in egg-mockup.gif.',
+    d.text((24, 46), 'On the second projection, the figure flickers to this for a moment, with its file number, 66, beside it. Motion is in egg-mockup.gif.',
            font=font(12), fill=C['dim'])
     d.text((24, 88), 'IN THE WORLD, FROM THE FRONT', font=font(14), fill=C['glow'])
     draw_scene(d, lambda tick: scan(hooded(), tick, 'glow'), 0, 24, 320, 7)

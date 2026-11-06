@@ -20,7 +20,7 @@ Each took the recommendation, 2026-11-06.
 
 1. **Frostmite's strategy (Ruling 19).** It holds in code, with three limits. See "Frostmite, for a verdict". Answer: keep, tested on a live swarm at the pass.
 2. **The twelve items (Ruling 12).** See "The twelve items, for a verdict". Answer: keep all twelve. The thermostat's tip is the weakest.
-3. **What the egg turns into (Ruling 16).** The figure "flickers to another shape", and no mockup drew that shape. A look needs an approved mockup. Answer: a small hooded figure on one knee, in her green, standing in for the figure that asks for help. It is no film character and carries no marks. Drawn in `art/aurora-shepherd/egg-mockup.png` and `egg-mockup.gif`, for approval before Task 6.
+3. **What the egg turns into (Ruling 16).** The figure "flickers to another shape", and no mockup drew that shape. A look needs an approved mockup. Answer: a small hooded figure on one knee, in her green, standing in for the figure that asks for help. It is no film character and carries no marks. Left as is on 2026-11-06, with a floating file number, 66, added at the owner's ask. The number is drawn on the hologram and never said, so the guard on "six" stays absolute. Drawn in `art/aurora-shepherd/egg-mockup.png` and `egg-mockup.gif`, for approval before Task 6.
 4. **The gag's other items (Ruling 28).** The Stuffed Penguin is the first and the rest are yours. Answer: the penguin alone for now.
 5. **Seven greetings.** Ruling 23 asks for six to eight, and there are seven below, on top of the first and the long-gone lines. Answer: all seven stay.
 
