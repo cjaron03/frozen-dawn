@@ -6,6 +6,7 @@ import com.frozendawn.shepherd.ShepherdDialogue.Line;
 import com.frozendawn.shepherd.ShepherdFace.Mood;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import net.minecraft.locale.Language;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
@@ -22,7 +23,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 @EventBusSubscriber(modid = FrozenDawn.MOD_ID)
 public final class ShepherdProjection {
     /** What {@link ShepherdEntity#projection()} carries. */
-    public static final int NONE = 0, HUNTER = 1, MIMIC = 2, ARCHITECT = 3, EGG_FRAME = 4;
+    public static final int NONE = 0, HUNTER = 1, MIMIC = 2, ARCHITECT = 3, EGG_FRAME = 4, ITEM = 5, PAIR = 6;
     /** Her lines wait for the beam to land. */
     public static final int BEAM_TICKS = 20;
     /** The other shape, tears and all. */
@@ -56,10 +57,17 @@ public final class ShepherdProjection {
     public static void start(ServerPlayer player, ShepherdEntity she, String kind, List<Line> lines) {
         int shown = shown(kind);
         if (live != null || shown == NONE) return;
-        live = new Live(player, she, shown, withTheEgg(player, lines));
+        live = new Live(player, she, shown, shown <= ARCHITECT ? withTheEgg(player, lines) : lines);
         spoken.clear();
         she.projection(shown);
+        if (shown == PAIR) she.projectedPlayer(Optional.of(player.getUUID()));
         she.getNavigation().stop();
+    }
+
+    /** What she shows herself when she thinks nobody is looking. It says nothing, and it ends by itself if nobody catches her. */
+    static void secretly(ServerPlayer follower, ShepherdEntity she) {
+        start(follower, she, "pair", List.of());
+        if (live != null) live.wait = ShepherdPolicy.CAUGHT_WINDOW_TICKS;
     }
 
     private static int shown(String kind) {
@@ -67,6 +75,8 @@ public final class ShepherdProjection {
             case "hunter" -> HUNTER;
             case "mimic" -> MIMIC;
             case "architect" -> ARCHITECT;
+            case "item" -> ITEM;
+            case "pair" -> PAIR;
             default -> NONE;
         };
     }
@@ -92,6 +102,7 @@ public final class ShepherdProjection {
         var over = live;
         live = null;
         over.she.projection(NONE);
+        over.she.projectedPlayer(Optional.empty());
         over.she.talkFor(0);
         over.she.rest();
     }
@@ -104,6 +115,12 @@ public final class ShepherdProjection {
         if (live == null) return;
         if (mustStop()) {
             stop();
+            return;
+        }
+        if (live.kind == PAIR && ShepherdEggs.spotted(live.she)) {
+            var she = live.she;
+            stop();
+            ShepherdEggs.caught(she);
             return;
         }
         if (live.eggTicks > 0 && --live.eggTicks == 0) live.she.projection(live.kind);

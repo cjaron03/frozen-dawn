@@ -430,4 +430,16 @@ class ShepherdFaceTest {
             }
         }
     }
+
+    @Test
+    void theFlusterSpinsAwayAndPeeks() {
+        assertEquals(0, ShepherdFace.fluster(0).yaw(), "you catch her first");
+        assertEquals(rows(Mood.FLUSTERED), rows(ShepherdFace.fluster(0).face()));
+        assertEquals(180, ShepherdFace.fluster(30).yaw(), "she shows you her back");
+        assertEquals(62, ShepherdFace.fluster(58).yaw(), "she peeks");
+        assertEquals(rows(ShepherdFace.Idle.WINK), rows(ShepherdFace.fluster(58).face()), "with the Wink");
+        assertEquals(0, ShepherdFace.fluster(ShepherdFace.FLUSTER_TICKS - 1).yaw(), "and carries on");
+        assertEquals(rows(Mood.NEUTRAL), rows(ShepherdFace.fluster(ShepherdFace.FLUSTER_TICKS - 1).face()));
+        assertEquals(106, ShepherdFace.FLUSTER_TICKS);
+    }
 }

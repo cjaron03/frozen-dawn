@@ -40,8 +40,9 @@ public final class ShepherdRenderer extends MobRenderer<ShepherdEntity, Shepherd
 
     @Override public void render(ShepherdEntity entity, float yaw, float partial, PoseStack pose, MultiBufferSource buffers, int light) {
         // She has no neck: where she looks is where the whole body points.
-        entity.yBodyRot = entity.yHeadRot;
-        entity.yBodyRotO = entity.yHeadRotO;
+        int spin = entity.flustered() ? ShepherdFace.fluster(entity.flusterAge()).yaw() : 0;
+        entity.yBodyRot = entity.yHeadRot + spin;
+        entity.yBodyRotO = entity.yHeadRotO + spin;
         pose.pushPose();
         if (entity.crashed()) {
             float crash = entity.crashAge() + partial;
@@ -76,6 +77,8 @@ public final class ShepherdRenderer extends MobRenderer<ShepherdEntity, Shepherd
                 ShepherdFaceRenderer.drawOnModel(pose, buffers, cursor ? ShepherdBoot.cursor() : Mood.OFFLINE, 0, false, 0);
             } else if (entity.logo()) {
                 ShepherdFaceRenderer.drawOnModel(pose, buffers, entity.flowed(ShepherdFace.logo(ShepherdFace.logoFrame(entity.tickCount))), 0, false, 0);
+            } else if (entity.flustered()) {
+                ShepherdFaceRenderer.drawOnModel(pose, buffers, entity.flowed(ShepherdFace.fluster(entity.flusterAge()).face()), 0, false, 0);
             } else if (entity.thinking()) {
                 ShepherdFaceRenderer.drawOnModel(pose, buffers, entity.flowed(entity.thinkingFrame()), 0, false, 0);
             } else {

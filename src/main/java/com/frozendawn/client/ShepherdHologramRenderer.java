@@ -1,6 +1,7 @@
 package com.frozendawn.client;
 
 import com.frozendawn.FrozenDawn;
+import com.frozendawn.init.ModItems;
 import com.frozendawn.shepherd.ShepherdEntity;
 import com.frozendawn.shepherd.ShepherdHologram;
 import com.frozendawn.shepherd.ShepherdHologram.Shade;
@@ -10,18 +11,25 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 import java.io.IOException;
+import java.util.UUID;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.HumanoidModel;
+import net.minecraft.client.model.PlayerModel;
 import net.minecraft.client.model.geom.ModelLayers;
+import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.client.resources.DefaultPlayerSkin;
+import net.minecraft.client.resources.PlayerSkin;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.item.ItemDisplayContext;
+import net.minecraft.world.item.ItemStack;
 
 /**
  * Her projection, in the mockup's own numbers: texels from her middle, x toward the figure's side as you face her, z toward you.
@@ -35,19 +43,22 @@ public final class ShepherdHologramRenderer {
     private static final int GLOW = 0x7DF2C0, BODY = 0x3AA984, HOLO = 0x1F5C48, HOLO_DARK = 0x113028;
     private static final int SEE_THROUGH = 0xC8, SOLID = 0xE0;
     private static final int SKIN = 64, FRAME_TICKS = 3;
-    private static final int FIGURE_X = -30, FIGURE_Y = 4, FIGURE_Z = 5, FROM_X = -4, FROM_Y = 7, RING_Y = 2, RING_RADIUS = 8;
+    private static final int FIGURE_X = -30, FIGURE_Y = 4, FIGURE_Z = 5, FROM_X = -4, FROM_Y = 7, RING_Y = 2, RING_RADIUS = 8, ROWS_HALF = 8, SMALL_YOU_X = -5;
     private static final int[] RAY_TOPS = {1, 8, 15};
     private static final float TEXEL = 1 / 16F, FIGURE_SCALE = 0.5F, MODEL_DROP = -1.501F, HUNTER_DEGREES_A_TICK = 1.5F, MAX_LOOK = 1.2F;
     private static final float CHIN_ARM_X = -2.2F, CHIN_ARM_Y = -0.6F, CHIN_HEAD_X = 0.25F;
     private static final float DIM_SHADOWS = 0.55F, LIFT_LIGHT = 0.2F, LIGHT_GAIN = 1.6F;
 
     private final HumanoidModel<LivingEntity> model;
+    private final PlayerModel<LivingEntity> wide, slim;
     private DynamicTexture painted;
     private NativeImage source;
     private int sourceFigure = ShepherdProjection.NONE, paintedFigure = ShepherdProjection.NONE, paintedAge = -1;
 
     public ShepherdHologramRenderer(EntityRendererProvider.Context context) {
         model = new HumanoidModel<>(context.bakeLayer(ModelLayers.ZOMBIE));
+        wide = new PlayerModel<>(context.bakeLayer(ModelLayers.PLAYER), false);
+        slim = new PlayerModel<>(context.bakeLayer(ModelLayers.PLAYER_SLIM), true);
     }
 
     private static ResourceLocation skin(String name) {
@@ -92,6 +103,14 @@ public final class ShepherdHologramRenderer {
 
     private void figure(ShepherdEntity she, float partial, PoseStack pose, MultiBufferSource buffers, int age) {
         int figure = she.projectionFigure();
+        if (figure == ShepherdProjection.ITEM) {
+            item(she, partial, pose, buffers, age);
+            return;
+        }
+        if (figure == ShepherdProjection.PAIR) {
+            pair(she, pose, buffers, age);
+            return;
+        }
         paint(figure, age);
         if (painted == null) return;
         pose.pushPose();
@@ -104,6 +123,73 @@ public final class ShepherdHologramRenderer {
         pose.popPose();
         // Asking for another render type ends the last one, so this asks again.
         if (figure == ShepherdProjection.ARCHITECT) overdraw(buffers.getBuffer(RenderType.entityTranslucentEmissive(WHITE)), pose, age);
+    }
+
+    /** Something stupid, in her green. */
+    private static void item(ShepherdEntity she, float partial, PoseStack pose, MultiBufferSource buffers, int age) {
+        pose.pushPose();
+        pose.translate(-FIGURE_X * TEXEL, (FIGURE_Y + ROWS_HALF) * TEXEL, -FIGURE_Z * TEXEL);
+        pose.mulPose(Axis.YP.rotationDegrees((age + partial) * HUNTER_DEGREES_A_TICK));
+        var stack = new ItemStack(ModItems.STUFFED_PENGUIN.get());
+        Minecraft.getInstance().getItemRenderer().renderStatic(stack, ItemDisplayContext.FIXED, LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY, pose, tinted(buffers), she.level(), 0);
+        pose.popPose();
+    }
+
+    /** A small you in your own skin, in her green, beside a small her. Whoever is looking sees her follower. */
+    private void pair(ShepherdEntity she, PoseStack pose, MultiBufferSource buffers, int age) {
+        var skin = skinOf(she.projectedPlayer().orElse(she.getUUID()));
+        var body = skin.model() == PlayerSkin.Model.SLIM ? slim : wide;
+        pose.pushPose();
+        pose.translate(-(FIGURE_X + SMALL_YOU_X) * TEXEL, FIGURE_Y * TEXEL, -FIGURE_Z * TEXEL);
+        pose.scale(-FIGURE_SCALE, -FIGURE_SCALE, FIGURE_SCALE);
+        pose.translate(0, MODEL_DROP, 0);
+        body.renderToBuffer(pose, buffers.getBuffer(RenderType.entityTranslucentEmissive(skin.texture())), LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY, SEE_THROUGH << 24 | GLOW);
+        pose.popPose();
+        var flat = buffers.getBuffer(RenderType.entityTranslucentEmissive(WHITE));
+        for (var cell : ShepherdHologram.smallHer()) voxel(flat, pose, FIGURE_X + cell.x(), FIGURE_Y + cell.y(), FIGURE_Z + cell.z(), shaded(cell.shade(), cell.y(), ShepherdHologram.band(age)), SOLID);
+    }
+
+    private static PlayerSkin skinOf(UUID who) {
+        var connection = Minecraft.getInstance().getConnection();
+        PlayerInfo info = connection == null ? null : connection.getPlayerInfo(who);
+        return info != null ? info.getSkin() : DefaultPlayerSkin.get(who);
+    }
+
+    private static MultiBufferSource tinted(MultiBufferSource buffers) {
+        return type -> new Tinted(buffers.getBuffer(type));
+    }
+
+    /** An item's model knows nothing of her green, so its vertices are told on their way through. */
+    private record Tinted(VertexConsumer to) implements VertexConsumer {
+        @Override public VertexConsumer addVertex(float x, float y, float z) {
+            to.addVertex(x, y, z);
+            return this;
+        }
+
+        @Override public VertexConsumer setColor(int red, int green, int blue, int alpha) {
+            to.setColor(red * (GLOW >> 16 & 0xFF) / 255, green * (GLOW >> 8 & 0xFF) / 255, blue * (GLOW & 0xFF) / 255, alpha);
+            return this;
+        }
+
+        @Override public VertexConsumer setUv(float u, float v) {
+            to.setUv(u, v);
+            return this;
+        }
+
+        @Override public VertexConsumer setUv1(int u, int v) {
+            to.setUv1(u, v);
+            return this;
+        }
+
+        @Override public VertexConsumer setUv2(int u, int v) {
+            to.setUv2(u, v);
+            return this;
+        }
+
+        @Override public VertexConsumer setNormal(float x, float y, float z) {
+            to.setNormal(x, y, z);
+            return this;
+        }
     }
 
     private void posed(ShepherdEntity she, int figure, int age, float partial) {
@@ -134,13 +220,15 @@ public final class ShepherdHologramRenderer {
         int band = ShepherdHologram.band(age);
         for (var cell : ShepherdHologram.hooded()) {
             if (cell.shade() != Shade.GLOW && ShepherdHologram.eggRowTorn(eggAge, cell.y())) continue;
-            int color = cell.shade() == Shade.GLOW || cell.y() == band ? GLOW : ShepherdHologram.dimRow(cell.y()) ? HOLO : switch (cell.shade()) {
-                case HOLO -> HOLO;
-                case HOLO_DARK -> HOLO_DARK;
-                default -> BODY;
-            };
-            voxel(flat, pose, FIGURE_X + cell.x(), FIGURE_Y + cell.y(), FIGURE_Z + cell.z(), color, SOLID);
+            voxel(flat, pose, FIGURE_X + cell.x(), FIGURE_Y + cell.y(), FIGURE_Z + cell.z(), shaded(cell.shade(), cell.y(), band), SOLID);
         }
+    }
+
+    /** A voxel's green, under the same band and dim rows as the skins. */
+    private static int shaded(Shade shade, int row, int band) {
+        if (shade == Shade.GLOW || row == band) return GLOW;
+        if (ShepherdHologram.dimRow(row)) return HOLO;
+        return shade == Shade.HOLO ? HOLO : shade == Shade.HOLO_DARK ? HOLO_DARK : BODY;
     }
 
     /** One texel of light, at the mockup's coordinates. */

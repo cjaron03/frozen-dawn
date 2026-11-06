@@ -18,7 +18,7 @@ public final class ShepherdHologram {
     private static final int HEAD_BOTTOM = 15, CHEST_TOP = 11, LEG_TOP = 5;
     private static final int SKIN_HEAD_ROW = 8, SKIN_LIMB_ROW = 20, SKIN_LEG_COLUMNS = 16, SKIN_LAYER = 16;
     private static final int EYE_TOP = 10, EYE_BOTTOM = 11;
-    private static final List<Voxel> HOODED = hood();
+    private static final List<Voxel> HOODED = hood(), SMALL_HER = smallLantern();
 
     public enum Shade { HOLO, HOLO_DARK, BODY, GLOW }
 
@@ -126,6 +126,20 @@ public final class ShepherdHologram {
     /** The egg's small figure on one knee, with its drawn file number. */
     public static List<Voxel> hooded() {
         return HOODED;
+    }
+
+    /** The small her, beside the small you. */
+    public static List<Voxel> smallHer() {
+        return SMALL_HER;
+    }
+
+    private static List<Voxel> smallLantern() {
+        List<Voxel> cells = new ArrayList<>();
+        for (int x = 1; x <= 8; x++) {
+            for (int y = 1; y <= 7; y++) cells.add(new Voxel(x, y, 0, x == 1 || x == 8 || y == 1 || y == 7 ? Shade.BODY : Shade.HOLO_DARK));
+        }
+        for (int[] texel : new int[][] {{3, 5}, {6, 5}, {4, 3}, {5, 3}}) cells.add(new Voxel(texel[0], texel[1], 1, Shade.GLOW));
+        return List.copyOf(cells);
     }
 
     private static List<Voxel> hood() {

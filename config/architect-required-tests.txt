@@ -1311,3 +1311,10 @@ shepherdthearchitectcommentsthroughout xml
 shepherdtheeggplaysonce xml
 shepherdnoprojectionsurvivesareload xml
 shepherdholdsstillforaprojection xml
+shepherdreactsoncetoahunterattheheater xml
+shepherdignoresahunterkilledanotherway xml
+shepherdgetscaughtonlywhencalm xml
+shepherdgetscaughtonceaday xml
+shepherdcaughtshowsherfollower xml
+shepherdthegagwaitsforcalm xml
+shepherdnamesclovisonlyaftert5 xml

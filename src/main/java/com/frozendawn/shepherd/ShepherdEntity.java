@@ -7,6 +7,7 @@ import com.frozendawn.shepherd.ShepherdAffinity.Tier;
 import com.frozendawn.shepherd.ShepherdFace.Mood;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -53,6 +54,10 @@ public final class ShepherdEntity extends PathfinderMob {
     private static final EntityDataAccessor<Boolean> DATA_NINE_LAMP = SynchedEntityData.defineId(ShepherdEntity.class, EntityDataSerializers.BOOLEAN);
     /** The figure she is projecting, or 0. Never saved: {@link ShepherdProjection} is gone after a reload, and so is this. */
     private static final EntityDataAccessor<Integer> DATA_PROJECTION = SynchedEntityData.defineId(ShepherdEntity.class, EntityDataSerializers.INT);
+    /** Whose skin the small you wears: her follower's, whoever is looking. */
+    private static final EntityDataAccessor<Optional<UUID>> DATA_PROJECTED_PLAYER = SynchedEntityData.defineId(ShepherdEntity.class, EntityDataSerializers.OPTIONAL_UUID);
+    /** Caught: her body spins away. */
+    private static final EntityDataAccessor<Boolean> DATA_FLUSTER = SynchedEntityData.defineId(ShepherdEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Byte> DATA_BOOT = SynchedEntityData.defineId(ShepherdEntity.class, EntityDataSerializers.BYTE);
     /** What her display shows for a replay's boot: her own face, nothing, or the BIOS cursor. */
     public static final byte BOOT_NONE = 0, BOOT_DARK = 1, BOOT_CURSOR = 2;
@@ -75,6 +80,7 @@ public final class ShepherdEntity extends PathfinderMob {
     private int logoTicks;
     private int bootTicks;
     private int thinkTicks;
+    private int flusterTicks;
     private int askTicks;
     private int reactTicks;
     private Mob watching;
@@ -89,6 +95,8 @@ public final class ShepherdEntity extends PathfinderMob {
     private final ShepherdFlow flow = new ShepherdFlow();
     /** Client only: how far into the wait it has got. */
     private int thinkAge;
+    /** Client only: how far into the spin. */
+    private int flusterAge;
     /** Client only: how long the projection has been up, which way she faced when it came, and the figure under any flicker. */
     private int projectionAge, eggAge, projectionFigure;
     private float projectionYaw;
@@ -156,6 +164,8 @@ public final class ShepherdEntity extends PathfinderMob {
         builder.define(DATA_BOOT, BOOT_NONE);
         builder.define(DATA_THINK, 0);
         builder.define(DATA_PROJECTION, ShepherdProjection.NONE);
+        builder.define(DATA_PROJECTED_PLAYER, Optional.empty());
+        builder.define(DATA_FLUSTER, false);
     }
 
     @Override protected PathNavigation createNavigation(Level level) {
@@ -337,6 +347,30 @@ public final class ShepherdEntity extends PathfinderMob {
         entityData.set(DATA_PROJECTION, shown);
     }
 
+    public Optional<UUID> projectedPlayer() {
+        return entityData.get(DATA_PROJECTED_PLAYER);
+    }
+
+    void projectedPlayer(Optional<UUID> who) {
+        entityData.set(DATA_PROJECTED_PLAYER, who);
+    }
+
+    /** She has been caught at it. */
+    void fluster() {
+        flusterTicks = ShepherdFace.FLUSTER_TICKS;
+        entityData.set(DATA_FLUSTER, true);
+        react(Mood.FLUSTERED, ShepherdFace.FLUSTER_TICKS);
+    }
+
+    public boolean flustered() {
+        return entityData.get(DATA_FLUSTER);
+    }
+
+    /** Client only. */
+    public int flusterAge() {
+        return flusterAge;
+    }
+
     /** Client only. */
     public int projectionAge() {
         return projectionAge;
@@ -425,6 +459,8 @@ public final class ShepherdEntity extends PathfinderMob {
         talkFor(0);
         logoTicks = 0;
         thinkFor(0);
+        flusterTicks = 0;
+        entityData.set(DATA_FLUSTER, false);
         bootStop();
         askTicks = 0;
         reactTicks = 0;
@@ -489,6 +525,7 @@ public final class ShepherdEntity extends PathfinderMob {
             else crashAge = offline() ? crashAge + 1 : Math.max(crashAge, ShepherdPolicy.CRASH_DOWN_TICKS) + 1;
             thinkAge = thinking() ? thinkAge + 1 : 0;
             trackProjection();
+            flusterAge = flustered() ? flusterAge + 1 : 0;
             return;
         }
         // A /summon, or a body that loaded after its replacement was built. There is one of her.
@@ -509,6 +546,7 @@ public final class ShepherdEntity extends PathfinderMob {
             entityData.set(DATA_CRASH, false);
         }
         if (thinkTicks > 0 && --thinkTicks == 0) entityData.set(DATA_THINK, 0);
+        if (flusterTicks > 0 && --flusterTicks == 0) entityData.set(DATA_FLUSTER, false);
         if (bootTicks > 0 && --bootTicks == 0) {
             bootStop();
             ShepherdBoot.biosDone(this);

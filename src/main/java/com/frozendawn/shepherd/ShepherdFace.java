@@ -172,6 +172,32 @@ public final class ShepherdFace {
         return age < WORRY_TICKS ? LIDS_FRAME : NEUTRAL_FRAME;
     }
 
+    /** Her whole body turning away, in degrees from facing you, and what her display shows while it does. */
+    public record Spin(Cells face, int yaw) {}
+
+    /** One frame of `flustered-motion-mockup.gif`, and how many it holds, from the moment she is caught. */
+    private record Beat(Spin spin, int frames) {}
+
+    private static final int FLUSTER_FRAME_TICKS = 2;
+    private static final List<Beat> FLUSTER = List.of(beat(Mood.FLUSTERED, 0, 4), beat(Mood.FLUSTERED, 45, 1), beat(Mood.FLUSTERED, 100, 1), beat(Mood.FLUSTERED, 150, 1),
+            beat(Mood.FLUSTERED, 180, 14), beat(Mood.NEUTRAL, 150, 1), beat(Idle.WINK, 105, 1), beat(Idle.WINK, 62, 9), beat(Idle.WINK, 110, 1), beat(Mood.FLUSTERED, 180, 8),
+            beat(Mood.NEUTRAL, 120, 2), beat(Mood.NEUTRAL, 60, 2), beat(Mood.NEUTRAL, 0, 8));
+    public static final int FLUSTER_TICKS = FLUSTER.stream().mapToInt(Beat::frames).sum() * FLUSTER_FRAME_TICKS;
+
+    private static Beat beat(Cells face, int yaw, int frames) {
+        return new Beat(new Spin(face, yaw), frames);
+    }
+
+    /** Caught: she spins away, then peeks. Past the end she has carried on. */
+    public static Spin fluster(int age) {
+        int frame = age / FLUSTER_FRAME_TICKS;
+        for (var beat : FLUSTER) {
+            if (frame < beat.frames()) return beat.spin();
+            frame -= beat.frames();
+        }
+        return FLUSTER.getLast().spin();
+    }
+
     private record Rows(String... rows) implements Cells {
         Rows(Cells cells) {
             this(copy(cells));
