@@ -14,7 +14,7 @@
 
 **Mockups:** none. The topics use the existing talk grid, and nothing new is drawn.
 
-**Status:** approved by the owner as written, 2026-11-05, Rulings 1 to 22 included. Rechecked against M4 as shipped, and the owner approved Rulings 23 to 28 and the edits they make the same day. Nothing is built.
+**Status:** approved by the owner as written, 2026-11-05, Rulings 1 to 22 included. Rechecked against M4 as shipped, and the owner approved Rulings 23 to 28 and the edits they make the same day. Ruling 29 records the fresh set's result.
 
 **Branch:** `feat/miller-m5` in `/Volumes/SSD/Work/frozen-dawn-miller-m5`, cut from `docs/miller-m5-plan`, which holds this plan on top of `feat/maeve-director` at 9ccb53f8, with M4 (PR 161) and the worktree rules (PR 162) merged in. The build session starts in this worktree and works there. PR into `feat/maeve-director`. It changes a shared system and merges into a long-lived branch, so the branch review runs on Opus.
 
@@ -81,6 +81,10 @@
 26. **Her focus holds for a walk.** `layTopics` rebuilds the menu on every reply, so a focus read at each build could shift a page under a click. It is read when the walk reaches the menu and held on `Live` until the walk leaves it.
 27. **"What are you?" is hers too.** "what are you" goes Strong on `how_are_you` at 0.66 today, and "who are you?" only reaches Close. Both go in `who_are_you`'s examples.
 28. **Typing during a topic's replies leaves the topic.** Only a scene keeps its place, and M5 adds the first tone replies on topics opened from the menu. The typed line pays nothing and sets no paid flag, so the topic can be asked again and still pay once.
+
+### After the fresh set ran, the owner's yes, 2026-11-05
+
+29. **The topic set's numbers are accepted.** Its first run, untuned, read top-one 83 of 108, top two 95 and out-of-scope Strong 3 of 48, against 87, 98 and 2, with Strong and wrong 2 of 108. The owner accepted them, as they did M4's. `theTopicSetHoldsTheMarks` holds those three at the accepted counts, and the set stays untuned. The blind test under Ruling 4 is the next measure.
 
 ## Lines to mark
 

@@ -189,12 +189,12 @@ public final class ShepherdTypedGameTest {
     public static void shepherdNoneShowsTopics(GameTestHelper h) {
         ShepherdTestWorld.whenTicking(h, () -> {
             var player = player(h);
-            var she = awake(h, player, FRIENDLY);
+            var she = awake(h, player, NEUTRAL);
             data(h).flag("orsa_heard_what_is_orsa", true);
             open(she, player);
             type(she, player, GIBBERISH);
             assertAt(h, "typed.none");
-            h.assertTrue(labels().equals(List.of(HAPPENED, EXODUS, OUT_THERE, KEVIN)), "Four, unheard first: " + labels());
+            h.assertTrue(labels().equals(List.of(HAPPENED, EXODUS, OUT_THERE, ORSA)), "Four, unheard first: " + labels());
             h.assertTrue(ShepherdTalk.liveSent().plain(), "No tone on them");
             say(player, ASK);
             assertAt(h, "orsa.what_happened");

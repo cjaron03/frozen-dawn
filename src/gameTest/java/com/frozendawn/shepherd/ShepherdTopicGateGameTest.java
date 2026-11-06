@@ -23,8 +23,8 @@ import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 @PrefixGameTestTemplate(false)
 public final class ShepherdTopicGateGameTest {
     private static final BlockPos SPOT = new BlockPos(10, 4, 10);
-    private static final int WARY = -300, TRUSTED = 600;
-    private static final String PLUSH = "carrying:stuffed_penguin";
+    private static final int WARY = -300, NEUTRAL = 0, TRUSTED = 600, CONTINUE = -1;
+    private static final String PLUSH = "carrying:stuffed_penguin", PENGUIN = "shepherd.orsa.penguin.label", DENG = "shepherd.orsa.deng.label", SESSION = "shepherd.orsa.session_14b.label";
 
     @BeforeBatch(batch = "shepherd_gate_join") public static void joinBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
     @AfterBatch(batch = "shepherd_gate_join") public static void joinAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
@@ -34,6 +34,8 @@ public final class ShepherdTopicGateGameTest {
     @AfterBatch(batch = "shepherd_gate_conspiracy") public static void conspiracyAfter(ServerLevel l) { ShepherdTestWorld.clear(l); WinConditionState.get(l.getServer()).setConspiracyDiscovered(false); }
     @BeforeBatch(batch = "shepherd_gate_find") public static void findBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
     @AfterBatch(batch = "shepherd_gate_find") public static void findAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_gate_plush") public static void plushBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_gate_plush") public static void plushAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
 
     private static ShepherdSavedData data(GameTestHelper h) {
         return ShepherdSavedData.get(h.getLevel().getServer());
@@ -105,6 +107,10 @@ public final class ShepherdTopicGateGameTest {
             assertHolds(h, player, gate, true);
             data(h).affinity(WARY);
             assertHolds(h, player, gate, false);
+            var she = ShepherdTopicsGameTest.awake(h, player, NEUTRAL);
+            h.assertTrue(ShepherdTopicsGameTest.menu(she, player).contains(SESSION), "On the menu");
+            WinConditionState.get(h.getLevel().getServer()).setConspiracyDiscovered(false);
+            h.assertFalse(ShepherdTopicsGameTest.menu(she, player).contains(SESSION), "Off it");
             h.succeed();
         });
     }
@@ -120,6 +126,29 @@ public final class ShepherdTopicGateGameTest {
             find(h, finder, "terminus_log_maintenance");
             assertHolds(h, finder, gate, true);
             assertHolds(h, other, gate, false);
+            var she = ShepherdTopicsGameTest.awake(h, finder, TRUSTED);
+            h.assertTrue(ShepherdTopicsGameTest.menu(she, finder).contains(DENG), "Theirs");
+            h.assertFalse(ShepherdTopicsGameTest.menu(she, other).contains(DENG), "Not the other player's");
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_gate_plush", timeoutTicks = 400)
+    public static void shepherdThePenguinGoesWithThePlush(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            var she = ShepherdTopicsGameTest.awake(h, player, NEUTRAL);
+            h.assertFalse(ShepherdTopicsGameTest.menu(she, player).contains(PENGUIN), "Nothing to react to");
+            player.getInventory().add(new ItemStack(ModItems.STUFFED_PENGUIN.get()));
+            h.assertTrue(ShepherdTopicsGameTest.menu(she, player).contains(PENGUIN), "They brought it");
+            ShepherdTopicsGameTest.pick(h, she, player, PENGUIN);
+            h.assertTrue("orsa.penguin".equals(ShepherdTalk.liveNode()), "The topic: " + ShepherdTalk.liveNode());
+            player.getInventory().clearContent();
+            h.assertTrue(ShepherdTalk.liveLines().size() == 3, "It plays out: " + ShepherdTalk.liveLines());
+            ShepherdTalk.reply(player, ShepherdTalk.liveId(), CONTINUE);
+            h.assertTrue("orsa.menu".equals(ShepherdTalk.liveNode()), "Back on the menu: " + ShepherdTalk.liveNode());
+            ShepherdTalk.close(player);
+            h.assertFalse(ShepherdTopicsGameTest.menu(she, player).contains(PENGUIN), "And it left with the plush");
             h.succeed();
         });
     }
