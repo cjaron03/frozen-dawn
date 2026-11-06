@@ -14,7 +14,7 @@
 
 **Mockups:** none. The topics use the existing talk grid, and nothing new is drawn.
 
-**Status:** approved by the owner as written, 2026-11-05, Rulings 1 to 22 included. Rechecked against M4 as shipped, and the owner approved Rulings 23 to 28 and the edits they make the same day. Ruling 29 records the fresh set's result. Tasks 2 to 6 are built; see the Handback.
+**Status:** approved by the owner as written, 2026-11-05, Rulings 1 to 22 included. Rechecked against M4 as shipped, and the owner approved Rulings 23 to 28 and the edits they make the same day. Ruling 29 records the fresh set's result. Tasks 2 to 6 are built; see the Handback. The owner passed M5 on 2026-11-06; see "The owner's pass".
 
 **Branch:** `feat/miller-m5` in `/Volumes/SSD/Work/frozen-dawn-miller-m5`, cut from `docs/miller-m5-plan`, which holds this plan on top of `feat/maeve-director` at 9ccb53f8, with M4 (PR 161) and the worktree rules (PR 162) merged in. The build session starts in this worktree and works there. PR into `feat/maeve-director`. It changes a shared system and merges into a long-lived branch, so the branch review runs on Opus.
 
@@ -256,6 +256,23 @@ Tasks 2 to 6 are committed on `feat/miller-m5`, the branch review ran on Opus, a
 **To watch at the pass.** "Never mind" on `how_you_know` and `kevin_volunteer` still shows the Sarcastic tone word above it, though it counts as no answer. A second player's first answer earns nothing once the world flag is set, by Ruling 10.
 
 **Deferred minors.** `paysAfter` and `focusAfter` do not restore the conspiracy flag if a test fails partway. `[Find everything]` leaves out `launch_manifest` and `vasik_log`, so `exodus.4` and `exodus.5` cannot play in the save. The "It plays out" check in `shepherdThePenguinGoesWithThePlush` reads a snapshot and cannot fail.
+
+## The owner's pass, 2026-11-06
+
+In `Aurora Topics Check`, typing first and then up through every tier, unprompted: "i like it", then "i liked all the response and went through all the tiers". They named no fault. They asked for more, which went to M6 and not this branch: see `docs/miller-pattern-m6-idea.md` on the plan branch.
+
+**Blind test, Ruling 4.** `aurora-typed.jsonl` holds 25 lines, 21 different.
+
+| Measure | Result |
+| --- | --- |
+| In scope, top one | 10 of 11 |
+| In scope, top two | 11 of 11 |
+| Out of scope, Strong | 0 of 9 |
+| The word | 1 of 1, her crash, as designed |
+
+"who is kevin" first missed at a tier below its gate, then landed once open, so it counts as a hit. No typed line was one of the Handback's filler lines. The one in-scope miss, "where is everyone", went to `who_is_kevin` at 0.39 with `anyone_out_there` second, so it became a phrasing on `anyone_out_there`, which Ruling 19 allows. The nine out-of-scope lines are sorted in [aurora-typed-backlog.md](aurora-typed-backlog.md).
+
+**The filler stays.** The owner's ruling, 2026-11-06, after the blind test: the examples in the Handback's table stay as they are for M5, and Ruling 29's numbers stand. Those lines stay on the watch list for later logs.
 
 ## Left for later
 

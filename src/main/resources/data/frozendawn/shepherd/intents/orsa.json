@@ -183,7 +183,7 @@
       "node": "orsa.anyone_out_there",
       "label": "shepherd.orsa.anyone_out_there.label",
       "guess": "shepherd.orsa.anyone_out_there.guess",
-      "examples": ["Is anyone still out there?", "Are there any survivors?", "Is anyone alive on Mars?", "Did anybody make it?", "Are we alone?", "Is there anybody else left?", "What happened to the people who left?", "Is someone coming for us?", "Can we contact anyone?", "Are the colonists okay?"]
+      "examples": ["Is anyone still out there?", "Are there any survivors?", "Is anyone alive on Mars?", "Did anybody make it?", "Are we alone?", "Is there anybody else left?", "What happened to the people who left?", "Is someone coming for us?", "Can we contact anyone?", "Are the colonists okay?", "Where is everyone?"]
     }
   ]
 }
