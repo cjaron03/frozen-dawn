@@ -28,7 +28,7 @@ public final class ShepherdProjection {
     /** Her lines wait for the beam to land. */
     public static final int BEAM_TICKS = 20;
     /** The other shape, tears and all. */
-    static final int EGG_TICKS = 36;
+    static final int EGG_TICKS = 90;
     static final String SEEN = "hologram_seen", EGG = "hologram_egg", EGG_LINE = "shepherd.egg.hologram";
 
     private static final class Live {
@@ -114,13 +114,14 @@ public final class ShepherdProjection {
         return live != null;
     }
 
-    /** It snaps off. Whatever is on the strip finishes by itself. */
+    /** The hologram goes by itself on each client, and she stays with it. Whatever is on the strip finishes by itself. */
     public static void stop() {
         if (live == null) return;
         var over = live;
         live = null;
         over.she.projection(NONE);
         over.she.projectedPlayer(Optional.empty());
+        over.she.holdForHologram();
         // Her own moments count from here: a long one outlasts the wait since the last talk.
         var server = over.player.getServer();
         ShepherdSavedData.get(server).deedReady(ShepherdEggs.MOMENT, server.overworld().getGameTime() + ShepherdPolicy.MOMENT_IDLE_TICKS);

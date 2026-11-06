@@ -5,7 +5,6 @@ import com.frozendawn.shepherd.ShepherdEntity;
 import com.frozendawn.shepherd.ShepherdFace;
 import com.frozendawn.shepherd.ShepherdGlitch;
 import com.frozendawn.shepherd.ShepherdPolicy;
-import com.frozendawn.shepherd.ShepherdProjection;
 import com.frozendawn.shepherd.ShepherdFace.Mood;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -31,7 +30,7 @@ public final class ShepherdRenderer extends MobRenderer<ShepherdEntity, Shepherd
 
     /** Her figure stands off to one side, and stays when she is out of view. */
     @Override public boolean shouldRender(ShepherdEntity entity, Frustum frustum, double x, double y, double z) {
-        return entity.projection() != ShepherdProjection.NONE || super.shouldRender(entity, frustum, x, y, z);
+        return entity.hologramShown() || super.shouldRender(entity, frustum, x, y, z);
     }
 
     @Override public ResourceLocation getTextureLocation(ShepherdEntity entity) {

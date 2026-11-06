@@ -98,7 +98,9 @@ public final class ShepherdEntity extends PathfinderMob {
     /** Client only: how far into the spin. */
     private int flusterAge;
     /** Client only: how long the projection has been up, which way she faced when it came, and the figure under any flicker. */
-    private int projectionAge, eggAge, projectionFigure;
+    private int projectionAge, eggAge, projectionFigure, hologramLeaving = ShepherdHologram.STAYING;
+    /** Server side: she waits here while her hologram goes, or it would slide off with her. */
+    private int hologramHold;
     private float projectionYaw;
 
     public ShepherdEntity(EntityType<? extends ShepherdEntity> type, Level level) {
@@ -390,6 +392,20 @@ public final class ShepherdEntity extends PathfinderMob {
     }
 
     /** Client only: how long the egg's shape has been up. */
+    /** Client side: how far through going the hologram is, or {@link ShepherdHologram#STAYING}. */
+    public int hologramLeaving() {
+        return hologramLeaving;
+    }
+
+    /** Client side: there is a hologram to draw, staying or going. */
+    public boolean hologramShown() {
+        return projection() != ShepherdProjection.NONE || hologramLeaving != ShepherdHologram.STAYING;
+    }
+
+    void holdForHologram() {
+        hologramHold = ShepherdHologram.LEAVE_TICKS;
+    }
+
     public int eggAge() {
         return eggAge;
     }
@@ -397,8 +413,18 @@ public final class ShepherdEntity extends PathfinderMob {
     private void trackProjection() {
         int shown = projection();
         if (shown == ShepherdProjection.NONE) {
-            projectionAge = 0;
+            if (projectionAge == 0) return;
+            projectionAge++;
+            if (++hologramLeaving == ShepherdHologram.LEAVE_TICKS) {
+                hologramLeaving = ShepherdHologram.STAYING;
+                projectionAge = 0;
+            }
             return;
+        }
+        // Asked again before the last one had gone.
+        if (hologramLeaving != ShepherdHologram.STAYING) {
+            hologramLeaving = ShepherdHologram.STAYING;
+            projectionAge = 0;
         }
         if (projectionAge++ == 0) projectionYaw = yHeadRot;
         if (shown == ShepherdProjection.EGG_FRAME) {
@@ -543,6 +569,7 @@ public final class ShepherdEntity extends PathfinderMob {
         } else if (crashed() && offline() && rebootTicks == ShepherdPolicy.CRASH_TICKS + ShepherdPolicy.CRASH_STILL_TICKS) {
             ShepherdTalk.crashStill(this);
         }
+        if (hologramHold > 0) hologramHold--;
         if (talkTicks > 0 && --talkTicks == 0) entityData.set(DATA_TALKING, false);
         if (logoTicks > 0 && --logoTicks == 0) {
             entityData.set(DATA_LOGO, false);
@@ -725,7 +752,7 @@ public final class ShepherdEntity extends PathfinderMob {
 
         /** Nobody while she projects: she stays with the figure, so it can be walked round and walked away from. */
         private ServerPlayer target() {
-            return ShepherdSavedData.get(getServer()).waiting() || ShepherdProjection.active() ? null : follower();
+            return ShepherdSavedData.get(getServer()).waiting() || ShepherdProjection.active() || hologramHold > 0 ? null : follower();
         }
 
         @Override public boolean canUse() {

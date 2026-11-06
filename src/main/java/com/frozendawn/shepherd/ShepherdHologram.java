@@ -10,6 +10,10 @@ import java.util.List;
 public final class ShepherdHologram {
     /** After the beam: how long the figure takes to form. */
     public static final int FORM_TICKS = 40;
+    /** When it ends: the figure falls away, then the beam draws back, as `hologram-leave-mockup.gif` draws it. */
+    public static final int LEAVE_FADE_TICKS = 24, LEAVE_BEAM_TICKS = 9, LEAVE_TICKS = LEAVE_FADE_TICKS + LEAVE_BEAM_TICKS;
+    /** How far through leaving it is, while it isn't. */
+    public static final int STAYING = -1;
     public static final int ROWS = 16, MAX_SHIFT = 4;
     /** One frame of the mockup. */
     private static final int FRAME_TICKS = 3, EGG_TEAR_TICKS = 6;
@@ -98,6 +102,21 @@ public final class ShepherdHologram {
     public static boolean formed(int age, int x, int y) {
         float formed = Math.max(0, (age - ShepherdProjection.BEAM_TICKS + 1) / (float) FORM_TICKS);
         return formed >= 1 || !eye(x, y) && hash(x, y, 0) % 100 < formed * 100;
+    }
+
+    /** How much of the figure has gone. */
+    public static float faded(int leaving) {
+        return leaving == STAYING ? 0 : Math.min(1, (leaving + 1) / (float) LEAVE_FADE_TICKS);
+    }
+
+    /** Whether this texel of its skin has left: the eyes first, then a few at a time. */
+    public static boolean gone(int leaving, int x, int y) {
+        return leaving != STAYING && (eye(x, y) || hash(x, y, 0) % 100 < faded(leaving) * 100);
+    }
+
+    /** How much of the beam is still out, which is all of it until the figure has gone. */
+    public static float beamLeft(int leaving) {
+        return 1 - Math.clamp((leaving - LEAVE_FADE_TICKS + 1) / (float) LEAVE_BEAM_TICKS, 0F, 1F);
     }
 
     /** The two eyes on a head's front, in skin texels. */

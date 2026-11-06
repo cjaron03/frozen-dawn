@@ -80,6 +80,36 @@ class ShepherdHologramTest {
         assertEquals(1, ShepherdHologram.beam(LONG_ENOUGH), "and stays");
     }
 
+    private static int goneCount(int leaving) {
+        int gone = 0;
+        for (int x = 0; x < SKIN; x++) {
+            for (int y = 0; y < SKIN; y++) if (ShepherdHologram.gone(leaving, x, y)) gone++;
+        }
+        return gone;
+    }
+
+    @Test
+    void theFigureFallsAwayEyesFirst() {
+        assertEquals(0, goneCount(ShepherdHologram.STAYING), "nothing goes while it stays");
+        assertTrue(ShepherdHologram.gone(0, 9, 10), "the eyes go first");
+        int last = 0, steps = 0;
+        for (int leaving = 0; leaving < ShepherdHologram.LEAVE_FADE_TICKS; leaving++) {
+            int now = goneCount(leaving);
+            assertTrue(now >= last, "a texel never comes back at " + leaving);
+            if (now > last) steps++;
+            last = now;
+        }
+        assertEquals(SKIN * SKIN, last, "every texel by the end");
+        assertTrue(steps > ShepherdHologram.LEAVE_FADE_TICKS / 2, "a few at a time: " + steps);
+    }
+
+    @Test
+    void theBeamDrawsBackAfterTheFigure() {
+        assertEquals(1, ShepherdHologram.beamLeft(ShepherdHologram.LEAVE_FADE_TICKS - 1), "it stays until the figure has gone");
+        assertTrue(ShepherdHologram.beamLeft(ShepherdHologram.LEAVE_FADE_TICKS) < 1, "then it starts back");
+        assertEquals(0, ShepherdHologram.beamLeft(ShepherdHologram.LEAVE_TICKS - 1), "and it is home by the end");
+    }
+
     @Test
     void theFigureFormsSlowlyAndCompletely() {
         int last = 0, steps = 0;

@@ -45,7 +45,7 @@ public final class ShepherdHologramRenderer {
     private static final int SKIN = 64, FRAME_TICKS = 3;
     private static final int FIGURE_X = -30, FIGURE_Y = 4, FIGURE_Z = 5, FROM_X = -4, FROM_Y = 7, RING_Y = 2, RING_RADIUS = 8, ROWS_HALF = 8, SMALL_YOU_X = -5;
     private static final int[] RAY_TOPS = {1, 8, 15};
-    private static final float TEXEL = 1 / 16F, FIGURE_SCALE = 0.5F, MODEL_DROP = -1.501F, HUNTER_DEGREES_A_TICK = 1.5F, MAX_LOOK = 1.2F;
+    private static final float TEXEL = 1 / 16F, FIGURE_SCALE = 0.5F, MODEL_DROP = -1.501F, HUNTER_DEGREES_A_TICK = 1.5F, MAX_LOOK = 1.2F, HALF = 0.5F;
     private static final float CHIN_ARM_X = -2.2F, CHIN_ARM_Y = -0.6F, CHIN_HEAD_X = 0.25F;
     private static final float DIM_SHADOWS = 0.55F, LIFT_LIGHT = 0.2F, LIGHT_GAIN = 1.6F;
 
@@ -69,23 +69,22 @@ public final class ShepherdHologramRenderer {
 
     /** {@code pose} stands at her feet, facing the world's way. */
     public void draw(ShepherdEntity she, float partial, PoseStack pose, MultiBufferSource buffers) {
-        int shown = she.projection();
-        if (shown == ShepherdProjection.NONE) return;
-        int age = she.projectionAge();
+        if (!she.hologramShown()) return;
+        int age = she.projectionAge(), leaving = she.hologramLeaving();
         pose.pushPose();
         pose.mulPose(Axis.YP.rotationDegrees(180 - she.projectionYaw()));
         var flat = buffers.getBuffer(RenderType.entityTranslucentEmissive(WHITE));
-        stage(flat, pose, age);
-        boolean egg = shown == ShepherdProjection.EGG_FRAME;
+        stage(flat, pose, age, leaving);
+        boolean egg = she.projection() == ShepherdProjection.EGG_FRAME;
         if (egg) hooded(flat, pose, age, she.eggAge());
-        if (!egg || ShepherdHologram.eggTearing(she.eggAge())) figure(she, partial, pose, buffers, age);
+        if (!egg || ShepherdHologram.eggTearing(she.eggAge())) figure(she, partial, pose, buffers, age, leaving);
         pose.popPose();
     }
 
     /** Thin rays from her side, reaching out first, then the ring the figure stands in. */
-    private static void stage(VertexConsumer flat, PoseStack pose, int age) {
+    private static void stage(VertexConsumer flat, PoseStack pose, int age, int leaving) {
         int frame = age / FRAME_TICKS, last = FIGURE_X + 3;
-        float beam = ShepherdHologram.beam(age);
+        float beam = Math.min(ShepherdHologram.beam(age), ShepherdHologram.beamLeft(leaving));
         int far = Math.round(FROM_X + (last - FROM_X) * beam);
         for (int ray = 0; ray < RAY_TOPS.length; ray++) {
             for (int x = FROM_X; x > last && x >= far; x--) {
@@ -103,8 +102,11 @@ public final class ShepherdHologramRenderer {
         }
     }
 
-    private void figure(ShepherdEntity she, float partial, PoseStack pose, MultiBufferSource buffers, int age) {
+    private void figure(ShepherdEntity she, float partial, PoseStack pose, MultiBufferSource buffers, int age, int leaving) {
         int figure = she.projectionFigure();
+        // These two have no skin of ours to take apart, so they go halfway through.
+        boolean whole = figure == ShepherdProjection.ITEM || figure == ShepherdProjection.PAIR;
+        if (whole && ShepherdHologram.faded(leaving) > HALF) return;
         if (figure == ShepherdProjection.ITEM) {
             item(she, partial, pose, buffers, age);
             return;
@@ -113,7 +115,7 @@ public final class ShepherdHologramRenderer {
             pair(she, pose, buffers, age);
             return;
         }
-        paint(figure, age);
+        paint(figure, age, leaving);
         if (painted == null) return;
         pose.pushPose();
         pose.translate(-FIGURE_X * TEXEL, FIGURE_Y * TEXEL, -FIGURE_Z * TEXEL);
@@ -124,7 +126,7 @@ public final class ShepherdHologramRenderer {
         model.renderToBuffer(pose, buffers.getBuffer(RenderType.entityTranslucentEmissive(PAINTED)), LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY, 0xFFFFFFFF);
         pose.popPose();
         // Asking for another render type ends the last one, so this asks again.
-        if (figure == ShepherdProjection.ARCHITECT) overdraw(buffers.getBuffer(RenderType.entityTranslucentEmissive(WHITE)), pose, age);
+        if (figure == ShepherdProjection.ARCHITECT && leaving == ShepherdHologram.STAYING) overdraw(buffers.getBuffer(RenderType.entityTranslucentEmissive(WHITE)), pose, age);
     }
 
     /** Something stupid, in her green. */
@@ -262,7 +264,7 @@ public final class ShepherdHologramRenderer {
     }
 
     /** Once a tick at most: the skin as this age shows it. */
-    private void paint(int figure, int age) {
+    private void paint(int figure, int age, int leaving) {
         if (figure == paintedFigure && age == paintedAge) return;
         if (!load(figure)) return;
         paintedFigure = figure;
@@ -276,7 +278,7 @@ public final class ShepherdHologramRenderer {
             for (int y = 0; y < SKIN; y++) {
                 int row = ShepherdHologram.row(x, y);
                 boolean eye = ShepherdHologram.eye(x, y);
-                if (!ShepherdHologram.formed(age, x, y) || torn && !eye && (row == gap || row == gap + 1)) {
+                if (!ShepherdHologram.formed(age, x, y) || ShepherdHologram.gone(leaving, x, y) || torn && !eye && (row == gap || row == gap + 1)) {
                     out.setPixelRGBA(x, y, 0);
                     continue;
                 }

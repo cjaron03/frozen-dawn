@@ -1323,6 +1323,7 @@ shepherdmomentswaitafteraprojection xml
 shepherdthegagwaitsforthemtostop xml
 shepherdthespeakercanskipforward xml
 shepherdasneakingclickendsit xml
+shepherdwaitsforthehologramtogo xml
 shepherdoffersonceafterseeingamob xml
 shepherdoffersonlywhenitwouldhelp xml
 shepherdtheofferrunsheradvice xml

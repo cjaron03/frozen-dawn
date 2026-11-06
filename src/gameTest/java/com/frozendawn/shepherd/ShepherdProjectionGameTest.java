@@ -46,6 +46,10 @@ public final class ShepherdProjectionGameTest {
     @AfterBatch(batch = "shepherd_projection_worry") public static void worryAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
     @BeforeBatch(batch = "shepherd_projection_architect") public static void architectBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
     @AfterBatch(batch = "shepherd_projection_architect") public static void architectAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_projection_skip_all") public static void skipAllBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_projection_skip_all") public static void skipAllAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_projection_leaves") public static void leavesBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_projection_leaves") public static void leavesAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
     @BeforeBatch(batch = "shepherd_projection_egg") public static void eggBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
     @AfterBatch(batch = "shepherd_projection_egg") public static void eggAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
     @BeforeBatch(batch = "shepherd_projection_reload") public static void reloadBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
@@ -306,6 +310,23 @@ public final class ShepherdProjectionGameTest {
             run(h, 1);
             h.assertTrue(keys().size() == 1 && ShepherdTalk.liveId() == 0, "With nothing more said, and no talk: " + keys());
             h.succeed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_projection_leaves", timeoutTicks = 400)
+    public static void shepherdWaitsForTheHologramToGo(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            var she = awake(h, player, FRIENDLY);
+            ShepherdProjection.start(player, she, "hunter", TWO);
+            run(h, ShepherdProjection.BEAM_TICKS);
+            ShepherdProjection.stop();
+            var at = she.position();
+            player.setPos(player.position().add(5, 0, 0));
+            h.runAfterDelay(ShepherdHologram.LEAVE_TICKS - 2, () -> {
+                h.assertTrue(she.position().distanceTo(at) < 0.3, "She stays with the figure while it goes: " + she.position().distanceTo(at));
+                h.succeed();
+            });
         });
     }
 

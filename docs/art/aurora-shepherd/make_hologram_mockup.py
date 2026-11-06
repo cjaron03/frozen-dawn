@@ -308,9 +308,40 @@ def arrive_gif():
     frames[0].save(HERE / 'hologram-arrive-mockup.gif', save_all=True, append_images=frames[1:], duration=FRAME_MS, loop=0)
 
 
+HOLD_FRAMES, FADE_FRAMES, RETRACT_FRAMES, LEAVE_FRAMES = 4, 8, 3, 20  # About a second and a bit of fading, then the beam goes home.
+
+
+def leaving(fn, frame):
+    """The arrival run backward and quicker: the eyes go first, the figure falls away a few texels at a time, and the beam draws back into her."""
+    b = lantern()
+    stage(b, frame)
+    gone = max(0, (frame - HOLD_FRAMES + 1) / FADE_FRAMES)
+    reach = 1 - min(1, max(0, frame - HOLD_FRAMES - FADE_FRAMES + 1) / RETRACT_FRAMES)
+    far = -4 + (FX + 4 + 4) * reach
+    b.v = {key: c for key, c in b.v.items() if key[1] == 2 and reach == 1 or key[1] != 2 and not (key[0] < far and key[2] == FZ and key[0] < -3)}
+    for (x, y, z), color in fn(frame).items():
+        if gone == 0 or color != 'glow' and hash3(x, y, z) % 100 >= gone * 100:
+            b.v[(FX + x, FY + y, FZ + z)] = color
+    return b
+
+
+def leave_gif():
+    w, h, s = 340, 270, 6
+    frames = []
+    for frame in range(LEAVE_FRAMES):
+        img = Image.new('RGB', (w * 3, h), C['bg'])
+        d = ImageDraw.Draw(img)
+        for i, (name, _, fn) in enumerate(FIGURES):
+            d.text((i * w + 16, 12), name, font=font(14), fill=C['glow'])
+            flat(d, leaving(fn, frame), i * w + 28, h - 24, s, 'front')
+        frames.append(img)
+    frames[0].save(HERE / 'hologram-leave-mockup.gif', save_all=True, append_images=frames[1:], duration=FRAME_MS, loop=0)
+
+
 if __name__ == '__main__':
     gif()
     sheet()
     caught_sheet()
     egg_sheet()
     arrive_gif()
+    leave_gif()
