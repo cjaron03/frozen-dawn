@@ -317,9 +317,41 @@ def transitions_sheet():
     img.save(HERE / 'face-transitions-mockup.png')
 
 
+WORRIED = [
+    ('A  Wavering', 'Shaking mouth, brows up.', ['..+..+..', '.##..##.', '.##..##.', '........', '.+.++.+.', '..+..+..']),
+    ('B  Looks away', 'Eyes slide off you.', ['...+..+.', '..##.##.', '..##.##.', '........', '...+.+..', '....+...']),
+    ('C  Wide and small', 'Eyes too open, tiny mouth.', ['.##..##.', '.##..##.', '.+....+.', '........', '...++...', '........']),
+]
+
+
+def worried_sheet():
+    img = Image.new('RGB', (1180, 560), C['bg'])
+    d = ImageDraw.Draw(img)
+    d.text((24, 16), 'AURORA M6: WORRIED, THREE TRIES', font=font(22), fill=C['text'])
+    d.text((24, 46), 'For when she tells you the Architects stopped making the same mistakes. Sad and Alarmed, at right, for comparison.',
+           font=font(14), fill=C['dim'])
+    s = 16
+    for i, (name, note, rows) in enumerate(WORRIED):
+        x = 40 + i * 220
+        framed(d, rows, x, 110, s)
+        d.text((x - 10, 224), name, font=font(15), fill=C['text'])
+        d.text((x - 10, 246), note, font=font(12), fill=C['dim'])
+        display(d, cells(rows), x, 274, 5)
+        iso(d, body_with(cells(rows)), x + 70, 410, 6)
+    d.text((720, 90), 'FOR COMPARISON', font=font(15), fill=C['glow'])
+    for i, index in enumerate((4, 5)):
+        name, rows = MOODS[index]
+        x = 730 + i * 200
+        framed(d, rows, x, 126, 12)
+        d.text((x - 10, 210), name, font=font(13), fill=C['text'])
+        display(d, cells(rows), x, 236, 5)
+    img.save(HERE / 'worried-face-mockup.png')
+
+
 if __name__ == '__main__':
     orsa_sheet()
     orsa_gif()
     expressions_sheet()
     transitions_gif()
     transitions_sheet()
+    worried_sheet()
