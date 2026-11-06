@@ -1,0 +1,62 @@
+{
+  "in_scope": {
+    "what_is_orsa": {
+      "casual": ["hey what is orsa exactly", "orsa sounds like a big deal, what were they"],
+      "terse": ["orsa who", "what's orsa"],
+      "typo": ["whats orsaa", "who wer orsa"],
+      "long": ["every crate and door down here has ORSA stamped on it, so what kind of outfit was that", "I want to understand the organisation behind all of this equipment, what were they for"],
+      "indirect": ["who do you belong to", "whose stuff is all this"]
+    },
+    "what_happened": {
+      "casual": ["ok seriously what happened here", "how did it all get so bad"],
+      "terse": ["the cold?", "why frozen"],
+      "typo": ["wy is it so cold", "what hapend to the world"],
+      "long": ["a few weeks ago this was a normal summer and now the sea is solid, what did that", "nobody has told me why the sky went wrong and the whole planet iced over"],
+      "indirect": ["whose fault is the cold", "was it the satellites"]
+    },
+    "exodus": {
+      "casual": ["so what was that exodus thing", "wait did they evacuate everyone"],
+      "terse": ["exodus", "the evacuation"],
+      "typo": ["what was exdous", "evacuaton plan?"],
+      "long": ["there are posters everywhere promising a seat on a shuttle, how was that whole evacuation supposed to go", "I read something about a project that would move everybody off the planet, what was it called and what was it"],
+      "indirect": ["did everybody get a seat", "when does the evacuation officer get here"]
+    },
+    "anyone_out_there": {
+      "casual": ["anybody else alive out there", "so is it just me now"],
+      "terse": ["anyone alive", "survivors"],
+      "typo": ["is enyone out there", "any1 left alive"],
+      "long": ["it has been weeks since I saw a single other person, are there people still alive anywhere", "those colonists who made it to Mars, are they still alive up there"],
+      "indirect": ["will anyone ever come looking for us", "is there anybody we could call"]
+    },
+    "who_is_kevin": {
+      "casual": ["so who was kevin then", "kevin who lol"],
+      "terse": ["kevin", "who was kevin"],
+      "typo": ["who is kevinn", "tell me about kevni"],
+      "long": ["every bulletin I find makes a joke about some guy called Kevin, what is the story with him", "I keep running into notes telling people to pass things on to Kevin, who is this man"],
+      "indirect": ["who spent the airlock money", "who is everybody blaming in these bulletins"]
+    },
+    "hello": {
+      "terse": ["hey", "hiya", "heyy"],
+      "casual": ["hi there", "hello aurora", "good evening"]
+    },
+    "thanks": {
+      "terse": ["thank you", "thx", "cheers"],
+      "casual": ["thanks aurora", "thanks for the help", "much appreciated"]
+    },
+    "how_are_you": {
+      "terse": ["you ok?", "hows it going"],
+      "casual": ["how are you doing", "how are you feeling", "are you alright", "how have you been"]
+    },
+    "alive": {
+      "terse": ["are you conscious", "are you sentient"],
+      "casual": ["are you a living thing", "are you actually alive", "is there someone in there", "do you think you're alive"]
+    }
+  },
+  "out_of_scope": {
+    "small_talk": ["you're annoying", "i'm bored", "what's your favourite food", "do you dream", "tell me a story", "sing me something", "i love this place", "that was cool", "nevermind", "yes", "no", "maybe", "sure", "wow", "whatever", "you're weird", "goodbye", "see you later"],
+    "gameplay": ["how do i craft a furnace", "where do i find coal", "how do i stop freezing to death", "what's the best armour", "can you carry my stuff", "where did i leave my bed", "go over there", "stay here", "open the door", "how far is the tower", "how do i charge a cell", "turn off your light", "what do i eat", "how do i make a thermal suit", "where's the vault", "which way to the mine"],
+    "gibberish": ["zxcvbnm", "fjdksl fjdksl", "lorem ipsum dolor", "!!!", "hhhhhh", "a b c d e f", "999999", "bloop bleep", "ok ok ok ok", "mmmmm"],
+    "fourth_wall": ["what minecraft version is this", "is this modded", "are you gpt", "who wrote your dialogue", "what's my fps", "is this multiplayer", "are you a language model", "can i change the difficulty", "who coded you", "are you an npc"],
+    "locked": ["what's on floor seven", "tell me about enoch", "who was deng", "what is the blackglass cipher", "what's a returned", "what is the thaeven language", "who is dr morrow", "what are the doors for", "what is the wand", "where does the transfer go", "who is the archivist", "what is in the vault", "what's the penguin about", "did kevin really volunteer", "did kevin make it", "what was session 14-b", "why did the recall come early", "who was hollis", "what's the reliquus signal", "who is vasquez"]
+  }
+}
