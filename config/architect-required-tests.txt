@@ -1322,6 +1322,7 @@ shepherdgreetswhoshewasleftwaitingfor xml
 shepherdmomentswaitafteraprojection xml
 shepherdthegagwaitsforthemtostop xml
 shepherdthespeakercanskipforward xml
+shepherdasneakingclickendsit xml
 shepherdoffersonceafterseeingamob xml
 shepherdoffersonlywhenitwouldhelp xml
 shepherdtheofferrunsheradvice xml

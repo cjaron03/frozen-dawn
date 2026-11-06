@@ -276,11 +276,35 @@ public final class ShepherdProjectionGameTest {
             h.assertTrue(keys().size() == 1, "Only the one who asked can skip: " + keys());
             she.interact(player, InteractionHand.MAIN_HAND);
             run(h, 1);
-            h.assertTrue(List.of(FIRST, SECOND).equals(keys()), "A right-click goes to the next line: " + keys());
+            h.assertTrue(keys().size() == 1 && ShepherdProjection.active(), "The first right-click only finishes the typing: " + keys());
+            she.interact(player, InteractionHand.MAIN_HAND);
+            run(h, 1);
+            h.assertTrue(List.of(FIRST, SECOND).equals(keys()), "The next goes to the next line: " + keys());
+            she.interact(player, InteractionHand.MAIN_HAND);
             she.interact(player, InteractionHand.MAIN_HAND);
             run(h, 1);
             h.assertTrue(!ShepherdProjection.active() && she.projection() == 0, "And past the last, it ends");
             h.assertTrue(ShepherdTalk.liveId() == 0, "Without opening a talk");
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_projection_skip_all", timeoutTicks = 400)
+    public static void shepherdASneakingClickEndsIt(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            var other = player(h);
+            var she = awake(h, player, FRIENDLY);
+            ShepherdProjection.start(player, she, "hunter", TWO);
+            run(h, ShepherdProjection.BEAM_TICKS);
+            other.setShiftKeyDown(true);
+            she.interact(other, InteractionHand.MAIN_HAND);
+            h.assertTrue(ShepherdProjection.active(), "Only the one who asked can end it");
+            player.setShiftKeyDown(true);
+            she.interact(player, InteractionHand.MAIN_HAND);
+            h.assertTrue(!ShepherdProjection.active() && she.projection() == 0, "It ends there, with lines still to come");
+            run(h, 1);
+            h.assertTrue(keys().size() == 1 && ShepherdTalk.liveId() == 0, "With nothing more said, and no talk: " + keys());
             h.succeed();
         });
     }

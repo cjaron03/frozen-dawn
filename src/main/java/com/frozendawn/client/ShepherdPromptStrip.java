@@ -60,6 +60,14 @@ public final class ShepherdPromptStrip {
         length = rows.stream().mapToInt(String::length).sum();
     }
 
+    /** The rest of the line at once. It still holds for as long as it would have. */
+    public static void finish() {
+        var level = Minecraft.getInstance().level;
+        if (started == NONE || level == null) return;
+        started = Math.min(started, level.getGameTime() - (long) length * ShepherdPolicy.TICKS_PER_CHAR);
+        typed = length;
+    }
+
     public static void clear() {
         started = NONE;
     }

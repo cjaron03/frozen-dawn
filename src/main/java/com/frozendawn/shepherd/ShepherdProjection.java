@@ -2,6 +2,7 @@ package com.frozendawn.shepherd;
 
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.network.ShepherdLinePayload;
+import com.frozendawn.network.ShepherdStripPayload;
 import com.frozendawn.shepherd.ShepherdDialogue.Line;
 import com.frozendawn.shepherd.ShepherdFace.Mood;
 import java.util.ArrayList;
@@ -39,6 +40,8 @@ public final class ShepherdProjection {
         /** She has stopped mid-sentence, and the line she stopped on comes when she is back. */
         Line held;
         boolean hurt;
+        /** A line is on the strip, so while {@link #wait} is past its hold it is still typing. */
+        boolean saying;
 
         Live(ServerPlayer player, ShepherdEntity she, int kind, List<Line> lines) {
             this.player = player;
@@ -92,9 +95,19 @@ public final class ShepherdProjection {
         return played;
     }
 
-    /** A right-click from the one who asked moves her on to the next line. */
+    /** A right-click from the one who asked does what a click does in a talk: it finishes a typing line, and the next moves on. Sneaking, it ends the lot. */
     static void skip(ServerPlayer player) {
-        if (live != null && live.player == player && live.kind != PAIR) live.wait = 1;
+        if (live == null || live.player != player || live.kind == PAIR) return;
+        if (player.isShiftKeyDown()) {
+            PacketDistributor.sendToPlayer(player, new ShepherdStripPayload(true));
+            stop();
+        } else if (live.saying && live.wait > ShepherdPolicy.STRIP_HOLD_TICKS) {
+            live.wait = ShepherdPolicy.STRIP_HOLD_TICKS;
+            live.she.talkFor(0);
+            PacketDistributor.sendToPlayer(player, new ShepherdStripPayload(false));
+        } else {
+            live.wait = 1;
+        }
     }
 
     public static boolean active() {
@@ -154,6 +167,7 @@ public final class ShepherdProjection {
     private static void next(Line line) {
         if (line.mood() == Mood.WORRIED) {
             live.held = line;
+            live.saying = false;
             live.wait = ShepherdFace.WORRY_TICKS;
             live.she.talkFor(0);
             live.she.setMood(Mood.WORRIED);
@@ -176,6 +190,7 @@ public final class ShepherdProjection {
         String key = heavy && line.heavyKey() != null ? line.heavyKey() : line.key();
         int typing = Language.getInstance().getOrDefault(key).length() * ShepherdPolicy.TICKS_PER_CHAR;
         live.wait = typing + ShepherdPolicy.STRIP_HOLD_TICKS;
+        live.saying = true;
         live.she.talkFor(typing);
         live.she.setMood(mood);
         var payload = new ShepherdLinePayload(key, mood, null);
