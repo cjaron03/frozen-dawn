@@ -13,6 +13,8 @@ import java.util.Set;
 public final class ShepherdDialogue {
     /** What a line's {@code args} may ask for. The server works them out for whoever it is talking to. */
     public static final Set<String> ARGS = Set.of("pit_x", "pit_z", "pit_blocks", "pit_bearing", "offline_days");
+    /** What a node's {@code project} may name. */
+    public static final Set<String> PROJECTIONS = Set.of("hunter", "mimic", "architect");
 
     private ShepherdDialogue() {}
 
@@ -39,11 +41,17 @@ public final class ShepherdDialogue {
      * If {@code when} does not hold, nobody ever stands on it: the walk goes straight on to {@code otherwise}.
      * Arriving by a reply, {@code noted} is evidence for or against a theory ({@code "+kind"}) and {@code keep} a moment to
      * hold on to, so writers need no Java. A {@code plain} node's slots mean nothing about tone: a menu, not an answer.
+     * Reaching a node with {@code project} ends the talk, and its lines run over that hologram.
      */
     public record Node(String id, List<Line> lines, List<Response> responses, String next, List<String> set, String when, String otherwise,
-                       List<String> noted, String keep, boolean plain) {
+                       List<String> noted, String keep, boolean plain, String project) {
         public Node(String id, List<Line> lines, List<Response> responses, String next, List<String> set, String when, String otherwise) {
             this(id, lines, responses, next, set, when, otherwise, List.of(), null, false);
+        }
+
+        public Node(String id, List<Line> lines, List<Response> responses, String next, List<String> set, String when, String otherwise,
+                    List<String> noted, String keep, boolean plain) {
+            this(id, lines, responses, next, set, when, otherwise, noted, keep, plain, null);
         }
     }
 
@@ -63,7 +71,7 @@ public final class ShepherdDialogue {
                 for (JsonElement response : json.getAsJsonArray("responses")) responses.add(response(response.getAsJsonObject()));
             }
             return new Node(id, List.copyOf(lines), List.copyOf(responses), string(json, "next"), strings(json, "set"), string(json, "when"), string(json, "else"),
-                    strings(json, "noted"), string(json, "keep"), json.has("plain") && json.get("plain").getAsBoolean());
+                    strings(json, "noted"), string(json, "keep"), json.has("plain") && json.get("plain").getAsBoolean(), string(json, "project"));
         } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException("Dialogue node " + id + ": " + e.getMessage(), e);
         }

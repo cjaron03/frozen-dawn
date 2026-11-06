@@ -674,4 +674,16 @@ class ShepherdDialogueDataTest {
     void fewerIsHerOneWord() throws Exception {
         assertEquals("Fewer.", lang().get("shepherd.bleed.fewer").getAsString());
     }
+
+    @Test
+    void everyProjectionIsOneWeDraw() throws Exception {
+        var nodes = nodes();
+        for (Node node : nodes.values()) {
+            if (node.project() != null) assertTrue(ShepherdDialogue.PROJECTIONS.contains(node.project()), node.id() + ": " + node.project());
+        }
+        for (String variant : ShepherdDialogue.PROJECTIONS) {
+            assertEquals(variant, nodes.get("advice." + variant).project(), variant);
+            assertEquals(variant, nodes.get("advice." + variant + ".again").project(), variant);
+        }
+    }
 }

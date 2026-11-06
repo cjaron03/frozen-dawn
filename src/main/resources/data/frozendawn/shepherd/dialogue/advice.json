@@ -296,6 +296,7 @@
     },
     {
       "id": "advice.hunter",
+      "project": "hunter",
       "when": "not:orsa_heard_hunter",
       "else": "advice.hunter.again",
       "set": [
@@ -336,6 +337,7 @@
     },
     {
       "id": "advice.hunter.again",
+      "project": "hunter",
       "lines": [
         {
           "line": "shepherd.advice.hunter.again",
@@ -371,6 +373,7 @@
     },
     {
       "id": "advice.mimic",
+      "project": "mimic",
       "when": "not:orsa_heard_mimic",
       "else": "advice.mimic.again",
       "set": [
@@ -416,6 +419,7 @@
     },
     {
       "id": "advice.mimic.again",
+      "project": "mimic",
       "lines": [
         {
           "line": "shepherd.advice.mimic.again",
@@ -456,6 +460,7 @@
     },
     {
       "id": "advice.architect",
+      "project": "architect",
       "when": "not:orsa_heard_architect",
       "else": "advice.architect.again",
       "set": [
@@ -521,6 +526,7 @@
     },
     {
       "id": "advice.architect.again",
+      "project": "architect",
       "lines": [
         {
           "line": "shepherd.advice.architect.again",

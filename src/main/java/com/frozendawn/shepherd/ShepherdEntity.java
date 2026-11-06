@@ -51,6 +51,8 @@ public final class ShepherdEntity extends PathfinderMob {
     private static final EntityDataAccessor<Integer> DATA_THINK = SynchedEntityData.defineId(ShepherdEntity.class, EntityDataSerializers.INT);
     /** Nine's lamp, in her handle. The saved flag is the truth: a body is only told. */
     private static final EntityDataAccessor<Boolean> DATA_NINE_LAMP = SynchedEntityData.defineId(ShepherdEntity.class, EntityDataSerializers.BOOLEAN);
+    /** The figure she is projecting, or 0. Never saved: {@link ShepherdProjection} is gone after a reload, and so is this. */
+    private static final EntityDataAccessor<Integer> DATA_PROJECTION = SynchedEntityData.defineId(ShepherdEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Byte> DATA_BOOT = SynchedEntityData.defineId(ShepherdEntity.class, EntityDataSerializers.BYTE);
     /** What her display shows for a replay's boot: her own face, nothing, or the BIOS cursor. */
     public static final byte BOOT_NONE = 0, BOOT_DARK = 1, BOOT_CURSOR = 2;
@@ -150,6 +152,7 @@ public final class ShepherdEntity extends PathfinderMob {
         builder.define(DATA_NINE_LAMP, false);
         builder.define(DATA_BOOT, BOOT_NONE);
         builder.define(DATA_THINK, 0);
+        builder.define(DATA_PROJECTION, ShepherdProjection.NONE);
     }
 
     @Override protected PathNavigation createNavigation(Level level) {
@@ -321,6 +324,14 @@ public final class ShepherdEntity extends PathfinderMob {
     public ShepherdFace.Cells thinkingFrame() {
         int ticks = entityData.get(DATA_THINK);
         return ShepherdFace.thinking(Math.min(thinkAge, ticks - 1), ticks);
+    }
+
+    public int projection() {
+        return entityData.get(DATA_PROJECTION);
+    }
+
+    void projection(int shown) {
+        entityData.set(DATA_PROJECTION, shown);
     }
 
     public byte bootDisplay() {
@@ -632,8 +643,9 @@ public final class ShepherdEntity extends PathfinderMob {
             setFlags(EnumSet.of(Flag.MOVE, Flag.LOOK));
         }
 
+        /** Nobody while she projects: she stays with the figure, so it can be walked round and walked away from. */
         private ServerPlayer target() {
-            return ShepherdSavedData.get(getServer()).waiting() ? null : follower();
+            return ShepherdSavedData.get(getServer()).waiting() || ShepherdProjection.active() ? null : follower();
         }
 
         @Override public boolean canUse() {

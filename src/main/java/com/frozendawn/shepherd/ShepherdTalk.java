@@ -145,7 +145,7 @@ public final class ShepherdTalk {
 
     /** A right-click. She picks an unfinished conversation back up, then takes one she has been waiting to have; otherwise this is the hub. */
     public static void openHub(ServerPlayer player, ShepherdEntity she) {
-        if (she.offline()) return;
+        if (she.offline() || ShepherdProjection.active()) return;
         if (live != null) {
             if (live.player != player) {
                 live.unimpressedTicks = UNIMPRESSED_TICKS;
@@ -211,7 +211,7 @@ public final class ShepherdTalk {
     }
 
     public static void start(ServerPlayer player, String node) {
-        if (live != null || !ShepherdDialogues.nodes().containsKey(node)) return;
+        if (live != null || ShepherdProjection.active() || !ShepherdDialogues.nodes().containsKey(node)) return;
         var id = ShepherdSavedData.get(player.getServer()).entity();
         if (id == null || !(player.serverLevel().getEntity(id) instanceof ShepherdEntity she) || she.offline()) return;
         live = new Live(player, she);
@@ -669,6 +669,10 @@ public final class ShepherdTalk {
     private static void send() {
         var data = data();
         var node = live.talk.current();
+        if (node.project() != null) {
+            project(node.project());
+            return;
+        }
         // An unspent prompt resumes by its own id, whichever node it opened on, or it would stop being that prompt.
         if (!live.fromHub) data.resumeNode(node.responses().isEmpty() && node.next() == null ? null : live.fromPrompt != null ? live.fromPrompt : node.id());
         int logo = live.she.logoTicks();
@@ -683,6 +687,15 @@ public final class ShepherdTalk {
         var player = live.player;
         live.sent = payload(live.id, node, live.lines, data.heavy(), logo, live.thinkTicks, token -> arg(player, token));
         PacketDistributor.sendToPlayer(player, live.sent);
+    }
+
+    /** The screen has to go for them to walk round it, so the walk ends here. */
+    private static void project(String kind) {
+        var player = live.player;
+        var she = live.she;
+        var lines = live.talk.lines();
+        end(true);
+        ShepherdProjection.start(player, she, kind, lines);
     }
 
     /**
@@ -774,6 +787,7 @@ public final class ShepherdTalk {
         var data = ShepherdSavedData.get(server);
         if (data.stage() != ShepherdSavedData.Stage.AWAKE) return false;
         if (live != null) end(true);
+        ShepherdProjection.stop();
         catchingUp = null;
         ShepherdBoot.stop();
         data.replayFirstMeeting();
@@ -815,8 +829,9 @@ public final class ShepherdTalk {
         clearForTests();
     }
 
+    /** Someone has her attention, in a talk or at a projection, so nothing else may. */
     static boolean live() {
-        return live != null;
+        return live != null || ShepherdProjection.active();
     }
 
     static boolean speakingTo(ServerPlayer player) {
@@ -859,6 +874,7 @@ public final class ShepherdTalk {
     /** GameTest isolation only. */
     static void clearForTests() {
         live = null;
+        ShepherdProjection.clearForTests();
         refused = null;
         catchingUp = null;
         crashedBy = null;

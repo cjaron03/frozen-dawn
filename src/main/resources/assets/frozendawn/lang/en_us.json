@@ -2868,6 +2868,7 @@
   "shepherd.egg.resupply": "Resupply is not coming. Nobody's coming. I've told you this.",
   "shepherd.egg.your_part": "Are you doing your part? ...That's a recording. It plays on its own.",
   "shepherd.egg.raw_fish": "Please remain calm. The survivor is eating raw fish.",
+  "shepherd.egg.hologram": "Sorry. Wrong file. That one wasn't for you.",
   "shepherd.lore.lattice": "That wall isn't built. It's being held. I don't know by what, and I don't want to be here when it lets go.",
   "shepherd.prompt": "Got a minute?",
   "shepherd.prompt.hint": "Right-click her",
