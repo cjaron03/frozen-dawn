@@ -44,7 +44,7 @@ public final class MillerPattern {
     /** The 100-tick poll, with what it already knows. */
     public static void poll(MinecraftServer server, int near, UUID nearest, long lastTalk, Tier tier) {
         var runtime = current(server);
-        runtime.state().poll(near, nearest, lastTalk, tier, runtime.now());
+        runtime.state().poll(near, nearest, lastTalk, tier, runtime.now(), runtime.day());
         runtime.data.setDirty();
     }
 
@@ -93,7 +93,7 @@ public final class MillerPattern {
     /** {@code /fd shepherd log write}: an entry now, about this person, without waiting for the day to settle. */
     public static LogEntry writeDay(MinecraftServer server, UUID who, long lastTalk, Tier tier) {
         var runtime = current(server);
-        var entry = runtime.state().writeDay(who, lastTalk, tier, runtime.now());
+        var entry = runtime.state().writeDay(who, lastTalk, tier, runtime.now(), runtime.day());
         runtime.data.setDirty();
         return entry;
     }

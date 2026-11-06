@@ -22,7 +22,7 @@ class DailyLogTest {
 
     /** A day with nothing in it, to be filled in by each test. */
     private static final class Today {
-        long number = 1;
+        long number = 1, worldDay;
         boolean signed, read, nineFound;
         Stage stage = Stage.NOTICING;
         Tier tier = Tier.NEUTRAL;
@@ -34,6 +34,8 @@ class DailyLogTest {
         long unseen;
 
         Today on(long number) { this.number = number; return this; }
+        /** Slept to this day: the world's day runs ahead of game time. */
+        Today sleptTo(long worldDay) { this.worldDay = worldDay; return this; }
         Today at(Stage stage) { this.stage = stage; return this; }
         Today tier(Tier tier) { this.tier = tier; return this; }
         Today coherence(double coherence) { this.coherence = coherence; return this; }
@@ -47,7 +49,7 @@ class DailyLogTest {
         Today nineFound() { nineFound = true; return this; }
 
         Day day() {
-            return new Day((number - 1) * DAY, signed, stage, tier, coherence, strongest, strength, marks, deeds, backs, unseen, read, nineFound);
+            return new Day((number - 1) * DAY, worldDay == 0 ? number : worldDay, signed, stage, tier, coherence, strongest, strength, marks, deeds, backs, unseen, read, nineFound);
         }
     }
 
@@ -298,6 +300,35 @@ class DailyLogTest {
     }
 
     @Test
+    void theDayIsTheWorldsAndTheClockStaysGameTime() {
+        var entry = new DailyLog().write(today().on(5).sleptTo(30).day());
+        assertEquals(30, entry.day());
+        assertEquals(4 * DAY, entry.time());
+    }
+
+    @Test
+    void theWorldsDayPicksTheNote() {
+        assertEquals("knows.2", note(new DailyLog(), today().on(3).sleptTo(4).read()), "Day 4 is a day she knows, whatever game time says");
+    }
+
+    @Test
+    void anEntryKeepsItsDayThroughASaveAndAnAge() {
+        var log = new DailyLog();
+        log.write(today().on(5).sleptTo(30).day());
+        var loaded = DailyLog.load(log.save());
+        assertEquals(30, loaded.entries().getFirst().day());
+        loaded.age(2 * DAY);
+        assertEquals(28, loaded.entries().getFirst().day());
+    }
+
+    @Test
+    void anEntryWithNoDayReadsItsClock() {
+        var saved = new LogEntry(4 * DAY, 30, false, false, null).save();
+        saved.remove("day");
+        assertEquals(5, LogEntry.load(saved).day());
+    }
+
+    @Test
     void saveAndLoadKeepEveryEntry() {
         var log = new DailyLog();
         log.write(today().on(3).marks(Mark.COLD).day());
@@ -324,7 +355,7 @@ class DailyLogTest {
     @Test
     void anOverlongSaveLosesItsOldest() {
         var entries = new ListTag();
-        for (int i = 0; i <= DailyLog.MAX; i++) entries.add(new LogEntry(i * DAY, false, false, null).save());
+        for (int i = 0; i <= DailyLog.MAX; i++) entries.add(new LogEntry(i * DAY, i + 1, false, false, null).save());
         var tag = new CompoundTag();
         tag.put("entries", entries);
         var loaded = DailyLog.load(tag).entries();
@@ -387,7 +418,7 @@ class DailyLogTest {
     @Test
     void writingTheDayRestartsTheSettle() {
         var state = woken();
-        state.writeDay(ONE, PatternState.NOT_SET, Tier.NEUTRAL, DAY - 100);
+        state.writeDay(ONE, PatternState.NOT_SET, Tier.NEUTRAL, DAY - 100, 1);
         state.poll(1, ONE, PatternState.NOT_SET, Tier.NEUTRAL, DAY);
         assertEquals(1, state.log().entries().size(), "A day written by hand is that day's entry");
     }

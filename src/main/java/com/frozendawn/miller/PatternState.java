@@ -93,6 +93,11 @@ final class PatternState {
 
     /** {@code near}, {@code nearest}, {@code lastTalk} and {@code tier} are what the poll already knows: nothing here looks at the world. */
     void poll(int near, UUID nearest, long lastTalk, Tier tier, long now) {
+        poll(near, nearest, lastTalk, tier, now, ShepherdPolicy.day(now));
+    }
+
+    /** {@code day} is the world's day, the one the phases count: sleep moves it and game time stays put. */
+    void poll(int near, UUID nearest, long lastTalk, Tier tier, long now, long day) {
         drives.begin(now);
         arm(now);
         if (near > 0) drives.feed(Drive.COMPANY, PRESENCE_FEEDS, now);
@@ -105,18 +110,18 @@ final class PatternState {
             coherence.spoken(now);
             if (feelings.strongest(now) != null) self.witness(PatternLaws.LEGIBLE);
         }
-        if (near > 0) noticed(nearest, lastTalk, tier, now);
+        if (near > 0) noticed(nearest, lastTalk, tier, now, day);
         self.look(impressions.known(), tier.atLeast(Tier.TRUSTED));
     }
 
     /** Someone is beside her. What she has been turning over lands, she writes the day down, and being away shows. */
-    private void noticed(UUID nearest, long lastTalk, Tier tier, long now) {
+    private void noticed(UUID nearest, long lastTalk, Tier tier, long now, long day) {
         if (now >= settleAt) {
             var settled = impressions.settle();
             if (!settled.changed().isEmpty()) self.witness(PatternLaws.LAGGED);
             if (!settled.flipped().isEmpty()) self.witness(PatternLaws.FALLIBLE);
             if (settled.fromKindness()) self.witness(PatternLaws.EXPLOITABLE);
-            writeDay(nearest, lastTalk, tier, now);
+            writeDay(nearest, lastTalk, tier, now, day);
         }
         if (seenAt != UNARMED && now - seenAt >= ShepherdPolicy.DAY_TICKS) self.witness(PatternLaws.CAUSAL);
         seenAt = now;
@@ -124,14 +129,14 @@ final class PatternState {
     }
 
     /** One entry about {@code who}, and the next is a day off. What it took from the marks is spent. */
-    LogEntry writeDay(UUID who, long lastTalk, Tier tier, long now) {
-        var entry = log.write(day(who, lastTalk, tier, now));
+    LogEntry writeDay(UUID who, long lastTalk, Tier tier, long now, long day) {
+        var entry = log.write(day(who, lastTalk, tier, now, day));
         marks.written();
         settleAt = now + ShepherdPolicy.DAY_TICKS;
         return entry;
     }
 
-    private DailyLog.Day day(UUID who, long lastTalk, Tier tier, long now) {
+    private DailyLog.Day day(UUID who, long lastTalk, Tier tier, long now, long number) {
         var deeds = EnumSet.noneOf(Deed.class);
         boolean nineFound = false;
         for (var event : history) {
@@ -141,7 +146,7 @@ final class PatternState {
             for (Deed deed : Deed.values()) if (deed.name().equals(event.deed())) deeds.add(deed);
         }
         var strongest = feelings.strongest(now);
-        return new DailyLog.Day(now, self.lean() != SelfModel.Lean.NONE, self.stage(), tier, coherence.value(now), strongest, strongest == null ? 0 : feelings.value(strongest, now),
+        return new DailyLog.Day(now, number, self.lean() != SelfModel.Lean.NONE, self.stage(), tier, coherence.value(now), strongest, strongest == null ? 0 : feelings.value(strongest, now),
                 marks.of(who, lastTalk), deeds, marks.backs(who), marks.unseen(who, now), impressions.readLog(who), nineFound);
     }
 

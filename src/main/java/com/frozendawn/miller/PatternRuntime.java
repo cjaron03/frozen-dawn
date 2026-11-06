@@ -1,5 +1,6 @@
 package com.frozendawn.miller;
 
+import com.frozendawn.shepherd.ShepherdPolicy;
 import java.util.IdentityHashMap;
 import java.util.Map;
 import net.minecraft.server.MinecraftServer;
@@ -30,5 +31,10 @@ final class PatternRuntime {
 
     long now() {
         return server.overworld().getGameTime();
+    }
+
+    /** The day the phases and F3 count, from 1: sleep moves it, and game time stays put. */
+    long day() {
+        return ShepherdPolicy.day(server.overworld().getDayTime());
     }
 }

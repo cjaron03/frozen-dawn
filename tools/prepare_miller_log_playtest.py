@@ -2,9 +2,9 @@
 """Fresh Aurora Log Check: her private log, the first read, and how the form shows what she feels.
 
 A flat lab in Survival with a dock, and charged and empty cells in a chest. Boot her, finish the first meeting, then the
-buttons write days into her log: plain, cold, a fight, a close call, a return, a peak, a long absence, and signed. Game
-time starts on her day 48 and a button cannot move it on, so each button first skips a day, which moves the older entries
-back. The sun stands at noon of that day, which F3 counts from 0 as day 47. Advancements are filtered as in
+buttons write days into her log: plain, cold, a fight, a close call, a return, a peak, a long absence, and signed. The
+sun stands at noon of her day 48, which F3 counts from 0 as day 47, so each button first skips a day, which moves the older
+entries back. /time add 24000 moves the world on a day, as sleeping would, and the next entry follows it. Advancements are filtered as in
 every generated playtest world, and the difficulty is locked. Never overwrites a save.
 Usage (lab client, run-lab/ directory):
   python3 tools/prepare_miller_log_playtest.py --source <any closed level.dat> --destination "run-lab/saves/Aurora Log Check"

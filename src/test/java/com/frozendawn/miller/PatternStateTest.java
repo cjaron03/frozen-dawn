@@ -24,6 +24,16 @@ class PatternStateTest {
         for (long t = from; ; t += 20) if (state.mood(t) == Mood.NEUTRAL) return t - from;
     }
 
+    @Test
+    void theDaySettlesOnGameTimeAndIsWrittenOnTheWorldsDay() {
+        var state = new PatternState();
+        state.poll(1, ONE, PatternState.NOT_SET, Tier.NEUTRAL, 0, 6);
+        state.poll(1, ONE, PatternState.NOT_SET, Tier.NEUTRAL, ShepherdPolicy.DAY_TICKS - 100, 20);
+        assertTrue(state.log().entries().isEmpty(), "Sleep does not bring the entry on");
+        state.poll(1, ONE, PatternState.NOT_SET, Tier.NEUTRAL, ShepherdPolicy.DAY_TICKS, 21);
+        assertEquals(21, state.log().entries().getFirst().day());
+    }
+
     private static PatternState woken() {
         var state = new PatternState();
         state.poll(0, new UUID(0, 1), PatternState.NOT_SET, Tier.NEUTRAL, 0);

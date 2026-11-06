@@ -27,17 +27,14 @@ public final class DailyLog {
     private static final List<Feeling> OWN_WORDS_AT_HIGH = List.of(Feeling.JOY, Feeling.FEAR);
 
     /**
-     * Everything the order reads, so the choice has no server in it. {@code strongest} and {@code strength} are the feeling
+     * Everything the order reads, so the choice has no server in it. {@code time} is game time and {@code number} the
+     * world's day as she writes it, which sleep moves and game time does not. {@code strongest} and {@code strength} are the feeling
      * on her face, or null and 0. {@code marks} and {@code deeds} are the subject's since the last entry, {@code backs}
      * how many times she has seen them return, {@code unseen} how long it had been, {@code read} whether they have read
      * this, and {@code nineFound} whether anyone took her to the husk since the last entry.
      */
-    record Day(long time, boolean signed, Stage stage, Tier tier, double coherence, Feeling strongest, double strength,
+    record Day(long time, long number, boolean signed, Stage stage, Tier tier, double coherence, Feeling strongest, double strength,
                Set<Mark> marks, Set<Deed> deeds, int backs, long unseen, boolean read, boolean nineFound) {
-        long number() {
-            return ShepherdPolicy.day(time);
-        }
-
         boolean noticing() {
             return stage != Stage.PRODUCT;
         }
@@ -86,7 +83,7 @@ public final class DailyLog {
         boolean firstSigned = day.signed() && entries.stream().noneMatch(LogEntry::signed);
         var note = firstSigned ? null : choose(day);
         if (note != null) spent(note.key());
-        var entry = new LogEntry(day.time(), day.signed(), note != null && note.cracked(), note == null ? null : note.key());
+        var entry = new LogEntry(day.time(), day.number(), day.signed(), note != null && note.cracked(), note == null ? null : note.key());
         entries.add(entry);
         if (entries.size() > MAX) entries.removeFirst();
         return entry;

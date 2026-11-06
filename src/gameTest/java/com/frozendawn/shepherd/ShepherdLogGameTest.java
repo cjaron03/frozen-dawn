@@ -146,6 +146,25 @@ public final class ShepherdLogGameTest {
         });
     }
 
+    /** The clock goes back in the same tick, so nothing on the shared server sees the other day. */
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_log_world_day", timeoutTicks = 600)
+    public static void shepherdTheLogCountsTheWorldsDay(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            awake(h, player);
+            h.startSequence()
+                    .thenExecuteAfter(A_POLL, () -> {
+                        var world = h.getLevel().getServer().overworld();
+                        long time = world.getDayTime();
+                        world.setDayTime(30L * ShepherdPolicy.DAY_TICKS);
+                        long day = ShepherdReactions.writeDay(player).day();
+                        world.setDayTime(time);
+                        h.assertTrue(day == 31, "F3's day 30 is her Day 31, wrote " + day);
+                    })
+                    .thenSucceed();
+        });
+    }
+
     @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_log_cold", timeoutTicks = 800, skyAccess = true)
     public static void shepherdAColdDayIsLogged(GameTestHelper h) {
         ShepherdTestWorld.whenTicking(h, () -> {

@@ -135,7 +135,7 @@ Every line is a draft. Spec lines are marked as such; the rest are new. Keys sit
 - She only logs what she perceived: deeds and marks that reached her, about the person beside her. A break is text in the form, nothing else.
 - Same events at the same game times give bit-identical state. No randomness in the log: the day number picks the variant. Reading never changes state, except the once-only facts of the first read.
 - The Pattern scans nothing. The log runs on the poll and on what reaches it.
-- Time is overworld game time. Entries store the time, not the day, and `age()` moves them, so `skipday` works.
+- Time is overworld game time. Entries store that time and the world's day, the one the phases count, and `age()` moves both, so `skipday` works.
 - `PatternState.VERSION` goes to 4, and a version 3 save loads with an empty log. `ShepherdSavedData`'s format does not change.
 - `MillerPattern` stays under about 300 lines. Coherence never touches an entry.
 - No MACS edits. Never open the Notion page "SEALED: Sequel Seed". No new items, recipes, loot or world generation. No `build.gradle` dependency. No emojis.
