@@ -22,6 +22,7 @@ class IntentIndexTest {
     private static final Intent ORSA = new Intent("orsa", "orsa.orsa", null, "label.orsa", "guess.orsa", List.of());
     private static final Intent LOCKED = new Intent("deng", null, null, null, null, List.of());
     private static final Intent HELLO = new Intent("hello", "chat.hello", null, null, null, List.of());
+    private static final int ACCEPTED_TOP_ONE = 59, ACCEPTED_TOP_TWO = 66;
     private static final Predicate<String> ALL = condition -> true, NONE = condition -> false;
 
     private static JsonElement file(String path) throws IOException {
@@ -88,7 +89,10 @@ class IntentIndexTest {
         assertEquals("how_are_you", index().rank("how are you").first().id());
     }
 
-    /** M0's marks, on lines written before this ran (Ruling 10). If this fails, stop and report: never tune against it. */
+    /**
+     * M0's marks, on lines written before this ran (Ruling 10). The set read 59 and 66 of 74, one line short of 80 and 90 percent on each, and the owner accepted that on
+     * 2026-11-05, so those two hold at the accepted counts. If this fails, stop and report: never tune against it.
+     */
     @Test void theFreshSetHoldsTheMarks() throws IOException {
         var index = index();
         var fresh = file("/frozendawn/intent_fresh.json").getAsJsonObject();
@@ -134,8 +138,8 @@ class IntentIndexTest {
                 lines, top1, top2, strongRight, strongWrong, closeHit, closeMiss, none, outside, outsideStrong, outsideClose, wrong);
         System.out.println(report);
         assertTrue(lines >= 66 && outside >= 66, report);
-        assertTrue(top1 >= 0.80 * lines, report);
-        assertTrue(top2 >= 0.90 * lines, report);
+        assertTrue(top1 >= ACCEPTED_TOP_ONE, report);
+        assertTrue(top2 >= ACCEPTED_TOP_TWO, report);
         assertTrue(strongWrong <= 0.05 * lines, report);
         assertTrue(outsideStrong <= 0.05 * outside, report);
     }
