@@ -28,6 +28,16 @@ Read on `feat/miller-m5`; recheck them against M5 as shipped.
 - `docs/aurora-shepherd.md` says she feels guilt about the Returned, so the egg must not undercut that.
 - More topics crowd the intent index, which stands at 83 of 108 top-one on the held-out set (Ruling 29 of `docs/miller-pattern-m5-plan.md` on `feat/miller-m5`).
 
+## Her strategies, for the owner's verdict
+
+Drafted 2026-11-06 from the code on `feat/miller-m5`. None has been played. The owner says which work; only those go on to become lines.
+
+- **Hunter: show it a heater.** The manual says hide backup heaters. Instead, set a lit heater 3 blocks behind a one-high window, on the Hunter's own level. `ReturnedExtinguishHeaterGoal` outranks its melee, needs only line of sight, and must get within 2 blocks to put the heater out. The heater burn reaches 4 blocks. It stands at the window burning, at about 4.5 a second plus fire, against 50 health. It scans every 10 to 20 seconds, within 16 blocks.
+- **Mimic: stand still and shoot.** For its 5 seconds of copying, it takes your velocity and doesn't fight back, and a hit doesn't end the phase. Stand still and it stands still; walk at it and it backs away at your speed. Below 20 of 40 health it runs, and it never heals. If you stay within 16 blocks it copies you again, so a second free window can finish it.
+- **Architect: fight it at your heater, and don't be a pattern.** An ordinary Architect doesn't avoid heat, so within 4 blocks of a lit heater it takes the same burn against 40 health. The manual says press the attack while it heals, but it records chasing a withdrawal, swords and ranged damage as patterns and answers them. It drinks once a minute, so let it drink, then force the next retreat inside that minute. Mix weapons.
+
+Her advice must not name Maeve or MACS. The manual already says each Architect keeps what the last one learned, so she can go that far. `ArchitectThinkingController` has a hand-to-chin pose the hologram could use for "have it think".
+
 ## Rules for later steps
 
 - Faces need a mockup the owner approves, at 16 pixels per block.
