@@ -1318,3 +1318,6 @@ shepherdgetscaughtonceaday xml
 shepherdcaughtshowsherfollower xml
 shepherdthegagwaitsforcalm xml
 shepherdnamesclovisonlyaftert5 xml
+shepherdgreetswhoshewasleftwaitingfor xml
+shepherdmomentswaitafteraprojection xml
+shepherdthegagwaitsforthemtostop xml

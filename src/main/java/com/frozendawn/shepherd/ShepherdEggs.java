@@ -31,7 +31,7 @@ public final class ShepherdEggs {
     static final String ARCHITECT = "egg_architect", SWARM = "egg_swarm", EXPLOSION = "egg_explosion", YOUR_PART = "egg_your_part", WALL = "lore_lattice";
     static final String ARCHITECT_LINE = "shepherd.egg.architect", SWARM_LINE = "shepherd.egg.swarm", EXPLOSION_LINE = "shepherd.egg.explosion",
             YOUR_PART_LINE = "shepherd.egg.your_part", RESUPPLY_LINE = "shepherd.egg.resupply", RAW_FISH_LINE = "shepherd.egg.raw_fish", WALL_LINE = "shepherd.lore.lattice";
-    static final String HUNTER_BURN = "reacted_hunter_burn", CLOVIS = "clovis_said", CAUGHT = "caught", GAG = "gag";
+    static final String HUNTER_BURN = "reacted_hunter_burn", CLOVIS = "clovis_said", CAUGHT = "caught", GAG = "gag", MOMENT = "moment";
     static final String HUNTER_BURN_LINE = "shepherd.egg.hunter_burn", CLOVIS_LINE = "shepherd.egg.clovis", CAUGHT_LINE = "shepherd.egg.caught",
             GAG_LINE = "shepherd.egg.gag", PENGUIN_LINE = "shepherd.egg.gag.penguin";
     private static final String T5_DONE = "t5_done";
@@ -68,11 +68,12 @@ public final class ShepherdEggs {
         var follower = ShepherdEntity.followerIn(level);
         if (follower == null || !near.contains(follower) || follower.distanceTo(she) > ShepherdPolicy.TALK_RANGE || ShepherdTalk.live() || she.asking()) return;
         if (data.tier() == Tier.WARY || !data.flag(ShepherdPrompt.FIRST_MEETING_DONE) || ShepherdReactions.quiet(data, now) || !ShepherdPrompt.calm(server, level, near)) return;
-        if (data.lastTalk() == ShepherdSavedData.NOT_SET || now - data.lastTalk() < ShepherdPolicy.MOMENT_IDLE_TICKS) return;
+        if (data.lastTalk() == ShepherdSavedData.NOT_SET || now - data.lastTalk() < ShepherdPolicy.MOMENT_IDLE_TICKS || now < data.deedReady(MOMENT)) return;
+        // She stays put for either, so someone on the move would walk straight out of it.
+        if (she.stoodFor() < ShepherdPolicy.STILL_TICKS) return;
         if (data.tier().atLeast(Tier.CLOSE) && now >= data.deedReady(GAG)) {
-            data.deedReady(GAG, now + ShepherdPolicy.GAG_EVERY_TICKS);
             ShepherdProjection.start(follower, she, "item", List.of(new Line(GAG_LINE, null, Mood.BEAMING, null), new Line(PENGUIN_LINE, null, Mood.AMUSED, null)));
-        } else if (now >= data.deedReady(CAUGHT) && she.stoodFor() >= ShepherdPolicy.STILL_TICKS && near.stream().noneMatch(player -> looking(player, she))) {
+        } else if (now >= data.deedReady(CAUGHT) && near.stream().noneMatch(player -> looking(player, she))) {
             data.deedReady(CAUGHT, now + ShepherdPolicy.CAUGHT_RETRY_TICKS);
             ShepherdProjection.secretly(follower, she);
         }

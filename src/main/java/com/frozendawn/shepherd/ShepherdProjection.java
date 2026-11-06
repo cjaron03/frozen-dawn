@@ -103,6 +103,9 @@ public final class ShepherdProjection {
         live = null;
         over.she.projection(NONE);
         over.she.projectedPlayer(Optional.empty());
+        // Her own moments count from here: a long one outlasts the wait since the last talk.
+        var server = over.player.getServer();
+        ShepherdSavedData.get(server).deedReady(ShepherdEggs.MOMENT, server.overworld().getGameTime() + ShepherdPolicy.MOMENT_IDLE_TICKS);
         over.she.talkFor(0);
         over.she.rest();
     }
@@ -150,6 +153,10 @@ public final class ShepherdProjection {
             live.she.talkFor(0);
             live.she.setMood(Mood.WORRIED);
             return;
+        }
+        if (ShepherdEggs.GAG_LINE.equals(line.key())) {
+            var server = live.player.getServer();
+            ShepherdSavedData.get(server).deedReady(ShepherdEggs.GAG, server.overworld().getGameTime() + ShepherdPolicy.GAG_EVERY_TICKS);
         }
         if (EGG_LINE.equals(line.key())) {
             ShepherdSavedData.get(live.player.getServer()).flag(EGG, true);

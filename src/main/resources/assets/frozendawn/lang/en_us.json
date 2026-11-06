@@ -2300,7 +2300,7 @@
   "shepherd.advice.battery_lantern.1": "A cave light that runs on one Power Cell. It draws 50 W while on: a full cell lasts about 2 h 47 min. Lit in your offhand only; press F to move it there.",
   "shepherd.advice.battery_lantern.2": "A Hunter breaks torches and lanterns because it knows what they are. It doesn't know what this is.",
   "shepherd.advice.battery_lantern.3": "It doesn't need air, either. Your torches will.",
-  "shepherd.advice.emergency_light.1": "Off while the grid is healthy, charging its own battery for free. When normal lights lose power, it glows dim red for up to 10 minutes.\" MANUAL, with \"level 6",
+  "shepherd.advice.emergency_light.1": "Off while the grid is healthy, charging its own battery for free. When normal lights lose power, it glows dim red for up to 10 minutes.",
   "shepherd.advice.emergency_light.2": "The grid cuts lights before heat. So red doesn't mean the power's out. It means it's running out, and your RH-5 is next.",
   "shepherd.advice.geiger.1": "Clicks while carried. Hold it to read counts, rate and dose. Above about 15 RU/s the clicks blur into a roar. If it screams, leave.",
   "shepherd.advice.geiger.2": "Leave which way? Any way. Twice the distance is a quarter of the rate.",

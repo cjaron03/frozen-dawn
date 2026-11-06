@@ -686,4 +686,11 @@ class ShepherdDialogueDataTest {
             assertEquals(variant, nodes.get("advice." + variant + ".again").project(), variant);
         }
     }
+
+    @Test
+    void noAdviceLineKeepsItsNote() throws Exception {
+        for (var entry : lang().entrySet()) {
+            if (entry.getKey().startsWith("shepherd.advice.")) assertFalse(entry.getValue().getAsString().contains("\""), entry.getKey());
+        }
+    }
 }

@@ -42,6 +42,10 @@ public final class ShepherdMomentsGameTest {
     @AfterBatch(batch = "shepherd_moment_follower") public static void followerAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
     @BeforeBatch(batch = "shepherd_moment_gag") public static void gagBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
     @AfterBatch(batch = "shepherd_moment_gag") public static void gagAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_moment_after") public static void afterBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_moment_after") public static void afterAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_moment_gag_still") public static void gagStillBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_moment_gag_still") public static void gagStillAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
     @BeforeBatch(batch = "shepherd_moment_clovis") public static void clovisBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
     @AfterBatch(batch = "shepherd_moment_clovis") public static void clovisAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
 
@@ -183,6 +187,7 @@ public final class ShepherdMomentsGameTest {
             long now = server.overworld().getGameTime();
             h.assertTrue(data(h).deedReady(ShepherdEggs.CAUGHT) >= now + ShepherdPolicy.DAY_TICKS - 2, "Not for a day: " + data(h).deedReady(ShepherdEggs.CAUGHT));
             data(h).deedReady(ShepherdEggs.CAUGHT, now);
+            data(h).deedReady(ShepherdEggs.MOMENT, now);
             look(h, she, player);
             h.assertTrue(ShepherdProjection.active(), "The next day she tries again");
             h.succeed();
@@ -233,6 +238,42 @@ public final class ShepherdMomentsGameTest {
             look(h, she, player);
             h.assertTrue(!ShepherdProjection.active(), "Every few days at most");
             h.assertTrue(data(h).deedReady(ShepherdEggs.GAG) >= now + ShepherdPolicy.GAG_EVERY_TICKS - 2, "Spaced: " + data(h).deedReady(ShepherdEggs.GAG));
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_moment_after", timeoutTicks = 400)
+    public static void shepherdMomentsWaitAfterAProjection(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h, AWAY);
+            var she = awake(h, player, CLOSE);
+            leftAlone(h, she);
+            ShepherdProjection.start(player, she, "hunter", List.of());
+            ShepherdProjection.stop();
+            look(h, she, player);
+            h.assertTrue(!ShepherdProjection.active(), "An Architect runs longer than the wait, so the wait starts when it ends");
+            data(h).deedReady(ShepherdEggs.MOMENT, h.getLevel().getServer().overworld().getGameTime());
+            look(h, she, player);
+            h.assertTrue(ShepherdProjection.active(), "Then she can");
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_moment_gag_still", timeoutTicks = 400)
+    public static void shepherdTheGagWaitsForThemToStop(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var server = h.getLevel().getServer();
+            var player = player(h, AT_HER);
+            var she = awake(h, player, CLOSE);
+            leftAlone(h, she);
+            she.stillFor(0);
+            look(h, she, player);
+            h.assertTrue(!ShepherdProjection.active(), "She holds still for it, so walking would end it");
+            she.stillFor(ShepherdPolicy.STILL_TICKS);
+            look(h, she, player);
+            h.assertTrue(she.projection() == ShepherdProjection.ITEM, "Standing: " + she.projection());
+            ShepherdProjection.stop();
+            h.assertTrue(data(h).deedReady(ShepherdEggs.GAG) <= server.overworld().getGameTime(), "Cut off before a word, it is not spent: " + data(h).deedReady(ShepherdEggs.GAG));
             h.succeed();
         });
     }

@@ -98,6 +98,8 @@ public final class ShepherdTalkGameTest {
 
     @BeforeBatch(batch = "shepherd_talk_greet_first") public static void greetfirstBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
     @AfterBatch(batch = "shepherd_talk_greet_first") public static void greetfirstAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_talk_greet_waiting") public static void greetWaitingBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_talk_greet_waiting") public static void greetWaitingAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
     @BeforeBatch(batch = "shepherd_talk_greet_daily") public static void greetdailyBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
     @AfterBatch(batch = "shepherd_talk_greet_daily") public static void greetdailyAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
     @BeforeBatch(batch = "shepherd_talk_greet_cargo") public static void greetcargoBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
@@ -589,6 +591,17 @@ public final class ShepherdTalkGameTest {
             h.assertTrue(greeted(she, player).isEmpty(), "Not before the day is up");
             clock(h, START + ShepherdPolicy.DAY_TICKS);
             h.assertTrue(greeted(she, player).size() == 1, "One line a day after that");
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_talk_greet_waiting", timeoutTicks = 400)
+    public static void shepherdGreetsWhoSheWasLeftWaitingFor(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            var she = close(h, player);
+            ShepherdSavedData.get(h.getLevel().getServer()).waiting(true);
+            h.assertTrue(!greeted(she, player).isEmpty(), "Coming back to her is what the greeting is for");
             h.succeed();
         });
     }

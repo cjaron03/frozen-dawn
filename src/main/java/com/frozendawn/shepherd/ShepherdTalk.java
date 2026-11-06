@@ -177,10 +177,10 @@ public final class ShepherdTalk {
         showHub();
     }
 
-    /** At Close she speaks first, once a day, to the one she files as Cargo. */
+    /** At Close she speaks first, once a day, to the one she files as Cargo, even if they left her waiting. */
     private static boolean greets(ShepherdSavedData data, ServerPlayer player) {
         long now = player.getServer().overworld().getGameTime();
-        return data.tier().atLeast(Tier.CLOSE) && follows(data, player) && !ShepherdReactions.quiet(data, now) && now >= data.deedReady(GREET_READY);
+        return data.tier().atLeast(Tier.CLOSE) && player.getUUID().equals(data.follower()) && !ShepherdReactions.quiet(data, now) && now >= data.deedReady(GREET_READY);
     }
 
     /** A node that has gone missing, say from an edited datapack, is dropped here. */

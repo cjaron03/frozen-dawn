@@ -59,6 +59,8 @@ public final class ShepherdHologramRenderer {
         model = new HumanoidModel<>(context.bakeLayer(ModelLayers.ZOMBIE));
         wide = new PlayerModel<>(context.bakeLayer(ModelLayers.PLAYER), false);
         slim = new PlayerModel<>(context.bakeLayer(ModelLayers.PLAYER_SLIM), true);
+        // A model is a baby until a mob's renderer says otherwise, and none does here.
+        model.young = wide.young = slim.young = false;
     }
 
     private static ResourceLocation skin(String name) {
@@ -195,6 +197,11 @@ public final class ShepherdHologramRenderer {
     private void posed(ShepherdEntity she, int figure, int age, float partial) {
         model.head.xRot = model.head.yRot = 0;
         model.rightArm.xRot = model.rightArm.yRot = 0;
+        turn(she, figure, age, partial);
+        model.hat.copyFrom(model.head);
+    }
+
+    private void turn(ShepherdEntity she, int figure, int age, float partial) {
         if (figure == ShepherdProjection.MIMIC) {
             var player = Minecraft.getInstance().player;
             if (player == null) return;
