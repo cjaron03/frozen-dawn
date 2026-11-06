@@ -1,0 +1,412 @@
+{
+  "in_scope": {
+    "frostbitten": {
+      "casual": [
+        "how do i deal with those frozen zombie things",
+        "the ice guys keep throwing snowballs at me"
+      ],
+      "terse": [
+        "frostbitten?"
+      ],
+      "typo": [
+        "how do i beat a frostbiten"
+      ],
+      "long": [
+        "there's a frozen corpse thing on the surface pelting me from far away and every hit slows me down, what do i do"
+      ],
+      "indirect": [
+        "something out there keeps lobbing heavy snowballs at my head"
+      ]
+    },
+    "frostmite": {
+      "casual": [
+        "how do i get rid of these mites",
+        "the little bugs are all over my heater"
+      ],
+      "terse": [
+        "frostmites"
+      ],
+      "typo": [
+        "how do i kill frostmights"
+      ],
+      "long": [
+        "a swarm of tiny ice creatures latched onto me and my temperature is dropping fast, how do i shake them off"
+      ],
+      "indirect": [
+        "tiny things keep crawling on the heater and burning my fuel"
+      ]
+    },
+    "hollow": {
+      "casual": [
+        "what do i do about the smoke ghosts",
+        "something grabbed me through the wall"
+      ],
+      "terse": [
+        "hollows?"
+      ],
+      "typo": [
+        "how do i beat a holow"
+      ],
+      "long": [
+        "i heard breathing behind me and then a smoky thing came through the wall and started freezing me solid"
+      ],
+      "indirect": [
+        "there's a ghost in my walls and it keeps grabbing me"
+      ]
+    },
+    "returned": {
+      "casual": [
+        "tell me how to handle the returned",
+        "what's the deal fighting returned"
+      ],
+      "terse": [
+        "returned advice"
+      ],
+      "typo": [
+        "how do i fight the retruned"
+      ],
+      "long": [
+        "those frozen people that came back are showing up near my base and i have no idea how to deal with any of them"
+      ],
+      "indirect": [
+        "the dead staff keep coming back, what do i do"
+      ]
+    },
+    "hunter": {
+      "casual": [
+        "how do i stop the hunter",
+        "the hunter keeps putting my heater out"
+      ],
+      "terse": [
+        "hunter tips"
+      ],
+      "typo": [
+        "how do i kill a huntr"
+      ],
+      "long": [
+        "one of those stalkers broke into my base through the door, smashed my torches and put out the heater, how do i kill it"
+      ],
+      "indirect": [
+        "something opened my door and snuffed the heater while i was out"
+      ]
+    },
+    "mimic": {
+      "casual": [
+        "how do i kill a mimic",
+        "that shadow thing keeps copying me"
+      ],
+      "terse": [
+        "mimic?"
+      ],
+      "typo": [
+        "how do i fight the mimick"
+      ],
+      "long": [
+        "there's a dark figure that stands still and watches me and then starts moving exactly the way i move"
+      ],
+      "indirect": [
+        "a shadow is walking when i walk and it's freaking me out"
+      ]
+    },
+    "architect": {
+      "casual": [
+        "how do i beat an architect",
+        "the architect is taking my base apart"
+      ],
+      "terse": [
+        "architect?"
+      ],
+      "typo": [
+        "how do i kill the archetect"
+      ],
+      "long": [
+        "something is mining through my walls with the right tool for each block and drinking potions when i hurt it"
+      ],
+      "indirect": [
+        "a thing out there watches my base then digs in with a pickaxe"
+      ]
+    },
+    "thermal_heater": {
+      "casual": [
+        "any tips for the thermal heater",
+        "what should i burn in my heater"
+      ],
+      "terse": [
+        "thermal heater?"
+      ],
+      "typo": [
+        "how do i use the thermel heater"
+      ],
+      "long": [
+        "i keep running out of coal in my iron box heater, is there a better way to fuel it and keep a spare going"
+      ],
+      "indirect": [
+        "my heater eats coal way too fast"
+      ]
+    },
+    "resistive_heater": {
+      "casual": [
+        "is the rh-5 any good",
+        "should i use the electric heater"
+      ],
+      "terse": [
+        "rh5"
+      ],
+      "typo": [
+        "whats the resistve heater for"
+      ],
+      "long": [
+        "i've got power running and i'm thinking of swapping my fuel heaters for the electric one, is that a good idea"
+      ],
+      "indirect": [
+        "can i heat my room off the grid instead of burning stuff"
+      ]
+    },
+    "frost_ward_torch": {
+      "casual": [
+        "how do i use frost ward torches",
+        "do the ward torches really work"
+      ],
+      "terse": [
+        "ward torch?"
+      ],
+      "typo": [
+        "what does a frost wrd torch do"
+      ],
+      "long": [
+        "i crafted those torches from frozen breath and want to ring my base, how far does one reach"
+      ],
+      "indirect": [
+        "what's the torch made from ghost breath good for"
+      ]
+    },
+    "miteaway": {
+      "casual": [
+        "does miteaway work",
+        "how do i use the mite coil"
+      ],
+      "terse": [
+        "miteaway"
+      ],
+      "typo": [
+        "how does mite away werk"
+      ],
+      "long": [
+        "i lit that smoke coil near my heater, how much does it really cover and will it keep burning without air"
+      ],
+      "indirect": [
+        "what does the smoke coil actually do"
+      ]
+    },
+    "insulated_glass": {
+      "casual": [
+        "is insulated glass worth it",
+        "should i use the fancy glass for windows"
+      ],
+      "terse": [
+        "insulated glass?"
+      ],
+      "typo": [
+        "whats insulatd glass for"
+      ],
+      "long": [
+        "my windows leak all my heat, is the glass with packed ice in it any better than a normal pane"
+      ],
+      "indirect": [
+        "my windows are letting all the warmth out"
+      ]
+    },
+    "thermostat": {
+      "casual": [
+        "how do i use the thermostat",
+        "anything useful about the thermostat"
+      ],
+      "terse": [
+        "thermostat?"
+      ],
+      "typo": [
+        "what does the thermastat do"
+      ],
+      "long": [
+        "i put the little sensor in my room and it sets the target, but is there anything clever i can do with it"
+      ],
+      "indirect": [
+        "can i set how warm my room gets"
+      ]
+    },
+    "airlocks": {
+      "casual": [
+        "how do i build an airlock",
+        "help me with the airlock"
+      ],
+      "terse": [
+        "airlock?"
+      ],
+      "typo": [
+        "how does an airlok work"
+      ],
+      "long": [
+        "i need to get in and out of my sealed base without venting all the air, how do the two doors work"
+      ],
+      "indirect": [
+        "i keep losing my air whenever i open the door"
+      ]
+    },
+    "oxygen_reservoir": {
+      "casual": [
+        "how long does the reservoir last",
+        "tell me about the o2 tank"
+      ],
+      "terse": [
+        "reservoir?"
+      ],
+      "typo": [
+        "whats the oxygen resevoir do"
+      ],
+      "long": [
+        "i want spare air stored for my sealed room in case production stops, how much will that tank really give me"
+      ],
+      "indirect": [
+        "how do i store spare oxygen"
+      ]
+    },
+    "battery_lantern": {
+      "casual": [
+        "is the battery lantern any good",
+        "should i carry the lantern"
+      ],
+      "terse": [
+        "lantern?"
+      ],
+      "typo": [
+        "how long does the batery lantern last"
+      ],
+      "long": [
+        "i'm going down into the caves and my torches keep going out, would the cell powered light be better"
+      ],
+      "indirect": [
+        "i need a light that runs on a power cell"
+      ]
+    },
+    "emergency_light": {
+      "casual": [
+        "what do emergency lights do",
+        "why did my lights go red"
+      ],
+      "terse": [
+        "emergency light?"
+      ],
+      "typo": [
+        "whats an emergancy light for"
+      ],
+      "long": [
+        "all of a sudden my base went dim red and the panel lights are off, what does that mean and what do i do"
+      ],
+      "indirect": [
+        "there's a red backup lamp on my wall"
+      ]
+    },
+    "geiger": {
+      "casual": [
+        "how do i read the geiger counter",
+        "the geiger won't stop clicking"
+      ],
+      "terse": [
+        "geiger?"
+      ],
+      "typo": [
+        "how does the giger counter work"
+      ],
+      "long": [
+        "i'm carrying that clicking thing near the reactor and the needle is climbing, what am i meant to look at"
+      ],
+      "indirect": [
+        "the clicking is getting faster, should i worry"
+      ]
+    },
+    "rad_aid": {
+      "casual": [
+        "how does radaid work",
+        "when should i use the iv bag"
+      ],
+      "terse": [
+        "radaid?"
+      ],
+      "typo": [
+        "how do i use rad aid"
+      ],
+      "long": [
+        "i took a big dose by the reactor and found one of those orange drip bags, how do i get the most out of it"
+      ],
+      "indirect": [
+        "i've got too much radiation in me, how do i flush it"
+      ]
+    },
+    "need_help": {
+      "casual": [
+        "help me please",
+        "i really need some help"
+      ],
+      "terse": [
+        "help"
+      ],
+      "typo": [
+        "halp me"
+      ],
+      "long": [
+        "everything is going wrong out here and i don't know what to do next, can you do something for me"
+      ],
+      "indirect": [
+        "i'm in trouble and i could use a hand"
+      ]
+    }
+  },
+  "out_of_scope": {
+    "small_talk": [
+      "do you like the cold",
+      "you sound tired",
+      "what's your favourite colour",
+      "i like your lamp",
+      "you're pretty funny today",
+      "i'm bored"
+    ],
+    "gameplay": [
+      "how do i make bread",
+      "where do diamonds spawn",
+      "how do i tame a wolf",
+      "what's the best sword enchant",
+      "how do i grow wheat",
+      "can i breed cows",
+      "how do i get to the nether"
+    ],
+    "gibberish": [
+      "zxcvbnm",
+      "lorem ipsum",
+      "hhhhhhh",
+      "...?",
+      "asdfgh jkl"
+    ],
+    "fourth_wall": [
+      "is this minecraft",
+      "who coded you",
+      "what's my fps",
+      "are you chatgpt"
+    ],
+    "locked": [
+      "what is maeve",
+      "who is the leader",
+      "who is sophie",
+      "what's the heart",
+      "what is tithonus",
+      "what does the terminus do",
+      "who is anderson-kind",
+      "where did enoch go"
+    ],
+    "verdict": [
+      "pattern transfer",
+      "what was recovered",
+      "which subject was it",
+      "why did you stop just now"
+    ]
+  }
+}
