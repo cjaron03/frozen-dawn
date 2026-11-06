@@ -63,6 +63,10 @@ public final class Embeddings {
         }
     }
 
+    public static Embeddings none() {
+        return EMPTY;
+    }
+
     public boolean empty() {
         return width == 0;
     }

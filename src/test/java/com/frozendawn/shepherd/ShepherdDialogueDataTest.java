@@ -3,6 +3,8 @@ package com.frozendawn.shepherd;
 import static org.junit.jupiter.api.Assertions.*;
 
 import com.frozendawn.miller.ImpressionStore;
+import com.frozendawn.miller.Intent;
+import com.frozendawn.miller.TypedCheck;
 import com.frozendawn.shepherd.ShepherdDialogue.Node;
 import com.frozendawn.shepherd.ShepherdDialogue.Response;
 import com.google.gson.JsonObject;
@@ -54,6 +56,45 @@ class ShepherdDialogueDataTest {
         if (node.next() != null) exits.add(node.next());
         if (node.otherwise() != null) exits.add(node.otherwise());
         return exits;
+    }
+
+    private static List<Intent> intents() throws IOException, URISyntaxException {
+        var folder = ShepherdDialogueDataTest.class.getResource("/data/frozendawn/shepherd/intents");
+        assertNotNull(folder, "the intents folder on the classpath");
+        List<Intent> intents = new ArrayList<>();
+        try (var files = Files.list(Path.of(folder.toURI()))) {
+            for (Path file : files.toList()) {
+                try (var reader = Files.newBufferedReader(file)) {
+                    intents.addAll(Intent.parse(JsonParser.parseReader(reader)));
+                }
+            }
+        }
+        return intents;
+    }
+
+    @Test
+    void everyIntentIsWellFormed() throws Exception {
+        var ids = new HashSet<String>();
+        var intents = intents();
+        assertEquals(26, intents.size());
+        for (Intent intent : intents) {
+            assertTrue(ids.add(intent.id()), "two intents named " + intent.id());
+            assertTrue(intent.examples().size() >= 8 && intent.examples().size() <= 15, intent.id());
+            assertEquals(intent.label() == null, intent.guess() == null, intent.id() + " offers a guess it cannot label, or the other way");
+            if (intent.label() != null) assertNotNull(intent.node(), intent.id() + " offers a topic with nowhere to go");
+        }
+        assertEquals(5, intents.stream().filter(intent -> intent.label() != null).count());
+        assertEquals(9, intents.stream().filter(intent -> intent.node() != null).count());
+    }
+
+    @Test
+    void noExampleSaysTheWord() throws Exception {
+        for (Intent intent : intents()) {
+            for (String example : intent.examples()) {
+                assertFalse(TypedCheck.crashes(example), intent.id() + ": " + example);
+                assertFalse(TypedCheck.guarded(example), intent.id() + ": " + example);
+            }
+        }
     }
 
     @Test
