@@ -59,7 +59,7 @@
 13. **Eight miss lines.** The three stay, and five new ones join the rotation. A miss must suit gibberish and a locked name alike, so none may imply she knows the subject.
 14. **Labels fit the slot.** A label over about 20 characters overruns it, as S3 found. So "How do you know?", "The safety bulletin" and "Did Kevin volunteer?" go on the buttons, and the longer wording stays in the examples.
 15. **Each topic gets its own Close line.** "You mean Deng, or are we just saying things now?", one whole lang key each, as M4's Ruling 12 does.
-16. **Three drafts hit the lint.** "thirty-six years" and "It goes six, then eight." hold `six`, and "Is he alive?" holds `alive`. The last is the player's reply, not hers, and stays with a named exception. The other two each get an owner's mark: keep with an exception, or reword. "Thirty-odd years" is the recommendation for the first. The org chart line is also a `[C]` line Ruling 3 did not list, so it needs its own yes.
+16. **Three drafts hit the lint.** "thirty-six years" and "It goes six, then eight." hold `six`, and "Is he alive?" holds `alive`. The last is the player's reply, not hers, and stays with a named exception. The other two each get an owner's mark: keep with an exception, or reword. "Thirty-odd years" is the recommendation for the first. The owner kept the org chart line on 2026-11-04, but the spec's guard on "six" is absolute, so it needs that mark all the same.
 
 ### The menu
 
