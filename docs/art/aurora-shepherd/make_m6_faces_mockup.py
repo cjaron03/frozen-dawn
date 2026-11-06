@@ -352,6 +352,47 @@ def worry_sheet():
     img.save(HERE / 'worry-motion-mockup.png')
 
 
+WHISTLES = [
+    ('A  Looks aside', ['........', '..##.##.', '..##.##.', '........', '..++....', '..++....']),
+    ('B  Eyes shut', ['........', '........', '.##..##.', '........', '...++...', '...++...']),
+    ('C  Looks up', ['.##..##.', '.##..##.', '........', '........', '...++...', '...++...']),
+]
+NOTE = [(7, 4), (7, 3), (7, 2), (7, 1), (7, 0), None, None, None]
+
+
+def whistling(rows, frame):
+    """Her face, with one lit texel climbing the right side like a note."""
+    spot = NOTE[frame % len(NOTE)]
+    if spot is None:
+        return rows
+    x, y = spot
+    return [row[:x] + '#' + row[x + 1:] if i == y else row for i, row in enumerate(rows)]
+
+
+def whistle_mockups():
+    img = Image.new('RGB', (760, 330), C['bg'])
+    d = ImageDraw.Draw(img)
+    d.text((24, 16), 'AURORA M6: WHISTLING, THREE TRIES', font=font(22), fill=C['text'])
+    d.text((24, 46), 'She whistles to herself and stops if you catch her. Motion is in the GIF.', font=font(13), fill=C['dim'])
+    for i, (name, rows) in enumerate(WHISTLES):
+        x = 40 + i * 240
+        framed(d, whistling(rows, 2), x, 96, 16)
+        d.text((x - 10, 210), name, font=font(15), fill=C['text'])
+        display(d, cells(whistling(rows, 2)), x, 240, 5)
+    img.save(HERE / 'whistle-face-mockup.png')
+    s, pad = 14, 26
+    frames = []
+    for frame in range(len(NOTE) * 2):
+        img = Image.new('RGB', (pad + 3 * (W * s + pad), H * s + 2 * pad + 18), C['bg'])
+        d = ImageDraw.Draw(img)
+        for i, (name, rows) in enumerate(WHISTLES):
+            x = pad + i * (W * s + pad)
+            display(d, cells(whistling(rows, frame)), x, pad, s)
+            d.text((x, pad + H * s + 8), name, font=font(13), fill=C['dim'])
+        frames.append(img)
+    frames[0].save(HERE / 'whistle-face-mockup.gif', save_all=True, append_images=frames[1:], duration=200, loop=0)
+
+
 if __name__ == '__main__':
     orsa_sheet()
     orsa_gif()
@@ -360,3 +401,4 @@ if __name__ == '__main__':
     transitions_sheet()
     worry_gif()
     worry_sheet()
+    whistle_mockups()

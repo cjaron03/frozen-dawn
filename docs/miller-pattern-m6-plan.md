@@ -51,6 +51,16 @@
 21. **The older sets stay on their topics.** `theFreshSetHoldsTheMarks` and `theTopicSetHoldsTheMarks` hold the new intents closed, so they go on measuring what the owner accepted. If that isn't enough to hold them, stop and report.
 22. **Thresholds and guarded words do not change.** `pattern` joins the lint for `shepherd.advice` keys too, so the Architect hint can't use it.
 
+### More of her, the owner's asks, 2026-11-06
+
+23. **Six to eight greetings.** They rotate by the day, so the same day gives the same line.
+24. **More Architect commentary.** Three or four more lines run during the hologram, with the owner's two: "Huh, it looks kind of like you" and the pickaxe line.
+25. **Asking again.** One short line each for the mobs, shown once `orsa_heard_<id>` is set, in place of the opening line.
+26. **Reactions, starting with the Hunter.** A Hunter dies to heater burn with her in range: she says one line, once a world. Others follow only if this lands. Nothing reacts to the player's death, by the typing red lines.
+27. **She whistles.** When she is calm and nobody has looked at her for a while, she whistles to herself. Catch her with your crosshair and she stops: Flustered, "You didn't see that!", once a day. A new mood `WHISTLING`, from `whistle-face-mockup.png`, once the owner picks one. Whether it has a sound is the owner's call.
+28. **"Cargo! Cargo! check this out!"** At Close, when calm, at most once every few days, she calls you on the strip and projects something stupid, using Task 7's hologram with an item model in place of a figure. The first is the Stuffed Penguin. The owner picks the rest.
+29. **The Clovis Bray nod is rewritten.** The S3 rule for eggs says a nod makes sense in the world and never says "game" or a title, so the fourth-wall count stays at three. "I heard of this game" can't stay. In-world, it is an ORSA file: "ORSA had a file on a man named Clovis Bray. Heard of him?" He put minds into machines, which points at her, so it reads `t5_done` under red line 8. Once a world.
+
 ## Lines to mark
 
 Everything goes in `docs/aurora-m6-lines.md`. These are first drafts, to show the shape. The owner's mark decides.
@@ -70,6 +80,15 @@ Everything goes in `docs/aurora-m6-lines.md`. These are first drafts, to show th
 | Architect | (Grim) ORSA was terrified of these guys. |
 | Architect | (Neutral) The early ones wasted swings. The later ones didn't. Nobody showed them. |
 | Architect, after the worry | (Neutral) So fight it at your heater, and don't do the same thing twice. |
+| Architect | (Thinking) Huh, it looks kind of like you. |
+| Architect | (Amused) So it's got a pickaxe like you, a sword like you and blocks like you. ORSA's scientists would faint. |
+| Architect | (Grim) That's ORSA's best image. Every other capture came out worse. |
+| Greeting | (Neutral) Cargo. Temperature's bad. You knew that. |
+| Asking again | (Unimpressed) Still the heater. It was the heater last time. |
+| Reaction, Hunter | (Sad) That worked. I said it would. |
+| Caught whistling | (Flustered) You didn't see that! |
+| The gag | (Beaming) Cargo! Cargo! Check this out! |
+| The nod, after T5 | (Thinking) ORSA had a file on a man named Clovis Bray. Heard of him? |
 
 ## Global Constraints
 
@@ -106,7 +125,7 @@ Each has its test in the task named.
 
 Docs only. Nothing goes in the game.
 
-- [ ] **Step 1: Write the doc.** Every greeting, label, guess, topic line, `need_help` and the egg, each with mood, gate and source. Each mob's counters come from its manual entry. Each mob's own way comes from the idea file. Each item's lines come from its manual entry, and its tip must be checked in code as the mobs' were. Vary how each one is presented. Show every line against the red lines.
+- [ ] **Step 1: Write the doc.** Every greeting, label, guess, topic line, repeat line, reaction, `need_help`, the gag, the nod and the egg, each with mood, gate and source. Each mob's counters come from its manual entry. Each mob's own way comes from the idea file. Each item's lines come from its manual entry, and its tip must be checked in code as the mobs' were. Vary how each one is presented. Show every line against the red lines.
 - [ ] **Step 2: Add the Frostmite strategy and the twelve items for a verdict.** Rulings 12 and 19.
 - [ ] **Step 3: Commit.** `docs: draft the M6 lines for the owner to mark`
 - [ ] **Step 4: Stop for the owner's marks.** Record them in the doc. A cut line or item comes out of the rest of this plan.
@@ -217,7 +236,21 @@ Draw a `HumanoidModel` baked from `ModelLayers.ZOMBIE`, at half size, about two 
 - [ ] **Step 4: Run them, then `./gradlew build`.** Expected: PASS. The look is judged at the pass, not here.
 - [ ] **Step 5: Commit.** `feat: draw her hologram in the world`
 
-### Task 8: Gate, playtest, handback
+### Task 8: Small moments
+
+**Files:**
+- Modify: `shepherd/ShepherdEggs.java`, `shepherd/ShepherdFace.java`, `shepherd/ShepherdProjection.java`, `shepherd/ShepherdHologram.java`, `client/ShepherdHologramRenderer.java`, `shepherd/ShepherdPolicy.java`, `assets/frozendawn/lang/en_us.json`
+- Test: `ShepherdMomentsGameTest.java`
+
+**Interfaces:** Consumes Task 6's `start` and Task 7's renderer. Produces `Mood.WHISTLING`; projection kind 5, an item model; `ShepherdPolicy.GAG_EVERY_TICKS`; world flags `reacted_hunter_burn`, `clovis_said`; deed times `caught_whistling`, `gag`.
+
+- [ ] **Step 1: Write the failing tests.** `shepherdReactsOnceToAHunterAtTheHeater`, `shepherdIgnoresAHunterKilledAnotherWay`, `shepherdWhistlesOnlyWhenCalm`, `shepherdGetsCaughtOnceADay`, `shepherdTheGagWaitsForCalm`, `shepherdNamesClovisOnlyAfterT5`.
+- [ ] **Step 2: Run them.** Expected: FAIL.
+- [ ] **Step 3: Implement,** beside the other nods in `ShepherdEggs`.
+- [ ] **Step 4: Run them.** Expected: PASS.
+- [ ] **Step 5: Commit.** `feat: give her a few small moments`
+
+### Task 9: Gate, playtest, handback
 
 **Files:**
 - Create: `tools/prepare_miller_m6_playtest.py`, save `Aurora Advice Check`, `src/labBridge/java/com/frozendawn/labbridge/LabShepherdAdvice.java`
@@ -226,7 +259,7 @@ Draw a `HumanoidModel` baked from `ModelLayers.ZOMBIE`, at half size, about two 
 - [ ] **Step 1: Run the full `architectVerify`.** In the background. `architectMonkey` only if Architect code changed; none should have.
 - [ ] **Step 2: Branch review on Opus,** brief: the branch range, this plan and its rulings. Fix real findings, each with a failing test first.
 - [ ] **Step 3: Prepare the save and launch `runClientLab`.** Lab buttons under their own namespace: `[Friendly]`, `[Trusted]`, `[Close]`, `[Wary]`, `[A day on]`, `[Long gone]`, `[Erased]`, `[Forget the advice]`, and a spawn button for each mob, so the strategies can be tried on a live one.
-- [ ] **Step 4: The owner's pass.** Ask them to type freely first, before seeing any list. Take their unprompted description. Judge: the voice trace, the three faces and Flow in motion, the greeting, each hologram from every side, the worry, the egg, and whether each strategy works as she says.
+- [ ] **Step 4: The owner's pass.** Ask them to type freely first, before seeing any list. Take their unprompted description. Judge: the voice trace, the three faces and Flow in motion, the greeting, each hologram from every side, the worry, the egg, the whistle, the gag, and whether each strategy works as she says.
 - [ ] **Step 5: Sort the log.** M5's Ruling 4: score it blind, record the numbers, sort each miss.
 - [ ] **Step 6: Fix what the pass finds, update the Status, offer the PR.**
 
