@@ -60,6 +60,8 @@ public final class ShepherdPolicy {
     /** How long since anyone talked to her before she gets up to anything of her own. */
     public static final int MOMENT_IDLE_TICKS = 2400;
     /** How long she keeps up what she thinks nobody sees, and how soon she tries again if they didn't. */
+    /** How long she goes on not noticing, so whoever caught her gets a look at it. */
+    public static final int CAUGHT_BEAT_TICKS = 40;
     public static final int CAUGHT_WINDOW_TICKS = 200, CAUGHT_RETRY_TICKS = 6000;
     /** Their view has to point this close to her to catch her, as a cosine: about 45 degrees. */
     public static final double LOOKING_AT = 0.7;

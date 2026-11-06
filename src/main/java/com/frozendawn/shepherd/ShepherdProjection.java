@@ -37,6 +37,8 @@ public final class ShepherdProjection {
         final int kind;
         final List<Line> lines;
         int next, wait = BEAM_TICKS, eggTicks;
+        /** She has been seen and hasn't noticed yet. */
+        int noticing;
         /** She has stopped mid-sentence, and the line she stopped on comes when she is back. */
         Line held;
         boolean hurt;
@@ -139,7 +141,9 @@ public final class ShepherdProjection {
             stop();
             return;
         }
-        if (live.kind == PAIR && ShepherdEggs.spotted(live.she)) {
+        if (live.kind == PAIR && live.noticing == 0 && ShepherdEggs.spotted(live.she)) live.noticing = ShepherdPolicy.CAUGHT_BEAT_TICKS;
+        if (live.noticing > 0) {
+            if (--live.noticing > 0) return;
             var she = live.she;
             stop();
             ShepherdEggs.caught(she);

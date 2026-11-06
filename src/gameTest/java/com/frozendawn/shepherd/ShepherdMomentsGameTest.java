@@ -56,6 +56,10 @@ public final class ShepherdMomentsGameTest {
     @AfterBatch(batch = "shepherd_offer_yes") public static void offerYesAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
     @BeforeBatch(batch = "shepherd_offer_no") public static void offerNoBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
     @AfterBatch(batch = "shepherd_offer_no") public static void offerNoAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_caught_us") public static void caughtUsBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_caught_us") public static void caughtUsAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_caught_what") public static void caughtWhatBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_caught_what") public static void caughtWhatAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
     @BeforeBatch(batch = "shepherd_moment_clovis") public static void clovisBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
     @AfterBatch(batch = "shepherd_moment_clovis") public static void clovisAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
 
@@ -91,6 +95,11 @@ public final class ShepherdMomentsGameTest {
 
     private static void look(GameTestHelper h, ShepherdEntity she, ServerPlayer... near) {
         ShepherdEggs.look(h.getLevel(), she, List.of(near));
+    }
+
+    /** The beat between being seen and seeing it. */
+    private static void noticed(net.minecraft.server.MinecraftServer server) {
+        for (int tick = 0; tick < ShepherdPolicy.CAUGHT_BEAT_TICKS; tick++) ShepherdProjection.tick(server);
     }
 
     private static Zombie hostile(GameTestHelper h, ServerPlayer player) {
@@ -188,7 +197,9 @@ public final class ShepherdMomentsGameTest {
             h.assertTrue(ShepherdProjection.active(), "Nobody saw");
             face(player, AT_HER);
             ShepherdProjection.tick(server);
-            h.assertTrue(!ShepherdProjection.active() && she.projection() == 0, "It snaps off");
+            h.assertTrue(ShepherdProjection.active() && !she.flustered(), "She hasn't noticed yet, so they get a look at it");
+            noticed(server);
+            h.assertTrue(!ShepherdProjection.active() && she.projection() == 0, "Then it goes");
             h.assertTrue(she.flustered(), "She spins away");
             h.assertTrue(ShepherdEggs.CAUGHT_LINE.equals(ShepherdReactions.said()), "And says so: " + ShepherdReactions.said());
             face(player, AWAY);
@@ -215,6 +226,7 @@ public final class ShepherdMomentsGameTest {
             h.assertTrue(Optional.of(follower.getUUID()).equals(she.projectedPlayer()), "The small you is her follower: " + she.projectedPlayer());
             face(other, AT_HER);
             ShepherdProjection.tick(h.getLevel().getServer());
+            noticed(h.getLevel().getServer());
             h.assertTrue(she.flustered(), "Anyone can catch her");
             h.assertTrue(she.projectedPlayer().isEmpty(), "And it leaves nothing behind: " + she.projectedPlayer());
             h.succeed();
@@ -358,6 +370,37 @@ public final class ShepherdMomentsGameTest {
             ShepherdTalk.reply(player, ShepherdTalk.liveId(), 1);
             h.assertTrue(ShepherdTalk.liveId() == 0, "Not now ends it");
             h.assertTrue(data(h).promptNode() == null && data(h).resumeNode() == null, "And it stays gone: " + data(h).promptNode() + ", " + data(h).resumeNode());
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_caught_us", timeoutTicks = 400)
+    public static void shepherdCanBeConfronted(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h, AT_HER);
+            var she = awake(h, player, FRIENDLY);
+            ShepherdEggs.caught(she);
+            she.interact(player, InteractionHand.MAIN_HAND);
+            h.assertTrue("caught.confront".equals(ShepherdTalk.liveNode()), "The next right-click is about that: " + ShepherdTalk.liveNode());
+            ShepherdTalk.reply(player, ShepherdTalk.liveId(), 0);
+            h.assertTrue("caught.us".equals(ShepherdTalk.liveNode()), "That was us: " + ShepherdTalk.liveNode());
+            ShepherdTalk.reply(player, ShepherdTalk.liveId(), ShepherdConversation.CONTINUE);
+            h.assertTrue(ShepherdTalk.liveId() == 0 && data(h).resumeNode() == null, "And it is over: " + data(h).resumeNode());
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_caught_what", timeoutTicks = 400)
+    public static void shepherdCanBeLetOff(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h, AT_HER);
+            var she = awake(h, player, FRIENDLY);
+            ShepherdEggs.caught(she);
+            she.interact(player, InteractionHand.MAIN_HAND);
+            ShepherdTalk.reply(player, ShepherdTalk.liveId(), 1);
+            h.assertTrue("caught.what".equals(ShepherdTalk.liveNode()), "Saw what: " + ShepherdTalk.liveNode());
+            ShepherdTalk.reply(player, ShepherdTalk.liveId(), ShepherdConversation.CONTINUE);
+            h.assertTrue(ShepherdTalk.liveId() == 0 && data(h).resumeNode() == null, "And it is over: " + data(h).resumeNode());
             h.succeed();
         });
     }

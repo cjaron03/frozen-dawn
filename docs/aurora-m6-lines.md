@@ -327,6 +327,10 @@ Typed only, above Wary, with no label and no Close line (Ruling 17). All NEW.
 
 Marked by the owner during the pass, 2026-11-06 (Ruling 34). (Thinking) "That was a Hunter. I've got a better way to handle those. Want it?" with the mob's name for each of Frostbitten, Frostmite, Hollow, Hunter, Mimic and Architect, and "That was an Architect" for the last. Buttons: "Yeah, tell me" and "Not now".
 
+## The confront
+
+Marked by the owner during the pass, 2026-11-06 (Ruling 38). (Flustered) "Whatever you think you saw, you didn't." Buttons: "That was us." and "Saw what?". That was us: (Flustered) "It was a calibration image.", (Thinking) "It needed two figures. You were on file.", (Amused) "Don't make this weird." Saw what: (Amused) "Exactly. Good talk."
+
 ## Checked against the limits
 
 Every line, label and Close line above, by hand and by a script running `typedLinesStayInside`'s banned words with `pattern` added, and the 20-character label limit.

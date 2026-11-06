@@ -41,6 +41,7 @@ public final class ShepherdEggs {
             GAG_LINE = "shepherd.egg.gag", PENGUIN_LINE = "shepherd.egg.gag.penguin";
     private static final String T5_DONE = "t5_done";
     /** What she has seen near them, what she has already offered on it, and the node that offers it. */
+    private static final String CONFRONT = "caught.confront";
     private static final String SAW = "offer_saw_", OFFERED = "offer_made_", OFFER = "advice.offer.";
     private static final List<String> OFFERS = List.of("frostbitten", "frostmite", "hollow", "hunter", "mimic", "architect");
     /** Set by "Or what, Shepherd?" in the first meeting. */
@@ -126,6 +127,8 @@ public final class ShepherdEggs {
         data.deedReady(CAUGHT, level.getServer().overworld().getGameTime() + ShepherdPolicy.DAY_TICKS);
         ShepherdReactions.answer(level, CAUGHT_LINE, Mood.FLUSTERED);
         she.fluster();
+        // Whoever talks to her next gets to bring it up, however long they leave it.
+        if (data.resumeNode() == null) data.resumeNode(CONFRONT);
     }
 
     /** Her own strategy, working where she can see it. Fire from anywhere else is not hers. */

@@ -71,6 +71,8 @@
 35. **The strip widens for a long line.** From the owner's screenshot, 2026-11-06: a long recording stacked so high it covered the hologram. Past three rows the panel widens, up to the screen.
 36. **The hologram leaves.** The owner's ask and mockup yes, 2026-11-06. However it ends, the eyes go first, the figure falls away a few texels at a time over about 1.2 seconds, and the beam draws back into her, as in `hologram-leave-mockup.gif`. She stays with it while it goes.
 37. **The egg stays long enough to see.** From the owner's pass, 2026-11-06: 36 ticks went by too fast. It is 90 now, about as long as she takes to type her line.
+38. **They can confront her.** The owner's ask and mark, 2026-11-06. After she is caught, the next right-click opens "Whatever you think you saw, you didn't." with "That was us." and "Saw what?", as in `docs/aurora-m6-lines.md`.
+39. **She doesn't notice at once.** The owner's call, 2026-11-06: the catch was over too fast. The figure stays up two seconds after someone looks, then she notices and spins away.
 
 ## Lines to mark
 
