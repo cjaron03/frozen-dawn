@@ -8,7 +8,7 @@
 2. **A new face for ORSA-scripted answers,** replacing the `RECORDING` face (two dim eyes). The owner wants "something besides just those two eyes". Picked 2026-11-06: A, Voice trace, in `docs/art/aurora-shepherd/orsa-face-mockup.png`. A flat line at rest, moving only while the recording plays.
 3. **At Close, she greets the player first on right-click,** with exclamation points if warranted, calls them Cargo aloud, and says "dont make it weird". Those are the owner's words; the final line needs their mark.
 4. **Two or three more facial expressions.** Picked 2026-11-06: Beaming, Flustered and Grim, in `docs/art/aurora-shepherd/new-expressions-mockup.png`. The owner also asked for smooth transitions between her faces and the voice trace, and picked Flow in `docs/art/aurora-shepherd/face-transitions-mockup.gif`: texels slide to their new places over 2 to 4 ticks, replacing the blink on a mood change.
-5. **Several more responses, for the Frozen Dawn mobs marked in the manual.** The Threats section has Frostbitten, Frostmite, Hollow and Returned. The M5 plan left the Returned's topics for S5, so the owner must decide that one.
+5. **Several more responses, for the Frozen Dawn mobs marked in the manual.** The Threats section has Frostbitten, Frostmite, Hollow and Returned. The M5 plan left the Returned's topics for later; the owner put them in M6 on 2026-11-06. Their idea: asked about the Returned, she projects a hologram of it, "kinda like Star Wars", with an easter egg on it. It needs a mockup, and any egg line needs their mark.
 6. **Asking her for advice on items listed in the manual.** Suggested start: the mobs plus about a dozen items, chosen from the owner's typed log, not all 166 entries.
 
 ## Facts for the later plan
@@ -20,6 +20,8 @@ Read on `feat/miller-m5`; recheck them against M5 as shipped.
 - Right-click enters at `ShepherdTalk.openHub`.
 - 40 of the 166 manual entries are locked behind advancements, so advice needs a new condition so she doesn't spoil locked entries.
 - `FieldManual.openEntry` can open a page.
+- `VaultRecordingRenderer` already draws a see-through figure, and `ReturnedRenderer` has the Returned's model, so the hologram has a starting point.
+- `docs/aurora-shepherd.md` says she feels guilt about the Returned, so the egg must not undercut that.
 - More topics crowd the intent index, which stands at 83 of 108 top-one on the held-out set (Ruling 29 of `docs/miller-pattern-m5-plan.md` on `feat/miller-m5`).
 
 ## Rules for later steps
