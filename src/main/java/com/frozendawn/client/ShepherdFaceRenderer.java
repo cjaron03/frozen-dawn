@@ -5,6 +5,7 @@ import static com.frozendawn.shepherd.ShepherdFace.WIDTH;
 
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.shepherd.ShepherdFace;
+import com.frozendawn.shepherd.ShepherdGlitch;
 import com.frozendawn.shepherd.ShepherdFace.Cells;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -25,6 +26,8 @@ public final class ShepherdFaceRenderer {
     private static final float PROUD = 0.05F;
     /** The texels in cs1_unit.png that hold the two face colors. */
     private static final float U_LIT = 60.5F / 64, U_DIM = 62.5F / 64, V = 60.5F / 64;
+    /** And the stop screen's three. */
+    private static final float U_STOP = 54.5F / 64, U_STOP_DIM = 56.5F / 64, U_STOP_TEXT = 58.5F / 64;
 
     private ShepherdFaceRenderer() {}
 
@@ -55,16 +58,48 @@ public final class ShepherdFaceRenderer {
             for (int cy = 0; cy < HEIGHT; cy++) {
                 boolean lit = ShepherdFace.lit(cells, blink, eyeShift, cx, cy);
                 if (!lit && !ShepherdFace.dim(cells, mouthFrame, cx, cy)) continue;
-                float left = (DISPLAY_X + cx - ShepherdModel.CENTER_X) / 16F, right = left + 1 / 16F;
-                float top = (ShepherdModel.FEET_Y - DISPLAY_TOP + cy) / 16F, bottom = top + 1 / 16F;
-                float z = (ShepherdModel.CENTER_Z - DISPLAY_FRONT - PROUD) / 16F;
-                float u = lit ? U_LIT : U_DIM;
-                vertex(buffer, pose, left, top, z, u);
-                vertex(buffer, pose, left, bottom, z, u);
-                vertex(buffer, pose, right, bottom, z, u);
-                vertex(buffer, pose, right, top, z, u);
+                texel(buffer, pose, cx, cy, lit ? U_LIT : U_DIM);
             }
         }
+    }
+
+    /** Every texel of her display, in blue. */
+    public static void drawStop(PoseStack pose, MultiBufferSource buffers) {
+        var buffer = buffers.getBuffer(RenderType.entityCutoutNoCull(ShepherdModel.TEXTURE));
+        var stop = ShepherdFace.STOP;
+        for (int cx = 0; cx < WIDTH; cx++) {
+            for (int cy = 0; cy < HEIGHT; cy++) {
+                float u = stop.lit(cx, cy) ? U_STOP_TEXT : stop.dim(cx, cy) ? U_STOP_DIM : U_STOP;
+                texel(buffer, pose, cx, cy, u);
+            }
+        }
+    }
+
+    /** Her display coming apart. A blank texel draws nothing, so the dark screen shows through. */
+    public static void drawGlitch(PoseStack pose, MultiBufferSource buffers, int age, long seed) {
+        var buffer = buffers.getBuffer(RenderType.entityCutoutNoCull(ShepherdModel.TEXTURE));
+        for (int cx = 0; cx < WIDTH; cx++) {
+            for (int cy = 0; cy < HEIGHT; cy++) {
+                switch (ShepherdGlitch.cell(age, seed, cx, cy)) {
+                    case LIT -> texel(buffer, pose, cx, cy, U_LIT);
+                    case DIM -> texel(buffer, pose, cx, cy, U_DIM);
+                    case STOP -> texel(buffer, pose, cx, cy, U_STOP);
+                    case STOP_DIM -> texel(buffer, pose, cx, cy, U_STOP_DIM);
+                    case STOP_TEXT -> texel(buffer, pose, cx, cy, U_STOP_TEXT);
+                    case BLANK -> { }
+                }
+            }
+        }
+    }
+
+    private static void texel(VertexConsumer buffer, PoseStack pose, int cx, int cy, float u) {
+        float left = (DISPLAY_X + cx - ShepherdModel.CENTER_X) / 16F, right = left + 1 / 16F;
+        float top = (ShepherdModel.FEET_Y - DISPLAY_TOP + cy) / 16F, bottom = top + 1 / 16F;
+        float z = (ShepherdModel.CENTER_Z - DISPLAY_FRONT - PROUD) / 16F;
+        vertex(buffer, pose, left, top, z, u);
+        vertex(buffer, pose, left, bottom, z, u);
+        vertex(buffer, pose, right, bottom, z, u);
+        vertex(buffer, pose, right, top, z, u);
     }
 
     private static void vertex(VertexConsumer buffer, PoseStack pose, float x, float y, float z, float u) {

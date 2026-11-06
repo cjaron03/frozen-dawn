@@ -48,6 +48,8 @@ public class ModNetworking {
                 (payload, context) -> context.enqueueWork(ClientHandlers::handleShepherdPrompt));
         registrar.playToClient(ShepherdLinePayload.TYPE, ShepherdLinePayload.STREAM_CODEC,
                 (payload, context) -> context.enqueueWork(() -> ClientHandlers.handleShepherdLine(payload)));
+        registrar.playToClient(ShepherdCrashPayload.TYPE, ShepherdCrashPayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(ClientHandlers::handleShepherdCrash));
         registrar.playToClient(ShepherdHubPayload.TYPE, ShepherdHubPayload.STREAM_CODEC,
                 (payload, context) -> context.enqueueWork(() -> ClientHandlers.handleShepherdHub(payload)));
         registrar.playToClient(ShepherdLogPayload.TYPE, ShepherdLogPayload.STREAM_CODEC,
@@ -55,6 +57,10 @@ public class ModNetworking {
         registrar.playToServer(ShepherdReplyPayload.TYPE, ShepherdReplyPayload.STREAM_CODEC,
                 (payload, context) -> context.enqueueWork(() -> {
                     if (context.player() instanceof ServerPlayer sp) ShepherdTalk.reply(sp, payload.conversation(), payload.slot());
+                }));
+        registrar.playToServer(ShepherdTypedPayload.TYPE, ShepherdTypedPayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(() -> {
+                    if (context.player() instanceof ServerPlayer sp) ShepherdTalk.typed(sp, payload.conversation(), payload.text());
                 }));
         registrar.playToServer(ShepherdActionPayload.TYPE, ShepherdActionPayload.STREAM_CODEC,
                 (payload, context) -> context.enqueueWork(() -> {

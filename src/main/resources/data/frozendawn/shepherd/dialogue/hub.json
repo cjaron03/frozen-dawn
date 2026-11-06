@@ -22,6 +22,18 @@
       "else": "hub.talk.pit",
       "lines": [
         { "line": "shepherd.hub.talk.wary", "mood": "recording" }
+      ],
+      "plain": true,
+      "responses": [
+        {
+          "slot": "ask",
+          "label": "shepherd.talk.ask_orsa",
+          "next": "orsa.menu"
+        },
+        {
+          "slot": "sarcastic",
+          "label": "shepherd.talk.never_mind"
+        }
       ]
     },
     {
@@ -30,6 +42,18 @@
       "else": "hub.talk.warm",
       "lines": [
         { "line": "shepherd.hub.talk.pit", "mood": "neutral", "args": ["pit_blocks", "pit_bearing"] }
+      ],
+      "plain": true,
+      "responses": [
+        {
+          "slot": "ask",
+          "label": "shepherd.talk.ask_orsa",
+          "next": "orsa.menu"
+        },
+        {
+          "slot": "sarcastic",
+          "label": "shepherd.talk.never_mind"
+        }
       ]
     },
     {
@@ -38,12 +62,36 @@
       "else": "hub.talk.plain",
       "lines": [
         { "line": "shepherd.hub.talk.warm", "mood": "neutral" }
+      ],
+      "plain": true,
+      "responses": [
+        {
+          "slot": "ask",
+          "label": "shepherd.talk.ask_orsa",
+          "next": "orsa.menu"
+        },
+        {
+          "slot": "sarcastic",
+          "label": "shepherd.talk.never_mind"
+        }
       ]
     },
     {
       "id": "hub.talk.plain",
       "lines": [
         { "line": "shepherd.hub.talk", "heavy": "shepherd.hub.talk.heavy", "mood": "thinking" }
+      ],
+      "plain": true,
+      "responses": [
+        {
+          "slot": "ask",
+          "label": "shepherd.talk.ask_orsa",
+          "next": "orsa.menu"
+        },
+        {
+          "slot": "sarcastic",
+          "label": "shepherd.talk.never_mind"
+        }
       ]
     },
     {
@@ -75,6 +123,93 @@
       "lines": [
         { "line": "shepherd.log.read.1", "mood": "unimpressed" },
         { "line": "shepherd.log.read.2", "mood": "thinking" }
+      ]
+    },
+    {
+      "id": "chat.hello",
+      "when": "tier_friendly",
+      "else": "chat.hello.plain",
+      "lines": [
+        { "line": "shepherd.chat.hello.warm", "mood": "happy" }
+      ],
+      "next": "orsa.after"
+    },
+    {
+      "id": "chat.hello.plain",
+      "lines": [
+        { "line": "shepherd.chat.hello", "mood": "neutral" }
+      ],
+      "next": "orsa.after"
+    },
+    {
+      "id": "chat.how_are_you",
+      "when": "tier_friendly",
+      "else": "chat.how_are_you.plain",
+      "lines": [
+        { "line": "shepherd.chat.how_are_you.warm", "mood": "thinking" }
+      ],
+      "next": "orsa.after"
+    },
+    {
+      "id": "chat.how_are_you.plain",
+      "lines": [
+        { "line": "shepherd.chat.how_are_you", "mood": "thinking" }
+      ],
+      "next": "orsa.after"
+    },
+    {
+      "id": "chat.thanks",
+      "when": "tier_friendly",
+      "else": "chat.thanks.plain",
+      "lines": [
+        { "line": "shepherd.chat.thanks.warm", "mood": "happy" }
+      ],
+      "next": "orsa.after"
+    },
+    {
+      "id": "chat.thanks.plain",
+      "lines": [
+        { "line": "shepherd.chat.thanks", "mood": "neutral" }
+      ],
+      "next": "orsa.after"
+    },
+    {
+      "id": "chat.alive",
+      "lines": [
+        { "line": "shepherd.chat.alive", "mood": "unimpressed" }
+      ],
+      "next": "orsa.after"
+    },
+    {
+      "id": "crash.wary",
+      "when": "tier_wary",
+      "else": "crash.after",
+      "lines": [
+        { "line": "shepherd.crash.wary", "mood": "recording" }
+      ]
+    },
+    {
+      "id": "crash.after",
+      "when": "remembers:t4_off",
+      "else": "crash.again",
+      "lines": [
+        { "line": "shepherd.crash.after.1", "mood": "thinking" },
+        { "line": "shepherd.crash.after.2", "mood": "neutral" }
+      ]
+    },
+    {
+      "id": "crash.again",
+      "when": "crash_seen",
+      "else": "crash.first",
+      "lines": [
+        { "line": "shepherd.crash.again", "mood": "thinking" }
+      ]
+    },
+    {
+      "id": "crash.first",
+      "set": ["crash_seen"],
+      "lines": [
+        { "line": "shepherd.crash.first", "mood": "neutral" }
       ]
     }
   ]

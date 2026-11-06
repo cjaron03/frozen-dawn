@@ -31,19 +31,19 @@ public final class ShepherdDialogue {
         SARCASTIC
     }
 
-    /** {@code noted} is what saying this tells her, as a node's is what arriving there does. */
+    /** {@code noted} is what saying this tells her, as a node's is what arriving there does. A null {@code next} ends the walk. */
     public record Response(Slot slot, String label, String full, String next, int affinity, List<String> set, List<String> noted) {}
 
     /**
      * A node with no responses continues to {@code next} on a click, or ends the conversation if that is null.
      * If {@code when} does not hold, nobody ever stands on it: the walk goes straight on to {@code otherwise}.
      * Arriving by a reply, {@code noted} is evidence for or against a theory ({@code "+kind"}) and {@code keep} a moment to
-     * hold on to, so writers need no Java.
+     * hold on to, so writers need no Java. A {@code plain} node's slots mean nothing about tone: a menu, not an answer.
      */
     public record Node(String id, List<Line> lines, List<Response> responses, String next, List<String> set, String when, String otherwise,
-                       List<String> noted, String keep) {
+                       List<String> noted, String keep, boolean plain) {
         public Node(String id, List<Line> lines, List<Response> responses, String next, List<String> set, String when, String otherwise) {
-            this(id, lines, responses, next, set, when, otherwise, List.of(), null);
+            this(id, lines, responses, next, set, when, otherwise, List.of(), null, false);
         }
     }
 
@@ -63,7 +63,7 @@ public final class ShepherdDialogue {
                 for (JsonElement response : json.getAsJsonArray("responses")) responses.add(response(response.getAsJsonObject()));
             }
             return new Node(id, List.copyOf(lines), List.copyOf(responses), string(json, "next"), strings(json, "set"), string(json, "when"), string(json, "else"),
-                    strings(json, "noted"), string(json, "keep"));
+                    strings(json, "noted"), string(json, "keep"), json.has("plain") && json.get("plain").getAsBoolean());
         } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException("Dialogue node " + id + ": " + e.getMessage(), e);
         }
@@ -78,7 +78,7 @@ public final class ShepherdDialogue {
         String full = string(json, "full");
         Slot slot = Slot.valueOf(json.get("slot").getAsString().toUpperCase(Locale.ROOT));
         int affinity = json.has("affinity") ? json.get("affinity").getAsInt() : 0;
-        return new Response(slot, label, full != null ? full : label, json.get("next").getAsString(), affinity, strings(json, "set"), strings(json, "noted"));
+        return new Response(slot, label, full != null ? full : label, string(json, "next"), affinity, strings(json, "set"), strings(json, "noted"));
     }
 
     private static String string(JsonObject json, String name) {

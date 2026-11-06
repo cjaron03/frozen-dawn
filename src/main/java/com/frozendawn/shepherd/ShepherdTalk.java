@@ -5,10 +5,15 @@ import com.frozendawn.data.ApocalypseState;
 import com.frozendawn.entity.ArchivistEntity;
 import com.frozendawn.miller.SelfModel;
 import com.frozendawn.miller.Heard;
+import com.frozendawn.miller.Intent;
+import com.frozendawn.miller.IntentIndex;
+import com.frozendawn.miller.IntentIndex.Band;
 import com.frozendawn.miller.LogEntry;
 import com.frozendawn.miller.MillerPattern;
 import com.frozendawn.miller.Refusal;
+import com.frozendawn.miller.TypedCheck;
 import com.frozendawn.network.ShepherdClosePayload;
+import com.frozendawn.network.ShepherdCrashPayload;
 import com.frozendawn.network.ShepherdHubPayload;
 import com.frozendawn.network.ShepherdLogPayload;
 import com.frozendawn.network.ShepherdNodePayload;
@@ -19,8 +24,12 @@ import com.frozendawn.shepherd.ShepherdDialogue.Slot;
 import com.frozendawn.shepherd.ShepherdFace.Mood;
 import com.frozendawn.world.BlastPitPlacement;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.UUID;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 import net.minecraft.resources.ResourceLocation;
@@ -42,7 +51,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 @EventBusSubscriber(modid = FrozenDawn.MOD_ID)
 public final class ShepherdTalk {
     public static final String FIRST_MEETING = "fm.boot";
-    private static final String HUB_TALK = "hub.talk.quiet", LOG_READ = "hub.log.read";
+    private static final String HUB_TALK = "hub.talk.quiet", HUB_WARY = "hub.talk", LOG_READ = "hub.log.read", CRASH_LINE = "crash.wary";
     private static final int UNIMPRESSED_TICKS = 40;
     private static final int TALK_TICKS_PER_LINE = 80;
     private static final String FOUND = "found:", REMEMBERS = "remembers:", NOT = "not:";
@@ -65,6 +74,18 @@ public final class ShepherdTalk {
         final ShepherdEntity she;
         /** Null while the hub is showing. */
         ShepherdConversation talk;
+        /** The dialogue files, with what is built for this walk laid over them. {@code talk} reads it live, so a menu can change under it. */
+        Map<String, Node> nodes = Map.of();
+        /** What a typed line built, kept while the walk it started lasts. */
+        Map<String, Node> built = Map.of();
+        /** A typed line is being answered: it runs as if from the hub, so it never touches what is waiting. */
+        boolean detour;
+        /** Where a detour goes when it is done, one level deep. A scene's node, {@link ShepherdTopics#AFTER} for the menu, or null for the hub. */
+        String back;
+        /** The next line sent answers something typed, so she works it out first. */
+        boolean typed;
+        /** Pressing Talk and typing are the same thing to her, and count once a conversation. */
+        boolean talked;
         boolean fromHub;
         /** The prompt this was opened from, which stays waiting until an answer shows it was heard. */
         String fromPrompt;
@@ -79,6 +100,7 @@ public final class ShepherdTalk {
         int thinkTicks;
         /** What the client was last sent. */
         ShepherdNodePayload sent;
+        ShepherdHubPayload hub;
         /** The log it was last sent, if it has asked. */
         ShepherdLogPayload log;
 
@@ -90,11 +112,21 @@ public final class ShepherdTalk {
         }
     }
 
+    /** One line and how she took it. Only the lab hears these. */
+    public record TypedLine(String text, String band, String first, double firstScore, String second, double secondScore) {}
+
     /** Whom she last said no to. It need not outlive the server: thirty seconds is all it is for. */
     private record Refused(UUID who, Refusal.Kind kind, long at) {}
 
+    /** Null in a normal build, which keeps no record of typed text. */
+    public static Consumer<TypedLine> typedListener;
+
     private static int nextId = 1;
     private static Live live;
+    /** Who said the word, so the line after it is theirs even if they walked off. Lost on a reload, and then it is whoever is near. */
+    private static UUID crashedBy;
+    /** Where she is in the miss pool. It need not outlive the server. */
+    private static int missTurn;
     private static Refused refused;
     /** Who she told she would catch up with. Lost on a reload, which leaves her waiting as she would anyway. */
     private static UUID catchingUp;
@@ -167,16 +199,43 @@ public final class ShepherdTalk {
 
     /** False, with nothing changed, if an edited datapack leaves the walk nowhere to stand. */
     private static boolean begin(String node, boolean fromHub) {
+        return begin(node, fromHub, FIRST_MEETING.equals(node));
+    }
+
+    private static boolean begin(String node, boolean fromHub, boolean logo) {
         var player = live.player;
         Predicate<String> holds = condition -> holds(player, condition);
-        if (!ShepherdConversation.opens(ShepherdDialogues.nodes(), node, holds)) return false;
-        live.talk = new ShepherdConversation(ShepherdDialogues.nodes(), node, holds);
+        live.nodes = new HashMap<>(ShepherdDialogues.nodes());
+        live.nodes.putAll(live.built);
+        layTopics();
+        if (!ShepherdConversation.opens(live.nodes, node, holds)) return false;
+        live.talk = new ShepherdConversation(live.nodes, node, holds);
         live.fromHub = fromHub;
         live.affinityApplied = 0;
         settle();
-        if (FIRST_MEETING.equals(node)) live.she.showLogo();
+        if (logo) live.she.showLogo();
         send();
         return true;
+    }
+
+    private static Predicate<String> holds() {
+        var player = live.player;
+        return condition -> holds(player, condition);
+    }
+
+    /** What is on the menu for this speaker. A topic with its node gone from an edited datapack is not. */
+    private static List<Intent> openTopics() {
+        var holds = holds();
+        return ShepherdIntents.intents().stream().filter(intent -> intent.label() != null && IntentIndex.open(intent, holds) && ShepherdDialogues.nodes().containsKey(intent.node())).toList();
+    }
+
+    /** The menu as it stands. A topic ends back on it, unless a detour has somewhere else to be. */
+    private static void layTopics() {
+        var holds = holds();
+        var open = openTopics();
+        live.nodes.putAll(ShepherdTopics.menu(open, holds, false));
+        if (live.detour && !ShepherdTopics.AFTER.equals(live.back)) live.nodes.remove(ShepherdTopics.AFTER);
+        else live.nodes.put(ShepherdTopics.AFTER, ShepherdTopics.menu(open, holds, true).get(ShepherdTopics.MENU));
     }
 
     /** The dialogue files' conditions: her tier, how far she has got, where the wand is, what this speaker has read or she holds of them, or else a saved flag. */
@@ -237,26 +296,189 @@ public final class ShepherdTalk {
         };
     }
 
+    /** Nothing reaches her while she is down, though the talk waits. */
     private static boolean speaking(ServerPlayer player, int conversation) {
-        return live != null && live.player == player && live.id == conversation;
+        return live != null && live.player == player && live.id == conversation && !live.she.offline();
     }
 
     public static void reply(ServerPlayer player, int conversation, int slot) {
         if (!speaking(player, conversation) || live.talk == null) return;
-        boolean readToThem = LOG_READ.equals(live.talk.current().id());
+        var answered = live.talk.current();
+        boolean readToThem = LOG_READ.equals(answered.id()), plain = answered.plain(), detour = live.detour;
+        boolean scene = detour && ShepherdTopics.NONE.equals(answered.id()) && live.back != null && !ShepherdTopics.AFTER.equals(live.back);
+        layTopics();
         if (!live.talk.answer(slot)) return;
         // Only once they have heard it: cut off partway, she says it again at the next talk.
         if (readToThem) MillerPattern.markTold(player.getServer(), player.getUUID());
-        hear(slot);
-        spendPrompt();
+        hear(plain ? ShepherdConversation.CONTINUE : slot);
+        if (scene) rejoin();
+        if (!detour || scene) spendPrompt();
         settle();
         if (!live.talk.finished()) {
+            if (live.talk.current().id().startsWith(ShepherdTopics.MENU)) onTheMenu();
             send();
+        } else if (live.detour || live.back != null) {
+            goBack();
         } else if (live.fromHub) {
             showHub();
         } else {
             end(true);
         }
+    }
+
+    /** An answer on a miss in a scene is the scene's own answer, and the walk is the scene again. */
+    private static void rejoin() {
+        live.detour = false;
+        live.back = null;
+        live.fromHub = false;
+        live.built = Map.of();
+    }
+
+    /** A walk that reaches the menu is a menu walk: its topics come back here. */
+    private static void onTheMenu() {
+        live.detour = false;
+        if (ShepherdTopics.AFTER.equals(live.back)) live.back = null;
+    }
+
+    /** A detour is over: the scene says its line again, or the menu asks what else. */
+    private static void goBack() {
+        String back = live.back;
+        live.detour = false;
+        live.back = null;
+        live.built = Map.of();
+        if (back == null) showHub();
+        else if (!begin(back, ShepherdTopics.AFTER.equals(back), false)) end(true);
+    }
+
+    /** One line from the bar, in the order Ruling 7 sets. It is held for this call and goes nowhere else. */
+    public static void typed(ServerPlayer player, int conversation, String text) {
+        if (!speaking(player, conversation) || live.she.thinking() || live.she.logoTicks() > 0) return;
+        String line = TypedCheck.clean(text);
+        if (line.isEmpty()) return;
+        if (TypedCheck.crashes(line)) {
+            if (typedListener != null) typedListener.accept(new TypedLine(line, "CRASH", null, 0, null, 0));
+            crash();
+            return;
+        }
+        var holds = holds();
+        var ranked = ShepherdIntents.index().rank(line);
+        var match = TypedCheck.guarded(line) || ranked == null ? IntentIndex.MISS : IntentIndex.judge(ranked, holds);
+        if (typedListener != null) typedListener.accept(new TypedLine(line, match.band().name(), ranked == null ? null : ranked.first().id(), ranked == null ? 0 : ranked.firstScore(),
+                ranked == null ? null : ranked.second().id(), ranked == null ? 0 : ranked.secondScore()));
+        talked();
+        leaveFor();
+        if (holds.test("quiet") || holds.test("tier_silent")) {
+            answerTyped(HUB_TALK);
+        } else if (match.band() == Band.STRONG && ShepherdDialogues.nodes().containsKey(match.first().node())) {
+            answerTyped(match.first().node());
+        } else if (data().tier() == Tier.WARY) {
+            answerTyped(HUB_WARY);
+        } else if (match.band() == Band.CLOSE) {
+            live.built = Map.of(ShepherdTopics.CLOSE, ShepherdTopics.close(match), ShepherdTopics.NONE, miss());
+            answerTyped(ShepherdTopics.CLOSE);
+        } else {
+            live.built = Map.of(ShepherdTopics.NONE, miss());
+            answerTyped(ShepherdTopics.NONE);
+        }
+    }
+
+    /** She does not hear it: she goes down. Nothing reaches the Pattern, so it costs nothing and she keeps no record. */
+    private static void crash() {
+        crashedBy = live.player.getUUID();
+        live.she.crash();
+        live.lines = List.of();
+        live.line = 0;
+        PacketDistributor.sendToPlayer(live.player, new ShepherdCrashPayload(live.id));
+    }
+
+    /** {@code /fd shepherd crash}. False if she cannot go down. */
+    public static boolean crash(ServerPlayer player) {
+        var id = ShepherdSavedData.get(player.getServer()).entity();
+        if (id == null || !(player.serverLevel().getEntity(id) instanceof ShepherdEntity she) || she.offline()) return false;
+        if (live != null && live.she == she) {
+            crash();
+        } else {
+            crashedBy = player.getUUID();
+            she.crash();
+        }
+        return true;
+    }
+
+    /** The noise has stopped. The screen shows the line itself; with nobody on it, the strip does. */
+    static void crashStill(ShepherdEntity she) {
+        if (live == null || live.she != she) ShepherdReactions.crashLine(she, ShepherdGlitch.VERDICT, Mood.OFFLINE);
+    }
+
+    /** The logo has started. Her line follows it, over the hub or as a node before the scene she was in. With the screen gone it goes to the strip, and the talk does not reopen. */
+    static void crashOver(ShepherdEntity she) {
+        if (live == null || live.she != she) {
+            crashLine(she);
+            return;
+        }
+        String scene = live.detour ? live.back : live.talk != null && !live.fromHub ? live.talk.current().id() : null;
+        if (scene == null || ShepherdTopics.AFTER.equals(scene)) {
+            sayOnTheHub(CRASH_LINE);
+            return;
+        }
+        live.detour = true;
+        live.back = scene;
+        if (!begin(CRASH_LINE, true)) goBack();
+    }
+
+    /** Whoever did it if they are still here, else whoever is near: the line depends on who it is to. A save reloaded with nobody near hears nothing. */
+    private static void crashLine(ShepherdEntity she) {
+        var server = she.getServer();
+        var who = crashedBy == null ? null : server.getPlayerList().getPlayer(crashedBy);
+        if (who == null && she.level() instanceof ServerLevel level) who = (ServerPlayer) level.getNearestPlayer(she, ShepherdPolicy.HEARD_BLOCKS);
+        crashedBy = null;
+        if (who == null) return;
+        var player = who;
+        Predicate<String> holds = condition -> holds(player, condition);
+        var nodes = ShepherdDialogues.nodes();
+        if (!ShepherdConversation.opens(nodes, CRASH_LINE, holds)) return;
+        var walk = new ShepherdConversation(nodes, CRASH_LINE, holds);
+        var data = ShepherdSavedData.get(server);
+        walk.flags().forEach(flag -> data.flag(flag, true));
+        var line = walk.lines().getFirst();
+        ShepherdReactions.crashLine(she, line.key(), line.mood());
+    }
+
+    /** Where this detour goes back to. Typing during a detour replaces it and keeps that. */
+    private static void leaveFor() {
+        if (live.detour) return;
+        live.detour = true;
+        if (live.talk == null) live.back = null;
+        else if (!live.fromHub) live.back = live.talk.current().id();
+        else live.back = live.talk.current().id().startsWith(ShepherdTopics.MENU) ? ShepherdTopics.AFTER : null;
+    }
+
+    private static void answerTyped(String node) {
+        live.typed = true;
+        if (!begin(node, true)) live.typed = false;
+    }
+
+    /** The same pool, the same turn and the same slots, whatever was typed: a locked topic must not show. */
+    private static Node miss() {
+        int reach = MillerPattern.variety(live.player.getServer(), ShepherdTopics.misses());
+        int turn = missTurn++ % reach;
+        var scene = live.back == null || ShepherdTopics.AFTER.equals(live.back) ? null : ShepherdDialogues.nodes().get(live.back);
+        return scene != null ? ShepherdTopics.none(turn, scene) : ShepherdTopics.none(turn, openTopics(), holds());
+    }
+
+    private static void talked() {
+        if (live.talked) return;
+        live.talked = true;
+        MillerPattern.heard(live.player.getServer(), live.player.getUUID(), new Heard.Used(Action.TALK));
+    }
+
+    /** {@code /fd shepherd hear}: the band and the top two for this speaker, changing nothing. */
+    public static List<String> hearing(ServerPlayer player, String text) {
+        String line = TypedCheck.clean(text);
+        var ranked = ShepherdIntents.index().rank(line);
+        if (ranked == null) return List.of("no intents loaded");
+        var match = IntentIndex.judge(ranked, condition -> holds(player, condition));
+        return List.of("band=" + match.band() + (TypedCheck.crashes(line) ? " crash" : "") + (TypedCheck.guarded(line) ? " guarded" : ""),
+                String.format(Locale.ROOT, "%s %.3f, %s %.3f", ranked.first().id(), ranked.firstScore(), ranked.second().id(), ranked.secondScore()));
     }
 
     /** What the reply told her about the speaker, and what the node it led to has to add. */
@@ -279,7 +501,8 @@ public final class ShepherdTalk {
 
     public static void action(ServerPlayer player, int conversation, Action action) {
         if (!speaking(player, conversation) || live.talk != null) return;
-        MillerPattern.heard(player.getServer(), player.getUUID(), new Heard.Used(action));
+        if (action == Action.TALK) talked();
+        else MillerPattern.heard(player.getServer(), player.getUUID(), new Heard.Used(action));
         var data = data();
         switch (action) {
             case TALK -> {
@@ -410,24 +633,59 @@ public final class ShepherdTalk {
         PacketDistributor.sendToPlayer(player, live.sent);
     }
 
-    /** She takes a moment when her coherence is low. The logo is its own wait, and a recording has nobody in it to think. */
+    /**
+     * She takes a moment when her coherence is low. The logo is its own wait, and a recording has nobody in it to think.
+     * Something typed she always has to work out, even on a line that opens on a recording, unless she is at Wary.
+     */
     private static int thinkTicks(int logo) {
+        boolean typed = live.typed;
+        live.typed = false;
         boolean recording = !live.lines.isEmpty() && live.lines.getFirst().mood() == Mood.RECORDING;
-        return logo > 0 || live.lines.isEmpty() || recording ? 0 : ShepherdFace.thinkingTicks(MillerPattern.halfLaps(live.player.getServer()));
+        if (logo > 0 || live.lines.isEmpty()) return 0;
+        int halfLaps = MillerPattern.halfLaps(live.player.getServer());
+        if (typed && data().tier() != Tier.WARY) return ShepherdFace.thinkingTicks(Math.max(1, halfLaps));
+        return recording ? 0 : ShepherdFace.thinkingTicks(halfLaps);
     }
 
     private static void showHub() {
+        showHub(List.of());
+    }
+
+    /** {@code said} plays over the hub, after any logo, and its buttons appear when she finishes. */
+    private static void showHub(List<Line> said) {
         var data = data();
         live.talk = null;
         live.fromHub = false;
-        live.she.talkFor(0);
+        live.detour = false;
+        live.back = null;
+        live.built = Map.of();
+        live.lines = said;
+        live.line = 0;
+        int logo = live.she.logoTicks();
+        live.lineTicks = logo + TALK_TICKS_PER_LINE;
+        live.she.talkFor(said.isEmpty() ? 0 : logo + TALK_TICKS_PER_LINE * said.size());
         showMood();
-        PacketDistributor.sendToPlayer(live.player, new ShepherdHubPayload(live.id, !follows(data, live.player), data.lamp(), data.heavy()));
+        var player = live.player;
+        live.hub = new ShepherdHubPayload(live.id, !follows(data, player), data.lamp(), data.heavy(), resolved(said, data.heavy(), token -> arg(player, token)), logo);
+        PacketDistributor.sendToPlayer(player, live.hub);
+    }
+
+    /** A node's lines over the hub, as it stands for this speaker. */
+    static void sayOnTheHub(String node) {
+        var holds = holds();
+        if (!ShepherdConversation.opens(ShepherdDialogues.nodes(), node, holds)) {
+            showHub();
+            return;
+        }
+        var walk = new ShepherdConversation(ShepherdDialogues.nodes(), node, holds);
+        var data = data();
+        walk.flags().forEach(flag -> data.flag(flag, true));
+        showHub(walk.lines());
     }
 
     private static void showMood() {
         if (live.unimpressedTicks > 0) return;
-        if (live.talk == null || live.lines.isEmpty()) {
+        if (live.lines.isEmpty()) {
             live.she.composed();
         } else {
             live.she.setMood(live.lines.get(live.line).mood());
@@ -435,11 +693,15 @@ public final class ShepherdTalk {
     }
 
     static ShepherdNodePayload payload(int conversation, Node node, List<Line> said, boolean heavy, int logoTicks, int thinkTicks, UnaryOperator<String> arg) {
-        var lines = said.stream().map(line -> new ShepherdNodePayload.Line(
-                heavy && line.heavyKey() != null ? line.heavyKey() : line.key(), line.mood(), line.args().stream().map(arg).toList())).toList();
+        var lines = resolved(said, heavy, arg);
         var replies = node.responses().stream().map(response -> new ShepherdNodePayload.Reply(
                 response.slot().ordinal(), response.label(), response.full())).toList();
-        return new ShepherdNodePayload(conversation, node.id(), lines, replies, replies.isEmpty(), logoTicks, thinkTicks);
+        return new ShepherdNodePayload(conversation, node.id(), lines, replies, replies.isEmpty(), logoTicks, thinkTicks, node.plain());
+    }
+
+    private static List<ShepherdNodePayload.Line> resolved(List<Line> said, boolean heavy, UnaryOperator<String> arg) {
+        return said.stream().map(line -> new ShepherdNodePayload.Line(
+                heavy && line.heavyKey() != null ? line.heavyKey() : line.key(), line.mood(), line.args().stream().map(arg).toList())).toList();
     }
 
     static ShepherdLogPayload logPayload(int conversation, List<LogEntry> entries) {
@@ -481,14 +743,14 @@ public final class ShepherdTalk {
     @SubscribeEvent public static void tick(ServerTickEvent.Post event) {
         if (live == null) return;
         if (live.unimpressedTicks > 0 && --live.unimpressedTicks == 0) showMood();
-        if (live.talk != null && live.line < live.lines.size() - 1 && --live.lineTicks <= 0) {
+        if (live.line < live.lines.size() - 1 && --live.lineTicks <= 0) {
             live.line++;
             live.lineTicks = TALK_TICKS_PER_LINE;
             showMood();
         }
         var player = live.player;
         var she = live.she;
-        boolean gone = player.isRemoved() || player.hasDisconnected() || she.isRemoved() || she.offline() || player.level() != she.level();
+        boolean gone = player.isRemoved() || player.hasDisconnected() || she.isRemoved() || she.offline() && !she.crashed() || player.level() != she.level();
         if (gone || ShepherdPolicy.talkMustClose(player.distanceTo(she), live.hurt, nearestHostileOn(player))) end(true);
     }
 
@@ -522,6 +784,11 @@ public final class ShepherdTalk {
         return live == null ? null : live.sent;
     }
 
+    /** The hub the client was last sent, or null. */
+    static ShepherdHubPayload liveHub() {
+        return live == null ? null : live.hub;
+    }
+
     static ShepherdLogPayload liveLog() {
         return live == null ? null : live.log;
     }
@@ -541,5 +808,7 @@ public final class ShepherdTalk {
         live = null;
         refused = null;
         catchingUp = null;
+        crashedBy = null;
+        missTurn = 0;
     }
 }

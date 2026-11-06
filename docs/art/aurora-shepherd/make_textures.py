@@ -113,6 +113,10 @@ def unit():
         for y in range(60, 62):
             img.putpixel((x, y), C['glow'] + (255,))
             img.putpixel((x + 2, y), C['glow2'] + (255,))
+            # And the stop screen's three, from make_crash_mockup.py.
+            img.putpixel((x - 6, y), (30, 84, 168, 255))
+            img.putpixel((x - 4, y), (112, 160, 226, 255))
+            img.putpixel((x - 2, y), (205, 239, 255, 255))
     img.save(TEXTURES / 'entity/cs1_unit.png')
 
 
