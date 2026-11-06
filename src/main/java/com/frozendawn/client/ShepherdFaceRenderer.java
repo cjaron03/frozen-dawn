@@ -5,6 +5,7 @@ import static com.frozendawn.shepherd.ShepherdFace.WIDTH;
 
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.shepherd.ShepherdFace;
+import com.frozendawn.shepherd.ShepherdGlitch;
 import com.frozendawn.shepherd.ShepherdFace.Cells;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -70,6 +71,23 @@ public final class ShepherdFaceRenderer {
             for (int cy = 0; cy < HEIGHT; cy++) {
                 float u = stop.lit(cx, cy) ? U_STOP_TEXT : stop.dim(cx, cy) ? U_STOP_DIM : U_STOP;
                 texel(buffer, pose, cx, cy, u);
+            }
+        }
+    }
+
+    /** Her display coming apart. A blank texel draws nothing, so the dark screen shows through. */
+    public static void drawGlitch(PoseStack pose, MultiBufferSource buffers, int age, long seed) {
+        var buffer = buffers.getBuffer(RenderType.entityCutoutNoCull(ShepherdModel.TEXTURE));
+        for (int cx = 0; cx < WIDTH; cx++) {
+            for (int cy = 0; cy < HEIGHT; cy++) {
+                switch (ShepherdGlitch.cell(age, seed, cx, cy)) {
+                    case LIT -> texel(buffer, pose, cx, cy, U_LIT);
+                    case DIM -> texel(buffer, pose, cx, cy, U_DIM);
+                    case STOP -> texel(buffer, pose, cx, cy, U_STOP);
+                    case STOP_DIM -> texel(buffer, pose, cx, cy, U_STOP_DIM);
+                    case STOP_TEXT -> texel(buffer, pose, cx, cy, U_STOP_TEXT);
+                    case BLANK -> { }
+                }
             }
         }
     }

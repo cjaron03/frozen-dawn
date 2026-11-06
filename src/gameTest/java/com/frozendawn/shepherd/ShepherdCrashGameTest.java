@@ -105,6 +105,47 @@ public final class ShepherdCrashGameTest {
         h.assertTrue(said.equals(List.of(keys)), "Says " + List.of(keys) + ": " + said);
     }
 
+    @BeforeBatch(batch = "shepherd_crash_verdict") public static void verdictBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_crash_verdict") public static void verdictAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_crash_verdict_open") public static void verdictOpenBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_crash_verdict_open") public static void verdictOpenAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+
+    private static final int STILL_STARTS = ShepherdPolicy.CRASH_TICKS + ShepherdPolicy.CRASH_STILL_TICKS + 1;
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_crash_verdict", timeoutTicks = 400)
+    public static void shepherdTheStripGetsTheLineWithNobodyWatching(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            var she = awake(h, player, NEUTRAL);
+            open(she, player);
+            type(she, player, WORD);
+            ShepherdTalk.close(player);
+            ShepherdReactions.clearForTests();
+            she.rebootIn(STILL_STARTS);
+            h.runAfterDelay(SOON, () -> {
+                h.assertTrue(ShepherdGlitch.VERDICT.equals(ShepherdReactions.said()), "On the strip: " + ShepherdReactions.said());
+                ShepherdReactions.clearForTests();
+                h.succeed();
+            });
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_crash_verdict_open", timeoutTicks = 400)
+    public static void shepherdTheScreenKeepsTheLineToItself(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            var she = awake(h, player, NEUTRAL);
+            open(she, player);
+            type(she, player, WORD);
+            ShepherdReactions.clearForTests();
+            she.rebootIn(STILL_STARTS);
+            h.runAfterDelay(SOON, () -> {
+                h.assertTrue(ShepherdReactions.said() == null, "Not on the strip too: " + ShepherdReactions.said());
+                h.succeed();
+            });
+        });
+    }
+
     @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_crash_down", timeoutTicks = 400)
     public static void shepherdTheWordTakesHerDown(GameTestHelper h) {
         ShepherdTestWorld.whenTicking(h, () -> {
@@ -113,7 +154,7 @@ public final class ShepherdCrashGameTest {
             open(she, player);
             type(she, player, "tell me about C-O-N-T-I-N-U-I-T-Y");
             h.assertTrue(she.crashed() && she.offline(), "Down");
-            h.assertTrue(she.rebootTicks() == ShepherdPolicy.CRASH_TICKS, "For eight seconds: " + she.rebootTicks());
+            h.assertTrue(she.rebootTicks() == ShepherdPolicy.CRASH_DOWN_TICKS, "The noise, the stillness and eight seconds: " + she.rebootTicks());
             h.assertFalse(she.logo(), "No logo yet");
             h.succeed();
         });

@@ -138,7 +138,7 @@ public final class ShepherdReactions {
         for (var heard : near((ServerLevel) she.level(), she)) PacketDistributor.sendToPlayer(heard, line);
     }
 
-    /** Back from the word with nobody on her screen. It answers no cooldown: she has no idea anything happened. */
+    /** The word, with nobody on her screen. It answers no cooldown: she has no idea anything happened. */
     static void crashLine(ShepherdEntity she, String key, Mood mood) {
         speak(she, key, mood, null);
     }

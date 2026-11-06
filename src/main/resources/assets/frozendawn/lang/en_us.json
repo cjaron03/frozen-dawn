@@ -2256,6 +2256,8 @@
   "shepherd.chat.thanks": "Don't mention it. Really, it's fine.",
   "shepherd.chat.thanks.warm": "Anytime. I mean that.",
   "shepherd.chat.alive": "I'm a heated, flying, talking flashlight. Beyond that you'd have to ask the doors.",
+  "shepherd.crash.break": "PLEASE REMAIN CA",
+  "shepherd.crash.verdict": "pattern transfer only, subject not recovered",
   "shepherd.crash.first": "Sorry. You cut out. Say that again?",
   "shepherd.crash.again": "You cut out again. Probably the cold.",
   "shepherd.crash.after.1": "My clock just jumped eight seconds. Did something happen?",

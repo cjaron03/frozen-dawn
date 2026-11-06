@@ -104,6 +104,13 @@ class ShepherdDialogueDataTest {
         assertEquals(List.of("CS-1 UNIT 4", "HAS STOPPED.", "PLEASE REMAIN CALM.", "STOP CODE", "0x0000000A"), rows);
     }
 
+    @Test
+    void theCrashLinesAreFixed() throws Exception {
+        var lang = lang();
+        assertEquals("PLEASE REMAIN CA", lang.get(ShepherdGlitch.BREAK).getAsString());
+        assertEquals("pattern transfer only, subject not recovered", lang.get(ShepherdGlitch.VERDICT).getAsString());
+    }
+
     /** She keeps every secret the buttons keep: none of this is typed-only licence to say more. */
     @Test
     void typedLinesStayInside() throws Exception {
@@ -393,7 +400,8 @@ class ShepherdDialogueDataTest {
     @Test
     void noLineCarriesHerFileName() throws Exception {
         for (var line : shepherdLines().entrySet()) {
-            if (line.getKey().startsWith("shepherd.t5.")) continue;
+            // The crash's line is the owner's one exception, 2026-11-05: it shows on her, and it is not her talking.
+            if (line.getKey().startsWith("shepherd.t5.") || line.getKey().equals(ShepherdGlitch.VERDICT)) continue;
             String text = line.getValue().toLowerCase(Locale.ROOT);
             assertFalse(text.contains("miller") || text.contains("pattern") && !line.getKey().equals("shepherd.log.pattern"), line.getKey());
         }

@@ -193,7 +193,8 @@ The ORSA spec's eleven red lines apply. Typing adds these:
 
 **"Continuity" crashes her (owner, 2026-11-04).** A check before matching catches the word, however it's typed. She doesn't hear it; she goes down.
 
-1. Her face snaps to a blue screen with a small sad face, on her body's display and in the talk screen's face panel, like a machine's stop screen. It uses ORSA's own text and no real company's marks:
+1. She comes apart first (owner, at the M4 pass, 2026-11-05). For two seconds her face breaks up, she starts her holding phrase and it breaks at `PLEASE REMAIN CA` into letters and numbers, her body shakes hard, and the talk screen's panels tear. Then everything stops for one second: a dark display, no name, and one line, "pattern transfer only, subject not recovered". She does not say the word. The line is the one use of "pattern" near her before T5 besides the form's label, and it is not her talking. [crash-glitch-mockup.png](art/aurora-shepherd/crash-glitch-mockup.png).
+2. Her face snaps to a blue screen with a small sad face, on her body's display and in the talk screen's face panel, like a machine's stop screen. It uses ORSA's own text and no real company's marks:
 
 ```text
 :(
@@ -202,13 +203,13 @@ PLEASE REMAIN CALM.
 STOP CODE 0x0000000A
 ```
 
-2. She drops a little in the air and her lamp and heater cut out for about eight seconds. Then the ORSA boot logo plays, and she rises.
-3. She has no memory of it: (Neutral) "Sorry. You cut out. Say that again?" Later: (Thinking) "You cut out again. Probably the cold."
-4. After T4: (Thinking) "My clock just jumped eight seconds. Did something happen?" (Neutral) "Never mind. I don't want to know."
+3. She drops a little in the air and her lamp and heater cut out for about eight seconds. Then the ORSA boot logo plays, and she rises.
+4. She has no memory of it: (Neutral) "Sorry. You cut out. Say that again?" Later: (Thinking) "You cut out again. Probably the cold."
+5. After T4: (Thinking) "My clock just jumped eight seconds. Did something happen?" (Neutral) "Never mind. I don't want to know."
 
 Rules for the crash:
 
-- **It stays on her, never on the player's screen.** A crash that looks like the game failing would be a fourth-wall moment, and the count stays at three. The world keeps running around her.
+- **It stays on her, never on the player's screen.** A crash that looks like the game failing would be a fourth-wall moment, and the count stays at three. The world keeps running around her. The tearing stays inside the talk screen's own panels.
 - **The stop code is 10, the word's length.** Nobody points that out.
 - **No cost:** no affinity, coherence or memory lost. It happens every time, and only from typed text, so it never interrupts a button conversation.
 - **It explains nothing.** It only shows that the word matters, as CH-22's inference rule allows. It does confirm that early, before CH-18, and the owner accepted that.
@@ -351,3 +352,5 @@ The fresh set missed its top-one mark. The owner accepted it ("Accept, carry on"
 Branch review on Opus: no critical findings, four important, all fixed test-first. `!` hid a guarded word, since it was read as an i; a dropped or added last letter did not crash her; coming back to the first meeting from a detour replayed the logo and its sound; and "how are you?" missed. Six minors are deferred: a Close spends a miss turn, an edited datapack can throw on a crash node with no lines, the bar has no timeout out of its sent state, the drawn drop can rise early below 20 TPS, a narrow prompt spend at Wary after a tier drop, and `ShepherdCrashPayload.conversation` is unread.
 
 Verified headlessly: the unit tests and the full `architectVerify`. The table is in the built jar, but it has only been loaded from dev class directories. Still needs the owner's eyes: everything judged by look or feel, and the drafts the plan left to the pass.
+
+2026-11-05, the owner's pass in `Aurora Chat Check`, first words: "i said "kevin" "what is orsa" etc. got pretty simple asnwers." That was Neutral tier, as designed; at Trusted, "i got the lines". On the crash: "i like it, but i want her face to like glitch out", with the body shaking and the screen glitching before the stop screen. The owner approved draft 2 of [crash-glitch-mockup.png](art/aurora-shepherd/crash-glitch-mockup.png), and it is built as step 1 of the crash above. The heater cuts at the word, though the flame is drawn through the noise; a reload mid-crash replays the noise.

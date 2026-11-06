@@ -10,7 +10,7 @@
 
 **Spec:** [aurora-miller-pattern.md](aurora-miller-pattern.md), "Buttons or a chat bar", "How typed text is understood", "Red lines for typing", and Rulings 5, 6, 14 and 15. [aurora-intent-trial.md](aurora-intent-trial.md), the M0 result. [aurora-orsa-topics.md](aurora-orsa-topics.md), the menu, the candor table and the eleven red lines.
 
-**Mockups:** [chat-bar-mockup.png](art/aurora-shepherd/chat-bar-mockup.png), [crash-mockup.png](art/aurora-shepherd/crash-mockup.png), approved 2026-11-05. Exact values are in `make_chat_bar_mockup.py` and `make_crash_mockup.py`.
+**Mockups:** [chat-bar-mockup.png](art/aurora-shepherd/chat-bar-mockup.png), [crash-mockup.png](art/aurora-shepherd/crash-mockup.png), approved 2026-11-05. [crash-glitch-mockup.png](art/aurora-shepherd/crash-glitch-mockup.png), approved at the pass, 2026-11-05. Exact values are in `make_chat_bar_mockup.py` and `make_crash_mockup.py`.
 
 **Status:** approved by the owner, 2026-11-05: all 33 rulings. The lines are drafts to build with and mark at the owner's pass. Built on `feat/miller-m4`; see the spec's Status.
 

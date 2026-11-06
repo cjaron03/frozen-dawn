@@ -3,6 +3,8 @@ package com.frozendawn.client;
 import com.frozendawn.shepherd.ShepherdBoot;
 import com.frozendawn.shepherd.ShepherdEntity;
 import com.frozendawn.shepherd.ShepherdFace;
+import com.frozendawn.shepherd.ShepherdGlitch;
+import com.frozendawn.shepherd.ShepherdPolicy;
 import com.frozendawn.shepherd.ShepherdFace.Mood;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -31,7 +33,11 @@ public final class ShepherdRenderer extends MobRenderer<ShepherdEntity, Shepherd
         entity.yBodyRot = entity.yHeadRot;
         entity.yBodyRotO = entity.yHeadRotO;
         pose.pushPose();
-        if (entity.crashed()) pose.translate(0, -ShepherdFace.crashDrop(entity.crashAge() + partial), 0);
+        if (entity.crashed()) {
+            float crash = entity.crashAge() + partial;
+            float drop = ShepherdFace.crashDrop(Math.max(0, crash - ShepherdPolicy.CRASH_LEAD_TICKS));
+            pose.translate(ShepherdGlitch.shake(crash, 0), ShepherdGlitch.shake(crash, 1) - drop, ShepherdGlitch.shake(crash, 2));
+        }
         if (!entity.offline()) pose.translate(0, Mth.sin((entity.tickCount + partial) * BOB_SPEED) * BOB_HEIGHT, 0);
         super.render(entity, yaw, partial, pose, buffers, light);
         pose.popPose();
@@ -47,8 +53,13 @@ public final class ShepherdRenderer extends MobRenderer<ShepherdEntity, Shepherd
             Mood mood = entity.mood();
             var motion = ShepherdFace.motion(mood, entity.tickCount, entity.getId(), entity.resting());
             int mouth = entity.talking() ? ShepherdFace.talkingMouth(entity.tickCount) : 0;
-            if (entity.crashed() && entity.offline()) {
+            var beat = entity.crashed() && entity.offline() ? ShepherdGlitch.beat(entity.crashAge()) : null;
+            if (beat == ShepherdGlitch.Beat.NOISE) {
+                ShepherdFaceRenderer.drawGlitch(pose, buffers, entity.crashAge(), entity.getId());
+            } else if (beat == ShepherdGlitch.Beat.STOP) {
                 ShepherdFaceRenderer.drawStop(pose, buffers);
+            } else if (beat == ShepherdGlitch.Beat.STILL) {
+                return;
             } else if (entity.bootDisplay() != ShepherdEntity.BOOT_NONE) {
                 boolean cursor = entity.bootDisplay() == ShepherdEntity.BOOT_CURSOR && entity.tickCount / ShepherdBoot.LINE_TICKS % 2 == 0;
                 ShepherdFaceRenderer.drawOnModel(pose, buffers, cursor ? ShepherdBoot.cursor() : Mood.OFFLINE, 0, false, 0);
@@ -60,7 +71,7 @@ public final class ShepherdRenderer extends MobRenderer<ShepherdEntity, Shepherd
                 var cells = motion.cells(mood, entity.talking());
                 ShepherdFaceRenderer.drawOnModel(pose, buffers, cells, mouth, motion.blink() || entity.moodBeat(), motion.eyeShift());
             }
-            if (entity.offline()) return;
+            if (entity.offline() && beat != ShepherdGlitch.Beat.NOISE) return;
             var flame = buffers.getBuffer(RenderType.entityCutoutNoCull(ShepherdModel.TEXTURE));
             getParentModel().renderFlame(pose, flame, ShepherdFace.flameHeight(entity.tickCount, entity.getId()));
         }

@@ -404,6 +404,11 @@ public final class ShepherdTalk {
         return true;
     }
 
+    /** The noise has stopped. The screen shows the line itself; with nobody on it, the strip does. */
+    static void crashStill(ShepherdEntity she) {
+        if (live == null || live.she != she) ShepherdReactions.crashLine(she, ShepherdGlitch.VERDICT, Mood.OFFLINE);
+    }
+
     /** The logo has started. Her line follows it, over the hub or as a node before the scene she was in. With the screen gone it goes to the strip, and the talk does not reopen. */
     static void crashOver(ShepherdEntity she) {
         if (live == null || live.she != she) {

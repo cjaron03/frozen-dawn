@@ -394,7 +394,7 @@ public final class ShepherdEntity extends PathfinderMob {
         if (offline()) return;
         stopEverything();
         entityData.set(DATA_CRASH, true);
-        rebootTicks = ShepherdPolicy.CRASH_TICKS;
+        rebootTicks = ShepherdPolicy.CRASH_DOWN_TICKS;
     }
 
     public boolean crashed() {
@@ -431,7 +431,7 @@ public final class ShepherdEntity extends PathfinderMob {
             }
             // Joining mid-way, or the moment she comes back: the logo always starts at the same point.
             if (!crashed()) crashAge = 0;
-            else crashAge = offline() ? crashAge + 1 : Math.max(crashAge, ShepherdPolicy.CRASH_TICKS) + 1;
+            else crashAge = offline() ? crashAge + 1 : Math.max(crashAge, ShepherdPolicy.CRASH_DOWN_TICKS) + 1;
             if (thinking()) {
                 thinkAge++;
             } else if (thinkAge > 0) {
@@ -450,6 +450,8 @@ public final class ShepherdEntity extends PathfinderMob {
         if (offline() && --rebootTicks <= 0) {
             if (crashed()) afterCrash();
             else reboot();
+        } else if (crashed() && offline() && rebootTicks == ShepherdPolicy.CRASH_TICKS + ShepherdPolicy.CRASH_STILL_TICKS) {
+            ShepherdTalk.crashStill(this);
         }
         if (talkTicks > 0 && --talkTicks == 0) entityData.set(DATA_TALKING, false);
         if (logoTicks > 0 && --logoTicks == 0) {
