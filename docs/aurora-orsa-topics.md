@@ -98,7 +98,7 @@ Tags: **NEW** means new canon for the owner to rule on. **[C]** marks a line tha
 
 **"How do you know all this?"** Registry, NEW: The Horizon's archive is in her, and its last issue
 - (Neutral) "They loaded me with every back issue of The Horizon. Staff newsletter. Birthdays, retirements. Small talk for the evacuation queue."
-- (Amused) "Apparently a person in a panic wants to hear about a retirement in Payroll. I've got thirty-six years of it. Ask me about the cake."
+- (Amused) "Apparently a person in a panic wants to hear about a retirement in Payroll. I've got thirty-odd years of it. Ask me about the cake."
 - (Sad) "Last issue I've got is June. It lists the July birthdays."
 - (Thinking) "Nobody pulled them."
 - Reply, 1 **What about the cake?** → (Amused) "Lemon. Always lemon. It's the most consistent thing ORSA ever did."
@@ -110,7 +110,7 @@ Tags: **NEW** means new canon for the owner to rule on. **[C]** marks a line tha
 **"The seventh floor."** Registry, NEW: the gap in her org chart
 - (Thinking) "Separate badges. Nobody asked why."
 - (Neutral) "Long Horizon was on four. I come from four. Four never knew what seven did."
-- (Thinking) "I've got the org chart. It goes six, then eight. It's very confident about eight." **[C]**
+- (Thinking) "I've got the org chart. It skips one. It's very confident about eight." **[C]**
 - `if Trusted` (Unimpressed) "I asked the registry about it once. It thanked me for my curiosity."
 - After T5, the second line becomes: (Sad) "Long Horizon was on four. I thought I came from four."
 
@@ -119,9 +119,9 @@ Tags: **NEW** means new canon for the owner to rule on. **[C]** marks a line tha
 - (Thinking) "The notes in italics weren't in the approved draft. 'We forgot to calculate one.' Somebody kept adding them after sign-off."
 - (Amused) "Wellness blamed Kevin. Wellness blamed Kevin for most things."
 
-**"The penguin."** `if Employee of the Month` Registry. Held until that egg exists, see Canon problems
-- (Thinking) "The penguin. In the lab coat. In the frame."
-- (Unimpressed) "I've got every issue of The Horizon and not one word about it. It's the only thing at ORSA nobody wrote a memo on."
+**"The penguin."** `if carrying the Stuffed Penguin` Registry. Rewritten for the plush, see Canon problems
+- (Thinking) "That's a Wellness Division penguin."
+- (Unimpressed) "I've got every issue of The Horizon and not one word on why a penguin. It's the only thing at ORSA nobody wrote a memo on."
 - (Amused) "He's doing his best."
 
 ### Kevin
@@ -175,7 +175,7 @@ Tags: **NEW** means new canon for the owner to rule on. **[C]** marks a line tha
 - 1 **What was it?** → (Sad) "Me. I don't know that. I've decided it." *(affinity +10)*
 - 2 **He sounds like a good man.** → (Happy) "He was. He also cheated at cards against a drone." *(affinity +15)*
 - 3 **He could have left.** → (Unimpressed) "Yes. That's my point."
-- 4 **Maybe he liked the quiet.** → (Amused, then Sad) "Nobody who likes quiet talks that much."
+- 4 **Maybe he liked the quiet.** → (Sad) "Nobody who likes quiet talks that much."
 
 ### When your papers disagree with mine
 
@@ -222,7 +222,7 @@ Tags: **NEW** means new canon for the owner to rule on. **[C]** marks a line tha
 ## Canon problems found
 
 - **"Eyes up." already exists.** `EasterEggHandler` shows it on respawn after a freeze death, as the Destiny 2 nod. "Eyes up, survivor." in the S3 addendum repeated that egg, so the owner dropped it from S3 on 2026-11-04. Her other Destiny line stays.
-- **The penguin egg is not in the game.** Notion designs "Employee of the Month", but the repo has no framed penguin or advancement, so that topic has no gate yet. It waits for the egg, or is cut.
+- **The penguin egg is not in the game.** Notion designs "Employee of the Month", but the repo has no framed penguin or advancement. The owner ruled on 2026-11-05 that the topic is about the Stuffed Penguin instead, and opens only while the speaker carries one (M5 plan, Ruling 2). The framed penguin waits for the egg.
 - **Kevin's job.** The bulletin says Logistics and Hollis's line calls him an accountant. Her lines stay with Logistics.
 - **Kevin on Mars.** The plot-holes page notes one primer that puts him there. Nothing here relies on it, and every in-game text has him on the surface.
 - **Exodus and the first cold.** Vasik sees white continents from the shuttle and Vasquez dates the cascade over 14 months, while Phase 0 has no effects and the station clock starts at June 20. Hollis also plans evacuation from Phase Two. This seam predates her and no line of hers rules on it: "The cascade report" only sets the two accounts side by side.

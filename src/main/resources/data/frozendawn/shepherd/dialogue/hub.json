@@ -181,6 +181,31 @@
       "next": "orsa.after"
     },
     {
+      "id": "chat.who_are_you",
+      "when": "t5_done",
+      "else": "chat.who_are_you.warm",
+      "lines": [
+        { "line": "shepherd.chat.who_are_you.after", "mood": "thinking" }
+      ],
+      "next": "orsa.after"
+    },
+    {
+      "id": "chat.who_are_you.warm",
+      "when": "tier_friendly",
+      "else": "chat.who_are_you.plain",
+      "lines": [
+        { "line": "shepherd.chat.who_are_you.warm", "mood": "thinking" }
+      ],
+      "next": "orsa.after"
+    },
+    {
+      "id": "chat.who_are_you.plain",
+      "lines": [
+        { "line": "shepherd.chat.who_are_you", "mood": "neutral" }
+      ],
+      "next": "orsa.after"
+    },
+    {
       "id": "crash.wary",
       "when": "tier_wary",
       "else": "crash.after",

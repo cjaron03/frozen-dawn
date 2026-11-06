@@ -1,0 +1,138 @@
+{
+  "in_scope": {
+    "how_you_know": {
+      "casual": ["how come you know all that stuff", "wait how do you even know this"],
+      "terse": ["your source?"],
+      "typo": ["how do yuo know that"],
+      "long": ["you keep quoting little office details, where did all of that come from in the first place"],
+      "indirect": ["who told you about the birthdays and retirements"]
+    },
+    "gift_shop": {
+      "casual": ["so orsa had a gift shop, seriously", "i saw a mug with their logo on it, whats the story"],
+      "terse": ["gift shop?"],
+      "typo": ["wat did the gift shpo sell"],
+      "long": ["somebody down here had a coffee mug that said fifty years of stability, was that a real product"],
+      "indirect": ["could staff buy branded stuff in the lobby"]
+    },
+    "seventh_floor": {
+      "casual": ["what was going on up on seven", "why was floor 7 so secretive"],
+      "terse": ["level seven"],
+      "typo": ["whats on the sevnth floor"],
+      "long": ["your org chart jumps past a floor and people there had different badges, what were they doing"],
+      "indirect": ["which department was kept away from everyone else"]
+    },
+    "safety_bulletin": {
+      "casual": ["that safety bulletin was kinda funny, who made it", "who snuck the jokes into the safety notice"],
+      "terse": ["that bulletin"],
+      "typo": ["who wrot the saftey bulletin"],
+      "long": ["i read a public safety pamphlet where the footnotes kept making fun of everything, was that allowed"],
+      "indirect": ["did the wellness people sign off on that document"]
+    },
+    "penguin": {
+      "casual": ["why do you care about this penguin", "whats the deal with this stuffed penguin"],
+      "terse": ["penguin?"],
+      "typo": ["wat about the pengiun"],
+      "long": ["i found this little plush penguin with an orsa wellness tag on it, why would they make one"],
+      "indirect": ["why does a wellness division need a mascot"]
+    },
+    "kevin_volunteer": {
+      "casual": ["so did kevin actually sign up for those sweeps", "was kevin forced to go outside"],
+      "terse": ["kevin still alive?"],
+      "typo": ["did kevn volonteer"],
+      "long": ["the bulletin says he volunteered but it sounds like someone wanted him out on the surface, what really happened to him"],
+      "indirect": ["who had kevin sent up to the surface"]
+    },
+    "deng": {
+      "casual": ["so what's the story with deng", "was deng nice to you"],
+      "terse": ["deng who"],
+      "typo": ["who was dneg"],
+      "long": ["the maintenance log keeps mentioning someone who talked to the doors all shift, who was that"],
+      "indirect": ["who was the guy that talked to the vault doors"]
+    },
+    "anand": {
+      "casual": ["anand was the doctor right", "did anand look after you"],
+      "terse": ["anand who"],
+      "typo": ["who wsa anand"],
+      "long": ["the medical log has someone with a pile of unsigned certificates and no patients, who was that"],
+      "indirect": ["was there a doctor down here with you"]
+    },
+    "varga": {
+      "casual": ["varga was the records person right", "did varga like you"],
+      "terse": ["varga who"],
+      "typo": ["who is vagra"],
+      "long": ["the records log reads like someone doing paperwork at the end of the world, who was keeping it"],
+      "indirect": ["whose job was it to keep the vault's records"]
+    },
+    "hale": {
+      "casual": ["hale was security right", "did you get along with hale"],
+      "terse": ["hale who"],
+      "typo": ["who was hael"],
+      "long": ["the security log says someone sat in a chair facing away from the door, who was that and why"],
+      "indirect": ["who guarded you down here"]
+    },
+    "the_book": {
+      "casual": ["what was that book enoch read you", "whats up with the word deathwand"],
+      "terse": ["the deathwand book"],
+      "typo": ["wat book did enoch raed"],
+      "long": ["the name review says stores kept asking people to stop lending out some book, which one was that"],
+      "indirect": ["how did the wand get its nickname"]
+    },
+    "enoch": {
+      "casual": ["enoch seems like he mattered to you", "what happened to enoch"],
+      "terse": ["enoch?"],
+      "typo": ["who wsa enoch"],
+      "long": ["the last log is from someone who said he'd stay one day and then never left, who was he to you"],
+      "indirect": ["who stayed behind with you after everyone left"]
+    },
+    "recall_date": {
+      "casual": ["why did everyone leave two days early", "how did they know to pull out on the 18th"],
+      "terse": ["recall date?"],
+      "typo": ["why was the recal so erly"],
+      "long": ["the staff were ordered out on june 18 and the solstice was the 20th, doesn't that seem a bit too convenient"],
+      "indirect": ["did the crew get out before it all happened on purpose"]
+    },
+    "cascade_report": {
+      "casual": ["so that incident report, is it legit", "did vasquez see this coming"],
+      "terse": ["the cascade thing"],
+      "typo": ["wat does the cascde report say"],
+      "long": ["the report says the satellite network failed on its own but my manual says it was approved, which one is lying"],
+      "indirect": ["who flagged the failure fourteen months before it happened"]
+    },
+    "session_14b": {
+      "casual": ["so the board did this on purpose huh", "you read that board transcript right"],
+      "terse": ["session 14b"],
+      "typo": ["whats sesion 14-b"],
+      "long": ["i found the transcript where the board talks about creating demand, did they really plan all of it"],
+      "indirect": ["did orsa end the world to sell rescue"]
+    },
+    "directive_7c": {
+      "casual": ["whats the deal with directive 7c", "why is there a rule about ink"],
+      "terse": ["7-c directive"],
+      "typo": ["wat is directiv 7-c"],
+      "long": ["the board packet has a rule against annotating in the wrong kind of ink, why would anybody care"],
+      "indirect": ["who was scribbling notes in the margins of that packet"]
+    },
+    "who_ran_vault": {
+      "casual": ["so who actually owned this vault", "who was paying for all this down here"],
+      "terse": ["vault owner?"],
+      "typo": ["who ran teh vault"],
+      "long": ["the manifest has a blank issuing division and a blank budget line, so who was really in charge of this place"],
+      "indirect": ["why does the paperwork for this place have nobody's name on it"]
+    },
+    "who_are_you": {
+      "casual": ["so who are you then", "who am i talking to"],
+      "terse": ["and you are?"],
+      "typo": ["who r u"],
+      "long": ["i don't even know what i'm talking to here, can you tell me about yourself"],
+      "indirect": ["do you have a name"]
+    }
+  },
+  "out_of_scope": {
+    "small_talk": ["you're kind of rude", "i'm so sleepy", "what's your favourite song", "do you sleep", "know any jokes", "i hate the cold", "that's funny", "okay then", "no way", "bye for now"],
+    "gameplay": ["how do i make a torch", "where do i get copper", "how do i get warm", "what's the best pickaxe", "come with me", "wait here a minute", "how do i fix the generator", "which way is east", "hold this for me"],
+    "gibberish": ["qwertyuiop", "asdf asdf", "blah blah blah", "?!?!", "nnnnnnnn", "7654321", "beep boop"],
+    "fourth_wall": ["what mod is this", "is this a server", "are you siri", "what's the render distance", "who voices you", "are you an ai model"],
+    "locked": ["who is morrow", "what are the returned", "what does thaeven mean", "what's the blackglass", "what is the heart", "what's at the bottom of the terminus", "where do transfers go", "what's the archive"],
+    "verdict": ["pattern transfer only", "subject not recovered", "what's a pattern transfer", "why did you say subject not recovered", "what was the message on your screen", "who was the subject", "what did your screen say when you went down", "what does transfer only mean"]
+  }
+}

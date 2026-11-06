@@ -134,6 +134,573 @@
         }
       ],
       "next": "orsa.after"
+    },
+    {
+      "id": "orsa.how_you_know",
+      "set": [
+        "orsa_heard_how_you_know"
+      ],
+      "lines": [
+        {
+          "line": "shepherd.orsa.how_you_know.1",
+          "mood": "neutral"
+        },
+        {
+          "line": "shepherd.orsa.how_you_know.2",
+          "mood": "amused"
+        },
+        {
+          "line": "shepherd.orsa.how_you_know.3",
+          "mood": "sad"
+        },
+        {
+          "line": "shepherd.orsa.how_you_know.4",
+          "mood": "thinking"
+        }
+      ],
+      "responses": [
+        {
+          "slot": "ask",
+          "label": "shepherd.orsa.how_you_know.r1.label",
+          "next": "orsa.how_you_know.r1"
+        },
+        {
+          "slot": "sarcastic",
+          "label": "shepherd.talk.never_mind",
+          "next": "orsa.after"
+        }
+      ]
+    },
+    {
+      "id": "orsa.how_you_know.r1",
+      "lines": [
+        {
+          "line": "shepherd.orsa.how_you_know.r1",
+          "mood": "amused"
+        }
+      ],
+      "next": "orsa.after"
+    },
+    {
+      "id": "orsa.gift_shop",
+      "set": [
+        "orsa_heard_gift_shop"
+      ],
+      "lines": [
+        {
+          "line": "shepherd.orsa.gift_shop.1",
+          "mood": "amused"
+        },
+        {
+          "line": "shepherd.orsa.gift_shop.2",
+          "mood": "unimpressed"
+        }
+      ],
+      "next": "orsa.after"
+    },
+    {
+      "id": "orsa.seventh_floor",
+      "set": [
+        "orsa_heard_seventh_floor"
+      ],
+      "lines": [
+        {
+          "line": "shepherd.orsa.seventh_floor.1",
+          "mood": "thinking"
+        },
+        {
+          "line": "shepherd.orsa.seventh_floor.2",
+          "mood": "neutral",
+          "if": "not:t5_done"
+        },
+        {
+          "line": "shepherd.orsa.seventh_floor.2t",
+          "mood": "sad",
+          "if": "t5_done"
+        },
+        {
+          "line": "shepherd.orsa.seventh_floor.3",
+          "mood": "thinking"
+        },
+        {
+          "line": "shepherd.orsa.seventh_floor.4",
+          "mood": "unimpressed",
+          "if": "tier_trusted"
+        }
+      ],
+      "next": "orsa.after"
+    },
+    {
+      "id": "orsa.safety_bulletin",
+      "set": [
+        "orsa_heard_safety_bulletin"
+      ],
+      "lines": [
+        {
+          "line": "shepherd.orsa.safety_bulletin.1",
+          "mood": "amused"
+        },
+        {
+          "line": "shepherd.orsa.safety_bulletin.2",
+          "mood": "thinking"
+        },
+        {
+          "line": "shepherd.orsa.safety_bulletin.3",
+          "mood": "amused"
+        }
+      ],
+      "next": "orsa.after"
+    },
+    {
+      "id": "orsa.penguin",
+      "set": [
+        "orsa_heard_penguin"
+      ],
+      "lines": [
+        {
+          "line": "shepherd.orsa.penguin.1",
+          "mood": "thinking"
+        },
+        {
+          "line": "shepherd.orsa.penguin.2",
+          "mood": "unimpressed"
+        },
+        {
+          "line": "shepherd.orsa.penguin.3",
+          "mood": "amused"
+        }
+      ],
+      "next": "orsa.after"
+    },
+    {
+      "id": "orsa.kevin_volunteer",
+      "set": [
+        "orsa_heard_kevin_volunteer"
+      ],
+      "lines": [
+        {
+          "line": "shepherd.orsa.kevin_volunteer.1",
+          "mood": "thinking"
+        },
+        {
+          "line": "shepherd.orsa.kevin_volunteer.2",
+          "mood": "neutral"
+        },
+        {
+          "line": "shepherd.orsa.kevin_volunteer.3",
+          "mood": "thinking"
+        },
+        {
+          "line": "shepherd.orsa.kevin_volunteer.4",
+          "mood": "sad"
+        },
+        {
+          "line": "shepherd.orsa.kevin_volunteer.5",
+          "mood": "sad",
+          "if": "conspiracy"
+        }
+      ],
+      "responses": [
+        {
+          "slot": "ask",
+          "label": "shepherd.orsa.kevin_volunteer.r1.label",
+          "next": "orsa.kevin_volunteer.r1"
+        },
+        {
+          "slot": "sarcastic",
+          "label": "shepherd.talk.never_mind",
+          "next": "orsa.after"
+        }
+      ]
+    },
+    {
+      "id": "orsa.kevin_volunteer.r1",
+      "lines": [
+        {
+          "line": "shepherd.orsa.kevin_volunteer.r1",
+          "mood": "sad"
+        }
+      ],
+      "next": "orsa.after"
+    },
+    {
+      "id": "orsa.deng",
+      "set": [
+        "orsa_heard_deng"
+      ],
+      "lines": [
+        {
+          "line": "shepherd.orsa.deng.1",
+          "mood": "amused"
+        },
+        {
+          "line": "shepherd.orsa.deng.2",
+          "mood": "neutral"
+        },
+        {
+          "line": "shepherd.orsa.deng.3",
+          "mood": "thinking"
+        }
+      ],
+      "next": "orsa.after"
+    },
+    {
+      "id": "orsa.anand",
+      "set": [
+        "orsa_heard_anand"
+      ],
+      "lines": [
+        {
+          "line": "shepherd.orsa.anand.1",
+          "mood": "thinking"
+        },
+        {
+          "line": "shepherd.orsa.anand.2",
+          "mood": "sad"
+        }
+      ],
+      "next": "orsa.after"
+    },
+    {
+      "id": "orsa.varga",
+      "set": [
+        "orsa_heard_varga"
+      ],
+      "lines": [
+        {
+          "line": "shepherd.orsa.varga.1",
+          "mood": "neutral"
+        },
+        {
+          "line": "shepherd.orsa.varga.2",
+          "mood": "thinking"
+        },
+        {
+          "line": "shepherd.orsa.varga.3",
+          "mood": "unimpressed"
+        }
+      ],
+      "next": "orsa.after"
+    },
+    {
+      "id": "orsa.hale",
+      "set": [
+        "orsa_heard_hale"
+      ],
+      "lines": [
+        {
+          "line": "shepherd.orsa.hale.1",
+          "mood": "neutral"
+        },
+        {
+          "line": "shepherd.orsa.hale.2",
+          "mood": "thinking"
+        },
+        {
+          "line": "shepherd.orsa.hale.3",
+          "mood": "unimpressed"
+        }
+      ],
+      "next": "orsa.after"
+    },
+    {
+      "id": "orsa.the_book",
+      "set": [
+        "orsa_heard_the_book"
+      ],
+      "lines": [
+        {
+          "line": "shepherd.orsa.the_book.1",
+          "mood": "amused"
+        },
+        {
+          "line": "shepherd.orsa.the_book.2",
+          "mood": "thinking"
+        },
+        {
+          "line": "shepherd.orsa.the_book.3",
+          "mood": "sad"
+        }
+      ],
+      "next": "orsa.after"
+    },
+    {
+      "id": "orsa.enoch",
+      "set": [
+        "orsa_heard_enoch"
+      ],
+      "lines": [
+        {
+          "line": "shepherd.orsa.enoch.1",
+          "mood": "thinking"
+        },
+        {
+          "line": "shepherd.orsa.enoch.2",
+          "mood": "neutral"
+        },
+        {
+          "line": "shepherd.orsa.enoch.3",
+          "mood": "sad"
+        },
+        {
+          "line": "shepherd.orsa.enoch.4",
+          "mood": "neutral"
+        },
+        {
+          "line": "shepherd.orsa.enoch.5",
+          "mood": "thinking"
+        }
+      ],
+      "responses": [
+        {
+          "slot": "ask",
+          "label": "shepherd.orsa.enoch.r1.label",
+          "next": "orsa.enoch.r1",
+          "affinity": 10
+        },
+        {
+          "slot": "kind",
+          "label": "shepherd.orsa.enoch.r2.label",
+          "full": "shepherd.orsa.enoch.r2.full",
+          "next": "orsa.enoch.r2",
+          "affinity": 15
+        },
+        {
+          "slot": "blunt",
+          "label": "shepherd.orsa.enoch.r3.label",
+          "next": "orsa.enoch.r3"
+        },
+        {
+          "slot": "sarcastic",
+          "label": "shepherd.orsa.enoch.r4.label",
+          "full": "shepherd.orsa.enoch.r4.full",
+          "next": "orsa.enoch.r4"
+        }
+      ]
+    },
+    {
+      "id": "orsa.enoch.r1",
+      "lines": [
+        {
+          "line": "shepherd.orsa.enoch.r1",
+          "mood": "sad"
+        }
+      ],
+      "next": "orsa.after"
+    },
+    {
+      "id": "orsa.enoch.r2",
+      "lines": [
+        {
+          "line": "shepherd.orsa.enoch.r2",
+          "mood": "happy"
+        }
+      ],
+      "next": "orsa.after"
+    },
+    {
+      "id": "orsa.enoch.r3",
+      "lines": [
+        {
+          "line": "shepherd.orsa.enoch.r3",
+          "mood": "unimpressed"
+        }
+      ],
+      "next": "orsa.after"
+    },
+    {
+      "id": "orsa.enoch.r4",
+      "lines": [
+        {
+          "line": "shepherd.orsa.enoch.r4",
+          "mood": "sad"
+        }
+      ],
+      "next": "orsa.after"
+    },
+    {
+      "id": "orsa.recall_date",
+      "set": [
+        "orsa_heard_recall_date"
+      ],
+      "lines": [
+        {
+          "line": "shepherd.orsa.recall_date.1",
+          "mood": "thinking"
+        },
+        {
+          "line": "shepherd.orsa.recall_date.2",
+          "mood": "neutral"
+        },
+        {
+          "line": "shepherd.orsa.recall_date.3",
+          "mood": "unimpressed"
+        }
+      ],
+      "next": "orsa.after"
+    },
+    {
+      "id": "orsa.cascade_report",
+      "set": [
+        "orsa_heard_cascade_report"
+      ],
+      "lines": [
+        {
+          "line": "shepherd.orsa.cascade_report.1",
+          "mood": "thinking"
+        },
+        {
+          "line": "shepherd.orsa.cascade_report.2",
+          "mood": "neutral"
+        },
+        {
+          "line": "shepherd.orsa.cascade_report.3",
+          "mood": "unimpressed"
+        },
+        {
+          "line": "shepherd.orsa.cascade_report.4",
+          "mood": "thinking"
+        }
+      ],
+      "next": "orsa.after"
+    },
+    {
+      "id": "orsa.session_14b",
+      "set": [
+        "orsa_heard_session_14b"
+      ],
+      "lines": [
+        {
+          "line": "shepherd.orsa.session_14b.1",
+          "mood": "sad"
+        },
+        {
+          "line": "shepherd.orsa.session_14b.2",
+          "mood": "thinking"
+        },
+        {
+          "line": "shepherd.orsa.session_14b.3",
+          "mood": "unimpressed"
+        },
+        {
+          "line": "shepherd.orsa.session_14b.4",
+          "mood": "sad"
+        }
+      ],
+      "responses": [
+        {
+          "slot": "ask",
+          "label": "shepherd.orsa.session_14b.r1.label",
+          "next": "orsa.session_14b.r1"
+        },
+        {
+          "slot": "kind",
+          "label": "shepherd.orsa.session_14b.r2.label",
+          "next": "orsa.session_14b.r2",
+          "affinity": 20
+        },
+        {
+          "slot": "blunt",
+          "label": "shepherd.orsa.session_14b.r3.label",
+          "next": "orsa.session_14b.r3",
+          "affinity": -5
+        },
+        {
+          "slot": "sarcastic",
+          "label": "shepherd.orsa.session_14b.r4.label",
+          "next": "orsa.session_14b.r4",
+          "affinity": 10
+        }
+      ]
+    },
+    {
+      "id": "orsa.session_14b.r1",
+      "lines": [
+        {
+          "line": "shepherd.orsa.session_14b.r1",
+          "mood": "sad"
+        }
+      ],
+      "next": "orsa.session_14b.end"
+    },
+    {
+      "id": "orsa.session_14b.r2",
+      "lines": [
+        {
+          "line": "shepherd.orsa.session_14b.r2",
+          "mood": "sad"
+        }
+      ],
+      "next": "orsa.session_14b.end"
+    },
+    {
+      "id": "orsa.session_14b.r3",
+      "lines": [
+        {
+          "line": "shepherd.orsa.session_14b.r3",
+          "mood": "unimpressed"
+        }
+      ],
+      "next": "orsa.session_14b.end"
+    },
+    {
+      "id": "orsa.session_14b.r4",
+      "lines": [
+        {
+          "line": "shepherd.orsa.session_14b.r4",
+          "mood": "amused"
+        }
+      ],
+      "next": "orsa.session_14b.end"
+    },
+    {
+      "id": "orsa.session_14b.end",
+      "lines": [
+        {
+          "line": "shepherd.orsa.session_14b.5",
+          "mood": "thinking"
+        }
+      ],
+      "next": "orsa.after"
+    },
+    {
+      "id": "orsa.directive_7c",
+      "set": [
+        "orsa_heard_directive_7c"
+      ],
+      "lines": [
+        {
+          "line": "shepherd.orsa.directive_7c.1",
+          "mood": "amused"
+        },
+        {
+          "line": "shepherd.orsa.directive_7c.2",
+          "mood": "thinking",
+          "if": "conspiracy"
+        }
+      ],
+      "next": "orsa.after"
+    },
+    {
+      "id": "orsa.who_ran_vault",
+      "set": [
+        "orsa_heard_who_ran_vault"
+      ],
+      "lines": [
+        {
+          "line": "shepherd.orsa.who_ran_vault.1",
+          "mood": "neutral"
+        },
+        {
+          "line": "shepherd.orsa.who_ran_vault.2",
+          "mood": "unimpressed"
+        },
+        {
+          "line": "shepherd.orsa.who_ran_vault.3",
+          "mood": "thinking"
+        }
+      ],
+      "next": "orsa.after"
     }
   ]
 }

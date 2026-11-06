@@ -19,6 +19,12 @@
       "examples": ["how are you today", "so how are you", "and how are you?", "how's it going today", "how are you holding up", "how do you feel", "are you okay", "are you doing okay", "what's up with you", "you doing alright", "how's your day", "how are things", "how you doing"]
     },
     {
+      "id": "who_are_you",
+      "node": "chat.who_are_you",
+      "when": "tier_above_wary",
+      "examples": ["who are you?", "what are you", "what's your name", "who are you exactly", "tell me who you are", "what do they call you", "what should i call you", "are you aurora", "introduce yourself", "what is your name"]
+    },
+    {
       "id": "alive",
       "node": "chat.alive",
       "when": "tier_above_wary",

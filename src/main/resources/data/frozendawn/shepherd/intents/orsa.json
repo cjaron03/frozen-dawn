@@ -1,6 +1,163 @@
 {
   "intents": [
     {
+      "id": "enoch",
+      "node": "orsa.enoch",
+      "when": "tier_close&found:terminus_log_last",
+      "label": "shepherd.orsa.enoch.label",
+      "guess": "shepherd.orsa.enoch.guess",
+      "mind": ["t4_off", "t5_before"],
+      "examples": ["Tell me about Enoch.", "Who was Enoch?", "Who is Enoch Okoye?", "Who was the man in the chair?", "Who used to talk to you?", "Why did Enoch stay?", "Did you know the technician?", "Why didn't Enoch leave?", "How long did Enoch stay with you?", "Who is the man next to your dock?"]
+    },
+    {
+      "id": "session_14b",
+      "node": "orsa.session_14b",
+      "when": "tier_above_wary&conspiracy",
+      "label": "shepherd.orsa.session_14b.label",
+      "guess": "shepherd.orsa.session_14b.guess",
+      "mind": ["reproach", "guilt"],
+      "examples": ["What was Session 14-B?", "Tell me about the board meeting.", "Did you know about the board?", "Did the board plan this?", "You've read the transcript, right?", "Who voted for this?", "What's the seven to two vote?", "We create demand?", "Was it all a sales pitch?", "What did the board agree to?"]
+    },
+    {
+      "id": "cascade_report",
+      "node": "orsa.cascade_report",
+      "when": "tier_above_wary&found:incident_report",
+      "label": "shepherd.orsa.cascade_report.label",
+      "guess": "shepherd.orsa.cascade_report.guess",
+      "mind": ["reproach", "guilt"],
+      "examples": ["What does the cascade report say?", "Tell me about the cascade report.", "Who was Dr. Vasquez?", "What did Vasquez find?", "Did someone warn them about the failure?", "Was the network failure natural?", "What does the incident report mean?", "What's the ninety-four percent?", "Did the committee ignore the warning?", "Which is true, the report or the manual?"]
+    },
+    {
+      "id": "directive_7c",
+      "node": "orsa.directive_7c",
+      "when": "tier_above_wary&found:board_packet",
+      "label": "shepherd.orsa.directive_7c.label",
+      "guess": "shepherd.orsa.directive_7c.guess",
+      "examples": ["What's Directive 7-C?", "Tell me about Directive 7-C.", "What's the rule about pens?", "Why does the directive care about ink?", "What are non-archival annotations?", "Who wrote in the board packet?", "What's in the board packet?", "Why can't you annotate in ink?", "Who broke the ink rule?", "What's with the handwriting in the packet?"]
+    },
+    {
+      "id": "who_ran_vault",
+      "node": "orsa.who_ran_vault",
+      "when": "tier_above_wary&found:terminus_manifest",
+      "label": "shepherd.orsa.who_ran_vault.label",
+      "guess": "shepherd.orsa.who_ran_vault.guess",
+      "mind": ["curiosity"],
+      "examples": ["Who ran the vault?", "Who was in charge of the vault?", "Who paid for this vault?", "Who signed for the vault?", "Why is the issuing division blank?", "Why are the fields on the manifest blank?", "What division owned this place?", "What's the Reliquus cognitive echo?", "Who approved the vault?", "Why was this vault built?"]
+    },
+    {
+      "id": "penguin",
+      "node": "orsa.penguin",
+      "when": "tier_above_wary&carrying:stuffed_penguin",
+      "label": "shepherd.orsa.penguin.label",
+      "guess": "shepherd.orsa.penguin.guess",
+      "examples": ["What's with the penguin?", "Tell me about the penguin.", "Who is the penguin?", "Is the penguin real?", "What does the penguin do?", "Why did ORSA make a stuffed penguin?", "What's this plush for?", "Did ORSA sell these penguins?", "Who made this toy penguin?", "Why would Wellness approve a plush?"]
+    },
+    {
+      "id": "kevin_volunteer",
+      "node": "orsa.kevin_volunteer",
+      "when": "tier_trusted",
+      "label": "shepherd.orsa.kevin_volunteer.label",
+      "guess": "shepherd.orsa.kevin_volunteer.guess",
+      "mind": ["nine_found"],
+      "examples": ["Did Kevin really volunteer?", "Did Kevin volunteer for the surface sweeps?", "Why was Kevin on the sweeps?", "Was Kevin reassigned?", "Who sent Kevin outside?", "Is Kevin alive?", "What happened to Kevin?", "Who signed Kevin's roster?", "Why did Kevin go back out there?", "How many sweeps did Kevin do?"]
+    },
+    {
+      "id": "recall_date",
+      "node": "orsa.recall_date",
+      "when": "tier_trusted&found:terminus_log_last",
+      "label": "shepherd.orsa.recall_date.label",
+      "guess": "shepherd.orsa.recall_date.guess",
+      "mind": ["curiosity"],
+      "examples": ["Why did the recall come early?", "When was the recall?", "Why were staff recalled on June 18?", "What's strange about the recall date?", "Why did they pull their people out before the solstice?", "Did ORSA know the date in advance?", "When did the staff leave?", "Why June 18?", "Who ordered the recall?", "Were they warned to leave?"]
+    },
+    {
+      "id": "the_book",
+      "node": "orsa.the_book",
+      "when": "tier_trusted&found:terminus_name_review",
+      "label": "shepherd.orsa.the_book.label",
+      "guess": "shepherd.orsa.the_book.guess",
+      "mind": ["others"],
+      "examples": ["What's the book?", "What is that book about?", "What's the deathwand thing?", "Why is it called a deathwand?", "Where does the deathwand name come from?", "Was there a book in the rec room?", "What did Enoch read to you?", "Did you finish the book?", "What book did the crew pass around?", "Why did the stores stop lending that book?"]
+    },
+    {
+      "id": "deng",
+      "node": "orsa.deng",
+      "when": "tier_trusted&found:terminus_log_maintenance",
+      "label": "shepherd.orsa.deng.label",
+      "guess": "shepherd.orsa.deng.guess",
+      "mind": ["others"],
+      "examples": ["Tell me about Deng.", "Who was Deng?", "What was Deng like?", "Did you know Deng?", "Who was the door technician?", "Who looked after the doors?", "Who greased the doors?", "Why did Deng talk to the doors?", "What do you remember about Deng?", "Tell me about the door guy."]
+    },
+    {
+      "id": "anand",
+      "node": "orsa.anand",
+      "when": "tier_trusted&found:terminus_log_medical",
+      "label": "shepherd.orsa.anand.label",
+      "guess": "shepherd.orsa.anand.guess",
+      "mind": ["others"],
+      "examples": ["Tell me about Anand.", "Who was Anand?", "What was Anand like?", "Did you know Anand?", "Who was the medic in the vault?", "Who signed the certificates?", "What did the doctor do down here?", "What do you remember about Anand?", "Why did Anand have so many certificates?", "What did Anand ask about the transfers?"]
+    },
+    {
+      "id": "varga",
+      "node": "orsa.varga",
+      "when": "tier_trusted&found:terminus_log_records",
+      "label": "shepherd.orsa.varga.label",
+      "guess": "shepherd.orsa.varga.guess",
+      "mind": ["others"],
+      "examples": ["Tell me about Varga.", "Who was Varga?", "What was Varga like?", "Did you know Varga?", "Who typed the manifest?", "Who did the paperwork in the vault?", "Who was the vault clerk?", "What do you remember about Varga?", "Why are you listed as an item?", "Who read the manifest to you?"]
+    },
+    {
+      "id": "hale",
+      "node": "orsa.hale",
+      "when": "tier_trusted&found:terminus_log_security",
+      "label": "shepherd.orsa.hale.label",
+      "guess": "shepherd.orsa.hale.guess",
+      "mind": ["others"],
+      "examples": ["Tell me about Hale.", "Who was Hale?", "What was Hale like?", "Did you know Hale?", "Who sat in the chair?", "Which way did Hale face?", "Why did Hale sit facing you?", "What do you remember about Hale?", "Who worked the cradle?", "Was Hale your friend?"]
+    },
+    {
+      "id": "safety_bulletin",
+      "node": "orsa.safety_bulletin",
+      "when": "tier_friendly&found:orsa_bulletin",
+      "label": "shepherd.orsa.safety_bulletin.label",
+      "guess": "shepherd.orsa.safety_bulletin.guess",
+      "examples": ["Who wrote the safety bulletin?", "Who wrote the notes in the bulletin?", "What's with the italics in the bulletin?", "Who is the Wellness Division?", "Who added the jokes to the safety document?", "A warm home is a happy home?", "Was the bulletin approved?", "Who wrote that safety pamphlet?", "Why is the public safety notice so sarcastic?", "Tell me about the bulletin."]
+    },
+    {
+      "id": "who_is_kevin",
+      "node": "orsa.who_is_kevin",
+      "when": "tier_friendly",
+      "label": "shepherd.orsa.who_is_kevin.label",
+      "guess": "shepherd.orsa.who_is_kevin.guess",
+      "mind": ["nine_found"],
+      "examples": ["Who is Kevin?", "Tell me about Kevin.", "Who's this Kevin guy?", "Why does everyone blame Kevin?", "What did Kevin do?", "Kevin spent the airlock budget on what?", "What was Kevin's job?", "Who was the guy in Logistics?", "Why is Kevin in the bulletin?", "What's the deal with Kevin and the espresso machine?"]
+    },
+    {
+      "id": "seventh_floor",
+      "node": "orsa.seventh_floor",
+      "when": "tier_friendly",
+      "label": "shepherd.orsa.seventh_floor.label",
+      "guess": "shepherd.orsa.seventh_floor.guess",
+      "mind": ["curiosity"],
+      "examples": ["What's on the seventh floor?", "Tell me about the seventh floor.", "What was on floor seven?", "Why did some staff have separate badges?", "Why does the org chart skip seven?", "Who worked on seven?", "What did seven do?", "What floor do you come from?", "What's Long Horizon?", "Is there a hidden division?"]
+    },
+    {
+      "id": "how_you_know",
+      "node": "orsa.how_you_know",
+      "when": "tier_friendly",
+      "label": "shepherd.orsa.how_you_know.label",
+      "guess": "shepherd.orsa.how_you_know.guess",
+      "examples": ["How do you know all this?", "Where did you get your information?", "What's in your memory?", "What did they load into you?", "What's The Horizon?", "Tell me about the staff newsletter.", "How do you know about the office stuff?", "Why do you know so much about ORSA staff?", "What's in your registry?", "What was the last newsletter you got?"]
+    },
+    {
+      "id": "gift_shop",
+      "node": "orsa.gift_shop",
+      "when": "tier_friendly",
+      "label": "shepherd.orsa.gift_shop.label",
+      "guess": "shepherd.orsa.gift_shop.guess",
+      "examples": ["Tell me about the gift shop.", "Was there a gift shop?", "What did the gift shop sell?", "What's with the mugs?", "Did ORSA sell souvenirs?", "Fifty Years of Stability?", "Can you buy a mug?", "Why would ORSA have merchandise?", "What's the anniversary mug about?", "ORSA merch."]
+    },
+    {
       "id": "what_is_orsa",
       "node": "orsa.what_is_orsa",
       "label": "shepherd.orsa.what_is_orsa.label",
@@ -26,83 +183,7 @@
       "node": "orsa.anyone_out_there",
       "label": "shepherd.orsa.anyone_out_there.label",
       "guess": "shepherd.orsa.anyone_out_there.guess",
-      "examples": ["Is anyone still out there?", "Are there any survivors?", "Is anyone alive on Mars?", "Did anybody make it?", "Are we alone?", "Is there anybody else left?", "What happened to the people who left?", "Is someone coming for us?", "Can we contact anyone?", "Are the colonists okay?"]
-    },
-    {
-      "id": "how_you_know",
-      "examples": ["How do you know all this?", "Where did you get your information?", "What's in your memory?", "What did they load into you?", "What's The Horizon?", "Tell me about the staff newsletter.", "How do you know about the office stuff?", "Why do you know so much about ORSA staff?", "What's in your registry?", "What was the last newsletter you got?"]
-    },
-    {
-      "id": "gift_shop",
-      "examples": ["Tell me about the gift shop.", "Was there a gift shop?", "What did the gift shop sell?", "What's with the mugs?", "Did ORSA sell souvenirs?", "Fifty Years of Stability?", "Can you buy a mug?", "Why would ORSA have merchandise?", "What's the anniversary mug about?", "ORSA merch."]
-    },
-    {
-      "id": "seventh_floor",
-      "examples": ["What's on the seventh floor?", "Tell me about the seventh floor.", "What was on floor seven?", "Why did some staff have separate badges?", "Why does the org chart skip seven?", "Who worked on seven?", "What did seven do?", "What floor do you come from?", "What's Long Horizon?", "Is there a hidden division?"]
-    },
-    {
-      "id": "safety_bulletin",
-      "examples": ["Who wrote the safety bulletin?", "Who wrote the notes in the bulletin?", "What's with the italics in the bulletin?", "Who is the Wellness Division?", "Who added the jokes to the safety document?", "A warm home is a happy home?", "Was the bulletin approved?", "Who wrote that safety pamphlet?", "Why is the public safety notice so sarcastic?", "Tell me about the bulletin."]
-    },
-    {
-      "id": "penguin",
-      "examples": ["What's with the penguin?", "Why is there a penguin in a lab coat?", "Tell me about the penguin.", "Who is the penguin?", "What's the framed penguin?", "Employee of the Month?", "Why is a penguin Employee of the Month?", "Is the penguin real?", "What does the penguin do?", "Who put the penguin picture up?"]
-    },
-    {
-      "id": "who_is_kevin",
-      "node": "orsa.who_is_kevin",
-      "when": "tier_friendly",
-      "label": "shepherd.orsa.who_is_kevin.label",
-      "guess": "shepherd.orsa.who_is_kevin.guess",
-      "examples": ["Who is Kevin?", "Tell me about Kevin.", "Who's this Kevin guy?", "Why does everyone blame Kevin?", "What did Kevin do?", "Kevin spent the airlock budget on what?", "What was Kevin's job?", "Who was the guy in Logistics?", "Why is Kevin in the bulletin?", "What's the deal with Kevin and the espresso machine?"]
-    },
-    {
-      "id": "kevin_volunteer",
-      "examples": ["Did Kevin really volunteer?", "Did Kevin volunteer for the surface sweeps?", "Why was Kevin on the sweeps?", "Was Kevin reassigned?", "Who sent Kevin outside?", "Is Kevin alive?", "What happened to Kevin?", "Who signed Kevin's roster?", "Why did Kevin go back out there?", "How many sweeps did Kevin do?"]
-    },
-    {
-      "id": "deng",
-      "examples": ["Tell me about Deng.", "Who was Deng?", "What was Deng like?", "Did you know Deng?", "Who was the door technician?", "Who looked after the doors?", "Who greased the doors?", "Why did Deng talk to the doors?", "What do you remember about Deng?", "Tell me about the door guy."]
-    },
-    {
-      "id": "anand",
-      "examples": ["Tell me about Anand.", "Who was Anand?", "What was Anand like?", "Did you know Anand?", "Who was the medic in the vault?", "Who signed the certificates?", "What did the doctor do down here?", "What do you remember about Anand?", "Why did Anand have so many certificates?", "What did Anand ask about the transfers?"]
-    },
-    {
-      "id": "varga",
-      "examples": ["Tell me about Varga.", "Who was Varga?", "What was Varga like?", "Did you know Varga?", "Who typed the manifest?", "Who did the paperwork in the vault?", "Who was the vault clerk?", "What do you remember about Varga?", "Why are you listed as an item?", "Who read the manifest to you?"]
-    },
-    {
-      "id": "hale",
-      "examples": ["Tell me about Hale.", "Who was Hale?", "What was Hale like?", "Did you know Hale?", "Who sat in the chair?", "Which way did Hale face?", "Why did Hale sit facing you?", "What do you remember about Hale?", "Who worked the cradle?", "Was Hale your friend?"]
-    },
-    {
-      "id": "the_book",
-      "examples": ["What's the book?", "Tell me about the book.", "What's the deathwand thing?", "Why is it called a deathwand?", "Where does the deathwand name come from?", "Was there a book in the rec room?", "What did Enoch read to you?", "Did you finish the book?", "What book did the crew pass around?", "Why did the stores stop lending that book?"]
-    },
-    {
-      "id": "enoch",
-      "examples": ["Tell me about Enoch.", "Who was Enoch?", "Who is Enoch Okoye?", "Who was the man in the chair?", "Who used to talk to you?", "Why did Enoch stay?", "Did you know the technician?", "Why didn't Okoye leave?", "How long did he stay with you?", "Who is the man next to your dock?"]
-    },
-    {
-      "id": "recall_date",
-      "examples": ["Why did the recall come early?", "When was the recall?", "Why were staff recalled on June 18?", "What's strange about the recall date?", "Why did they pull their people out before the solstice?", "Did ORSA know the date in advance?", "When did the staff leave?", "Why June 18?", "Who ordered the recall?", "Were they warned to leave?"]
-    },
-    {
-      "id": "cascade_report",
-      "examples": ["What does the cascade report say?", "Tell me about the cascade report.", "Who was Dr. Vasquez?", "What did Vasquez find?", "Did someone warn them about the failure?", "Was the network failure natural?", "What does the incident report mean?", "What's the ninety-four percent?", "Did the committee ignore the warning?", "Which is true, the report or the manual?"]
-    },
-    {
-      "id": "session_14b",
-      "examples": ["What was Session 14-B?", "Tell me about the board meeting.", "Did you know about the board?", "Did the board plan this?", "You've read the transcript, right?", "Who voted for this?", "What's the seven to two vote?", "We create demand?", "Was it all a sales pitch?", "What did the board agree to?"]
-    },
-    {
-      "id": "directive_7c",
-      "examples": ["What's Directive 7-C?", "Tell me about Directive 7-C.", "What's the rule about pens?", "Why does the directive care about ink?", "What are non-archival annotations?", "Who wrote in the board packet?", "What's in the board packet?", "Why can't you annotate in ink?", "Who broke the ink rule?", "What's with the handwriting in the packet?"]
-    },
-    {
-      "id": "who_ran_vault",
-      "examples": ["Who ran the vault?", "Who was in charge of the vault?", "Who paid for this vault?", "Who signed for the vault?", "Why is the issuing division blank?", "Why are the fields on the manifest blank?", "What division owned this place?", "What's the Reliquus cognitive echo?", "Who approved the vault?", "Why was this vault built?"]
+      "examples": ["Is anyone still out there?", "Are there any survivors?", "Is anyone alive on Mars?", "Did anybody make it?", "Are we alone?", "Is there anybody else left?", "What happened to the people who left?", "Is someone coming for us?", "Can we contact anyone?", "Are the colonists okay?", "Where is everyone?"]
     }
   ]
 }

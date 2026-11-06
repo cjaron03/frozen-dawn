@@ -49,7 +49,7 @@ class ShepherdDialogueDataTest {
             }
         }
         // Built at run time from the open topics, and laid over these.
-        nodes.putAll(ShepherdTopics.menu(List.of(), condition -> false, false));
+        nodes.putAll(ShepherdTopics.menu(List.of(), condition -> false, "", false));
         nodes.put(ShepherdTopics.AFTER, nodes.get(ShepherdTopics.MENU));
         return nodes;
     }
@@ -78,12 +78,19 @@ class ShepherdDialogueDataTest {
     @Test
     void everyTopicLineHasItsLang() throws Exception {
         var lang = lang();
-        for (Node node : nodes().values()) {
+        var nodes = nodes();
+        for (Node node : nodes.values()) {
             if (!node.id().startsWith("orsa.") && !node.id().startsWith("chat.")) continue;
             node.lines().forEach(line -> {
                 assertTrue(lang.has(line.key()), node.id() + " -> " + line.key());
                 if (line.heavyKey() != null) assertTrue(lang.has(line.heavyKey()), node.id() + " -> " + line.heavyKey());
             });
+        }
+        for (Intent intent : intents()) {
+            if (intent.label() == null) continue;
+            var node = nodes.get(intent.node());
+            assertNotNull(node, intent.id());
+            assertTrue(node.set().contains(ShepherdTopics.HEARD + intent.id()), intent.id() + " orders the menu by this");
         }
     }
 
@@ -94,7 +101,31 @@ class ShepherdDialogueDataTest {
             if (intent.label() == null) continue;
             assertTrue(lang.has(intent.label()), intent.label());
             assertTrue(lang.has(intent.guess()), intent.guess());
+            assertTrue(lang.get(intent.guess()).getAsString().matches("You mean .+, or are we just saying things now\\?"), intent.guess());
         }
+    }
+
+    /** A key nothing ever reads would leave a topic waiting for a focus she never has. */
+    @Test
+    void everyMindKeyIsOneSheHas() throws Exception {
+        var known = new HashSet<>(List.of("nine_found", "t4_off", "t5_before"));
+        for (var feeling : com.frozendawn.miller.Feelings.Feeling.values()) known.add(feeling.name().toLowerCase(Locale.ROOT));
+        for (var drive : com.frozendawn.miller.Drives.Drive.values()) known.add(drive.name().toLowerCase(Locale.ROOT));
+        for (Intent intent : intents()) assertTrue(known.containsAll(intent.mind()), intent.id() + ": " + intent.mind());
+        assertEquals(13, intents().stream().filter(intent -> !intent.mind().isEmpty()).count());
+    }
+
+    /** A longer label overruns its button. */
+    @Test
+    void everyLabelFitsTheSlot() throws Exception {
+        var lang = lang();
+        var labels = new ArrayList<String>();
+        for (Intent intent : intents()) if (intent.label() != null) labels.add(intent.label());
+        for (Node node : nodes().values()) {
+            if (node.id().startsWith("orsa.")) node.responses().forEach(response -> labels.add(response.label()));
+        }
+        assertTrue(labels.size() > 22, "The labels moved: " + labels.size());
+        for (String label : labels) assertTrue(lang.get(label).getAsString().length() <= 20, label + ": " + lang.get(label));
     }
 
     @Test
@@ -115,20 +146,34 @@ class ShepherdDialogueDataTest {
     @Test
     void typedLinesStayInside() throws Exception {
         var banned = java.util.regex.Pattern.compile("\\b(six|fair|rules|alive|respawn|heart|archive|maeve|continuity|miller|anderson-kind|tithonus|sophie|game)\\b", java.util.regex.Pattern.CASE_INSENSITIVE);
+        // The player's words, not hers (Ruling 16).
+        var theirs = Set.of("shepherd.orsa.kevin_volunteer.r1.label");
         int checked = 0;
         for (var line : lang().entrySet()) {
-            if (!line.getKey().matches("shepherd\\.(orsa|typed|chat|crash|stop)\\..*")) continue;
+            if (!line.getKey().matches("shepherd\\.(orsa|typed|chat|crash|stop)\\..*") || theirs.contains(line.getKey())) continue;
             checked++;
             assertFalse(banned.matcher(line.getValue().getAsString()).find(), line.getKey() + ": " + line.getValue());
         }
-        assertTrue(checked > 40, "The keys moved: " + checked);
+        assertTrue(checked > 150, "The keys moved: " + checked);
+    }
+
+    /** The crash's verdict is the only place she shows the word: typed back, it must find nothing of hers to land on (Ruling 25). */
+    @Test
+    void sheNeverSaysPattern() throws Exception {
+        int checked = 0;
+        for (var line : lang().entrySet()) {
+            if (!line.getKey().matches("shepherd\\.(orsa|typed|chat)\\..*")) continue;
+            checked++;
+            assertFalse(line.getValue().getAsString().toLowerCase(Locale.ROOT).contains("pattern"), line.getKey() + ": " + line.getValue());
+        }
+        assertTrue(checked > 150, "The keys moved: " + checked);
     }
 
     @Test
     void everyIntentIsWellFormed() throws Exception {
         var ids = new HashSet<String>();
         var intents = intents();
-        assertEquals(26, intents.size());
+        assertEquals(27, intents.size());
         for (Intent intent : intents) {
             assertTrue(ids.add(intent.id()), "two intents named " + intent.id());
             assertTrue(intent.examples().size() >= 8 && intent.examples().size() <= 15, intent.id());
@@ -136,8 +181,8 @@ class ShepherdDialogueDataTest {
             if (intent.label() != null) assertNotNull(intent.node(), intent.id() + " offers a topic with nowhere to go");
             if (intent.node() != null) assertTrue(nodes().containsKey(intent.node()), intent.id() + " -> " + intent.node());
         }
-        assertEquals(5, intents.stream().filter(intent -> intent.label() != null).count());
-        assertEquals(9, intents.stream().filter(intent -> intent.node() != null).count());
+        assertEquals(22, intents.stream().filter(intent -> intent.label() != null).count());
+        assertEquals(27, intents.stream().filter(intent -> intent.node() != null).count());
     }
 
     @Test
@@ -174,10 +219,13 @@ class ShepherdDialogueDataTest {
     void everyConditionIsKnown() throws Exception {
         var nodes = nodes();
         Set<String> known = new HashSet<>(List.of("woke_in_vault", "wand_cradle", "wand_hand", "wand_other", "tier_silent", "tier_wary", "tier_above_wary", "tier_friendly", "tier_trusted", "tier_close",
-                "stage_noticing", "stage_walls", "quiet", "pit_open", "saw_aurora", "stars_before", "lean_someone", "lean_left"));
+                "stage_noticing", "stage_walls", "quiet", "pit_open", "saw_aurora", "stars_before", "lean_someone", "lean_left", "conspiracy"));
         for (Node node : nodes.values()) {
             known.addAll(node.set());
             for (Response response : node.responses()) known.addAll(response.set());
+        }
+        for (Intent intent : intents()) {
+            if (intent.when() != null) assertTrue(isKnown(known, intent.when()), intent.id() + ": " + intent.when());
         }
         for (Node node : nodes.values()) {
             if (node.when() != null) assertTrue(isKnown(known, node.when()), node.id() + ": " + node.when());
@@ -188,8 +236,9 @@ class ShepherdDialogueDataTest {
     }
 
     private static boolean isKnown(Set<String> known, String condition) {
+        if (condition.contains("&")) return java.util.Arrays.stream(condition.split("&", -1)).allMatch(part -> isKnown(known, part));
         if (condition.startsWith("not:")) return isKnown(known, condition.substring("not:".length()));
-        return known.contains(condition) || condition.startsWith("found:") || condition.startsWith("remembers:");
+        return known.contains(condition) || condition.startsWith("found:") || condition.startsWith("remembers:") || condition.startsWith("carrying:");
     }
 
     /** A line's text has one slot for each argument, and each argument is one the server can fill. */
