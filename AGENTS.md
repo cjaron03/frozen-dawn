@@ -6,7 +6,7 @@ Before working, identify the owning checkout, branch, HEAD and current changes. 
 
 ## Workflow
 
-1. Each feature gets its own branch and worktree, cut from `feat/maeve-director` unless the owner names another base. One feature, one worktree, one session: the session starts in that worktree and works there, with no second worktree beside it.
+1. Each feature gets its own branch and worktree, cut from `feat/maeve-director` unless the owner names another base. One feature, one worktree, one session: the session starts in that worktree and works there, with no second worktree beside it. A planned feature waits until the owner has approved its plan and the plan has merged into `feat/maeve-director`; its worktree is cut after that, so the build starts with the plan.
 2. The agent implements and verifies headlessly: tests first, then the full `architectVerify`.
 3. The owner does the visual pass. The agent prepares the feature's playtest world, launches the lab client (below) and reads the logs; the owner plays and reports what they see.
 4. Fix what the pass finds, then offer a PR. The owner approves every merge; a passing gate or replay is not approval.
