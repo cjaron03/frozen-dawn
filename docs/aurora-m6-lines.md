@@ -20,7 +20,7 @@ Each took the recommendation, 2026-11-06.
 
 1. **Frostmite's strategy (Ruling 19).** It holds in code, with three limits. See "Frostmite, for a verdict". Answer: keep, tested on a live swarm at the pass.
 2. **The twelve items (Ruling 12).** See "The twelve items, for a verdict". Answer: keep all twelve. The thermostat's tip is the weakest.
-3. **What the egg turns into (Ruling 16).** The figure "flickers to another shape", and no mockup drew that shape. A look needs an approved mockup. Answer: a small hooded figure on one knee, in her green, standing in for the figure that asks for help. It is no film character and carries no marks. Left as is on 2026-11-06, with a floating file number, 66, added at the owner's ask. The number is drawn on the hologram and never said, so the guard on "six" stays absolute. Drawn in `art/aurora-shepherd/egg-mockup.png` and `egg-mockup.gif`, for approval before Task 6.
+3. **What the egg turns into (Ruling 16).** The figure "flickers to another shape", and no mockup drew that shape. A look needs an approved mockup. Answer: a small hooded figure on one knee, in her green, standing in for the figure that asks for help. It is no film character and carries no marks. Left as is on 2026-11-06, with a floating file number, 66, added at the owner's ask. The number is drawn on the hologram and never said, so the guard on "six" stays absolute. Drawn in `art/aurora-shepherd/egg-mockup.png` and `egg-mockup.gif`, approved by the owner.
 4. **The gag's other items (Ruling 28).** The Stuffed Penguin is the first and the rest are yours. Answer: the penguin alone for now.
 5. **Seven greetings.** Ruling 23 asks for six to eight, and there are seven below, on top of the first and the long-gone lines. Answer: all seven stay.
 
@@ -321,7 +321,7 @@ Typed only, above Wary, with no label and no Close line (Ruling 17). All NEW.
 - **The gag,** at Close, when calm (Ruling 28). (Beaming) "Cargo! Cargo! Check this out!" PLAN, OWNER's words
 - **The gag, the penguin.** (Amused) "Look at him. Still doing his best." NEW. It calls back `penguin.3`.
 - **The nod,** `if t5_done`, once a world (Ruling 29). (Thinking) "ORSA had a file on a man named Clovis Bray. Heard of him?" PLAN
-- **The egg,** at Trusted, on the second projection, once (Ruling 16). (Flustered) "Sorry. Wrong file. That one wasn't for you." NEW. It quotes nothing, and it laughs at her own mistake, not at the Returned. Waits on the egg's mockup.
+- **The egg,** at Trusted, on the second projection, once (Ruling 16). (Flustered) "Sorry. Wrong file. That one wasn't for you." NEW. It quotes nothing, and it laughs at her own mistake, not at the Returned.
 
 ## Checked against the limits
 
@@ -352,4 +352,4 @@ Lines nearest the edge, to listen for at the pass: `architect.3` and `architect.
 
 ## The owner's marks
 
-2026-11-06: the five questions, each as recommended. The lines themselves are not yet marked.
+2026-11-06: "Yes to both". Every line, label and Close line above is keep, as it now reads, with the five questions answered as recommended and the Frostmite strategy and all twelve items kept. Cut: none. The egg's mockup, with its 66, is approved.
