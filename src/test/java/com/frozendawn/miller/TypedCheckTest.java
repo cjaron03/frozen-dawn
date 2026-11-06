@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test;
 class TypedCheckTest {
     @Test void theWordIsCaught() {
         for (String line : List.of("continuity", "CONTINUITY", "c o n t i n u i t y", "c.o.n.t.i.n.u.i.t.y", "c0ntinuity", "continuuuity", "cöntinuity", "continuty", "contiunity", "discontinuity",
-                "what is continuity", "tell me about C-O-N-T-I-N-U-I-T-Y please", "c0nt1nu1ty", "contiguity")) {
+                "what is continuity", "tell me about C-O-N-T-I-N-U-I-T-Y please", "c0nt1nu1ty", "contiguity", "continuit", "continuitt", "continuityx")) {
             assertTrue(TypedCheck.crashes(line), line);
         }
     }
@@ -20,7 +20,7 @@ class TypedCheckTest {
     }
 
     @Test void guardedWordsAreWholeWords() {
-        for (String line : List.of("who is sophie", "SOPHIE MILLER", "miller?", "project tithonus", "anderson-kind", "who is maeve", "is this minecraft", "this is a game", "will i respawn", "Söphie's file", "m4eve")) {
+        for (String line : List.of("sophie!", "who is maeve!!", "is this a game!", "minecraft!", "game1", "who is sophie", "SOPHIE MILLER", "miller?", "project tithonus", "anderson-kind", "who is maeve", "is this minecraft", "this is a game", "will i respawn", "Söphie's file", "m4eve")) {
             assertTrue(TypedCheck.guarded(line), line);
         }
         for (String line : List.of("gamely", "gamer", "the millers", "sophisticated", "who is kevin", "")) {

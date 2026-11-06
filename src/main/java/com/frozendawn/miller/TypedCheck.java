@@ -28,15 +28,20 @@ public final class TypedCheck {
     }
 
     public static boolean guarded(String text) {
-        return words(plain(text)).stream().anyMatch(GUARDED::contains);
+        // Before the swaps as well: the "!" in "sophie!" is punctuation, not an i.
+        return words(lower(text)).stream().anyMatch(GUARDED::contains) || words(plain(text)).stream().anyMatch(GUARDED::contains);
     }
 
     private static List<String> words(String plain) {
         return List.of(plain.split("\\P{L}+"));
     }
 
+    private static String lower(String text) {
+        return Normalizer.normalize(text, Normalizer.Form.NFKD).toLowerCase(Locale.ROOT).replaceAll("\\p{M}", "");
+    }
+
     private static String plain(String text) {
-        String lower = Normalizer.normalize(text, Normalizer.Form.NFKD).toLowerCase(Locale.ROOT).replaceAll("\\p{M}", "");
+        String lower = lower(text);
         var swapped = new StringBuilder(lower.length());
         for (char c : lower.toCharArray()) {
             int at = SWAPPED.indexOf(c);
@@ -59,7 +64,7 @@ public final class TypedCheck {
         if (Math.abs(end - target) > 1) return false;
         while (a < end && a < target && word.charAt(a) == WORD.charAt(a)) a++;
         if (a == end && a == target) return true;
-        if (word.substring(Math.min(a + 1, end)).equals(WORD.substring(Math.min(a + 1, target)))) return end == target;
+        if (end == target && word.substring(a + 1).equals(WORD.substring(a + 1))) return true;
         if (word.substring(a).equals(WORD.substring(Math.min(a + 1, target)))) return true;
         if (word.substring(Math.min(a + 1, end)).equals(WORD.substring(a))) return true;
         return end == target && a + 1 < end && word.charAt(a) == WORD.charAt(a + 1) && word.charAt(a + 1) == WORD.charAt(a)
