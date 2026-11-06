@@ -69,6 +69,12 @@ public final class ShepherdMomentsGameTest {
         return ShepherdEntity.spawnFrom(h.getLevel(), h.absolutePos(SPOT), player.getUUID());
     }
 
+    /** Left alone long enough for her own moments, with nobody walking. */
+    private static void leftAlone(GameTestHelper h, ShepherdEntity she) {
+        data(h).lastTalk(h.getLevel().getServer().overworld().getGameTime() - ShepherdPolicy.MOMENT_IDLE_TICKS);
+        she.stillFor(ShepherdPolicy.STILL_TICKS);
+    }
+
     private static void look(GameTestHelper h, ShepherdEntity she, ServerPlayer... near) {
         ShepherdEggs.look(h.getLevel(), she, List.of(near));
     }
@@ -135,6 +141,13 @@ public final class ShepherdMomentsGameTest {
         ShepherdTestWorld.whenTicking(h, () -> {
             var player = player(h, AWAY);
             var she = awake(h, player, FRIENDLY);
+            look(h, she, player);
+            h.assertTrue(!ShepherdProjection.active(), "Not until she has been left alone");
+            leftAlone(h, she);
+            she.stillFor(0);
+            look(h, she, player);
+            h.assertTrue(!ShepherdProjection.active(), "Not with them walking, or she would be left behind");
+            leftAlone(h, she);
             var zombie = hostile(h, player);
             look(h, she, player);
             h.assertTrue(!ShepherdProjection.active(), "Not with something near");
@@ -155,6 +168,7 @@ public final class ShepherdMomentsGameTest {
             var server = h.getLevel().getServer();
             var player = player(h, AWAY);
             var she = awake(h, player, FRIENDLY);
+            leftAlone(h, she);
             look(h, she, player);
             ShepherdProjection.tick(server);
             h.assertTrue(ShepherdProjection.active(), "Nobody saw");
@@ -181,6 +195,7 @@ public final class ShepherdMomentsGameTest {
             var follower = player(h, AWAY);
             var other = player(h, AWAY);
             var she = awake(h, follower, FRIENDLY);
+            leftAlone(h, she);
             look(h, she, follower, other);
             h.assertTrue(Optional.of(follower.getUUID()).equals(she.projectedPlayer()), "The small you is her follower: " + she.projectedPlayer());
             face(other, AT_HER);
@@ -197,9 +212,14 @@ public final class ShepherdMomentsGameTest {
             var server = h.getLevel().getServer();
             var player = player(h, AT_HER);
             var she = awake(h, player, FRIENDLY);
+            leftAlone(h, she);
             look(h, she, player);
             h.assertTrue(!ShepherdProjection.active(), "Only at Close");
             data(h).affinity(CLOSE);
+            data(h).lastTalk(server.overworld().getGameTime());
+            look(h, she, player);
+            h.assertTrue(!ShepherdProjection.active(), "Not straight after a talk");
+            leftAlone(h, she);
             var zombie = hostile(h, player);
             look(h, she, player);
             h.assertTrue(!ShepherdProjection.active(), "Not with something near");

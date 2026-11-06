@@ -57,8 +57,10 @@ public final class ShepherdPolicy {
     public static final int DAY_TICKS = 24000;
     /** Her gag, at most this often. */
     public static final int GAG_EVERY_TICKS = 3 * DAY_TICKS;
+    /** How long since anyone talked to her before she gets up to anything of her own. */
+    public static final int MOMENT_IDLE_TICKS = 2400;
     /** How long she keeps up what she thinks nobody sees, and how soon she tries again if they didn't. */
-    public static final int CAUGHT_WINDOW_TICKS = 200, CAUGHT_RETRY_TICKS = 1200;
+    public static final int CAUGHT_WINDOW_TICKS = 200, CAUGHT_RETRY_TICKS = 6000;
     /** Their view has to point this close to her to catch her, as a cosine: about 45 degrees. */
     public static final double LOOKING_AT = 0.7;
     /** How far a heater's burn reaches, as {@code ReturnedEntity} has it. */

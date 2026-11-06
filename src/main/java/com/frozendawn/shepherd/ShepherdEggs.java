@@ -68,10 +68,11 @@ public final class ShepherdEggs {
         var follower = ShepherdEntity.followerIn(level);
         if (follower == null || !near.contains(follower) || follower.distanceTo(she) > ShepherdPolicy.TALK_RANGE || ShepherdTalk.live() || she.asking()) return;
         if (data.tier() == Tier.WARY || !data.flag(ShepherdPrompt.FIRST_MEETING_DONE) || ShepherdReactions.quiet(data, now) || !ShepherdPrompt.calm(server, level, near)) return;
+        if (data.lastTalk() == ShepherdSavedData.NOT_SET || now - data.lastTalk() < ShepherdPolicy.MOMENT_IDLE_TICKS) return;
         if (data.tier().atLeast(Tier.CLOSE) && now >= data.deedReady(GAG)) {
             data.deedReady(GAG, now + ShepherdPolicy.GAG_EVERY_TICKS);
             ShepherdProjection.start(follower, she, "item", List.of(new Line(GAG_LINE, null, Mood.BEAMING, null), new Line(PENGUIN_LINE, null, Mood.AMUSED, null)));
-        } else if (now >= data.deedReady(CAUGHT) && near.stream().noneMatch(player -> looking(player, she))) {
+        } else if (now >= data.deedReady(CAUGHT) && she.stoodFor() >= ShepherdPolicy.STILL_TICKS && near.stream().noneMatch(player -> looking(player, she))) {
             data.deedReady(CAUGHT, now + ShepherdPolicy.CAUGHT_RETRY_TICKS);
             ShepherdProjection.secretly(follower, she);
         }
