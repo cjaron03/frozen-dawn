@@ -352,43 +352,40 @@ def worry_sheet():
     img.save(HERE / 'worry-motion-mockup.png')
 
 
-WHISTLES = [
-    ('A  Looks aside', ['........', '..##.##.', '..##.##.', '........', '..++....', '..++....']),
-    ('B  Eyes shut', ['........', '........', '.##..##.', '........', '...++...', '...++...']),
-    ('C  Looks up', ['.##..##.', '.##..##.', '........', '........', '...++...', '...++...']),
-]
-NOTE = [(7, 4), (7, 3), (7, 2), (7, 1), (7, 0), None, None, None]
+WHISTLE_SHUT = ['........', '........', '.#..#...', '........', '..++....', '........']
+WHISTLE_OPEN = ['........', '........', '.#..#...', '........', '..++....', '..++....']
+NOTE_SHAPE = ((1, 0), (1, 1), (0, 2), (1, 2))  # A stem and a head, at most 2 by 3 texels.
 
 
-def whistling(rows, frame):
-    """Her face, with one lit texel climbing the right side like a note."""
-    spot = NOTE[frame % len(NOTE)]
-    if spot is None:
-        return rows
-    x, y = spot
-    return [row[:x] + '#' + row[x + 1:] if i == y else row for i, row in enumerate(rows)]
+def whistling(frame):
+    """Small eyes, a mouth that opens and shuts, and a note rising up the right side, dimming at the top."""
+    rows = [list(row) for row in (WHISTLE_OPEN if frame // 2 % 2 else WHISTLE_SHUT)]
+    step = frame % 8
+    if step < 5:
+        top = 3 - step if step < 4 else 0
+        cell = '+' if step == 4 else '#'
+        for dx, dy in NOTE_SHAPE:
+            if 0 <= top + dy < H:
+                rows[top + dy][6 + dx] = cell
+    return [''.join(row) for row in rows]
 
 
 def whistle_mockups():
-    img = Image.new('RGB', (760, 330), C['bg'])
+    img = Image.new('RGB', (760, 300), C['bg'])
     d = ImageDraw.Draw(img)
-    d.text((24, 16), 'AURORA M6: WHISTLING, THREE TRIES', font=font(22), fill=C['text'])
-    d.text((24, 46), 'She whistles to herself and stops if you catch her. Motion is in the GIF.', font=font(13), fill=C['dim'])
-    for i, (name, rows) in enumerate(WHISTLES):
-        x = 40 + i * 240
-        framed(d, whistling(rows, 2), x, 96, 16)
-        d.text((x - 10, 210), name, font=font(15), fill=C['text'])
-        display(d, cells(whistling(rows, 2)), x, 240, 5)
+    d.text((24, 16), 'AURORA M6: WHISTLING', font=font(22), fill=C['text'])
+    d.text((24, 46), 'Eyes go small, the mouth moves, a note rises. Motion is in the GIF.', font=font(13), fill=C['dim'])
+    for i, frame in enumerate((0, 2, 3, 4)):
+        x = 34 + i * 180
+        display(d, cells(whistling(frame)), x, 90, 16)
+        display(d, cells(whistling(frame)), x, 206, 5)
+    d.text((34, 250), 'Play size, above.', font=font(12), fill=C['dim'])
     img.save(HERE / 'whistle-face-mockup.png')
-    s, pad = 14, 26
+    s, pad = 22, 26
     frames = []
-    for frame in range(len(NOTE) * 2):
-        img = Image.new('RGB', (pad + 3 * (W * s + pad), H * s + 2 * pad + 18), C['bg'])
-        d = ImageDraw.Draw(img)
-        for i, (name, rows) in enumerate(WHISTLES):
-            x = pad + i * (W * s + pad)
-            display(d, cells(whistling(rows, frame)), x, pad, s)
-            d.text((x, pad + H * s + 8), name, font=font(13), fill=C['dim'])
+    for frame in range(16):
+        img = Image.new('RGB', (W * s + 2 * pad, H * s + 2 * pad), C['bg'])
+        display(ImageDraw.Draw(img), cells(whistling(frame)), pad, pad, s)
         frames.append(img)
     frames[0].save(HERE / 'whistle-face-mockup.gif', save_all=True, append_images=frames[1:], duration=200, loop=0)
 
