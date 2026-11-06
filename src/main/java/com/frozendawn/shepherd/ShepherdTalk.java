@@ -2,6 +2,7 @@ package com.frozendawn.shepherd;
 
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.data.ApocalypseState;
+import com.frozendawn.data.WinConditionState;
 import com.frozendawn.entity.ArchivistEntity;
 import com.frozendawn.miller.SelfModel;
 import com.frozendawn.miller.Heard;
@@ -24,6 +25,7 @@ import com.frozendawn.shepherd.ShepherdDialogue.Slot;
 import com.frozendawn.shepherd.ShepherdFace.Mood;
 import com.frozendawn.world.BlastPitPlacement;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -32,6 +34,7 @@ import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
@@ -54,7 +57,7 @@ public final class ShepherdTalk {
     private static final String HUB_TALK = "hub.talk.quiet", HUB_WARY = "hub.talk", LOG_READ = "hub.log.read", CRASH_LINE = "crash.wary";
     private static final int UNIMPRESSED_TICKS = 40;
     private static final int TALK_TICKS_PER_LINE = 80;
-    private static final String FOUND = "found:", REMEMBERS = "remembers:", NOT = "not:";
+    private static final String FOUND = "found:", REMEMBERS = "remembers:", CARRYING = "carrying:", NOT = "not:", AND = "&";
     private static final String CLEAR_NIGHT = "clear_night", LEAN = "t5_lean";
     /** The ground ref when there is no pit to give one for, as {@code TowerArchive} writes it. */
     private static final String NO_REF = "---";
@@ -238,11 +241,17 @@ public final class ShepherdTalk {
         else live.nodes.put(ShepherdTopics.AFTER, ShepherdTopics.menu(open, holds, true).get(ShepherdTopics.MENU));
     }
 
-    /** The dialogue files' conditions: her tier, how far she has got, where the wand is, what this speaker has read or she holds of them, or else a saved flag. */
+    /**
+     * The dialogue files' conditions: her tier, how far she has got, where the wand is, what this speaker has read, carries or she holds of them, or else a saved flag.
+     * {@code &} joins them and every part must hold, so {@code not:} reaches only its own part. An empty part fails.
+     */
     static boolean holds(ServerPlayer player, String condition) {
+        if (condition.contains(AND)) return Arrays.stream(condition.split(AND, -1)).allMatch(part -> holds(player, part));
+        if (condition.isEmpty() || condition.equals(NOT)) return false;
         var server = player.getServer();
         if (condition.startsWith(NOT)) return !holds(player, condition.substring(NOT.length()));
         if (condition.startsWith(FOUND)) return found(player, condition.substring(FOUND.length()));
+        if (condition.startsWith(CARRYING)) return carrying(player, condition.substring(CARRYING.length()));
         if (condition.startsWith(REMEMBERS)) return MillerPattern.remembers(server, player.getUUID(), condition.substring(REMEMBERS.length()));
         var tier = ShepherdSavedData.get(server).tier();
         return switch (condition) {
@@ -262,6 +271,7 @@ public final class ShepherdTalk {
             case "wand_cradle" -> ShepherdWand.of(player) == ShepherdWand.Where.CRADLE;
             case "wand_hand" -> ShepherdWand.of(player) == ShepherdWand.Where.HAND;
             case "wand_other" -> ShepherdWand.of(player) == ShepherdWand.Where.OTHER;
+            case "conspiracy" -> WinConditionState.get(server).isConspiracyDiscovered();
             default -> ShepherdSavedData.get(player.getServer()).flag(condition);
         };
     }
@@ -279,6 +289,12 @@ public final class ShepherdTalk {
     private static boolean found(ServerPlayer player, String doc) {
         var holder = player.getServer().getAdvancements().get(ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "found_" + doc));
         return holder != null && player.getAdvancements().getOrStartProgress(holder).isDone();
+    }
+
+    /** Whether this speaker has one of our items on them. An item that does not exist must not read as air, which every empty slot is. */
+    private static boolean carrying(ServerPlayer player, String id) {
+        var item = BuiltInRegistries.ITEM.getOptional(ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, id));
+        return item.isPresent() && player.getInventory().contains(stack -> stack.is(item.get()));
     }
 
     /** What a line's argument comes to, for the one she is talking to. The ground ref is read fresh: the target can be rerolled until the pit is built. */

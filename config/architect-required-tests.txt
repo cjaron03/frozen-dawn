@@ -1261,3 +1261,7 @@ shepherdbuttonsnevercrashher xml
 shepherdadetourfromthefirstmeetinghasnologo xml
 shepherdthestripgetsthelinewithnobodywatching xml
 shepherdthescreenkeepsthelinetoitself xml
+joinedconditionsneedeverypart xml
+shepherdcarryingreadsthespeaker xml
+shepherdconspiracyopensitstopic xml
+shepherdafindbelongstoitsspeaker xml
