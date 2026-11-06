@@ -354,3 +354,6 @@ Branch review on Opus: no critical findings, four important, all fixed test-firs
 Verified headlessly: the unit tests and the full `architectVerify`. The table is in the built jar, but it has only been loaded from dev class directories. Still needs the owner's eyes: everything judged by look or feel, and the drafts the plan left to the pass.
 
 2026-11-05, the owner's pass in `Aurora Chat Check`, first words: "i said "kevin" "what is orsa" etc. got pretty simple asnwers." That was Neutral tier, as designed; at Trusted, "i got the lines". On the crash: "i like it, but i want her face to like glitch out", with the body shaking and the screen glitching before the stop screen. The owner approved draft 2 of [crash-glitch-mockup.png](art/aurora-shepherd/crash-glitch-mockup.png), and it is built as step 1 of the crash above. The heater cuts at the word, though the flame is drawn through the noise; a reload mid-crash replays the noise.
+
+2026-11-05, the owner closed the pass after the revised crash: "Pass done". `aurora-typed.jsonl` holds four different lines: "who are you", "who is kevin", "who is orsa" and the word, three times. So the blind column is thin, and no typed line reached Close or small talk in this pass. "who are you" landed on ORSA at 0.59, as Strong; there is no topic for it yet, and it goes to M5 unless the owner says otherwise.
+
