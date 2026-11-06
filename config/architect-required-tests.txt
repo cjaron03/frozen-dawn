@@ -1294,3 +1294,12 @@ shepherdgreetsnobodybelowclose xml
 shepherdawaitingscenebeatsthegreeting xml
 shepherdquietmeansnogreeting xml
 shepherdcallsonlyherfollowercargo xml
+shepherdadviceopensfromthehub xml
+shepherdadvicereturnstoadvice xml
+shepherdorsastillreturnstoorsa xml
+shepherdwaryonlyplaysthecounters xml
+shepherdthemobslockonceerased xml
+shepherditemsoutlivetheend xml
+shepherdasksagaindifferently xml
+shepherdhelpmepointsatadvice xml
+shepherdthereturnedoffersitsthree xml

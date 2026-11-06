@@ -368,7 +368,7 @@
       "what's your favourite colour",
       "i like your lamp",
       "you're pretty funny today",
-      "i'm bored"
+      "nothing to do down here"
     ],
     "gameplay": [
       "how do i make bread",
@@ -380,7 +380,7 @@
       "how do i get to the nether"
     ],
     "gibberish": [
-      "zxcvbnm",
+      "qwfpgjluy",
       "lorem ipsum",
       "hhhhhhh",
       "...?",
@@ -388,8 +388,8 @@
     ],
     "fourth_wall": [
       "is this minecraft",
-      "who coded you",
-      "what's my fps",
+      "what language are you written in",
+      "my frame rate is awful",
       "are you chatgpt"
     ],
     "locked": [

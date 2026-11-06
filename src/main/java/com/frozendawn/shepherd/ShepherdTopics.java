@@ -16,7 +16,8 @@ import java.util.function.Predicate;
 
 /** Nodes built on the spot, so a menu is an ordinary walk. Nothing here is saved: a topic's node sets the flag that orders it. */
 public final class ShepherdTopics {
-    public static final String MENU = "orsa.menu";
+    public static final String MENU = "orsa.menu", ADVICE = "advice.menu";
+    private static final String ADVICE_TOPICS = "advice";
     /** Where a topic goes when it is done. What stands here depends on how the walk got to the topic. */
     public static final String AFTER = "orsa.after";
     public static final String HEARD = "orsa_heard_";
@@ -30,13 +31,13 @@ public final class ShepherdTopics {
     private static final List<Line> MISSES = List.of(new Line("shepherd.typed.miss.1", null, Mood.THINKING, null), new Line("shepherd.typed.miss.2", null, Mood.UNIMPRESSED, null),
             new Line("shepherd.typed.miss.3", null, Mood.NEUTRAL, null), new Line("shepherd.typed.miss.4", null, Mood.NEUTRAL, null), new Line("shepherd.typed.miss.5", null, Mood.THINKING, null),
             new Line("shepherd.typed.miss.6", null, Mood.UNIMPRESSED, null), new Line("shepherd.typed.miss.7", null, Mood.UNIMPRESSED, null), new Line("shepherd.typed.miss.8", null, Mood.NEUTRAL, null));
-    private static final String FIRST = "shepherd.orsa.menu.first", AGAIN = "shepherd.orsa.menu.again", RECORDING = "shepherd.hub.talk.wary";
+    private static final String RECORDING = "shepherd.hub.talk.wary";
     private static final String SOMETHING_ELSE = "shepherd.talk.something_else", NEVER_MIND = "shepherd.talk.never_mind";
 
     private ShepherdTopics() {}
 
     /** Up to three topics a page, in {@link #ordered} order, and the fourth slot goes on or leaves. At Wary a recording does the talking. */
-    public static Map<String, Node> menu(List<Intent> open, Predicate<String> holds, String focus, boolean again) {
+    public static Map<String, Node> menu(String root, List<Intent> open, Predicate<String> holds, String focus, boolean again) {
         var topics = ordered(open, holds, focus);
         var nodes = new HashMap<String, Node>();
         int pages = Math.max(1, (topics.size() + PER_PAGE - 1) / PER_PAGE);
@@ -44,8 +45,8 @@ public final class ShepherdTopics {
             var replies = new ArrayList<Response>();
             var slots = topics.subList(page * PER_PAGE, Math.min(topics.size(), (page + 1) * PER_PAGE));
             for (int i = 0; i < slots.size(); i++) replies.add(reply(Slot.values()[i], slots.get(i).label(), slots.get(i).node()));
-            replies.add(page + 1 < pages ? reply(Slot.SARCASTIC, SOMETHING_ELSE, id(page + 1)) : reply(Slot.SARCASTIC, NEVER_MIND, null));
-            nodes.put(id(page), plain(id(page), line(holds, again || page > 0), replies));
+            replies.add(page + 1 < pages ? reply(Slot.SARCASTIC, SOMETHING_ELSE, id(root, page + 1)) : reply(Slot.SARCASTIC, NEVER_MIND, null));
+            nodes.put(id(root, page), plain(id(root, page), line(root, holds, again || page > 0), replies));
         }
         return nodes;
     }
@@ -93,13 +94,28 @@ public final class ShepherdTopics {
         return topics;
     }
 
-    private static String id(int page) {
-        return page == 0 ? MENU : MENU + "." + (page + 1);
+    private static String id(String root, int page) {
+        return page == 0 ? root : root + "." + (page + 1);
     }
 
-    private static Line line(Predicate<String> holds, boolean again) {
+    /** Whether this node is a page of a menu. */
+    public static boolean onMenu(String node) {
+        return node.startsWith(MENU) || node.startsWith(ADVICE);
+    }
+
+    /** The menu this page belongs to. */
+    public static String root(String node) {
+        return node.startsWith(ADVICE) ? ADVICE : MENU;
+    }
+
+    /** Which topics sit on this menu, as {@link Intent#menu} names them. */
+    public static boolean sitsOn(Intent topic, String root) {
+        return topic.menu().equals(ADVICE.equals(root) ? ADVICE_TOPICS : Intent.ORSA);
+    }
+
+    private static Line line(String root, Predicate<String> holds, boolean again) {
         if (holds.test("tier_wary")) return new Line(RECORDING, null, Mood.RECORDING, null);
-        return again ? new Line(AGAIN, null, Mood.NEUTRAL, null) : new Line(FIRST, null, Mood.THINKING, null);
+        return again ? new Line("shepherd." + root + ".again", null, Mood.NEUTRAL, null) : new Line("shepherd." + root + ".first", null, Mood.THINKING, null);
     }
 
     private static Response reply(Slot slot, String label, String next) {

@@ -4,31 +4,109 @@
       "id": "hello",
       "node": "chat.hello",
       "when": "tier_above_wary",
-      "examples": ["hello", "hey there", "hi aurora", "howdy", "greetings", "yo", "morning", "good afternoon", "hello again", "hey aurora", "good to see you", "hi again"]
+      "examples": [
+        "hello",
+        "hey there",
+        "hi aurora",
+        "howdy",
+        "greetings",
+        "yo",
+        "morning",
+        "good afternoon",
+        "hello again",
+        "hey aurora",
+        "good to see you",
+        "hi again"
+      ]
     },
     {
       "id": "thanks",
       "node": "chat.thanks",
       "when": "tier_above_wary",
-      "examples": ["thanks a lot", "thanks so much", "thank you so much", "thank you aurora", "ty", "appreciate it", "i appreciate that", "thanks for that", "nice one thanks", "many thanks"]
+      "examples": [
+        "thanks a lot",
+        "thanks so much",
+        "thank you so much",
+        "thank you aurora",
+        "ty",
+        "appreciate it",
+        "i appreciate that",
+        "thanks for that",
+        "nice one thanks",
+        "many thanks"
+      ]
     },
     {
       "id": "how_are_you",
       "node": "chat.how_are_you",
       "when": "tier_above_wary",
-      "examples": ["how are you today", "so how are you", "and how are you?", "how's it going today", "how are you holding up", "how do you feel", "are you okay", "are you doing okay", "what's up with you", "you doing alright", "how's your day", "how are things", "how you doing"]
+      "examples": [
+        "how are you today",
+        "so how are you",
+        "and how are you?",
+        "how's it going today",
+        "how are you holding up",
+        "how do you feel",
+        "are you okay",
+        "are you doing okay",
+        "what's up with you",
+        "you doing alright",
+        "how's your day",
+        "how are things",
+        "how you doing"
+      ]
     },
     {
       "id": "who_are_you",
       "node": "chat.who_are_you",
       "when": "tier_above_wary",
-      "examples": ["who are you?", "what are you", "what's your name", "who are you exactly", "tell me who you are", "what do they call you", "what should i call you", "are you aurora", "introduce yourself", "what is your name"]
+      "examples": [
+        "who are you?",
+        "what are you",
+        "what's your name",
+        "who are you exactly",
+        "tell me who you are",
+        "what do they call you",
+        "what should i call you",
+        "are you aurora",
+        "introduce yourself",
+        "what is your name"
+      ]
     },
     {
       "id": "alive",
       "node": "chat.alive",
       "when": "tier_above_wary",
-      "examples": ["are you alive or not", "are you really alive", "are you a real person", "are you a machine", "are you a robot", "are you just a machine", "do you feel things", "are you self aware", "do you know you're a machine", "are you living"]
+      "examples": [
+        "are you alive or not",
+        "are you really alive",
+        "are you a real person",
+        "are you a machine",
+        "are you a robot",
+        "are you just a machine",
+        "do you feel things",
+        "are you self aware",
+        "do you know you're a machine",
+        "are you living"
+      ]
+    },
+    {
+      "id": "need_help",
+      "node": "chat.need_help",
+      "when": "tier_above_wary",
+      "examples": [
+        "help me",
+        "help me out",
+        "can you help me",
+        "i need help",
+        "please help",
+        "i need your help",
+        "what should i do",
+        "i'm stuck",
+        "give me a hand",
+        "can you give me a hand",
+        "what do i do now"
+      ]
     }
   ]
 }

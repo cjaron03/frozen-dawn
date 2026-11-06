@@ -49,7 +49,8 @@ class ShepherdDialogueDataTest {
             }
         }
         // Built at run time from the open topics, and laid over these.
-        nodes.putAll(ShepherdTopics.menu(List.of(), condition -> false, "", false));
+        nodes.putAll(ShepherdTopics.menu(ShepherdTopics.MENU, List.of(), condition -> false, "", false));
+        nodes.putAll(ShepherdTopics.menu(ShepherdTopics.ADVICE, List.of(), condition -> false, "", false));
         nodes.put(ShepherdTopics.AFTER, nodes.get(ShepherdTopics.MENU));
         return nodes;
     }
@@ -150,7 +151,7 @@ class ShepherdDialogueDataTest {
         var theirs = Set.of("shepherd.orsa.kevin_volunteer.r1.label");
         int checked = 0;
         for (var line : lang().entrySet()) {
-            if (!line.getKey().matches("shepherd\\.(orsa|typed|chat|crash|stop)\\..*") || theirs.contains(line.getKey())) continue;
+            if (!line.getKey().matches("shepherd\\.(orsa|advice|typed|chat|crash|stop)\\..*") || theirs.contains(line.getKey())) continue;
             checked++;
             assertFalse(banned.matcher(line.getValue().getAsString()).find(), line.getKey() + ": " + line.getValue());
         }
@@ -162,7 +163,7 @@ class ShepherdDialogueDataTest {
     void sheNeverSaysPattern() throws Exception {
         int checked = 0;
         for (var line : lang().entrySet()) {
-            if (!line.getKey().matches("shepherd\\.(orsa|typed|chat)\\..*")) continue;
+            if (!line.getKey().matches("shepherd\\.(orsa|advice|typed|chat)\\..*")) continue;
             checked++;
             assertFalse(line.getValue().getAsString().toLowerCase(Locale.ROOT).contains("pattern"), line.getKey() + ": " + line.getValue());
         }
@@ -173,7 +174,7 @@ class ShepherdDialogueDataTest {
     void everyIntentIsWellFormed() throws Exception {
         var ids = new HashSet<String>();
         var intents = intents();
-        assertEquals(27, intents.size());
+        assertEquals(47, intents.size());
         for (Intent intent : intents) {
             assertTrue(ids.add(intent.id()), "two intents named " + intent.id());
             assertTrue(intent.examples().size() >= 8 && intent.examples().size() <= 15, intent.id());
@@ -181,8 +182,87 @@ class ShepherdDialogueDataTest {
             if (intent.label() != null) assertNotNull(intent.node(), intent.id() + " offers a topic with nowhere to go");
             if (intent.node() != null) assertTrue(nodes().containsKey(intent.node()), intent.id() + " -> " + intent.node());
         }
-        assertEquals(22, intents.stream().filter(intent -> intent.label() != null).count());
-        assertEquals(27, intents.stream().filter(intent -> intent.node() != null).count());
+        assertEquals(41, intents.stream().filter(intent -> intent.label() != null).count());
+        assertEquals(47, intents.stream().filter(intent -> intent.node() != null).count());
+    }
+
+    private static final Map<String, String> ADVICE_ENTRIES = Map.ofEntries(Map.entry("frostbitten", "threats/frostbitten"), Map.entry("frostmite", "threats/frostmite"),
+            Map.entry("hollow", "threats/hollow"), Map.entry("returned", "threats/returned"), Map.entry("hunter", "threats/returned"), Map.entry("mimic", "threats/returned"),
+            Map.entry("architect", "threats/returned"), Map.entry("thermal_heater", "heating/thermal_heater"), Map.entry("resistive_heater", "heating/resistive_heater"),
+            Map.entry("frost_ward_torch", "heating/frost_ward_torch"), Map.entry("miteaway", "heating/miteaway"), Map.entry("insulated_glass", "heating/insulated_glass"),
+            Map.entry("thermostat", "heating/thermostat"), Map.entry("airlocks", "heating/airlocks"), Map.entry("oxygen_reservoir", "heating/oxygen_reservoir"),
+            Map.entry("battery_lantern", "heating/battery_lantern"), Map.entry("emergency_light", "heating/emergency_light"), Map.entry("geiger", "radiation/geiger"), Map.entry("rad_aid", "radiation/rad_aid"));
+    private static final Set<String> MOBS = Set.of("frostbitten", "frostmite", "hollow", "returned", "hunter", "mimic", "architect");
+
+    private static List<Intent> advice() throws Exception {
+        return intents().stream().filter(intent -> !intent.menu().equals(Intent.ORSA)).toList();
+    }
+
+    @Test
+    void everyAdviceLineHasItsLang() throws Exception {
+        var lang = lang();
+        var nodes = nodes();
+        assertEquals(19, advice().size());
+        for (Intent intent : advice()) {
+            assertTrue(lang.has(intent.label()) && lang.has(intent.guess()), intent.id());
+            assertTrue(nodes.containsKey(intent.node()), intent.id());
+            assertTrue(ADVICE_ENTRIES.containsKey(intent.id()), intent.id());
+        }
+        for (Node node : nodes.values()) {
+            if (!node.id().startsWith("advice.")) continue;
+            for (var line : node.lines()) assertTrue(lang.has(line.key()), node.id() + ": " + line.key());
+        }
+    }
+
+    @Test
+    void everyAdviceLabelFitsTheSlot() throws Exception {
+        var lang = lang();
+        for (Intent intent : advice()) assertTrue(lang.get(intent.label()).getAsString().length() <= 20, intent.id());
+        assertTrue(lang.get("shepherd.talk.ask_advice").getAsString().length() <= 20);
+    }
+
+    /** Her manual's locked pages stay hers to keep: advice covers only what anyone can already open. */
+    @Test
+    void everyAdviceEntryIsOpen() throws Exception {
+        for (var path : ADVICE_ENTRIES.values()) {
+            String file = "/assets/frozendawn/patchouli_books/frozen_dawn_guide/en_us/entries/" + path + ".json";
+            try (var in = ShepherdDialogueDataTest.class.getResourceAsStream(file)) {
+                assertNotNull(in, file);
+                assertFalse(JsonParser.parseReader(new InputStreamReader(in, StandardCharsets.UTF_8)).getAsJsonObject().has("advancement"), path);
+            }
+        }
+    }
+
+    /** Every mob reads as a miss once erased; items don't. */
+    @Test
+    void onlyTheMobsLockAtTheEnd() throws Exception {
+        for (Intent intent : advice()) assertEquals(MOBS.contains(intent.id()) ? "not:erased" : null, intent.when(), intent.id());
+    }
+
+    /** The first ask and the repeat differ in their opening line and nothing else. */
+    @Test
+    void asksAgainKeepsTheRestOfTheAnswer() throws Exception {
+        var nodes = nodes();
+        for (String mob : MOBS) {
+            var first = nodes.get("advice." + mob);
+            var again = nodes.get("advice." + mob + ".again");
+            assertEquals("not:orsa_heard_" + mob, first.when(), mob);
+            assertEquals(again.id(), first.otherwise(), mob);
+            assertEquals(first.lines().subList(1, first.lines().size()), again.lines().subList(1, again.lines().size()), mob);
+            assertEquals(first.responses(), again.responses(), mob);
+        }
+    }
+
+    /** At Wary only ORSA's recording plays (Ruling 13). */
+    @Test
+    void herOwnWayIsAboveWary() throws Exception {
+        for (Node node : nodes().values()) {
+            if (!node.id().startsWith("advice.") || node.id().startsWith("advice.menu")) continue;
+            for (var line : node.lines()) {
+                if (line.mood() == ShepherdFace.Mood.RECORDING) assertNull(line.condition(), line.key());
+                else assertEquals("tier_above_wary", line.condition(), line.key());
+            }
+        }
     }
 
     @Test
@@ -219,7 +299,7 @@ class ShepherdDialogueDataTest {
     void everyConditionIsKnown() throws Exception {
         var nodes = nodes();
         Set<String> known = new HashSet<>(List.of("woke_in_vault", "wand_cradle", "wand_hand", "wand_other", "tier_silent", "tier_wary", "tier_above_wary", "tier_friendly", "tier_trusted", "tier_close",
-                "stage_noticing", "stage_walls", "quiet", "pit_open", "saw_aurora", "stars_before", "lean_someone", "lean_left", "conspiracy", "greet_long"));
+                "stage_noticing", "stage_walls", "quiet", "pit_open", "saw_aurora", "stars_before", "lean_someone", "lean_left", "conspiracy", "greet_long", "erased"));
         for (Node node : nodes.values()) {
             known.addAll(node.set());
             for (Response response : node.responses()) known.addAll(response.set());

@@ -4,6 +4,7 @@ import com.frozendawn.FrozenDawn;
 import com.frozendawn.data.ApocalypseState;
 import com.frozendawn.data.WinConditionState;
 import com.frozendawn.entity.ArchivistEntity;
+import com.frozendawn.homo.PostMaeveWorldState;
 import com.frozendawn.miller.SelfModel;
 import com.frozendawn.miller.Heard;
 import com.frozendawn.miller.Intent;
@@ -87,6 +88,8 @@ public final class ShepherdTalk {
         boolean detour;
         /** Where a detour goes when it is done, one level deep. A scene's node, {@link ShepherdTopics#AFTER} for the menu, or null for the hub. */
         String back;
+        /** The menu the player last stood on, which a miss and the page after an answer return to. */
+        String menu = ShepherdTopics.MENU;
         /** What is on her mind for the menu in front of them, read once so a page cannot shift under a click. Null off the menu, and then it is read again. */
         String focus;
         /** The next line sent answers something typed, so she works it out first. */
@@ -243,19 +246,20 @@ public final class ShepherdTalk {
     }
 
     /** What is on the menu for this speaker. A topic with its node gone from an edited datapack is not. */
-    private static List<Intent> openTopics() {
+    private static List<Intent> openTopics(String root) {
         var holds = holds();
-        return ShepherdIntents.intents().stream().filter(intent -> intent.label() != null && IntentIndex.open(intent, holds) && ShepherdDialogues.nodes().containsKey(intent.node())).toList();
+        return ShepherdIntents.intents().stream().filter(intent -> intent.label() != null && ShepherdTopics.sitsOn(intent, root) && IntentIndex.open(intent, holds)
+                && ShepherdDialogues.nodes().containsKey(intent.node())).toList();
     }
 
     /** The menu as it stands. A topic ends back on it, unless a detour has somewhere else to be. */
     private static void layTopics() {
         var holds = holds();
-        var open = openTopics();
+        if (live.talk != null && ShepherdTopics.onMenu(live.talk.current().id())) live.menu = ShepherdTopics.root(live.talk.current().id());
         if (live.focus == null) live.focus = focus();
-        live.nodes.putAll(ShepherdTopics.menu(open, holds, live.focus, false));
+        for (String root : List.of(ShepherdTopics.MENU, ShepherdTopics.ADVICE)) live.nodes.putAll(ShepherdTopics.menu(root, openTopics(root), holds, live.focus, false));
         if (live.detour && !ShepherdTopics.AFTER.equals(live.back)) live.nodes.remove(ShepherdTopics.AFTER);
-        else live.nodes.put(ShepherdTopics.AFTER, ShepherdTopics.menu(open, holds, live.focus, true).get(ShepherdTopics.MENU));
+        else live.nodes.put(ShepherdTopics.AFTER, ShepherdTopics.menu(live.menu, openTopics(live.menu), holds, live.focus, true).get(live.menu));
     }
 
     /** What is on her mind with this speaker in front of her. Reading it changes nothing. */
@@ -296,6 +300,7 @@ public final class ShepherdTalk {
             case "wand_hand" -> ShepherdWand.of(player) == ShepherdWand.Where.HAND;
             case "wand_other" -> ShepherdWand.of(player) == ShepherdWand.Where.OTHER;
             case "conspiracy" -> WinConditionState.get(server).isConspiracyDiscovered();
+            case "erased" -> PostMaeveWorldState.isErased(server);
             default -> ShepherdSavedData.get(player.getServer()).flag(condition);
         };
     }
@@ -361,7 +366,7 @@ public final class ShepherdTalk {
         if (!detour || scene) spendPrompt();
         settle();
         if (!live.talk.finished()) {
-            if (live.talk.current().id().startsWith(ShepherdTopics.MENU)) onTheMenu();
+            if (ShepherdTopics.onMenu(live.talk.current().id())) onTheMenu();
             else live.focus = null;
             send();
         } else if (live.detour || live.back != null) {
@@ -496,7 +501,7 @@ public final class ShepherdTalk {
         live.detour = true;
         if (live.talk == null) live.back = null;
         else if (!live.fromHub) live.back = live.talk.current().id();
-        else live.back = live.talk.current().id().startsWith(ShepherdTopics.MENU) ? ShepherdTopics.AFTER : null;
+        else live.back = ShepherdTopics.onMenu(live.talk.current().id()) ? ShepherdTopics.AFTER : null;
     }
 
     private static void answerTyped(String node) {
@@ -509,7 +514,7 @@ public final class ShepherdTalk {
         int reach = MillerPattern.variety(live.player.getServer(), ShepherdTopics.misses());
         int turn = missTurn++ % reach;
         var scene = live.back == null || ShepherdTopics.AFTER.equals(live.back) ? null : ShepherdDialogues.nodes().get(live.back);
-        return scene != null ? ShepherdTopics.none(turn, scene) : ShepherdTopics.none(turn, openTopics(), holds(), focus());
+        return scene != null ? ShepherdTopics.none(turn, scene) : ShepherdTopics.none(turn, openTopics(live.menu), holds(), focus());
     }
 
     private static void talked() {
@@ -702,6 +707,7 @@ public final class ShepherdTalk {
     private static void showHub(List<Line> said) {
         var data = data();
         live.talk = null;
+        live.menu = ShepherdTopics.MENU;
         live.fromHub = false;
         live.detour = false;
         live.back = null;
