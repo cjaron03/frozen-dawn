@@ -99,6 +99,7 @@ public final class ShepherdTalk {
         int thinkTicks;
         /** What the client was last sent. */
         ShepherdNodePayload sent;
+        ShepherdHubPayload hub;
         /** The log it was last sent, if it has asked. */
         ShepherdLogPayload log;
 
@@ -573,20 +574,37 @@ public final class ShepherdTalk {
     }
 
     private static void showHub() {
+        showHub(List.of());
+    }
+
+    /** {@code said} plays over the hub, after any logo, and its buttons appear when she finishes. */
+    private static void showHub(List<Line> said) {
         var data = data();
         live.talk = null;
         live.fromHub = false;
         live.detour = false;
         live.back = null;
         live.built = Map.of();
-        live.she.talkFor(0);
+        live.lines = said;
+        live.line = 0;
+        int logo = live.she.logoTicks();
+        live.lineTicks = logo + TALK_TICKS_PER_LINE;
+        live.she.talkFor(said.isEmpty() ? 0 : logo + TALK_TICKS_PER_LINE * said.size());
         showMood();
-        PacketDistributor.sendToPlayer(live.player, new ShepherdHubPayload(live.id, !follows(data, live.player), data.lamp(), data.heavy()));
+        var player = live.player;
+        live.hub = new ShepherdHubPayload(live.id, !follows(data, player), data.lamp(), data.heavy(), resolved(said, data.heavy(), token -> arg(player, token)), logo);
+        PacketDistributor.sendToPlayer(player, live.hub);
+    }
+
+    /** A node's lines over the hub, as it stands for this speaker. */
+    static void sayOnTheHub(String node) {
+        var holds = holds();
+        if (ShepherdConversation.opens(ShepherdDialogues.nodes(), node, holds)) showHub(new ShepherdConversation(ShepherdDialogues.nodes(), node, holds).lines());
     }
 
     private static void showMood() {
         if (live.unimpressedTicks > 0) return;
-        if (live.talk == null || live.lines.isEmpty()) {
+        if (live.lines.isEmpty()) {
             live.she.composed();
         } else {
             live.she.setMood(live.lines.get(live.line).mood());
@@ -594,11 +612,15 @@ public final class ShepherdTalk {
     }
 
     static ShepherdNodePayload payload(int conversation, Node node, List<Line> said, boolean heavy, int logoTicks, int thinkTicks, UnaryOperator<String> arg) {
-        var lines = said.stream().map(line -> new ShepherdNodePayload.Line(
-                heavy && line.heavyKey() != null ? line.heavyKey() : line.key(), line.mood(), line.args().stream().map(arg).toList())).toList();
+        var lines = resolved(said, heavy, arg);
         var replies = node.responses().stream().map(response -> new ShepherdNodePayload.Reply(
                 response.slot().ordinal(), response.label(), response.full())).toList();
         return new ShepherdNodePayload(conversation, node.id(), lines, replies, replies.isEmpty(), logoTicks, thinkTicks, node.plain());
+    }
+
+    private static List<ShepherdNodePayload.Line> resolved(List<Line> said, boolean heavy, UnaryOperator<String> arg) {
+        return said.stream().map(line -> new ShepherdNodePayload.Line(
+                heavy && line.heavyKey() != null ? line.heavyKey() : line.key(), line.mood(), line.args().stream().map(arg).toList())).toList();
     }
 
     static ShepherdLogPayload logPayload(int conversation, List<LogEntry> entries) {
@@ -640,7 +662,7 @@ public final class ShepherdTalk {
     @SubscribeEvent public static void tick(ServerTickEvent.Post event) {
         if (live == null) return;
         if (live.unimpressedTicks > 0 && --live.unimpressedTicks == 0) showMood();
-        if (live.talk != null && live.line < live.lines.size() - 1 && --live.lineTicks <= 0) {
+        if (live.line < live.lines.size() - 1 && --live.lineTicks <= 0) {
             live.line++;
             live.lineTicks = TALK_TICKS_PER_LINE;
             showMood();
@@ -679,6 +701,11 @@ public final class ShepherdTalk {
     /** What the client was last sent, or null. */
     static ShepherdNodePayload liveSent() {
         return live == null ? null : live.sent;
+    }
+
+    /** The hub the client was last sent, or null. */
+    static ShepherdHubPayload liveHub() {
+        return live == null ? null : live.hub;
     }
 
     static ShepherdLogPayload liveLog() {

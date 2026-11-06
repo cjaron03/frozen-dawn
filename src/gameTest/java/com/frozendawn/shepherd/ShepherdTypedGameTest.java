@@ -38,6 +38,8 @@ public final class ShepherdTypedGameTest {
             OUT_THERE = "shepherd.orsa.anyone_out_there.label", KEVIN = "shepherd.orsa.who_is_kevin.label", NEITHER = "shepherd.typed.neither";
     private static final String MISS = "shepherd.typed.miss.";
 
+    @BeforeBatch(batch = "shepherd_typed_hubline") public static void hublineBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_typed_hubline") public static void hublineAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
     @BeforeBatch(batch = "shepherd_typed_strong") public static void strongBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
     @AfterBatch(batch = "shepherd_typed_strong") public static void strongAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
     @BeforeBatch(batch = "shepherd_typed_close") public static void closeBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
@@ -454,6 +456,25 @@ public final class ShepherdTypedGameTest {
             assertAt(h, "orsa.what_is_orsa");
             type(she, player, "a".repeat(32000) + ORSA_LINE);
             assertAt(h, "typed.none");
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_typed_hubline", timeoutTicks = 400)
+    public static void shepherdTheHubCanCarryALine(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            var she = awake(h, player, NEUTRAL);
+            open(she, player);
+            h.assertTrue(ShepherdTalk.liveHub().lines().isEmpty() && ShepherdTalk.liveHub().logoTicks() == 0, "An ordinary hub carries nothing");
+            she.showLogo();
+            ShepherdTalk.sayOnTheHub("hub.talk.plain");
+            assertHub(h);
+            var hub = ShepherdTalk.liveHub();
+            h.assertTrue(hub.lines().size() == 1 && hub.lines().get(0).key().equals("shepherd.hub.talk"), "Her line over the buttons: " + hub.lines());
+            h.assertTrue(hub.logoTicks() == ShepherdFace.LOGO_TICKS, "After the logo: " + hub.logoTicks());
+            ShepherdTalk.action(player, ShepherdTalk.liveId(), Action.LAMP);
+            h.assertTrue(ShepherdTalk.liveHub().lines().isEmpty(), "It is said once");
             h.succeed();
         });
     }

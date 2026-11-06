@@ -1241,3 +1241,4 @@ shepherdamisskeepsthescenereplies xml
 shepherdadetourkeepsthescene xml
 shepherdbadtypingdoesnothing xml
 shepherdtypedtextisnotlogged xml
+shepherdthehubcancarryaline xml

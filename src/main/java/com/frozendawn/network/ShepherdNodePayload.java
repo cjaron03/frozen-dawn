@@ -27,7 +27,7 @@ public record ShepherdNodePayload(int conversation, String node, List<Line> line
     }
 
     public static final Type<ShepherdNodePayload> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "shepherd_node"));
-    private static final StreamCodec<FriendlyByteBuf, List<Line>> LINES = Line.STREAM_CODEC.apply(ByteBufCodecs.list(MAX_LINES));
+    static final StreamCodec<FriendlyByteBuf, List<Line>> LINES = Line.STREAM_CODEC.apply(ByteBufCodecs.list(MAX_LINES));
     private static final StreamCodec<FriendlyByteBuf, List<Reply>> REPLIES = Reply.STREAM_CODEC.apply(ByteBufCodecs.list(MAX_REPLIES));
     /** Written out, because {@code composite} stops at six fields. */
     public static final StreamCodec<FriendlyByteBuf, ShepherdNodePayload> STREAM_CODEC = StreamCodec.of((buffer, payload) -> {
