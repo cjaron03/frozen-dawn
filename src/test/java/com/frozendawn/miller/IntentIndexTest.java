@@ -87,6 +87,7 @@ class IntentIndexTest {
 
     @Test void howAreYouIsSmallTalk() throws IOException {
         assertEquals("how_are_you", index().rank("how are you").first().id());
+        assertEquals(Band.STRONG, index().judge("how are you?", ALL).band());
     }
 
     /** Whoever types what a button says gets what the button gives. */

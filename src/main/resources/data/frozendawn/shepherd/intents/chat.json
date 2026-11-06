@@ -16,7 +16,7 @@
       "id": "how_are_you",
       "node": "chat.how_are_you",
       "when": "tier_above_wary",
-      "examples": ["how are you today", "so how are you", "how's it going today", "how are you holding up", "how do you feel", "are you okay", "are you doing okay", "what's up with you", "you doing alright", "how's your day", "how are things", "how you doing"]
+      "examples": ["how are you today", "so how are you", "and how are you?", "how's it going today", "how are you holding up", "how do you feel", "are you okay", "are you doing okay", "what's up with you", "you doing alright", "how's your day", "how are things", "how you doing"]
     },
     {
       "id": "alive",
