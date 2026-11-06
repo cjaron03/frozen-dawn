@@ -50,6 +50,8 @@ public final class ShepherdProjectionGameTest {
     @AfterBatch(batch = "shepherd_projection_egg") public static void eggAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
     @BeforeBatch(batch = "shepherd_projection_reload") public static void reloadBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
     @AfterBatch(batch = "shepherd_projection_reload") public static void reloadAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_projection_skip") public static void skipBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_projection_skip") public static void skipAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
     @BeforeBatch(batch = "shepherd_projection_holds") public static void holdsBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
     @AfterBatch(batch = "shepherd_projection_holds") public static void holdsAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
 
@@ -256,6 +258,29 @@ public final class ShepherdProjectionGameTest {
             h.assertTrue(loaded.projection() == 0, "A body loads with no figure: " + loaded.projection());
             ShepherdTalk.clearForTests();
             h.assertTrue(!ShepherdProjection.active(), "And a stopped server forgets it");
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_projection_skip", timeoutTicks = 400)
+    public static void shepherdTheSpeakerCanSkipForward(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            var other = player(h);
+            var she = awake(h, player, FRIENDLY);
+            ShepherdProjection.start(player, she, "hunter", TWO);
+            run(h, ShepherdProjection.BEAM_TICKS);
+            h.assertTrue(List.of(FIRST).equals(keys()), "The first line: " + keys());
+            she.interact(other, InteractionHand.MAIN_HAND);
+            run(h, 1);
+            h.assertTrue(keys().size() == 1, "Only the one who asked can skip: " + keys());
+            she.interact(player, InteractionHand.MAIN_HAND);
+            run(h, 1);
+            h.assertTrue(List.of(FIRST, SECOND).equals(keys()), "A right-click goes to the next line: " + keys());
+            she.interact(player, InteractionHand.MAIN_HAND);
+            run(h, 1);
+            h.assertTrue(!ShepherdProjection.active() && she.projection() == 0, "And past the last, it ends");
+            h.assertTrue(ShepherdTalk.liveId() == 0, "Without opening a talk");
             h.succeed();
         });
     }

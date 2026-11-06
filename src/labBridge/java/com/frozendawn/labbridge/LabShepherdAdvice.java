@@ -17,6 +17,7 @@ import net.neoforged.neoforge.event.RegisterCommandsEvent;
 public final class LabShepherdAdvice {
     private static final List<String> MOMENTS = List.of("hologram_seen", "hologram_egg", "reacted_hunter_burn", "clovis_said");
     private static final List<String> DEEDS = List.of("caught", "gag");
+    private static final List<String> OFFERS = List.of("frostbitten", "frostmite", "hollow", "hunter", "mimic", "architect");
 
     private LabShepherdAdvice() { }
 
@@ -44,6 +45,10 @@ public final class LabShepherdAdvice {
                 data.flag(ShepherdTopics.PAID + intent.id(), false);
             }
             MOMENTS.forEach(flag -> data.flag(flag, false));
+            for (String mob : OFFERS) {
+                data.flag("offer_saw_" + mob, false);
+                data.flag("offer_made_" + mob, false);
+            }
             DEEDS.forEach(deed -> data.deedReady(deed, 0));
             c.getSource().sendSuccess(() -> Component.literal("the advice is new, and her moments can happen again"), false);
             return 1;

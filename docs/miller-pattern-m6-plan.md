@@ -66,6 +66,9 @@
 31. **Two marks moved, one line each.** The owner's call, 2026-11-06, on the first read of the marks with the advice intents in. M4's fresh set read 65 of 74 top two against the accepted 66: "evacuaton plan?" ranks `miteaway` first at 0.259, below Close, so the player gets the same miss, but closed intents still rank, so holding them closed couldn't keep it. The advice set read 2 of 34 out-of-scope Strong against a limit of 1: "do you like the cold" on `what_happened` and "...?" on `how_are_you`, both older intents. The accepted marks are now 65 top two for M4's set and 2 out-of-scope Strong for the advice set. Its other reads: 103 and 114 of 120, 0 strong wrong. M5's topic set holds 83 and 95. Nothing was tuned.
 
 32. **Flow is only for the voice.** The owner's call, 2026-11-06, on seeing it in the pass. It replaces Ruling 4: her face flows into and out of the voice trace, for ORSA's recordings, and every other change of face cuts at once.
+33. **A right-click skips.** The owner's ask, 2026-11-06, during the pass. A right-click on her from the one who asked moves a projection to its next line, and past the last it ends. Nothing else about Ruling 15 changes: no talk opens over a projection.
+34. **She offers.** The owner's ask and mark, 2026-11-06. At Friendly and above, once a mob, once things are calm after she has seen a Frostbitten, Frostmite, Hollow, Hunter, Mimic or Architect that they haven't asked about, she raises a prompt: "That was a Hunter. I've got a better way to handle those. Want it?", with "Yeah, tell me" and "Not now". Yes runs her advice. Never at Wary or once erased.
+35. **The strip widens for a long line.** From the owner's screenshot, 2026-11-06: a long recording stacked so high it covered the hologram. Past three rows the panel widens, up to the screen.
 
 ## Lines to mark
 

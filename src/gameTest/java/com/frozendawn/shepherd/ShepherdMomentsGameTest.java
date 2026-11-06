@@ -1,6 +1,7 @@
 package com.frozendawn.shepherd;
 
 import com.frozendawn.FrozenDawn;
+import com.frozendawn.config.FrozenDawnConfig;
 import com.frozendawn.gametest.GameTestTemplates;
 import com.frozendawn.init.ModEntities;
 import com.frozendawn.miller.MillerPattern;
@@ -16,6 +17,7 @@ import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.monster.Zombie;
 import net.minecraft.world.phys.Vec3;
@@ -46,6 +48,14 @@ public final class ShepherdMomentsGameTest {
     @AfterBatch(batch = "shepherd_moment_after") public static void afterAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
     @BeforeBatch(batch = "shepherd_moment_gag_still") public static void gagStillBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
     @AfterBatch(batch = "shepherd_moment_gag_still") public static void gagStillAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_offer_sees") public static void offerSeesBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_offer_sees") public static void offerSeesAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_offer_gates") public static void offerGatesBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_offer_gates") public static void offerGatesAfter(ServerLevel l) { FrozenDawnConfig.DEBUG_FORCE_MAEVE_ERASED.set(false); ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_offer_yes") public static void offerYesBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_offer_yes") public static void offerYesAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_offer_no") public static void offerNoBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_offer_no") public static void offerNoAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
     @BeforeBatch(batch = "shepherd_moment_clovis") public static void clovisBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
     @AfterBatch(batch = "shepherd_moment_clovis") public static void clovisAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
 
@@ -274,6 +284,80 @@ public final class ShepherdMomentsGameTest {
             h.assertTrue(she.projection() == ShepherdProjection.ITEM, "Standing: " + she.projection());
             ShepherdProjection.stop();
             h.assertTrue(data(h).deedReady(ShepherdEggs.GAG) <= server.overworld().getGameTime(), "Cut off before a word, it is not spent: " + data(h).deedReady(ShepherdEggs.GAG));
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_offer_sees", timeoutTicks = 400)
+    public static void shepherdOffersOnceAfterSeeingAMob(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h, AT_HER);
+            var she = awake(h, player, FRIENDLY);
+            var hunter = ModEntities.RETURNED.get().create(h.getLevel());
+            hunter.moveTo(she.position().add(-4, 0, 0));
+            h.getLevel().addFreshEntity(hunter);
+            h.runAfterDelay(12, () -> {
+                look(h, she, player);
+                h.assertTrue(data(h).promptNode() == null, "Not while it is here");
+                hunter.discard();
+                look(h, she, player);
+                h.assertTrue("advice.offer.hunter".equals(data(h).promptNode()), "Once things calm down: " + data(h).promptNode());
+                data(h).promptNode(null);
+                look(h, she, player);
+                h.assertTrue(data(h).promptNode() == null, "Once a mob: " + data(h).promptNode());
+                h.succeed();
+            });
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_offer_gates", timeoutTicks = 400)
+    public static void shepherdOffersOnlyWhenItWouldHelp(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h, AT_HER);
+            var she = awake(h, player, 0);
+            data(h).flag("offer_saw_mimic", true);
+            look(h, she, player);
+            h.assertTrue(data(h).promptNode() == null, "Not below Friendly");
+            data(h).affinity(FRIENDLY);
+            data(h).flag("orsa_heard_mimic", true);
+            look(h, she, player);
+            h.assertTrue(data(h).promptNode() == null, "Not for what they already asked");
+            data(h).flag("orsa_heard_mimic", false);
+            FrozenDawnConfig.DEBUG_FORCE_MAEVE_ERASED.set(true);
+            look(h, she, player);
+            h.assertTrue(data(h).promptNode() == null, "Not once the advice would be wrong");
+            FrozenDawnConfig.DEBUG_FORCE_MAEVE_ERASED.set(false);
+            look(h, she, player);
+            h.assertTrue("advice.offer.mimic".equals(data(h).promptNode()), "Otherwise she does: " + data(h).promptNode());
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_offer_yes", timeoutTicks = 400)
+    public static void shepherdTheOfferRunsHerAdvice(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h, AT_HER);
+            var she = awake(h, player, FRIENDLY);
+            data(h).promptNode("advice.offer.hunter");
+            she.interact(player, InteractionHand.MAIN_HAND);
+            h.assertTrue("advice.offer.hunter".equals(ShepherdTalk.liveNode()), "A right-click takes the offer: " + ShepherdTalk.liveNode());
+            ShepherdTalk.reply(player, ShepherdTalk.liveId(), 0);
+            h.assertTrue(she.projection() == ShepherdProjection.HUNTER, "Yes runs it, hologram and all: " + she.projection());
+            h.assertTrue(data(h).promptNode() == null && data(h).resumeNode() == null, "Nothing waits behind it: " + data(h).promptNode() + ", " + data(h).resumeNode());
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_offer_no", timeoutTicks = 400)
+    public static void shepherdTheOfferTakesNo(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h, AT_HER);
+            var she = awake(h, player, FRIENDLY);
+            data(h).promptNode("advice.offer.frostbitten");
+            she.interact(player, InteractionHand.MAIN_HAND);
+            ShepherdTalk.reply(player, ShepherdTalk.liveId(), 1);
+            h.assertTrue(ShepherdTalk.liveId() == 0, "Not now ends it");
+            h.assertTrue(data(h).promptNode() == null && data(h).resumeNode() == null, "And it stays gone: " + data(h).promptNode() + ", " + data(h).resumeNode());
             h.succeed();
         });
     }

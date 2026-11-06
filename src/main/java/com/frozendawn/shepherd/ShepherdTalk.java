@@ -145,7 +145,11 @@ public final class ShepherdTalk {
 
     /** A right-click. She picks an unfinished conversation back up, then takes one she has been waiting to have; otherwise this is the hub. */
     public static void openHub(ServerPlayer player, ShepherdEntity she) {
-        if (she.offline() || ShepherdProjection.active()) return;
+        if (she.offline()) return;
+        if (ShepherdProjection.active()) {
+            ShepherdProjection.skip(player);
+            return;
+        }
         if (live != null) {
             if (live.player != player) {
                 live.unimpressedTicks = UNIMPRESSED_TICKS;
@@ -374,6 +378,7 @@ public final class ShepherdTalk {
         } else if (live.fromHub) {
             showHub();
         } else {
+            data().resumeNode(null);
             end(true);
         }
     }
@@ -670,6 +675,7 @@ public final class ShepherdTalk {
         var data = data();
         var node = live.talk.current();
         if (node.project() != null) {
+            if (!live.fromHub) data.resumeNode(null);
             project(node.project());
             return;
         }

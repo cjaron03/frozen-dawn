@@ -3,7 +3,12 @@ package com.frozendawn.shepherd;
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.data.ReturnedHearthSavedData;
 import com.frozendawn.entity.ArchitectEntity;
+import com.frozendawn.entity.FrostbittenEntity;
+import com.frozendawn.entity.FrostmiteEntity;
+import com.frozendawn.entity.HollowEntity;
+import com.frozendawn.entity.MimicEntity;
 import com.frozendawn.entity.ReturnedEntity;
+import com.frozendawn.homo.PostMaeveWorldState;
 import com.frozendawn.shepherd.ShepherdAffinity.Tier;
 import com.frozendawn.shepherd.ShepherdDialogue.Line;
 import com.frozendawn.shepherd.ShepherdFace.Mood;
@@ -35,6 +40,9 @@ public final class ShepherdEggs {
     static final String HUNTER_BURN_LINE = "shepherd.egg.hunter_burn", CLOVIS_LINE = "shepherd.egg.clovis", CAUGHT_LINE = "shepherd.egg.caught",
             GAG_LINE = "shepherd.egg.gag", PENGUIN_LINE = "shepherd.egg.gag.penguin";
     private static final String T5_DONE = "t5_done";
+    /** What she has seen near them, what she has already offered on it, and the node that offers it. */
+    private static final String SAW = "offer_saw_", OFFERED = "offer_made_", OFFER = "advice.offer.";
+    private static final List<String> OFFERS = List.of("frostbitten", "frostmite", "hollow", "hunter", "mimic", "architect");
     /** Set by "Or what, Shepherd?" in the first meeting. */
     private static final String NARRATED = "fm_narrated";
     private static final String RESUPPLY_CODE = "down down up right";
@@ -55,10 +63,32 @@ public final class ShepherdEggs {
         }
         if (she.stoodFor() >= ShepherdPolicy.YOUR_PART_TICKS) once(data, YOUR_PART, () -> ShepherdReactions.murmur(level, YOUR_PART_LINE, Mood.RECORDING));
         if (data.flag(T5_DONE)) once(data, CLOVIS, () -> ShepherdReactions.murmur(level, CLOVIS_LINE, Mood.THINKING));
+        offer(level, near, data);
         idle(level, she, near, data);
         if (data.flag(WALL) || level != level.getServer().overworld()) return;
         var hearths = ReturnedHearthSavedData.get(level.getServer());
         wall(level, near, hearths.hearths().stream().filter(ReturnedHearthSavedData.HearthRecord::structurePlaced).map(ReturnedHearthSavedData.HearthRecord::center).toList(), hearths.maeveErased());
+    }
+
+    /** She has seen one, so she noticed: it goes on file for when things are calm. */
+    static void sighted(ShepherdSavedData data, Mob mob) {
+        String id = mob instanceof FrostbittenEntity ? "frostbitten" : mob instanceof FrostmiteEntity ? "frostmite" : mob instanceof HollowEntity ? "hollow"
+                : mob instanceof ReturnedEntity ? "hunter" : mob instanceof MimicEntity ? "mimic" : mob instanceof ArchitectEntity ? "architect" : null;
+        if (id != null && !data.flag(SAW + id)) data.flag(SAW + id, true);
+    }
+
+    /** Once she likes them, she offers what she knows on what she saw, once a mob, unless they asked already or the advice has stopped being true. */
+    private static void offer(ServerLevel level, List<ServerPlayer> near, ShepherdSavedData data) {
+        var server = level.getServer();
+        long now = server.overworld().getGameTime();
+        if (!data.tier().atLeast(Tier.FRIENDLY) || data.promptNode() != null || data.resumeNode() != null || ShepherdTalk.live() || !data.flag(ShepherdPrompt.FIRST_MEETING_DONE)) return;
+        if (ShepherdReactions.quiet(data, now) || PostMaeveWorldState.isErased(server) || !ShepherdPrompt.calm(server, level, near)) return;
+        for (String mob : OFFERS) {
+            if (!data.flag(SAW + mob) || data.flag(OFFERED + mob) || data.flag(ShepherdTopics.HEARD + mob)) continue;
+            data.flag(OFFERED + mob, true);
+            ShepherdPrompt.ask(data, OFFER + mob);
+            return;
+        }
     }
 
     /** A quiet minute of her own, with her follower by her: the gag at Close, else what she shows herself when nobody is looking. */

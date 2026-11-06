@@ -287,7 +287,10 @@ public final class ShepherdEntity extends PathfinderMob {
             watching = null;
             return;
         }
-        if (tickCount % WATCH_EVERY_TICKS == 0) watching = nearestHostile(level);
+        if (tickCount % WATCH_EVERY_TICKS == 0) {
+            watching = nearestHostile(level);
+            if (watching != null) ShepherdEggs.sighted(ShepherdSavedData.get(level.getServer()), watching);
+        }
         if (watching != null && !watching.isAlive()) watching = null;
         if (watching == null || asking()) return;
         getLookControl().setLookAt(watching, 30, 30);

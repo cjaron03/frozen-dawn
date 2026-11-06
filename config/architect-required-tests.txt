@@ -1321,3 +1321,8 @@ shepherdnamesclovisonlyaftert5 xml
 shepherdgreetswhoshewasleftwaitingfor xml
 shepherdmomentswaitafteraprojection xml
 shepherdthegagwaitsforthemtostop xml
+shepherdthespeakercanskipforward xml
+shepherdoffersonceafterseeingamob xml
+shepherdoffersonlywhenitwouldhelp xml
+shepherdtheofferrunsheradvice xml
+shepherdtheoffertakesno xml

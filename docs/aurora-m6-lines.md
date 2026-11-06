@@ -323,6 +323,10 @@ Typed only, above Wary, with no label and no Close line (Ruling 17). All NEW.
 - **The nod,** `if t5_done`, once a world (Ruling 29). (Thinking) "ORSA had a file on a man named Clovis Bray. Heard of him?" PLAN
 - **The egg,** at Trusted, on the second projection, once (Ruling 16). (Flustered) "Sorry. Wrong file. That one wasn't for you." NEW. It quotes nothing, and it laughs at her own mistake, not at the Returned.
 
+## The offer
+
+Marked by the owner during the pass, 2026-11-06 (Ruling 34). (Thinking) "That was a Hunter. I've got a better way to handle those. Want it?" with the mob's name for each of Frostbitten, Frostmite, Hollow, Hunter, Mimic and Architect, and "That was an Architect" for the last. Buttons: "Yeah, tell me" and "Not now".
+
 ## Checked against the limits
 
 Every line, label and Close line above, by hand and by a script running `typedLinesStayInside`'s banned words with `pattern` added, and the 20-character label limit.

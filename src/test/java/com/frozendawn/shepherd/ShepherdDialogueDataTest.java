@@ -257,7 +257,7 @@ class ShepherdDialogueDataTest {
     @Test
     void herOwnWayIsAboveWary() throws Exception {
         for (Node node : nodes().values()) {
-            if (!node.id().startsWith("advice.") || node.id().startsWith("advice.menu")) continue;
+            if (!node.id().startsWith("advice.") || node.id().startsWith("advice.menu") || node.id().startsWith("advice.offer.")) continue;
             for (var line : node.lines()) {
                 if (line.mood() == ShepherdFace.Mood.RECORDING) assertNull(line.condition(), line.key());
                 else assertEquals("tier_above_wary", line.condition(), line.key());

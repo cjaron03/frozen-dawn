@@ -92,6 +92,11 @@ public final class ShepherdProjection {
         return played;
     }
 
+    /** A right-click from the one who asked moves her on to the next line. */
+    static void skip(ServerPlayer player) {
+        if (live != null && live.player == player && live.kind != PAIR) live.wait = 1;
+    }
+
     public static boolean active() {
         return live != null;
     }

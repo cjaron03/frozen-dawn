@@ -845,6 +845,132 @@
         }
       ],
       "next": "orsa.after"
+    },
+    {
+      "id": "advice.offer.frostbitten",
+      "plain": true,
+      "lines": [
+        {
+          "line": "shepherd.advice.offer.frostbitten",
+          "mood": "thinking"
+        }
+      ],
+      "responses": [
+        {
+          "slot": "ask",
+          "label": "shepherd.advice.offer.yes",
+          "next": "advice.frostbitten"
+        },
+        {
+          "slot": "kind",
+          "label": "shepherd.advice.offer.no"
+        }
+      ]
+    },
+    {
+      "id": "advice.offer.frostmite",
+      "plain": true,
+      "lines": [
+        {
+          "line": "shepherd.advice.offer.frostmite",
+          "mood": "thinking"
+        }
+      ],
+      "responses": [
+        {
+          "slot": "ask",
+          "label": "shepherd.advice.offer.yes",
+          "next": "advice.frostmite"
+        },
+        {
+          "slot": "kind",
+          "label": "shepherd.advice.offer.no"
+        }
+      ]
+    },
+    {
+      "id": "advice.offer.hollow",
+      "plain": true,
+      "lines": [
+        {
+          "line": "shepherd.advice.offer.hollow",
+          "mood": "thinking"
+        }
+      ],
+      "responses": [
+        {
+          "slot": "ask",
+          "label": "shepherd.advice.offer.yes",
+          "next": "advice.hollow"
+        },
+        {
+          "slot": "kind",
+          "label": "shepherd.advice.offer.no"
+        }
+      ]
+    },
+    {
+      "id": "advice.offer.hunter",
+      "plain": true,
+      "lines": [
+        {
+          "line": "shepherd.advice.offer.hunter",
+          "mood": "thinking"
+        }
+      ],
+      "responses": [
+        {
+          "slot": "ask",
+          "label": "shepherd.advice.offer.yes",
+          "next": "advice.hunter"
+        },
+        {
+          "slot": "kind",
+          "label": "shepherd.advice.offer.no"
+        }
+      ]
+    },
+    {
+      "id": "advice.offer.mimic",
+      "plain": true,
+      "lines": [
+        {
+          "line": "shepherd.advice.offer.mimic",
+          "mood": "thinking"
+        }
+      ],
+      "responses": [
+        {
+          "slot": "ask",
+          "label": "shepherd.advice.offer.yes",
+          "next": "advice.mimic"
+        },
+        {
+          "slot": "kind",
+          "label": "shepherd.advice.offer.no"
+        }
+      ]
+    },
+    {
+      "id": "advice.offer.architect",
+      "plain": true,
+      "lines": [
+        {
+          "line": "shepherd.advice.offer.architect",
+          "mood": "thinking"
+        }
+      ],
+      "responses": [
+        {
+          "slot": "ask",
+          "label": "shepherd.advice.offer.yes",
+          "next": "advice.architect"
+        },
+        {
+          "slot": "kind",
+          "label": "shepherd.advice.offer.no"
+        }
+      ]
     }
   ]
 }
