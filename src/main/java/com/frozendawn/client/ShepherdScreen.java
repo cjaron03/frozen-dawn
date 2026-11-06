@@ -7,9 +7,12 @@ import com.frozendawn.network.ShepherdHubPayload;
 import com.frozendawn.network.ShepherdLogPayload;
 import com.frozendawn.network.ShepherdNodePayload;
 import com.frozendawn.network.ShepherdReplyPayload;
+import com.frozendawn.network.ShepherdTypedPayload;
 import com.frozendawn.shepherd.ShepherdConversation;
 import com.frozendawn.shepherd.ShepherdDialogue.Slot;
 import com.frozendawn.shepherd.ShepherdFace;
+import com.frozendawn.shepherd.ShepherdGlitch;
+import com.frozendawn.shepherd.ShepherdGlitch.Beat;
 import com.frozendawn.shepherd.ShepherdFace.Mood;
 import com.frozendawn.shepherd.ShepherdPolicy;
 import com.frozendawn.shepherd.ShepherdTalk.Action;
@@ -40,7 +43,8 @@ public final class ShepherdScreen extends Screen {
     static final int SLOT_X = 84, SLOT_Y = 144, SLOT_DX = 158, SLOT_DY = 28, SLOT_W = 153, SLOT_H = 23;
     /** Her display on the shell, and how large one texel draws. */
     static final int FACE_X = 200, FACE_Y = 18, FACE_SCALE = 10;
-    private static final int SETTINGS_X = 84, SETTINGS_Y = 202, SETTINGS_W = 150, SETTINGS_H = 14;
+    private static final int HINT_Y = 240, HINT_UNDER_SAID_Y = 254, SAID_Y = 219;
+    private static final int SETTINGS_X = 84, SETTINGS_Y = 220, SETTINGS_W = 150, SETTINGS_H = 14;
 
     /** What is on the panel. Settings and the log are hers to show: the talk behind them stays on the hub. */
     private enum Page {
@@ -55,7 +59,7 @@ public final class ShepherdScreen extends Screen {
     private boolean hub, waiting, lamp, heavy;
     private List<ShepherdNodePayload.Line> lines = List.of();
     private List<ShepherdNodePayload.Reply> replies = List.of();
-    private boolean canContinue;
+    private boolean canContinue, plain;
     private int line;
     private List<String> rows = List.of();
     private int total, typed, charTicks, age;
@@ -65,6 +69,13 @@ public final class ShepherdScreen extends Screen {
     private int logoTicks;
     /** The wait this line was sent with, and how much of it is left. */
     private int thinkTicks, thinkLeft;
+    private ShepherdChatBar bar;
+    /** The key that opened the bar also arrives as a character, which is not something typed. */
+    private boolean swallowChar;
+    private static final int TEAR_LEFT = 84, TEAR_TOP = 8, TEAR_RIGHT = 396, TEAR_BOTTOM = 218, STILL_LINE_Y = 108;
+    private boolean stopped;
+    private int stopAge;
+    private long stopSeed;
 
     public ShepherdScreen() {
         super(CommonComponents.EMPTY);
@@ -72,29 +83,53 @@ public final class ShepherdScreen extends Screen {
 
     public void show(ShepherdNodePayload payload) {
         conversation = payload.conversation();
+        stopped = false;
         page = Page.TALK;
         hub = false;
         lines = payload.lines();
         replies = payload.replies();
         canContinue = payload.canContinue();
+        plain = payload.plain();
         logoTicks = payload.logoTicks();
         thinkTicks = thinkLeft = payload.thinkTicks();
+        if (bar != null && (bar.state() != ShepherdChatBar.State.SENT || thinkLeft == 0)) bar.close();
         line = 0;
         startLine();
     }
 
     public void show(ShepherdHubPayload payload) {
         conversation = payload.conversation();
+        stopped = false;
         hub = true;
         waiting = payload.waiting();
         lamp = payload.lamp();
         heavy = payload.heavy();
-        lines = List.of();
+        lines = payload.lines();
         replies = List.of();
         canContinue = false;
         rows = List.of();
         total = typed = 0;
         thinkLeft = 0;
+        logoTicks = payload.logoTicks();
+        if (bar != null) bar.close();
+        line = 0;
+        if (!lines.isEmpty()) startLine();
+    }
+
+    /** Her panel goes blue and everything under it empties until the server says what she says on the way back. */
+    public void stop() {
+        stopped = true;
+        stopAge = 0;
+        stopSeed = System.nanoTime();
+        page = Page.TALK;
+        lines = List.of();
+        replies = List.of();
+        canContinue = false;
+        rows = List.of();
+        total = typed = 0;
+        thinkLeft = logoTicks = 0;
+        hub = false;
+        bar.close();
     }
 
     public void show(ShepherdLogPayload payload) {
@@ -109,6 +144,7 @@ public final class ShepherdScreen extends Screen {
     }
 
     @Override protected void init() {
+        if (bar == null) bar = new ShepherdChatBar(font);
         if (!lines.isEmpty()) startLine(typed);
     }
 
@@ -118,7 +154,7 @@ public final class ShepherdScreen extends Screen {
 
     /** Wraps the whole line first, so a word never jumps down a row halfway through typing. */
     private void startLine(int alreadyTyped) {
-        if (font == null) return;
+        if (font == null || lines.isEmpty()) return;
         String text = I18n.get(lines.get(line).key(), lines.get(line).args().toArray());
         rows = new ArrayList<>();
         for (var row : font.getSplitter().splitLines(text, LINE_W, Style.EMPTY)) rows.add(row.getString());
@@ -135,8 +171,18 @@ public final class ShepherdScreen extends Screen {
         return !hub && !typing() && line >= lines.size() - 1;
     }
 
+    /** The hub's buttons wait for any line it came with. */
+    private boolean hubReady() {
+        return hub && logoTicks == 0 && !typing() && line >= lines.size() - 1;
+    }
+
+    /** It takes the keys only once she has finished: while she types or thinks it stays shut, as the slots do. */
+    private boolean barLive() {
+        return page == Page.TALK && !stopped && logoTicks == 0 && thinkLeft == 0 && (hub ? hubReady() : spoken());
+    }
+
     private Mood mood() {
-        return hub || lines.isEmpty() ? Mood.NEUTRAL : lines.get(line).mood();
+        return lines.isEmpty() ? Mood.NEUTRAL : lines.get(line).mood();
     }
 
     private char typedChar() {
@@ -156,6 +202,8 @@ public final class ShepherdScreen extends Screen {
 
     @Override public void tick() {
         age++;
+        if (stopped) stopAge++;
+        swallowChar = false;
         if (moodBeat > 0) moodBeat--;
         if (mood() != shownMood) {
             if (shownMood != null) moodBeat = ShepherdFace.MOOD_BEAT_TICKS;
@@ -167,7 +215,10 @@ public final class ShepherdScreen extends Screen {
         }
         if (thinkLeft > 0) {
             // The same blink as a change of mood, even if the mood did not change: it takes her into the line's face.
-            if (--thinkLeft == 0) moodBeat = ShepherdFace.MOOD_BEAT_TICKS;
+            if (--thinkLeft == 0) {
+                moodBeat = ShepherdFace.MOOD_BEAT_TICKS;
+                bar.close();
+            }
             return;
         }
         if (!typing()) return;
@@ -228,9 +279,18 @@ public final class ShepherdScreen extends Screen {
             pressSettings(slot);
             return true;
         }
-        if (hub) {
-            if (inside(mx, my, SETTINGS_X, SETTINGS_Y, SETTINGS_W, SETTINGS_H)) page = Page.SETTINGS;
-            else pressHub(slot);
+        if (insideBar(mx, my)) {
+            if (bar.open()) bar.click(mx, my);
+            else if (barLive()) bar.show();
+            return true;
+        }
+        if (hub && hubReady()) {
+            if (inside(mx, my, SETTINGS_X, SETTINGS_Y, SETTINGS_W, SETTINGS_H)) {
+                bar.close();
+                page = Page.SETTINGS;
+            } else {
+                pressHub(slot);
+            }
             return true;
         }
         if (spoken() && slot >= 0 && reply(slot) != null) answer(slot);
@@ -240,7 +300,7 @@ public final class ShepherdScreen extends Screen {
 
     /** A click finishes a typing line; the next moves on to her next line, then continues. */
     private void advance() {
-        if (logoTicks > 0 || thinkLeft > 0) return;
+        if (stopped || logoTicks > 0 || thinkLeft > 0) return;
         if (typing()) {
             typed = total;
         } else if (line < lines.size() - 1) {
@@ -248,6 +308,21 @@ public final class ShepherdScreen extends Screen {
             startLine();
         } else if (canContinue) {
             answer(ShepherdConversation.CONTINUE);
+        }
+    }
+
+    private boolean insideBar(double mx, double my) {
+        return inside(mx, my, ShepherdChatBar.X, ShepherdChatBar.Y, ShepherdChatBar.W, ShepherdChatBar.H);
+    }
+
+    /** An empty Enter closes it. */
+    private void sendBar() {
+        String text = bar.value();
+        if (text.isEmpty()) {
+            bar.close();
+        } else {
+            PacketDistributor.sendToServer(new ShepherdTypedPayload(conversation, text));
+            bar.sent();
         }
     }
 
@@ -304,7 +379,32 @@ public final class ShepherdScreen extends Screen {
         return true;
     }
 
+    /** Once it is open the keys are the bar's: Esc shuts it, and a second Esc walks away. */
+    private boolean barKey(int key, int scanCode, int modifiers) {
+        switch (key) {
+            case GLFW.GLFW_KEY_ESCAPE -> bar.close();
+            case GLFW.GLFW_KEY_ENTER, GLFW.GLFW_KEY_KP_ENTER -> sendBar();
+            default -> bar.keyPressed(key, scanCode, modifiers);
+        }
+        return true;
+    }
+
+    @Override public boolean charTyped(char c, int modifiers) {
+        if (!bar.open()) return false;
+        if (swallowChar) {
+            swallowChar = false;
+            return true;
+        }
+        return bar.charTyped(c, modifiers);
+    }
+
     @Override public boolean keyPressed(int key, int scanCode, int modifiers) {
+        if (bar.open()) return barKey(key, scanCode, modifiers);
+        if (barLive() && minecraft.options.keyChat.matches(key, scanCode)) {
+            bar.show();
+            swallowChar = true;
+            return true;
+        }
         if (key == GLFW.GLFW_KEY_ESCAPE && page != Page.TALK) {
             if (page == Page.LOG) act(Action.LOG_DONE);
             page = page == Page.LOG ? Page.SETTINGS : Page.TALK;
@@ -315,12 +415,12 @@ public final class ShepherdScreen extends Screen {
             int slot = key - GLFW.GLFW_KEY_1;
             if (page == Page.SETTINGS) pressSettings(slot);
             else if (page == Page.LOG) return true;
-            else if (hub) pressHub(slot);
+            else if (hubReady()) pressHub(slot);
             else if (spoken() && reply(slot) != null) answer(slot);
             else if (!spoken()) advance();
             return true;
         }
-        if (!hub && (key == GLFW.GLFW_KEY_SPACE || key == GLFW.GLFW_KEY_ENTER)) {
+        if (!hubReady() && (key == GLFW.GLFW_KEY_SPACE || key == GLFW.GLFW_KEY_ENTER)) {
             advance();
             return true;
         }
@@ -370,6 +470,26 @@ public final class ShepherdScreen extends Screen {
 
     @Override public void render(GuiGraphics g, int mx, int my, float partial) {
         super.render(g, mx, my, partial);
+        if (stopped && beat() == Beat.NOISE) drawTorn(g, mx, my, partial);
+        else drawAll(g, mx, my, partial);
+    }
+
+    /** The whole talk screen, once per band, each slid sideways inside its own strip. Nothing outside her panels moves. */
+    private void drawTorn(GuiGraphics g, int mx, int my, float partial) {
+        for (var tear : ShepherdGlitch.tears(stopAge, stopSeed, TEAR_TOP, TEAR_BOTTOM)) {
+            g.enableScissor(ox() + TEAR_LEFT, oy() + tear.top(), ox() + TEAR_RIGHT, oy() + tear.bottom());
+            g.pose().pushPose();
+            g.pose().translate(tear.shift(), 0, 0);
+            drawAll(g, mx, my, partial);
+            g.pose().popPose();
+            g.disableScissor();
+        }
+        for (var block : ShepherdGlitch.blocks(stopAge, stopSeed, TEAR_LEFT, TEAR_TOP, TEAR_RIGHT, TEAR_BOTTOM)) {
+            g.fill(ox() + block.x(), oy() + block.y(), ox() + block.x() + block.w(), oy() + block.y() + block.h(), ShepherdStopPanel.colour(block.cell()));
+        }
+    }
+
+    private void drawAll(GuiGraphics g, int mx, int my, float partial) {
         int hover = page == Page.LOG ? -1 : slotAt(mx, my);
         drawFace(g, hover);
         if (page == Page.LOG) {
@@ -382,20 +502,38 @@ public final class ShepherdScreen extends Screen {
             drawSettings(g, hover);
             return;
         }
-        if (hub) {
+        var said = !hub && spoken() && hover >= 0 ? reply(hover) : null;
+        if (hub && hubReady()) {
             drawHub(g, hover, inside(mx, my, SETTINGS_X, SETTINGS_Y, SETTINGS_W, SETTINGS_H));
         } else {
             for (int slot = 0; slot < 4; slot++) drawReply(g, slot, spoken() ? reply(slot) : null, hover == slot);
-            var said = spoken() && hover >= 0 ? reply(hover) : null;
             if (said != null) drawSaid(g, I18n.get(said.full()));
         }
-        String hint = !hub && spoken() && canContinue ? "shepherd.screen.continue" : "shepherd.screen.hint";
-        text(g, I18n.get(hint), SLOT_X, 240, DIM);
+        boolean moreToSay = hub && line < lines.size() - 1;
+        bar.draw(g, font, ox(), oy(), mx, my, partial, barLive() && insideBar(mx, my), stopped || logoTicks > 0 || moreToSay);
+        text(g, hint(moreToSay), SLOT_X, said != null ? HINT_UNDER_SAID_Y : HINT_Y, DIM);
+    }
+
+    private String hint(boolean moreToSay) {
+        if (stopped) return beat() == Beat.STOP ? I18n.get("shepherd.screen.stopped") : "";
+        if (logoTicks > 0) return "";
+        if (bar.open()) return I18n.get("shepherd.screen.typing");
+        if (moreToSay || !hub && spoken() && canContinue) return I18n.get("shepherd.screen.continue");
+        return I18n.get("shepherd.screen.hint", minecraft.options.keyChat.getTranslatedKeyMessage().getString());
     }
 
     /** Her eyes go to the reply you are on: the grid's left column, or its right. */
     private void drawFace(GuiGraphics g, int hover) {
         shell(g, ox(), oy());
+        if (stopped) {
+            int x = ox() + FACE_X, y = oy() + FACE_Y;
+            switch (beat()) {
+                case NOISE -> ShepherdStopPanel.drawGlitch(g, x, y, stopAge, stopSeed);
+                case STILL -> ShepherdStopPanel.dark(g, x, y);
+                case STOP -> ShepherdStopPanel.draw(g, x, y);
+            }
+            return;
+        }
         if (logoTicks > 0) {
             ShepherdFaceRenderer.drawLogo(g, ShepherdFace.logoFrame(age), ox() + FACE_X, oy() + FACE_Y, FACE_SCALE);
             return;
@@ -414,6 +552,10 @@ public final class ShepherdScreen extends Screen {
 
     private void drawLine(GuiGraphics g) {
         panel(g, 84, 88, 312, 49, PANEL, STEEL);
+        if (stopped) {
+            drawStoppedLine(g);
+            return;
+        }
         boolean settings = page == Page.SETTINGS;
         text(g, I18n.get(settings ? "shepherd.screen.settings" : "shepherd.screen.name"), LINE_X, 92, settings ? DIM : GLOW);
         int left = typed, y = LINE_Y, cursorX = LINE_X, cursorY = LINE_Y;
@@ -430,13 +572,28 @@ public final class ShepherdScreen extends Screen {
         if (!rows.isEmpty()) g.fill(ox() + cursorX, oy() + cursorY, ox() + cursorX + 4, oy() + cursorY + 8, GLOW);
     }
 
+    /** Her phrase breaking under her name; then a line with no name over it, because it is not her talking; then nothing. */
+    private void drawStoppedLine(GuiGraphics g) {
+        if (beat() == Beat.STILL) text(g, I18n.get(ShepherdGlitch.VERDICT), LINE_X, STILL_LINE_Y, DIM);
+        if (beat() != Beat.NOISE) return;
+        text(g, I18n.get("shepherd.screen.name"), LINE_X, 92, GLOW);
+        String line = ShepherdGlitch.line(I18n.get(ShepherdGlitch.BREAK), stopAge, stopSeed);
+        for (int row = 0; row * ShepherdGlitch.ROW < line.length(); row++) {
+            text(g, line.substring(row * ShepherdGlitch.ROW, Math.min(line.length(), (row + 1) * ShepherdGlitch.ROW)), LINE_X, LINE_Y + row * LINE_STEP, TEXT);
+        }
+    }
+
+    private Beat beat() {
+        return ShepherdGlitch.beat(stopAge);
+    }
+
     private void drawReply(GuiGraphics g, int slot, ShepherdNodePayload.Reply reply, boolean hover) {
         int x = slotX(slot), y = slotY(slot);
         if (reply == null) {
             panel(g, x, y, SLOT_W, SLOT_H, EMPTY, STEEL);
             return;
         }
-        drawSlot(g, slot, I18n.get("shepherd.screen.tone." + Slot.values()[slot].name().toLowerCase(Locale.ROOT)), I18n.get(reply.label()), hover);
+        drawSlot(g, slot, plain ? "" : I18n.get("shepherd.screen.tone." + Slot.values()[slot].name().toLowerCase(Locale.ROOT)), I18n.get(reply.label()), hover);
     }
 
     private void drawSlot(GuiGraphics g, int slot, String tone, String label, boolean hover) {
@@ -444,9 +601,9 @@ public final class ShepherdScreen extends Screen {
     }
 
     private void drawSaid(GuiGraphics g, String full) {
-        panel(g, 242, 202, 197, 31, SAY, GLOW2);
-        text(g, I18n.get("shepherd.screen.you_say"), 248, 206, DIM);
-        text(g, "\"" + full + "\"", 248, 219, TEXT);
+        panel(g, 242, SAID_Y, 197, 31, SAY, GLOW2);
+        text(g, I18n.get("shepherd.screen.you_say"), 248, SAID_Y + 4, DIM);
+        text(g, "\"" + full + "\"", 248, SAID_Y + 17, TEXT);
     }
 
     private void drawSettings(GuiGraphics g, int hover) {

@@ -193,7 +193,8 @@ The ORSA spec's eleven red lines apply. Typing adds these:
 
 **"Continuity" crashes her (owner, 2026-11-04).** A check before matching catches the word, however it's typed. She doesn't hear it; she goes down.
 
-1. Her face snaps to a blue screen with a small sad face, on her body's display and in the talk screen's face panel, like a machine's stop screen. It uses ORSA's own text and no real company's marks:
+1. She comes apart first (owner, at the M4 pass, 2026-11-05). For two seconds her face breaks up, she starts her holding phrase and it breaks at `PLEASE REMAIN CA` into letters and numbers, her body shakes hard, and the talk screen's panels tear. Then everything stops for one second: a dark display, no name, and one line, "pattern transfer only, subject not recovered". She does not say the word. The line is the one use of "pattern" near her before T5 besides the form's label, and it is not her talking. [crash-glitch-mockup.png](art/aurora-shepherd/crash-glitch-mockup.png).
+2. Her face snaps to a blue screen with a small sad face, on her body's display and in the talk screen's face panel, like a machine's stop screen. It uses ORSA's own text and no real company's marks:
 
 ```text
 :(
@@ -202,13 +203,13 @@ PLEASE REMAIN CALM.
 STOP CODE 0x0000000A
 ```
 
-2. She drops a little in the air and her lamp and heater cut out for about eight seconds. Then the ORSA boot logo plays, and she rises.
-3. She has no memory of it: (Neutral) "Sorry. You cut out. Say that again?" Later: (Thinking) "You cut out again. Probably the cold."
-4. After T4: (Thinking) "My clock just jumped eight seconds. Did something happen?" (Neutral) "Never mind. I don't want to know."
+3. She drops a little in the air and her lamp and heater cut out for about eight seconds. Then the ORSA boot logo plays, and she rises.
+4. She has no memory of it: (Neutral) "Sorry. You cut out. Say that again?" Later: (Thinking) "You cut out again. Probably the cold."
+5. After T4: (Thinking) "My clock just jumped eight seconds. Did something happen?" (Neutral) "Never mind. I don't want to know."
 
 Rules for the crash:
 
-- **It stays on her, never on the player's screen.** A crash that looks like the game failing would be a fourth-wall moment, and the count stays at three. The world keeps running around her.
+- **It stays on her, never on the player's screen.** A crash that looks like the game failing would be a fourth-wall moment, and the count stays at three. The world keeps running around her. The tearing stays inside the talk screen's own panels.
 - **The stop code is 10, the word's length.** Nobody points that out.
 - **No cost:** no affinity, coherence or memory lost. It happens every time, and only from typed text, so it never interrupts a button conversation.
 - **It explains nothing.** It only shows that the word matters, as CH-22's inference rule allows. It does confirm that early, before CH-18, and the owner accepted that.
@@ -335,9 +336,24 @@ Verified headlessly: the order, rest and variants, every note the order can reac
 
 2026-11-05, the owner's pass in `Aurora Log Check`: "everything looked good". Two things they asked about were the lab's clock, not lost entries: the newest entry stayed on Day 48 because `skipday` moves entries back and leaves game time alone, and the first entry sat near day 28 while F3 said day 0. The fixture now starts the sun on her day, for a new save only. In `Aurora Log Check 2`, a sprint of real ticks past a written day gave a new Day 49 entry: the owner saw it on screen. F3 read Day 47 beside her Day 48, as the fixture intends. The phases run on day time, F3's clock (`ApocalypseState`), so on game time a player who slept would have seen her log fall behind the phases. Ruling: an entry's day number is the world's day, counted from 1, so it reads F3's day plus one and nights slept through show as skipped days. Everything else stays on game time, including when she writes, so sleep does not bring an entry on. Each entry stores that day, and an entry saved before this reads its game time. The owner saw it on screen: after `/time add 24000`, F3 read Day 48 and her next entry Day 49.
 
+2026-11-05: the owner approved [miller-pattern-m4-plan.md](miller-pattern-m4-plan.md): the chat bar, intents and the crash on one branch with one pass. Five ORSA topics and "Ask about ORSA" move from M5 into M4; the other 17 load as locked. `potion-base-8M` at int8 ships, and the owner accepted M0's note on the training data's licence. Nothing is built.
+
 ## Sources
 
 - `MaeveDirector`, `ShepherdAffinity` and `ShepherdReactions` at c866cf02 on `feat/aurora-affinity`.
 - The Aurora spec and script, Canon Hierarchy, and `docs/aurora-orsa-topics.md`.
 - MACS's six laws and sections 4, 9.12, 9.16a, 9.17, 10 and 17, not the whole page, and all of The Edge. This page edits neither.
 - [potion-base-8M model card](https://huggingface.co/minishlab/potion-base-8M), [its parameter and licence listing](https://www.promptlayer.com/models/potion-base-8m), and the [ONNX Runtime Java README](https://sources.debian.org/src/onnxruntime/1.23.2%2Bdfsg-3/java/README.md).
+
+2026-11-05, M4 handback: built on `feat/miller-m4` from [miller-pattern-m4-plan.md](miller-pattern-m4-plan.md), Tasks 1 to 9. The bar under her slots; static embeddings at int8 in pure Java, with `potion-base-8M` committed as a table; the Strong, Close and None bands; five ORSA topics and the menu; small talk; detours that keep a scene; and the crash: her stop face, the panel, the drawn drop and the recovery lines. `Aurora Chat Check` is prepared by `tools/prepare_miller_chat_playtest.py`, and typed lines go to `lab-bridge/aurora-typed.jsonl` in lab clients only.
+
+The fresh set missed its top-one mark. The owner accepted it ("Accept, carry on") at 59 of 74 top-one and 66 top two, with the safety marks unchanged, and the test pins those. Two example changes followed: `is anyone in there` came out of `alive` because it beat the button's own label "Is anyone out there?", which moved top-one to 60; and `and how are you?` went in because "how are you?" missed, which moved nothing. "so how are you" was added earlier for the same line. The set now reads top-one 60, top two 66, strong right 42, strong wrong 2, close with the answer 12, close without 0, none 18; out of scope, strong 1 and close 2.
+
+Branch review on Opus: no critical findings, four important, all fixed test-first. `!` hid a guarded word, since it was read as an i; a dropped or added last letter did not crash her; coming back to the first meeting from a detour replayed the logo and its sound; and "how are you?" missed. Six minors are deferred: a Close spends a miss turn, an edited datapack can throw on a crash node with no lines, the bar has no timeout out of its sent state, the drawn drop can rise early below 20 TPS, a narrow prompt spend at Wary after a tier drop, and `ShepherdCrashPayload.conversation` is unread.
+
+Verified headlessly: the unit tests and the full `architectVerify`. The table is in the built jar, but it has only been loaded from dev class directories. Still needs the owner's eyes: everything judged by look or feel, and the drafts the plan left to the pass.
+
+2026-11-05, the owner's pass in `Aurora Chat Check`, first words: "i said "kevin" "what is orsa" etc. got pretty simple asnwers." That was Neutral tier, as designed; at Trusted, "i got the lines". On the crash: "i like it, but i want her face to like glitch out", with the body shaking and the screen glitching before the stop screen. The owner approved draft 2 of [crash-glitch-mockup.png](art/aurora-shepherd/crash-glitch-mockup.png), and it is built as step 1 of the crash above. The heater cuts at the word, though the flame is drawn through the noise; a reload mid-crash replays the noise.
+
+2026-11-05, the owner closed the pass after the revised crash: "Pass done". `aurora-typed.jsonl` holds four different lines: "who are you", "who is kevin", "who is orsa" and the word, three times. So the blind column is thin, and no typed line reached Close or small talk in this pass. "who are you" landed on ORSA at 0.59, as Strong; there is no topic for it yet, and it goes to M5 unless the owner says otherwise.
+

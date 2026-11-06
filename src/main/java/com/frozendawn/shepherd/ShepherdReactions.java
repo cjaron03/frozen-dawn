@@ -138,6 +138,11 @@ public final class ShepherdReactions {
         for (var heard : near((ServerLevel) she.level(), she)) PacketDistributor.sendToPlayer(heard, line);
     }
 
+    /** The word, with nobody on her screen. It answers no cooldown: she has no idea anything happened. */
+    static void crashLine(ShepherdEntity she, String key, Mood mood) {
+        speak(she, key, mood, null);
+    }
+
     /** A pool's line, if the trigger's cooldown has run and the moment allows. */
     public static boolean murmur(ServerLevel level, Trigger trigger) {
         return murmur(level, trigger, ShepherdAmbients.pools(trigger));

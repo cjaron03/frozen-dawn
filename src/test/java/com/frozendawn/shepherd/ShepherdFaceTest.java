@@ -296,4 +296,55 @@ class ShepherdFaceTest {
             }
         }
     }
+
+    /** Display B from crash-mockup.png: the mark over a row of writing-shaped blue. */
+    @Test
+    void theStopFaceMatchesTheMockup() {
+        String[] rows = {".#...#..", "....#...", "....#...", ".#...#..", "........", ".++++++."};
+        for (int y = 0; y < ShepherdFace.HEIGHT; y++) {
+            for (int x = 0; x < ShepherdFace.WIDTH; x++) {
+                assertEquals(rows[y].charAt(x) == '#', ShepherdFace.STOP.lit(x, y), x + "," + y);
+                assertEquals(rows[y].charAt(x) == '+', ShepherdFace.STOP.dim(x, y), x + "," + y);
+            }
+        }
+    }
+
+    @Test
+    void theDropEasesDownAndHolds() {
+        assertEquals(0, ShepherdFace.crashDrop(0));
+        float last = 0;
+        for (int age = 1; age <= ShepherdPolicy.CRASH_DROP_TICKS; age++) {
+            float drop = ShepherdFace.crashDrop(age);
+            assertTrue(drop > last, "Down at " + age);
+            last = drop;
+        }
+        assertEquals(ShepherdPolicy.CRASH_DROP_BLOCKS, last);
+        assertTrue(ShepherdFace.crashDrop(1) > ShepherdPolicy.CRASH_DROP_BLOCKS / ShepherdPolicy.CRASH_DROP_TICKS, "It falls fastest at first");
+        assertEquals(ShepherdPolicy.CRASH_DROP_BLOCKS, ShepherdFace.crashDrop(ShepherdPolicy.CRASH_TICKS));
+    }
+
+    @Test
+    void theDropRisesThroughTheLogo() {
+        float last = ShepherdFace.crashDrop(ShepherdPolicy.CRASH_TICKS);
+        for (int age = 1; age <= ShepherdFace.LOGO_TICKS; age++) {
+            float drop = ShepherdFace.crashDrop(ShepherdPolicy.CRASH_TICKS + age);
+            assertTrue(drop < last, "Up at " + age);
+            last = drop;
+        }
+        assertEquals(0, last);
+        assertEquals(0, ShepherdFace.crashDrop(ShepherdPolicy.CRASH_TICKS + ShepherdFace.LOGO_TICKS + 10));
+    }
+
+    @Test
+    void everyStopRowHasGlyphs() throws java.io.IOException {
+        try (var in = ShepherdFaceTest.class.getResourceAsStream("/assets/frozendawn/lang/en_us.json")) {
+            var lang = com.google.gson.JsonParser.parseReader(new java.io.InputStreamReader(in, java.nio.charset.StandardCharsets.UTF_8)).getAsJsonObject();
+            assertEquals(5, ShepherdFace.STOP_ROWS.size());
+            for (String key : ShepherdFace.STOP_ROWS) {
+                String row = lang.get(key).getAsString();
+                assertTrue(row.length() * ShepherdFace.GLYPH_STEP <= ShepherdFace.WIDTH * 10, row + " fits the panel");
+                for (char c : row.toCharArray()) assertEquals(ShepherdFace.GLYPH_ROWS, ShepherdFace.glyph(c).size(), row + ": " + c);
+            }
+        }
+    }
 }

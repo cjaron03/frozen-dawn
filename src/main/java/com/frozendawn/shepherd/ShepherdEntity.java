@@ -41,6 +41,9 @@ import net.minecraft.world.phys.Vec3;
 public final class ShepherdEntity extends PathfinderMob {
     private static final EntityDataAccessor<Integer> DATA_MOOD = SynchedEntityData.defineId(ShepherdEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Boolean> DATA_OFFLINE = SynchedEntityData.defineId(ShepherdEntity.class, EntityDataSerializers.BOOLEAN);
+    /** The word took her down: from the stop screen until the logo ends. */
+    private int crashAge;
+    private static final EntityDataAccessor<Boolean> DATA_CRASH = SynchedEntityData.defineId(ShepherdEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Boolean> DATA_TALKING = SynchedEntityData.defineId(ShepherdEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Boolean> DATA_LOGO = SynchedEntityData.defineId(ShepherdEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Boolean> DATA_RESTING = SynchedEntityData.defineId(ShepherdEntity.class, EntityDataSerializers.BOOLEAN);
@@ -139,6 +142,7 @@ public final class ShepherdEntity extends PathfinderMob {
         super.defineSynchedData(builder);
         builder.define(DATA_MOOD, Mood.NEUTRAL.ordinal());
         builder.define(DATA_OFFLINE, false);
+        builder.define(DATA_CRASH, false);
         builder.define(DATA_TALKING, false);
         builder.define(DATA_LOGO, false);
         builder.define(DATA_RESTING, false);
@@ -360,10 +364,8 @@ public final class ShepherdEntity extends PathfinderMob {
         rebootTicks = ticks;
     }
 
-    public void goOffline() {
-        setHealth(1);
-        deathTime = 0;
-        if (offline()) return;
+    /** Whatever she was doing stops. Her health and height are her own. */
+    private void stopEverything() {
         talkFor(0);
         logoTicks = 0;
         thinkFor(0);
@@ -373,9 +375,43 @@ public final class ShepherdEntity extends PathfinderMob {
         entityData.set(DATA_LOGO, false);
         entityData.set(DATA_MOOD, Mood.OFFLINE.ordinal());
         entityData.set(DATA_OFFLINE, true);
+        getNavigation().stop();
+    }
+
+    /** A real fall outranks a crash: she is down for the full two minutes. */
+    public void goOffline() {
+        setHealth(1);
+        deathTime = 0;
+        if (offline() && !crashed()) return;
+        stopEverything();
+        entityData.set(DATA_CRASH, false);
         rebootTicks = ShepherdPolicy.REBOOT_TICKS;
         setNoGravity(false);
-        getNavigation().stop();
+    }
+
+    /** A short offline: everything that stops for offline stops, and she stays where she is. */
+    public void crash() {
+        if (offline()) return;
+        stopEverything();
+        entityData.set(DATA_CRASH, true);
+        rebootTicks = ShepherdPolicy.CRASH_DOWN_TICKS;
+    }
+
+    public boolean crashed() {
+        return entityData.get(DATA_CRASH);
+    }
+
+    /** Client only: how long since she went down, for the drop. */
+    public int crashAge() {
+        return crashAge;
+    }
+
+    /** Lamp and flame come back with the logo, and the talk hears of it. */
+    private void afterCrash() {
+        entityData.set(DATA_OFFLINE, false);
+        rest();
+        showLogo();
+        ShepherdTalk.crashOver(this);
     }
 
     private void reboot() {
@@ -393,6 +429,9 @@ public final class ShepherdEntity extends PathfinderMob {
                 if (shownMood != null) moodBeat = ShepherdFace.MOOD_BEAT_TICKS;
                 shownMood = mood();
             }
+            // Joining mid-way, or the moment she comes back: the logo always starts at the same point.
+            if (!crashed()) crashAge = 0;
+            else crashAge = offline() ? crashAge + 1 : Math.max(crashAge, ShepherdPolicy.CRASH_DOWN_TICKS) + 1;
             if (thinking()) {
                 thinkAge++;
             } else if (thinkAge > 0) {
@@ -408,9 +447,17 @@ public final class ShepherdEntity extends PathfinderMob {
             return;
         }
         entityData.set(DATA_NINE_LAMP, ShepherdSavedData.get(level.getServer()).flag(ShepherdNine.LAMP_WORN));
-        if (offline() && --rebootTicks <= 0) reboot();
+        if (offline() && --rebootTicks <= 0) {
+            if (crashed()) afterCrash();
+            else reboot();
+        } else if (crashed() && offline() && rebootTicks == ShepherdPolicy.CRASH_TICKS + ShepherdPolicy.CRASH_STILL_TICKS) {
+            ShepherdTalk.crashStill(this);
+        }
         if (talkTicks > 0 && --talkTicks == 0) entityData.set(DATA_TALKING, false);
-        if (logoTicks > 0 && --logoTicks == 0) entityData.set(DATA_LOGO, false);
+        if (logoTicks > 0 && --logoTicks == 0) {
+            entityData.set(DATA_LOGO, false);
+            entityData.set(DATA_CRASH, false);
+        }
         if (thinkTicks > 0 && --thinkTicks == 0) entityData.set(DATA_THINK, 0);
         if (bootTicks > 0 && --bootTicks == 0) {
             bootStop();
@@ -498,6 +545,7 @@ public final class ShepherdEntity extends PathfinderMob {
     @Override public void addAdditionalSaveData(CompoundTag tag) {
         super.addAdditionalSaveData(tag);
         tag.putBoolean("Offline", offline());
+        tag.putBoolean("Crash", crashed() && offline());
         tag.putInt("RebootTicks", rebootTicks);
     }
 
@@ -506,6 +554,7 @@ public final class ShepherdEntity extends PathfinderMob {
         boolean offline = tag.getBoolean("Offline");
         entityData.set(DATA_OFFLINE, offline);
         if (offline) entityData.set(DATA_MOOD, Mood.OFFLINE.ordinal());
+        entityData.set(DATA_CRASH, tag.getBoolean("Crash"));
         rebootTicks = tag.getInt("RebootTicks");
     }
 

@@ -3,6 +3,8 @@ package com.frozendawn.shepherd;
 import static org.junit.jupiter.api.Assertions.*;
 
 import com.frozendawn.miller.ImpressionStore;
+import com.frozendawn.miller.Intent;
+import com.frozendawn.miller.TypedCheck;
 import com.frozendawn.shepherd.ShepherdDialogue.Node;
 import com.frozendawn.shepherd.ShepherdDialogue.Response;
 import com.google.gson.JsonObject;
@@ -46,14 +48,106 @@ class ShepherdDialogueDataTest {
                 }
             }
         }
+        // Built at run time from the open topics, and laid over these.
+        nodes.putAll(ShepherdTopics.menu(List.of(), condition -> false, false));
+        nodes.put(ShepherdTopics.AFTER, nodes.get(ShepherdTopics.MENU));
         return nodes;
     }
 
     private static List<String> exits(Node node) {
-        List<String> exits = new ArrayList<>(node.responses().stream().map(Response::next).toList());
+        List<String> exits = new ArrayList<>(node.responses().stream().map(Response::next).filter(java.util.Objects::nonNull).toList());
         if (node.next() != null) exits.add(node.next());
         if (node.otherwise() != null) exits.add(node.otherwise());
         return exits;
+    }
+
+    private static List<Intent> intents() throws IOException, URISyntaxException {
+        var folder = ShepherdDialogueDataTest.class.getResource("/data/frozendawn/shepherd/intents");
+        assertNotNull(folder, "the intents folder on the classpath");
+        List<Intent> intents = new ArrayList<>();
+        try (var files = Files.list(Path.of(folder.toURI()))) {
+            for (Path file : files.toList()) {
+                try (var reader = Files.newBufferedReader(file)) {
+                    intents.addAll(Intent.parse(JsonParser.parseReader(reader)));
+                }
+            }
+        }
+        return intents;
+    }
+
+    @Test
+    void everyTopicLineHasItsLang() throws Exception {
+        var lang = lang();
+        for (Node node : nodes().values()) {
+            if (!node.id().startsWith("orsa.") && !node.id().startsWith("chat.")) continue;
+            node.lines().forEach(line -> {
+                assertTrue(lang.has(line.key()), node.id() + " -> " + line.key());
+                if (line.heavyKey() != null) assertTrue(lang.has(line.heavyKey()), node.id() + " -> " + line.heavyKey());
+            });
+        }
+    }
+
+    @Test
+    void everyIntentHasItsLabelAndGuess() throws Exception {
+        var lang = lang();
+        for (Intent intent : intents()) {
+            if (intent.label() == null) continue;
+            assertTrue(lang.has(intent.label()), intent.label());
+            assertTrue(lang.has(intent.guess()), intent.guess());
+        }
+    }
+
+    @Test
+    void everyStopRowIsSpecCopy() throws Exception {
+        var lang = lang();
+        var rows = ShepherdFace.STOP_ROWS.stream().map(key -> lang.get(key).getAsString()).toList();
+        assertEquals(List.of("CS-1 UNIT 4", "HAS STOPPED.", "PLEASE REMAIN CALM.", "STOP CODE", "0x0000000A"), rows);
+    }
+
+    @Test
+    void theCrashLinesAreFixed() throws Exception {
+        var lang = lang();
+        assertEquals("PLEASE REMAIN CA", lang.get(ShepherdGlitch.BREAK).getAsString());
+        assertEquals("pattern transfer only, subject not recovered", lang.get(ShepherdGlitch.VERDICT).getAsString());
+    }
+
+    /** She keeps every secret the buttons keep: none of this is typed-only licence to say more. */
+    @Test
+    void typedLinesStayInside() throws Exception {
+        var banned = java.util.regex.Pattern.compile("\\b(six|fair|rules|alive|respawn|heart|archive|maeve|continuity|miller|anderson-kind|tithonus|sophie|game)\\b", java.util.regex.Pattern.CASE_INSENSITIVE);
+        int checked = 0;
+        for (var line : lang().entrySet()) {
+            if (!line.getKey().matches("shepherd\\.(orsa|typed|chat|crash|stop)\\..*")) continue;
+            checked++;
+            assertFalse(banned.matcher(line.getValue().getAsString()).find(), line.getKey() + ": " + line.getValue());
+        }
+        assertTrue(checked > 40, "The keys moved: " + checked);
+    }
+
+    @Test
+    void everyIntentIsWellFormed() throws Exception {
+        var ids = new HashSet<String>();
+        var intents = intents();
+        assertEquals(26, intents.size());
+        for (Intent intent : intents) {
+            assertTrue(ids.add(intent.id()), "two intents named " + intent.id());
+            assertTrue(intent.examples().size() >= 8 && intent.examples().size() <= 15, intent.id());
+            assertEquals(intent.label() == null, intent.guess() == null, intent.id() + " offers a guess it cannot label, or the other way");
+            if (intent.label() != null) assertNotNull(intent.node(), intent.id() + " offers a topic with nowhere to go");
+            if (intent.node() != null) assertTrue(nodes().containsKey(intent.node()), intent.id() + " -> " + intent.node());
+        }
+        assertEquals(5, intents.stream().filter(intent -> intent.label() != null).count());
+        assertEquals(9, intents.stream().filter(intent -> intent.node() != null).count());
+    }
+
+    @Test
+    void noExampleSaysTheWord() throws Exception {
+        for (Intent intent : intents()) {
+            for (String example : intent.examples()) {
+                assertFalse(TypedCheck.crashes(example), intent.id() + ": " + example);
+                assertFalse(TypedCheck.guarded(example), intent.id() + ": " + example);
+            }
+        }
     }
 
     @Test
@@ -306,7 +400,8 @@ class ShepherdDialogueDataTest {
     @Test
     void noLineCarriesHerFileName() throws Exception {
         for (var line : shepherdLines().entrySet()) {
-            if (line.getKey().startsWith("shepherd.t5.")) continue;
+            // The crash's line is the owner's one exception, 2026-11-05: it shows on her, and it is not her talking.
+            if (line.getKey().startsWith("shepherd.t5.") || line.getKey().equals(ShepherdGlitch.VERDICT)) continue;
             String text = line.getValue().toLowerCase(Locale.ROOT);
             assertFalse(text.contains("miller") || text.contains("pattern") && !line.getKey().equals("shepherd.log.pattern"), line.getKey());
         }
