@@ -219,7 +219,7 @@ class ShepherdDialogueDataTest {
     void everyConditionIsKnown() throws Exception {
         var nodes = nodes();
         Set<String> known = new HashSet<>(List.of("woke_in_vault", "wand_cradle", "wand_hand", "wand_other", "tier_silent", "tier_wary", "tier_above_wary", "tier_friendly", "tier_trusted", "tier_close",
-                "stage_noticing", "stage_walls", "quiet", "pit_open", "saw_aurora", "stars_before", "lean_someone", "lean_left", "conspiracy"));
+                "stage_noticing", "stage_walls", "quiet", "pit_open", "saw_aurora", "stars_before", "lean_someone", "lean_left", "conspiracy", "greet_long"));
         for (Node node : nodes.values()) {
             known.addAll(node.set());
             for (Response response : node.responses()) known.addAll(response.set());
@@ -238,7 +238,7 @@ class ShepherdDialogueDataTest {
     private static boolean isKnown(Set<String> known, String condition) {
         if (condition.contains("&")) return java.util.Arrays.stream(condition.split("&", -1)).allMatch(part -> isKnown(known, part));
         if (condition.startsWith("not:")) return isKnown(known, condition.substring("not:".length()));
-        return known.contains(condition) || condition.startsWith("found:") || condition.startsWith("remembers:") || condition.startsWith("carrying:");
+        return known.contains(condition) || condition.startsWith("found:") || condition.startsWith("remembers:") || condition.startsWith("carrying:") || condition.startsWith("greet_day:");
     }
 
     /** A line's text has one slot for each argument, and each argument is one the server can fill. */

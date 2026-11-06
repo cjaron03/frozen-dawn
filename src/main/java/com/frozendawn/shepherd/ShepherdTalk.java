@@ -58,6 +58,8 @@ public final class ShepherdTalk {
     private static final int UNIMPRESSED_TICKS = 40;
     private static final int TALK_TICKS_PER_LINE = 80;
     private static final String FOUND = "found:", REMEMBERS = "remembers:", CARRYING = "carrying:", NOT = "not:", AND = "&";
+    /** Her greeting at Close: the node, the deed that spaces it, and the condition that picks the day's line. */
+    private static final String GREET = "hub.greet", GREET_READY = "greet", GREET_DAY = "greet_day:";
     private static final String CLEAR_NIGHT = "clear_night", LEAN = "t5_lean";
     /** The ground ref when there is no pit to give one for, as {@code TowerArchive} writes it. */
     private static final String NO_REF = "---";
@@ -157,7 +159,12 @@ public final class ShepherdTalk {
         var data = data();
         String waiting = waitingNode(data);
         if (waiting == null) {
-            showHub();
+            if (greets(data, player)) {
+                sayOnTheHub(GREET);
+                data.deedReady(GREET_READY, player.getServer().overworld().getGameTime() + ShepherdPolicy.DAY_TICKS);
+            } else {
+                showHub();
+            }
             return;
         }
         if (waiting.equals(data.promptNode())) live.fromPrompt = waiting;
@@ -165,6 +172,12 @@ public final class ShepherdTalk {
         if (waiting.equals(data.resumeNode())) data.resumeNode(null);
         if (waiting.equals(data.promptNode())) data.promptNode(null);
         showHub();
+    }
+
+    /** At Close she speaks first, once a day, to the one she files as Cargo. */
+    private static boolean greets(ShepherdSavedData data, ServerPlayer player) {
+        long now = player.getServer().overworld().getGameTime();
+        return data.tier().atLeast(Tier.CLOSE) && follows(data, player) && !ShepherdReactions.quiet(data, now) && now >= data.deedReady(GREET_READY);
     }
 
     /** A node that has gone missing, say from an edited datapack, is dropped here. */
@@ -262,6 +275,7 @@ public final class ShepherdTalk {
         if (condition.startsWith(FOUND)) return found(player, condition.substring(FOUND.length()));
         if (condition.startsWith(CARRYING)) return carrying(player, condition.substring(CARRYING.length()));
         if (condition.startsWith(REMEMBERS)) return MillerPattern.remembers(server, player.getUUID(), condition.substring(REMEMBERS.length()));
+        if (condition.startsWith(GREET_DAY)) return ShepherdPolicy.day(server.overworld().getGameTime()) % ShepherdPolicy.GREETINGS == Integer.parseInt(condition.substring(GREET_DAY.length()));
         var tier = ShepherdSavedData.get(server).tier();
         return switch (condition) {
             case "tier_silent" -> ShepherdSavedData.get(player.getServer()).affinity() < ShepherdAffinity.SILENT_BELOW;
@@ -271,6 +285,7 @@ public final class ShepherdTalk {
             case "tier_trusted" -> tier.atLeast(Tier.TRUSTED);
             case "tier_close" -> tier.atLeast(Tier.CLOSE);
             case "pit_open" -> ShepherdSavedData.get(server).flag(ShepherdNine.OPEN) && !ShepherdSavedData.get(server).flag(ShepherdNine.SEEN);
+            case "greet_long" -> server.overworld().getGameTime() >= ShepherdSavedData.get(server).deedReady(GREET_READY) + 2L * ShepherdPolicy.DAY_TICKS;
             case "quiet" -> ShepherdReactions.quiet(ShepherdSavedData.get(server), server.overworld().getGameTime());
             case "stars_before" -> starsBefore(player);
             case "lean_someone" -> MillerPattern.leaning(server) == SelfModel.Lean.SOMEONE;

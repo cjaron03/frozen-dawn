@@ -55,6 +55,8 @@ public final class ShepherdPolicy {
     public static final int GLAD_TICKS = 40;
     public static final int GLAD_AWAY_TICKS = 1200;
     public static final int DAY_TICKS = 24000;
+    /** How many greetings rotate at Close, one a day. */
+    public static final int GREETINGS = 7;
     /** "We don't have time." She lets it go for this long. */
     public static final int SKY_AGAIN_TICKS = 3 * DAY_TICKS;
     public static final int ENOCH_DAYS = 14, OFFLINE_DAYS_FLOOR = 2;

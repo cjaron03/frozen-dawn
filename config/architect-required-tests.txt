@@ -1285,3 +1285,12 @@ shepherdanewtopicrises xml
 shepherdwhatisorsaleadsafreshmenu xml
 shepherdamenuholdsstillwhileopen xml
 shepherdthemissesrotatethrougheight xml
+shepherdgreetsfirstatclose xml
+shepherdgreetsonceaday xml
+shepherdnamescargoonce xml
+shepherdshoutsafteralongabsence xml
+shepherdgreetingsrotatebytheday xml
+shepherdgreetsnobodybelowclose xml
+shepherdawaitingscenebeatsthegreeting xml
+shepherdquietmeansnogreeting xml
+shepherdcallsonlyherfollowercargo xml
