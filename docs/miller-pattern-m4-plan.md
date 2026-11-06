@@ -12,7 +12,7 @@
 
 **Mockups:** [chat-bar-mockup.png](art/aurora-shepherd/chat-bar-mockup.png), [crash-mockup.png](art/aurora-shepherd/crash-mockup.png), approved 2026-11-05. Exact values are in `make_chat_bar_mockup.py` and `make_crash_mockup.py`.
 
-**Status:** approved by the owner, 2026-11-05: all 33 rulings. The lines are drafts to build with and mark at the owner's pass. Nothing is built.
+**Status:** approved by the owner, 2026-11-05: all 33 rulings. The lines are drafts to build with and mark at the owner's pass. Built on `feat/miller-m4`; see the spec's Status.
 
 **Branch:** `feat/miller-m4` in `/Volumes/SSD/Work/frozen-dawn-miller-m4`, cut from `docs/miller-m4-plan`, which holds this plan on top of `feat/maeve-director` at 922c787a. PR into `feat/maeve-director`. It changes client and server sync and a shared system, so the branch review runs on Opus.
 
