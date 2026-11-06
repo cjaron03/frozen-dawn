@@ -7,7 +7,7 @@ Run from anywhere: python3 docs/art/aurora-shepherd/make_m6_faces_mockup.py
 import math
 from pathlib import Path
 from PIL import Image, ImageDraw
-from make_body_directions import C, font, iso
+from make_body_directions import C, font, iso, lit
 from make_face_and_talk_mockup import body_with, display
 
 HERE = Path(__file__).resolve().parent
@@ -352,42 +352,78 @@ def worry_sheet():
     img.save(HERE / 'worry-motion-mockup.png')
 
 
-WHISTLE_SHUT = ['........', '........', '.#..#...', '........', '..++....', '........']
-WHISTLE_OPEN = ['........', '........', '.#..#...', '........', '..++....', '..++....']
-NOTE_SHAPE = ((1, 0), (1, 1), (0, 2), (1, 2))  # A stem and a head, at most 2 by 3 texels.
+WINK = ['........', '.##.....', '.##.+++.', '........', '..++++..', '........']
+FLUSTERED = FACES['Flustered']
+SIDES = (((0, 1, 0), ((0, 1, 0), (1, 1, 0), (1, 1, 1), (0, 1, 1))), ((0, 0, 1), ((0, 0, 1), (1, 0, 1), (1, 1, 1), (0, 1, 1))),
+         ((0, 0, -1), ((0, 0, 0), (1, 0, 0), (1, 1, 0), (0, 1, 0))), ((1, 0, 0), ((1, 0, 0), (1, 0, 1), (1, 1, 1), (1, 1, 0))),
+         ((-1, 0, 0), ((0, 0, 0), (0, 0, 1), (0, 1, 1), (0, 1, 0))))
+TILT = .3
 
 
-def whistling(frame):
-    """Small eyes, a mouth that opens and shuts, and a note rising up the right side, dimming at the top."""
-    rows = [list(row) for row in (WHISTLE_OPEN if frame // 2 % 2 else WHISTLE_SHUT)]
-    step = frame % 8
-    if step < 5:
-        top = 3 - step if step < 4 else 0
-        cell = '+' if step == 4 else '#'
-        for dx, dy in NOTE_SHAPE:
-            if 0 <= top + dy < H:
-                rows[top + dy][6 + dx] = cell
-    return [''.join(row) for row in rows]
+def spun(d, rows, ox, oy, a, yaw):
+    """Her body turned by yaw degrees, seen from in front and a little above: 0 faces you, 180 shows you her back."""
+    body = body_with(cells(rows))
+    c, s = math.cos(math.radians(yaw)), math.sin(math.radians(yaw))
+    cx, cz = 6, 5
+
+    def turn(x, z):
+        return (x - cx) * c + (z - cz) * s, -(x - cx) * s + (z - cz) * c
+
+    quads = []
+    for (x, y, z), color in body.v.items():
+        for normal, corners in SIDES:
+            nx, ny, nz = normal
+            if (x + nx, y + ny, z + nz) in body.v:
+                continue
+            tx, tz = turn(nx + cx, nz + cz)
+            if tz + ny * TILT <= 0:
+                continue
+            points = []
+            depth = 0
+            for px, py, pz in corners:
+                rx, rz = turn(x + px, z + pz)
+                points.append((ox + rx * a, oy - (y + py) * a + rz * a * TILT))
+                depth += rz + (y + py) * TILT
+            quads.append((depth, points, lit(color, 1 if ny else .62 + .3 * max(0, tz))))
+    for _, points, color in sorted(quads, key=lambda q: q[0]):
+        d.polygon(points, fill=color)
 
 
-def whistle_mockups():
-    img = Image.new('RGB', (760, 300), C['bg'])
-    d = ImageDraw.Draw(img)
-    d.text((24, 16), 'AURORA M6: WHISTLING', font=font(22), fill=C['text'])
-    d.text((24, 46), 'Eyes go small, the mouth moves, a note rises. Motion is in the GIF.', font=font(13), fill=C['dim'])
-    for i, frame in enumerate((0, 2, 3, 4)):
-        x = 34 + i * 180
-        display(d, cells(whistling(frame)), x, 90, 16)
-        display(d, cells(whistling(frame)), x, 206, 5)
-    d.text((34, 250), 'Play size, above.', font=font(12), fill=C['dim'])
-    img.save(HERE / 'whistle-face-mockup.png')
-    s, pad = 22, 26
+# Face, her turn in degrees, frames held, the sheet's name for the beat, and whether her line shows.
+CAUGHT = [(NEUTRAL, 0, 8, None, False), (FLUSTERED, 0, 4, 'You catch her', False), (FLUSTERED, 45, 1, None, False), (FLUSTERED, 100, 1, None, False),
+          (FLUSTERED, 150, 1, None, False), (FLUSTERED, 180, 14, 'She spins away', True), (NEUTRAL, 150, 1, None, False), (WINK, 105, 1, None, False),
+          (WINK, 62, 9, 'She peeks', False), (WINK, 110, 1, None, False), (FLUSTERED, 180, 8, 'Still looking', False), (NEUTRAL, 120, 2, None, False),
+          (NEUTRAL, 60, 2, None, False), (NEUTRAL, 0, 8, 'She carries on', False)]
+
+
+def caught_line(d, x, y):
+    d.rectangle([x, y, x + 214, y + 28], fill=C['panel'], outline=C['glow2'])
+    d.text((x + 10, y + 7), "You didn't see that!", font=font(13), fill=C['text'])
+
+
+def caught_mockups():
+    w, h, a = 300, 250, 9
     frames = []
-    for frame in range(16):
-        img = Image.new('RGB', (W * s + 2 * pad, H * s + 2 * pad), C['bg'])
-        display(ImageDraw.Draw(img), cells(whistling(frame)), pad, pad, s)
-        frames.append(img)
-    frames[0].save(HERE / 'whistle-face-mockup.gif', save_all=True, append_images=frames[1:], duration=200, loop=0)
+    for rows, yaw, hold, _, line in CAUGHT:
+        img = Image.new('RGB', (w, h), C['bg'])
+        d = ImageDraw.Draw(img)
+        spun(d, rows, w // 2, 170, a, yaw)
+        if line:
+            caught_line(d, 42, 208)
+        frames += [img] * hold
+    frames[0].save(HERE / 'flustered-motion-mockup.gif', save_all=True, append_images=frames[1:], duration=TRANSITION_MS, loop=0)
+    beats = [beat for beat in CAUGHT if beat[3]]
+    img = Image.new('RGB', (60 + len(beats) * 236, 330), C['bg'])
+    d = ImageDraw.Draw(img)
+    d.text((24, 16), 'AURORA M6: CAUGHT', font=font(22), fill=C['text'])
+    d.text((24, 46), 'No new face: Flustered, her Wink, and her whole body. Motion is in flustered-motion-mockup.gif.', font=font(14), fill=C['dim'])
+    for i, (rows, yaw, _, name, line) in enumerate(beats):
+        x = 30 + i * 236
+        spun(d, rows, x + 104, 220, 8, yaw)
+        d.text((x, 262), f'{i + 1}  {name}', font=font(14), fill=C['text'])
+        if line:
+            caught_line(d, x, 286)
+    img.save(HERE / 'flustered-motion-mockup.png')
 
 
 if __name__ == '__main__':
@@ -398,4 +434,4 @@ if __name__ == '__main__':
     transitions_sheet()
     worry_gif()
     worry_sheet()
-    whistle_mockups()
+    caught_mockups()

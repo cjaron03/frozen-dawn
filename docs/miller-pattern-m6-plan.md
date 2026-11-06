@@ -12,7 +12,7 @@
 
 **Lines:** `docs/aurora-m6-lines.md`, written in Task 1, for the owner to mark before anything is built.
 
-**Mockups:** approved 2026-11-06, in `docs/art/aurora-shepherd/`: `orsa-face-mockup.png` (A, Voice trace), `new-expressions-mockup.png` (Beaming, Flustered, Grim), `face-transitions-mockup.gif` (Flow), `worry-motion-mockup.gif` and `hologram-mockup.gif`. `make_m6_faces_mockup.py` holds the exact rows and frames.
+**Mockups:** approved 2026-11-06, in `docs/art/aurora-shepherd/`: `orsa-face-mockup.png` (A, Voice trace), `new-expressions-mockup.png` (Beaming, Flustered, Grim), `face-transitions-mockup.gif` (Flow), `worry-motion-mockup.gif` and `hologram-mockup.gif`. `flustered-motion-mockup.gif` awaits the owner's look. `make_m6_faces_mockup.py` holds the exact rows and frames.
 
 **Status:** awaiting the owner's approval. Rechecked against M5 as shipped, PR 164 at 517623c7.
 
@@ -57,7 +57,8 @@
 24. **More Architect commentary.** Three or four more lines run during the hologram, with the owner's two: "Huh, it looks kind of like you" and the pickaxe line.
 25. **Asking again.** One short line each for the mobs, shown once `orsa_heard_<id>` is set, in place of the opening line.
 26. **Reactions, starting with the Hunter.** A Hunter dies to heater burn with her in range: she says one line, once a world. Others follow only if this lands. Nothing reacts to the player's death, by the typing red lines.
-27. **She whistles.** When she is calm and nobody has looked at her for a while, she whistles to herself. Catch her with your crosshair and she stops: Flustered, "You didn't see that!", once a day. A new mood `WHISTLING`, from `whistle-face-mockup.png`, once the owner picks one. Whether it has a sound is the owner's call.
+27. **She gets caught.** The owner turned down a whistling face. When she's caught, there's no new face: Flustered, her body spins away so you can't see her display, "You didn't see that!", then she peeks back with the Wink, as in `flustered-motion-mockup.gif`. Once a day. What she's caught doing is the owner's call.
+
 28. **"Cargo! Cargo! check this out!"** At Close, when calm, at most once every few days, she calls you on the strip and projects something stupid, using Task 7's hologram with an item model in place of a figure. The first is the Stuffed Penguin. The owner picks the rest.
 29. **The Clovis Bray nod is rewritten.** The S3 rule for eggs says a nod makes sense in the world and never says "game" or a title, so the fourth-wall count stays at three. "I heard of this game" can't stay. In-world, it is an ORSA file: "ORSA had a file on a man named Clovis Bray. Heard of him?" He put minds into machines, which points at her, so it reads `t5_done` under red line 8. Once a world.
 
@@ -86,7 +87,7 @@ Everything goes in `docs/aurora-m6-lines.md`. These are first drafts, to show th
 | Greeting | (Neutral) Cargo. Temperature's bad. You knew that. |
 | Asking again | (Unimpressed) Still the heater. It was the heater last time. |
 | Reaction, Hunter | (Sad) That worked. I said it would. |
-| Caught whistling | (Flustered) You didn't see that! |
+| Caught | (Flustered) You didn't see that! |
 | The gag | (Beaming) Cargo! Cargo! Check this out! |
 | The nod, after T5 | (Thinking) ORSA had a file on a man named Clovis Bray. Heard of him? |
 
@@ -242,9 +243,9 @@ Draw a `HumanoidModel` baked from `ModelLayers.ZOMBIE`, at half size, about two 
 - Modify: `shepherd/ShepherdEggs.java`, `shepherd/ShepherdFace.java`, `shepherd/ShepherdProjection.java`, `shepherd/ShepherdHologram.java`, `client/ShepherdHologramRenderer.java`, `shepherd/ShepherdPolicy.java`, `assets/frozendawn/lang/en_us.json`
 - Test: `ShepherdMomentsGameTest.java`
 
-**Interfaces:** Consumes Task 6's `start` and Task 7's renderer. Produces `Mood.WHISTLING`; projection kind 5, an item model; `ShepherdPolicy.GAG_EVERY_TICKS`; world flags `reacted_hunter_burn`, `clovis_said`; deed times `caught_whistling`, `gag`.
+**Interfaces:** Consumes Task 6's `start` and Task 7's renderer. Produces `ShepherdEntity.flusterTicks`, which turns her body by the mockup's beats; projection kind 5, an item model; `ShepherdPolicy.GAG_EVERY_TICKS`; world flags `reacted_hunter_burn`, `clovis_said`; deed times `caught_whistling`, `gag`.
 
-- [ ] **Step 1: Write the failing tests.** `shepherdReactsOnceToAHunterAtTheHeater`, `shepherdIgnoresAHunterKilledAnotherWay`, `shepherdWhistlesOnlyWhenCalm`, `shepherdGetsCaughtOnceADay`, `shepherdTheGagWaitsForCalm`, `shepherdNamesClovisOnlyAfterT5`.
+- [ ] **Step 1: Write the failing tests.** `shepherdReactsOnceToAHunterAtTheHeater`, `shepherdIgnoresAHunterKilledAnotherWay`, `shepherdGetsCaughtOnlyWhenCalm`, `shepherdGetsCaughtOnceADay`, `shepherdTheGagWaitsForCalm`, `shepherdNamesClovisOnlyAfterT5`.
 - [ ] **Step 2: Run them.** Expected: FAIL.
 - [ ] **Step 3: Implement,** beside the other nods in `ShepherdEggs`.
 - [ ] **Step 4: Run them.** Expected: PASS.
@@ -259,7 +260,7 @@ Draw a `HumanoidModel` baked from `ModelLayers.ZOMBIE`, at half size, about two 
 - [ ] **Step 1: Run the full `architectVerify`.** In the background. `architectMonkey` only if Architect code changed; none should have.
 - [ ] **Step 2: Branch review on Opus,** brief: the branch range, this plan and its rulings. Fix real findings, each with a failing test first.
 - [ ] **Step 3: Prepare the save and launch `runClientLab`.** Lab buttons under their own namespace: `[Friendly]`, `[Trusted]`, `[Close]`, `[Wary]`, `[A day on]`, `[Long gone]`, `[Erased]`, `[Forget the advice]`, and a spawn button for each mob, so the strategies can be tried on a live one.
-- [ ] **Step 4: The owner's pass.** Ask them to type freely first, before seeing any list. Take their unprompted description. Judge: the voice trace, the three faces and Flow in motion, the greeting, each hologram from every side, the worry, the egg, the whistle, the gag, and whether each strategy works as she says.
+- [ ] **Step 4: The owner's pass.** Ask them to type freely first, before seeing any list. Take their unprompted description. Judge: the voice trace, the three faces and Flow in motion, the greeting, each hologram from every side, the worry, the egg, getting caught, the gag, and whether each strategy works as she says.
 - [ ] **Step 5: Sort the log.** M5's Ruling 4: score it blind, record the numbers, sort each miss.
 - [ ] **Step 6: Fix what the pass finds, update the Status, offer the PR.**
 
