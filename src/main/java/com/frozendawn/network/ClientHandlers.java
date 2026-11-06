@@ -354,6 +354,11 @@ public final class ClientHandlers {
         shepherdScreen().show(payload);
     }
 
+    /** Only onto a screen that asked for it: one closed in the meantime has gone for good. */
+    public static void handleShepherdLog(ShepherdLogPayload payload) {
+        if (Minecraft.getInstance().screen instanceof com.frozendawn.client.ShepherdScreen screen) screen.show(payload);
+    }
+
     public static void handleShepherdBootOffer() {
         com.frozendawn.client.ShepherdPromptStrip.clear();
         Minecraft.getInstance().setScreen(new com.frozendawn.client.ShepherdBootScreen());

@@ -2,6 +2,7 @@ package com.frozendawn.miller;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import com.frozendawn.shepherd.ShepherdAffinity.Tier;
 import com.frozendawn.miller.ImpressionStore.Theory;
 import com.frozendawn.shepherd.ShepherdAffinity.Deed;
 import com.frozendawn.shepherd.ShepherdDialogue.Slot;
@@ -18,13 +19,13 @@ class ImpressionStoreTest {
 
     private static PatternState woken() {
         var state = new PatternState();
-        state.poll(1, PatternState.NOT_SET, false, 0);
+        state.poll(1, new UUID(0, 1), PatternState.NOT_SET, Tier.NEUTRAL, 0);
         return state;
     }
 
     /** A day on: the settle has run. */
     private static double leanAfterADay(PatternState state, Theory theory) {
-        state.poll(1, PatternState.NOT_SET, false, DAY);
+        state.poll(1, new UUID(0, 1), PatternState.NOT_SET, Tier.NEUTRAL, DAY);
         return state.impressions().confidence(ONE, theory);
     }
 
@@ -49,11 +50,11 @@ class ImpressionStoreTest {
         var state = woken();
         state.impressions().note(ONE, Theory.KIND, true);
         assertEquals(0, state.impressions().confidence(ONE, Theory.KIND));
-        state.poll(1, PatternState.NOT_SET, false, DAY - 1);
+        state.poll(1, new UUID(0, 1), PatternState.NOT_SET, Tier.NEUTRAL, DAY - 1);
         assertEquals(0, state.impressions().confidence(ONE, Theory.KIND), "Not before the day is out");
-        state.poll(0, PatternState.NOT_SET, false, DAY);
+        state.poll(0, new UUID(0, 1), PatternState.NOT_SET, Tier.NEUTRAL, DAY);
         assertEquals(0, state.impressions().confidence(ONE, Theory.KIND), "Nobody near, so it waits");
-        state.poll(1, PatternState.NOT_SET, false, DAY);
+        state.poll(1, new UUID(0, 1), PatternState.NOT_SET, Tier.NEUTRAL, DAY);
         assertEquals(1.0 / 3, state.impressions().confidence(ONE, Theory.KIND), 1e-12);
     }
 
@@ -149,7 +150,7 @@ class ImpressionStoreTest {
         assertHeard(new Heard.Used(Action.FOLLOW), Theory.USES_ME, 1);
         assertHeard(new Heard.Used(Action.LAMP), Theory.USES_ME, 1);
         assertHeard(new Heard.Used(Action.TALK), Theory.USES_ME, -1);
-        assertHeard(new Heard.Used(Action.SETTINGS), Theory.USES_ME, 0);
+        assertHeard(new Heard.Used(Action.LANGUAGE), Theory.USES_ME, 0);
     }
 
     @Test
@@ -211,7 +212,7 @@ class ImpressionStoreTest {
     @Test
     void namingHerOnceIsEnoughToBeKnown() {
         var state = named();
-        state.poll(1, PatternState.NOT_SET, false, DAY);
+        state.poll(1, new UUID(0, 1), PatternState.NOT_SET, Tier.NEUTRAL, DAY);
         assertTrue(state.impressions().known());
     }
 
@@ -220,7 +221,7 @@ class ImpressionStoreTest {
         var state = woken();
         state.heard(ONE, reply(Slot.KIND), 0);
         state.heard(ONE, reply(Slot.KIND), 0);
-        state.poll(1, PatternState.NOT_SET, false, DAY);
+        state.poll(1, new UUID(0, 1), PatternState.NOT_SET, Tier.NEUTRAL, DAY);
         assertFalse(state.impressions().known());
     }
 
@@ -229,7 +230,7 @@ class ImpressionStoreTest {
         var state = named();
         state.appraise(ONE, Deed.CALLED_SHEPHERD, 0);
         state.impressions().note(ONE, Theory.CALLS_ME_AURORA, false);
-        state.poll(1, PatternState.NOT_SET, false, DAY);
+        state.poll(1, new UUID(0, 1), PatternState.NOT_SET, Tier.NEUTRAL, DAY);
         assertTrue(state.impressions().confidence(ONE, Theory.CALLS_ME_AURORA) < 0);
         assertTrue(state.impressions().known());
     }
@@ -237,11 +238,11 @@ class ImpressionStoreTest {
     @Test
     void theNameOutlivesTheFade() {
         var state = named();
-        for (int day = 1; day <= 40; day++) state.poll(1, PatternState.NOT_SET, false, day * DAY);
+        for (int day = 1; day <= 40; day++) state.poll(1, new UUID(0, 1), PatternState.NOT_SET, Tier.NEUTRAL, day * DAY);
         assertFalse(state.impressions().known(), "They stopped talking to her");
         state.heard(ONE, reply(Slot.KIND), 40 * DAY);
         state.heard(ONE, reply(Slot.KIND), 40 * DAY);
-        state.poll(1, PatternState.NOT_SET, false, 41 * DAY);
+        state.poll(1, new UUID(0, 1), PatternState.NOT_SET, Tier.NEUTRAL, 41 * DAY);
         assertTrue(state.impressions().known());
     }
 

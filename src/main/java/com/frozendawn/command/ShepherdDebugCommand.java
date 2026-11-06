@@ -3,6 +3,7 @@ package com.frozendawn.command;
 import com.frozendawn.data.ReturnedHearthSavedData;
 import com.frozendawn.miller.Drives.Drive;
 import com.frozendawn.miller.Feelings.Feeling;
+import com.frozendawn.miller.Mark;
 import com.frozendawn.miller.MillerPattern;
 import com.frozendawn.miller.PatternLaws;
 import com.frozendawn.miller.SelfModel;
@@ -75,6 +76,34 @@ final class ShepherdDebugCommand {
         return feel;
     }
 
+    /** Her log for the lab: an entry now, the lean that signs it, a mark as if she saw it, and the first read again. */
+    private static LiteralArgumentBuilder<CommandSourceStack> log() {
+        var mark = Commands.literal("mark");
+        for (Mark seen : Mark.values()) {
+            mark.then(Commands.literal(seen.name().toLowerCase(Locale.ROOT)).executes(c -> {
+                MillerPattern.marked(c.getSource().getServer(), c.getSource().getPlayerOrException().getUUID(), seen);
+                return 1;
+            }));
+        }
+        return Commands.literal("log")
+                .then(mark)
+                .then(Commands.literal("forget").executes(c -> {
+                    MillerPattern.forgetRead(c.getSource().getServer(), c.getSource().getPlayerOrException().getUUID());
+                    FrozenDawnCommandOutput.item(c.getSource(), "she has not seen you read it");
+                    return 1;
+                }))
+                .then(Commands.literal("write").executes(c -> {
+                    var entry = ShepherdReactions.writeDay(c.getSource().getPlayerOrException());
+                    FrozenDawnCommandOutput.item(c.getSource(), "day " + entry.day() + " note=" + entry.note());
+                    return 1;
+                }))
+                .then(Commands.literal("sign").executes(c -> {
+                    MillerPattern.lean(c.getSource().getServer(), c.getSource().getPlayerOrException().getUUID());
+                    FrozenDawnCommandOutput.item(c.getSource(), "lean=" + MillerPattern.leaning(c.getSource().getServer()));
+                    return 1;
+                }));
+    }
+
     static LiteralArgumentBuilder<CommandSourceStack> commands() {
         return Commands.literal("shepherd").requires(source -> source.hasPermission(2))
                 .then(Commands.literal("state").executes(c -> lines(c.getSource(), MillerPattern.diagnostics(c.getSource().getServer()))))
@@ -89,6 +118,7 @@ final class ShepherdDebugCommand {
                 .then(witness())
                 .then(saw())
                 .then(feel())
+                .then(log())
                 .then(Commands.literal("dump").executes(c -> {
                     FrozenDawnCommandOutput.heading(c.getSource(), "CS-1 Shepherd");
                     for (var line : ShepherdSavedData.get(c.getSource().getServer()).describe())

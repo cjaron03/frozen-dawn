@@ -40,7 +40,11 @@ final class Coherence {
 
     /** How many of a pool's first variants she can reach. At the floor she repeats herself. */
     int variety(int lines, long now) {
-        return Math.min(lines, Math.max(1, (int) Math.ceil(lines * value(now))));
+        return reach(lines, value(now));
+    }
+
+    static int reach(int lines, double value) {
+        return Math.min(lines, Math.max(1, (int) Math.ceil(lines * value)));
     }
 
     void age(long ticks) {

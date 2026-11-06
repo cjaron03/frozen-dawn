@@ -73,7 +73,9 @@ public final class ShepherdAffinity {
         LEFT_BEHIND(-10, 0, Mood.UNIMPRESSED, keys("left_behind", 2)),
         CALLED_SHEPHERD(-5, MINUTE, Mood.UNIMPRESSED, keys("called_shepherd", 3)),
         /** She stood at the husk. It costs nobody anything, and it happens once. */
-        NINE_FOUND(0, 0, Mood.SAD, List.of());
+        NINE_FOUND(0, 0, Mood.SAD, List.of()),
+        /** The log she keeps, read the first time. {@link #READ_LOG} is ORSA's paperwork. What she says about it is a node, not a reaction. */
+        READ_HER_LOG(-5, 0, Mood.UNIMPRESSED, List.of());
 
         private final int score, cooldownTicks;
         private final Mood mood;

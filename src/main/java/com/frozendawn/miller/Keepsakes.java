@@ -77,9 +77,9 @@ public final class Keepsakes {
         return best;
     }
 
-    /** A deed with no lines she keeps to herself, and that goes for the memory of it too. Nine is the one she could not speak of at the time and can later. */
+    /** A deed with no lines she keeps to herself, and that goes for the memory of it too. Nine she could not speak of at the time and can later, and her log has its say in a node. */
     private static boolean unspoken(String kind) {
-        for (Deed deed : Deed.values()) if (deed.name().equalsIgnoreCase(kind)) return deed.lines().isEmpty() && deed != Deed.NINE_FOUND;
+        for (Deed deed : Deed.values()) if (deed.name().equalsIgnoreCase(kind)) return deed.lines().isEmpty() && deed != Deed.NINE_FOUND && deed != Deed.READ_HER_LOG;
         return false;
     }
 

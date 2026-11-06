@@ -2,6 +2,7 @@ package com.frozendawn.miller;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import com.frozendawn.shepherd.ShepherdAffinity.Tier;
 import com.frozendawn.miller.Drives.Drive;
 import com.frozendawn.miller.Feelings.Feeling;
 import com.frozendawn.shepherd.ShepherdAffinity.Deed;
@@ -23,9 +24,19 @@ class PatternStateTest {
         for (long t = from; ; t += 20) if (state.mood(t) == Mood.NEUTRAL) return t - from;
     }
 
+    @Test
+    void theDaySettlesOnGameTimeAndIsWrittenOnTheWorldsDay() {
+        var state = new PatternState();
+        state.poll(1, ONE, PatternState.NOT_SET, Tier.NEUTRAL, 0, 6);
+        state.poll(1, ONE, PatternState.NOT_SET, Tier.NEUTRAL, ShepherdPolicy.DAY_TICKS - 100, 20);
+        assertTrue(state.log().entries().isEmpty(), "Sleep does not bring the entry on");
+        state.poll(1, ONE, PatternState.NOT_SET, Tier.NEUTRAL, ShepherdPolicy.DAY_TICKS, 21);
+        assertEquals(21, state.log().entries().getFirst().day());
+    }
+
     private static PatternState woken() {
         var state = new PatternState();
-        state.poll(0, PatternState.NOT_SET, false, 0);
+        state.poll(0, new UUID(0, 1), PatternState.NOT_SET, Tier.NEUTRAL, 0);
         return state;
     }
 
@@ -167,7 +178,7 @@ class PatternStateTest {
             boolean spoken = random.nextInt(3) == 0;
             if (step < from) continue;
             var who = step % 2 == 0 ? ONE : TWO;
-            if (poll) state.poll(near, talk, trusted, now);
+            if (poll) state.poll(near, new UUID(0, 1), talk, trusted ? Tier.TRUSTED : Tier.NEUTRAL, now);
             else if (spoken) state.heard(who, new Heard.Reply(tone, List.of("+calls_me_aurora"), "named"), now);
             else state.appraise(who, deed, now);
             between.accept(now);
@@ -218,7 +229,7 @@ class PatternStateTest {
     @Test
     void aSaveWithNoStateStartsAtRest() {
         var state = PatternState.load(new CompoundTag());
-        state.poll(0, PatternState.NOT_SET, false, 10_000_000);
+        state.poll(0, new UUID(0, 1), PatternState.NOT_SET, Tier.NEUTRAL, 10_000_000);
         for (Drive drive : Drive.values()) assertEquals(0.5, state.drives().value(drive, 10_000_000), 1e-9, drive.name());
         assertEquals(Mood.NEUTRAL, state.mood(10_000_000));
     }
@@ -226,15 +237,15 @@ class PatternStateTest {
     @Test
     void aTalkFromBeforeTheStateIsNotAConversation() {
         var state = PatternState.load(new CompoundTag());
-        state.poll(1, 5_000_000, false, 10_000_000);
+        state.poll(1, new UUID(0, 1), 5_000_000, Tier.NEUTRAL, 10_000_000);
         assertEquals(0.49, state.drives().value(Drive.COMPANY, 10_000_000), 1e-9);
     }
 
     @Test
     void theClockSeededInTheSameTickIsNotAConversation() {
         var state = new PatternState();
-        state.poll(1, PatternState.NOT_SET, false, 1000);
-        state.poll(1, 1000, false, 1100);
+        state.poll(1, new UUID(0, 1), PatternState.NOT_SET, Tier.NEUTRAL, 1000);
+        state.poll(1, new UUID(0, 1), 1000, Tier.NEUTRAL, 1100);
         assertTrue(state.drives().value(Drive.COMPANY, 1100) > 0.47, "Company: " + state.drives().value(Drive.COMPANY, 1100));
     }
 
@@ -270,13 +281,13 @@ class PatternStateTest {
     @Test
     void aConversationCountsOnce() {
         var once = woken();
-        once.poll(0, 50, false, 100);
+        once.poll(0, new UUID(0, 1), 50, Tier.NEUTRAL, 100);
         double fed = once.drives().value(Drive.COMPANY, 100);
         var state = woken();
-        state.poll(0, 50, false, 100);
-        state.poll(0, 50, false, 100);
+        state.poll(0, new UUID(0, 1), 50, Tier.NEUTRAL, 100);
+        state.poll(0, new UUID(0, 1), 50, Tier.NEUTRAL, 100);
         state = PatternState.load(state.save());
-        state.poll(0, 50, false, 100);
+        state.poll(0, new UUID(0, 1), 50, Tier.NEUTRAL, 100);
         assertEquals(fed, state.drives().value(Drive.COMPANY, 100), 1e-12);
         assertTrue(fed < 0.45);
     }
@@ -284,7 +295,7 @@ class PatternStateTest {
     @Test
     void companyFallsWithSomeoneNearAndRisesAlone() {
         var state = woken();
-        for (long t = 100; t <= 2000; t += 100) state.poll(1, PatternState.NOT_SET, false, t);
+        for (long t = 100; t <= 2000; t += 100) state.poll(1, new UUID(0, 1), PatternState.NOT_SET, Tier.NEUTRAL, t);
         double near = state.drives().value(Drive.COMPANY, 2000);
         assertTrue(near < 0.5);
         assertTrue(state.drives().value(Drive.COMPANY, 20000) > near);
@@ -321,7 +332,7 @@ class PatternStateTest {
         for (Drive drive : Drive.values()) assertEquals(waited.drives().value(drive, 24000), aged.drives().value(drive, 0), 1e-12);
         assertEquals(waited.coherence().value(24000), aged.coherence().value(0), 1e-12);
         assertEquals(waited.keepsakes().of(ONE).getFirst().time() - 24000, aged.keepsakes().of(ONE).getFirst().time());
-        aged.poll(1, PatternState.NOT_SET, false, 0);
+        aged.poll(1, new UUID(0, 1), PatternState.NOT_SET, Tier.NEUTRAL, 0);
         assertTrue(aged.impressions().confidence(ONE, ImpressionStore.Theory.KIND) < 0, "A skipped day settles too");
     }
 
@@ -344,7 +355,7 @@ class PatternStateTest {
         assertEquals(0, state.impressions().confidence(ONE, ImpressionStore.Theory.CAREFUL));
         assertEquals(SelfModel.Stage.PRODUCT, state.self().stage());
         assertEquals(1, state.coherence().value(later), "Not slowed by a silence she was never built to count");
-        state.poll(1, PatternState.NOT_SET, true, later);
+        state.poll(1, new UUID(0, 1), PatternState.NOT_SET, Tier.TRUSTED, later);
         assertEquals(1, state.coherence().value(later));
         assertEquals(0, state.coherence().halfLaps(later), "No delay");
         assertEquals(SelfModel.Stage.PRODUCT, state.self().stage(), "No stage jump");
@@ -352,8 +363,8 @@ class PatternStateTest {
     }
 
     @Test
-    void thisSaveIsVersionThree() {
-        assertEquals(3, PatternState.VERSION);
+    void thisSaveIsVersionFour() {
+        assertEquals(4, PatternState.VERSION);
     }
 
     @Test

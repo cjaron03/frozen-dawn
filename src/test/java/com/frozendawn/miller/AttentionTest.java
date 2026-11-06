@@ -2,6 +2,7 @@ package com.frozendawn.miller;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import com.frozendawn.shepherd.ShepherdAffinity.Tier;
 import com.frozendawn.miller.Attention.Source;
 import com.frozendawn.miller.Drives.Drive;
 import com.frozendawn.shepherd.ShepherdAffinity.Deed;
@@ -15,7 +16,7 @@ class AttentionTest {
 
     private static PatternState woken() {
         var state = new PatternState();
-        state.poll(0, PatternState.NOT_SET, false, 0);
+        state.poll(0, new UUID(0, 1), PatternState.NOT_SET, Tier.NEUTRAL, 0);
         return state;
     }
 

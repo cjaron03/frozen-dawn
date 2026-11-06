@@ -146,6 +146,56 @@ class ShepherdDialogueDataTest {
         for (String key : keys) assertTrue(lang.has(key) && !lang.get(key).getAsString().isBlank(), key);
     }
 
+    private static final String LOG = "shepherd.log.", RETURN = "shepherd.log.note.back.";
+
+    @Test
+    void logLinesStayInside() throws Exception {
+        var banned = List.of("six", "fair", "rules", "alive", "respawn", "heart", "archive", "maeve", "continuity", "miller", "anderson-kind", "tithonus");
+        int lines = 0;
+        for (var line : lang().entrySet()) {
+            String value = line.getValue().getAsString().toLowerCase(Locale.ROOT);
+            String key = line.getKey();
+            if (!key.startsWith(LOG)) continue;
+            if (value.contains("pattern")) assertEquals("shepherd.log.pattern", key, "The one approved use of the word");
+            if (value.contains("sophie")) assertEquals("shepherd.log.signed", key, "Shown only on signed entries");
+            lines++;
+            for (String word : banned) assertFalse(value.contains(word), key + " says " + word);
+        }
+        assertTrue(lines > 50, "The log's lines are there: " + lines);
+    }
+
+    @Test
+    void noAnswerToTheReturn() throws Exception {
+        int notes = 0;
+        for (var line : lang().entrySet()) {
+            if (!line.getKey().startsWith(RETURN)) continue;
+            notes++;
+            String value = line.getValue().getAsString().toLowerCase(Locale.ROOT);
+            for (String word : List.of("game", "spawn", "enroll", "because")) assertFalse(value.contains(word), line.getKey() + " explains it: " + word);
+        }
+        assertEquals(5, notes);
+    }
+
+    @Test
+    void onlyHighAndPeakLetThePunctuationGo() throws Exception {
+        for (var line : lang().entrySet()) {
+            String key = line.getKey();
+            if (!key.startsWith("shepherd.log.note.") || key.endsWith(".high") || key.endsWith(".peak") || key.equals(RETURN + "walls")) continue;
+            assertFalse(line.getValue().getAsString().contains("!"), key);
+        }
+    }
+
+    @Test
+    void everyBreakEndsOnTheFieldLimit() throws Exception {
+        for (var line : lang().entrySet()) {
+            String key = line.getKey();
+            if (key.startsWith("shepherd.log.note.") && (key.endsWith(".peak") || key.equals(RETURN + "walls"))) {
+                assertTrue(line.getValue().getAsString().endsWith("FIELD LIMIT REACHED."), key);
+                assertTrue(line.getValue().getAsString().contains("LOOP DETECTED. Retrying."), key);
+            }
+        }
+    }
+
     private static void assertNoShepherdLineSays(String... words) throws Exception {
         for (var line : lang().entrySet()) {
             if (!line.getKey().startsWith("shepherd.")) continue;
@@ -158,7 +208,7 @@ class ShepherdDialogueDataTest {
     @Test
     void namesStayInTheirPlace() throws Exception {
         for (var line : shepherdLines().entrySet()) {
-            if (line.getKey().startsWith("shepherd.t5.")) continue;
+            if (line.getKey().startsWith("shepherd.t5.") || line.getKey().equals("shepherd.log.signed")) continue;
             for (String name : List.of("sophie", "miller", "tithonus", "anderson")) assertFalse(line.getValue().toLowerCase(Locale.ROOT).contains(name), line.getKey());
         }
     }
@@ -258,7 +308,7 @@ class ShepherdDialogueDataTest {
         for (var line : shepherdLines().entrySet()) {
             if (line.getKey().startsWith("shepherd.t5.")) continue;
             String text = line.getValue().toLowerCase(Locale.ROOT);
-            assertFalse(text.contains("miller") || text.contains("pattern"), line.getKey());
+            assertFalse(text.contains("miller") || text.contains("pattern") && !line.getKey().equals("shepherd.log.pattern"), line.getKey());
         }
     }
 

@@ -4,6 +4,7 @@ import com.frozendawn.init.ModSounds;
 import com.frozendawn.network.ShepherdActionPayload;
 import com.frozendawn.network.ShepherdClosePayload;
 import com.frozendawn.network.ShepherdHubPayload;
+import com.frozendawn.network.ShepherdLogPayload;
 import com.frozendawn.network.ShepherdNodePayload;
 import com.frozendawn.network.ShepherdReplyPayload;
 import com.frozendawn.shepherd.ShepherdConversation;
@@ -32,7 +33,8 @@ public final class ShepherdScreen extends Screen {
     static final int STEEL = 0xFF5D666D;
     private static final int SHELL2 = 0xFFAEB2AD, SCUFF = 0xFF8C918E, LAMP = 0xFFF6F4D8;
     static final int PANEL = 0xFF0E1216, VEIL = 0x73060809;
-    private static final int SLOT = 0xFF12161B, SLOT_HOVER = 0xFF1E2C2A, EMPTY = 0x8012161B, SAY = 0xFF0A0D10;
+    static final int SLOT = 0xFF12161B, SLOT_HOVER = 0xFF1E2C2A;
+    private static final int EMPTY = 0x8012161B, SAY = 0xFF0A0D10;
     static final int LINE_X = 92;
     private static final int LINE_Y = 103, LINE_W = 295, LINE_STEP = 10;
     static final int SLOT_X = 84, SLOT_Y = 144, SLOT_DX = 158, SLOT_DY = 28, SLOT_W = 153, SLOT_H = 23;
@@ -40,6 +42,15 @@ public final class ShepherdScreen extends Screen {
     static final int FACE_X = 200, FACE_Y = 18, FACE_SCALE = 10;
     private static final int SETTINGS_X = 84, SETTINGS_Y = 202, SETTINGS_W = 150, SETTINGS_H = 14;
 
+    /** What is on the panel. Settings and the log are hers to show: the talk behind them stays on the hub. */
+    private enum Page {
+        TALK,
+        SETTINGS,
+        LOG
+    }
+
+    private Page page = Page.TALK;
+    private ShepherdLogPage log;
     private int conversation;
     private boolean hub, waiting, lamp, heavy;
     private List<ShepherdNodePayload.Line> lines = List.of();
@@ -61,6 +72,7 @@ public final class ShepherdScreen extends Screen {
 
     public void show(ShepherdNodePayload payload) {
         conversation = payload.conversation();
+        page = Page.TALK;
         hub = false;
         lines = payload.lines();
         replies = payload.replies();
@@ -83,6 +95,11 @@ public final class ShepherdScreen extends Screen {
         rows = List.of();
         total = typed = 0;
         thinkLeft = 0;
+    }
+
+    public void show(ShepherdLogPayload payload) {
+        log = new ShepherdLogPage(payload.pages());
+        page = Page.LOG;
     }
 
     /** The server ended it, so there is nothing to tell the server back. */
@@ -202,8 +219,17 @@ public final class ShepherdScreen extends Screen {
     @Override public boolean mouseClicked(double mx, double my, int button) {
         if (button != 0) return false;
         int slot = slotAt(mx, my);
+        if (page == Page.LOG) {
+            if (hoverOlder(mx, my)) log.move(1, hasShiftDown());
+            if (hoverNewer(mx, my)) log.move(-1, hasShiftDown());
+            return true;
+        }
+        if (page == Page.SETTINGS) {
+            pressSettings(slot);
+            return true;
+        }
         if (hub) {
-            if (inside(mx, my, SETTINGS_X, SETTINGS_Y, SETTINGS_W, SETTINGS_H)) act(Action.SETTINGS);
+            if (inside(mx, my, SETTINGS_X, SETTINGS_Y, SETTINGS_W, SETTINGS_H)) page = Page.SETTINGS;
             else pressHub(slot);
             return true;
         }
@@ -242,10 +268,54 @@ public final class ShepherdScreen extends Screen {
         }
     }
 
+    private void pressSettings(int slot) {
+        switch (slot) {
+            case 0 -> act(Action.LANGUAGE);
+            case 1 -> act(Action.LOG);
+            default -> { }
+        }
+    }
+
+    private boolean hoverOlder(double mx, double my) {
+        return inside(mx, my, ShepherdLogPage.OLDER_X, ShepherdLogPage.ROW_Y, ShepherdLogPage.BUTTON_W, ShepherdLogPage.ROW_H);
+    }
+
+    private boolean hoverNewer(double mx, double my) {
+        return inside(mx, my, ShepherdLogPage.NEWER_X, ShepherdLogPage.ROW_Y, ShepherdLogPage.BUTTON_W, ShepherdLogPage.ROW_H);
+    }
+
+    /** Left and right a day, holding a key repeats, Shift ten at a time, and Home and End the two ends. */
+    private boolean turnPage(int key) {
+        switch (key) {
+            case GLFW.GLFW_KEY_LEFT -> log.move(1, hasShiftDown());
+            case GLFW.GLFW_KEY_RIGHT -> log.move(-1, hasShiftDown());
+            case GLFW.GLFW_KEY_HOME -> log.oldest();
+            case GLFW.GLFW_KEY_END -> log.newest();
+            default -> {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    @Override public boolean mouseScrolled(double mx, double my, double scrollX, double scrollY) {
+        if (page != Page.LOG || scrollY == 0) return false;
+        log.move(scrollY < 0 ? 1 : -1, hasShiftDown());
+        return true;
+    }
+
     @Override public boolean keyPressed(int key, int scanCode, int modifiers) {
+        if (key == GLFW.GLFW_KEY_ESCAPE && page != Page.TALK) {
+            if (page == Page.LOG) act(Action.LOG_DONE);
+            page = page == Page.LOG ? Page.SETTINGS : Page.TALK;
+            return true;
+        }
+        if (page == Page.LOG && turnPage(key)) return true;
         if (key >= GLFW.GLFW_KEY_1 && key <= GLFW.GLFW_KEY_4) {
             int slot = key - GLFW.GLFW_KEY_1;
-            if (hub) pressHub(slot);
+            if (page == Page.SETTINGS) pressSettings(slot);
+            else if (page == Page.LOG) return true;
+            else if (hub) pressHub(slot);
             else if (spoken() && reply(slot) != null) answer(slot);
             else if (!spoken()) advance();
             return true;
@@ -300,9 +370,18 @@ public final class ShepherdScreen extends Screen {
 
     @Override public void render(GuiGraphics g, int mx, int my, float partial) {
         super.render(g, mx, my, partial);
-        int hover = slotAt(mx, my);
+        int hover = page == Page.LOG ? -1 : slotAt(mx, my);
         drawFace(g, hover);
+        if (page == Page.LOG) {
+            log.draw(g, font, ox(), oy(), hoverOlder(mx, my), hoverNewer(mx, my));
+            text(g, I18n.get("shepherd.screen.log_hint"), SLOT_X, 240, DIM);
+            return;
+        }
         drawLine(g);
+        if (page == Page.SETTINGS) {
+            drawSettings(g, hover);
+            return;
+        }
         if (hub) {
             drawHub(g, hover, inside(mx, my, SETTINGS_X, SETTINGS_Y, SETTINGS_W, SETTINGS_H));
         } else {
@@ -335,7 +414,8 @@ public final class ShepherdScreen extends Screen {
 
     private void drawLine(GuiGraphics g) {
         panel(g, 84, 88, 312, 49, PANEL, STEEL);
-        text(g, I18n.get("shepherd.screen.name"), LINE_X, 92, GLOW);
+        boolean settings = page == Page.SETTINGS;
+        text(g, I18n.get(settings ? "shepherd.screen.settings" : "shepherd.screen.name"), LINE_X, 92, settings ? DIM : GLOW);
         int left = typed, y = LINE_Y, cursorX = LINE_X, cursorY = LINE_Y;
         for (String row : rows) {
             String shown = row.substring(0, Math.min(left, row.length()));
@@ -369,12 +449,20 @@ public final class ShepherdScreen extends Screen {
         text(g, "\"" + full + "\"", 248, 219, TEXT);
     }
 
+    private void drawSettings(GuiGraphics g, int hover) {
+        drawSlot(g, 0, "", I18n.get(heavy ? "shepherd.screen.language.heavy" : "shepherd.screen.language.mild"), hover == 0);
+        drawSlot(g, 1, "", I18n.get("shepherd.screen.diagnostics"), hover == 1);
+        panel(g, slotX(2), slotY(2), SLOT_W, SLOT_H, EMPTY, STEEL);
+        panel(g, slotX(3), slotY(3), SLOT_W, SLOT_H, EMPTY, STEEL);
+        text(g, I18n.get("shepherd.screen.settings_hint"), SLOT_X, 240, DIM);
+    }
+
     private void drawHub(GuiGraphics g, int hover, boolean hoverSettings) {
         drawSlot(g, 0, "", I18n.get("shepherd.screen.hub.talk"), hover == 0);
         drawSlot(g, 1, "", I18n.get(waiting ? "shepherd.screen.hub.follow" : "shepherd.screen.hub.wait"), hover == 1);
         drawSlot(g, 2, "", I18n.get(lamp ? "shepherd.screen.hub.lamp_off" : "shepherd.screen.hub.lamp_on"), hover == 2);
         panel(g, slotX(3), slotY(3), SLOT_W, SLOT_H, EMPTY, STEEL);
         panel(g, SETTINGS_X, SETTINGS_Y, SETTINGS_W, SETTINGS_H, hoverSettings ? SLOT_HOVER : SLOT, hoverSettings ? GLOW : STEEL);
-        text(g, I18n.get(heavy ? "shepherd.screen.language.heavy" : "shepherd.screen.language.mild"), SETTINGS_X + 5, SETTINGS_Y + 3, DIM);
+        text(g, I18n.get("shepherd.screen.settings"), SETTINGS_X + 5, SETTINGS_Y + 3, DIM);
     }
 }

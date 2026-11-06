@@ -5,10 +5,12 @@ import com.frozendawn.data.ApocalypseState;
 import com.frozendawn.entity.ArchivistEntity;
 import com.frozendawn.miller.SelfModel;
 import com.frozendawn.miller.Heard;
+import com.frozendawn.miller.LogEntry;
 import com.frozendawn.miller.MillerPattern;
 import com.frozendawn.miller.Refusal;
 import com.frozendawn.network.ShepherdClosePayload;
 import com.frozendawn.network.ShepherdHubPayload;
+import com.frozendawn.network.ShepherdLogPayload;
 import com.frozendawn.network.ShepherdNodePayload;
 import com.frozendawn.shepherd.ShepherdAffinity.Tier;
 import com.frozendawn.shepherd.ShepherdDialogue.Line;
@@ -40,7 +42,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 @EventBusSubscriber(modid = FrozenDawn.MOD_ID)
 public final class ShepherdTalk {
     public static final String FIRST_MEETING = "fm.boot";
-    private static final String HUB_TALK = "hub.talk.quiet";
+    private static final String HUB_TALK = "hub.talk.quiet", LOG_READ = "hub.log.read";
     private static final int UNIMPRESSED_TICKS = 40;
     private static final int TALK_TICKS_PER_LINE = 80;
     private static final String FOUND = "found:", REMEMBERS = "remembers:", NOT = "not:";
@@ -52,7 +54,9 @@ public final class ShepherdTalk {
         TALK,
         FOLLOW,
         LAMP,
-        SETTINGS
+        LANGUAGE,
+        LOG,
+        LOG_DONE
     }
 
     private static final class Live {
@@ -75,6 +79,8 @@ public final class ShepherdTalk {
         int thinkTicks;
         /** What the client was last sent. */
         ShepherdNodePayload sent;
+        /** The log it was last sent, if it has asked. */
+        ShepherdLogPayload log;
 
         Live(ServerPlayer player, ShepherdEntity she) {
             this.player = player;
@@ -118,7 +124,7 @@ public final class ShepherdTalk {
             return;
         }
         if (waiting.equals(data.promptNode())) live.fromPrompt = waiting;
-        if (begin(waiting, false)) return;
+        if (begin(waiting, LOG_READ.equals(waiting))) return;
         if (waiting.equals(data.resumeNode())) data.resumeNode(null);
         if (waiting.equals(data.promptNode())) data.promptNode(null);
         showHub();
@@ -131,11 +137,24 @@ public final class ShepherdTalk {
             if (nodes.containsKey(data.resumeNode())) return data.resumeNode();
             data.resumeNode(null);
         }
+        if (owesTheRead(data, live.player)) return LOG_READ;
         String prompt = data.promptNode();
         if (prompt != null && ShepherdReactions.quiet(data, live.player.getServer().overworld().getGameTime())) return null;
         if (prompt == null || nodes.containsKey(prompt)) return prompt;
         data.promptNode(null);
         return null;
+    }
+
+    /** They read it and she has not said so. Her own voice cannot play at Wary, so there it is dropped and counts as said, and a quiet day only holds it back. */
+    private static boolean owesTheRead(ShepherdSavedData data, ServerPlayer player) {
+        var server = player.getServer();
+        var who = player.getUUID();
+        if (!MillerPattern.hasRead(server, who) || MillerPattern.toldOff(server, who)) return false;
+        if (data.tier() == Tier.WARY) {
+            MillerPattern.markTold(server, who);
+            return false;
+        }
+        return !ShepherdReactions.quiet(data, server.overworld().getGameTime()) && ShepherdDialogues.nodes().containsKey(LOG_READ);
     }
 
     public static void start(ServerPlayer player, String node) {
@@ -223,7 +242,11 @@ public final class ShepherdTalk {
     }
 
     public static void reply(ServerPlayer player, int conversation, int slot) {
-        if (!speaking(player, conversation) || live.talk == null || !live.talk.answer(slot)) return;
+        if (!speaking(player, conversation) || live.talk == null) return;
+        boolean readToThem = LOG_READ.equals(live.talk.current().id());
+        if (!live.talk.answer(slot)) return;
+        // Only once they have heard it: cut off partway, she says it again at the next talk.
+        if (readToThem) MillerPattern.markTold(player.getServer(), player.getUUID());
         hear(slot);
         spendPrompt();
         settle();
@@ -271,9 +294,25 @@ public final class ShepherdTalk {
                 }
             }
             case LAMP -> data.lamp(!data.lamp());
-            case SETTINGS -> swearing(data, !data.heavy());
+            case LANGUAGE -> swearing(data, !data.heavy());
+            case LOG -> {
+                readLog(player);
+                live.log = logPayload(live.id, MillerPattern.log(player.getServer()));
+                PacketDistributor.sendToPlayer(player, live.log);
+                return;
+            }
+            case LOG_DONE -> {
+                if (owesTheRead(data, player) && begin(LOG_READ, true)) return;
+            }
         }
         showHub();
+    }
+
+    /** The first read of anything costs, once. An empty log has nothing to read, and a read she could not charge is not paid for. */
+    private static void readLog(ServerPlayer player) {
+        var server = player.getServer();
+        var who = player.getUUID();
+        if (!MillerPattern.log(server).isEmpty() && !MillerPattern.hasRead(server, who) && ShepherdReactions.saw(player, ShepherdAffinity.Deed.READ_HER_LOG, false)) MillerPattern.markRead(server, who);
     }
 
     /** She objects, or goes. True if she answered with a line, which takes the hub's place until it is done. */
@@ -403,6 +442,10 @@ public final class ShepherdTalk {
         return new ShepherdNodePayload(conversation, node.id(), lines, replies, replies.isEmpty(), logoTicks, thinkTicks);
     }
 
+    static ShepherdLogPayload logPayload(int conversation, List<LogEntry> entries) {
+        return new ShepherdLogPayload(conversation, entries.stream().map(entry -> new ShepherdLogPayload.Page(entry.day(), entry.signed(), entry.cracked(), entry.note())).toList());
+    }
+
     private static void end(boolean tellClient) {
         var over = live;
         live = null;
@@ -477,6 +520,10 @@ public final class ShepherdTalk {
     /** What the client was last sent, or null. */
     static ShepherdNodePayload liveSent() {
         return live == null ? null : live.sent;
+    }
+
+    static ShepherdLogPayload liveLog() {
+        return live == null ? null : live.log;
     }
 
     /** How long the line on screen was made to wait. */

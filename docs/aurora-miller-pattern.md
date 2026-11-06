@@ -63,7 +63,7 @@ what her sensors saw -> Appraisal -> Feelings -> Impressions, Keepsakes -> Atten
 1. **She only knows what she perceived**, as in MACS's Causal law. If she wasn't there, it didn't happen to her.
 2. **Deterministic:** the same events give the same state, so it can be tested and explained. Randomness only picks among lines that are equally fitting.
 3. **Cheap:** it runs on S3's 100-tick poll, and on events. It does no scanning of its own.
-4. **Time uses game time**, saved in the world, as `ShepherdSavedData` does. Impressions and keepsakes are held per player; drives and feelings belong to the world, since there is one of her.
+4. **Time uses game time**, saved in the world, as `ShepherdSavedData` does. The one exception is the day number on a log entry, which is the world's day, the one the phases count. Impressions and keepsakes are held per player; drives and feelings belong to the world, since there is one of her.
 5. **Coherence never punishes.** It costs line variety and makes her reply a little slower. It never lowers a tier or deletes a keepsake (only the Bounded cap displaces one), and it recovers with a few conversations.
 6. **A delay is never dead air.** Whenever she takes a moment to reply, for coherence or typed text, her face shows a thinking indicator until the line starts. It is drawn on her own display in her two-dot style, and needs a mockup before it is built. Her log should mention the slowness in her own words, so nobody takes it for a bug.
 
@@ -84,6 +84,8 @@ Other sample notes: "I said the heater was fine. It wasn't. I just liked the roo
 - It sits under Settings, as "Unit diagnostics". Nothing points the player to it.
 - Reading it is a deed, with a small affinity cost the first time only. She knows: (Unimpressed) "You read my log." (Thinking) "That field's marked optional. That means private. I've decided."
 - After that, she sometimes writes knowing you might read it.
+- **She asks what she can't say (owner, 2026-11-05).** If she saw a player stop and saw them return, the log asks what brings them back. Questions, never answers. It never reaches her voice, her face, her feelings or the score.
+- **She shows what she doesn't say (owner, 2026-11-05).** The notes wake as she does, and at her strongest the form breaks for her. See [log-emotion-mockup.png](art/aurora-shepherd/log-emotion-mockup.png), approved 2026-11-05. She calls the player Cargo, from Friendly, in the log.
 - **The blank field pays off.** "Pattern:" stays empty, a blank and not a redaction. After T5 she fills it in, and no one mentions it: `Pattern: Sophie.` The word "Miller" need not appear.
 
 ## Self-awareness
@@ -186,7 +188,7 @@ The ORSA spec's eleven red lines apply. Typing adds these:
 1. **A locked topic is an ordinary miss.** If a player types about something they haven't unlocked, she uses the same miss lines, so she never gives away that it exists. That includes "Sophie", "TITHONUS", "Anderson-Kind" and "Maeve" before the player has earned them.
 2. **Nothing about the game itself.** "Minecraft" or "this is a game" is an ordinary miss, so the fourth-wall count stays at three.
 3. **She never claims or denies being alive.** (Unimpressed) "I'm a heated, flying, talking flashlight. Beyond that you'd have to ask the doors."
-4. **No respawn.** No intent or appraisal touches it. A player's death is never an event to her.
+4. **No respawn.** No intent or appraisal touches it. A player's death is never an event to her. The one exception is the private log, Ruling 16: nothing she says aloud, and no typed reply.
 5. **Her replies are approved lines only.** The one exception is filling a slot like `{day}` or `{place}`. The player's words are never echoed back.
 
 **"Continuity" crashes her (owner, 2026-11-04).** A check before matching catches the word, however it's typed. She doesn't hear it; she goes down.
@@ -263,6 +265,8 @@ S4 can run after M2b, so its personal arc uses the real system. This is Architec
 13. **The private log: approved, owner, 2026-11-05.** Settings becomes a page holding Language and "Unit diagnostics". See [private-log-mockup.png](art/aurora-shepherd/private-log-mockup.png).
 14. **The chat bar: approved, owner, 2026-11-05.** Close gains slot 4 "Neither.", so two wrong guesses are not a dead end. See [chat-bar-mockup.png](art/aurora-shepherd/chat-bar-mockup.png).
 15. **The crash: approved, owner, 2026-11-05.** Her display shows B, a small `:(` over a row of text-shaped blue. The talk panel shows A, all the copy at once in a 3 by 5 hand font. At Wary, the logo is followed by the recording "ORSA Civilian Support Unit CS-1, online." in place of her lines. See [crash-mockup.png](art/aurora-shepherd/crash-mockup.png).
+16. **The player's return, in the log only: added, owner, 2026-11-05.** This reverses "never comments on respawn" for the private log and nowhere else. Log only, only what she saw, questions and no answers, and it stays out of her state.
+17. **Her log shows feeling: added, owner, 2026-11-05.** Three levels, her voice waking by stage, and at Peak the form loops, fills, and `Status:` reads `nominal?`. Her nickname for the player is Cargo.
 
 ## Status
 
@@ -310,6 +314,26 @@ Verified headlessly: focus and urge, recall, walls said once, the slowing-down l
 2026-11-05: S4a adds one appraisal, `NINE_FOUND`, which leaves her sad and counts as the world's doing, and `MillerPattern.stage` for dialogue conditions. See the Status in `aurora-shepherd.md`.
 
 2026-11-05: S4b adds `SelfModel.Lean` (NONE, SOMEONE, LEFT), set once at T5 and moving her to LEANING, and `PatternState` is at version 3. A save with no `lean` tag loads NONE. `Keepsakes.unspoken` exempts `NINE_FOUND`, and `Keepsake.day()` reads `ShepherdPolicy.day`. See the Status in `aurora-shepherd.md`.
+
+2026-11-05, M3 handback: built on `feat/miller-m3` in `/Volumes/SSD/Work/frozen-dawn-miller-m3` from [miller-pattern-m3-plan.md](miller-pattern-m3-plan.md), Tasks 1 to 6. `DailyLog`, `LogEntry`, `Mark` and `Marks` under `com.frozendawn.miller`, with `PatternState` at version 4; `READ_HER_LOG` and node `hub.log.read`; `ShepherdLogPayload`; Settings and the log as client pages in `ShepherdScreen` and `ShepherdLogPage`. New commands: `/fd shepherd log write`, `sign`, `mark` and `forget`; `mind` shows the last entry's key. `architectVerify` passed at 045721cf (1,272 GameTests, 1,062 required Architect cases). `architectMonkey` has not run on this branch, since no Architect code changed. Active save: `run-lab/saves/Aurora Log Check`, from `tools/prepare_miller_log_playtest.py`.
+
+Where the build goes past the plan, each for the owner's pass to mark:
+
+- Every note that is not in the table is a new draft: a `.peak` line for each of the seven feelings, since Ruling 16 breaks the form on a feeling and the table has no words for it, and `reunion.high`, mockup 2's line, for a return below the walls.
+- The plain Joy and Fear lines are the mockup's Normal, but row 7 needs High, so a new last row plays a feeling she shows below High, at Noticing or later.
+- `cargo.2` and `cargo.3` have no row of their own, so they play as `cold.cargo` and `trusted.cargo` once she has filed the name, by the day, as other variants do.
+- A `back` note is flat at Product, about Nine once at Noticing and up, the loop once a world at the walls, then "Cargo stopped again" with the name filed and two returns seen, otherwise the Noticing line. A Peak on every `back` at the walls would never reach the line the mockup draws uncracked.
+- A player who has stopped stays marked across entries until she sees them again, so an entry between the two does not lose the question.
+- Her lines on the first read wait out a quiet day and count as said only when heard, so if they are cut off they play again at the next talk.
+- A player on the stop screen is not beside her: no day settles on them and she does not mark them in the cold.
+
+Branch review on Opus: no critical findings, one important and five minor. Fixed with a failing test first: her lines were marked as said before she spoke, so a double Esc lost them; a dead player counted as near, regraded from minor because an entry could read "Good day." about someone she had just watched stop; and a day written by hand did not restart the settle, which only the lab reached. The test for a return she never saw now writes an entry about that player.
+
+Deferred minors: `seen` runs only for the nearest, so someone standing behind the follower for five days can read as a reunion; `LastWitnessHandler` cancels a death at the same priority as `killed`, so a denied Fold death may leave a `back` note, and the bus order is unspecified; `lastTalk` is world-wide and stamped on opening the hub, so a lamp press clears a `fight` note. `reunion.peak` files the name if a Peak return is what first uses it.
+
+Verified headlessly: the order, rest and variants, every note the order can reach against the lang file, save and a version 3 load, marks, the first read's cost and lines, what the screen is sent, language and the canon lints. Nothing on screen has been seen by anyone: the owner's pass judges the form's look and fit, findability, how the first read lands, the gap, how a Peak lands and how often, the first `back` note, Cargo, and the blank field against `Pattern: Sophie.`
+
+2026-11-05, the owner's pass in `Aurora Log Check`: "everything looked good". Two things they asked about were the lab's clock, not lost entries: the newest entry stayed on Day 48 because `skipday` moves entries back and leaves game time alone, and the first entry sat near day 28 while F3 said day 0. The fixture now starts the sun on her day, for a new save only. In `Aurora Log Check 2`, a sprint of real ticks past a written day gave a new Day 49 entry: the owner saw it on screen. F3 read Day 47 beside her Day 48, as the fixture intends. The phases run on day time, F3's clock (`ApocalypseState`), so on game time a player who slept would have seen her log fall behind the phases. Ruling: an entry's day number is the world's day, counted from 1, so it reads F3's day plus one and nights slept through show as skipped days. Everything else stays on game time, including when she writes, so sleep does not bring an entry on. Each entry stores that day, and an entry saved before this reads its game time. The owner saw it on screen: after `/time add 24000`, F3 read Day 48 and her next entry Day 49.
 
 ## Sources
 

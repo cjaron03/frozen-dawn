@@ -83,7 +83,7 @@ public final class ShepherdMemoryGameTest {
     private static void aDayPasses(GameTestHelper h) {
         var server = h.getLevel().getServer();
         MillerPattern.skipDay(server);
-        MillerPattern.poll(server, 1, data(h).lastTalk(), false);
+        MillerPattern.poll(server, 1, new java.util.UUID(0, 1), data(h).lastTalk(), ShepherdAffinity.Tier.NEUTRAL);
     }
 
     private static double lean(GameTestHelper h, ServerPlayer player, Theory theory) {
@@ -178,7 +178,7 @@ public final class ShepherdMemoryGameTest {
             var kept = MillerPattern.snapshot(server).keepsakes();
             MillerPattern.setCoherence(server, 0.3);
             MillerPattern.skipDay(server);
-            MillerPattern.poll(server, 1, data(h).lastTalk(), data(h).tier().atLeast(ShepherdAffinity.Tier.TRUSTED));
+            MillerPattern.poll(server, 1, new java.util.UUID(0, 1), data(h).lastTalk(), data(h).tier());
             h.assertTrue(MillerPattern.halfLaps(server) == 2, "She is slow");
             h.assertTrue(data(h).affinity() == score && data(h).tier() == ShepherdAffinity.Tier.TRUSTED, "Slow is all she is: " + data(h).affinity());
             h.assertTrue(MillerPattern.snapshot(server).keepsakes().equals(kept), "And she has lost nothing");

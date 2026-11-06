@@ -4,6 +4,7 @@ import com.frozendawn.miller.Drives.Drive;
 import com.frozendawn.miller.Feelings.Feeling;
 import com.frozendawn.miller.ImpressionStore.Theory;
 import com.frozendawn.shepherd.ShepherdAffinity.Deed;
+import com.frozendawn.shepherd.ShepherdAffinity.Tier;
 import com.frozendawn.shepherd.ShepherdFace.Mood;
 import com.frozendawn.shepherd.ShepherdPolicy;
 import java.util.Collections;
@@ -41,10 +42,60 @@ public final class MillerPattern {
     }
 
     /** The 100-tick poll, with what it already knows. */
-    public static void poll(MinecraftServer server, int near, long lastTalk, boolean trusted) {
+    public static void poll(MinecraftServer server, int near, UUID nearest, long lastTalk, Tier tier) {
         var runtime = current(server);
-        runtime.state().poll(near, lastTalk, trusted, runtime.now());
+        runtime.state().poll(near, nearest, lastTalk, tier, runtime.now(), runtime.day());
         runtime.data.setDirty();
+    }
+
+    /** She saw it, and it is for the log alone. Callers have already checked that she could. */
+    public static void marked(MinecraftServer server, UUID who, Mark mark) {
+        var runtime = current(server);
+        runtime.state().marked(who, mark, runtime.now());
+        runtime.data.setDirty();
+    }
+
+    /** Her log, newest first. Only reads. */
+    public static List<LogEntry> log(MinecraftServer server) {
+        return current(server).state().log().entries();
+    }
+
+    /** Whether this person has paid for reading it. Only reads. */
+    public static boolean hasRead(MinecraftServer server, UUID who) {
+        return current(server).state().impressions().readLog(who);
+    }
+
+    /** They have paid, once. Charge first: a read she could not see is not marked. */
+    public static void markRead(MinecraftServer server, UUID who) {
+        var runtime = current(server);
+        runtime.state().impressions().read(who);
+        runtime.data.setDirty();
+    }
+
+    /** Whether she has said what she had to about it, or been unable to. Only reads. */
+    public static boolean toldOff(MinecraftServer server, UUID who) {
+        return current(server).state().impressions().toldOff(who);
+    }
+
+    public static void markTold(MinecraftServer server, UUID who) {
+        var runtime = current(server);
+        runtime.state().impressions().told(who);
+        runtime.data.setDirty();
+    }
+
+    /** {@code /fd shepherd log forget}. */
+    public static void forgetRead(MinecraftServer server, UUID who) {
+        var runtime = current(server);
+        runtime.state().impressions().forgetRead(who);
+        runtime.data.setDirty();
+    }
+
+    /** {@code /fd shepherd log write}: an entry now, about this person, without waiting for the day to settle. */
+    public static LogEntry writeDay(MinecraftServer server, UUID who, long lastTalk, Tier tier) {
+        var runtime = current(server);
+        var entry = runtime.state().writeDay(who, lastTalk, tier, runtime.now(), runtime.day());
+        runtime.data.setDirty();
+        return entry;
     }
 
     /** The face her feelings leave her on. Runs every tick: it only reads. */
@@ -227,7 +278,8 @@ public final class MillerPattern {
         var drives = new EnumMap<Drive, Double>(Drive.class);
         for (Drive drive : Drive.values()) drives.put(drive, state.drives().value(drive, now));
         return new Snapshot(now, state.mood(now), state.feelings().strongest(now), feelings, drives, state.history(), state.coherence().value(now),
-                state.self().stage(), state.self().lean(), state.self().walls(), state.impressions().all(), state.keepsakes().counts(), Attention.on(state, nearest, now), state.urge(nearest, now));
+                state.self().stage(), state.self().lean(), state.self().walls(), state.impressions().all(), state.keepsakes().counts(), Attention.on(state, nearest, now), state.urge(nearest, now),
+                state.log().entries().isEmpty() ? null : String.valueOf(state.log().entries().getFirst().note()));
     }
 
     public static List<String> diagnostics(MinecraftServer server) { return PatternDiagnostics.format(snapshot(server)); }
@@ -235,10 +287,10 @@ public final class MillerPattern {
     public static List<String> explain(MinecraftServer server, UUID nearest) { return PatternDiagnostics.explain(snapshot(server, nearest)); }
     public static List<String> mind(MinecraftServer server) { return PatternDiagnostics.mind(snapshot(server)); }
 
-    /** {@code strongest} is the feeling on her face, or null when she is Neutral. {@code focus} and {@code urge} are for one person's side, or nobody's. */
+    /** {@code strongest} is the feeling on her face, or null when she is Neutral. {@code focus} and {@code urge} are for one person's side, or nobody's. {@code lastNote} is the last entry's key, or null with no entries. */
     public record Snapshot(long now, Mood mood, Feeling strongest, Map<Feeling, Double> feelings, Map<Drive, Double> drives, List<Appraised> history,
                            double coherence, SelfModel.Stage stage, SelfModel.Lean lean, Set<PatternLaws> walls, Map<UUID, Map<Theory, Double>> impressions, Map<UUID, Integer> keepsakes,
-                           Attention.Focus focus, Urges.Urge urge) {
+                           Attention.Focus focus, Urges.Urge urge, String lastNote) {
         public Snapshot {
             feelings = Collections.unmodifiableMap(new EnumMap<>(feelings));
             drives = Collections.unmodifiableMap(new EnumMap<>(drives));

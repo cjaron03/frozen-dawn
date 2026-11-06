@@ -33,7 +33,7 @@ These are checks on every line, button label and hover text, and the first of th
 
 1. **The word CONTINUITY never appears** (CH-11). That covers "Continuity Operations", the Accords' name, the motto past "Stability Above.", and the Continuity Protocol item, which she calls "the emergency issue". Because the player picks from a menu, no topic ever offers it.
 2. **Nothing explains or hints at what Continuity is** (CH-22). No third file, no redacted lines, no "always the objective", no Schedule R-1, Annex C or Council.
-3. **She never mentions respawn, enrollees, or the player's badge reading "active"**, or "Civilian #39102".
+3. **She never mentions respawn, enrollees, or the player's badge reading "active"**, or "Civilian #39102". Her private log may ask what brings a player back (Miller Pattern, Ruling 16); no topic does.
 4. **No Heart, archive, Master Architect as lid, or Thaeven words.** Maeve stays a "signal pattern" unless the player brings the name. The Returned get their own S5 topics.
 5. **She never says what the Terminus does, where a transfer goes, or how Enoch died.** She does not know.
 6. **Kevin's fate stays open.** She never says he is alive or dead. Mars's ignorance of the Returned stays out.
