@@ -317,35 +317,39 @@ def transitions_sheet():
     img.save(HERE / 'face-transitions-mockup.png')
 
 
-WORRIED = [
-    ('A  Wavering', 'Shaking mouth, brows up.', ['..+..+..', '.##..##.', '.##..##.', '........', '.+.++.+.', '..+..+..']),
-    ('B  Looks away', 'Eyes slide off you.', ['...+..+.', '..##.##.', '..##.##.', '........', '...+.+..', '....+...']),
-    ('C  Wide and small', 'Eyes too open, tiny mouth.', ['.##..##.', '.##..##.', '.+....+.', '........', '...++...', '........']),
-]
+TALK_OPEN = ['........', '.##..##.', '.##..##.', '........', '..++++..', '...++...']
+TALK_WIDE = ['........', '.##..##.', '.##..##.', '........', '..++++..', '..++++..']
+LIDS = ['........', '.++..++.', '.##..##.', '........', '..++++..', '........']
+SMALL = ['........', '.++..++.', '.##..##.', '........', '...++...', '........']
+AWAY = ['........', '++..++..', '##..##..', '........', '...++...', '........']
+# What each beat shows, how many frames it holds, and its name on the sheet.
+WORRY = [(TALK_OPEN, 2, 'Talking'), (TALK_WIDE, 2, None), (NEUTRAL, 1, None), (TALK_OPEN, 2, None), (TALK_WIDE, 2, None),
+         (NEUTRAL, 7, 'She stops'), (LIDS, 5, 'Her eyes dim'), (SMALL, 3, 'Her mouth shrinks'), (AWAY, 16, 'She looks at it'),
+         (SMALL, 4, 'Back to you'), (LIDS, 6, None), (NEUTRAL, 8, 'She carries on')]
 
 
-def worried_sheet():
-    img = Image.new('RGB', (1180, 560), C['bg'])
+def worry_gif():
+    s, pad = 20, 26
+    frames = []
+    for rows, hold, _ in WORRY:
+        img = Image.new('RGB', (W * s + 2 * pad, H * s + 2 * pad), C['bg'])
+        display(ImageDraw.Draw(img), cells(rows), pad, pad, s)
+        frames += [img] * hold
+    frames[0].save(HERE / 'worry-motion-mockup.gif', save_all=True, append_images=frames[1:], duration=TRANSITION_MS, loop=0)
+
+
+def worry_sheet():
+    beats = [(rows, name) for rows, _, name in WORRY if name]
+    img = Image.new('RGB', (60 + len(beats) * 170, 250), C['bg'])
     d = ImageDraw.Draw(img)
-    d.text((24, 16), 'AURORA M6: WORRIED, THREE TRIES', font=font(22), fill=C['text'])
-    d.text((24, 46), 'For when she tells you the Architects stopped making the same mistakes. Sad and Alarmed, at right, for comparison.',
+    d.text((24, 16), 'AURORA M6: WORRY AS MOTION, NO NEW FACE', font=font(22), fill=C['text'])
+    d.text((24, 46), 'Mid-line she stops, dims and looks at the hologram. About three seconds. Motion is in worry-motion-mockup.gif.',
            font=font(14), fill=C['dim'])
-    s = 16
-    for i, (name, note, rows) in enumerate(WORRIED):
-        x = 40 + i * 220
-        framed(d, rows, x, 110, s)
-        d.text((x - 10, 224), name, font=font(15), fill=C['text'])
-        d.text((x - 10, 246), note, font=font(12), fill=C['dim'])
-        display(d, cells(rows), x, 274, 5)
-        iso(d, body_with(cells(rows)), x + 70, 410, 6)
-    d.text((720, 90), 'FOR COMPARISON', font=font(15), fill=C['glow'])
-    for i, index in enumerate((4, 5)):
-        name, rows = MOODS[index]
-        x = 730 + i * 200
-        framed(d, rows, x, 126, 12)
-        d.text((x - 10, 210), name, font=font(13), fill=C['text'])
-        display(d, cells(rows), x, 236, 5)
-    img.save(HERE / 'worried-face-mockup.png')
+    for i, (rows, name) in enumerate(beats):
+        x = 34 + i * 170
+        display(d, cells(rows), x, 96, 16)
+        d.text((x, 206), f'{i + 1}  {name}', font=font(13), fill=C['text'])
+    img.save(HERE / 'worry-motion-mockup.png')
 
 
 if __name__ == '__main__':
@@ -354,4 +358,5 @@ if __name__ == '__main__':
     expressions_sheet()
     transitions_gif()
     transitions_sheet()
-    worried_sheet()
+    worry_gif()
+    worry_sheet()
