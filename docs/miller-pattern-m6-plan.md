@@ -135,19 +135,19 @@ Docs only. Nothing goes in the game.
 ### Task 2: Her faces
 
 **Files:**
-- Create: `shepherd/ShepherdFlow.java`
-- Modify: `shepherd/ShepherdFace.java`, `shepherd/ShepherdEntity.java`, `client/ShepherdRenderer.java`, `client/ShepherdScreen.java`
-- Test: `src/test/java/com/frozendawn/shepherd/ShepherdFaceTest.java`, `ShepherdFlowTest.java`
+- Create: `shepherd/ShepherdFlow.java`, `src/test/java/com/frozendawn/shepherd/ShepherdFlowTest.java`
+- Modify: `shepherd/ShepherdFace.java`, `shepherd/ShepherdEntity.java`, `client/ShepherdRenderer.java`, `client/ShepherdFaceRenderer.java`, `client/ShepherdScreen.java`, `client/ShepherdPromptStrip.java`
+- Test: `src/test/java/com/frozendawn/shepherd/ShepherdFaceTest.java`
 
 **Interfaces:** Produces:
-- `Mood.BEAMING`, `FLUSTERED`, `GRIM`, `WORRIED`, appended after `RECORDING`. `RECORDING`'s rows become `WAVE_REST` in the mockup script.
+- `Mood.BEAMING`, `FLUSTERED`, `GRIM`, appended after `RECORDING`, and `WORRIED`, which is internal: it carries the worry timeline and is no new face, by Ruling 5. `RECORDING`'s rows become `WAVE_REST` in the mockup script.
 - `ShepherdFace.trace(int age)`, returning `Cells`: the six `WAVE` frames, four ticks each.
 - `ShepherdFace.worry(int age)`, returning `Cells`, and `WORRY_TICKS = 82`: Neutral 14 ticks, lids 10, small mouth 6, eyes away 32, small mouth 8, lids 12. `WORRIED`'s rows are the eyes-away frame.
 - `ShepherdFlow`, one per view: `Cells shown(Cells wanted, int tick)`. A new `wanted` starts a flow from what is showing. Idle expressions and blinks pass through without one.
 
-`MOOD_BEAT_TICKS` and every `moodBeat` go.
+`MOOD_BEAT_TICKS` and every `moodBeat` go. `ShepherdFace`'s special cases for `RECORDING` stay: no mouth, no eye motion. The strip draws a still face today, so `ShepherdPromptStrip` draws `trace(age)` while a recording types, with its existing age, and the flat line once it has typed.
 
-- [ ] **Step 1: Write the failing tests.** `theNewMoodsMatchTheMockup`, `theTraceRestsFlatAndMovesOnlyWhileSpeaking`, `worryComesBackToNeutral`, `flowEndsOnTheNewFace`, `flowMovesOneTexelAFrame`, `flowStartsFromWhatIsShowing`, `flowLeavesAnUnchangedFaceAlone`.
+- [ ] **Step 1: Write the failing tests.** `theNewMoodsMatchTheMockup`, `theTraceRestsFlatAndMovesOnlyWhileSpeaking`, `theStripTraceStopsWhenTheLineHasTyped`, `worryComesBackToNeutral`, `flowEndsOnTheNewFace`, `flowMovesOneTexelAFrame`, `flowStartsFromWhatIsShowing`, `flowLeavesAnUnchangedFaceAlone`.
 - [ ] **Step 2: Run them.** `./gradlew test --tests '*ShepherdF*'`. Expected: FAIL.
 - [ ] **Step 3: Implement.** The matching in `flow` of `make_m6_faces_mockup.py` is the algorithm: nearest pairs first, ties in a fixed order, so it stays deterministic.
 - [ ] **Step 4: Run them.** Expected: PASS.
@@ -161,9 +161,9 @@ Docs only. Nothing goes in the game.
 
 **Interfaces:** Produces node `hub.greet`, played by `sayOnTheHub`, and condition `greet_long`. `GREET_READY = "greet"`, a deed time: ready again one `DAY_TICKS` on. `greet_long` holds at two days past ready. The first greeting sets `greeted_cargo`.
 
-In `openHub`, after `waitingNode` comes back null: at `tier_close`, not `quiet`, with the deed ready, say `hub.greet`. Otherwise `showHub()`.
+`hub.greet` holds the six to eight marked lines, one chosen by the day number, as Ruling 23 says. In `openHub`, after `waitingNode` comes back null: at `tier_close`, not `quiet`, with the deed ready, say `hub.greet`. Otherwise `showHub()`.
 
-- [ ] **Step 1: Write the failing tests.** `shepherdGreetsFirstAtClose`, `shepherdGreetsOnceADay`, `shepherdNamesCargoOnce`, `shepherdShoutsAfterALongAbsence`, `shepherdGreetsNobodyBelowClose`, `shepherdAWaitingSceneBeatsTheGreeting`, `shepherdQuietMeansNoGreeting`.
+- [ ] **Step 1: Write the failing tests.** `shepherdGreetsFirstAtClose`, `shepherdGreetsOnceADay`, `shepherdNamesCargoOnce`, `shepherdShoutsAfterALongAbsence`, `shepherdGreetingsRotateByTheDay`, `shepherdGreetsNobodyBelowClose`, `shepherdAWaitingSceneBeatsTheGreeting`, `shepherdQuietMeansNoGreeting`.
 - [ ] **Step 2: Run them.** `./gradlew gameTestQuick -PfdTests=shepherd`. Expected: FAIL.
 - [ ] **Step 3: Implement,** with the lines as marked.
 - [ ] **Step 4: Run them.** Expected: PASS.
@@ -187,12 +187,12 @@ In `openHub`, after `waitingNode` comes back null: at `tier_close`, not `quiet`,
 **Interfaces:** Consumes the marked lines. Produces:
 - `Intent.menu()`, `orsa` if absent.
 - `ShepherdTopics.ADVICE = "advice.menu"`. `menu` and `none` take the root as their first argument; pages are `advice.menu.2` and so on.
-- Nodes `advice.frostbitten`, `.frostmite`, `.hollow`, `.returned`, `.hunter`, `.mimic`, `.architect`, and `advice.<item>` for each marked item. Each sets `orsa_heard_<id>`. Counters use mood `recording`. Her own lines carry `"if": "tier_above_wary"`.
+- Nodes `advice.frostbitten`, `.frostmite`, `.hollow`, `.returned`, `.hunter`, `.mimic`, `.architect`, and `advice.<item>` for each marked item. Each sets `orsa_heard_<id>`. Counters use mood `recording`. Her own lines carry `"if": "tier_above_wary"`. Each mob's opening line reads `not:orsa_heard_<id>`, and its short repeat line reads `orsa_heard_<id>`.
 - Condition `erased`, on `ShepherdTalk.holds`.
 - `orsa.after` returns to the menu the walk came from.
 - `chat.need_help`.
 
-- [ ] **Step 1: Write the failing tests.** `shepherdAdviceOpensFromTheHub`, `shepherdAdviceReturnsToAdvice`, `shepherdWaryOnlyPlaysTheCounters`, `shepherdTheMobsLockOnceErased`, `shepherdItemsOutliveTheEnd`, `shepherdHelpMePointsAtAdvice`; in `ShepherdDialogueDataTest`, `everyAdviceLineHasItsLang`, `everyAdviceLabelFitsTheSlot`, `everyAdviceEntryIsOpen`, and M4's banned words over every new key; in `IntentIndexTest`, `theAdviceSetHoldsTheMarks`.
+- [ ] **Step 1: Write the failing tests.** `shepherdAdviceOpensFromTheHub`, `shepherdAdviceReturnsToAdvice`, `shepherdWaryOnlyPlaysTheCounters`, `shepherdTheMobsLockOnceErased`, `shepherdItemsOutliveTheEnd`, `shepherdAsksAgainDifferently`, `shepherdHelpMePointsAtAdvice`; in `ShepherdDialogueDataTest`, `everyAdviceLineHasItsLang`, `everyAdviceLabelFitsTheSlot`, `everyAdviceEntryIsOpen`, and M4's banned words over every new key; in `IntentIndexTest`, `theAdviceSetHoldsTheMarks`.
 - [ ] **Step 2: Run them.** Expected: FAIL.
 - [ ] **Step 3: Add the code, nodes, examples and lines.** 8 to 15 phrasings an intent. No example may be copied from the fresh set.
 - [ ] **Step 4: Run them, with `theFreshSetHoldsTheMarks` and `theTopicSetHoldsTheMarks`.** Expected: PASS. If a set fails, stop and report the numbers.
@@ -202,17 +202,17 @@ In `openHub`, after `waitingNode` comes back null: at `tier_close`, not `quiet`,
 
 **Files:**
 - Create: `shepherd/ShepherdProjection.java`
-- Modify: `shepherd/ShepherdDialogue.java`, `shepherd/ShepherdEntity.java`, `shepherd/ShepherdTalk.java`, `shepherd/ShepherdReactions.java`, `dialogue/advice.json`
+- Modify: `shepherd/ShepherdDialogue.java`, `shepherd/ShepherdEntity.java`, `shepherd/ShepherdTalk.java`, `shepherd/ShepherdReactions.java` (silence during a projection), `dialogue/advice.json`
 - Test: `ShepherdProjectionGameTest.java`, `ShepherdDialogueDataTest.java`
 
 **Interfaces:** Produces:
-- `Node.project()`, read from `"project"`: `hunter`, `mimic` or `architect`, or null.
+- `Node.project()`, read from `"project"`: `hunter`, `mimic` or `architect`, or null. Task 8 adds the kinds `item` and `pair`, which no node names: its own code starts them.
 - `ShepherdProjection.start(ServerPlayer player, ShepherdEntity she, String kind, List<Line> lines)`, `tick(MinecraftServer)`, `active()`, `stop()`. One at a time, kept in a static like `ShepherdTalk.live`.
-- `ShepherdEntity.projection()`, an int on a new synced `DATA_PROJECTION`, not saved: 0 none, then 1 to 3, and 4 for the egg's frame.
+- `ShepherdEntity.projection()`, an int on a new synced `DATA_PROJECTION`, not saved: 0 none, 1 to 3 the variants, 4 the egg's frame, 5 `item` and 6 `pair`, the last two added in Task 8.
 
-Reaching a node with `project`: `end(true)`, then `start`. Each line goes to the speaker as a `ShepherdLinePayload`, and the next waits for the line's typing and `STRIP_HOLD_TICKS`. A `worried` line sets the mood, waits `WORRY_TICKS`, then sends its text as Neutral. It stops on `talkMustClose`, and when she goes offline or the speaker leaves. `murmur` and its kin stay silent while `active()`, and `openHub` does nothing. Second projection of any variant at `tier_trusted` with `hologram_egg` unset plays the egg.
+Reaching a node with `project`: `end(true)`, then `start`. Each line goes to the speaker as a `ShepherdLinePayload`, and the next waits for the line's typing and `STRIP_HOLD_TICKS`. A `worried` line sets the mood, waits `WORRY_TICKS`, then sends its text as Neutral. It stops on `talkMustClose`, and when she goes offline or the speaker leaves. `murmur` and its kin stay silent while `active()`, and `openHub` does nothing. `advice.architect` carries Ruling 24's lines in its list, so they run during the hologram like the rest. Second projection of any variant at `tier_trusted` with `hologram_egg` unset plays the egg.
 
-- [ ] **Step 1: Write the failing tests.** `shepherdAProjectionClosesTheTalkAndPlays`, `shepherdAProjectionStopsWhenItShould`, `shepherdNothingInterruptsAProjection`, `shepherdWorryHoldsTheLine`, `shepherdTheEggPlaysOnce`, `shepherdNoProjectionSurvivesAReload`, and `everyProjectionIsOneWeDraw`.
+- [ ] **Step 1: Write the failing tests.** `shepherdAProjectionClosesTheTalkAndPlays`, `shepherdAProjectionStopsWhenItShould`, `shepherdNothingInterruptsAProjection`, `shepherdWorryHoldsTheLine`, `shepherdTheArchitectCommentsThroughout`, `shepherdTheEggPlaysOnce`, `shepherdNoProjectionSurvivesAReload`, and `everyProjectionIsOneWeDraw`.
 - [ ] **Step 2: Run them.** Expected: FAIL.
 - [ ] **Step 3: Implement.**
 - [ ] **Step 4: Run them.** Expected: PASS.
@@ -240,10 +240,10 @@ Draw a `HumanoidModel` baked from `ModelLayers.ZOMBIE`, at half size, about two 
 ### Task 8: Small moments
 
 **Files:**
-- Modify: `shepherd/ShepherdEggs.java`, `shepherd/ShepherdFace.java`, `shepherd/ShepherdProjection.java`, `shepherd/ShepherdHologram.java`, `client/ShepherdHologramRenderer.java`, `shepherd/ShepherdPolicy.java`, `assets/frozendawn/lang/en_us.json`
+- Modify: `shepherd/ShepherdEggs.java`, `shepherd/ShepherdEntity.java`, `shepherd/ShepherdReactions.java`, `shepherd/ShepherdProjection.java`, `shepherd/ShepherdHologram.java`, `client/ShepherdHologramRenderer.java`, `client/ShepherdRenderer.java`, `shepherd/ShepherdPolicy.java`, `assets/frozendawn/lang/en_us.json`
 - Test: `ShepherdMomentsGameTest.java`
 
-**Interfaces:** Consumes Task 6's `start` and Task 7's renderer. Produces `ShepherdEntity.flusterTicks`, which turns her body by the mockup's beats; projection kind 5, an item model; kind 6, the small you and her, with a synced `DATA_PROJECTED_PLAYER`, an optional UUID; `ShepherdPolicy.GAG_EVERY_TICKS`; world flags `reacted_hunter_burn`, `clovis_said`; deed times `caught_whistling`, `gag`.
+**Interfaces:** Consumes Task 6's `start` and Task 7's renderer. Produces `ShepherdEntity.flusterTicks`, which turns her body by the mockup's beats; kind `item` (5), an item model; kind `pair` (6), the small you and her, with a synced `DATA_PROJECTED_PLAYER`, an optional UUID; `ShepherdPolicy.GAG_EVERY_TICKS`; world flags `reacted_hunter_burn`, `clovis_said`; deed times `caught`, `gag`.
 
 - [ ] **Step 1: Write the failing tests.** `shepherdReactsOnceToAHunterAtTheHeater`, `shepherdIgnoresAHunterKilledAnotherWay`, `shepherdGetsCaughtOnlyWhenCalm`, `shepherdGetsCaughtOnceADay`, `shepherdCaughtShowsHerFollower`, `shepherdTheGagWaitsForCalm`, `shepherdNamesClovisOnlyAfterT5`.
 - [ ] **Step 2: Run them.** Expected: FAIL.
@@ -259,7 +259,7 @@ Draw a `HumanoidModel` baked from `ModelLayers.ZOMBIE`, at half size, about two 
 
 - [ ] **Step 1: Run the full `architectVerify`.** In the background. `architectMonkey` only if Architect code changed; none should have.
 - [ ] **Step 2: Branch review on Opus,** brief: the branch range, this plan and its rulings. Fix real findings, each with a failing test first.
-- [ ] **Step 3: Prepare the save and launch `runClientLab`.** Lab buttons under their own namespace: `[Friendly]`, `[Trusted]`, `[Close]`, `[Wary]`, `[A day on]`, `[Long gone]`, `[Erased]`, `[Forget the advice]`, and a spawn button for each mob, so the strategies can be tried on a live one.
+- [ ] **Step 3: Prepare the save and launch `runClientLab`.** Lab buttons under their own namespace: `[Friendly]`, `[Trusted]`, `[Close]`, `[Wary]`, `[A day on]`, `[Long gone]`, `[Erased]`, `[Forget the advice]`, and a spawn button for each mob, so the strategies can be tried on a live one. Allow each function in `config/lab-bridge-functions.json` if the bridge asks for it.
 - [ ] **Step 4: The owner's pass.** Ask them to type freely first, before seeing any list. Take their unprompted description. Judge: the voice trace, the three faces and Flow in motion, the greeting, each hologram from every side, the worry, the egg, getting caught, the gag, and whether each strategy works as she says.
 - [ ] **Step 5: Sort the log.** M5's Ruling 4: score it blind, record the numbers, sort each miss.
 - [ ] **Step 6: Fix what the pass finds, update the Status, offer the PR.**
