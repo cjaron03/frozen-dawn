@@ -62,6 +62,8 @@
 28. **"Cargo! Cargo! check this out!"** At Close, when calm, at most once every few days, she calls you on the strip and projects something stupid, using Task 7's hologram with an item model in place of a figure. The first is the Stuffed Penguin. The owner picks the rest.
 29. **The Clovis Bray nod is rewritten.** The S3 rule for eggs says a nod makes sense in the world and never says "game" or a title, so the fourth-wall count stays at three. "I heard of this game" can't stay. In-world, it is an ORSA file: "ORSA had a file on a man named Clovis Bray. Heard of him?" He put minds into machines, which points at her, so it reads `t5_done` under red line 8. Once a world.
 
+30. **The hologram arrives.** The owner's ask, 2026-11-06: the beam comes out of her first, then the figure slowly forms in it. About one second of beam and two of forming, a few texels at a time, the eyes last, as in `hologram-arrive-mockup.gif`. Her lines start once the beam has landed. Stopping is unchanged: it snaps off.
+
 ## Lines to mark
 
 Everything goes in `docs/aurora-m6-lines.md`. These are first drafts, to show the shape. The owner's mark decides.
@@ -226,12 +228,12 @@ Reaching a node with `project`: `end(true)`, then `start`. Each line goes to the
 - Test: `src/test/java/com/frozendawn/shepherd/ShepherdHologramTest.java`
 
 **Interfaces:** Consumes `ShepherdEntity.projection()`. Produces:
-- `ShepherdHologram`, pure logic by tick: `tearRow`, `tearShift`, `chin(int age)`, `bars(int age)`, all from a hash, as `ShepherdGlitch` does.
+- `ShepherdHologram`, pure logic by tick: `tearRow`, `tearShift`, `chin(int age)`, `bars(int age)`, all from a hash, as `ShepherdGlitch` does, and `beam(int age)` and `formed(int age, int x, int y)` for Ruling 30.
 - `ShepherdHologramRenderer.draw(ShepherdEntity, float partial, PoseStack, MultiBufferSource)`, called from `ShepherdRenderer.render`.
 
 Draw a `HumanoidModel` baked from `ModelLayers.ZOMBIE`, at half size, about two blocks to her left, facing as she faces. The textures are the mob's own, tinted her green, see-through and full bright. Rays and the ring are flat quads. Scanlines are a bright band climbing the figure. Hunter turns slowly. Mimic's head copies the local player's look. Architect is dark with clean eyes, and tears, gaps and static are drawn over it, with the right arm posed to the chin while `chin` holds. This must not touch `ArchitectModel`.
 
-- [ ] **Step 1: Write the failing tests.** `theHologramIsDeterministic`, `theArchitectStopsToThink`, `tearsStayOnTheFigure`.
+- [ ] **Step 1: Write the failing tests.** `theHologramIsDeterministic`, `theArchitectStopsToThink`, `tearsStayOnTheFigure`, `theBeamComesBeforeTheFigure`, `theFigureFormsSlowlyAndCompletely`.
 - [ ] **Step 2: Run them.** Expected: FAIL.
 - [ ] **Step 3: Implement.**
 - [ ] **Step 4: Run them, then `./gradlew build`.** Expected: PASS. The look is judged at the pass, not here.
