@@ -55,7 +55,7 @@ public final class ShepherdScreen extends Screen {
     private boolean hub, waiting, lamp, heavy;
     private List<ShepherdNodePayload.Line> lines = List.of();
     private List<ShepherdNodePayload.Reply> replies = List.of();
-    private boolean canContinue;
+    private boolean canContinue, plain;
     private int line;
     private List<String> rows = List.of();
     private int total, typed, charTicks, age;
@@ -77,6 +77,7 @@ public final class ShepherdScreen extends Screen {
         lines = payload.lines();
         replies = payload.replies();
         canContinue = payload.canContinue();
+        plain = payload.plain();
         logoTicks = payload.logoTicks();
         thinkTicks = thinkLeft = payload.thinkTicks();
         line = 0;
@@ -436,7 +437,7 @@ public final class ShepherdScreen extends Screen {
             panel(g, x, y, SLOT_W, SLOT_H, EMPTY, STEEL);
             return;
         }
-        drawSlot(g, slot, I18n.get("shepherd.screen.tone." + Slot.values()[slot].name().toLowerCase(Locale.ROOT)), I18n.get(reply.label()), hover);
+        drawSlot(g, slot, plain ? "" : I18n.get("shepherd.screen.tone." + Slot.values()[slot].name().toLowerCase(Locale.ROOT)), I18n.get(reply.label()), hover);
     }
 
     private void drawSlot(GuiGraphics g, int slot, String tone, String label, boolean hover) {

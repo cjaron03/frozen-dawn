@@ -48,11 +48,14 @@ class ShepherdDialogueDataTest {
                 }
             }
         }
+        // Built at run time from the open topics, and laid over these.
+        nodes.putAll(ShepherdTopics.menu(List.of(), condition -> false, false));
+        nodes.put(ShepherdTopics.AFTER, nodes.get(ShepherdTopics.MENU));
         return nodes;
     }
 
     private static List<String> exits(Node node) {
-        List<String> exits = new ArrayList<>(node.responses().stream().map(Response::next).toList());
+        List<String> exits = new ArrayList<>(node.responses().stream().map(Response::next).filter(java.util.Objects::nonNull).toList());
         if (node.next() != null) exits.add(node.next());
         if (node.otherwise() != null) exits.add(node.otherwise());
         return exits;

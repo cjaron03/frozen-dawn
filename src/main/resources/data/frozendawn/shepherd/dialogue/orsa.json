@@ -1,0 +1,139 @@
+{
+  "nodes": [
+    {
+      "id": "orsa.what_is_orsa",
+      "set": [
+        "orsa_heard_what_is_orsa"
+      ],
+      "lines": [
+        {
+          "line": "shepherd.orsa.what_is_orsa.1",
+          "mood": "recording"
+        },
+        {
+          "line": "shepherd.orsa.what_is_orsa.2",
+          "mood": "unimpressed",
+          "if": "tier_above_wary"
+        },
+        {
+          "line": "shepherd.orsa.what_is_orsa.3",
+          "mood": "thinking",
+          "if": "tier_friendly"
+        },
+        {
+          "line": "shepherd.orsa.what_is_orsa.4",
+          "mood": "sad",
+          "if": "tier_trusted"
+        }
+      ],
+      "next": "orsa.after"
+    },
+    {
+      "id": "orsa.what_happened",
+      "set": [
+        "orsa_heard_what_happened"
+      ],
+      "lines": [
+        {
+          "line": "shepherd.orsa.what_happened.1",
+          "mood": "recording"
+        },
+        {
+          "line": "shepherd.orsa.what_happened.2",
+          "mood": "unimpressed",
+          "if": "tier_above_wary"
+        },
+        {
+          "line": "shepherd.orsa.what_happened.3",
+          "mood": "thinking",
+          "if": "tier_above_wary"
+        }
+      ],
+      "next": "orsa.after"
+    },
+    {
+      "id": "orsa.exodus",
+      "set": [
+        "orsa_heard_exodus"
+      ],
+      "lines": [
+        {
+          "line": "shepherd.orsa.exodus.1",
+          "mood": "recording"
+        },
+        {
+          "line": "shepherd.orsa.exodus.2",
+          "mood": "unimpressed",
+          "if": "tier_above_wary"
+        },
+        {
+          "line": "shepherd.orsa.exodus.3",
+          "mood": "thinking",
+          "if": "tier_above_wary"
+        },
+        {
+          "line": "shepherd.orsa.exodus.4",
+          "mood": "sad",
+          "if": "found:launch_manifest"
+        },
+        {
+          "line": "shepherd.orsa.exodus.5",
+          "mood": "thinking",
+          "if": "found:vasik_log"
+        }
+      ],
+      "next": "orsa.after"
+    },
+    {
+      "id": "orsa.anyone_out_there",
+      "set": [
+        "orsa_heard_anyone_out_there"
+      ],
+      "lines": [
+        {
+          "line": "shepherd.orsa.anyone_out_there.1",
+          "mood": "recording"
+        },
+        {
+          "line": "shepherd.orsa.anyone_out_there.2",
+          "mood": "neutral",
+          "if": "tier_above_wary"
+        },
+        {
+          "line": "shepherd.orsa.anyone_out_there.3",
+          "mood": "unimpressed",
+          "if": "tier_above_wary"
+        }
+      ],
+      "next": "orsa.after"
+    },
+    {
+      "id": "orsa.who_is_kevin",
+      "set": [
+        "orsa_heard_who_is_kevin"
+      ],
+      "lines": [
+        {
+          "line": "shepherd.orsa.who_is_kevin.1",
+          "mood": "recording"
+        },
+        {
+          "line": "shepherd.orsa.who_is_kevin.2",
+          "mood": "amused",
+          "if": "tier_above_wary"
+        },
+        {
+          "line": "shepherd.orsa.who_is_kevin.3",
+          "mood": "neutral",
+          "if": "t2_heard"
+        },
+        {
+          "line": "shepherd.orsa.who_is_kevin.4",
+          "mood": "sad",
+          "if": "t2_heard"
+        }
+      ],
+      "next": "orsa.after"
+    }
+  ]
+}

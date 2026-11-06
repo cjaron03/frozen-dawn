@@ -350,7 +350,7 @@ public final class ShepherdTalkGameTest {
             rightClick(she, player);
             ShepherdTalk.action(player, ShepherdTalk.liveId(), Action.TALK);
             h.assertTrue("hub.talk.plain".equals(ShepherdTalk.liveNode()), "Talk speaks: " + ShepherdTalk.liveNode());
-            say(player, CONTINUE);
+            say(player, SARCASTIC);
             h.assertTrue(ShepherdTalk.live() && ShepherdTalk.liveNode() == null, "And returns to the hub");
             h.assertTrue(data(h).resumeNode() == null, "A hub talk leaves nothing to resume");
             h.succeed();
@@ -405,7 +405,7 @@ public final class ShepherdTalkGameTest {
                 rightClick(she, player);
                 ShepherdTalk.action(player, ShepherdTalk.liveId(), Action.TALK);
                 h.assertTrue(she.talking(), "A line in a talk moves her mouth");
-                say(player, CONTINUE);
+                say(player, SARCASTIC);
                 h.assertTrue(!she.talking(), "Back at the hub she has stopped");
                 ShepherdTalk.action(player, ShepherdTalk.liveId(), Action.TALK);
                 player.setPos(player.position().add(ShepherdPolicy.TALK_RANGE + 3, 0, 0));

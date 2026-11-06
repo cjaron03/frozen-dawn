@@ -1215,3 +1215,12 @@ shepherdlanguagestillswaps xml
 shepherdsettingsarenotevidence xml
 shepherdnologduringatalk xml
 shepherdherlinescutoffplayagain xml
+shepherdtalkoffersthemenu xml
+shepherdthemenuisunheardfirst xml
+shepherdthemenupages xml
+shepherdkevinwaitsforfriendly xml
+shepherdcandorfollowsthetier xml
+shepherdatopiccomesbacktothemenu xml
+shepherdnevermindgoestothehub xml
+shepherdsilenthasnomenu xml
+shepherdamenupickisnotone xml

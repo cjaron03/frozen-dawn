@@ -22,6 +22,18 @@
       "else": "hub.talk.pit",
       "lines": [
         { "line": "shepherd.hub.talk.wary", "mood": "recording" }
+      ],
+      "plain": true,
+      "responses": [
+        {
+          "slot": "ask",
+          "label": "shepherd.talk.ask_orsa",
+          "next": "orsa.menu"
+        },
+        {
+          "slot": "sarcastic",
+          "label": "shepherd.talk.never_mind"
+        }
       ]
     },
     {
@@ -30,6 +42,18 @@
       "else": "hub.talk.warm",
       "lines": [
         { "line": "shepherd.hub.talk.pit", "mood": "neutral", "args": ["pit_blocks", "pit_bearing"] }
+      ],
+      "plain": true,
+      "responses": [
+        {
+          "slot": "ask",
+          "label": "shepherd.talk.ask_orsa",
+          "next": "orsa.menu"
+        },
+        {
+          "slot": "sarcastic",
+          "label": "shepherd.talk.never_mind"
+        }
       ]
     },
     {
@@ -38,12 +62,36 @@
       "else": "hub.talk.plain",
       "lines": [
         { "line": "shepherd.hub.talk.warm", "mood": "neutral" }
+      ],
+      "plain": true,
+      "responses": [
+        {
+          "slot": "ask",
+          "label": "shepherd.talk.ask_orsa",
+          "next": "orsa.menu"
+        },
+        {
+          "slot": "sarcastic",
+          "label": "shepherd.talk.never_mind"
+        }
       ]
     },
     {
       "id": "hub.talk.plain",
       "lines": [
         { "line": "shepherd.hub.talk", "heavy": "shepherd.hub.talk.heavy", "mood": "thinking" }
+      ],
+      "plain": true,
+      "responses": [
+        {
+          "slot": "ask",
+          "label": "shepherd.talk.ask_orsa",
+          "next": "orsa.menu"
+        },
+        {
+          "slot": "sarcastic",
+          "label": "shepherd.talk.never_mind"
+        }
       ]
     },
     {

@@ -5,6 +5,7 @@ import com.frozendawn.data.ApocalypseState;
 import com.frozendawn.entity.ArchivistEntity;
 import com.frozendawn.miller.SelfModel;
 import com.frozendawn.miller.Heard;
+import com.frozendawn.miller.IntentIndex;
 import com.frozendawn.miller.LogEntry;
 import com.frozendawn.miller.MillerPattern;
 import com.frozendawn.miller.Refusal;
@@ -19,7 +20,9 @@ import com.frozendawn.shepherd.ShepherdDialogue.Slot;
 import com.frozendawn.shepherd.ShepherdFace.Mood;
 import com.frozendawn.world.BlastPitPlacement;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
@@ -65,6 +68,8 @@ public final class ShepherdTalk {
         final ShepherdEntity she;
         /** Null while the hub is showing. */
         ShepherdConversation talk;
+        /** The dialogue files, with what is built for this walk laid over them. {@code talk} reads it live, so a menu can change under it. */
+        Map<String, Node> nodes = Map.of();
         boolean fromHub;
         /** The prompt this was opened from, which stays waiting until an answer shows it was heard. */
         String fromPrompt;
@@ -169,14 +174,25 @@ public final class ShepherdTalk {
     private static boolean begin(String node, boolean fromHub) {
         var player = live.player;
         Predicate<String> holds = condition -> holds(player, condition);
-        if (!ShepherdConversation.opens(ShepherdDialogues.nodes(), node, holds)) return false;
-        live.talk = new ShepherdConversation(ShepherdDialogues.nodes(), node, holds);
+        live.nodes = new HashMap<>(ShepherdDialogues.nodes());
+        layTopics();
+        if (!ShepherdConversation.opens(live.nodes, node, holds)) return false;
+        live.talk = new ShepherdConversation(live.nodes, node, holds);
         live.fromHub = fromHub;
         live.affinityApplied = 0;
         settle();
         if (FIRST_MEETING.equals(node)) live.she.showLogo();
         send();
         return true;
+    }
+
+    /** The menu as it stands. A topic with its node gone from an edited datapack is not on it. */
+    private static void layTopics() {
+        var player = live.player;
+        Predicate<String> holds = condition -> holds(player, condition);
+        var open = ShepherdIntents.intents().stream().filter(intent -> intent.label() != null && IntentIndex.open(intent, holds) && ShepherdDialogues.nodes().containsKey(intent.node())).toList();
+        live.nodes.putAll(ShepherdTopics.menu(open, holds, false));
+        live.nodes.put(ShepherdTopics.AFTER, ShepherdTopics.menu(open, holds, true).get(ShepherdTopics.MENU));
     }
 
     /** The dialogue files' conditions: her tier, how far she has got, where the wand is, what this speaker has read or she holds of them, or else a saved flag. */
@@ -243,11 +259,12 @@ public final class ShepherdTalk {
 
     public static void reply(ServerPlayer player, int conversation, int slot) {
         if (!speaking(player, conversation) || live.talk == null) return;
-        boolean readToThem = LOG_READ.equals(live.talk.current().id());
+        boolean readToThem = LOG_READ.equals(live.talk.current().id()), plain = live.talk.current().plain();
+        layTopics();
         if (!live.talk.answer(slot)) return;
         // Only once they have heard it: cut off partway, she says it again at the next talk.
         if (readToThem) MillerPattern.markTold(player.getServer(), player.getUUID());
-        hear(slot);
+        hear(plain ? ShepherdConversation.CONTINUE : slot);
         spendPrompt();
         settle();
         if (!live.talk.finished()) {
@@ -439,7 +456,7 @@ public final class ShepherdTalk {
                 heavy && line.heavyKey() != null ? line.heavyKey() : line.key(), line.mood(), line.args().stream().map(arg).toList())).toList();
         var replies = node.responses().stream().map(response -> new ShepherdNodePayload.Reply(
                 response.slot().ordinal(), response.label(), response.full())).toList();
-        return new ShepherdNodePayload(conversation, node.id(), lines, replies, replies.isEmpty(), logoTicks, thinkTicks);
+        return new ShepherdNodePayload(conversation, node.id(), lines, replies, replies.isEmpty(), logoTicks, thinkTicks, node.plain());
     }
 
     static ShepherdLogPayload logPayload(int conversation, List<LogEntry> entries) {
