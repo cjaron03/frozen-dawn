@@ -12,7 +12,7 @@
 
 **Lines:** `docs/aurora-m6-lines.md`, written in Task 1, for the owner to mark before anything is built.
 
-**Mockups:** approved 2026-11-06, in `docs/art/aurora-shepherd/`: `orsa-face-mockup.png` (A, Voice trace), `new-expressions-mockup.png` (Beaming, Flustered, Grim), `face-transitions-mockup.gif` (Flow), `worry-motion-mockup.gif` and `hologram-mockup.gif`. `flustered-motion-mockup.gif` awaits the owner's look. `make_m6_faces_mockup.py` holds the exact rows and frames.
+**Mockups:** approved 2026-11-06, in `docs/art/aurora-shepherd/`: `orsa-face-mockup.png` (A, Voice trace), `new-expressions-mockup.png` (Beaming, Flustered, Grim), `face-transitions-mockup.gif` (Flow), `worry-motion-mockup.gif`, `hologram-mockup.gif` and `flustered-motion-mockup.gif`. `make_m6_faces_mockup.py` holds the exact rows and frames.
 
 **Status:** awaiting the owner's approval. Rechecked against M5 as shipped, PR 164 at 517623c7.
 
