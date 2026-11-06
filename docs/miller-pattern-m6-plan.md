@@ -12,7 +12,7 @@
 
 **Lines:** `docs/aurora-m6-lines.md`, written in Task 1, for the owner to mark before anything is built.
 
-**Mockups:** approved 2026-11-06, in `docs/art/aurora-shepherd/`: `orsa-face-mockup.png` (A, Voice trace), `new-expressions-mockup.png` (Beaming, Flustered, Grim), `face-transitions-mockup.gif` (Flow), `worry-motion-mockup.gif`, `hologram-mockup.gif` and `flustered-motion-mockup.gif`. `make_m6_faces_mockup.py` holds the exact rows and frames.
+**Mockups:** approved 2026-11-06, in `docs/art/aurora-shepherd/`: `orsa-face-mockup.png` (A, Voice trace), `new-expressions-mockup.png` (Beaming, Flustered, Grim), `face-transitions-mockup.gif` (Flow), `worry-motion-mockup.gif`, `hologram-mockup.gif`, `flustered-motion-mockup.gif` and `caught-projection-mockup.png`. `make_m6_faces_mockup.py` holds the exact rows and frames.
 
 **Status:** awaiting the owner's approval. Rechecked against M5 as shipped, PR 164 at 517623c7.
 
@@ -57,7 +57,7 @@
 24. **More Architect commentary.** Three or four more lines run during the hologram, with the owner's two: "Huh, it looks kind of like you" and the pickaxe line.
 25. **Asking again.** One short line each for the mobs, shown once `orsa_heard_<id>` is set, in place of the opening line.
 26. **Reactions, starting with the Hunter.** A Hunter dies to heater burn with her in range: she says one line, once a world. Others follow only if this lands. Nothing reacts to the player's death, by the typing red lines.
-27. **She gets caught.** The owner turned down a whistling face. When she's caught, there's no new face: Flustered, her body spins away so you can't see her display, "You didn't see that!", then she peeks back with the Wink, as in `flustered-motion-mockup.gif`. Once a day. She's caught projecting something embarrassing but wholesome, the owner's words, when she thinks nobody is looking. It uses Task 7's hologram and snaps off as she spins. What it shows is the owner's call.
+27. **She gets caught.** The owner turned down a whistling face. When she's caught, there's no new face: Flustered, her body spins away so you can't see her display, "You didn't see that!", then she peeks back with the Wink, as in `flustered-motion-mockup.gif`. Once a day. She's caught projecting something embarrassing but wholesome, the owner's words, when she thinks nobody is looking. It uses Task 7's hologram and snaps off as she spins. It shows a small you and a small her, side by side, as in `caught-projection-mockup.png`. The small you wears the follower's real skin, tinted her green. The UUID comes from `ShepherdSavedData.follower`, synced on the entity, and the client reads the skin as `ScribeChalk` does: `getPlayerInfo`, falling back to `DefaultPlayerSkin`, with slim or wide arms as `RemnantRenderer` picks them. Whoever catches her sees the follower, not themselves.
 
 28. **"Cargo! Cargo! check this out!"** At Close, when calm, at most once every few days, she calls you on the strip and projects something stupid, using Task 7's hologram with an item model in place of a figure. The first is the Stuffed Penguin. The owner picks the rest.
 29. **The Clovis Bray nod is rewritten.** The S3 rule for eggs says a nod makes sense in the world and never says "game" or a title, so the fourth-wall count stays at three. "I heard of this game" can't stay. In-world, it is an ORSA file: "ORSA had a file on a man named Clovis Bray. Heard of him?" He put minds into machines, which points at her, so it reads `t5_done` under red line 8. Once a world.
@@ -243,9 +243,9 @@ Draw a `HumanoidModel` baked from `ModelLayers.ZOMBIE`, at half size, about two 
 - Modify: `shepherd/ShepherdEggs.java`, `shepherd/ShepherdFace.java`, `shepherd/ShepherdProjection.java`, `shepherd/ShepherdHologram.java`, `client/ShepherdHologramRenderer.java`, `shepherd/ShepherdPolicy.java`, `assets/frozendawn/lang/en_us.json`
 - Test: `ShepherdMomentsGameTest.java`
 
-**Interfaces:** Consumes Task 6's `start` and Task 7's renderer. Produces `ShepherdEntity.flusterTicks`, which turns her body by the mockup's beats; projection kind 5, an item model; `ShepherdPolicy.GAG_EVERY_TICKS`; world flags `reacted_hunter_burn`, `clovis_said`; deed times `caught_whistling`, `gag`.
+**Interfaces:** Consumes Task 6's `start` and Task 7's renderer. Produces `ShepherdEntity.flusterTicks`, which turns her body by the mockup's beats; projection kind 5, an item model; kind 6, the small you and her, with a synced `DATA_PROJECTED_PLAYER`, an optional UUID; `ShepherdPolicy.GAG_EVERY_TICKS`; world flags `reacted_hunter_burn`, `clovis_said`; deed times `caught_whistling`, `gag`.
 
-- [ ] **Step 1: Write the failing tests.** `shepherdReactsOnceToAHunterAtTheHeater`, `shepherdIgnoresAHunterKilledAnotherWay`, `shepherdGetsCaughtOnlyWhenCalm`, `shepherdGetsCaughtOnceADay`, `shepherdTheGagWaitsForCalm`, `shepherdNamesClovisOnlyAfterT5`.
+- [ ] **Step 1: Write the failing tests.** `shepherdReactsOnceToAHunterAtTheHeater`, `shepherdIgnoresAHunterKilledAnotherWay`, `shepherdGetsCaughtOnlyWhenCalm`, `shepherdGetsCaughtOnceADay`, `shepherdCaughtShowsHerFollower`, `shepherdTheGagWaitsForCalm`, `shepherdNamesClovisOnlyAfterT5`.
 - [ ] **Step 2: Run them.** Expected: FAIL.
 - [ ] **Step 3: Implement,** beside the other nods in `ShepherdEggs`.
 - [ ] **Step 4: Run them.** Expected: PASS.

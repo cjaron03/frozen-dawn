@@ -187,6 +187,32 @@ def sheet():
     img.save(HERE / 'hologram-mockup.png')
 
 
+def you_and_her(tick):
+    """What she's caught projecting: a small you, with your skin in her greens, and a small her beside you."""
+    cells = {}
+    for (x, y, z), color in humanoid('glow2').items():
+        shirt = 6 <= y < 12
+        cells[(x - 5, y, z)] = 'holo' if y < 6 and y % 2 else 'glow' if shirt and x in (-2, 1) else color
+    for (x, y, z), color in eyes({}, 0).items():
+        cells[(x - 5, y, z)] = color
+    for x in range(1, 9):
+        for y in range(1, 8):
+            cells[(x, y, 0)] = 'glow2' if x in (1, 8) or y in (1, 7) else 'holo2'
+    for x, y in ((3, 5), (6, 5), (4, 3), (5, 3)):
+        cells[(x, y, 1)] = 'glow'
+    return scan(cells, tick, 'glow')
+
+
+def caught_sheet():
+    img = Image.new('RGB', (640, 300), C['bg'])
+    d = ImageDraw.Draw(img)
+    d.text((24, 16), 'AURORA M6: WHAT SHE IS CAUGHT PROJECTING', font=font(18), fill=C['text'])
+    d.text((24, 44), 'A small you in your own skin, tinted green, beside a small her.', font=font(12), fill=C['dim'])
+    draw_scene(d, you_and_her, 0, 60, 280, 8)
+    img.save(HERE / 'caught-projection-mockup.png')
+
+
 if __name__ == '__main__':
     gif()
     sheet()
+    caught_sheet()
