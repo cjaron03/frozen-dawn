@@ -199,6 +199,10 @@ public final class ShepherdTalk {
 
     /** False, with nothing changed, if an edited datapack leaves the walk nowhere to stand. */
     private static boolean begin(String node, boolean fromHub) {
+        return begin(node, fromHub, FIRST_MEETING.equals(node));
+    }
+
+    private static boolean begin(String node, boolean fromHub, boolean logo) {
         var player = live.player;
         Predicate<String> holds = condition -> holds(player, condition);
         live.nodes = new HashMap<>(ShepherdDialogues.nodes());
@@ -209,7 +213,7 @@ public final class ShepherdTalk {
         live.fromHub = fromHub;
         live.affinityApplied = 0;
         settle();
-        if (FIRST_MEETING.equals(node)) live.she.showLogo();
+        if (logo) live.she.showLogo();
         send();
         return true;
     }
@@ -343,7 +347,7 @@ public final class ShepherdTalk {
         live.back = null;
         live.built = Map.of();
         if (back == null) showHub();
-        else if (ShepherdTopics.AFTER.equals(back) ? !begin(back, true) : !begin(back, false)) end(true);
+        else if (!begin(back, ShepherdTopics.AFTER.equals(back), false)) end(true);
     }
 
     /** One line from the bar, in the order Ruling 7 sets. It is held for this call and goes nowhere else. */

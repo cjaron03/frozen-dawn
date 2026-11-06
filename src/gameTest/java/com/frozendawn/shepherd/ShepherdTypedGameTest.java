@@ -70,6 +70,8 @@ public final class ShepherdTypedGameTest {
     @AfterBatch(batch = "shepherd_typed_keeps") public static void keepsAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
     @BeforeBatch(batch = "shepherd_typed_miss") public static void missBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
     @AfterBatch(batch = "shepherd_typed_miss") public static void missAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_typed_boot") public static void bootBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_typed_boot") public static void bootAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
     @BeforeBatch(batch = "shepherd_typed_bad") public static void badBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
     @AfterBatch(batch = "shepherd_typed_bad") public static void badAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
     @BeforeBatch(batch = "shepherd_typed_log") public static void logBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
@@ -432,6 +434,25 @@ public final class ShepherdTypedGameTest {
             say(player, KIND);
             h.assertTrue(data(h).promptNode() == null, "An answer does");
             h.succeed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_typed_boot", timeoutTicks = 400)
+    public static void shepherdADetourFromTheFirstMeetingHasNoLogo(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            var she = awake(h, player, FRIENDLY);
+            ShepherdTalk.start(player, "fm.boot");
+            assertAt(h, "fm.boot");
+            h.assertTrue(she.logoTicks() > 0, "The meeting opens on it");
+            h.runAfterDelay(ShepherdFace.LOGO_TICKS + 2, () -> {
+                type(she, player, "hi");
+                assertAt(h, "chat.hello");
+                say(player, CONTINUE);
+                assertAt(h, "fm.boot");
+                h.assertTrue(she.logoTicks() == 0 && ShepherdTalk.liveSent().logoTicks() == 0, "She only came back to the point");
+                h.succeed();
+            });
         });
     }
 

@@ -1258,3 +1258,4 @@ shepherdacrashinascenegoesback xml
 shepherdnobodyelsecanopenherduringit xml
 shepherdthecrashcostsnothing xml
 shepherdbuttonsnevercrashher xml
+shepherdadetourfromthefirstmeetinghasnologo xml
