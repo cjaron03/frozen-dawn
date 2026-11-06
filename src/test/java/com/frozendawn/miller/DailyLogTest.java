@@ -322,6 +322,14 @@ class DailyLogTest {
     }
 
     @Test
+    void ageStopsAtDayOne() {
+        var log = new DailyLog();
+        log.write(today().day());
+        log.age(DAY);
+        assertEquals(1, log.entries().getFirst().day());
+    }
+
+    @Test
     void anEntryWithNoDayReadsItsClock() {
         var saved = new LogEntry(4 * DAY, 30, false, false, null).save();
         saved.remove("day");

@@ -39,6 +39,8 @@ public final class ShepherdLogGameTest {
 
     @BeforeBatch(batch = "shepherd_log_day") public static void dayBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
     @AfterBatch(batch = "shepherd_log_day") public static void dayAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_log_world_day") public static void worldDayBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_log_world_day") public static void worldDayAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
     @BeforeBatch(batch = "shepherd_log_cold") public static void coldBefore(ServerLevel l) {
         ShepherdTestWorld.fresh(l);
         apocalypseTicks = ApocalypseState.get(l.getServer()).getApocalypseTicks();
