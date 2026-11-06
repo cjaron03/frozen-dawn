@@ -8,15 +8,15 @@
 
 **Tech Stack:** Java 21, NeoForge 1.21.1, JUnit in `src/test`, GameTests in `src/gameTest`.
 
-**Spec:** [aurora-miller-pattern.md](aurora-miller-pattern.md), "How typed text is understood", "Red lines for typing" and the Slices table. [aurora-orsa-topics.md](aurora-orsa-topics.md), the topics, the candor table and the eleven red lines. [miller-pattern-m4-plan.md](miller-pattern-m4-plan.md), the intent format and its Rulings 7 to 14, on `docs/miller-m4-plan` until PR 161 merges.
+**Spec:** [aurora-miller-pattern.md](aurora-miller-pattern.md), "How typed text is understood", "Red lines for typing" and the Slices table. [aurora-orsa-topics.md](aurora-orsa-topics.md), the topics, the candor table and the eleven red lines. [miller-pattern-m4-plan.md](miller-pattern-m4-plan.md), the intent format and its Rulings 7 to 14.
 
 **Lines:** `docs/aurora-m5-lines.md`, written in Task 1, for the owner to mark before anything is built.
 
 **Mockups:** none. The topics use the existing talk grid, and nothing new is drawn.
 
-**Status:** approved by the owner as written, 2026-11-05, Rulings 1 to 22 included. Nothing is built.
+**Status:** approved by the owner as written, 2026-11-05, Rulings 1 to 22 included. Rechecked against M4 as shipped, and the owner approved Rulings 23 to 28 and the edits they make the same day. Nothing is built.
 
-**Branch:** `feat/miller-m5` in `/Volumes/SSD/Work/frozen-dawn-miller-m5`, cut from `docs/miller-m5-plan`, which holds this plan on top of `feat/maeve-director` at 922c787a. Building waits for PR 161: merge `feat/maeve-director` into the branch once M4 is in, then start Task 2. Task 1 touches only docs and can run sooner. PR into `feat/maeve-director`. It changes a shared system and merges into a long-lived branch, so the branch review runs on Opus.
+**Branch:** `feat/miller-m5` in `/Volumes/SSD/Work/frozen-dawn-miller-m5`, cut from `docs/miller-m5-plan`, which holds this plan on top of `feat/maeve-director` at 9ccb53f8, with M4 (PR 161) and the worktree rules (PR 162) merged in. The build session starts in this worktree and works there. PR into `feat/maeve-director`. It changes a shared system and merges into a long-lived branch, so the branch review runs on Opus.
 
 ## Rulings
 
@@ -59,7 +59,7 @@
 13. **Eight miss lines.** The three stay, and five new ones join the rotation. A miss must suit gibberish and a locked name alike, so none may imply she knows the subject.
 14. **Labels fit the slot.** A label over about 20 characters overruns it, as S3 found. So "How do you know?", "The safety bulletin" and "Did Kevin volunteer?" go on the buttons, and the longer wording stays in the examples.
 15. **Each topic gets its own Close line.** "You mean Deng, or are we just saying things now?", one whole lang key each, as M4's Ruling 12 does.
-16. **Two drafts hit the lint.** "thirty-six years" holds `six`, and "Is he alive?" holds `alive`. The second is the player's reply, not hers, and stays with a named exception. The first gets an owner's mark: keep it with an exception, or reword it. "Thirty-odd years" is the recommendation.
+16. **Three drafts hit the lint.** "thirty-six years" and "It goes six, then eight." hold `six`, and "Is he alive?" holds `alive`. The last is the player's reply, not hers, and stays with a named exception. The other two each get an owner's mark: keep with an exception, or reword. "Thirty-odd years" is the recommendation for the first. The org chart line is also a `[C]` line Ruling 3 did not list, so it needs its own yes.
 
 ### The menu
 
@@ -68,10 +68,19 @@
 
 ### Testing the words
 
-19. **Phrasings stay at 10 for now.** That already sits inside the spec's 8 to 15. Only the penguin's change, since four of its examples are about the frame, and `who_are_you` gets its own. More come from the blind test under Ruling 4.
-20. **A fresh set, written first.** At least 6 new in-scope lines for each of the 17 topics and `who_are_you`, and at least 34 that must miss, in M0's styles, none from any earlier file. It is committed before any example changes, and it is never tuned against. All gates are held open for it. It must hold M0's marks: top-one 80 percent, top two 90, Strong and wrong 5, out-of-scope Strong 5. The owner's acceptance in M4 covers that set only. If it fails, stop and report.
+19. **Phrasings stay at 10 for now.** That already sits inside the spec's 8 to 15. Only the penguin's change, since four of its examples are about the frame, `who_are_you` gets its own, and Ruling 24 swaps three. More come from the blind test under Ruling 4.
+20. **A fresh set, written first.** At least 6 new in-scope lines for each of the 17 topics and `who_are_you`, and at least 34 that must miss, in M0's styles, none from any earlier file. It is committed before any example changes but Ruling 24's, and it is never tuned against. All gates are held open for it. It must hold M0's marks: top-one 80 percent, top two 90, Strong and wrong 5, out-of-scope Strong 5. The owner's acceptance in M4 covers that set only. If it fails, stop and report.
 21. **Thresholds and guarded words do not change.** No topic here can answer a guarded word, so M4's `unless` is not needed yet and moves to the slice that writes one.
 22. **The backlog is a tracked file.** `docs/aurora-typed-backlog.md`, one row a line: what was typed, its band and scores, and what the owner decided. It is the owner's own typing from a lab client. Normal builds still log nothing.
+
+### After M4 shipped, the owner's yes, 2026-11-05
+
+23. **M4's fresh set stays on M4's topics.** With the 17 open it reads 14 of 74 out-of-scope Strong, and 11 of those are lines it expected to stay locked. So `theFreshSetHoldsTheMarks` holds the 17 closed and goes on measuring what the owner accepted, 59 and 66 of 74. Ruling 20's set measures the 17. `everyIntentIsWellFormed` counts 27.
+24. **Three examples pull filler.** "Why didn't Okoye leave?" takes "ok" and "ok ok ok ok" to Strong on Enoch, "How long did he stay with you?" takes "stay here", and "Tell me about the book." takes "tell me a story" to the book. They become "Why didn't Enoch leave?", "How long did Enoch stay with you?" and "What is that book about?". "Who is Enoch Okoye?" stays, which leaves "ok" at Close at most. This comes before the fresh set is written, and `fillerOpensNoTopic` pins it.
+25. **The crash's verdict is not a topic.** Typed back, "pattern transfer only, subject not recovered" reaches no story topic as Strong, but "what does pattern transfer mean" lands Close on Exodus and "what was that message" on the safety bulletin. At least 6 of the fresh set's must-miss lines echo the verdict, and `pattern` joins the lint for `shepherd.orsa`, `chat` and `typed` keys. No new guarded word, so Ruling 21 stands.
+26. **Her focus holds for a walk.** `layTopics` rebuilds the menu on every reply, so a focus read at each build could shift a page under a click. It is read when the walk reaches the menu and held on `Live` until the walk leaves it.
+27. **"What are you?" is hers too.** "what are you" goes Strong on `how_are_you` at 0.66 today, and "who are you?" only reaches Close. Both go in `who_are_you`'s examples.
+28. **Typing during a topic's replies leaves the topic.** Only a scene keeps its place, and M5 adds the first tone replies on topics opened from the menu. The typed line pays nothing and sets no paid flag, so the topic can be asked again and still pay once.
 
 ## Lines to mark
 
@@ -105,7 +114,7 @@ Everything goes in `docs/aurora-m5-lines.md`. The topic lines come from `aurora-
 
 - Her replies are approved lines only. No line ships unmarked (Ruling 3). The player's words are never echoed or stored in a normal build.
 - The ORSA spec's eleven red lines and the typing red lines apply to every line, label and example. No `shepherd.*` value or intent example contains the word. Kevin's fate stays open. Morrow is not a topic. Nothing points at T5 before T5.
-- She never says "six", "fair" or "rules", or claims or denies being alive. "Miller" appears nowhere player-facing.
+- She never says "six", "fair" or "rules", or claims or denies being alive. "Miller" appears nowhere player-facing. `pattern` stays out of her topics, small talk and misses (Ruling 25).
 - A locked topic is an ordinary miss, for every one of the 17: the same line, wait and slots as gibberish.
 - Buttons stay the complete game: every topic with a node is on the menu, and typing unlocks no story. `who_are_you` is small talk, not story.
 - Same text and same state give the same band and the same menu. No randomness.
@@ -126,6 +135,8 @@ Each has its test in the task named.
 6. **Dropping the penguin mid-topic.** The topic plays out, then leaves the menu (Task 2, `shepherdThePenguinGoesWithThePlush`).
 7. **The focus reorders in the middle of a walk.** A menu page must not shift under a click (Task 6, `shepherdAMenuHoldsStillWhileOpen`).
 8. **A scene loses its place.** A typed Strong on a long gated topic still returns to the scene (Task 4, `shepherdADetourKeepsTheSceneOnANewTopic`).
+9. **Typing eats a payment.** A line typed during a topic's replies leaves it unpaid and payable (Task 5, `shepherdTypingInATopicPaysNothing`).
+10. **Filler opens a story.** "ok" must never start Enoch (Task 3, `fillerOpensNoTopic`).
 
 ---
 
@@ -135,7 +146,7 @@ Each has its test in the task named.
 - Create: `docs/aurora-m5-lines.md`
 - Modify: `docs/aurora-orsa-topics.md`, the penguin topic and its Canon problems entry
 
-Docs only, and it can run before PR 161 merges. Nothing goes in the game.
+Docs only. Nothing goes in the game.
 
 - [ ] **Step 1: Write the doc.** In the S4 doc's shape: all 17 topics with each line's mood, gate, source and `[C]` tag; labels; Close lines; the new lines above; the focus table; and the Enoch topic beside T5's lines. Show every line against the eleven red lines.
 - [ ] **Step 2: Commit.** `docs: draft the M5 lines for the owner to mark`
@@ -160,21 +171,24 @@ Docs only, and it can run before PR 161 merges. Nothing goes in the game.
 
 **Files:**
 - Create: `src/test/resources/frozendawn/intent_fresh_topics.json`
-- Modify: `IntentIndexTest.java`
+- Modify: `IntentIndexTest.java`, `data/frozendawn/shepherd/intents/orsa.json`
 
-- [ ] **Step 1: Write the set before anything else changes.** Ruling 20.
-- [ ] **Step 2: Commit it alone.** `test: write the fresh set for her topics`, so the history shows it came first.
-- [ ] **Step 3: Write `theTopicSetHoldsTheMarks`.** Run it once the intents change in Task 4. If it fails, stop and report the numbers.
+- [ ] **Step 1: Write `fillerOpensNoTopic` and run it.** It reads the rank, since the topics are still locked here: "ok", "ok ok ok ok", "stay here" and "tell me a story" are not Strong on any of the 17. Expected: FAIL.
+- [ ] **Step 2: Swap the three examples.** Ruling 24. Expected: PASS.
+- [ ] **Step 3: Commit.** `fix: stop filler reaching her topics`
+- [ ] **Step 4: Write the set before any other example changes.** Rulings 20 and 25.
+- [ ] **Step 5: Commit it alone.** `test: write the fresh set for her topics`, so the history shows it came before the rest.
+- [ ] **Step 6: Write `theTopicSetHoldsTheMarks`.** Run it once the intents change in Task 4. If it fails, stop and report the numbers.
 
 ### Task 4: The topics
 
 **Files:**
-- Modify: `data/frozendawn/shepherd/dialogue/orsa.json`, `hub.json`, `intents/orsa.json`, `intents/chat.json`, `miller/Intent.java`, `shepherd/ShepherdIntents.java`, `assets/frozendawn/lang/en_us.json`, `ShepherdDialogueDataTest.java`
+- Modify: `data/frozendawn/shepherd/dialogue/orsa.json`, `hub.json`, `intents/orsa.json`, `intents/chat.json`, `miller/Intent.java`, `shepherd/ShepherdIntents.java`, `assets/frozendawn/lang/en_us.json`, `ShepherdDialogueDataTest.java`, `IntentIndexTest.java`
 - Test: `ShepherdTopicsGameTest.java`
 
 **Interfaces:** Produces `Intent.mind`, `List<String>`, empty if absent. Nodes `orsa.<id>` for the 17, `chat.who_are_you`. `orsa.json` reordered by Ruling 18. Every line as the owner marked it.
 
-- [ ] **Step 1: Write the failing tests.** `shepherdEveryLockedTopicIsAMiss`, `shepherdEachTopicOpensOnItsGate`, `shepherdCandorFollowsTheTierOnNewTopics`, `shepherdNothingButARecordingAtWary`, `shepherdTheSeventhFloorChangesAfterT5`, `shepherdWhoAreYouIsSmallTalk`, `shepherdADetourKeepsTheSceneOnANewTopic`; in `ShepherdDialogueDataTest`, `everyTopicLineHasItsLang`, `everyIntentHasItsLabelAndGuess`, `everyLabelFitsTheSlot`, and the banned words of M4's `typedLinesStayInside` over every new key, with Ruling 16's named exceptions.
+- [ ] **Step 1: Write the failing tests.** `shepherdEveryLockedTopicIsAMiss`, `shepherdEachTopicOpensOnItsGate`, `shepherdCandorFollowsTheTierOnNewTopics`, `shepherdNothingButARecordingAtWary`, `shepherdTheSeventhFloorChangesAfterT5`, `shepherdWhoAreYouIsSmallTalk`, `shepherdADetourKeepsTheSceneOnANewTopic`; in `ShepherdDialogueDataTest`, `everyTopicLineHasItsLang`, `everyIntentHasItsLabelAndGuess`, `everyLabelFitsTheSlot`, and the banned words of M4's `typedLinesStayInside` over every new key, with Ruling 16's named exceptions, and Ruling 25's `pattern` lint. Hold the 17 closed in `theFreshSetHoldsTheMarks` and set `everyIntentIsWellFormed` to 27 (Ruling 23).
 - [ ] **Step 2: Run them.** Expected: FAIL.
 - [ ] **Step 3: Add the nodes, gates, examples and lines.**
 - [ ] **Step 4: Run them, and `theTopicSetHoldsTheMarks`.** Expected: PASS.
@@ -188,7 +202,7 @@ Docs only, and it can run before PR 161 merges. Nothing goes in the game.
 
 **Interfaces:** Produces `ShepherdTopics.PAID = "orsa_paid_"`. Applied only to nodes in `orsa.json` that have replies.
 
-- [ ] **Step 1: Write the failing tests.** `shepherdATopicReplyPaysOnce`, `shepherdWalkingOffPaysNothing`, `shepherdATopicReplyStillPlaysAgain`, `shepherdScenesStillPay`.
+- [ ] **Step 1: Write the failing tests.** `shepherdATopicReplyPaysOnce`, `shepherdWalkingOffPaysNothing`, `shepherdATopicReplyStillPlaysAgain`, `shepherdScenesStillPay`, `shepherdTypingInATopicPaysNothing`.
 - [ ] **Step 2: Run them.** Expected: FAIL.
 - [ ] **Step 3: Implement.**
 - [ ] **Step 4: Run them.** Expected: PASS.
@@ -200,9 +214,9 @@ Docs only, and it can run before PR 161 merges. Nothing goes in the game.
 - Modify: `shepherd/ShepherdTopics.java`, `shepherd/ShepherdTalk.java`
 - Test: `ShepherdTopicsGameTest.java`
 
-**Interfaces:** Produces `ShepherdTopics.menu` and `none` taking the speaker's focus key, read once when the menu is built. The miss pool grows to eight.
+**Interfaces:** Produces `ShepherdTopics.menu` and `none` taking the speaker's focus key, held on `Live` for the walk (Ruling 26). The miss pool grows to eight, the three old lines first, since `variety` reaches only those at her lowest coherence.
 
-- [ ] **Step 1: Write the failing tests.** `shepherdHerFocusLeadsTheMenu`, `shepherdUnheardStillComesFirst`, `shepherdANewTopicRises`, `shepherdWhatIsOrsaLeadsAFreshMenu`, `shepherdAMenuHoldsStillWhileOpen`, `shepherdTheMissesRotateThroughEight`. Update M4's tests that pin the old order.
+- [ ] **Step 1: Write the failing tests.** `shepherdHerFocusLeadsTheMenu`, `shepherdUnheardStillComesFirst`, `shepherdANewTopicRises`, `shepherdWhatIsOrsaLeadsAFreshMenu`, `shepherdAMenuHoldsStillWhileOpen`, `shepherdTheMissesRotateThroughEight`, at full coherence and with no Close between misses, since M4 left a Close spending a miss turn. Update M4's tests that pin the old order.
 - [ ] **Step 2: Run them.** Expected: FAIL.
 - [ ] **Step 3: Implement.**
 - [ ] **Step 4: Run them.** Expected: PASS.
