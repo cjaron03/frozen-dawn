@@ -12,13 +12,13 @@
 
 **Mockups:** [chat-bar-mockup.png](art/aurora-shepherd/chat-bar-mockup.png), [crash-mockup.png](art/aurora-shepherd/crash-mockup.png), approved 2026-11-05. Exact values are in `make_chat_bar_mockup.py` and `make_crash_mockup.py`.
 
-**Status:** draft. Rulings 1 to 6 are the owner's answers, 2026-11-05. Rulings 7 onward await approval. Nothing is built.
+**Status:** approved by the owner, 2026-11-05: all 33 rulings. The lines are drafts to build with and mark at the owner's pass. Nothing is built.
 
 **Branch:** `feat/miller-m4` in `/Volumes/SSD/Work/frozen-dawn-miller-m4`, cut from `docs/miller-m4-plan`, which holds this plan on top of `feat/maeve-director` at 922c787a. PR into `feat/maeve-director`. It changes client and server sync and a shared system, so the branch review runs on Opus.
 
 ## Rulings
 
-### Decided by the owner, 2026-11-05
+### The owner's answers, 2026-11-05
 
 1. **Five topics and the menu.** M4 builds "Ask about ORSA" and What is ORSA?, What happened?, What was Exodus?, Is anyone out there? and Who is Kevin? (from Friendly), with the tier rules and their `found:` and T2 lines. All 22 topics' examples load. The other 17 have no node, so they read as locked until M5 writes them.
 2. **`potion-base-8M` at int8.** It adds 6.9 MB to the jar and is committed to the repository once, with an export tool and the MIT notices. The owner accepted M0's note that the training data's card states no licence.
@@ -27,7 +27,7 @@
 5. **The word is caught through disguises and typos.** Case, accents, spaces and punctuation between letters, repeated letters, number swaps, and a one-letter typo. "continue" stays safe. The one real word a letter away is the rare "contiguity", which crashes her too.
 6. **One branch, one pass.** Everything on `feat/miller-m4`.
 
-### For approval: understanding a line
+### Understanding a line
 
 7. **The order of checks.** On Enter, in this order:
 
@@ -52,7 +52,7 @@
 15. **Typing counts as talking, and the words count for nothing.** The first typed line of a conversation is noted as a press of Talk, `Heard.Used(Action.TALK)`. No tone, theory, affinity, feeling, keepsake or log entry comes from what was typed. Opening the hub already feeds Company and coherence, so typing adds no second feed.
 16. **Typed text leaves no trace.** It is held for the one call that judges it. Normal builds never log it. It is cut to 120 characters on the server as well as the client. A typed line during her think is ignored.
 
-### For approval: the bar and the menu
+### The bar and the menu
 
 17. **Where the bar is.** At 84, 202, 312 by 14, on the hub and every node, on `Page.TALK` only. It is live when she has finished speaking, dim while she works it out, dead during the crash. Settings moves to y 220. "You say:" moves to y 219 and the hint to y 254, only while it shows. Hints name the player's own chat key, read from `keyChat`.
 18. **What the keys do.** The chat key or a click opens it. Then keys go to the bar. Enter sends, an empty Enter closes it, Esc closes it, and a second Esc walks away. It uses `EditBox`, unbordered, which slides text and stops at the cap. A new node closes it.
@@ -63,7 +63,7 @@
 
 23. **A plain reply is no tone.** Replies on Talk's new slots, the menu, Close and None sit in slots that mean Ask, Kind, Blunt and Sarcastic elsewhere. A node marked `plain` draws no tone label and tells her nothing: `hear` must read this from the node answered, before the walk moves on. Otherwise a topic in slot 2 would count as a kind reply.
 
-### For approval: the crash
+### The crash
 
 24. **The crash is a short offline.** `ShepherdEntity.crash()` sets `DATA_OFFLINE` and a new `DATA_CRASH`. Lamp, heater, flame, goals, harm and a second player's click all stop by the checks they already have. Unlike `goOffline`, it leaves her health and gravity alone. `RebootTicks` is 160. Recovery runs in place of `reboot()`.
 25. **The timing.** Stop screen 160 ticks. Then lamp and flame return and the logo plays, 64 ticks, by the same `showLogo()` the first meeting uses, so `send()` already waits for it. Then her line.

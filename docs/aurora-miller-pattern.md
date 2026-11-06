@@ -335,6 +335,8 @@ Verified headlessly: the order, rest and variants, every note the order can reac
 
 2026-11-05, the owner's pass in `Aurora Log Check`: "everything looked good". Two things they asked about were the lab's clock, not lost entries: the newest entry stayed on Day 48 because `skipday` moves entries back and leaves game time alone, and the first entry sat near day 28 while F3 said day 0. The fixture now starts the sun on her day, for a new save only. In `Aurora Log Check 2`, a sprint of real ticks past a written day gave a new Day 49 entry: the owner saw it on screen. F3 read Day 47 beside her Day 48, as the fixture intends. The phases run on day time, F3's clock (`ApocalypseState`), so on game time a player who slept would have seen her log fall behind the phases. Ruling: an entry's day number is the world's day, counted from 1, so it reads F3's day plus one and nights slept through show as skipped days. Everything else stays on game time, including when she writes, so sleep does not bring an entry on. Each entry stores that day, and an entry saved before this reads its game time. The owner saw it on screen: after `/time add 24000`, F3 read Day 48 and her next entry Day 49.
 
+2026-11-05: the owner approved [miller-pattern-m4-plan.md](miller-pattern-m4-plan.md): the chat bar, intents and the crash on one branch with one pass. Five ORSA topics and "Ask about ORSA" move from M5 into M4; the other 17 load as locked. `potion-base-8M` at int8 ships, and the owner accepted M0's note on the training data's licence. Nothing is built.
+
 ## Sources
 
 - `MaeveDirector`, `ShepherdAffinity` and `ShepherdReactions` at c866cf02 on `feat/aurora-affinity`.
