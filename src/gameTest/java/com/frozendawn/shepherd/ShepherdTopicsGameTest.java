@@ -4,6 +4,8 @@ import com.frozendawn.FrozenDawn;
 import com.frozendawn.data.WinConditionState;
 import com.frozendawn.gametest.GameTestTemplates;
 import com.frozendawn.init.ModItems;
+import com.frozendawn.miller.Drives.Drive;
+import com.frozendawn.miller.Feelings.Feeling;
 import com.frozendawn.miller.ImpressionStore.Theory;
 import com.frozendawn.miller.MillerPattern;
 import com.frozendawn.network.ShepherdNodePayload;
@@ -83,6 +85,18 @@ public final class ShepherdTopicsGameTest {
     @AfterBatch(batch = "shepherd_topics_typing") public static void typingAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
     @BeforeBatch(batch = "shepherd_topics_nevermindtopic") public static void nevermindtopicBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
     @AfterBatch(batch = "shepherd_topics_nevermindtopic") public static void nevermindtopicAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_topics_focus") public static void focusBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_topics_focus") public static void focusAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_topics_stillunheard") public static void stillunheardBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_topics_stillunheard") public static void stillunheardAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_topics_rises") public static void risesBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_topics_rises") public static void risesAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_topics_fresh") public static void freshBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_topics_fresh") public static void freshAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_topics_holdstill") public static void holdstillBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_topics_holdstill") public static void holdstillAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_topics_eight") public static void eightBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_topics_eight") public static void eightAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
 
     private static ShepherdSavedData data(GameTestHelper h) {
         return ShepherdSavedData.get(h.getLevel().getServer());
@@ -661,6 +675,126 @@ public final class ShepherdTopicsGameTest {
             h.assertFalse(data(h).flag("orsa_paid_how_you_know"), "Nothing spent");
             aDayPasses(h);
             h.assertTrue(MillerPattern.confidence(server, player.getUUID(), Theory.JOKES_WITH_ME) == 0, "Not sarcasm: " + MillerPattern.confidence(server, player.getUUID(), Theory.JOKES_WITH_ME));
+            h.succeed();
+        });
+    }
+
+    /** Nothing else pulling, so this is what is on her mind. */
+    private static void wants(GameTestHelper h, ServerPlayer player, Drive wanted) {
+        var server = h.getLevel().getServer();
+        for (Drive drive : Drive.values()) MillerPattern.want(server, drive, drive == wanted ? 1 : 0);
+        h.assertTrue(wanted.name().toLowerCase(java.util.Locale.ROOT).equals(MillerPattern.focus(server, player.getUUID()).key()), "On her mind: " + MillerPattern.focus(server, player.getUUID()));
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_topics_focus", timeoutTicks = 400)
+    public static void shepherdHerFocusLeadsTheMenu(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            var she = awake(h, player, TRUSTED);
+            var server = h.getLevel().getServer();
+            find(h, player, "terminus_log_maintenance");
+            wants(h, player, Drive.CURIOSITY);
+            h.assertTrue(menu(she, player).getFirst().equals(label("seventh_floor")), "Curious: " + menu(she, player));
+            wants(h, player, Drive.OTHERS);
+            h.assertTrue(menu(she, player).getFirst().equals(label("deng")), "The others: " + menu(she, player));
+            var read = menu(she, player);
+            h.assertTrue(read.equals(menu(she, player)), "The same state gives the same menu");
+            she.interact(player, InteractionHand.MAIN_HAND);
+            type(she, player, "asdfghjkl");
+            h.assertTrue(labels().getFirst().equals(label("deng")), "A miss uses the same order: " + labels());
+            ShepherdTalk.close(player);
+            conspiracy(h, true);
+            MillerPattern.feel(server, Feeling.REPROACH);
+            h.assertTrue("reproach".equals(MillerPattern.focus(server, player.getUUID()).key()), "Reproach: " + MillerPattern.focus(server, player.getUUID()));
+            h.assertTrue(menu(she, player).getFirst().equals(label("session_14b")), "What she holds against them: " + menu(she, player));
+            conspiracy(h, false);
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_topics_stillunheard", timeoutTicks = 400)
+    public static void shepherdUnheardStillComesFirst(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            var she = awake(h, player, TRUSTED);
+            find(h, player, "terminus_log_maintenance");
+            data(h).flag("orsa_heard_deng", true);
+            wants(h, player, Drive.OTHERS);
+            var topics = menu(she, player);
+            h.assertTrue(topics.getLast().equals(label("deng")), "On her mind, and heard, it still waits: " + topics);
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_topics_rises", timeoutTicks = 400)
+    public static void shepherdANewTopicRises(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            var she = awake(h, player, FRIENDLY);
+            wants(h, player, Drive.COMPANY);
+            h.assertTrue(menu(she, player).getFirst().equals(KEVIN), "Friendly: " + menu(she, player));
+            find(h, player, "orsa_bulletin");
+            h.assertTrue(menu(she, player).getFirst().equals(label("safety_bulletin")), "What they brought: " + menu(she, player));
+            data(h).affinity(TRUSTED);
+            h.assertTrue(menu(she, player).getFirst().equals(label("kevin_volunteer")), "What Trusted opened: " + menu(she, player));
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_topics_fresh", timeoutTicks = 400)
+    public static void shepherdWhatIsOrsaLeadsAFreshMenu(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            var she = awake(h, player, NEUTRAL);
+            wants(h, player, Drive.COMPANY);
+            h.assertTrue(menu(she, player).equals(List.of(ORSA, HAPPENED, EXODUS, OUT_THERE)), "A new player: " + menu(she, player));
+            h.succeed();
+        });
+    }
+
+    /** A menu is rebuilt on every reply, so a focus read each time would move a page under a click. */
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_topics_holdstill", timeoutTicks = 400)
+    public static void shepherdAMenuHoldsStillWhileOpen(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            var she = awake(h, player, TRUSTED);
+            find(h, player, "terminus_log_maintenance");
+            wants(h, player, Drive.COMPANY);
+            var settled = menu(she, player);
+            talk(she, player);
+            say(player, ASK);
+            var first = labels().subList(0, 3);
+            h.assertTrue(first.equals(settled.subList(0, 3)), "The first page: " + first);
+            wants(h, player, Drive.OTHERS);
+            say(player, SARCASTIC);
+            h.assertTrue(labels().subList(0, 3).equals(settled.subList(3, 6)), "The next page is the one it was: " + labels());
+            ShepherdTalk.close(player);
+            h.assertTrue(menu(she, player).getFirst().equals(label("deng")), "And the next walk reads her again: " + menu(she, player));
+            pick(h, she, player, KEVIN);
+            wants(h, player, Drive.CURIOSITY);
+            say(player, CONTINUE);
+            h.assertTrue(labels().getFirst().equals(label("seventh_floor")), "So does coming back from a topic: " + labels());
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_topics_eight", timeoutTicks = 400)
+    public static void shepherdTheMissesRotateThroughEight(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            var she = awake(h, player, NEUTRAL);
+            var server = h.getLevel().getServer();
+            she.interact(player, InteractionHand.MAIN_HAND);
+            for (int turn = 0; turn < 16; turn++) {
+                type(she, player, "asdfghjkl");
+                h.assertTrue(ShepherdTalk.liveLines().equals(List.of("shepherd.typed.miss." + (turn % 8 + 1))), "Turn " + turn + ": " + ShepherdTalk.liveLines());
+            }
+            MillerPattern.setCoherence(server, 0);
+            for (int turn = 0; turn < 12; turn++) {
+                type(she, player, "asdfghjkl");
+                var line = ShepherdTalk.liveLines().getFirst();
+                h.assertTrue(List.of("shepherd.typed.miss.1", "shepherd.typed.miss.2", "shepherd.typed.miss.3").contains(line), "Her lowest reaches the old three: " + line);
+            }
             h.succeed();
         });
     }

@@ -28,16 +28,16 @@ public final class ShepherdTopics {
     private static final String NEITHER = "shepherd.typed.neither";
     /** In the order she takes them, as far as her coherence reaches. */
     private static final List<Line> MISSES = List.of(new Line("shepherd.typed.miss.1", null, Mood.THINKING, null), new Line("shepherd.typed.miss.2", null, Mood.UNIMPRESSED, null),
-            new Line("shepherd.typed.miss.3", null, Mood.NEUTRAL, null));
+            new Line("shepherd.typed.miss.3", null, Mood.NEUTRAL, null), new Line("shepherd.typed.miss.4", null, Mood.NEUTRAL, null), new Line("shepherd.typed.miss.5", null, Mood.THINKING, null),
+            new Line("shepherd.typed.miss.6", null, Mood.UNIMPRESSED, null), new Line("shepherd.typed.miss.7", null, Mood.UNIMPRESSED, null), new Line("shepherd.typed.miss.8", null, Mood.NEUTRAL, null));
     private static final String FIRST = "shepherd.orsa.menu.first", AGAIN = "shepherd.orsa.menu.again", RECORDING = "shepherd.hub.talk.wary";
     private static final String SOMETHING_ELSE = "shepherd.talk.something_else", NEVER_MIND = "shepherd.talk.never_mind";
 
     private ShepherdTopics() {}
 
-    /** Up to three topics a page, unheard first, and the fourth slot goes on or leaves. At Wary a recording does the talking. */
-    public static Map<String, Node> menu(List<Intent> open, Predicate<String> holds, boolean again) {
-        var topics = new ArrayList<>(open);
-        topics.sort(Comparator.comparing(topic -> holds.test(HEARD + topic.id())));
+    /** Up to three topics a page, in {@link #ordered} order, and the fourth slot goes on or leaves. At Wary a recording does the talking. */
+    public static Map<String, Node> menu(List<Intent> open, Predicate<String> holds, String focus, boolean again) {
+        var topics = ordered(open, holds, focus);
         var nodes = new HashMap<String, Node>();
         int pages = Math.max(1, (topics.size() + PER_PAGE - 1) / PER_PAGE);
         for (int page = 0; page < pages; page++) {
@@ -63,10 +63,9 @@ public final class ShepherdTopics {
         return MISSES.size();
     }
 
-    /** A dry line, and what is on her mind: unheard first. */
-    public static Node none(int miss, List<Intent> open, Predicate<String> holds) {
-        var topics = new ArrayList<>(open);
-        topics.sort(Comparator.comparing(topic -> holds.test(HEARD + topic.id())));
+    /** A dry line, and what is on her mind, in the menu's order. */
+    public static Node none(int miss, List<Intent> open, Predicate<String> holds, String focus) {
+        var topics = ordered(open, holds, focus);
         var replies = new ArrayList<Response>();
         for (int i = 0; i < Math.min(MOST_ON_A_MISS, topics.size()); i++) replies.add(reply(Slot.values()[i], topics.get(i).label(), topics.get(i).node()));
         return plain(NONE, MISSES.get(miss), replies);
@@ -85,6 +84,13 @@ public final class ShepherdTopics {
     /** Never mind in a topic is walking away from the question, with no tone in it. */
     public static boolean leaves(Node node, int slot) {
         return node.responses().stream().anyMatch(response -> response.slot().ordinal() == slot && NEVER_MIND.equals(response.label()));
+    }
+
+    /** Unheard first, then whatever answers her focus. The sort is stable, so the file settles the rest, and the same state gives the same order. */
+    private static List<Intent> ordered(List<Intent> open, Predicate<String> holds, String focus) {
+        var topics = new ArrayList<>(open);
+        topics.sort(Comparator.<Intent, Boolean>comparing(topic -> holds.test(HEARD + topic.id())).thenComparing(topic -> !topic.mind().contains(focus)));
+        return topics;
     }
 
     private static String id(int page) {

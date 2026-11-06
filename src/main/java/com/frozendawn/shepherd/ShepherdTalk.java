@@ -85,6 +85,8 @@ public final class ShepherdTalk {
         boolean detour;
         /** Where a detour goes when it is done, one level deep. A scene's node, {@link ShepherdTopics#AFTER} for the menu, or null for the hub. */
         String back;
+        /** What is on her mind for the menu in front of them, read once so a page cannot shift under a click. Null off the menu, and then it is read again. */
+        String focus;
         /** The next line sent answers something typed, so she works it out first. */
         boolean typed;
         /** Pressing Talk and typing are the same thing to her, and count once a conversation. */
@@ -210,6 +212,7 @@ public final class ShepherdTalk {
         Predicate<String> holds = condition -> holds(player, condition);
         live.nodes = new HashMap<>(ShepherdDialogues.nodes());
         live.nodes.putAll(live.built);
+        live.focus = null;
         layTopics();
         if (!ShepherdConversation.opens(live.nodes, node, holds)) return false;
         live.talk = new ShepherdConversation(live.nodes, node, holds);
@@ -236,9 +239,15 @@ public final class ShepherdTalk {
     private static void layTopics() {
         var holds = holds();
         var open = openTopics();
-        live.nodes.putAll(ShepherdTopics.menu(open, holds, false));
+        if (live.focus == null) live.focus = focus();
+        live.nodes.putAll(ShepherdTopics.menu(open, holds, live.focus, false));
         if (live.detour && !ShepherdTopics.AFTER.equals(live.back)) live.nodes.remove(ShepherdTopics.AFTER);
-        else live.nodes.put(ShepherdTopics.AFTER, ShepherdTopics.menu(open, holds, true).get(ShepherdTopics.MENU));
+        else live.nodes.put(ShepherdTopics.AFTER, ShepherdTopics.menu(open, holds, live.focus, true).get(ShepherdTopics.MENU));
+    }
+
+    /** What is on her mind with this speaker in front of her. Reading it changes nothing. */
+    private static String focus() {
+        return MillerPattern.focus(live.player.getServer(), live.player.getUUID()).key();
     }
 
     /**
@@ -338,6 +347,7 @@ public final class ShepherdTalk {
         settle();
         if (!live.talk.finished()) {
             if (live.talk.current().id().startsWith(ShepherdTopics.MENU)) onTheMenu();
+            else live.focus = null;
             send();
         } else if (live.detour || live.back != null) {
             goBack();
@@ -484,7 +494,7 @@ public final class ShepherdTalk {
         int reach = MillerPattern.variety(live.player.getServer(), ShepherdTopics.misses());
         int turn = missTurn++ % reach;
         var scene = live.back == null || ShepherdTopics.AFTER.equals(live.back) ? null : ShepherdDialogues.nodes().get(live.back);
-        return scene != null ? ShepherdTopics.none(turn, scene) : ShepherdTopics.none(turn, openTopics(), holds());
+        return scene != null ? ShepherdTopics.none(turn, scene) : ShepherdTopics.none(turn, openTopics(), holds(), focus());
     }
 
     private static void talked() {

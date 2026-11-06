@@ -222,7 +222,7 @@ public final class ShepherdTypedGameTest {
             assertLines(h, MISS + 3);
             h.assertTrue(labels().equals(replies) && ShepherdTalk.liveThinkTicks() == wait, "An intent with no node is no different");
             type(she, player, GIBBERISH);
-            assertLines(h, MISS + 1);
+            assertLines(h, MISS + 4);
             h.succeed();
         });
     }

@@ -1279,3 +1279,9 @@ shepherdatopicreplystillplaysagain xml
 shepherdscenesstillpay xml
 shepherdtypinginatopicpaysnothing xml
 shepherdnevermindonatopicisnoanswer xml
+shepherdherfocusleadsthemenu xml
+shepherdunheardstillcomesfirst xml
+shepherdanewtopicrises xml
+shepherdwhatisorsaleadsafreshmenu xml
+shepherdamenuholdsstillwhileopen xml
+shepherdthemissesrotatethrougheight xml

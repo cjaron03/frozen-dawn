@@ -49,7 +49,7 @@ class ShepherdDialogueDataTest {
             }
         }
         // Built at run time from the open topics, and laid over these.
-        nodes.putAll(ShepherdTopics.menu(List.of(), condition -> false, false));
+        nodes.putAll(ShepherdTopics.menu(List.of(), condition -> false, "", false));
         nodes.put(ShepherdTopics.AFTER, nodes.get(ShepherdTopics.MENU));
         return nodes;
     }
@@ -103,6 +103,16 @@ class ShepherdDialogueDataTest {
             assertTrue(lang.has(intent.guess()), intent.guess());
             assertTrue(lang.get(intent.guess()).getAsString().matches("You mean .+, or are we just saying things now\\?"), intent.guess());
         }
+    }
+
+    /** A key nothing ever reads would leave a topic waiting for a focus she never has. */
+    @Test
+    void everyMindKeyIsOneSheHas() throws Exception {
+        var known = new HashSet<>(List.of("nine_found", "t4_off", "t5_before"));
+        for (var feeling : com.frozendawn.miller.Feelings.Feeling.values()) known.add(feeling.name().toLowerCase(Locale.ROOT));
+        for (var drive : com.frozendawn.miller.Drives.Drive.values()) known.add(drive.name().toLowerCase(Locale.ROOT));
+        for (Intent intent : intents()) assertTrue(known.containsAll(intent.mind()), intent.id() + ": " + intent.mind());
+        assertEquals(13, intents().stream().filter(intent -> !intent.mind().isEmpty()).count());
     }
 
     /** A longer label overruns its button. */
