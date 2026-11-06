@@ -76,6 +76,48 @@ class ShepherdDialogueDataTest {
     }
 
     @Test
+    void everyTopicLineHasItsLang() throws Exception {
+        var lang = lang();
+        for (Node node : nodes().values()) {
+            if (!node.id().startsWith("orsa.") && !node.id().startsWith("chat.")) continue;
+            node.lines().forEach(line -> {
+                assertTrue(lang.has(line.key()), node.id() + " -> " + line.key());
+                if (line.heavyKey() != null) assertTrue(lang.has(line.heavyKey()), node.id() + " -> " + line.heavyKey());
+            });
+        }
+    }
+
+    @Test
+    void everyIntentHasItsLabelAndGuess() throws Exception {
+        var lang = lang();
+        for (Intent intent : intents()) {
+            if (intent.label() == null) continue;
+            assertTrue(lang.has(intent.label()), intent.label());
+            assertTrue(lang.has(intent.guess()), intent.guess());
+        }
+    }
+
+    @Test
+    void everyStopRowIsSpecCopy() throws Exception {
+        var lang = lang();
+        var rows = ShepherdFace.STOP_ROWS.stream().map(key -> lang.get(key).getAsString()).toList();
+        assertEquals(List.of("CS-1 UNIT 4", "HAS STOPPED.", "PLEASE REMAIN CALM.", "STOP CODE", "0x0000000A"), rows);
+    }
+
+    /** She keeps every secret the buttons keep: none of this is typed-only licence to say more. */
+    @Test
+    void typedLinesStayInside() throws Exception {
+        var banned = java.util.regex.Pattern.compile("\\b(six|fair|rules|alive|respawn|heart|archive|maeve|continuity|miller|anderson-kind|tithonus|sophie|game)\\b", java.util.regex.Pattern.CASE_INSENSITIVE);
+        int checked = 0;
+        for (var line : lang().entrySet()) {
+            if (!line.getKey().matches("shepherd\\.(orsa|typed|chat|crash|stop)\\..*")) continue;
+            checked++;
+            assertFalse(banned.matcher(line.getValue().getAsString()).find(), line.getKey() + ": " + line.getValue());
+        }
+        assertTrue(checked > 40, "The keys moved: " + checked);
+    }
+
+    @Test
     void everyIntentIsWellFormed() throws Exception {
         var ids = new HashSet<String>();
         var intents = intents();
