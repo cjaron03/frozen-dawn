@@ -320,10 +320,16 @@ public final class ShepherdTalk {
     public static void reply(ServerPlayer player, int conversation, int slot) {
         if (!speaking(player, conversation) || live.talk == null) return;
         var answered = live.talk.current();
-        boolean readToThem = LOG_READ.equals(answered.id()), plain = answered.plain(), detour = live.detour;
+        boolean leaving = ShepherdTopics.leaves(answered, slot);
+        String paid = leaving ? null : ShepherdTopics.paid(answered);
+        boolean spent = paid != null && data().flag(paid);
+        boolean readToThem = LOG_READ.equals(answered.id()), plain = answered.plain() || leaving || spent, detour = live.detour;
         boolean scene = detour && ShepherdTopics.NONE.equals(answered.id()) && live.back != null && !ShepherdTopics.AFTER.equals(live.back);
+        int owed = live.talk.affinityDelta();
         layTopics();
         if (!live.talk.answer(slot)) return;
+        if (spent) live.affinityApplied += live.talk.affinityDelta() - owed;
+        else if (paid != null) data().flag(paid, true);
         // Only once they have heard it: cut off partway, she says it again at the next talk.
         if (readToThem) MillerPattern.markTold(player.getServer(), player.getUUID());
         hear(plain ? ShepherdConversation.CONTINUE : slot);

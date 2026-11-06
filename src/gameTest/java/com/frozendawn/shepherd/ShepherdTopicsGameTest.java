@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import net.minecraft.core.BlockPos;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.gametest.framework.AfterBatch;
 import net.minecraft.gametest.framework.BeforeBatch;
 import net.minecraft.gametest.framework.GameTest;
@@ -31,7 +32,7 @@ import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 @PrefixGameTestTemplate(false)
 public final class ShepherdTopicsGameTest {
     private static final BlockPos SPOT = new BlockPos(10, 4, 10);
-    private static final int ASK = 0, KIND = 1, SARCASTIC = 3, CONTINUE = -1;
+    private static final int ASK = 0, KIND = 1, BLUNT = 2, SARCASTIC = 3, CONTINUE = -1;
     private static final int WARY = -300, NEUTRAL = 0, FRIENDLY = 300, TRUSTED = 600, CLOSE = 900;
     private static final String ASK_ORSA = "shepherd.talk.ask_orsa", NEVER_MIND = "shepherd.talk.never_mind", SOMETHING_ELSE = "shepherd.talk.something_else";
     private static final String ORSA = "shepherd.orsa.what_is_orsa.label", HAPPENED = "shepherd.orsa.what_happened.label", EXODUS = "shepherd.orsa.exodus.label",
@@ -70,6 +71,18 @@ public final class ShepherdTopicsGameTest {
     @AfterBatch(batch = "shepherd_topics_whoareyou") public static void whoAreYouAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
     @BeforeBatch(batch = "shepherd_topics_detour") public static void detourBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); WinConditionState.get(l.getServer()).setConspiracyDiscovered(false); }
     @AfterBatch(batch = "shepherd_topics_detour") public static void detourAfter(ServerLevel l) { ShepherdTestWorld.clear(l); WinConditionState.get(l.getServer()).setConspiracyDiscovered(false); }
+    @BeforeBatch(batch = "shepherd_topics_pays") public static void paysBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_topics_pays") public static void paysAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_topics_walkoff") public static void walkoffBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_topics_walkoff") public static void walkoffAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_topics_again") public static void againBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_topics_again") public static void againAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_topics_scenes") public static void scenesBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_topics_scenes") public static void scenesAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_topics_typing") public static void typingBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_topics_typing") public static void typingAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_topics_nevermindtopic") public static void nevermindtopicBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_topics_nevermindtopic") public static void nevermindtopicAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
 
     private static ShepherdSavedData data(GameTestHelper h) {
         return ShepherdSavedData.get(h.getLevel().getServer());
@@ -519,6 +532,135 @@ public final class ShepherdTopicsGameTest {
             h.assertTrue("orsa.session_14b.end".equals(ShepherdTalk.liveNode()), "All four lead here: " + ShepherdTalk.liveNode());
             say(player, CONTINUE);
             h.assertTrue(scene.equals(ShepherdTalk.liveNode()), "And the scene again: " + ShepherdTalk.liveNode());
+            h.succeed();
+        });
+    }
+
+    /** Someone who may ask about Enoch. */
+    private static ServerPlayer readTheLastLog(GameTestHelper h) {
+        var player = player(h);
+        find(h, player, "terminus_log_last");
+        return player;
+    }
+
+    private static int payOf(GameTestHelper h, ShepherdEntity she, ServerPlayer player, String topic, int slot) {
+        pick(h, she, player, label(topic));
+        int before = data(h).affinity();
+        say(player, slot);
+        int paid = data(h).affinity() - before;
+        ShepherdTalk.close(player);
+        return paid;
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_topics_pays", timeoutTicks = 400)
+    public static void shepherdATopicReplyPaysOnce(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = readTheLastLog(h);
+            var she = awake(h, player, CLOSE);
+            var server = h.getLevel().getServer();
+            var registries = h.getLevel().registryAccess();
+            h.assertTrue(payOf(h, she, player, "enoch", KIND) == 15, "The first answer pays");
+            h.assertTrue(data(h).flag("orsa_paid_enoch"), "And is marked");
+            h.assertTrue(ShepherdSavedData.load(data(h).save(new CompoundTag(), registries), registries).flag("orsa_paid_enoch"), "Across a reload");
+            h.assertTrue(payOf(h, she, player, "enoch", KIND) == 0, "Not the same one twice");
+            h.assertTrue(payOf(h, she, player, "enoch", ASK) == 0, "Nor another one");
+            conspiracy(h, true);
+            h.assertTrue(payOf(h, she, player, "session_14b", BLUNT) == -5, "A cost is a payment too");
+            h.assertTrue(payOf(h, she, player, "session_14b", BLUNT) == 0, "And comes once");
+            conspiracy(h, false);
+            var other = readTheLastLog(h);
+            data(h).flag("orsa_paid_enoch", true);
+            for (int i = 0; i < 3; i++) payOf(h, she, other, "enoch", KIND);
+            aDayPasses(h);
+            h.assertTrue(MillerPattern.confidence(server, other.getUUID(), Theory.KIND) == 0, "Tells her nothing: " + MillerPattern.confidence(server, other.getUUID(), Theory.KIND));
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_topics_walkoff", timeoutTicks = 400)
+    public static void shepherdWalkingOffPaysNothing(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = readTheLastLog(h);
+            var other = readTheLastLog(h);
+            var she = awake(h, player, CLOSE);
+            pick(h, she, player, label("enoch"));
+            ShepherdTalk.close(player);
+            h.assertTrue(data(h).affinity() == CLOSE, "Nothing earned");
+            h.assertFalse(data(h).flag("orsa_paid_enoch"), "Nothing spent");
+            h.assertTrue(payOf(h, she, other, "enoch", KIND) == 15, "It is still there to answer, for anyone");
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_topics_again", timeoutTicks = 400)
+    public static void shepherdATopicReplyStillPlaysAgain(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = readTheLastLog(h);
+            var she = awake(h, player, CLOSE);
+            for (int i = 0; i < 2; i++) {
+                pick(h, she, player, label("enoch"));
+                say(player, KIND);
+                h.assertTrue("orsa.enoch.r2".equals(ShepherdTalk.liveNode()), "Her answer: " + ShepherdTalk.liveNode());
+                h.assertTrue(ShepherdTalk.liveLines().equals(List.of("shepherd.orsa.enoch.r2")), "The same line: " + ShepherdTalk.liveLines());
+                say(player, CONTINUE);
+                h.assertTrue("orsa.menu".equals(ShepherdTalk.liveNode()), "And the menu: " + ShepherdTalk.liveNode());
+                ShepherdTalk.close(player);
+            }
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_topics_scenes", timeoutTicks = 400)
+    public static void shepherdScenesStillPay(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            awake(h, player, NEUTRAL);
+            for (int paid = 1; paid <= 2; paid++) {
+                ShepherdTalk.start(player, "t2.others");
+                say(player, KIND);
+                h.assertTrue(data(h).affinity() == 15 * paid, "A scene's reply pays each time it is played: " + data(h).affinity());
+                ShepherdTalk.close(player);
+                data(h).resumeNode(null);
+            }
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_topics_typing", timeoutTicks = 400)
+    public static void shepherdTypingInATopicPaysNothing(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = readTheLastLog(h);
+            var she = awake(h, player, CLOSE);
+            pick(h, she, player, label("enoch"));
+            type(she, player, "asdfghjkl");
+            h.assertTrue("typed.none".equals(ShepherdTalk.liveNode()), "It leaves the topic: " + ShepherdTalk.liveNode());
+            h.assertTrue(ShepherdTalk.liveSent().plain(), "And the tones with it");
+            h.assertTrue(data(h).affinity() == CLOSE, "The line pays nothing");
+            h.assertFalse(data(h).flag("orsa_paid_enoch"), "And spends nothing");
+            ShepherdTalk.close(player);
+            h.assertTrue(payOf(h, she, player, "enoch", KIND) == 15, "Asked again, it pays");
+            h.assertTrue(payOf(h, she, player, "enoch", KIND) == 0, "Once");
+            h.succeed();
+        });
+    }
+
+    /** Leaving is no answer: it has no tone, and it leaves the question open. */
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_topics_nevermindtopic", timeoutTicks = 400)
+    public static void shepherdNeverMindOnATopicIsNoAnswer(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            var she = awake(h, player, FRIENDLY);
+            var server = h.getLevel().getServer();
+            for (int i = 0; i < 3; i++) {
+                pick(h, she, player, label("how_you_know"));
+                h.assertTrue(ShepherdTalk.liveSent().replies().get(1).slot() == SARCASTIC && ShepherdTalk.liveSent().replies().get(1).label().equals(NEVER_MIND), "In the fourth slot: " + labels());
+                say(player, SARCASTIC);
+                h.assertTrue("orsa.menu".equals(ShepherdTalk.liveNode()), "Back to the menu: " + ShepherdTalk.liveNode());
+                ShepherdTalk.close(player);
+            }
+            h.assertFalse(data(h).flag("orsa_paid_how_you_know"), "Nothing spent");
+            aDayPasses(h);
+            h.assertTrue(MillerPattern.confidence(server, player.getUUID(), Theory.JOKES_WITH_ME) == 0, "Not sarcasm: " + MillerPattern.confidence(server, player.getUUID(), Theory.JOKES_WITH_ME));
             h.succeed();
         });
     }

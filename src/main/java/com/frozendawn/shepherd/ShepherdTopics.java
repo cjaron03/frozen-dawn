@@ -20,6 +20,9 @@ public final class ShepherdTopics {
     /** Where a topic goes when it is done. What stands here depends on how the walk got to the topic. */
     public static final String AFTER = "orsa.after";
     public static final String HEARD = "orsa_heard_";
+    /** A topic can be asked again, and its answer pays the first time. A world flag, as affinity is the world's. */
+    public static final String PAID = "orsa_paid_";
+    private static final String TOPIC = "orsa.";
     public static final String CLOSE = "typed.close", NONE = "typed.none";
     private static final int PER_PAGE = 3, MOST_ON_A_MISS = 4;
     private static final String NEITHER = "shepherd.typed.neither";
@@ -72,6 +75,16 @@ public final class ShepherdTopics {
     /** A miss in a scene: the scene is what is on her mind, so it keeps its own replies, tones and all. */
     public static Node none(int miss, Node scene) {
         return new Node(NONE, List.of(MISSES.get(miss)), scene.responses(), scene.next(), List.of(), null, null, List.of(), null, scene.plain());
+    }
+
+    /** The flag a reply on this node spends. Null if it has none to spend: a scene pays each time it plays, and a menu never pays. */
+    public static String paid(Node node) {
+        return node.id().startsWith(TOPIC) && !node.plain() && !node.responses().isEmpty() ? PAID + node.id().substring(TOPIC.length()) : null;
+    }
+
+    /** Never mind in a topic is walking away from the question, with no tone in it. */
+    public static boolean leaves(Node node, int slot) {
+        return node.responses().stream().anyMatch(response -> response.slot().ordinal() == slot && NEVER_MIND.equals(response.label()));
     }
 
     private static String id(int page) {

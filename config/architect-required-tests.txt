@@ -1273,3 +1273,9 @@ shepherdnothingbutarecordingatwary xml
 shepherdtheseventhfloorchangesaftert5 xml
 shepherdwhoareyouissmalltalk xml
 shepherdadetourkeepsthesceneonanewtopic xml
+shepherdatopicreplypaysonce xml
+shepherdwalkingoffpaysnothing xml
+shepherdatopicreplystillplaysagain xml
+shepherdscenesstillpay xml
+shepherdtypinginatopicpaysnothing xml
+shepherdnevermindonatopicisnoanswer xml
