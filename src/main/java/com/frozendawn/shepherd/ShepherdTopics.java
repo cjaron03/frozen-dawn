@@ -1,6 +1,7 @@
 package com.frozendawn.shepherd;
 
 import com.frozendawn.miller.Intent;
+import com.frozendawn.miller.IntentIndex;
 import com.frozendawn.shepherd.ShepherdDialogue.Line;
 import com.frozendawn.shepherd.ShepherdDialogue.Node;
 import com.frozendawn.shepherd.ShepherdDialogue.Response;
@@ -19,7 +20,12 @@ public final class ShepherdTopics {
     /** Where a topic goes when it is done. What stands here depends on how the walk got to the topic. */
     public static final String AFTER = "orsa.after";
     public static final String HEARD = "orsa_heard_";
-    private static final int PER_PAGE = 3;
+    public static final String CLOSE = "typed.close", NONE = "typed.none";
+    private static final int PER_PAGE = 3, MOST_ON_A_MISS = 4;
+    private static final String NEITHER = "shepherd.typed.neither";
+    /** In the order she takes them, as far as her coherence reaches. */
+    private static final List<Line> MISSES = List.of(new Line("shepherd.typed.miss.1", null, Mood.THINKING, null), new Line("shepherd.typed.miss.2", null, Mood.UNIMPRESSED, null),
+            new Line("shepherd.typed.miss.3", null, Mood.NEUTRAL, null));
     private static final String FIRST = "shepherd.orsa.menu.first", AGAIN = "shepherd.orsa.menu.again", RECORDING = "shepherd.hub.talk.wary";
     private static final String SOMETHING_ELSE = "shepherd.talk.something_else", NEVER_MIND = "shepherd.talk.never_mind";
 
@@ -39,6 +45,33 @@ public final class ShepherdTopics {
             nodes.put(id(page), plain(id(page), line(holds, again || page > 0), replies));
         }
         return nodes;
+    }
+
+    /** Her check. A locked or unlabelled guess never gets this far: {@code match} is already what may be offered. */
+    public static Node close(IntentIndex.Match match) {
+        var replies = new ArrayList<Response>();
+        replies.add(reply(Slot.ASK, match.first().label(), match.first().node()));
+        if (match.second() != null) replies.add(reply(Slot.KIND, match.second().label(), match.second().node()));
+        replies.add(reply(Slot.SARCASTIC, NEITHER, NONE));
+        return plain(CLOSE, new Line(match.first().guess(), null, Mood.THINKING, null), replies);
+    }
+
+    public static int misses() {
+        return MISSES.size();
+    }
+
+    /** A dry line, and what is on her mind: unheard first. */
+    public static Node none(int miss, List<Intent> open, Predicate<String> holds) {
+        var topics = new ArrayList<>(open);
+        topics.sort(Comparator.comparing(topic -> holds.test(HEARD + topic.id())));
+        var replies = new ArrayList<Response>();
+        for (int i = 0; i < Math.min(MOST_ON_A_MISS, topics.size()); i++) replies.add(reply(Slot.values()[i], topics.get(i).label(), topics.get(i).node()));
+        return plain(NONE, MISSES.get(miss), replies);
+    }
+
+    /** A miss in a scene: the scene is what is on her mind, so it keeps its own replies, tones and all. */
+    public static Node none(int miss, Node scene) {
+        return new Node(NONE, List.of(MISSES.get(miss)), scene.responses(), scene.next(), List.of(), null, null, List.of(), null, scene.plain());
     }
 
     private static String id(int page) {

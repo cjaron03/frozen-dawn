@@ -89,6 +89,18 @@ class IntentIndexTest {
         assertEquals("how_are_you", index().rank("how are you").first().id());
     }
 
+    /** Whoever types what a button says gets what the button gives. */
+    @Test void everyLabelOpensItsOwnTopic() throws IOException {
+        var lang = file("/assets/frozendawn/lang/en_us.json").getAsJsonObject();
+        var index = index();
+        for (Intent intent : shipped()) {
+            if (intent.label() == null) continue;
+            var match = index.judge(lang.get(intent.label()).getAsString(), ALL);
+            assertEquals(Band.STRONG, match.band(), intent.id());
+            assertEquals(intent, match.first());
+        }
+    }
+
     /**
      * M0's marks, on lines written before this ran (Ruling 10). The set read 59 and 66 of 74, one line short of 80 and 90 percent on each, and the owner accepted that on
      * 2026-11-05, so those two hold at the accepted counts. If this fails, stop and report: never tune against it.

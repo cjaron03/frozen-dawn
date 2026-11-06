@@ -22,7 +22,7 @@
       "id": "alive",
       "node": "chat.alive",
       "when": "tier_above_wary",
-      "examples": ["are you alive or not", "are you really alive", "are you a real person", "are you a machine", "are you a robot", "are you just a machine", "do you feel things", "is anyone in there", "are you self aware", "do you know you're a machine", "are you living"]
+      "examples": ["are you alive or not", "are you really alive", "are you a real person", "are you a machine", "are you a robot", "are you just a machine", "do you feel things", "are you self aware", "do you know you're a machine", "are you living"]
     }
   ]
 }

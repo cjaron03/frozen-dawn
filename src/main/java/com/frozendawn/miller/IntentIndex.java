@@ -8,7 +8,7 @@ import java.util.function.Predicate;
 /** The nearest intent to a line: its best cosine to any example. Every intent ranks, open or not, since M0's thresholds were tuned with all of them present. */
 public final class IntentIndex {
     public static final double STRONG = 0.56, LEAD = 0.10, CLOSE = 0.425;
-    private static final Match MISS = new Match(Band.NONE, null, null);
+    public static final Match MISS = new Match(Band.NONE, null, null);
 
     public enum Band {
         STRONG,
@@ -19,7 +19,7 @@ public final class IntentIndex {
     /** {@code first} is what she answers or guesses, {@code second} a further guess: null where the band has none. */
     public record Match(Band band, Intent first, Intent second) {}
 
-    record Ranked(Intent first, double firstScore, Intent second, double secondScore) {}
+    public record Ranked(Intent first, double firstScore, Intent second, double secondScore) {}
 
     private record Scored(Intent intent, double score) {}
 
@@ -35,10 +35,11 @@ public final class IntentIndex {
 
     /** The same text and the same state give the same band. */
     public Match judge(String text, Predicate<String> holds) {
-        return intents.size() < 2 ? MISS : judge(rank(text), holds);
+        var ranked = rank(text);
+        return ranked == null ? MISS : judge(ranked, holds);
     }
 
-    static Match judge(Ranked ranked, Predicate<String> holds) {
+    public static Match judge(Ranked ranked, Predicate<String> holds) {
         var first = ranked.first();
         boolean strong = ranked.firstScore() >= STRONG && ranked.firstScore() - ranked.secondScore() >= LEAD;
         if (!open(first, holds) || !strong && (ranked.firstScore() < CLOSE || first.label() == null)) return MISS;
@@ -51,7 +52,9 @@ public final class IntentIndex {
         return intent.node() != null && (intent.when() == null || holds.test(intent.when()));
     }
 
-    Ranked rank(String text) {
+    /** Null with fewer than two intents, which is what a missing folder leaves. */
+    public Ranked rank(String text) {
+        if (intents.size() < 2) return null;
         float[] line = table.vector(text);
         var scores = new ArrayList<Scored>();
         for (int i = 0; i < intents.size(); i++) scores.add(new Scored(intents.get(i), best(line, examples.get(i))));

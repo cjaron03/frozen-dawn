@@ -124,6 +124,61 @@
         { "line": "shepherd.log.read.1", "mood": "unimpressed" },
         { "line": "shepherd.log.read.2", "mood": "thinking" }
       ]
+    },
+    {
+      "id": "chat.hello",
+      "when": "tier_friendly",
+      "else": "chat.hello.plain",
+      "lines": [
+        { "line": "shepherd.chat.hello.warm", "mood": "happy" }
+      ],
+      "next": "orsa.after"
+    },
+    {
+      "id": "chat.hello.plain",
+      "lines": [
+        { "line": "shepherd.chat.hello", "mood": "neutral" }
+      ],
+      "next": "orsa.after"
+    },
+    {
+      "id": "chat.how_are_you",
+      "when": "tier_friendly",
+      "else": "chat.how_are_you.plain",
+      "lines": [
+        { "line": "shepherd.chat.how_are_you.warm", "mood": "thinking" }
+      ],
+      "next": "orsa.after"
+    },
+    {
+      "id": "chat.how_are_you.plain",
+      "lines": [
+        { "line": "shepherd.chat.how_are_you", "mood": "thinking" }
+      ],
+      "next": "orsa.after"
+    },
+    {
+      "id": "chat.thanks",
+      "when": "tier_friendly",
+      "else": "chat.thanks.plain",
+      "lines": [
+        { "line": "shepherd.chat.thanks.warm", "mood": "happy" }
+      ],
+      "next": "orsa.after"
+    },
+    {
+      "id": "chat.thanks.plain",
+      "lines": [
+        { "line": "shepherd.chat.thanks", "mood": "neutral" }
+      ],
+      "next": "orsa.after"
+    },
+    {
+      "id": "chat.alive",
+      "lines": [
+        { "line": "shepherd.chat.alive", "mood": "unimpressed" }
+      ],
+      "next": "orsa.after"
     }
   ]
 }

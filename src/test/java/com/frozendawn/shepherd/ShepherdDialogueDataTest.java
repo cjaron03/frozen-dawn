@@ -85,6 +85,7 @@ class ShepherdDialogueDataTest {
             assertTrue(intent.examples().size() >= 8 && intent.examples().size() <= 15, intent.id());
             assertEquals(intent.label() == null, intent.guess() == null, intent.id() + " offers a guess it cannot label, or the other way");
             if (intent.label() != null) assertNotNull(intent.node(), intent.id() + " offers a topic with nowhere to go");
+            if (intent.node() != null) assertTrue(nodes().containsKey(intent.node()), intent.id() + " -> " + intent.node());
         }
         assertEquals(5, intents.stream().filter(intent -> intent.label() != null).count());
         assertEquals(9, intents.stream().filter(intent -> intent.node() != null).count());
