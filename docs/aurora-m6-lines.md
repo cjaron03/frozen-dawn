@@ -1,6 +1,6 @@
 # Aurora M6: lines for the owner to mark
 
-Drafted 2026-11-06. Nothing here is built, and only lines the owner marks go in (Global Constraints). The plan is [miller-pattern-m6-plan.md](miller-pattern-m6-plan.md), and the strategies come from [miller-pattern-m6-idea.md](miller-pattern-m6-idea.md).
+Drafted 2026-11-06. The owner answered the five questions the same day, each as recommended. Nothing here is built, and only lines the owner marks go in (Global Constraints). The plan is [miller-pattern-m6-plan.md](miller-pattern-m6-plan.md), and the strategies come from [miller-pattern-m6-idea.md](miller-pattern-m6-idea.md).
 
 **How to read it.** (Mood) sets her face. Bold is the button label. `if` is a line's own gate, on top of the topic's. Tags:
 
@@ -14,13 +14,15 @@ Drafted 2026-11-06. Nothing here is built, and only lines the owner marks go in 
 
 **Source.** Every advice line is Registry: ORSA's manual and field data, loaded into her. Her own way is what she thinks of it. The greetings and the moments are hers.
 
-## Questions for the owner
+## Questions the owner answered
 
-1. **Frostmite's strategy (Ruling 19).** It holds in code, with three limits. See "Frostmite, for a verdict". Keep, or cut? I recommend keep, tested on a live swarm at the pass.
-2. **The twelve items (Ruling 12).** See "The twelve items, for a verdict". Keep all, or cut some? I recommend keep all. The thermostat's tip is the weakest.
-3. **What the egg turns into (Ruling 16).** The figure "flickers to another shape", and no mockup drew that shape. A look needs an approved mockup. I propose a small hooded figure on one knee, in her green, standing in for the figure that asks for help. It is no film character and carries no marks. If you'd rather not, the egg is cut. Pick one, and I'll draw it at 16 pixels per block before Task 6.
-4. **The gag's other items (Ruling 28).** The Stuffed Penguin is the first and the rest are yours. Name more now, or ship the penguin alone and add later? I recommend the penguin alone.
-5. **Seven greetings.** Ruling 23 asks for six to eight, and there are seven below, on top of the first and the long-gone lines. Cut any you don't like; two can go before it drops under six.
+Each took the recommendation, 2026-11-06.
+
+1. **Frostmite's strategy (Ruling 19).** It holds in code, with three limits. See "Frostmite, for a verdict". Answer: keep, tested on a live swarm at the pass.
+2. **The twelve items (Ruling 12).** See "The twelve items, for a verdict". Answer: keep all twelve. The thermostat's tip is the weakest.
+3. **What the egg turns into (Ruling 16).** The figure "flickers to another shape", and no mockup drew that shape. A look needs an approved mockup. Answer: a small hooded figure on one knee, in her green, standing in for the figure that asks for help. It is no film character and carries no marks. Drawn in `art/aurora-shepherd/egg-mockup.png` and `egg-mockup.gif`, for approval before Task 6.
+4. **The gag's other items (Ruling 28).** The Stuffed Penguin is the first and the rest are yours. Answer: the penguin alone for now.
+5. **Seven greetings.** Ruling 23 asks for six to eight, and there are seven below, on top of the first and the long-gone lines. Answer: all seven stay.
 
 ## Frostmite, for a verdict
 
@@ -138,7 +140,7 @@ At Wary the menu plays the shipped recording, as ORSA's does.
 
 ### Frostmites
 
-**`frostmite`**. Waits on Question 1.
+**`frostmite`**
 
 - `frostmite.open` `if not:orsa_heard_frostmite` (Thinking) "Frostmites. One's a nuisance. You won't get one." NEW
 - `frostmite.again` `if orsa_heard_frostmite` (Amused) "Still the worse heater." NEW
@@ -208,7 +210,7 @@ Replies: 1 **Hunter**, 2 **Mimic**, 3 **Architect**, 4 **Never mind**, the shipp
 
 ## The items
 
-`.1` is the recording. No repeat lines (Ruling 25 is mobs only). Each waits on Question 2.
+`.1` is the recording. No repeat lines (Ruling 25 is mobs only).
 
 **`thermal_heater`**
 
@@ -319,7 +321,7 @@ Typed only, above Wary, with no label and no Close line (Ruling 17). All NEW.
 - **The gag,** at Close, when calm (Ruling 28). (Beaming) "Cargo! Cargo! Check this out!" PLAN, OWNER's words
 - **The gag, the penguin.** (Amused) "Look at him. Still doing his best." NEW. It calls back `penguin.3`.
 - **The nod,** `if t5_done`, once a world (Ruling 29). (Thinking) "ORSA had a file on a man named Clovis Bray. Heard of him?" PLAN
-- **The egg,** at Trusted, on the second projection, once (Ruling 16). (Flustered) "Sorry. Wrong file. That one wasn't for you." NEW. It quotes nothing, and it laughs at her own mistake, not at the Returned. Waits on Question 3.
+- **The egg,** at Trusted, on the second projection, once (Ruling 16). (Flustered) "Sorry. Wrong file. That one wasn't for you." NEW. It quotes nothing, and it laughs at her own mistake, not at the Returned. Waits on the egg's mockup.
 
 ## Checked against the limits
 
@@ -350,4 +352,4 @@ Lines nearest the edge, to listen for at the pass: `architect.3` and `architect.
 
 ## The owner's marks
 
-Not yet marked.
+2026-11-06: the five questions, each as recommended. The lines themselves are not yet marked.
