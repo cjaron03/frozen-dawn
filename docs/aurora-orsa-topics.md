@@ -98,7 +98,7 @@ Tags: **NEW** means new canon for the owner to rule on. **[C]** marks a line tha
 
 **"How do you know all this?"** Registry, NEW: The Horizon's archive is in her, and its last issue
 - (Neutral) "They loaded me with every back issue of The Horizon. Staff newsletter. Birthdays, retirements. Small talk for the evacuation queue."
-- (Amused) "Apparently a person in a panic wants to hear about a retirement in Payroll. I've got thirty-six years of it. Ask me about the cake."
+- (Amused) "Apparently a person in a panic wants to hear about a retirement in Payroll. I've got thirty-odd years of it. Ask me about the cake."
 - (Sad) "Last issue I've got is June. It lists the July birthdays."
 - (Thinking) "Nobody pulled them."
 - Reply, 1 **What about the cake?** → (Amused) "Lemon. Always lemon. It's the most consistent thing ORSA ever did."
@@ -110,7 +110,7 @@ Tags: **NEW** means new canon for the owner to rule on. **[C]** marks a line tha
 **"The seventh floor."** Registry, NEW: the gap in her org chart
 - (Thinking) "Separate badges. Nobody asked why."
 - (Neutral) "Long Horizon was on four. I come from four. Four never knew what seven did."
-- (Thinking) "I've got the org chart. It goes six, then eight. It's very confident about eight." **[C]**
+- (Thinking) "I've got the org chart. It skips one. It's very confident about eight." **[C]**
 - `if Trusted` (Unimpressed) "I asked the registry about it once. It thanked me for my curiosity."
 - After T5, the second line becomes: (Sad) "Long Horizon was on four. I thought I came from four."
 
@@ -175,7 +175,7 @@ Tags: **NEW** means new canon for the owner to rule on. **[C]** marks a line tha
 - 1 **What was it?** → (Sad) "Me. I don't know that. I've decided it." *(affinity +10)*
 - 2 **He sounds like a good man.** → (Happy) "He was. He also cheated at cards against a drone." *(affinity +15)*
 - 3 **He could have left.** → (Unimpressed) "Yes. That's my point."
-- 4 **Maybe he liked the quiet.** → (Amused, then Sad) "Nobody who likes quiet talks that much."
+- 4 **Maybe he liked the quiet.** → (Sad) "Nobody who likes quiet talks that much."
 
 ### When your papers disagree with mine
 

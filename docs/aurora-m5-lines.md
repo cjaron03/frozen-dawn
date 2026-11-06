@@ -1,28 +1,28 @@
 # Aurora M5: lines for the owner to mark
 
-Drafts, 2026-11-05. Nothing here is built, and only lines the owner marks go in (Ruling 3). The plan is [miller-pattern-m5-plan.md](miller-pattern-m5-plan.md).
-
-**How to mark.** Each line has an id. Mark it keep, change or cut. "Keep all except" is enough, as long as the questions below are answered.
+Marked by the owner, 2026-11-05: keep all, with the recommendations taken. See "The owner's marks". Nothing here is built yet, and only these lines go in (Ruling 3). The plan is [miller-pattern-m5-plan.md](miller-pattern-m5-plan.md).
 
 **How to read it.** (Mood) sets her face. Bold is the button label, and "Full:" is what hovering shows. `if` is a line's own gate, on top of the topic's. Each topic names where she got it: Registry, what ORSA loaded; Saw, what she saw in the vault; Brought, what the player found. Tags:
 
 - **TOPICS:** word for word from [aurora-orsa-topics.md](aurora-orsa-topics.md). Untagged lines in a topic are this.
 - **PLAN:** drafted in the plan, under "Lines to mark".
 - **NEW:** written here, nowhere else yet.
-- **[C]:** sits near the Continuity layer. **[C] kept** is one the owner kept on 2026-11-04. **[C] yes?** needs its own yes.
+- **[C]:** sits near the Continuity layer. **[C] kept** is one the owner kept on 2026-11-04. **[C] yes** got its own yes on 2026-11-05.
 
 Slots inside a topic: 1 Ask, 2 Kind, 3 Blunt, 4 Sarcastic. A label over about 20 characters overruns the slot.
 
-## Questions for the owner
+## Questions the owner answered
 
-1. **`how_you_know.2`, "thirty-six years".** It trips the `six` lint. Keep with an exception, or "thirty-odd years"? I recommend thirty-odd.
-2. **`seventh_floor.3`, "It goes six, then eight."** You kept this line on 2026-11-04, but the spec's guard says she never says "six", and the lint will catch it. It means floors, not her walls. Keep it with an exception, or use "I've got the org chart. It skips one. It's very confident about eight."? I recommend the reword, since the joke survives and the guard stays absolute.
-3. **The eight `[C] yes?` lines.** `deng.3`, `anand.2`, `hale.1` to `hale.3` and `who_ran_vault.1` to `who_ran_vault.3`.
-4. **`anand.2` beside the crash.** It says "transfer", and M4's crash now shows "pattern transfer only, subject not recovered". A player who crashed her may join the two. It says nothing new, so I would keep it, but it reads closer to the edge than when it was drafted.
-5. **`enoch.r4`, "(Amused, then Sad)".** A line has one mood. I recommend Sad.
-6. **The two one-reply topics.** `how_you_know` and `kevin_volunteer` each have one reply, so nothing else on the grid leaves them. I recommend "Never mind" in slot 4, the shipped label, going to the menu. It adds no new line.
-7. **`who_are_you.warm`, "Still working on that."** It plays before T5. It says nothing about what she is, but it is the new line nearest to pointing at T5.
-8. **Read together.** `seventh_floor.2` with `seventh_floor.2t`, and the Enoch topic beside T5's lines, under "Enoch beside T5".
+Each took the recommendation, and the lines below show the result.
+
+1. **`how_you_know.2`, "thirty-six years".** It trips the `six` lint. Keep with an exception, or "thirty-odd years"? Answer: "thirty-odd years".
+2. **`seventh_floor.3`, "It goes six, then eight."** You kept this line on 2026-11-04, but the spec's guard says she never says "six", and the lint will catch it. It means floors, not her walls. Keep it with an exception, or use "I've got the org chart. It skips one. It's very confident about eight."? Answer: the reword, so the joke survives and the guard stays absolute.
+3. **The eight `[C] yes?` lines.** `deng.3`, `anand.2`, `hale.1` to `hale.3` and `who_ran_vault.1` to `who_ran_vault.3`. Answer: yes to all eight.
+4. **`anand.2` beside the crash.** It says "transfer", and M4's crash now shows "pattern transfer only, subject not recovered". A player who crashed her may join the two. It says nothing new, but it reads closer to the edge than when it was drafted. Answer: keep.
+5. **`enoch.r4`, "(Amused, then Sad)".** A line has one mood. Answer: Sad.
+6. **The two one-reply topics.** `how_you_know` and `kevin_volunteer` each have one reply, so nothing else on the grid leaves them. Answer: "Never mind" in slot 4, the shipped label, going to the menu. It adds no new line.
+7. **`who_are_you.warm`, "Still working on that."** It plays before T5. It says nothing about what she is, but it is the new line nearest to pointing at T5. Answer: keep.
+8. **Read together.** `seventh_floor.2` with `seventh_floor.2t`, and the Enoch topic beside T5's lines, under "Enoch beside T5". Answer: keep both.
 
 ## Labels
 
@@ -55,13 +55,14 @@ Menu buttons, by Ruling 14. The ones the plan shortens keep the long wording in 
 **`how_you_know`**, `tier_friendly`. Registry.
 
 - `how_you_know.1` (Neutral) "They loaded me with every back issue of The Horizon. Staff newsletter. Birthdays, retirements. Small talk for the evacuation queue."
-- `how_you_know.2` (Amused) "Apparently a person in a panic wants to hear about a retirement in Payroll. I've got thirty-six years of it. Ask me about the cake." Question 1.
+- `how_you_know.2` (Amused) "Apparently a person in a panic wants to hear about a retirement in Payroll. I've got thirty-odd years of it. Ask me about the cake." Changed by Question 1.
 - `how_you_know.3` (Sad) "Last issue I've got is June. It lists the July birthdays."
 - `how_you_know.4` (Thinking) "Nobody pulled them."
 
 Replies:
 
 1. `how_you_know.r1` **What about the cake?** → (Amused) "Lemon. Always lemon. It's the most consistent thing ORSA ever did."
+4. **Never mind**, the shipped label, to the menu. Question 6.
 
 **`gift_shop`**, `tier_friendly`. Registry.
 
@@ -73,7 +74,7 @@ Replies:
 - `seventh_floor.1` (Thinking) "Separate badges. Nobody asked why."
 - `seventh_floor.2` `if not:t5_done` (Neutral) "Long Horizon was on four. I come from four. Four never knew what seven did."
 - `seventh_floor.2t` `if t5_done` (Sad) "Long Horizon was on four. I thought I came from four."
-- `seventh_floor.3` (Thinking) "I've got the org chart. It goes six, then eight. It's very confident about eight." **[C] kept** Question 2.
+- `seventh_floor.3` (Thinking) "I've got the org chart. It skips one. It's very confident about eight." **[C] kept**, changed by Question 2.
 - `seventh_floor.4` `if tier_trusted` (Unimpressed) "I asked the registry about it once. It thanked me for my curiosity."
 
 **`safety_bulletin`**, `tier_friendly&found:orsa_bulletin`. Registry.
@@ -101,6 +102,7 @@ Replies:
 Replies:
 
 1. `kevin_volunteer.r1` **Is he alive?** → (Sad) "I don't know. Please stop asking me things I'd like to know." The label is the player's words, and stays with a named exception (Ruling 16).
+4. **Never mind**, the shipped label, to the menu. Question 6.
 
 ### The vault
 
@@ -108,12 +110,12 @@ Replies:
 
 - `deng.1` (Amused) "Deng told me doors don't talk. Then talked to them all shift."
 - `deng.2` (Neutral) "The day the last of a brother's debts cleared, Deng told me. Told the door first."
-- `deng.3` (Thinking) "Near the end the talking stopped. The greasing didn't. Always facing them." **[C] yes?**
+- `deng.3` (Thinking) "Near the end the talking stopped. The greasing didn't. Always facing them." **[C] yes**
 
 **`anand`**, `tier_trusted&found:terminus_log_medical`. Saw.
 
 - `anand.1` (Thinking) "Anand had a stack of certificates and nobody to sign them for. Kept them very neat."
-- `anand.2` (Sad) "Anand asked where a transfer goes and got told it wasn't a medical question. I asked and got nothing. I'm not sure which is worse." **[C] yes?** Question 4.
+- `anand.2` (Sad) "Anand asked where a transfer goes and got told it wasn't a medical question. I asked and got nothing. I'm not sure which is worse." **[C] yes**, kept by Question 4.
 
 **`varga`**, `tier_trusted&found:terminus_log_records`. Saw.
 
@@ -123,9 +125,9 @@ Replies:
 
 **`hale`**, `tier_trusted&found:terminus_log_security`. Saw, an inference from the log.
 
-- `hale.1` (Neutral) "Hale asked which way to face. They said away from the door." **[C] yes?**
-- `hale.2` (Thinking) "I worked out the chair once. Away from the door is the cradle. And me." **[C] yes?**
-- `hale.3` (Unimpressed) "I thought Hale just liked the company." **[C] yes?**
+- `hale.1` (Neutral) "Hale asked which way to face. They said away from the door." **[C] yes**
+- `hale.2` (Thinking) "I worked out the chair once. Away from the door is the cradle. And me." **[C] yes**
+- `hale.3` (Unimpressed) "I thought Hale just liked the company." **[C] yes**
 
 **`the_book`**, `tier_trusted&found:terminus_name_review`. Saw.
 
@@ -146,7 +148,7 @@ Replies:
 1. `enoch.r1` **What was it?** → (Sad) "Me. I don't know that. I've decided it." *(+10)*
 2. `enoch.r2` **A good man.** Full: "He sounds like a good man." → (Happy) "He was. He also cheated at cards against a drone." *(+15)* Short label NEW.
 3. `enoch.r3` **He could have left.** → (Unimpressed) "Yes. That's my point."
-4. `enoch.r4` **Liked the quiet?** Full: "Maybe he liked the quiet." → (Sad) "Nobody who likes quiet talks that much." Short label NEW. Question 5.
+4. `enoch.r4` **Liked the quiet?** Full: "Maybe he liked the quiet." → (Sad) "Nobody who likes quiet talks that much." Short label NEW. Mood by Question 5.
 
 ### When your papers disagree with mine
 
@@ -188,9 +190,9 @@ All four lead to:
 
 **`who_ran_vault`**, `tier_above_wary&found:terminus_manifest`. Saw.
 
-- `who_ran_vault.1` (Neutral) "Issuing division, blank. Budget line, blank. Approver, blank. Reason: containment of Reliquus cognitive echo. In capitals." **[C] yes?**
-- `who_ran_vault.2` (Unimpressed) "That's how you know nobody could explain it." **[C] yes?**
-- `who_ran_vault.3` (Thinking) "Blank isn't redacted. Redacted means someone knows and won't say. Blank means nobody ever had to." **[C] yes?**
+- `who_ran_vault.1` (Neutral) "Issuing division, blank. Budget line, blank. Approver, blank. Reason: containment of Reliquus cognitive echo. In capitals." **[C] yes**
+- `who_ran_vault.2` (Unimpressed) "That's how you know nobody could explain it." **[C] yes**
+- `who_ran_vault.3` (Thinking) "Blank isn't redacted. Redacted means someone knows and won't say. Blank means nobody ever had to." **[C] yes**
 
 ## Close lines
 
@@ -221,7 +223,7 @@ Each is one whole lang key, `shepherd.orsa.<id>.guess`, in the shape M4 shipped.
 Typed only, above Wary, with no label and no Close line (Ruling 12). One line plays, the last whose gate holds. All PLAN.
 
 - `who_are_you` (Neutral) "Aurora. CS-1 unit 4. The first one's mine."
-- `who_are_you.warm` `if tier_friendly` (Thinking) "Still working on that. Aurora's the part I'm sure of." Question 7.
+- `who_are_you.warm` `if tier_friendly` (Thinking) "Still working on that. Aurora's the part I'm sure of." Kept by Question 7.
 - `who_are_you.after` `if t5_done` (Thinking) "Aurora. I picked that one myself. Keep that in mind."
 
 ## Misses
@@ -276,14 +278,14 @@ Every line, label and Close line above, by hand and by a script running M4's `ty
 | 9. Audacity, Epigraph, fourth wall, Bloom, the Moon | Absent. The count stays at three |
 | 10. Sealed sequel material | Not read and not used |
 | 11. Dates | Only 2041 by way of "thirty-four", 2075 and June 18 to 20, which canon holds. No document numbers |
-| "six" | `how_you_know.2` and `seventh_floor.3`, Questions 1 and 2 |
+| "six" | Absent, after Questions 1 and 2 |
 | "fair", "rules" | Absent. `directive_7c.1` says "a rule", about pens, which is not her walls |
 | Alive | Only in the player's label, `kevin_volunteer.r1` |
 | "Miller", "pattern" | Absent |
 | Labels over 20 characters | None. Two Enoch replies get short labels |
 
-Lines nearest the edge, for the owner's eye: `anand.2`, `hale.2`, `who_ran_vault.1`, `who_ran_vault.3`, `session_14b.5` and `who_are_you.warm`.
+Lines nearest the edge, to listen for at the pass: `anand.2`, `hale.2`, `who_ran_vault.1`, `who_ran_vault.3`, `session_14b.5` and `who_are_you.warm`.
 
 ## The owner's marks
 
-Not yet marked.
+2026-11-05: "Keep all, as recommended". Every line, label, Close line, miss and focus row above is keep, as it now reads. Changed: `how_you_know.2` and `seventh_floor.3`. Added: "Never mind" on `how_you_know` and `kevin_volunteer`. Cut: none. `enoch.r4` is Sad. The eight `[C] yes` lines have their own yes.
