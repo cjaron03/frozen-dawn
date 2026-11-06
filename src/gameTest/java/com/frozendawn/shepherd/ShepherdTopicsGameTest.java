@@ -1,7 +1,11 @@
 package com.frozendawn.shepherd;
 
 import com.frozendawn.FrozenDawn;
+import com.frozendawn.data.WinConditionState;
 import com.frozendawn.gametest.GameTestTemplates;
+import com.frozendawn.init.ModItems;
+import com.frozendawn.miller.Drives.Drive;
+import com.frozendawn.miller.Feelings.Feeling;
 import com.frozendawn.miller.ImpressionStore.Theory;
 import com.frozendawn.miller.MillerPattern;
 import com.frozendawn.network.ShepherdNodePayload;
@@ -9,14 +13,18 @@ import com.frozendawn.shepherd.ShepherdSavedData.Stage;
 import com.frozendawn.shepherd.ShepherdTalk.Action;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import net.minecraft.core.BlockPos;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.gametest.framework.AfterBatch;
 import net.minecraft.gametest.framework.BeforeBatch;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
@@ -26,8 +34,8 @@ import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 @PrefixGameTestTemplate(false)
 public final class ShepherdTopicsGameTest {
     private static final BlockPos SPOT = new BlockPos(10, 4, 10);
-    private static final int ASK = 0, KIND = 1, SARCASTIC = 3, CONTINUE = -1;
-    private static final int WARY = -300, NEUTRAL = 0, FRIENDLY = 300, TRUSTED = 600;
+    private static final int ASK = 0, KIND = 1, BLUNT = 2, SARCASTIC = 3, CONTINUE = -1;
+    private static final int WARY = -300, NEUTRAL = 0, FRIENDLY = 300, TRUSTED = 600, CLOSE = 900;
     private static final String ASK_ORSA = "shepherd.talk.ask_orsa", NEVER_MIND = "shepherd.talk.never_mind", SOMETHING_ELSE = "shepherd.talk.something_else";
     private static final String ORSA = "shepherd.orsa.what_is_orsa.label", HAPPENED = "shepherd.orsa.what_happened.label", EXODUS = "shepherd.orsa.exodus.label",
             OUT_THERE = "shepherd.orsa.anyone_out_there.label", KEVIN = "shepherd.orsa.who_is_kevin.label";
@@ -51,6 +59,45 @@ public final class ShepherdTopicsGameTest {
     @BeforeBatch(batch = "shepherd_topics_notone") public static void notoneBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
     @AfterBatch(batch = "shepherd_topics_notone") public static void notoneAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
 
+    @BeforeBatch(batch = "shepherd_topics_locked") public static void lockedBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_topics_locked") public static void lockedAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_topics_gates") public static void gatesBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); WinConditionState.get(l.getServer()).setConspiracyDiscovered(false); }
+    @AfterBatch(batch = "shepherd_topics_gates") public static void gatesAfter(ServerLevel l) { ShepherdTestWorld.clear(l); WinConditionState.get(l.getServer()).setConspiracyDiscovered(false); }
+    @BeforeBatch(batch = "shepherd_topics_newcandor") public static void newCandorBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); WinConditionState.get(l.getServer()).setConspiracyDiscovered(false); }
+    @AfterBatch(batch = "shepherd_topics_newcandor") public static void newCandorAfter(ServerLevel l) { ShepherdTestWorld.clear(l); WinConditionState.get(l.getServer()).setConspiracyDiscovered(false); }
+    @BeforeBatch(batch = "shepherd_topics_wary") public static void waryBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); WinConditionState.get(l.getServer()).setConspiracyDiscovered(false); }
+    @AfterBatch(batch = "shepherd_topics_wary") public static void waryAfter(ServerLevel l) { ShepherdTestWorld.clear(l); WinConditionState.get(l.getServer()).setConspiracyDiscovered(false); }
+    @BeforeBatch(batch = "shepherd_topics_seventh") public static void seventhBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_topics_seventh") public static void seventhAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_topics_whoareyou") public static void whoAreYouBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_topics_whoareyou") public static void whoAreYouAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_topics_detour") public static void detourBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); WinConditionState.get(l.getServer()).setConspiracyDiscovered(false); }
+    @AfterBatch(batch = "shepherd_topics_detour") public static void detourAfter(ServerLevel l) { ShepherdTestWorld.clear(l); WinConditionState.get(l.getServer()).setConspiracyDiscovered(false); }
+    @BeforeBatch(batch = "shepherd_topics_pays") public static void paysBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_topics_pays") public static void paysAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_topics_walkoff") public static void walkoffBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_topics_walkoff") public static void walkoffAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_topics_again") public static void againBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_topics_again") public static void againAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_topics_scenes") public static void scenesBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_topics_scenes") public static void scenesAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_topics_typing") public static void typingBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_topics_typing") public static void typingAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_topics_nevermindtopic") public static void nevermindtopicBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_topics_nevermindtopic") public static void nevermindtopicAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_topics_focus") public static void focusBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_topics_focus") public static void focusAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_topics_stillunheard") public static void stillunheardBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_topics_stillunheard") public static void stillunheardAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_topics_rises") public static void risesBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_topics_rises") public static void risesAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_topics_fresh") public static void freshBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_topics_fresh") public static void freshAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_topics_holdstill") public static void holdstillBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_topics_holdstill") public static void holdstillAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_topics_eight") public static void eightBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_topics_eight") public static void eightAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+
     private static ShepherdSavedData data(GameTestHelper h) {
         return ShepherdSavedData.get(h.getLevel().getServer());
     }
@@ -59,9 +106,10 @@ public final class ShepherdTopicsGameTest {
         return ShepherdTestWorld.onlinePlayer(h, h.absoluteVec(Vec3.atCenterOf(SPOT)).add(1, 0, 0));
     }
 
-    private static ShepherdEntity awake(GameTestHelper h, ServerPlayer player, int score) {
+    static ShepherdEntity awake(GameTestHelper h, ServerPlayer player, int score) {
         data(h).stage(Stage.AWAKE);
         data(h).affinity(score);
+        MillerPattern.setCoherence(h.getLevel().getServer(), 1);
         return ShepherdEntity.spawnFrom(h.getLevel(), h.absolutePos(SPOT), player.getUUID());
     }
 
@@ -80,8 +128,77 @@ public final class ShepherdTopicsGameTest {
 
     private static int slotOf(GameTestHelper h, String label) {
         for (var reply : ShepherdTalk.liveSent().replies()) if (reply.label().equals(label)) return reply.slot();
-        throw new AssertionError("Not on offer: " + label + " in " + labels());
+        throw new net.minecraft.gametest.framework.GameTestAssertException("Not on offer: " + label + " in " + labels());
     }
+
+    /** Every topic on the menu as it stands, over all its pages, leaving the talk closed. */
+    static List<String> menu(ShepherdEntity she, ServerPlayer player) {
+        talk(she, player);
+        say(player, ASK);
+        var topics = new ArrayList<String>();
+        while (true) {
+            var page = labels();
+            topics.addAll(page.subList(0, page.size() - 1));
+            if (!page.getLast().equals(SOMETHING_ELSE)) break;
+            say(player, SARCASTIC);
+        }
+        ShepherdTalk.close(player);
+        return topics;
+    }
+
+    /** Talk, then the page that has it, then it. */
+    static void pick(GameTestHelper h, ShepherdEntity she, ServerPlayer player, String label) {
+        talk(she, player);
+        say(player, ASK);
+        while (!labels().contains(label) && labels().getLast().equals(SOMETHING_ELSE)) say(player, SARCASTIC);
+        say(player, slotOf(h, label));
+    }
+
+    private static void find(GameTestHelper h, ServerPlayer player, String doc) {
+        var filed = h.getLevel().getServer().getAdvancements().get(ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "found_" + doc));
+        player.getAdvancements().award(filed, "impossible");
+    }
+
+    private static void carryThePlush(ServerPlayer player) {
+        player.getInventory().add(new ItemStack(ModItems.STUFFED_PENGUIN.get()));
+    }
+
+    private static void conspiracy(GameTestHelper h, boolean found) {
+        WinConditionState.get(h.getLevel().getServer()).setConspiracyDiscovered(found);
+    }
+
+    private static void findEverything(GameTestHelper h, ServerPlayer player) {
+        for (Gate gate : GATES.values()) if (gate.doc != null) find(h, player, gate.doc);
+        carryThePlush(player);
+        conspiracy(h, true);
+    }
+
+    private static String label(String topic) {
+        return "shepherd.orsa." + topic + ".label";
+    }
+
+    private static void type(ShepherdEntity she, ServerPlayer player, String text) {
+        she.thinkFor(0);
+        ShepherdTalk.typed(player, ShepherdTalk.liveId(), text);
+    }
+
+    /** The plan's table, Ruling 5: the score below and at its tier, and what the speaker must have brought. */
+    private record Gate(int below, int at, String doc) {
+        Gate(int below, int at) {
+            this(below, at, null);
+        }
+    }
+
+    private static final Map<String, Gate> GATES = Map.ofEntries(Map.entry("how_you_know", new Gate(NEUTRAL, FRIENDLY)), Map.entry("gift_shop", new Gate(NEUTRAL, FRIENDLY)),
+            Map.entry("seventh_floor", new Gate(NEUTRAL, FRIENDLY)), Map.entry("safety_bulletin", new Gate(NEUTRAL, FRIENDLY, "orsa_bulletin")),
+            Map.entry("kevin_volunteer", new Gate(FRIENDLY, TRUSTED)), Map.entry("deng", new Gate(FRIENDLY, TRUSTED, "terminus_log_maintenance")),
+            Map.entry("anand", new Gate(FRIENDLY, TRUSTED, "terminus_log_medical")), Map.entry("varga", new Gate(FRIENDLY, TRUSTED, "terminus_log_records")),
+            Map.entry("hale", new Gate(FRIENDLY, TRUSTED, "terminus_log_security")), Map.entry("the_book", new Gate(FRIENDLY, TRUSTED, "terminus_name_review")),
+            Map.entry("recall_date", new Gate(FRIENDLY, TRUSTED, "terminus_log_last")), Map.entry("enoch", new Gate(TRUSTED, CLOSE, "terminus_log_last")),
+            Map.entry("cascade_report", new Gate(WARY, NEUTRAL, "incident_report")), Map.entry("directive_7c", new Gate(WARY, NEUTRAL, "board_packet")),
+            Map.entry("who_ran_vault", new Gate(WARY, NEUTRAL, "terminus_manifest")));
+    /** The two that are not a find. */
+    private static final List<String> SPECIAL = List.of("penguin", "session_14b");
 
     /** Nobody on hand to settle on, so only the day's evidence moves. */
     private static void aDayPasses(GameTestHelper h) {
@@ -137,13 +254,13 @@ public final class ShepherdTopicsGameTest {
     public static void shepherdTheMenuPages(GameTestHelper h) {
         ShepherdTestWorld.whenTicking(h, () -> {
             var player = player(h);
-            var she = awake(h, player, FRIENDLY);
+            var she = awake(h, player, NEUTRAL);
             talk(she, player);
             say(player, ASK);
             h.assertTrue(labels().size() == 4 && labels().get(3).equals(SOMETHING_ELSE), "More to come: " + labels());
             say(player, SARCASTIC);
-            h.assertTrue(labels().equals(List.of(OUT_THERE, KEVIN, NEVER_MIND)), "The rest: " + labels());
-            h.assertTrue(ShepherdTalk.liveSent().replies().get(2).slot() == SARCASTIC, "Always the fourth slot");
+            h.assertTrue(labels().equals(List.of(OUT_THERE, NEVER_MIND)), "The rest: " + labels());
+            h.assertTrue(ShepherdTalk.liveSent().replies().get(1).slot() == SARCASTIC, "Always the fourth slot");
             h.assertTrue(ShepherdTalk.liveSent().plain(), "Later pages have no tone either");
             h.succeed();
         });
@@ -159,16 +276,12 @@ public final class ShepherdTopicsGameTest {
             h.assertTrue(labels().equals(List.of(OUT_THERE, NEVER_MIND)), "Not yet: " + labels());
             ShepherdTalk.close(player);
             data(h).affinity(FRIENDLY);
-            talk(she, player);
-            say(player, ASK, SARCASTIC);
-            say(player, slotOf(h, KEVIN));
+            pick(h, she, player, KEVIN);
             h.assertTrue("orsa.who_is_kevin".equals(ShepherdTalk.liveNode()), "From Friendly: " + ShepherdTalk.liveNode());
             h.assertTrue(ShepherdTalk.liveLines().equals(List.of("shepherd.orsa.who_is_kevin.1", "shepherd.orsa.who_is_kevin.2")), "No T2, no channel: " + ShepherdTalk.liveLines());
             ShepherdTalk.close(player);
             data(h).flag("t2_heard", true);
-            talk(she, player);
-            say(player, ASK, SARCASTIC);
-            say(player, slotOf(h, KEVIN));
+            pick(h, she, player, KEVIN);
             h.assertTrue(ShepherdTalk.liveLines().size() == 4, "T2 opens the rest: " + ShepherdTalk.liveLines());
             h.succeed();
         });
@@ -176,9 +289,7 @@ public final class ShepherdTopicsGameTest {
 
     private static List<String> orsaAt(GameTestHelper h, ShepherdEntity she, ServerPlayer player, int score) {
         data(h).affinity(score);
-        talk(she, player);
-        say(player, ASK);
-        say(player, slotOf(h, ORSA));
+        pick(h, she, player, ORSA);
         var lines = new ArrayList<>(ShepherdTalk.liveLines());
         ShepherdTalk.close(player);
         data(h).flag("orsa_heard_what_is_orsa", false);
@@ -257,6 +368,434 @@ public final class ShepherdTopicsGameTest {
             aDayPasses(h);
             h.assertTrue(MillerPattern.confidence(server, player.getUUID(), Theory.KIND) == 0, "Not a kind reply: " + MillerPattern.confidence(server, player.getUUID(), Theory.KIND));
             h.assertTrue(MillerPattern.confidence(server, player.getUUID(), Theory.TALKS_TO_ME) >= 0, "Nor anything said against them");
+            h.succeed();
+        });
+    }
+
+    private static List<String> locked() {
+        var topics = new ArrayList<>(GATES.keySet());
+        topics.addAll(SPECIAL);
+        return topics;
+    }
+
+    /** All seventeen, shut for this speaker: whatever they type shows nothing that could tell a topic from gibberish. */
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_topics_locked", timeoutTicks = 400)
+    public static void shepherdEveryLockedTopicIsAMiss(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            var she = awake(h, player, NEUTRAL);
+            var labels = locked().stream().map(ShepherdTopicsGameTest::label).toList();
+            var nodes = locked().stream().map(topic -> "orsa." + topic).toList();
+            she.interact(player, InteractionHand.MAIN_HAND);
+            type(she, player, "asdfghjkl");
+            var slots = labels();
+            int wait = ShepherdTalk.liveThinkTicks();
+            h.assertTrue("typed.none".equals(ShepherdTalk.liveNode()), "Gibberish misses: " + ShepherdTalk.liveNode());
+            for (var intent : ShepherdIntents.intents()) {
+                if (!locked().contains(intent.id())) continue;
+                for (String example : intent.examples()) {
+                    type(she, player, example);
+                    h.assertFalse(nodes.contains(ShepherdTalk.liveNode()), example + " opened " + ShepherdTalk.liveNode());
+                    h.assertTrue(labels().stream().noneMatch(labels::contains), example + " offered " + labels());
+                }
+                String exact = intent.examples().getFirst();
+                type(she, player, exact);
+                h.assertTrue("typed.none".equals(ShepherdTalk.liveNode()), exact + " is a miss: " + ShepherdTalk.liveNode());
+                h.assertTrue(ShepherdTalk.liveLines().getFirst().startsWith("shepherd.typed.miss."), exact + ": " + ShepherdTalk.liveLines());
+                h.assertTrue(labels().equals(slots), exact + " has the same slots: " + labels());
+                h.assertTrue(ShepherdTalk.liveThinkTicks() == wait, exact + " takes the same wait: " + ShepherdTalk.liveThinkTicks());
+            }
+            h.succeed();
+        });
+    }
+
+    private static void assertOpensAt(GameTestHelper h, ShepherdEntity she, ServerPlayer player, String topic, int below, int at) {
+        data(h).affinity(below);
+        h.assertFalse(menu(she, player).contains(label(topic)), topic + " below its tier");
+        data(h).affinity(at);
+        h.assertTrue(menu(she, player).contains(label(topic)), topic + " at its gate");
+        pick(h, she, player, label(topic));
+        h.assertTrue(("orsa." + topic).equals(ShepherdTalk.liveNode()), topic + ": " + ShepherdTalk.liveNode());
+        h.assertTrue(data(h).flag("orsa_heard_" + topic), topic + " is heard");
+        ShepherdTalk.close(player);
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_topics_gates", timeoutTicks = 400)
+    public static void shepherdEachTopicOpensOnItsGate(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var first = player(h);
+            var she = awake(h, first, NEUTRAL);
+            GATES.forEach((topic, gate) -> {
+                var player = player(h);
+                if (gate.doc != null) {
+                    data(h).affinity(gate.at);
+                    h.assertFalse(menu(she, player).contains(label(topic)), topic + " before the find");
+                    find(h, player, gate.doc);
+                }
+                assertOpensAt(h, she, player, topic, gate.below, gate.at);
+            });
+            var carrier = player(h);
+            data(h).affinity(NEUTRAL);
+            h.assertFalse(menu(she, carrier).contains(label("penguin")), "No plush");
+            carryThePlush(carrier);
+            assertOpensAt(h, she, carrier, "penguin", WARY, NEUTRAL);
+            var reader = player(h);
+            data(h).affinity(NEUTRAL);
+            h.assertFalse(menu(she, reader).contains(label("session_14b")), "No conspiracy");
+            conspiracy(h, true);
+            assertOpensAt(h, she, reader, "session_14b", WARY, NEUTRAL);
+            h.succeed();
+        });
+    }
+
+    private static List<String> linesOf(GameTestHelper h, ShepherdEntity she, ServerPlayer player, String topic) {
+        pick(h, she, player, label(topic));
+        var lines = new ArrayList<>(ShepherdTalk.liveLines());
+        ShepherdTalk.close(player);
+        return lines;
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_topics_newcandor", timeoutTicks = 400)
+    public static void shepherdCandorFollowsTheTierOnNewTopics(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            var she = awake(h, player, FRIENDLY);
+            String seventh = "shepherd.orsa.seventh_floor.", kevin = "shepherd.orsa.kevin_volunteer.", pens = "shepherd.orsa.directive_7c.";
+            h.assertTrue(linesOf(h, she, player, "seventh_floor").equals(List.of(seventh + 1, seventh + 2, seventh + 3)), "Friendly, no registry story");
+            data(h).affinity(TRUSTED);
+            h.assertTrue(linesOf(h, she, player, "seventh_floor").equals(List.of(seventh + 1, seventh + 2, seventh + 3, seventh + 4)), "Trusted, the rest");
+            h.assertTrue(linesOf(h, she, player, "kevin_volunteer").equals(List.of(kevin + 1, kevin + 2, kevin + 3, kevin + 4)), "No conspiracy, no memo");
+            find(h, player, "board_packet");
+            h.assertTrue(linesOf(h, she, player, "directive_7c").equals(List.of(pens + 1)), "Just the pens");
+            conspiracy(h, true);
+            h.assertTrue(linesOf(h, she, player, "kevin_volunteer").equals(List.of(kevin + 1, kevin + 2, kevin + 3, kevin + 4, kevin + 5)), "The memo");
+            h.assertTrue(linesOf(h, she, player, "directive_7c").equals(List.of(pens + 1, pens + 2)), "And who broke it");
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_topics_wary", timeoutTicks = 400)
+    public static void shepherdNothingButARecordingAtWary(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            var she = awake(h, player, WARY);
+            findEverything(h, player);
+            h.assertTrue(menu(she, player).equals(List.of(ORSA, HAPPENED, EXODUS, OUT_THERE)), "Only what has a recording: " + menu(she, player));
+            she.interact(player, InteractionHand.MAIN_HAND);
+            for (var intent : ShepherdIntents.intents()) {
+                if (!locked().contains(intent.id()) && !"who_are_you".equals(intent.id())) continue;
+                type(she, player, intent.examples().getFirst());
+                h.assertTrue("hub.talk".equals(ShepherdTalk.liveNode()), intent.id() + " is a recording: " + ShepherdTalk.liveNode());
+            }
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_topics_seventh", timeoutTicks = 400)
+    public static void shepherdTheSeventhFloorChangesAfterT5(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            var she = awake(h, player, FRIENDLY);
+            String key = "shepherd.orsa.seventh_floor.";
+            h.assertTrue(linesOf(h, she, player, "seventh_floor").contains(key + 2), "I come from four");
+            data(h).flag("t5_done", true);
+            var after = linesOf(h, she, player, "seventh_floor");
+            h.assertTrue(after.contains(key + "2t") && !after.contains(key + 2), "I thought I came from four: " + after);
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_topics_whoareyou", timeoutTicks = 400)
+    public static void shepherdWhoAreYouIsSmallTalk(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            var she = awake(h, player, NEUTRAL);
+            String key = "shepherd.chat.who_are_you";
+            h.assertFalse(menu(she, player).stream().anyMatch(topic -> topic.contains("who_are_you")), "Off the menu");
+            she.interact(player, InteractionHand.MAIN_HAND);
+            for (String line : List.of("Who are you?", "what are you")) {
+                type(she, player, line);
+                h.assertTrue(ShepherdTalk.liveLines().equals(List.of(key)), line + ": " + ShepherdTalk.liveLines());
+            }
+            data(h).affinity(FRIENDLY);
+            type(she, player, "who are you");
+            h.assertTrue(ShepherdTalk.liveLines().equals(List.of(key + ".warm")), "Friendly: " + ShepherdTalk.liveLines());
+            data(h).flag("t5_done", true);
+            type(she, player, "who are you");
+            h.assertTrue(ShepherdTalk.liveLines().equals(List.of(key + ".after")), "After T5: " + ShepherdTalk.liveLines());
+            say(player, CONTINUE);
+            h.assertTrue(ShepherdTalk.live() && ShepherdTalk.liveNode() == null, "Back to the hub: " + ShepherdTalk.liveNode());
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_topics_detour", timeoutTicks = 400)
+    public static void shepherdADetourKeepsTheSceneOnANewTopic(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            var she = awake(h, player, TRUSTED);
+            String scene = "t2.others";
+            conspiracy(h, true);
+            ShepherdTalk.start(player, scene);
+            h.assertTrue(scene.equals(ShepherdTalk.liveNode()), "The scene: " + ShepherdTalk.liveNode());
+            type(she, player, "What was Session 14-B?");
+            h.assertTrue("orsa.session_14b".equals(ShepherdTalk.liveNode()), "The long way: " + ShepherdTalk.liveNode());
+            say(player, KIND);
+            h.assertTrue("orsa.session_14b.r2".equals(ShepherdTalk.liveNode()), "A reply: " + ShepherdTalk.liveNode());
+            say(player, CONTINUE);
+            h.assertTrue("orsa.session_14b.end".equals(ShepherdTalk.liveNode()), "All four lead here: " + ShepherdTalk.liveNode());
+            say(player, CONTINUE);
+            h.assertTrue(scene.equals(ShepherdTalk.liveNode()), "And the scene again: " + ShepherdTalk.liveNode());
+            h.succeed();
+        });
+    }
+
+    /** Someone who may ask about Enoch. */
+    private static ServerPlayer readTheLastLog(GameTestHelper h) {
+        var player = player(h);
+        find(h, player, "terminus_log_last");
+        return player;
+    }
+
+    private static int payOf(GameTestHelper h, ShepherdEntity she, ServerPlayer player, String topic, int slot) {
+        pick(h, she, player, label(topic));
+        int before = data(h).affinity();
+        say(player, slot);
+        int paid = data(h).affinity() - before;
+        ShepherdTalk.close(player);
+        return paid;
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_topics_pays", timeoutTicks = 400)
+    public static void shepherdATopicReplyPaysOnce(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = readTheLastLog(h);
+            var she = awake(h, player, CLOSE);
+            var server = h.getLevel().getServer();
+            var registries = h.getLevel().registryAccess();
+            h.assertTrue(payOf(h, she, player, "enoch", KIND) == 15, "The first answer pays");
+            h.assertTrue(data(h).flag("orsa_paid_enoch"), "And is marked");
+            h.assertTrue(ShepherdSavedData.load(data(h).save(new CompoundTag(), registries), registries).flag("orsa_paid_enoch"), "Across a reload");
+            h.assertTrue(payOf(h, she, player, "enoch", KIND) == 0, "Not the same one twice");
+            h.assertTrue(payOf(h, she, player, "enoch", ASK) == 0, "Nor another one");
+            conspiracy(h, true);
+            h.assertTrue(payOf(h, she, player, "session_14b", BLUNT) == -5, "A cost is a payment too");
+            h.assertTrue(payOf(h, she, player, "session_14b", BLUNT) == 0, "And comes once");
+            conspiracy(h, false);
+            var other = readTheLastLog(h);
+            data(h).flag("orsa_paid_enoch", true);
+            for (int i = 0; i < 3; i++) payOf(h, she, other, "enoch", KIND);
+            aDayPasses(h);
+            h.assertTrue(MillerPattern.confidence(server, other.getUUID(), Theory.KIND) == 0, "Tells her nothing: " + MillerPattern.confidence(server, other.getUUID(), Theory.KIND));
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_topics_walkoff", timeoutTicks = 400)
+    public static void shepherdWalkingOffPaysNothing(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = readTheLastLog(h);
+            var other = readTheLastLog(h);
+            var she = awake(h, player, CLOSE);
+            pick(h, she, player, label("enoch"));
+            ShepherdTalk.close(player);
+            h.assertTrue(data(h).affinity() == CLOSE, "Nothing earned");
+            h.assertFalse(data(h).flag("orsa_paid_enoch"), "Nothing spent");
+            h.assertTrue(payOf(h, she, other, "enoch", KIND) == 15, "It is still there to answer, for anyone");
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_topics_again", timeoutTicks = 400)
+    public static void shepherdATopicReplyStillPlaysAgain(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = readTheLastLog(h);
+            var she = awake(h, player, CLOSE);
+            for (int i = 0; i < 2; i++) {
+                pick(h, she, player, label("enoch"));
+                say(player, KIND);
+                h.assertTrue("orsa.enoch.r2".equals(ShepherdTalk.liveNode()), "Her answer: " + ShepherdTalk.liveNode());
+                h.assertTrue(ShepherdTalk.liveLines().equals(List.of("shepherd.orsa.enoch.r2")), "The same line: " + ShepherdTalk.liveLines());
+                say(player, CONTINUE);
+                h.assertTrue("orsa.menu".equals(ShepherdTalk.liveNode()), "And the menu: " + ShepherdTalk.liveNode());
+                ShepherdTalk.close(player);
+            }
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_topics_scenes", timeoutTicks = 400)
+    public static void shepherdScenesStillPay(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            awake(h, player, NEUTRAL);
+            for (int paid = 1; paid <= 2; paid++) {
+                ShepherdTalk.start(player, "t2.others");
+                say(player, KIND);
+                h.assertTrue(data(h).affinity() == 15 * paid, "A scene's reply pays each time it is played: " + data(h).affinity());
+                ShepherdTalk.close(player);
+                data(h).resumeNode(null);
+            }
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_topics_typing", timeoutTicks = 400)
+    public static void shepherdTypingInATopicPaysNothing(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = readTheLastLog(h);
+            var she = awake(h, player, CLOSE);
+            pick(h, she, player, label("enoch"));
+            type(she, player, "asdfghjkl");
+            h.assertTrue("typed.none".equals(ShepherdTalk.liveNode()), "It leaves the topic: " + ShepherdTalk.liveNode());
+            h.assertTrue(ShepherdTalk.liveSent().plain(), "And the tones with it");
+            h.assertTrue(data(h).affinity() == CLOSE, "The line pays nothing");
+            h.assertFalse(data(h).flag("orsa_paid_enoch"), "And spends nothing");
+            ShepherdTalk.close(player);
+            h.assertTrue(payOf(h, she, player, "enoch", KIND) == 15, "Asked again, it pays");
+            h.assertTrue(payOf(h, she, player, "enoch", KIND) == 0, "Once");
+            h.succeed();
+        });
+    }
+
+    /** Leaving is no answer: it has no tone, and it leaves the question open. */
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_topics_nevermindtopic", timeoutTicks = 400)
+    public static void shepherdNeverMindOnATopicIsNoAnswer(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            var she = awake(h, player, FRIENDLY);
+            var server = h.getLevel().getServer();
+            for (int i = 0; i < 3; i++) {
+                pick(h, she, player, label("how_you_know"));
+                h.assertTrue(ShepherdTalk.liveSent().replies().get(1).slot() == SARCASTIC && ShepherdTalk.liveSent().replies().get(1).label().equals(NEVER_MIND), "In the fourth slot: " + labels());
+                say(player, SARCASTIC);
+                h.assertTrue("orsa.menu".equals(ShepherdTalk.liveNode()), "Back to the menu: " + ShepherdTalk.liveNode());
+                ShepherdTalk.close(player);
+            }
+            h.assertFalse(data(h).flag("orsa_paid_how_you_know"), "Nothing spent");
+            aDayPasses(h);
+            h.assertTrue(MillerPattern.confidence(server, player.getUUID(), Theory.JOKES_WITH_ME) == 0, "Not sarcasm: " + MillerPattern.confidence(server, player.getUUID(), Theory.JOKES_WITH_ME));
+            h.succeed();
+        });
+    }
+
+    /** Nothing else pulling, so this is what is on her mind. */
+    private static void wants(GameTestHelper h, ServerPlayer player, Drive wanted) {
+        var server = h.getLevel().getServer();
+        for (Drive drive : Drive.values()) MillerPattern.want(server, drive, drive == wanted ? 1 : 0);
+        h.assertTrue(wanted.name().toLowerCase(java.util.Locale.ROOT).equals(MillerPattern.focus(server, player.getUUID()).key()), "On her mind: " + MillerPattern.focus(server, player.getUUID()));
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_topics_focus", timeoutTicks = 400)
+    public static void shepherdHerFocusLeadsTheMenu(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            var she = awake(h, player, TRUSTED);
+            var server = h.getLevel().getServer();
+            find(h, player, "terminus_log_maintenance");
+            wants(h, player, Drive.CURIOSITY);
+            h.assertTrue(menu(she, player).getFirst().equals(label("seventh_floor")), "Curious: " + menu(she, player));
+            wants(h, player, Drive.OTHERS);
+            h.assertTrue(menu(she, player).getFirst().equals(label("deng")), "The others: " + menu(she, player));
+            var read = menu(she, player);
+            h.assertTrue(read.equals(menu(she, player)), "The same state gives the same menu");
+            she.interact(player, InteractionHand.MAIN_HAND);
+            type(she, player, "asdfghjkl");
+            h.assertTrue(labels().getFirst().equals(label("deng")), "A miss uses the same order: " + labels());
+            ShepherdTalk.close(player);
+            conspiracy(h, true);
+            MillerPattern.feel(server, Feeling.REPROACH);
+            h.assertTrue("reproach".equals(MillerPattern.focus(server, player.getUUID()).key()), "Reproach: " + MillerPattern.focus(server, player.getUUID()));
+            h.assertTrue(menu(she, player).getFirst().equals(label("session_14b")), "What she holds against them: " + menu(she, player));
+            conspiracy(h, false);
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_topics_stillunheard", timeoutTicks = 400)
+    public static void shepherdUnheardStillComesFirst(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            var she = awake(h, player, TRUSTED);
+            find(h, player, "terminus_log_maintenance");
+            data(h).flag("orsa_heard_deng", true);
+            wants(h, player, Drive.OTHERS);
+            var topics = menu(she, player);
+            h.assertTrue(topics.getLast().equals(label("deng")), "On her mind, and heard, it still waits: " + topics);
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_topics_rises", timeoutTicks = 400)
+    public static void shepherdANewTopicRises(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            var she = awake(h, player, FRIENDLY);
+            wants(h, player, Drive.COMPANY);
+            h.assertTrue(menu(she, player).getFirst().equals(KEVIN), "Friendly: " + menu(she, player));
+            find(h, player, "orsa_bulletin");
+            h.assertTrue(menu(she, player).getFirst().equals(label("safety_bulletin")), "What they brought: " + menu(she, player));
+            data(h).affinity(TRUSTED);
+            h.assertTrue(menu(she, player).getFirst().equals(label("kevin_volunteer")), "What Trusted opened: " + menu(she, player));
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_topics_fresh", timeoutTicks = 400)
+    public static void shepherdWhatIsOrsaLeadsAFreshMenu(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            var she = awake(h, player, NEUTRAL);
+            wants(h, player, Drive.COMPANY);
+            h.assertTrue(menu(she, player).equals(List.of(ORSA, HAPPENED, EXODUS, OUT_THERE)), "A new player: " + menu(she, player));
+            h.succeed();
+        });
+    }
+
+    /** A menu is rebuilt on every reply, so a focus read each time would move a page under a click. */
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_topics_holdstill", timeoutTicks = 400)
+    public static void shepherdAMenuHoldsStillWhileOpen(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            var she = awake(h, player, TRUSTED);
+            find(h, player, "terminus_log_maintenance");
+            wants(h, player, Drive.COMPANY);
+            var settled = menu(she, player);
+            talk(she, player);
+            say(player, ASK);
+            var first = labels().subList(0, 3);
+            h.assertTrue(first.equals(settled.subList(0, 3)), "The first page: " + first);
+            // The seventh floor sits on the second page, so reading this would push a topic across the turn.
+            wants(h, player, Drive.CURIOSITY);
+            say(player, SARCASTIC);
+            h.assertTrue(labels().subList(0, 3).equals(settled.subList(3, 6)), "The next page is the one it was: " + labels());
+            ShepherdTalk.close(player);
+            h.assertTrue(menu(she, player).getFirst().equals(label("seventh_floor")), "And the next walk reads her again: " + menu(she, player));
+            pick(h, she, player, KEVIN);
+            wants(h, player, Drive.OTHERS);
+            say(player, CONTINUE);
+            h.assertTrue(labels().getFirst().equals(label("deng")), "So does coming back from a topic: " + labels());
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_topics_eight", timeoutTicks = 400)
+    public static void shepherdTheMissesRotateThroughEight(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            var she = awake(h, player, NEUTRAL);
+            var server = h.getLevel().getServer();
+            she.interact(player, InteractionHand.MAIN_HAND);
+            for (int turn = 0; turn < 16; turn++) {
+                type(she, player, "asdfghjkl");
+                h.assertTrue(ShepherdTalk.liveLines().equals(List.of("shepherd.typed.miss." + (turn % 8 + 1))), "Turn " + turn + ": " + ShepherdTalk.liveLines());
+            }
+            MillerPattern.setCoherence(server, 0);
+            for (int turn = 0; turn < 12; turn++) {
+                type(she, player, "asdfghjkl");
+                var line = ShepherdTalk.liveLines().getFirst();
+                h.assertTrue(List.of("shepherd.typed.miss.1", "shepherd.typed.miss.2", "shepherd.typed.miss.3").contains(line), "Her lowest reaches the old three: " + line);
+            }
             h.succeed();
         });
     }
