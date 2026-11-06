@@ -9,7 +9,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/** One view's face between two moods: each texel slides to the nearest place in the new face, and any left over fade, from face-transitions-mockup.gif. */
+/** One view's face going into or out of the voice trace: each texel slides to the nearest place in the new face, and any left over fade, from face-transitions-mockup.gif. Every other change of face cuts. */
 public final class ShepherdFlow {
     private static final int TICKS_A_FRAME = 2;
     private static final int WIDTH = ShepherdFace.WIDTH, HEIGHT = ShepherdFace.HEIGHT;
@@ -19,7 +19,7 @@ public final class ShepherdFlow {
     private List<Cells> frames = List.of();
     private int started;
 
-    /** What to draw on this tick. A new face starts a flow from whatever is showing. An idle expression belongs to the face it plays on; anything else just shows. */
+    /** What to draw on this tick. The voice starts a flow from whatever is showing, and any other new face cuts to it. An idle expression belongs to the face it plays on; anything else just shows. */
     public Cells shown(Cells wanted, int tick) {
         Mood next = wanted instanceof Idle ? face : wanted instanceof Mood mood ? mood : ShepherdFace.tracing(wanted) ? Mood.RECORDING : null;
         if (next == null && !(wanted instanceof Idle)) {
@@ -28,7 +28,7 @@ public final class ShepherdFlow {
             return showing = wanted;
         }
         if (next != face && showing != null) {
-            frames = frames(showing, wanted);
+            frames = next == Mood.RECORDING || face == Mood.RECORDING ? frames(showing, wanted) : List.of();
             started = tick;
         }
         face = next;

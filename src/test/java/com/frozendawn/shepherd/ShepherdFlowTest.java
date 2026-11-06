@@ -50,10 +50,10 @@ class ShepherdFlowTest {
 
     @Test void aFrameHoldsTwoTicks() {
         var flow = settled(Mood.NEUTRAL);
-        var first = flow.shown(Mood.BEAMING, 10);
-        assertNotEquals(rows(Mood.BEAMING), rows(first));
+        var first = flow.shown(Mood.RECORDING, 10);
+        assertNotEquals(rows(Mood.RECORDING), rows(first));
         assertNotEquals(rows(Mood.NEUTRAL), rows(first));
-        assertEquals(rows(first), rows(flow.shown(Mood.BEAMING, 11)), "Two ticks a frame");
+        assertEquals(rows(first), rows(flow.shown(Mood.RECORDING, 11)), "Two ticks a frame");
     }
 
     @Test void flowMovesOneTexelAFrame() {
@@ -64,8 +64,8 @@ class ShepherdFlowTest {
 
     @Test void flowStartsFromWhatIsShowing() {
         var flow = settled(Mood.NEUTRAL);
-        flow.shown(Mood.BEAMING, 10);
-        var midway = flow.shown(Mood.BEAMING, 12);
+        flow.shown(Mood.RECORDING, 10);
+        var midway = flow.shown(Mood.RECORDING, 12);
         var next = flow.shown(Mood.SAD, 13);
         assertEquals(rows(ShepherdFlow.frames(midway, Mood.SAD).getFirst()), rows(next), "A new flow picks up where the last one was");
     }
@@ -89,10 +89,23 @@ class ShepherdFlowTest {
         for (int tick = after; tick < after + 30; tick++) assertEquals(rows(ShepherdFace.trace(tick)), rows(flow.shown(ShepherdFace.trace(tick), tick)), "at " + tick);
     }
 
-    @Test void aMoodFlowsOutOfAThinkingWait() {
+    @Test void aMoodCutsInAfterAThinkingWait() {
         var flow = settled(Mood.GRIM);
         var home = ShepherdFace.thinking(ShepherdFace.thinkingTicks(2) - 1, ShepherdFace.thinkingTicks(2));
         assertSame(home, flow.shown(home, 5));
-        assertNotSame(Mood.GRIM, flow.shown(Mood.GRIM, 6), "The same mood still flows in, as the blink did");
+        assertSame(Mood.GRIM, flow.shown(Mood.GRIM, 6));
+    }
+
+    @Test void facesCutBetweenEachOther() {
+        for (Mood from : Mood.values()) {
+            for (Mood to : Mood.values()) {
+                if (from != Mood.RECORDING && to != Mood.RECORDING) assertSame(to, settled(from).shown(to, 40), from + " to " + to);
+            }
+        }
+    }
+
+    @Test void onlyTheVoiceFlows() {
+        assertNotSame(Mood.RECORDING, settled(Mood.NEUTRAL).shown(Mood.RECORDING, 40), "Into the recording");
+        assertNotSame(Mood.NEUTRAL, settled(Mood.RECORDING).shown(Mood.NEUTRAL, 40), "And out of it");
     }
 }

@@ -65,6 +65,8 @@
 30. **The hologram arrives.** The owner's ask, 2026-11-06: the beam comes out of her first, then the figure slowly forms in it. About one second of beam and two of forming, a few texels at a time, the eyes last, as in `hologram-arrive-mockup.gif`. Her lines start once the beam has landed. Stopping is unchanged: it snaps off.
 31. **Two marks moved, one line each.** The owner's call, 2026-11-06, on the first read of the marks with the advice intents in. M4's fresh set read 65 of 74 top two against the accepted 66: "evacuaton plan?" ranks `miteaway` first at 0.259, below Close, so the player gets the same miss, but closed intents still rank, so holding them closed couldn't keep it. The advice set read 2 of 34 out-of-scope Strong against a limit of 1: "do you like the cold" on `what_happened` and "...?" on `how_are_you`, both older intents. The accepted marks are now 65 top two for M4's set and 2 out-of-scope Strong for the advice set. Its other reads: 103 and 114 of 120, 0 strong wrong. M5's topic set holds 83 and 95. Nothing was tuned.
 
+32. **Flow is only for the voice.** The owner's call, 2026-11-06, on seeing it in the pass. It replaces Ruling 4: her face flows into and out of the voice trace, for ORSA's recordings, and every other change of face cuts at once.
+
 ## Lines to mark
 
 Everything goes in `docs/aurora-m6-lines.md`. These are first drafts, to show the shape. The owner's mark decides.
