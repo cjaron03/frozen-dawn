@@ -11,6 +11,7 @@ import com.frozendawn.network.ShepherdTypedPayload;
 import com.frozendawn.shepherd.ShepherdConversation;
 import com.frozendawn.shepherd.ShepherdDialogue.Slot;
 import com.frozendawn.shepherd.ShepherdFace;
+import com.frozendawn.shepherd.ShepherdFlow;
 import com.frozendawn.shepherd.ShepherdGlitch;
 import com.frozendawn.shepherd.ShepherdGlitch.Beat;
 import com.frozendawn.shepherd.ShepherdFace.Mood;
@@ -64,8 +65,7 @@ public final class ShepherdScreen extends Screen {
     private List<String> rows = List.of();
     private int total, typed, charTicks, age;
     private boolean closedByServer;
-    private Mood shownMood;
-    private int moodBeat;
+    private final ShepherdFlow flow = new ShepherdFlow();
     private int logoTicks;
     /** The wait this line was sent with, and how much of it is left. */
     private int thinkTicks, thinkLeft;
@@ -204,21 +204,12 @@ public final class ShepherdScreen extends Screen {
         age++;
         if (stopped) stopAge++;
         swallowChar = false;
-        if (moodBeat > 0) moodBeat--;
-        if (mood() != shownMood) {
-            if (shownMood != null) moodBeat = ShepherdFace.MOOD_BEAT_TICKS;
-            shownMood = mood();
-        }
         if (logoTicks > 0) {
             logoTicks--;
             return;
         }
         if (thinkLeft > 0) {
-            // The same blink as a change of mood, even if the mood did not change: it takes her into the line's face.
-            if (--thinkLeft == 0) {
-                moodBeat = ShepherdFace.MOOD_BEAT_TICKS;
-                bar.close();
-            }
+            if (--thinkLeft == 0) bar.close();
             return;
         }
         if (!typing()) return;
@@ -539,15 +530,15 @@ public final class ShepherdScreen extends Screen {
             return;
         }
         if (thinkLeft > 0) {
-            ShepherdFaceRenderer.draw(g, ShepherdFace.thinking(thinkTicks - thinkLeft, thinkTicks), 0, false, 0, ox() + FACE_X, oy() + FACE_Y, FACE_SCALE);
+            ShepherdFaceRenderer.draw(g, flow.shown(ShepherdFace.thinking(thinkTicks - thinkLeft, thinkTicks), age), 0, false, 0, ox() + FACE_X, oy() + FACE_Y, FACE_SCALE);
             return;
         }
         Mood mood = mood();
         var motion = ShepherdFace.motion(mood, age, conversation);
-        boolean looking = hover >= 0 && (hub || spoken()) && mood != Mood.RECORDING && mood != Mood.THINKING;
+        boolean looking = hover >= 0 && (hub || spoken()) && !ShepherdFace.holdsStill(mood) && mood != Mood.THINKING && mood != Mood.GRIM;
         int eyes = looking ? (hover % 2 == 0 ? -1 : 1) : motion.eyeShift();
-        var cells = motion.cells(mood, looking || typing());
-        ShepherdFaceRenderer.draw(g, cells, mouth(), motion.blink() || moodBeat > 0, eyes, ox() + FACE_X, oy() + FACE_Y, FACE_SCALE);
+        var cells = flow.shown(ShepherdFace.voice(motion.cells(mood, looking || typing()), typing(), age), age);
+        ShepherdFaceRenderer.draw(g, cells, mouth(), motion.blink(), eyes, ox() + FACE_X, oy() + FACE_Y, FACE_SCALE);
     }
 
     private void drawLine(GuiGraphics g) {

@@ -3,6 +3,9 @@ package com.frozendawn.shepherd;
 import static org.junit.jupiter.api.Assertions.*;
 
 import com.frozendawn.shepherd.ShepherdFace.Mood;
+import java.util.EnumSet;
+import java.util.HashSet;
+import java.util.Set;
 import org.junit.jupiter.api.Test;
 
 /** Motion is free to change; these are the limits it has to stay inside. */
@@ -26,10 +29,90 @@ class ShepherdFaceTest {
         }
     }
 
+    private static String rows(ShepherdFace.Cells cells) {
+        var out = new StringBuilder();
+        for (int y = 0; y < ShepherdFace.HEIGHT; y++) {
+            for (int x = 0; x < ShepherdFace.WIDTH; x++) out.append(cells.lit(x, y) ? '#' : cells.dim(x, y) ? '+' : '.');
+            out.append('/');
+        }
+        return out.toString();
+    }
+
+    private static final Set<Mood> NO_EYES_TO_SHUT = EnumSet.of(Mood.RECORDING, Mood.OFFLINE, Mood.BEAMING, Mood.FLUSTERED, Mood.WORRIED);
+    private static final String FLAT = "......../......../......../++++++++/......../......../";
+
+    @Test
+    void theNewMoodsMatchTheMockup() {
+        assertEquals("......../.#....#./#.#..#.#/......../.++++++./..++++../", rows(Mood.BEAMING));
+        assertEquals("......../.#....#./..#..#../.#....#./......../...++.../", rows(Mood.FLUSTERED));
+        assertEquals("#......#/.##..##./.##..##./......../..++++../......../", rows(Mood.GRIM));
+        assertEquals("......../++..++../##..##../......../...++.../......../", rows(Mood.WORRIED));
+        assertEquals(FLAT, rows(Mood.RECORDING));
+    }
+
+    @Test
+    void theOldMoodsKeepTheirPlaceOnTheWire() {
+        assertEquals(8, Mood.RECORDING.ordinal());
+    }
+
+    @Test
+    void beamingAndFlusteredHoldStill() {
+        for (Mood mood : new Mood[] {Mood.BEAMING, Mood.FLUSTERED, Mood.WORRIED}) {
+            for (int age = 0; age < LONG_TIME; age++) assertEquals(new ShepherdFace.Motion(0, false), ShepherdFace.motion(mood, age, 7, true), mood + " at " + age);
+        }
+    }
+
+    @Test
+    void theTraceRestsFlatAndMovesOnlyWhileSpeaking() {
+        var frames = new HashSet<String>();
+        for (int age = 0; age < 200; age++) {
+            assertEquals(FLAT, rows(ShepherdFace.voice(Mood.RECORDING, false, age)), "at rest at " + age);
+            frames.add(rows(ShepherdFace.voice(Mood.RECORDING, true, age)));
+            assertEquals(rows(ShepherdFace.trace(age / 4 * 4)), rows(ShepherdFace.trace(age)), "four ticks a frame at " + age);
+        }
+        assertEquals(6, frames.size());
+        assertFalse(frames.contains(FLAT));
+    }
+
+    @Test
+    void otherFacesAreLeftAloneBySpeaking() {
+        assertSame(Mood.GRIM, ShepherdFace.voice(Mood.GRIM, true, 5));
+    }
+
+    @Test
+    void theTraceHasNoMouthToMove() {
+        for (int age = 0; age < 24; age++) {
+            for (int x = 0; x < ShepherdFace.WIDTH; x++) assertEquals(ShepherdFace.trace(age).dim(x, 5), ShepherdFace.dim(ShepherdFace.trace(age), 2, x, 5), "at " + age);
+        }
+    }
+
+    @Test
+    void theStripTraceStopsWhenTheLineHasTyped() {
+        int length = 12, typed = length * ShepherdPolicy.TICKS_PER_CHAR;
+        assertNotEquals(FLAT, rows(ShepherdFace.stripFace(Mood.RECORDING, 1, length)));
+        assertEquals(FLAT, rows(ShepherdFace.stripFace(Mood.RECORDING, typed, length)));
+        assertEquals(FLAT, rows(ShepherdFace.stripFace(Mood.RECORDING, typed + 40, length)));
+        assertSame(Mood.SAD, ShepherdFace.stripFace(Mood.SAD, 1, length));
+    }
+
+    @Test
+    void worryComesBackToNeutral() {
+        var neutral = rows(Mood.NEUTRAL);
+        assertEquals(neutral, rows(ShepherdFace.worry(0)));
+        assertEquals(neutral, rows(ShepherdFace.worry(13)));
+        assertEquals(rows(ShepherdFace.Idle.HEAVY_LIDS), rows(ShepherdFace.worry(14)));
+        assertEquals("......../.++..++./.##..##./......../...++.../......../", rows(ShepherdFace.worry(24)));
+        assertEquals(rows(Mood.WORRIED), rows(ShepherdFace.worry(30)));
+        assertEquals(rows(Mood.WORRIED), rows(ShepherdFace.worry(61)));
+        assertEquals(rows(ShepherdFace.Idle.HEAVY_LIDS), rows(ShepherdFace.worry(ShepherdFace.WORRY_TICKS - 1)));
+        assertEquals(neutral, rows(ShepherdFace.worry(ShepherdFace.WORRY_TICKS)));
+        assertEquals(82, ShepherdFace.WORRY_TICKS);
+    }
+
     @Test
     void everyLivingMoodBlinksAndNeverSticksShut() {
         for (Mood mood : Mood.values()) {
-            if (mood == Mood.RECORDING || mood == Mood.OFFLINE) continue;
+            if (NO_EYES_TO_SHUT.contains(mood)) continue;
             int shut = 0, blinks = 0;
             for (int age = 0; age < LONG_TIME; age++) {
                 boolean blink = ShepherdFace.motion(mood, age, 7).blink();
@@ -102,7 +185,7 @@ class ShepherdFaceTest {
 
     @Test void idlesPlayOnEveryRestingMood() {
         for (Mood mood : Mood.values()) {
-            if (mood == Mood.RECORDING || mood == Mood.OFFLINE) continue;
+            if (NO_EYES_TO_SHUT.contains(mood)) continue;
             var seen = java.util.EnumSet.noneOf(ShepherdFace.Idle.class);
             for (int seed = 0; seed < 40; seed++) for (int age = 0; age < 60000; age++) {
                 var idle = ShepherdFace.motion(mood, age, seed, true).idle();

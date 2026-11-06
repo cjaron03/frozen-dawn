@@ -81,9 +81,10 @@ public final class ShepherdEntity extends PathfinderMob {
     private long stoodSince;
     private long nextLook, closeUntil;
     private ShepherdCuriosity.Target lookingAt;
-    /** Client only: the mood last drawn, and how much of the blink between two moods is left. */
+    /** Client only: the mood last drawn, since when, and her face on its way to the next. */
     private Mood shownMood;
-    private int moodBeat;
+    private int moodSince;
+    private final ShepherdFlow flow = new ShepherdFlow();
     /** Client only: how far into the wait it has got. */
     private int thinkAge;
 
@@ -351,8 +352,14 @@ public final class ShepherdEntity extends PathfinderMob {
         return askTicks > 0;
     }
 
-    public boolean moodBeat() {
-        return moodBeat > 0;
+    /** Client only: how long the mood has been showing. */
+    public int moodAge() {
+        return tickCount - moodSince;
+    }
+
+    /** Client only: what her display shows on the way to this. */
+    public ShepherdFace.Cells flowed(ShepherdFace.Cells wanted) {
+        return flow.shown(wanted, tickCount);
     }
 
     public int rebootTicks() {
@@ -424,21 +431,14 @@ public final class ShepherdEntity extends PathfinderMob {
     @Override public void tick() {
         super.tick();
         if (!(level() instanceof ServerLevel level)) {
-            if (moodBeat > 0) moodBeat--;
             if (mood() != shownMood) {
-                if (shownMood != null) moodBeat = ShepherdFace.MOOD_BEAT_TICKS;
                 shownMood = mood();
+                moodSince = tickCount;
             }
             // Joining mid-way, or the moment she comes back: the logo always starts at the same point.
             if (!crashed()) crashAge = 0;
             else crashAge = offline() ? crashAge + 1 : Math.max(crashAge, ShepherdPolicy.CRASH_DOWN_TICKS) + 1;
-            if (thinking()) {
-                thinkAge++;
-            } else if (thinkAge > 0) {
-                // The same blink as a change of mood, even if the mood did not change: it takes her into the line's face.
-                thinkAge = 0;
-                moodBeat = ShepherdFace.MOOD_BEAT_TICKS;
-            }
+            thinkAge = thinking() ? thinkAge + 1 : 0;
             return;
         }
         // A /summon, or a body that loaded after its replacement was built. There is one of her.

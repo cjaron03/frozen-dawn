@@ -1,6 +1,7 @@
 package com.frozendawn.client;
 
 import com.frozendawn.init.ModSounds;
+import com.frozendawn.shepherd.ShepherdFace;
 import com.frozendawn.shepherd.ShepherdFace.Mood;
 import com.frozendawn.shepherd.ShepherdPolicy;
 import java.util.ArrayList;
@@ -75,7 +76,7 @@ public final class ShepherdPromptStrip {
         int x = (g.guiWidth() - WIDTH) / 2, y = g.guiHeight() - FROM_BOTTOM - height;
         g.setColor(1, 1, 1, alpha);
         OrsaHudPanel.frame(g, x, y, WIDTH, height, recording ? OrsaHudPanel.MUTED_COLOR : prompt ? PROMPT_EDGE : LINE_EDGE, BORDER);
-        ShepherdFaceRenderer.draw(g, face, 0, false, 0, x + FACE_X, y + (height - 18) / 2, FACE_SCALE);
+        ShepherdFaceRenderer.draw(g, ShepherdFace.stripFace(face, age, length), 0, false, 0, x + FACE_X, y + (height - 18) / 2, FACE_SCALE);
         int left = shown, rowY = y + TEXT_Y;
         for (String row : rows) {
             g.drawString(minecraft.font, row.substring(0, Math.min(left, row.length())), x + TEXT_X, rowY, recording ? OrsaHudPanel.MUTED_COLOR : OrsaHudPanel.VALUE_COLOR, false);

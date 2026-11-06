@@ -64,12 +64,13 @@ public final class ShepherdRenderer extends MobRenderer<ShepherdEntity, Shepherd
                 boolean cursor = entity.bootDisplay() == ShepherdEntity.BOOT_CURSOR && entity.tickCount / ShepherdBoot.LINE_TICKS % 2 == 0;
                 ShepherdFaceRenderer.drawOnModel(pose, buffers, cursor ? ShepherdBoot.cursor() : Mood.OFFLINE, 0, false, 0);
             } else if (entity.logo()) {
-                ShepherdFaceRenderer.drawOnModel(pose, buffers, ShepherdFace.logo(ShepherdFace.logoFrame(entity.tickCount)), 0, false, 0);
+                ShepherdFaceRenderer.drawOnModel(pose, buffers, entity.flowed(ShepherdFace.logo(ShepherdFace.logoFrame(entity.tickCount))), 0, false, 0);
             } else if (entity.thinking()) {
-                ShepherdFaceRenderer.drawOnModel(pose, buffers, entity.thinkingFrame(), 0, false, 0);
+                ShepherdFaceRenderer.drawOnModel(pose, buffers, entity.flowed(entity.thinkingFrame()), 0, false, 0);
             } else {
-                var cells = motion.cells(mood, entity.talking());
-                ShepherdFaceRenderer.drawOnModel(pose, buffers, cells, mouth, motion.blink() || entity.moodBeat(), motion.eyeShift());
+                var face = mood == Mood.WORRIED ? ShepherdFace.worry(entity.moodAge()) : motion.cells(mood, entity.talking());
+                var cells = entity.flowed(ShepherdFace.voice(face, entity.talking(), entity.tickCount));
+                ShepherdFaceRenderer.drawOnModel(pose, buffers, cells, mouth, motion.blink(), motion.eyeShift());
             }
             if (entity.offline() && beat != ShepherdGlitch.Beat.NOISE) return;
             var flame = buffers.getBuffer(RenderType.entityCutoutNoCull(ShepherdModel.TEXTURE));
