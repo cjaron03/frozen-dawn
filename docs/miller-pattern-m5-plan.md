@@ -14,7 +14,7 @@
 
 **Mockups:** none. The topics use the existing talk grid, and nothing new is drawn.
 
-**Status:** approved by the owner as written, 2026-11-05, Rulings 1 to 22 included. Rechecked against M4 as shipped, and the owner approved Rulings 23 to 28 and the edits they make the same day. Ruling 29 records the fresh set's result.
+**Status:** approved by the owner as written, 2026-11-05, Rulings 1 to 22 included. Rechecked against M4 as shipped, and the owner approved Rulings 23 to 28 and the edits they make the same day. Ruling 29 records the fresh set's result. Tasks 2 to 6 are built; see the Handback.
 
 **Branch:** `feat/miller-m5` in `/Volumes/SSD/Work/frozen-dawn-miller-m5`, cut from `docs/miller-m5-plan`, which holds this plan on top of `feat/maeve-director` at 9ccb53f8, with M4 (PR 161) and the worktree rules (PR 162) merged in. The build session starts in this worktree and works there. PR into `feat/maeve-director`. It changes a shared system and merges into a long-lived branch, so the branch review runs on Opus.
 
@@ -238,6 +238,24 @@ Docs only. Nothing goes in the game.
 - [ ] **Step 4: The owner's pass.** Ask them to type freely first, before seeing any list. Take their unprompted description. Judge: how the topics land at each tier, whether the crew topics earn their gates, the `[C]` lines heard aloud, the penguin, "Who are you?", the misses, and whether the menu's order feels like her.
 - [ ] **Step 5: Sort the log.** Ruling 4: score it blind first and record the numbers, then sort each miss. Retest any phrasing added, and put new writing in the backlog.
 - [ ] **Step 6: Fix what the pass finds, update the Status, offer the PR.**
+
+## Handback, 2026-11-05
+
+Tasks 2 to 6 are committed on `feat/miller-m5`, the branch review ran on Opus, and the save `Aurora Topics Check` is prepared. The owner's pass has not happened, so `runClientLab` is not launched, the log is not sorted and no PR is offered.
+
+**For the owner to decide before or at the pass.** Short, common lines go Strong on a topic. Rulings 19, 20 and 27 hold these examples, so nothing has changed. Swapping any moves the accepted numbers in Ruling 29, and both fresh sets would be rerun and reported, not tuned.
+
+| Typed | Lands on | Score | Cause |
+| --- | --- | --- | --- |
+| "talk", "let's talk", "can we talk", "talk to me", "keep talking", "talk to you later" | `enoch` | 0.62 to 0.80 | "Who used to talk to you?" |
+| "how come" | `seventh_floor` | 0.67 | |
+| "the door" | `deng` | 0.58 | |
+| "what", "what?", "who", "what is it", "what is this", "who is that", "who is he", "tell me", "tell me more", "tell me why", "tell me what you know" | `who_are_you` | 0.77 to 0.91 | Its examples, Ruling 27's "what are you" and "tell me who you are" |
+| "aurora" | `who_are_you` | 0.99 | An answer, not naming evidence, so Ruling 1 stands |
+
+**To watch at the pass.** "Never mind" on `how_you_know` and `kevin_volunteer` still shows the Sarcastic tone word above it, though it counts as no answer. A second player's first answer earns nothing once the world flag is set, by Ruling 10.
+
+**Deferred minors.** `paysAfter` and `focusAfter` do not restore the conspiracy flag if a test fails partway. `[Find everything]` leaves out `launch_manifest` and `vasik_log`, so `exodus.4` and `exodus.5` cannot play in the save. The "It plays out" check in `shepherdThePenguinGoesWithThePlush` reads a snapshot and cannot fail.
 
 ## Left for later
 

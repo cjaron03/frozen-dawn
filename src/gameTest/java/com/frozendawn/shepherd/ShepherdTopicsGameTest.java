@@ -765,15 +765,16 @@ public final class ShepherdTopicsGameTest {
             say(player, ASK);
             var first = labels().subList(0, 3);
             h.assertTrue(first.equals(settled.subList(0, 3)), "The first page: " + first);
-            wants(h, player, Drive.OTHERS);
+            // The seventh floor sits on the second page, so reading this would push a topic across the turn.
+            wants(h, player, Drive.CURIOSITY);
             say(player, SARCASTIC);
             h.assertTrue(labels().subList(0, 3).equals(settled.subList(3, 6)), "The next page is the one it was: " + labels());
             ShepherdTalk.close(player);
-            h.assertTrue(menu(she, player).getFirst().equals(label("deng")), "And the next walk reads her again: " + menu(she, player));
+            h.assertTrue(menu(she, player).getFirst().equals(label("seventh_floor")), "And the next walk reads her again: " + menu(she, player));
             pick(h, she, player, KEVIN);
-            wants(h, player, Drive.CURIOSITY);
+            wants(h, player, Drive.OTHERS);
             say(player, CONTINUE);
-            h.assertTrue(labels().getFirst().equals(label("seventh_floor")), "So does coming back from a topic: " + labels());
+            h.assertTrue(labels().getFirst().equals(label("deng")), "So does coming back from a topic: " + labels());
             h.succeed();
         });
     }
