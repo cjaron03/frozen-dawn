@@ -333,6 +333,8 @@ Deferred minors: `seen` runs only for the nearest, so someone standing behind th
 
 Verified headlessly: the order, rest and variants, every note the order can reach against the lang file, save and a version 3 load, marks, the first read's cost and lines, what the screen is sent, language and the canon lints. Nothing on screen has been seen by anyone: the owner's pass judges the form's look and fit, findability, how the first read lands, the gap, how a Peak lands and how often, the first `back` note, Cargo, and the blank field against `Pattern: Sophie.`
 
+2026-11-05, the owner's pass in `Aurora Log Check`: "everything looked good". Two things they asked about were the lab's clock, not lost entries: the newest entry stayed on Day 48 because `skipday` moves entries back and leaves game time alone, and the first entry sat near day 28 while F3 said day 0. Ruling: her log keeps counting game time, as her other clocks do. So F3 runs ahead of it once a player sleeps, and F3 counts from 0 where she counts from 1. The fixture now starts the sun on her day, for a new save only. A day number rolling over by itself has not been seen on screen.
+
 ## Sources
 
 - `MaeveDirector`, `ShepherdAffinity` and `ShepherdReactions` at c866cf02 on `feat/aurora-affinity`.
