@@ -89,6 +89,9 @@ public final class ShepherdEntity extends PathfinderMob {
     private final ShepherdFlow flow = new ShepherdFlow();
     /** Client only: how far into the wait it has got. */
     private int thinkAge;
+    /** Client only: how long the projection has been up, which way she faced when it came, and the figure under any flicker. */
+    private int projectionAge, eggAge, projectionFigure;
+    private float projectionYaw;
 
     public ShepherdEntity(EntityType<? extends ShepherdEntity> type, Level level) {
         super(type, level);
@@ -334,6 +337,41 @@ public final class ShepherdEntity extends PathfinderMob {
         entityData.set(DATA_PROJECTION, shown);
     }
 
+    /** Client only. */
+    public int projectionAge() {
+        return projectionAge;
+    }
+
+    /** Client only: the figure keeps its place, whatever she turns to. */
+    public float projectionYaw() {
+        return projectionYaw;
+    }
+
+    /** Client only: the one she is really showing. */
+    public int projectionFigure() {
+        return projectionFigure;
+    }
+
+    /** Client only: how long the egg's shape has been up. */
+    public int eggAge() {
+        return eggAge;
+    }
+
+    private void trackProjection() {
+        int shown = projection();
+        if (shown == ShepherdProjection.NONE) {
+            projectionAge = 0;
+            return;
+        }
+        if (projectionAge++ == 0) projectionYaw = yHeadRot;
+        if (shown == ShepherdProjection.EGG_FRAME) {
+            eggAge++;
+        } else {
+            eggAge = 0;
+            projectionFigure = shown;
+        }
+    }
+
     public byte bootDisplay() {
         return entityData.get(DATA_BOOT);
     }
@@ -450,6 +488,7 @@ public final class ShepherdEntity extends PathfinderMob {
             if (!crashed()) crashAge = 0;
             else crashAge = offline() ? crashAge + 1 : Math.max(crashAge, ShepherdPolicy.CRASH_DOWN_TICKS) + 1;
             thinkAge = thinking() ? thinkAge + 1 : 0;
+            trackProjection();
             return;
         }
         // A /summon, or a body that loaded after its replacement was built. There is one of her.

@@ -5,10 +5,12 @@ import com.frozendawn.shepherd.ShepherdEntity;
 import com.frozendawn.shepherd.ShepherdFace;
 import com.frozendawn.shepherd.ShepherdGlitch;
 import com.frozendawn.shepherd.ShepherdPolicy;
+import com.frozendawn.shepherd.ShepherdProjection;
 import com.frozendawn.shepherd.ShepherdFace.Mood;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.entity.MobRenderer;
 import net.minecraft.client.renderer.entity.RenderLayerParent;
@@ -19,9 +21,17 @@ import net.minecraft.util.Mth;
 public final class ShepherdRenderer extends MobRenderer<ShepherdEntity, ShepherdModel> {
     private static final float BOB_HEIGHT = 0.04F, BOB_SPEED = 0.12F;
 
+    private final ShepherdHologramRenderer hologram;
+
     public ShepherdRenderer(EntityRendererProvider.Context context) {
         super(context, new ShepherdModel(context.bakeLayer(ShepherdModel.LAYER_LOCATION)), 0.3F);
         addLayer(new FaceLayer(this));
+        hologram = new ShepherdHologramRenderer(context);
+    }
+
+    /** Her figure stands off to one side, and stays when she is out of view. */
+    @Override public boolean shouldRender(ShepherdEntity entity, Frustum frustum, double x, double y, double z) {
+        return entity.projection() != ShepherdProjection.NONE || super.shouldRender(entity, frustum, x, y, z);
     }
 
     @Override public ResourceLocation getTextureLocation(ShepherdEntity entity) {
@@ -41,6 +51,7 @@ public final class ShepherdRenderer extends MobRenderer<ShepherdEntity, Shepherd
         if (!entity.offline()) pose.translate(0, Mth.sin((entity.tickCount + partial) * BOB_SPEED) * BOB_HEIGHT, 0);
         super.render(entity, yaw, partial, pose, buffers, light);
         pose.popPose();
+        hologram.draw(entity, partial, pose, buffers);
     }
 
     private static final class FaceLayer extends RenderLayer<ShepherdEntity, ShepherdModel> {
