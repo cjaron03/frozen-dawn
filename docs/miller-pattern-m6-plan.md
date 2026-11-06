@@ -14,7 +14,7 @@
 
 **Mockups:** approved 2026-11-06, in `docs/art/aurora-shepherd/`: `orsa-face-mockup.png` (A, Voice trace), `new-expressions-mockup.png` (Beaming, Flustered, Grim), `face-transitions-mockup.gif` (Flow), `worry-motion-mockup.gif`, `hologram-mockup.gif`, `flustered-motion-mockup.gif` and `caught-projection-mockup.png`. `make_m6_faces_mockup.py` holds the exact rows and frames.
 
-**Status:** awaiting the owner's approval. Rechecked against M5 as shipped, PR 164 at 517623c7.
+**Status:** approved by the owner as written, 2026-11-06, Rulings 1 to 29 included. Rechecked against M5 as shipped, PR 164 at 517623c7. Frostmite's strategy, the twelve items and every line still get the owner's marks in Task 1.
 
 **Branch:** `feat/miller-m6` in `/Volumes/SSD/Work/frozen-dawn-miller-m6`, cut from `feat/maeve-director` once this plan has merged. The build session starts in that worktree and works there. PR into `feat/maeve-director`. It changes a shared system, sync and rendering, and merges into a long-lived branch, so the branch review runs on Opus.
 
@@ -33,7 +33,7 @@
 9. **The hologram shows in the world.** The figure stands to her left. The veil lifts, her words go to the strip, and you can walk round it. Walk off and it stops.
 10. **The Architect's hologram glitches** after the manual's failed captures, and stops to think, chin in hand. She comments on it a lot, and hints in her own words that the Architects stopped making the same mistakes.
 
-### For the owner's yes
+### Proposed and approved, 2026-11-06
 
 11. **Advice is its own menu.** Nineteen more topics would bury ORSA's at three a page. The hub's Talk gains "Ask for advice" in the Kind slot, beside "Ask about ORSA". `Intent` gains `menu`, default `orsa`.
 12. **Twelve items, none locked.** The typed log named no items, so these are a proposal from the open entries: `thermal_heater`, `resistive_heater`, `frost_ward_torch`, `miteaway`, `insulated_glass`, `thermostat`, `airlocks`, `oxygen_reservoir`, `battery_lantern`, `emergency_light`, `geiger`, `rad_aid`. All twelve are open, so no new condition is needed, and a test holds that. A locked entry joins only with a condition of its own, in a later slice.
