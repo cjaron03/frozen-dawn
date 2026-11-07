@@ -14,7 +14,7 @@
 
 **Mockups:** approved 2026-11-06, in `docs/art/aurora-shepherd/`: `orsa-face-mockup.png` (A, Voice trace), `new-expressions-mockup.png` (Beaming, Flustered, Grim), `face-transitions-mockup.gif` (Flow), `worry-motion-mockup.gif`, `hologram-mockup.gif`, `flustered-motion-mockup.gif`, `caught-projection-mockup.png` and `egg-mockup.png`. `make_m6_faces_mockup.py` holds the exact rows and frames.
 
-**Status:** approved by the owner as written, 2026-11-06, Rulings 1 to 29 included. Rechecked against M5 as shipped, PR 164 at 517623c7. Frostmite's strategy, the twelve items and every line still get the owner's marks in Task 1.
+**Status:** built on `feat/miller-m6` and passed by the owner in `Aurora Advice Check`, 2026-11-06. See the Handback. Approved by the owner as written, 2026-11-06, Rulings 1 to 29 included. Rechecked against M5 as shipped, PR 164 at 517623c7. Frostmite's strategy, the twelve items and every line still get the owner's marks in Task 1.
 
 **Branch:** `feat/miller-m6` in `/Volumes/SSD/Work/frozen-dawn-miller-m6`, cut from `feat/maeve-director` once this plan has merged. The build session starts in that worktree and works there. PR into `feat/maeve-director`. It changes a shared system, sync and rendering, and merges into a long-lived branch, so the branch review runs on Opus.
 
@@ -67,7 +67,7 @@
 
 32. **Flow is only for the voice.** The owner's call, 2026-11-06, on seeing it in the pass. It replaces Ruling 4: her face flows into and out of the voice trace, for ORSA's recordings, and every other change of face cuts at once.
 33. **A right-click skips.** The owner's ask, 2026-11-06, during the pass. A right-click on her from the one who asked does what a click does in a talk: it finishes a line still typing, and the next moves on, and past the last it ends. A sneaking right-click ends the whole projection at once. Nothing else about Ruling 15 changes: no talk opens over a projection.
-34. **She offers.** The owner's ask and mark, 2026-11-06. At Friendly and above, once a mob, once things are calm after she has seen a Frostbitten, Frostmite, Hollow, Hunter, Mimic or Architect that they haven't asked about, she raises a prompt: "That was a Hunter. I've got a better way to handle those. Want it?", with "Yeah, tell me" and "Not now". Yes runs her advice. Never at Wary or once erased.
+34. **She offers.** The owner's ask and mark, 2026-11-06. At Friendly and above, once a mob and at most one a day, once things are calm after she has seen a Frostbitten, Frostmite, Hollow, Hunter, Mimic or Architect that they haven't asked about, she raises a prompt: "That was a Hunter. I've got a better way to handle those. Want it?", with "Yeah, tell me" and "Not now". Yes runs her advice. Never at Wary or once erased.
 35. **The strip widens for a long line.** From the owner's screenshot, 2026-11-06: a long recording stacked so high it covered the hologram. Past three rows the panel widens, up to the screen.
 36. **The hologram leaves.** The owner's ask and mockup yes, 2026-11-06. However it ends, the eyes go first, the figure falls away a few texels at a time over about 1.2 seconds, and the beam draws back into her, as in `hologram-leave-mockup.gif`. She stays with it while it goes.
 37. **The egg stays long enough to see.** From the owner's pass, 2026-11-06: 36 ticks went by too fast. It is 90 now, about as long as she takes to type her line.
@@ -275,6 +275,22 @@ Draw a `HumanoidModel` baked from `ModelLayers.ZOMBIE`, at half size, about two 
 - [ ] **Step 4: The owner's pass.** Ask them to type freely first, before seeing any list. Take their unprompted description. Judge: the voice trace, the three faces and Flow in motion, the greeting, each hologram from every side, the worry, the egg, getting caught, the gag, and whether each strategy works as she says.
 - [ ] **Step 5: Sort the log.** M5's Ruling 4: score it blind, record the numbers, sort each miss.
 - [ ] **Step 6: Fix what the pass finds, update the Status, offer the PR.**
+
+## Handback
+
+In `Aurora Advice Check`, 2026-11-06, the owner passed the greeting, the skips, each hologram from every side, its shutdown, the worry, the egg, the catch, the confront and the offer. They cut Flow back to the voice trace and named no other fault in the trace or the faces, without a separate verdict on the three new faces. On the worry: "i like it". On the gag: "god i love it". Each of the six strategies worked as she says on a live mob: Hollow, Mimic, Frostbitten, Hunter, Architect and Frostmite. Their asks during the pass are Rulings 32 to 39.
+
+**Blind test, M5's Ruling 4.** `aurora-typed.jsonl` holds 19 lines, 15 different.
+
+| Measure | Result |
+| --- | --- |
+| In scope, top one | 11 of 11 |
+| In scope, top two | 11 of 11 |
+| Out of scope, Strong | 1 of 4 |
+
+The one Strong was "what scares you", on `frost_ward_torch` at 0.70, from the word "scares" in one example. That example now reads "torch that drives hollows off", and `askingWhatScaresHerIsNotTheTorch` holds it. The advice marks still pass. The misses are sorted in [aurora-typed-backlog.md](aurora-typed-backlog.md).
+
+**Review after the pass.** The earlier Opus review predates the pass, so a second one read its five commits. No critical findings. Four fixed test-first: she never saw a Hollow, since it isn't an `Enemy`, so its offer could not fire; curiosity could walk her away from a fading figure; a "Not now" brought the next offer within seconds, so it is one a day now; and a Yes on an offer with no hologram ended on ORSA's menu with that menu left waiting.
 
 ## Left for later
 

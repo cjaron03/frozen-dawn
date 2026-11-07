@@ -325,7 +325,7 @@ Typed only, above Wary, with no label and no Close line (Ruling 17). All NEW.
 
 ## The offer
 
-Marked by the owner during the pass, 2026-11-06 (Ruling 34). (Thinking) "That was a Hunter. I've got a better way to handle those. Want it?" with the mob's name for each of Frostbitten, Frostmite, Hollow, Hunter, Mimic and Architect, and "That was an Architect" for the last. Buttons: "Yeah, tell me" and "Not now".
+Marked by the owner during the pass, 2026-11-06 (Ruling 34). At most one a day. (Thinking) "That was a Hunter. I've got a better way to handle those. Want it?" with the mob's name for each of Frostbitten, Frostmite, Hollow, Hunter, Mimic and Architect, and "That was an Architect" for the last. Buttons: "Yeah, tell me" and "Not now".
 
 ## The confront
 

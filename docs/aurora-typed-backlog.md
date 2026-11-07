@@ -15,6 +15,14 @@ What the owner typed that she can't answer yet, kept because `aurora-typed.jsonl
 | "who is sophie" | `who_are_you` 0.34 | Left as a miss: the name belongs to T5 |
 | "pizza", "orange" | under 0.2 | Left as a miss |
 
+## M6 pass, 2026-11-06
+
+| Typed | Top score | Sorted as |
+| --- | --- | --- |
+| "whats your favorite food", "whats ur favorite food" | `who_are_you` 0.40, 0.30 | New writing: still small talk, as in M5 |
+| "who is sophie" | `who_are_you` 0.34 | Left as a miss: the name belongs to T5 |
+| "what scares you" | `frost_ward_torch` 0.70, Strong | New writing, for the owner to decide. It no longer lands Strong, since the torch's example lost the word "scares" |
+
 ## To watch
 
 Short lines that land Strong on a topic, kept by the owner's ruling, 2026-11-06. None came up in the M5 pass. The table is in the plan's Handback: "talk" on `enoch`, "how come" on `seventh_floor`, "the door" on `deng`, and "what", "who" and "tell me more" on `who_are_you`.
