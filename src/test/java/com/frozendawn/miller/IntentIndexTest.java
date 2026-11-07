@@ -118,6 +118,11 @@ class IntentIndexTest {
         }
     }
 
+    /** The owner typed this in the M6 pass and she answered about the torch, on the word "scares". */
+    @Test void askingWhatScaresHerIsNotTheTorch() throws IOException {
+        assertNotEquals(Band.STRONG, index().judge("what scares you", ALL).band());
+    }
+
     /** M4's set measures what the owner accepted, so the topics M5 writes stay locked for it, as they were (Ruling 23). */
     private static IntentIndex m4Index() throws IOException {
         var intents = shipped().stream().map(intent -> TOPICS.contains(intent.id()) || added(intent) ? new Intent(intent.id(), null, null, null, null, intent.examples()) : intent).toList();
