@@ -16,7 +16,7 @@ import net.neoforged.neoforge.event.RegisterCommandsEvent;
 @EventBusSubscriber(modid = "frozendawn")
 public final class LabShepherdAdvice {
     private static final List<String> MOMENTS = List.of("hologram_seen", "hologram_egg", "reacted_hunter_burn", "clovis_said");
-    private static final List<String> DEEDS = List.of("caught", "gag");
+    private static final List<String> DEEDS = List.of("offer_ready", "caught", "gag");
     private static final List<String> OFFERS = List.of("frostbitten", "frostmite", "hollow", "hunter", "mimic", "architect");
 
     private LabShepherdAdvice() { }

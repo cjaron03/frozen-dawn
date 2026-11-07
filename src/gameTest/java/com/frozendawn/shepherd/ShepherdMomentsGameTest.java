@@ -60,6 +60,12 @@ public final class ShepherdMomentsGameTest {
     @AfterBatch(batch = "shepherd_caught_us") public static void caughtUsAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
     @BeforeBatch(batch = "shepherd_caught_what") public static void caughtWhatBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
     @AfterBatch(batch = "shepherd_caught_what") public static void caughtWhatAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_offer_hollow") public static void offerHollowBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_offer_hollow") public static void offerHollowAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_offer_gap") public static void offerGapBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_offer_gap") public static void offerGapAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_offer_menu") public static void offerMenuBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_offer_menu") public static void offerMenuAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
     @BeforeBatch(batch = "shepherd_moment_clovis") public static void clovisBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
     @AfterBatch(batch = "shepherd_moment_clovis") public static void clovisAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
 
@@ -370,6 +376,56 @@ public final class ShepherdMomentsGameTest {
             ShepherdTalk.reply(player, ShepherdTalk.liveId(), 1);
             h.assertTrue(ShepherdTalk.liveId() == 0, "Not now ends it");
             h.assertTrue(data(h).promptNode() == null && data(h).resumeNode() == null, "And it stays gone: " + data(h).promptNode() + ", " + data(h).resumeNode());
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_offer_hollow", timeoutTicks = 400)
+    public static void shepherdSeesAHollow(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h, AT_HER);
+            var she = awake(h, player, FRIENDLY);
+            var hollow = ModEntities.HOLLOW.get().create(h.getLevel());
+            hollow.moveTo(she.position().add(-4, 0, 0));
+            h.getLevel().addFreshEntity(hollow);
+            h.runAfterDelay(12, () -> {
+                h.assertTrue(data(h).flag("offer_saw_hollow"), "A Hollow is not an Enemy, and she sees it all the same");
+                h.succeed();
+            });
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_offer_gap", timeoutTicks = 400)
+    public static void shepherdOffersOneADay(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h, AT_HER);
+            var she = awake(h, player, FRIENDLY);
+            data(h).flag("offer_saw_hollow", true);
+            data(h).flag("offer_saw_mimic", true);
+            look(h, she, player);
+            h.assertTrue("advice.offer.hollow".equals(data(h).promptNode()), "The first: " + data(h).promptNode());
+            data(h).promptNode(null);
+            look(h, she, player);
+            h.assertTrue(data(h).promptNode() == null, "Told not now, she does not ask again at once: " + data(h).promptNode());
+            data(h).deedReady("offer_ready", 0);
+            look(h, she, player);
+            h.assertTrue("advice.offer.mimic".equals(data(h).promptNode()), "The next day, the next one: " + data(h).promptNode());
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_offer_menu", timeoutTicks = 400)
+    public static void shepherdTheOfferEndsOnTheAdvice(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h, AT_HER);
+            var she = awake(h, player, FRIENDLY);
+            data(h).promptNode("advice.offer.frostbitten");
+            she.interact(player, InteractionHand.MAIN_HAND);
+            ShepherdTalk.reply(player, ShepherdTalk.liveId(), 0);
+            h.assertTrue("advice.frostbitten".equals(ShepherdTalk.liveNode()), "Yes runs it: " + ShepherdTalk.liveNode());
+            ShepherdTalk.reply(player, ShepherdTalk.liveId(), ShepherdConversation.CONTINUE);
+            h.assertTrue(ShepherdTopics.ADVICE.equals(ShepherdTalk.liveNode()), "It ends on the advice she was giving: " + ShepherdTalk.liveNode());
+            h.assertTrue(data(h).resumeNode() == null, "And nothing waits behind a menu: " + data(h).resumeNode());
             h.succeed();
         });
     }

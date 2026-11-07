@@ -42,7 +42,7 @@ public final class ShepherdEggs {
     private static final String T5_DONE = "t5_done";
     /** What she has seen near them, what she has already offered on it, and the node that offers it. */
     private static final String CONFRONT = "caught.confront";
-    private static final String SAW = "offer_saw_", OFFERED = "offer_made_", OFFER = "advice.offer.";
+    private static final String SAW = "offer_saw_", OFFERED = "offer_made_", OFFER = "advice.offer.", OFFER_READY = "offer_ready";
     private static final List<String> OFFERS = List.of("frostbitten", "frostmite", "hollow", "hunter", "mimic", "architect");
     /** Set by "Or what, Shepherd?" in the first meeting. */
     private static final String NARRATED = "fm_narrated";
@@ -71,6 +71,11 @@ public final class ShepherdEggs {
         wall(level, near, hearths.hearths().stream().filter(ReturnedHearthSavedData.HearthRecord::structurePlaced).map(ReturnedHearthSavedData.HearthRecord::center).toList(), hearths.maeveErased());
     }
 
+    /** Whether a talk opened on one of her offers, so it belongs to the advice. */
+    static boolean offering(String node) {
+        return node.startsWith(OFFER);
+    }
+
     /** She has seen one, so she noticed: it goes on file for when things are calm. */
     static void sighted(ShepherdSavedData data, Mob mob) {
         String id = mob instanceof FrostbittenEntity ? "frostbitten" : mob instanceof FrostmiteEntity ? "frostmite" : mob instanceof HollowEntity ? "hollow"
@@ -78,15 +83,16 @@ public final class ShepherdEggs {
         if (id != null && !data.flag(SAW + id)) data.flag(SAW + id, true);
     }
 
-    /** Once she likes them, she offers what she knows on what she saw, once a mob, unless they asked already or the advice has stopped being true. */
+    /** Once she likes them, she offers what she knows on what she saw, once a mob and once a day, unless they asked already or the advice has stopped being true. */
     private static void offer(ServerLevel level, List<ServerPlayer> near, ShepherdSavedData data) {
         var server = level.getServer();
         long now = server.overworld().getGameTime();
         if (!data.tier().atLeast(Tier.FRIENDLY) || data.promptNode() != null || data.resumeNode() != null || ShepherdTalk.live() || !data.flag(ShepherdPrompt.FIRST_MEETING_DONE)) return;
-        if (ShepherdReactions.quiet(data, now) || PostMaeveWorldState.isErased(server) || !ShepherdPrompt.calm(server, level, near)) return;
+        if (now < data.deedReady(OFFER_READY) || ShepherdReactions.quiet(data, now) || PostMaeveWorldState.isErased(server) || !ShepherdPrompt.calm(server, level, near)) return;
         for (String mob : OFFERS) {
             if (!data.flag(SAW + mob) || data.flag(OFFERED + mob) || data.flag(ShepherdTopics.HEARD + mob)) continue;
             data.flag(OFFERED + mob, true);
+            data.deedReady(OFFER_READY, now + ShepherdPolicy.DAY_TICKS);
             ShepherdPrompt.ask(data, OFFER + mob);
             return;
         }

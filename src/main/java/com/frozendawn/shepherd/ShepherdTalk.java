@@ -260,6 +260,7 @@ public final class ShepherdTalk {
     private static void layTopics() {
         var holds = holds();
         if (live.talk != null && ShepherdTopics.onMenu(live.talk.current().id())) live.menu = ShepherdTopics.root(live.talk.current().id());
+        else if (live.talk != null && ShepherdEggs.offering(live.talk.current().id())) live.menu = ShepherdTopics.ADVICE;
         if (live.focus == null) live.focus = focus();
         for (String root : List.of(ShepherdTopics.MENU, ShepherdTopics.ADVICE)) live.nodes.putAll(ShepherdTopics.menu(root, openTopics(root), holds, live.focus, false));
         if (live.detour && !ShepherdTopics.AFTER.equals(live.back)) live.nodes.remove(ShepherdTopics.AFTER);
@@ -680,7 +681,7 @@ public final class ShepherdTalk {
             return;
         }
         // An unspent prompt resumes by its own id, whichever node it opened on, or it would stop being that prompt.
-        if (!live.fromHub) data.resumeNode(node.responses().isEmpty() && node.next() == null ? null : live.fromPrompt != null ? live.fromPrompt : node.id());
+        if (!live.fromHub) data.resumeNode(node.responses().isEmpty() && node.next() == null || ShepherdTopics.onMenu(node.id()) ? null : live.fromPrompt != null ? live.fromPrompt : node.id());
         int logo = live.she.logoTicks();
         live.lines = live.talk.lines();
         live.line = 0;

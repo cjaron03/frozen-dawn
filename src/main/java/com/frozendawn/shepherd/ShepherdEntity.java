@@ -1,5 +1,6 @@
 package com.frozendawn.shepherd;
 
+import com.frozendawn.entity.HollowEntity;
 import com.frozendawn.init.ModEntities;
 import com.frozendawn.init.ModSounds;
 import com.frozendawn.miller.MillerPattern;
@@ -278,7 +279,7 @@ public final class ShepherdEntity extends PathfinderMob {
     /** What she can see for herself, and only that. */
     private Mob nearestHostile(ServerLevel level) {
         Mob nearest = null;
-        for (var mob : level.getEntitiesOfClass(Mob.class, getBoundingBox().inflate(ShepherdPolicy.WATCH_BLOCKS), mob -> mob instanceof Enemy && mob.isAlive())) {
+        for (var mob : level.getEntitiesOfClass(Mob.class, getBoundingBox().inflate(ShepherdPolicy.WATCH_BLOCKS), mob -> (mob instanceof Enemy || mob instanceof HollowEntity) && mob.isAlive())) {
             if (distanceTo(mob) <= ShepherdPolicy.WATCH_BLOCKS && (nearest == null || distanceTo(mob) < distanceTo(nearest)) && hasLineOfSight(mob)) nearest = mob;
         }
         return nearest;
@@ -692,7 +693,7 @@ public final class ShepherdEntity extends PathfinderMob {
         private boolean needed(ServerPlayer player) {
             var server = getServer();
             var data = ShepherdSavedData.get(server);
-            return player == null || !data.flag(ShepherdPrompt.FIRST_MEETING_DONE) || data.waiting() || data.tier() == Tier.WARY
+            return player == null || hologramHold > 0 || !data.flag(ShepherdPrompt.FIRST_MEETING_DONE) || data.waiting() || data.tier() == Tier.WARY
                     || ShepherdTalk.live() || asking() || watching != null || stoodFor() < ShepherdPolicy.STILL_TICKS
                     || !ShepherdPrompt.calm(server, (ServerLevel) level(), List.of(player));
         }

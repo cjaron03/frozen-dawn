@@ -1328,5 +1328,9 @@ shepherdcanbeconfronted xml
 shepherdcanbeletoff xml
 shepherdoffersonceafterseeingamob xml
 shepherdoffersonlywhenitwouldhelp xml
+shepherdseesahollow xml
+shepherdoffersoneaday xml
+shepherdtheofferendsontheadvice xml
+shepherddoesnotwanderfromafadingfigure xml
 shepherdtheofferrunsheradvice xml
 shepherdtheoffertakesno xml
