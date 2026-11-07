@@ -1,5 +1,6 @@
 package com.frozendawn.shepherd;
 
+import com.frozendawn.entity.HollowEntity;
 import com.frozendawn.init.ModEntities;
 import com.frozendawn.init.ModSounds;
 import com.frozendawn.miller.MillerPattern;
@@ -7,6 +8,7 @@ import com.frozendawn.shepherd.ShepherdAffinity.Tier;
 import com.frozendawn.shepherd.ShepherdFace.Mood;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -51,6 +53,12 @@ public final class ShepherdEntity extends PathfinderMob {
     private static final EntityDataAccessor<Integer> DATA_THINK = SynchedEntityData.defineId(ShepherdEntity.class, EntityDataSerializers.INT);
     /** Nine's lamp, in her handle. The saved flag is the truth: a body is only told. */
     private static final EntityDataAccessor<Boolean> DATA_NINE_LAMP = SynchedEntityData.defineId(ShepherdEntity.class, EntityDataSerializers.BOOLEAN);
+    /** The figure she is projecting, or 0. Never saved: {@link ShepherdProjection} is gone after a reload, and so is this. */
+    private static final EntityDataAccessor<Integer> DATA_PROJECTION = SynchedEntityData.defineId(ShepherdEntity.class, EntityDataSerializers.INT);
+    /** Whose skin the small you wears: her follower's, whoever is looking. */
+    private static final EntityDataAccessor<Optional<UUID>> DATA_PROJECTED_PLAYER = SynchedEntityData.defineId(ShepherdEntity.class, EntityDataSerializers.OPTIONAL_UUID);
+    /** Caught: her body spins away. */
+    private static final EntityDataAccessor<Boolean> DATA_FLUSTER = SynchedEntityData.defineId(ShepherdEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Byte> DATA_BOOT = SynchedEntityData.defineId(ShepherdEntity.class, EntityDataSerializers.BYTE);
     /** What her display shows for a replay's boot: her own face, nothing, or the BIOS cursor. */
     public static final byte BOOT_NONE = 0, BOOT_DARK = 1, BOOT_CURSOR = 2;
@@ -73,6 +81,7 @@ public final class ShepherdEntity extends PathfinderMob {
     private int logoTicks;
     private int bootTicks;
     private int thinkTicks;
+    private int flusterTicks;
     private int askTicks;
     private int reactTicks;
     private Mob watching;
@@ -81,11 +90,19 @@ public final class ShepherdEntity extends PathfinderMob {
     private long stoodSince;
     private long nextLook, closeUntil;
     private ShepherdCuriosity.Target lookingAt;
-    /** Client only: the mood last drawn, and how much of the blink between two moods is left. */
+    /** Client only: the mood last drawn, since when, and her face on its way to the next. */
     private Mood shownMood;
-    private int moodBeat;
+    private int moodSince;
+    private final ShepherdFlow flow = new ShepherdFlow();
     /** Client only: how far into the wait it has got. */
     private int thinkAge;
+    /** Client only: how far into the spin. */
+    private int flusterAge;
+    /** Client only: how long the projection has been up, which way she faced when it came, and the figure under any flicker. */
+    private int projectionAge, eggAge, projectionFigure, hologramLeaving = ShepherdHologram.STAYING;
+    /** Server side: she waits here while her hologram goes, or it would slide off with her. */
+    private int hologramHold;
+    private float projectionYaw;
 
     public ShepherdEntity(EntityType<? extends ShepherdEntity> type, Level level) {
         super(type, level);
@@ -149,6 +166,9 @@ public final class ShepherdEntity extends PathfinderMob {
         builder.define(DATA_NINE_LAMP, false);
         builder.define(DATA_BOOT, BOOT_NONE);
         builder.define(DATA_THINK, 0);
+        builder.define(DATA_PROJECTION, ShepherdProjection.NONE);
+        builder.define(DATA_PROJECTED_PLAYER, Optional.empty());
+        builder.define(DATA_FLUSTER, false);
     }
 
     @Override protected PathNavigation createNavigation(Level level) {
@@ -259,7 +279,7 @@ public final class ShepherdEntity extends PathfinderMob {
     /** What she can see for herself, and only that. */
     private Mob nearestHostile(ServerLevel level) {
         Mob nearest = null;
-        for (var mob : level.getEntitiesOfClass(Mob.class, getBoundingBox().inflate(ShepherdPolicy.WATCH_BLOCKS), mob -> mob instanceof Enemy && mob.isAlive())) {
+        for (var mob : level.getEntitiesOfClass(Mob.class, getBoundingBox().inflate(ShepherdPolicy.WATCH_BLOCKS), mob -> (mob instanceof Enemy || mob instanceof HollowEntity) && mob.isAlive())) {
             if (distanceTo(mob) <= ShepherdPolicy.WATCH_BLOCKS && (nearest == null || distanceTo(mob) < distanceTo(nearest)) && hasLineOfSight(mob)) nearest = mob;
         }
         return nearest;
@@ -270,7 +290,10 @@ public final class ShepherdEntity extends PathfinderMob {
             watching = null;
             return;
         }
-        if (tickCount % WATCH_EVERY_TICKS == 0) watching = nearestHostile(level);
+        if (tickCount % WATCH_EVERY_TICKS == 0) {
+            watching = nearestHostile(level);
+            if (watching != null) ShepherdEggs.sighted(ShepherdSavedData.get(level.getServer()), watching);
+        }
         if (watching != null && !watching.isAlive()) watching = null;
         if (watching == null || asking()) return;
         getLookControl().setLookAt(watching, 30, 30);
@@ -322,6 +345,97 @@ public final class ShepherdEntity extends PathfinderMob {
         return ShepherdFace.thinking(Math.min(thinkAge, ticks - 1), ticks);
     }
 
+    public int projection() {
+        return entityData.get(DATA_PROJECTION);
+    }
+
+    void projection(int shown) {
+        entityData.set(DATA_PROJECTION, shown);
+    }
+
+    public Optional<UUID> projectedPlayer() {
+        return entityData.get(DATA_PROJECTED_PLAYER);
+    }
+
+    void projectedPlayer(Optional<UUID> who) {
+        entityData.set(DATA_PROJECTED_PLAYER, who);
+    }
+
+    /** She has been caught at it. */
+    void fluster() {
+        flusterTicks = ShepherdFace.FLUSTER_TICKS;
+        entityData.set(DATA_FLUSTER, true);
+        react(Mood.FLUSTERED, ShepherdFace.FLUSTER_TICKS);
+    }
+
+    public boolean flustered() {
+        return entityData.get(DATA_FLUSTER);
+    }
+
+    /** Client only. */
+    public int flusterAge() {
+        return flusterAge;
+    }
+
+    /** Client only. */
+    public int projectionAge() {
+        return projectionAge;
+    }
+
+    /** Client only: the figure keeps its place, whatever she turns to. */
+    public float projectionYaw() {
+        return projectionYaw;
+    }
+
+    /** Client only: the one she is really showing. */
+    public int projectionFigure() {
+        return projectionFigure;
+    }
+
+    /** Client only: how long the egg's shape has been up. */
+    /** Client side: how far through going the hologram is, or {@link ShepherdHologram#STAYING}. */
+    public int hologramLeaving() {
+        return hologramLeaving;
+    }
+
+    /** Client side: there is a hologram to draw, staying or going. */
+    public boolean hologramShown() {
+        return projection() != ShepherdProjection.NONE || hologramLeaving != ShepherdHologram.STAYING;
+    }
+
+    void holdForHologram() {
+        hologramHold = ShepherdHologram.LEAVE_TICKS;
+    }
+
+    public int eggAge() {
+        return eggAge;
+    }
+
+    private void trackProjection() {
+        int shown = projection();
+        if (shown == ShepherdProjection.NONE) {
+            if (projectionAge == 0) return;
+            projectionAge++;
+            if (++hologramLeaving == ShepherdHologram.LEAVE_TICKS) {
+                hologramLeaving = ShepherdHologram.STAYING;
+                projectionAge = 0;
+            }
+            return;
+        }
+        // Asked again before the last one had gone.
+        if (hologramLeaving != ShepherdHologram.STAYING) {
+            hologramLeaving = ShepherdHologram.STAYING;
+            projectionAge = 0;
+        }
+        if (projectionAge++ == 0) projectionYaw = yHeadRot;
+        if (shown == ShepherdProjection.EGG_FRAME) {
+            eggAge++;
+        } else {
+            eggAge = 0;
+            projectionFigure = shown;
+        }
+    }
+
     public byte bootDisplay() {
         return entityData.get(DATA_BOOT);
     }
@@ -351,8 +465,14 @@ public final class ShepherdEntity extends PathfinderMob {
         return askTicks > 0;
     }
 
-    public boolean moodBeat() {
-        return moodBeat > 0;
+    /** Client only: how long the mood has been showing. */
+    public int moodAge() {
+        return tickCount - moodSince;
+    }
+
+    /** Client only: what her display shows on the way to this. */
+    public ShepherdFace.Cells flowed(ShepherdFace.Cells wanted) {
+        return flow.shown(wanted, tickCount);
     }
 
     public int rebootTicks() {
@@ -369,6 +489,8 @@ public final class ShepherdEntity extends PathfinderMob {
         talkFor(0);
         logoTicks = 0;
         thinkFor(0);
+        flusterTicks = 0;
+        entityData.set(DATA_FLUSTER, false);
         bootStop();
         askTicks = 0;
         reactTicks = 0;
@@ -424,21 +546,16 @@ public final class ShepherdEntity extends PathfinderMob {
     @Override public void tick() {
         super.tick();
         if (!(level() instanceof ServerLevel level)) {
-            if (moodBeat > 0) moodBeat--;
             if (mood() != shownMood) {
-                if (shownMood != null) moodBeat = ShepherdFace.MOOD_BEAT_TICKS;
                 shownMood = mood();
+                moodSince = tickCount;
             }
             // Joining mid-way, or the moment she comes back: the logo always starts at the same point.
             if (!crashed()) crashAge = 0;
             else crashAge = offline() ? crashAge + 1 : Math.max(crashAge, ShepherdPolicy.CRASH_DOWN_TICKS) + 1;
-            if (thinking()) {
-                thinkAge++;
-            } else if (thinkAge > 0) {
-                // The same blink as a change of mood, even if the mood did not change: it takes her into the line's face.
-                thinkAge = 0;
-                moodBeat = ShepherdFace.MOOD_BEAT_TICKS;
-            }
+            thinkAge = thinking() ? thinkAge + 1 : 0;
+            trackProjection();
+            flusterAge = flustered() ? flusterAge + 1 : 0;
             return;
         }
         // A /summon, or a body that loaded after its replacement was built. There is one of her.
@@ -453,12 +570,14 @@ public final class ShepherdEntity extends PathfinderMob {
         } else if (crashed() && offline() && rebootTicks == ShepherdPolicy.CRASH_TICKS + ShepherdPolicy.CRASH_STILL_TICKS) {
             ShepherdTalk.crashStill(this);
         }
+        if (hologramHold > 0) hologramHold--;
         if (talkTicks > 0 && --talkTicks == 0) entityData.set(DATA_TALKING, false);
         if (logoTicks > 0 && --logoTicks == 0) {
             entityData.set(DATA_LOGO, false);
             entityData.set(DATA_CRASH, false);
         }
         if (thinkTicks > 0 && --thinkTicks == 0) entityData.set(DATA_THINK, 0);
+        if (flusterTicks > 0 && --flusterTicks == 0) entityData.set(DATA_FLUSTER, false);
         if (bootTicks > 0 && --bootTicks == 0) {
             bootStop();
             ShepherdBoot.biosDone(this);
@@ -574,7 +693,7 @@ public final class ShepherdEntity extends PathfinderMob {
         private boolean needed(ServerPlayer player) {
             var server = getServer();
             var data = ShepherdSavedData.get(server);
-            return player == null || !data.flag(ShepherdPrompt.FIRST_MEETING_DONE) || data.waiting() || data.tier() == Tier.WARY
+            return player == null || hologramHold > 0 || !data.flag(ShepherdPrompt.FIRST_MEETING_DONE) || data.waiting() || data.tier() == Tier.WARY
                     || ShepherdTalk.live() || asking() || watching != null || stoodFor() < ShepherdPolicy.STILL_TICKS
                     || !ShepherdPrompt.calm(server, (ServerLevel) level(), List.of(player));
         }
@@ -632,8 +751,9 @@ public final class ShepherdEntity extends PathfinderMob {
             setFlags(EnumSet.of(Flag.MOVE, Flag.LOOK));
         }
 
+        /** Nobody while she projects: she stays with the figure, so it can be walked round and walked away from. */
         private ServerPlayer target() {
-            return ShepherdSavedData.get(getServer()).waiting() ? null : follower();
+            return ShepherdSavedData.get(getServer()).waiting() || ShepherdProjection.active() || hologramHold > 0 ? null : follower();
         }
 
         @Override public boolean canUse() {

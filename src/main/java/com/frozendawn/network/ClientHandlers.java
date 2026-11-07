@@ -377,6 +377,11 @@ public final class ClientHandlers {
         com.frozendawn.client.ShepherdPromptStrip.say(payload.key(), payload.mood(), payload.arg());
     }
 
+    public static void handleShepherdStrip(ShepherdStripPayload payload) {
+        if (payload.clear()) com.frozendawn.client.ShepherdPromptStrip.clear();
+        else com.frozendawn.client.ShepherdPromptStrip.finish();
+    }
+
     public static void handleShepherdClose() {
         var open = Minecraft.getInstance().screen;
         if (open instanceof ShepherdScreen screen) screen.closeFromServer();

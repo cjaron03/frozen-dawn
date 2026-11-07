@@ -158,6 +158,11 @@ public final class ShepherdPrompt {
         data.flag(asked, true);
     }
 
+    /** Something she wants to offer. It waits on the strip as any other prompt does. */
+    static void ask(ShepherdSavedData data, String node) {
+        raise(data, node);
+    }
+
     private static void raise(ShepherdSavedData data, String node) {
         withdraw(data);
         data.promptNode(node);

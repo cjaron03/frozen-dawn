@@ -1007,6 +1007,56 @@
           "mood": "neutral"
         }
       ]
+    },
+    {
+      "id": "caught.confront",
+      "plain": true,
+      "lines": [
+        {
+          "line": "shepherd.caught.confront",
+          "mood": "flustered"
+        }
+      ],
+      "responses": [
+        {
+          "slot": "ask",
+          "label": "shepherd.caught.confront.us",
+          "next": "caught.us"
+        },
+        {
+          "slot": "kind",
+          "label": "shepherd.caught.confront.what",
+          "next": "caught.what"
+        }
+      ]
+    },
+    {
+      "id": "caught.us",
+      "plain": true,
+      "lines": [
+        {
+          "line": "shepherd.caught.us.1",
+          "mood": "flustered"
+        },
+        {
+          "line": "shepherd.caught.us.2",
+          "mood": "thinking"
+        },
+        {
+          "line": "shepherd.caught.us.3",
+          "mood": "amused"
+        }
+      ]
+    },
+    {
+      "id": "caught.what",
+      "plain": true,
+      "lines": [
+        {
+          "line": "shepherd.caught.what",
+          "mood": "amused"
+        }
+      ]
     }
   ]
 }

@@ -22,8 +22,9 @@ class IntentIndexTest {
     private static final Intent ORSA = new Intent("orsa", "orsa.orsa", null, "label.orsa", "guess.orsa", List.of());
     private static final Intent LOCKED = new Intent("deng", null, null, null, null, List.of());
     private static final Intent HELLO = new Intent("hello", "chat.hello", null, null, null, List.of());
-    private static final int ACCEPTED_TOP_ONE = 59, ACCEPTED_TOP_TWO = 66;
+    private static final int ACCEPTED_TOP_ONE = 59, ACCEPTED_TOP_TWO = 65;
     private static final int ACCEPTED_TOPIC_TOP_ONE = 83, ACCEPTED_TOPIC_TOP_TWO = 95, ACCEPTED_TOPIC_OUTSIDE_STRONG = 3;
+    private static final int ACCEPTED_ADVICE_OUTSIDE_STRONG = 2;
     private static final Predicate<String> ALL = condition -> true, NONE = condition -> false;
     /** The topics M5 writes, and what M4's fresh set must go on reading as locked. */
     private static final Set<String> TOPICS = Set.of("how_you_know", "gift_shop", "seventh_floor", "safety_bulletin", "penguin", "kevin_volunteer", "deng", "anand", "varga", "hale", "the_book",
@@ -38,6 +39,7 @@ class IntentIndexTest {
 
     private static List<Intent> shipped() throws IOException {
         var intents = new ArrayList<>(Intent.parse(file("/data/frozendawn/shepherd/intents/orsa.json")));
+        intents.addAll(Intent.parse(file("/data/frozendawn/shepherd/intents/advice.json")));
         intents.addAll(Intent.parse(file("/data/frozendawn/shepherd/intents/chat.json")));
         return intents;
     }
@@ -116,9 +118,24 @@ class IntentIndexTest {
         }
     }
 
+    /** The owner typed this in the M6 pass and she answered about the torch, on the word "scares". */
+    @Test void askingWhatScaresHerIsNotTheTorch() throws IOException {
+        assertNotEquals(Band.STRONG, index().judge("what scares you", ALL).band());
+    }
+
     /** M4's set measures what the owner accepted, so the topics M5 writes stay locked for it, as they were (Ruling 23). */
     private static IntentIndex m4Index() throws IOException {
-        var intents = shipped().stream().map(intent -> TOPICS.contains(intent.id()) ? new Intent(intent.id(), null, null, null, null, intent.examples()) : intent).toList();
+        var intents = shipped().stream().map(intent -> TOPICS.contains(intent.id()) || added(intent) ? new Intent(intent.id(), null, null, null, null, intent.examples()) : intent).toList();
+        return new IntentIndex(intents, Embeddings.load());
+    }
+
+    /** What M6 adds, which the older sets go on reading as locked (Ruling 21). */
+    private static boolean added(Intent intent) {
+        return !intent.menu().equals(Intent.ORSA) || intent.id().equals("need_help");
+    }
+
+    private static IntentIndex m5Index() throws IOException {
+        var intents = shipped().stream().map(intent -> added(intent) ? new Intent(intent.id(), null, null, null, null, intent.examples()) : intent).toList();
         return new IntentIndex(intents, Embeddings.load());
     }
 
@@ -176,7 +193,7 @@ class IntentIndexTest {
 
     /**
      * M0's marks, on lines written before this ran (Ruling 10). The set read 59 and 66 of 74, one line short of 80 and 90 percent on each, and the owner accepted that on
-     * 2026-11-05, so those two hold at the accepted counts. If this fails, stop and report: never tune against it.
+     * 2026-11-05, so those two hold at the accepted counts. M6's Ruling 31 moves top two to 65. If this fails, stop and report: never tune against it.
      */
     @Test void theFreshSetHoldsTheMarks() throws IOException {
         var marks = marks(m4Index(), file("/frozendawn/intent_fresh.json").getAsJsonObject(), examples());
@@ -195,7 +212,7 @@ class IntentIndexTest {
         var fresh = file("/frozendawn/intent_fresh_topics.json").getAsJsonObject();
         var heldOut = examples();
         heldOut.addAll(flat(file("/frozendawn/intent_fresh.json").getAsJsonObject()).stream().map(String::toLowerCase).toList());
-        var marks = marks(index(), fresh, heldOut);
+        var marks = marks(m5Index(), fresh, heldOut);
         var inScope = fresh.getAsJsonObject("in_scope");
         for (String topic : TOPICS) assertTrue(flat(inScope.getAsJsonObject(topic)).size() >= 6, topic);
         assertTrue(flat(inScope.getAsJsonObject("who_are_you")).size() >= 6);
@@ -204,6 +221,21 @@ class IntentIndexTest {
         assertTrue(marks.top2() >= ACCEPTED_TOPIC_TOP_TWO, marks.report());
         assertTrue(marks.strongWrong() <= 0.05 * marks.lines(), marks.report());
         assertTrue(marks.outsideStrong() <= ACCEPTED_TOPIC_OUTSIDE_STRONG, marks.report());
+    }
+
+    /** M0's marks on the twenty M6 adds, on lines committed before their examples existed (Ruling 20), out-of-scope Strong as accepted (Ruling 31). If this fails, stop and report: never tune against it. */
+    @Test void theAdviceSetHoldsTheMarks() throws IOException {
+        var fresh = file("/frozendawn/intent_fresh_advice.json").getAsJsonObject();
+        var heldOut = examples();
+        heldOut.addAll(flat(file("/frozendawn/intent_fresh.json").getAsJsonObject()).stream().map(String::toLowerCase).toList());
+        heldOut.addAll(flat(file("/frozendawn/intent_fresh_topics.json").getAsJsonObject()).stream().map(String::toLowerCase).toList());
+        var marks = marks(index(), fresh, heldOut);
+        for (var intent : fresh.getAsJsonObject("in_scope").entrySet()) assertTrue(flat(intent.getValue().getAsJsonObject()).size() >= 6, intent.getKey());
+        assertTrue(marks.lines() >= 120 && marks.outside() >= 34, marks.report());
+        assertTrue(marks.top1() >= 0.8 * marks.lines(), marks.report());
+        assertTrue(marks.top2() >= 0.9 * marks.lines(), marks.report());
+        assertTrue(marks.strongWrong() <= 0.05 * marks.lines(), marks.report());
+        assertTrue(marks.outsideStrong() <= ACCEPTED_ADVICE_OUTSIDE_STRONG, marks.report());
     }
 
     private static List<String> flat(JsonObject object) {

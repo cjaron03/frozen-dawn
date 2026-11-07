@@ -212,7 +212,136 @@ def caught_sheet():
     img.save(HERE / 'caught-projection-mockup.png')
 
 
+def hooded():
+    """The egg: a small hooded figure on one knee, facing +z, holding out a small light. Half size, like the rest."""
+    cells = {}
+    part(cells, -2, 0, -5, 0, 2, 1, 'holo')  # Left shin, flat behind it.
+    part(cells, -2, 2, -1, 0, 6, 1, 'holo')  # Left thigh, down to the knee.
+    part(cells, 0, 4, -1, 2, 6, 4, 'holo')  # Right thigh, forward.
+    part(cells, 0, 0, 2, 2, 4, 4, 'holo')  # Right shin, foot down.
+    part(cells, -3, 3, -2, 3, 6, 2, 'glow2')  # The cloak's hem.
+    part(cells, -3, 6, -2, 3, 12, 2, 'glow2')  # The cloak.
+    part(cells, -3, 8, 2, -1, 10, 5, 'glow2')  # Left arm, held out.
+    part(cells, 1, 8, 2, 3, 10, 5, 'glow2')  # Right arm, held out.
+    part(cells, -3, 12, -3, 3, 16, 2, 'glow2')  # The hood.
+    part(cells, -2, 16, -2, 2, 17, 1, 'glow2')
+    part(cells, -2, 12, 2, 2, 15, 3, 'holo2')  # The dark inside the hood. No face.
+    part(cells, -1, 8, 5, 1, 10, 7, 'glow')  # What it holds out.
+    for left in (-11, -7):  # The file's number, floating beside it. Drawn, never said.
+        for y, row in enumerate(('###', '#.#', '###', '#..', '###')):
+            for x, texel in enumerate(row):
+                if texel == '#':
+                    cells[(left + x, 11 + y, 0)] = 'glow'
+    return cells
+
+
+def egg(tick):
+    """Hunter, a tear, the hooded figure for a moment, a tear, Hunter."""
+    if tick < 8 or tick >= 20:
+        return hunter(tick)
+    shape = scan(hooded(), tick, 'glow')
+    if 10 <= tick < 18:
+        return shape
+    other = hunter(tick)
+    return {key: c for key, c in {**other, **shape}.items() if (key[1] + tick) % 3 != 1 or c == 'glow'}
+
+
+def figure_only(fn, tick):
+    b = scene(fn, tick)
+    b.v = {key: c for key, c in b.v.items() if key[0] < FX + 4 and key[1] > 2}
+    return b
+
+
+def egg_sheet():
+    img = Image.new('RGB', (1000, 640), C['bg'])
+    d = ImageDraw.Draw(img)
+    d.text((24, 16), 'AURORA M6: THE EGG', font=font(22), fill=C['text'])
+    d.text((24, 46), 'On the second projection, the figure flickers to this for a moment, with its file number, 66, beside it. Motion is in egg-mockup.gif.',
+           font=font(12), fill=C['dim'])
+    d.text((24, 88), 'IN THE WORLD, FROM THE FRONT', font=font(14), fill=C['glow'])
+    draw_scene(d, lambda tick: scan(hooded(), tick, 'glow'), 0, 24, 320, 7)
+    d.text((500, 88), 'THE FIGURE: FRONT, THEN SIDE', font=font(14), fill=C['glow'])
+    still = lambda tick: scan(hooded(), tick, 'glow')
+    flat(d, figure_only(still, 3), 500, 320, 10, 'front')
+    flat(d, figure_only(still, 3), 730, 320, 10, 'side')
+    d.text((24, 350), 'THE FLICKER, FRAME BY FRAME', font=font(14), fill=C['glow'])
+    d.text((24, 372), 'Hunter, a tear, the figure, a tear, Hunter. Under two seconds in all at this speed.', font=font(12), fill=C['dim'])
+    for i, tick in enumerate((6, 9, 12, 16, 19, 21)):
+        flat(d, figure_only(egg, tick), 40 + i * 160, 600, 7, 'front')
+    img.save(HERE / 'egg-mockup.png')
+    w, h, s = 340, 270, 6
+    frames = []
+    for tick in range(FRAMES):
+        frame = Image.new('RGB', (w, h), C['bg'])
+        draw_scene(ImageDraw.Draw(frame), egg, tick, 28, h - 24, s)
+        frames.append(frame)
+    frames[0].save(HERE / 'egg-mockup.gif', save_all=True, append_images=frames[1:], duration=FRAME_MS, loop=0)
+
+
+BEAM_FRAMES, FORM_FRAMES, ARRIVE_FRAMES = 7, 14, 30  # About one second of beam, two of forming, at 150 ms a frame.
+
+
+def arriving(fn, frame):
+    """The beam reaches out from her first, then the figure forms in it a few texels at a time, its eyes last."""
+    b = lantern()
+    reach = min(1, (frame + 1) / BEAM_FRAMES)
+    stage(b, frame)
+    far = -4 + (FX + 4 + 4) * reach
+    b.v = {key: c for key, c in b.v.items() if key[1] == 2 and reach == 1 or key[1] != 2 and not (key[0] < far and key[2] == FZ and key[0] < -3)}
+    formed = max(0, (frame - BEAM_FRAMES + 1) / FORM_FRAMES)
+    for (x, y, z), color in fn(frame).items():
+        if formed >= 1 or color != 'glow' and hash3(x, y, z) % 100 < formed * 100:
+            b.v[(FX + x, FY + y, FZ + z)] = color
+    return b
+
+
+def arrive_gif():
+    w, h, s = 340, 270, 6
+    frames = []
+    for frame in range(ARRIVE_FRAMES):
+        img = Image.new('RGB', (w * 3, h), C['bg'])
+        d = ImageDraw.Draw(img)
+        for i, (name, _, fn) in enumerate(FIGURES):
+            d.text((i * w + 16, 12), name, font=font(14), fill=C['glow'])
+            flat(d, arriving(fn, frame), i * w + 28, h - 24, s, 'front')
+        frames.append(img)
+    frames[0].save(HERE / 'hologram-arrive-mockup.gif', save_all=True, append_images=frames[1:], duration=FRAME_MS, loop=0)
+
+
+HOLD_FRAMES, FADE_FRAMES, RETRACT_FRAMES, LEAVE_FRAMES = 4, 8, 3, 20  # About a second and a bit of fading, then the beam goes home.
+
+
+def leaving(fn, frame):
+    """The arrival run backward and quicker: the eyes go first, the figure falls away a few texels at a time, and the beam draws back into her."""
+    b = lantern()
+    stage(b, frame)
+    gone = max(0, (frame - HOLD_FRAMES + 1) / FADE_FRAMES)
+    reach = 1 - min(1, max(0, frame - HOLD_FRAMES - FADE_FRAMES + 1) / RETRACT_FRAMES)
+    far = -4 + (FX + 4 + 4) * reach
+    b.v = {key: c for key, c in b.v.items() if key[1] == 2 and reach == 1 or key[1] != 2 and not (key[0] < far and key[2] == FZ and key[0] < -3)}
+    for (x, y, z), color in fn(frame).items():
+        if gone == 0 or color != 'glow' and hash3(x, y, z) % 100 >= gone * 100:
+            b.v[(FX + x, FY + y, FZ + z)] = color
+    return b
+
+
+def leave_gif():
+    w, h, s = 340, 270, 6
+    frames = []
+    for frame in range(LEAVE_FRAMES):
+        img = Image.new('RGB', (w * 3, h), C['bg'])
+        d = ImageDraw.Draw(img)
+        for i, (name, _, fn) in enumerate(FIGURES):
+            d.text((i * w + 16, 12), name, font=font(14), fill=C['glow'])
+            flat(d, leaving(fn, frame), i * w + 28, h - 24, s, 'front')
+        frames.append(img)
+    frames[0].save(HERE / 'hologram-leave-mockup.gif', save_all=True, append_images=frames[1:], duration=FRAME_MS, loop=0)
+
+
 if __name__ == '__main__':
     gif()
     sheet()
     caught_sheet()
+    egg_sheet()
+    arrive_gif()
+    leave_gif()

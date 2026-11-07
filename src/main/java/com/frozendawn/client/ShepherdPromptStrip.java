@@ -1,6 +1,7 @@
 package com.frozendawn.client;
 
 import com.frozendawn.init.ModSounds;
+import com.frozendawn.shepherd.ShepherdFace;
 import com.frozendawn.shepherd.ShepherdFace.Mood;
 import com.frozendawn.shepherd.ShepherdPolicy;
 import java.util.ArrayList;
@@ -15,14 +16,16 @@ import net.minecraft.network.chat.Style;
 
 /** Her voice during play, as `ambient-lines-mockup.png` draws it: a strip over the hotbar with her face where the badge goes. */
 public final class ShepherdPromptStrip {
-    private static final int WIDTH = 214, MIN_HEIGHT = 26, PADDING = 8, FROM_BOTTOM = 54, FACE_X = 7, FACE_SCALE = 3, TEXT_X = 38, TEXT_Y = 4, ROW = 11, ROW_WIDTH = 170;
+    private static final int MIN_HEIGHT = 26, PADDING = 8, FROM_BOTTOM = 54, FACE_X = 7, FACE_SCALE = 3, TEXT_X = 38, TEXT_Y = 4, ROW = 11, ROW_WIDTH = 170;
+    /** What the panel takes round the text. Past {@link #MAX_ROWS} it widens, up to the screen, so a long line does not climb over what she is showing you. */
+    private static final int FRAME_WIDTH = 44, MAX_ROWS = 3, WIDE_ROW_WIDTH = 330, SCREEN_EDGE = 8;
     private static final int PROMPT_EDGE = 0xFF7DF2C0, LINE_EDGE = 0xFF3AA984, BORDER = 0xFF0B1217;
     private static final long NONE = -1;
 
     private static long started = NONE;
     private static int typed;
     private static List<String> rows = List.of();
-    private static int length;
+    private static int length, rowWidth = ROW_WIDTH;
     private static Mood face = Mood.THINKING;
     private static boolean prompt;
 
@@ -46,9 +49,23 @@ public final class ShepherdPromptStrip {
         typed = 0;
         face = mood;
         prompt = false;
+        String text = arg == null ? I18n.get(key) : I18n.get(key, arg);
+        var splitter = minecraft.font.getSplitter();
+        rowWidth = ROW_WIDTH;
+        if (splitter.splitLines(text, ROW_WIDTH, Style.EMPTY).size() > MAX_ROWS) {
+            rowWidth = Math.max(ROW_WIDTH, Math.min(WIDE_ROW_WIDTH, minecraft.getWindow().getGuiScaledWidth() - FRAME_WIDTH - SCREEN_EDGE * 2));
+        }
         rows = new ArrayList<>();
-        for (var row : minecraft.font.getSplitter().splitLines(arg == null ? I18n.get(key) : I18n.get(key, arg), ROW_WIDTH, Style.EMPTY)) rows.add(row.getString());
+        for (var row : splitter.splitLines(text, rowWidth, Style.EMPTY)) rows.add(row.getString());
         length = rows.stream().mapToInt(String::length).sum();
+    }
+
+    /** The rest of the line at once. It still holds for as long as it would have. */
+    public static void finish() {
+        var level = Minecraft.getInstance().level;
+        if (started == NONE || level == null) return;
+        started = Math.min(started, level.getGameTime() - (long) length * ShepherdPolicy.TICKS_PER_CHAR);
+        typed = length;
     }
 
     public static void clear() {
@@ -72,10 +89,10 @@ public final class ShepherdPromptStrip {
         }
         boolean recording = face == Mood.RECORDING;
         int height = Math.max(MIN_HEIGHT, PADDING + ROW * (rows.size() + (prompt ? 1 : 0)));
-        int x = (g.guiWidth() - WIDTH) / 2, y = g.guiHeight() - FROM_BOTTOM - height;
+        int width = rowWidth + FRAME_WIDTH, x = (g.guiWidth() - width) / 2, y = g.guiHeight() - FROM_BOTTOM - height;
         g.setColor(1, 1, 1, alpha);
-        OrsaHudPanel.frame(g, x, y, WIDTH, height, recording ? OrsaHudPanel.MUTED_COLOR : prompt ? PROMPT_EDGE : LINE_EDGE, BORDER);
-        ShepherdFaceRenderer.draw(g, face, 0, false, 0, x + FACE_X, y + (height - 18) / 2, FACE_SCALE);
+        OrsaHudPanel.frame(g, x, y, width, height, recording ? OrsaHudPanel.MUTED_COLOR : prompt ? PROMPT_EDGE : LINE_EDGE, BORDER);
+        ShepherdFaceRenderer.draw(g, ShepherdFace.stripFace(face, age, length), 0, false, 0, x + FACE_X, y + (height - 18) / 2, FACE_SCALE);
         int left = shown, rowY = y + TEXT_Y;
         for (String row : rows) {
             g.drawString(minecraft.font, row.substring(0, Math.min(left, row.length())), x + TEXT_X, rowY, recording ? OrsaHudPanel.MUTED_COLOR : OrsaHudPanel.VALUE_COLOR, false);

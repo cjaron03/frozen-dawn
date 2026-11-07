@@ -4,6 +4,7 @@ import com.frozendawn.FrozenDawn;
 import com.frozendawn.data.ApocalypseState;
 import com.frozendawn.data.WinConditionState;
 import com.frozendawn.entity.ArchivistEntity;
+import com.frozendawn.homo.PostMaeveWorldState;
 import com.frozendawn.miller.SelfModel;
 import com.frozendawn.miller.Heard;
 import com.frozendawn.miller.Intent;
@@ -58,6 +59,8 @@ public final class ShepherdTalk {
     private static final int UNIMPRESSED_TICKS = 40;
     private static final int TALK_TICKS_PER_LINE = 80;
     private static final String FOUND = "found:", REMEMBERS = "remembers:", CARRYING = "carrying:", NOT = "not:", AND = "&";
+    /** Her greeting at Close: the node, the deed that spaces it, and the condition that picks the day's line. */
+    private static final String GREET = "hub.greet", GREET_READY = "greet", GREET_DAY = "greet_day:";
     private static final String CLEAR_NIGHT = "clear_night", LEAN = "t5_lean";
     /** The ground ref when there is no pit to give one for, as {@code TowerArchive} writes it. */
     private static final String NO_REF = "---";
@@ -85,6 +88,8 @@ public final class ShepherdTalk {
         boolean detour;
         /** Where a detour goes when it is done, one level deep. A scene's node, {@link ShepherdTopics#AFTER} for the menu, or null for the hub. */
         String back;
+        /** The menu the player last stood on, which a miss and the page after an answer return to. */
+        String menu = ShepherdTopics.MENU;
         /** What is on her mind for the menu in front of them, read once so a page cannot shift under a click. Null off the menu, and then it is read again. */
         String focus;
         /** The next line sent answers something typed, so she works it out first. */
@@ -141,6 +146,10 @@ public final class ShepherdTalk {
     /** A right-click. She picks an unfinished conversation back up, then takes one she has been waiting to have; otherwise this is the hub. */
     public static void openHub(ServerPlayer player, ShepherdEntity she) {
         if (she.offline()) return;
+        if (ShepherdProjection.active()) {
+            ShepherdProjection.skip(player);
+            return;
+        }
         if (live != null) {
             if (live.player != player) {
                 live.unimpressedTicks = UNIMPRESSED_TICKS;
@@ -157,7 +166,12 @@ public final class ShepherdTalk {
         var data = data();
         String waiting = waitingNode(data);
         if (waiting == null) {
-            showHub();
+            if (greets(data, player)) {
+                sayOnTheHub(GREET);
+                data.deedReady(GREET_READY, player.getServer().overworld().getGameTime() + ShepherdPolicy.DAY_TICKS);
+            } else {
+                showHub();
+            }
             return;
         }
         if (waiting.equals(data.promptNode())) live.fromPrompt = waiting;
@@ -165,6 +179,12 @@ public final class ShepherdTalk {
         if (waiting.equals(data.resumeNode())) data.resumeNode(null);
         if (waiting.equals(data.promptNode())) data.promptNode(null);
         showHub();
+    }
+
+    /** At Close she speaks first, once a day, to the one she files as Cargo, even if they left her waiting. */
+    private static boolean greets(ShepherdSavedData data, ServerPlayer player) {
+        long now = player.getServer().overworld().getGameTime();
+        return data.tier().atLeast(Tier.CLOSE) && player.getUUID().equals(data.follower()) && !ShepherdReactions.quiet(data, now) && now >= data.deedReady(GREET_READY);
     }
 
     /** A node that has gone missing, say from an edited datapack, is dropped here. */
@@ -195,7 +215,7 @@ public final class ShepherdTalk {
     }
 
     public static void start(ServerPlayer player, String node) {
-        if (live != null || !ShepherdDialogues.nodes().containsKey(node)) return;
+        if (live != null || ShepherdProjection.active() || !ShepherdDialogues.nodes().containsKey(node)) return;
         var id = ShepherdSavedData.get(player.getServer()).entity();
         if (id == null || !(player.serverLevel().getEntity(id) instanceof ShepherdEntity she) || she.offline()) return;
         live = new Live(player, she);
@@ -230,19 +250,21 @@ public final class ShepherdTalk {
     }
 
     /** What is on the menu for this speaker. A topic with its node gone from an edited datapack is not. */
-    private static List<Intent> openTopics() {
+    private static List<Intent> openTopics(String root) {
         var holds = holds();
-        return ShepherdIntents.intents().stream().filter(intent -> intent.label() != null && IntentIndex.open(intent, holds) && ShepherdDialogues.nodes().containsKey(intent.node())).toList();
+        return ShepherdIntents.intents().stream().filter(intent -> intent.label() != null && ShepherdTopics.sitsOn(intent, root) && IntentIndex.open(intent, holds)
+                && ShepherdDialogues.nodes().containsKey(intent.node())).toList();
     }
 
     /** The menu as it stands. A topic ends back on it, unless a detour has somewhere else to be. */
     private static void layTopics() {
         var holds = holds();
-        var open = openTopics();
+        if (live.talk != null && ShepherdTopics.onMenu(live.talk.current().id())) live.menu = ShepherdTopics.root(live.talk.current().id());
+        else if (live.talk != null && ShepherdEggs.offering(live.talk.current().id())) live.menu = ShepherdTopics.ADVICE;
         if (live.focus == null) live.focus = focus();
-        live.nodes.putAll(ShepherdTopics.menu(open, holds, live.focus, false));
+        for (String root : List.of(ShepherdTopics.MENU, ShepherdTopics.ADVICE)) live.nodes.putAll(ShepherdTopics.menu(root, openTopics(root), holds, live.focus, false));
         if (live.detour && !ShepherdTopics.AFTER.equals(live.back)) live.nodes.remove(ShepherdTopics.AFTER);
-        else live.nodes.put(ShepherdTopics.AFTER, ShepherdTopics.menu(open, holds, live.focus, true).get(ShepherdTopics.MENU));
+        else live.nodes.put(ShepherdTopics.AFTER, ShepherdTopics.menu(live.menu, openTopics(live.menu), holds, live.focus, true).get(live.menu));
     }
 
     /** What is on her mind with this speaker in front of her. Reading it changes nothing. */
@@ -262,6 +284,7 @@ public final class ShepherdTalk {
         if (condition.startsWith(FOUND)) return found(player, condition.substring(FOUND.length()));
         if (condition.startsWith(CARRYING)) return carrying(player, condition.substring(CARRYING.length()));
         if (condition.startsWith(REMEMBERS)) return MillerPattern.remembers(server, player.getUUID(), condition.substring(REMEMBERS.length()));
+        if (condition.startsWith(GREET_DAY)) return ShepherdPolicy.day(server.overworld().getGameTime()) % ShepherdPolicy.GREETINGS == Integer.parseInt(condition.substring(GREET_DAY.length()));
         var tier = ShepherdSavedData.get(server).tier();
         return switch (condition) {
             case "tier_silent" -> ShepherdSavedData.get(player.getServer()).affinity() < ShepherdAffinity.SILENT_BELOW;
@@ -271,6 +294,7 @@ public final class ShepherdTalk {
             case "tier_trusted" -> tier.atLeast(Tier.TRUSTED);
             case "tier_close" -> tier.atLeast(Tier.CLOSE);
             case "pit_open" -> ShepherdSavedData.get(server).flag(ShepherdNine.OPEN) && !ShepherdSavedData.get(server).flag(ShepherdNine.SEEN);
+            case "greet_long" -> server.overworld().getGameTime() >= ShepherdSavedData.get(server).deedReady(GREET_READY) + 2L * ShepherdPolicy.DAY_TICKS;
             case "quiet" -> ShepherdReactions.quiet(ShepherdSavedData.get(server), server.overworld().getGameTime());
             case "stars_before" -> starsBefore(player);
             case "lean_someone" -> MillerPattern.leaning(server) == SelfModel.Lean.SOMEONE;
@@ -281,6 +305,7 @@ public final class ShepherdTalk {
             case "wand_hand" -> ShepherdWand.of(player) == ShepherdWand.Where.HAND;
             case "wand_other" -> ShepherdWand.of(player) == ShepherdWand.Where.OTHER;
             case "conspiracy" -> WinConditionState.get(server).isConspiracyDiscovered();
+            case "erased" -> PostMaeveWorldState.isErased(server);
             default -> ShepherdSavedData.get(player.getServer()).flag(condition);
         };
     }
@@ -346,7 +371,7 @@ public final class ShepherdTalk {
         if (!detour || scene) spendPrompt();
         settle();
         if (!live.talk.finished()) {
-            if (live.talk.current().id().startsWith(ShepherdTopics.MENU)) onTheMenu();
+            if (ShepherdTopics.onMenu(live.talk.current().id())) onTheMenu();
             else live.focus = null;
             send();
         } else if (live.detour || live.back != null) {
@@ -354,6 +379,7 @@ public final class ShepherdTalk {
         } else if (live.fromHub) {
             showHub();
         } else {
+            data().resumeNode(null);
             end(true);
         }
     }
@@ -481,7 +507,7 @@ public final class ShepherdTalk {
         live.detour = true;
         if (live.talk == null) live.back = null;
         else if (!live.fromHub) live.back = live.talk.current().id();
-        else live.back = live.talk.current().id().startsWith(ShepherdTopics.MENU) ? ShepherdTopics.AFTER : null;
+        else live.back = ShepherdTopics.onMenu(live.talk.current().id()) ? ShepherdTopics.AFTER : null;
     }
 
     private static void answerTyped(String node) {
@@ -494,7 +520,7 @@ public final class ShepherdTalk {
         int reach = MillerPattern.variety(live.player.getServer(), ShepherdTopics.misses());
         int turn = missTurn++ % reach;
         var scene = live.back == null || ShepherdTopics.AFTER.equals(live.back) ? null : ShepherdDialogues.nodes().get(live.back);
-        return scene != null ? ShepherdTopics.none(turn, scene) : ShepherdTopics.none(turn, openTopics(), holds(), focus());
+        return scene != null ? ShepherdTopics.none(turn, scene) : ShepherdTopics.none(turn, openTopics(live.menu), holds(), focus());
     }
 
     private static void talked() {
@@ -649,8 +675,13 @@ public final class ShepherdTalk {
     private static void send() {
         var data = data();
         var node = live.talk.current();
+        if (node.project() != null) {
+            if (!live.fromHub) data.resumeNode(null);
+            project(node.project());
+            return;
+        }
         // An unspent prompt resumes by its own id, whichever node it opened on, or it would stop being that prompt.
-        if (!live.fromHub) data.resumeNode(node.responses().isEmpty() && node.next() == null ? null : live.fromPrompt != null ? live.fromPrompt : node.id());
+        if (!live.fromHub) data.resumeNode(node.responses().isEmpty() && node.next() == null || ShepherdTopics.onMenu(node.id()) ? null : live.fromPrompt != null ? live.fromPrompt : node.id());
         int logo = live.she.logoTicks();
         live.lines = live.talk.lines();
         live.line = 0;
@@ -663,6 +694,15 @@ public final class ShepherdTalk {
         var player = live.player;
         live.sent = payload(live.id, node, live.lines, data.heavy(), logo, live.thinkTicks, token -> arg(player, token));
         PacketDistributor.sendToPlayer(player, live.sent);
+    }
+
+    /** The screen has to go for them to walk round it, so the walk ends here. */
+    private static void project(String kind) {
+        var player = live.player;
+        var she = live.she;
+        var lines = live.talk.lines();
+        end(true);
+        ShepherdProjection.start(player, she, kind, lines);
     }
 
     /**
@@ -687,6 +727,7 @@ public final class ShepherdTalk {
     private static void showHub(List<Line> said) {
         var data = data();
         live.talk = null;
+        live.menu = ShepherdTopics.MENU;
         live.fromHub = false;
         live.detour = false;
         live.back = null;
@@ -753,6 +794,7 @@ public final class ShepherdTalk {
         var data = ShepherdSavedData.get(server);
         if (data.stage() != ShepherdSavedData.Stage.AWAKE) return false;
         if (live != null) end(true);
+        ShepherdProjection.stop();
         catchingUp = null;
         ShepherdBoot.stop();
         data.replayFirstMeeting();
@@ -794,8 +836,9 @@ public final class ShepherdTalk {
         clearForTests();
     }
 
+    /** Someone has her attention, in a talk or at a projection, so nothing else may. */
     static boolean live() {
-        return live != null;
+        return live != null || ShepherdProjection.active();
     }
 
     static boolean speakingTo(ServerPlayer player) {
@@ -838,6 +881,7 @@ public final class ShepherdTalk {
     /** GameTest isolation only. */
     static void clearForTests() {
         live = null;
+        ShepherdProjection.clearForTests();
         refused = null;
         catchingUp = null;
         crashedBy = null;

@@ -96,6 +96,27 @@ public final class ShepherdTalkGameTest {
     @BeforeBatch(batch = "shepherd_talk_woke") public static void wokeBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
     @AfterBatch(batch = "shepherd_talk_woke") public static void wokeAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
 
+    @BeforeBatch(batch = "shepherd_talk_greet_first") public static void greetfirstBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_talk_greet_first") public static void greetfirstAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_talk_greet_waiting") public static void greetWaitingBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_talk_greet_waiting") public static void greetWaitingAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_talk_greet_daily") public static void greetdailyBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_talk_greet_daily") public static void greetdailyAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_talk_greet_cargo") public static void greetcargoBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_talk_greet_cargo") public static void greetcargoAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_talk_greet_long") public static void greetlongBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_talk_greet_long") public static void greetlongAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_talk_greet_rotate") public static void greetrotateBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_talk_greet_rotate") public static void greetrotateAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_talk_greet_below") public static void greetbelowBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_talk_greet_below") public static void greetbelowAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_talk_greet_scene") public static void greetsceneBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_talk_greet_scene") public static void greetsceneAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_talk_greet_quiet") public static void greetquietBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_talk_greet_quiet") public static void greetquietAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+    @BeforeBatch(batch = "shepherd_talk_greet_stranger") public static void greetstrangerBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_talk_greet_stranger") public static void greetstrangerAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
+
     /** The real tree, while a test stands an edited datapack's node beside it. */
     private static Map<String, Node> shipped;
 
@@ -519,6 +540,164 @@ public final class ShepherdTalkGameTest {
             h.assertTrue(ShepherdSavedData.load(saved, h.getLevel().registryAccess()).wokeAt() == now, "It reloads");
             saved.remove("wokeAt");
             h.assertTrue(ShepherdSavedData.load(saved, h.getLevel().registryAccess()).wokeAt() == ShepherdSavedData.NOT_SET, "A former save has none");
+            h.succeed();
+        });
+    }
+
+    private static final String FIRST = "shepherd.hub.greet.first.1", NAMED = "shepherd.hub.greet.first.2", LONG = "shepherd.hub.greet.long";
+    private static final long START = 10L * ShepherdPolicy.DAY_TICKS;
+
+    private static void clock(GameTestHelper h, long to) {
+        ((net.minecraft.world.level.storage.ServerLevelData) h.getLevel().getLevelData()).setGameTime(to);
+    }
+
+    /** She is close to {@code player}, on a known day. */
+    private static ShepherdEntity close(GameTestHelper h, ServerPlayer player) {
+        clock(h, START);
+        var she = awake(h, player);
+        data(h).affinity(900);
+        return she;
+    }
+
+    /** What she says on one right-click, ending the talk after. */
+    private static List<String> greeted(ShepherdEntity she, ServerPlayer player) {
+        rightClick(she, player);
+        var said = ShepherdTalk.liveLines();
+        ShepherdTalk.close(player);
+        return said;
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_talk_greet_first", timeoutTicks = 400)
+    public static void shepherdGreetsFirstAtClose(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            var she = close(h, player);
+            rightClick(she, player);
+            h.assertTrue(List.of(FIRST, NAMED).equals(ShepherdTalk.liveLines()), "She speaks first: " + ShepherdTalk.liveLines());
+            h.assertTrue(she.mood() == Mood.BEAMING, "Beaming: " + she.mood());
+            h.assertTrue(ShepherdTalk.liveHub() != null, "Over the hub");
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_talk_greet_daily", timeoutTicks = 400)
+    public static void shepherdGreetsOnceADay(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            var she = close(h, player);
+            greeted(she, player);
+            h.assertTrue(greeted(she, player).isEmpty(), "Once");
+            clock(h, START + ShepherdPolicy.DAY_TICKS - 1);
+            h.assertTrue(greeted(she, player).isEmpty(), "Not before the day is up");
+            clock(h, START + ShepherdPolicy.DAY_TICKS);
+            h.assertTrue(greeted(she, player).size() == 1, "One line a day after that");
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_talk_greet_waiting", timeoutTicks = 400)
+    public static void shepherdGreetsWhoSheWasLeftWaitingFor(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            var she = close(h, player);
+            ShepherdSavedData.get(h.getLevel().getServer()).waiting(true);
+            h.assertTrue(!greeted(she, player).isEmpty(), "Coming back to her is what the greeting is for");
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_talk_greet_cargo", timeoutTicks = 400)
+    public static void shepherdNamesCargoOnce(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            var she = close(h, player);
+            greeted(she, player);
+            h.assertTrue(data(h).flag("greeted_cargo"), "It is said");
+            clock(h, START + ShepherdPolicy.DAY_TICKS);
+            var next = greeted(she, player);
+            h.assertTrue(!next.contains(FIRST) && !next.contains(NAMED), "Never twice: " + next);
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_talk_greet_long", timeoutTicks = 400)
+    public static void shepherdShoutsAfterALongAbsence(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            var she = close(h, player);
+            greeted(she, player);
+            clock(h, START + 3L * ShepherdPolicy.DAY_TICKS - 1);
+            h.assertTrue(!greeted(she, player).contains(LONG), "Not quite two days past ready");
+            clock(h, START + 3L * ShepherdPolicy.DAY_TICKS - 1 + 3L * ShepherdPolicy.DAY_TICKS);
+            h.assertTrue(List.of(LONG).equals(greeted(she, player)), "Long gone");
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_talk_greet_rotate", timeoutTicks = 400)
+    public static void shepherdGreetingsRotateByTheDay(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            var she = close(h, player);
+            greeted(she, player);
+            var seen = new java.util.HashSet<String>();
+            for (int day = 1; day <= ShepherdPolicy.GREETINGS; day++) {
+                clock(h, START + day * (long) ShepherdPolicy.DAY_TICKS);
+                var line = greeted(she, player);
+                h.assertTrue(line.size() == 1, "One line on day " + day + ": " + line);
+                seen.add(line.getFirst());
+                data(h).deedReady("greet", START + day * (long) ShepherdPolicy.DAY_TICKS);
+                h.assertTrue(line.equals(greeted(she, player)), "The same day gives the same line");
+            }
+            h.assertTrue(seen.size() == ShepherdPolicy.GREETINGS, "Each in turn: " + seen);
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_talk_greet_below", timeoutTicks = 400)
+    public static void shepherdGreetsNobodyBelowClose(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            var she = close(h, player);
+            data(h).affinity(849);
+            h.assertTrue(greeted(she, player).isEmpty(), "Trusted waits to be spoken to");
+            h.assertTrue(!data(h).flag("greeted_cargo"), "And nothing is spent");
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_talk_greet_scene", timeoutTicks = 400)
+    public static void shepherdAWaitingSceneBeatsTheGreeting(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            var she = close(h, player);
+            data(h).promptNode("fm.exit");
+            rightClick(she, player);
+            h.assertTrue("fm.exit".equals(ShepherdTalk.liveNode()), "The scene first: " + ShepherdTalk.liveNode());
+            h.assertTrue(!data(h).flag("greeted_cargo"), "The greeting keeps");
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_talk_greet_quiet", timeoutTicks = 400)
+    public static void shepherdQuietMeansNoGreeting(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            var she = close(h, player);
+            ShepherdReactions.quietFor(data(h), START);
+            h.assertTrue(greeted(she, player).isEmpty(), "Not today");
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_talk_greet_stranger", timeoutTicks = 400)
+    public static void shepherdCallsOnlyHerFollowerCargo(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var player = player(h);
+            var she = close(h, player);
+            var stranger = ShepherdTestWorld.onlinePlayer(h, h.absoluteVec(Vec3.atCenterOf(SPOT)).add(0, 0, 1));
+            h.assertTrue(greeted(she, stranger).isEmpty(), "Nobody else is Cargo");
+            h.assertTrue(greeted(she, player).contains(FIRST), "Hers still waits");
             h.succeed();
         });
     }

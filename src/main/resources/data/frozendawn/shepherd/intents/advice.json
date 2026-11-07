@@ -1,0 +1,361 @@
+{
+  "intents": [
+    {
+      "id": "frostbitten",
+      "node": "advice.frostbitten",
+      "when": "not:erased",
+      "label": "shepherd.advice.frostbitten.label",
+      "guess": "shepherd.advice.frostbitten.guess",
+      "menu": "advice",
+      "examples": [
+        "Frostbitten",
+        "Tell me about the Frostbitten",
+        "How do I fight a Frostbitten?",
+        "What's the best way to kill Frostbitten?",
+        "the frozen ones on the surface",
+        "they throw snowballs at me",
+        "what beats a frostbitten",
+        "any advice on frostbitten",
+        "walking frozen corpses",
+        "how do i survive the frostbitten"
+      ]
+    },
+    {
+      "id": "frostmite",
+      "node": "advice.frostmite",
+      "when": "not:erased",
+      "label": "shepherd.advice.frostmite.label",
+      "guess": "shepherd.advice.frostmite.guess",
+      "menu": "advice",
+      "examples": [
+        "Tell me about Frostmites",
+        "How do I deal with Frostmites?",
+        "mites on my heater",
+        "what kills a frostmite",
+        "ice bugs are draining my heat",
+        "there are mites all over me",
+        "any advice on frostmites",
+        "how do i stop the mite swarm",
+        "frost mites keep latching on"
+      ]
+    },
+    {
+      "id": "hollow",
+      "node": "advice.hollow",
+      "when": "not:erased",
+      "label": "shepherd.advice.hollow.label",
+      "guess": "shepherd.advice.hollow.guess",
+      "menu": "advice",
+      "examples": [
+        "Hollows",
+        "Hollow",
+        "Tell me about the Hollow",
+        "How do I fight a Hollow?",
+        "what kills a hollow",
+        "the thing that drifts through walls",
+        "what do i do when a hollow grabs me",
+        "any advice on hollows",
+        "a ghost grabbed me",
+        "ghost that freezes you"
+      ]
+    },
+    {
+      "id": "returned",
+      "node": "advice.returned",
+      "when": "not:erased",
+      "label": "shepherd.advice.returned.label",
+      "guess": "shepherd.advice.returned.guess",
+      "menu": "advice",
+      "examples": [
+        "The Returned",
+        "Returned",
+        "Tell me about the Returned",
+        "How do I fight the Returned?",
+        "what are the returned weak to",
+        "the dead that came back",
+        "former staff that came back",
+        "any advice on the returned",
+        "how do i survive the returned",
+        "show me the returned"
+      ]
+    },
+    {
+      "id": "hunter",
+      "node": "advice.hunter",
+      "when": "not:erased",
+      "label": "shepherd.advice.hunter.label",
+      "guess": "shepherd.advice.hunter.guess",
+      "menu": "returned",
+      "examples": [
+        "Hunter",
+        "The Hunter",
+        "Tell me about the Hunter",
+        "How do I fight a Hunter?",
+        "what kills a hunter",
+        "a returned hunter",
+        "something broke my torches",
+        "it put out my heater",
+        "any advice on hunters",
+        "stalker in my base"
+      ]
+    },
+    {
+      "id": "mimic",
+      "node": "advice.mimic",
+      "when": "not:erased",
+      "label": "shepherd.advice.mimic.label",
+      "guess": "shepherd.advice.mimic.guess",
+      "menu": "returned",
+      "examples": [
+        "Mimic",
+        "The Mimic",
+        "Tell me about the Mimic",
+        "How do I fight a Mimic?",
+        "what kills a mimic",
+        "a returned mimic",
+        "the shadow figure",
+        "something copying my movement",
+        "any advice on mimics",
+        "a shadow that follows me"
+      ]
+    },
+    {
+      "id": "architect",
+      "node": "advice.architect",
+      "when": "not:erased",
+      "label": "shepherd.advice.architect.label",
+      "guess": "shepherd.advice.architect.guess",
+      "menu": "returned",
+      "examples": [
+        "Architect",
+        "The Architect",
+        "Tell me about the Architect",
+        "How do I fight an Architect?",
+        "what kills an architect",
+        "a returned architect",
+        "something is breaking my walls",
+        "it mines through my base",
+        "any advice on architects",
+        "the one that dismantles shelters"
+      ]
+    },
+    {
+      "id": "thermal_heater",
+      "node": "advice.thermal_heater",
+      "label": "shepherd.advice.thermal_heater.label",
+      "guess": "shepherd.advice.thermal_heater.guess",
+      "menu": "advice",
+      "examples": [
+        "Thermal Heater",
+        "The thermal heater",
+        "Tell me about the thermal heater",
+        "How do I fuel a heater?",
+        "best fuel for a heater",
+        "how long does coal last in a heater",
+        "heater advice",
+        "what can i burn",
+        "should i use coal blocks",
+        "spare heater"
+      ]
+    },
+    {
+      "id": "resistive_heater",
+      "node": "advice.resistive_heater",
+      "label": "shepherd.advice.resistive_heater.label",
+      "guess": "shepherd.advice.resistive_heater.guess",
+      "menu": "advice",
+      "examples": [
+        "RH-5 Heater",
+        "RH-5",
+        "The RH-5",
+        "Tell me about the RH-5",
+        "electric heater",
+        "resistive heater",
+        "how much power does the rh-5 use",
+        "heater that needs no fuel",
+        "should i build an rh-5",
+        "is electric heat better"
+      ]
+    },
+    {
+      "id": "frost_ward_torch",
+      "node": "advice.frost_ward_torch",
+      "label": "shepherd.advice.frost_ward_torch.label",
+      "guess": "shepherd.advice.frost_ward_torch.guess",
+      "menu": "advice",
+      "examples": [
+        "Frost Ward Torch",
+        "Frost Ward Torches",
+        "Tell me about the Frost Ward Torch",
+        "ward torch range",
+        "how far do ward torches reach",
+        "torch that drives hollows off",
+        "does a frost ward torch work in vacuum",
+        "torches hunters can't break",
+        "should i ring my base with ward torches"
+      ]
+    },
+    {
+      "id": "miteaway",
+      "node": "advice.miteaway",
+      "label": "shepherd.advice.miteaway.label",
+      "guess": "shepherd.advice.miteaway.guess",
+      "menu": "advice",
+      "examples": [
+        "Tell me about MiteAway",
+        "mite repellent",
+        "how does the smoke keep mites away",
+        "MiteAway radius",
+        "does miteaway need air",
+        "should i light a miteaway",
+        "mite smoke",
+        "how long does a miteaway coil burn"
+      ]
+    },
+    {
+      "id": "insulated_glass",
+      "node": "advice.insulated_glass",
+      "label": "shepherd.advice.insulated_glass.label",
+      "guess": "shepherd.advice.insulated_glass.guess",
+      "menu": "advice",
+      "examples": [
+        "Insulated Glass",
+        "Tell me about insulated glass",
+        "insulating window",
+        "window that keeps heat in",
+        "is insulated glass better than stone",
+        "glass for my base",
+        "do windows lose heat",
+        "best windows",
+        "what do i build my walls from"
+      ]
+    },
+    {
+      "id": "thermostat",
+      "node": "advice.thermostat",
+      "label": "shepherd.advice.thermostat.label",
+      "guess": "shepherd.advice.thermostat.guess",
+      "menu": "advice",
+      "examples": [
+        "Thermostat",
+        "The thermostat",
+        "Tell me about the thermostat",
+        "room temperature control",
+        "how do i change the target temperature",
+        "thermostat advice",
+        "does the thermostat use a comparator",
+        "what's the thermostat good for",
+        "controlling my heaters"
+      ]
+    },
+    {
+      "id": "airlocks",
+      "node": "advice.airlocks",
+      "label": "shepherd.advice.airlocks.label",
+      "guess": "shepherd.advice.airlocks.guess",
+      "menu": "advice",
+      "examples": [
+        "Airlocks",
+        "Airlock",
+        "Tell me about airlocks",
+        "how do airlocks work",
+        "building an airlock",
+        "airlock doors",
+        "can a hunter open an airlock",
+        "how do i leave a sealed base",
+        "airlock controller",
+        "cycling the airlock"
+      ]
+    },
+    {
+      "id": "oxygen_reservoir",
+      "node": "advice.oxygen_reservoir",
+      "label": "shepherd.advice.oxygen_reservoir.label",
+      "guess": "shepherd.advice.oxygen_reservoir.guess",
+      "menu": "advice",
+      "examples": [
+        "O2 Reservoir",
+        "Oxygen Reservoir",
+        "Tell me about the oxygen reservoir",
+        "oxygen storage",
+        "how much oxygen does a reservoir hold",
+        "spare air for my room",
+        "does a cow use oxygen",
+        "air tank for a sealed room",
+        "what uses up my oxygen"
+      ]
+    },
+    {
+      "id": "battery_lantern",
+      "node": "advice.battery_lantern",
+      "label": "shepherd.advice.battery_lantern.label",
+      "guess": "shepherd.advice.battery_lantern.guess",
+      "menu": "advice",
+      "examples": [
+        "Battery Lantern",
+        "The battery lantern",
+        "Tell me about the battery lantern",
+        "lantern that uses a cell",
+        "cave lighting",
+        "can a hunter break a battery lantern",
+        "light that works without air",
+        "offhand light",
+        "how long does a cell last in the lantern"
+      ]
+    },
+    {
+      "id": "emergency_light",
+      "node": "advice.emergency_light",
+      "label": "shepherd.advice.emergency_light.label",
+      "guess": "shepherd.advice.emergency_light.guess",
+      "menu": "advice",
+      "examples": [
+        "Emergency Light",
+        "Emergency lights",
+        "Tell me about emergency lights",
+        "backup lights",
+        "red lights in my base",
+        "what does the red light mean",
+        "lights during a power cut",
+        "my grid is failing",
+        "what happens in a blackout"
+      ]
+    },
+    {
+      "id": "geiger",
+      "node": "advice.geiger",
+      "label": "shepherd.advice.geiger.label",
+      "guess": "shepherd.advice.geiger.guess",
+      "menu": "advice",
+      "examples": [
+        "Geiger Counter",
+        "The Geiger counter",
+        "Geiger",
+        "Tell me about the Geiger counter",
+        "radiation meter",
+        "how do i read the dose",
+        "what does the clicking mean",
+        "how do i measure radiation",
+        "radiation readings"
+      ]
+    },
+    {
+      "id": "rad_aid",
+      "node": "advice.rad_aid",
+      "label": "shepherd.advice.rad_aid.label",
+      "guess": "shepherd.advice.rad_aid.guess",
+      "menu": "advice",
+      "examples": [
+        "RadAid",
+        "Rad Aid",
+        "Tell me about RadAid",
+        "radiation treatment",
+        "how do i treat radiation",
+        "radiation sickness cure",
+        "where do i find radaid",
+        "the iv drip",
+        "can i stack radaid"
+      ]
+    }
+  ]
+}

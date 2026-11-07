@@ -1,6 +1,6 @@
 # Miller Pattern M6: the idea
 
-**Status:** the owner's idea and its order, recorded 2026-11-06 during the M5 pass. The owner's picks and strategies, kept as the spec for [miller-pattern-m6-plan.md](miller-pattern-m6-plan.md), which the owner approved the same day.
+**Status:** built on `feat/miller-m6` and passed by the owner, 2026-11-06. The owner's idea and its order, recorded 2026-11-06 during the M5 pass. The owner's picks and strategies, kept as the spec for [miller-pattern-m6-plan.md](miller-pattern-m6-plan.md), which the owner approved the same day.
 
 ## Order
 

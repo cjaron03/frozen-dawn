@@ -9,6 +9,7 @@ import com.frozendawn.shepherd.ShepherdFace.Mood;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.entity.MobRenderer;
 import net.minecraft.client.renderer.entity.RenderLayerParent;
@@ -19,9 +20,17 @@ import net.minecraft.util.Mth;
 public final class ShepherdRenderer extends MobRenderer<ShepherdEntity, ShepherdModel> {
     private static final float BOB_HEIGHT = 0.04F, BOB_SPEED = 0.12F;
 
+    private final ShepherdHologramRenderer hologram;
+
     public ShepherdRenderer(EntityRendererProvider.Context context) {
         super(context, new ShepherdModel(context.bakeLayer(ShepherdModel.LAYER_LOCATION)), 0.3F);
         addLayer(new FaceLayer(this));
+        hologram = new ShepherdHologramRenderer(context);
+    }
+
+    /** Her figure stands off to one side, and stays when she is out of view. */
+    @Override public boolean shouldRender(ShepherdEntity entity, Frustum frustum, double x, double y, double z) {
+        return entity.hologramShown() || super.shouldRender(entity, frustum, x, y, z);
     }
 
     @Override public ResourceLocation getTextureLocation(ShepherdEntity entity) {
@@ -30,8 +39,9 @@ public final class ShepherdRenderer extends MobRenderer<ShepherdEntity, Shepherd
 
     @Override public void render(ShepherdEntity entity, float yaw, float partial, PoseStack pose, MultiBufferSource buffers, int light) {
         // She has no neck: where she looks is where the whole body points.
-        entity.yBodyRot = entity.yHeadRot;
-        entity.yBodyRotO = entity.yHeadRotO;
+        int spin = entity.flustered() ? ShepherdFace.fluster(entity.flusterAge()).yaw() : 0;
+        entity.yBodyRot = entity.yHeadRot + spin;
+        entity.yBodyRotO = entity.yHeadRotO + spin;
         pose.pushPose();
         if (entity.crashed()) {
             float crash = entity.crashAge() + partial;
@@ -41,6 +51,7 @@ public final class ShepherdRenderer extends MobRenderer<ShepherdEntity, Shepherd
         if (!entity.offline()) pose.translate(0, Mth.sin((entity.tickCount + partial) * BOB_SPEED) * BOB_HEIGHT, 0);
         super.render(entity, yaw, partial, pose, buffers, light);
         pose.popPose();
+        hologram.draw(entity, partial, pose, buffers);
     }
 
     private static final class FaceLayer extends RenderLayer<ShepherdEntity, ShepherdModel> {
@@ -64,12 +75,15 @@ public final class ShepherdRenderer extends MobRenderer<ShepherdEntity, Shepherd
                 boolean cursor = entity.bootDisplay() == ShepherdEntity.BOOT_CURSOR && entity.tickCount / ShepherdBoot.LINE_TICKS % 2 == 0;
                 ShepherdFaceRenderer.drawOnModel(pose, buffers, cursor ? ShepherdBoot.cursor() : Mood.OFFLINE, 0, false, 0);
             } else if (entity.logo()) {
-                ShepherdFaceRenderer.drawOnModel(pose, buffers, ShepherdFace.logo(ShepherdFace.logoFrame(entity.tickCount)), 0, false, 0);
+                ShepherdFaceRenderer.drawOnModel(pose, buffers, entity.flowed(ShepherdFace.logo(ShepherdFace.logoFrame(entity.tickCount))), 0, false, 0);
+            } else if (entity.flustered()) {
+                ShepherdFaceRenderer.drawOnModel(pose, buffers, entity.flowed(ShepherdFace.fluster(entity.flusterAge()).face()), 0, false, 0);
             } else if (entity.thinking()) {
-                ShepherdFaceRenderer.drawOnModel(pose, buffers, entity.thinkingFrame(), 0, false, 0);
+                ShepherdFaceRenderer.drawOnModel(pose, buffers, entity.flowed(entity.thinkingFrame()), 0, false, 0);
             } else {
-                var cells = motion.cells(mood, entity.talking());
-                ShepherdFaceRenderer.drawOnModel(pose, buffers, cells, mouth, motion.blink() || entity.moodBeat(), motion.eyeShift());
+                var face = mood == Mood.WORRIED ? ShepherdFace.worry(entity.moodAge()) : motion.cells(mood, entity.talking());
+                var cells = entity.flowed(ShepherdFace.voice(face, entity.talking(), entity.tickCount));
+                ShepherdFaceRenderer.drawOnModel(pose, buffers, cells, mouth, motion.blink(), motion.eyeShift());
             }
             if (entity.offline() && beat != ShepherdGlitch.Beat.NOISE) return;
             var flame = buffers.getBuffer(RenderType.entityCutoutNoCull(ShepherdModel.TEXTURE));

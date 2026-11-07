@@ -240,6 +240,7 @@ Approved 2026-11-04, for M2a, drawn in [boot-sequence-mockup.png](art/aurora-she
 | M3 | The private log | M2, mockup |
 | M4 | The chat bar, intents and the crash | M0, M2, mockups |
 | M5 | Writing: intents and lines, starting with the ORSA topics | M4, S4 |
+| M6 | Her new faces, the Close greeting, advice on the mobs and twelve items, the holograms | M5 |
 
 Recognising Maeve lands in S6, which still needs the owner's approval before anything is copied into MACS.
 
@@ -358,3 +359,5 @@ Verified headlessly: the unit tests and the full `architectVerify`. The table is
 2026-11-05, the owner closed the pass after the revised crash: "Pass done". `aurora-typed.jsonl` holds four different lines: "who are you", "who is kevin", "who is orsa" and the word, three times. So the blind column is thin, and no typed line reached Close or small talk in this pass. "who are you" landed on ORSA at 0.59, as Strong; there is no topic for it yet, and it goes to M5 unless the owner says otherwise.
 
 2026-11-06, the owner's M5 pass in `Aurora Topics Check`, through every tier: "i like it", then "i liked all the response and went through all the tiers". Blind test on 21 different lines: in scope 10 of 11 top one and 11 of 11 top two, out of scope Strong 0 of 9. "Where is everyone?" joined `anyone_out_there`, and the other misses are sorted in [aurora-typed-backlog.md](aurora-typed-backlog.md). The filler lines stay, by the owner's ruling. Their requests for more faces, a greeting at Close, the manual's mobs and item advice wait for M6, on `docs/miller-m6-plan`.
+
+2026-11-06, the owner's M6 pass in `Aurora Advice Check`, with all six strategies working on live mobs. On the gag: "god i love it". Blind test on 15 different lines: in scope 11 of 11 top one and top two, out of scope Strong 1 of 4. That one, "what scares you", landed on the torch and is fixed. The misses are sorted in [aurora-typed-backlog.md](aurora-typed-backlog.md), and the rest is in the Handback of [miller-pattern-m6-plan.md](miller-pattern-m6-plan.md).

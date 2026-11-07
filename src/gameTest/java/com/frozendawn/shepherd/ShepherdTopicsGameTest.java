@@ -211,7 +211,7 @@ public final class ShepherdTopicsGameTest {
         data(h).affinity(score);
         talk(she, player);
         var sent = ShepherdTalk.liveSent();
-        h.assertTrue(labels().equals(List.of(ASK_ORSA, NEVER_MIND)) && sent.replies().get(0).slot() == ASK && sent.replies().get(1).slot() == SARCASTIC, "At " + score + ": " + labels());
+        h.assertTrue(labels().equals(List.of(ASK_ORSA, "shepherd.talk.ask_advice", NEVER_MIND)) && sent.replies().get(0).slot() == ASK && sent.replies().get(2).slot() == SARCASTIC, "At " + score + ": " + labels());
         h.assertFalse(sent.canContinue(), "Its line no longer clicks through");
         h.assertTrue(sent.plain(), "No tone on these slots");
         ShepherdTalk.close(player);

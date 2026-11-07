@@ -23,6 +23,8 @@ import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 public final class ShepherdCuriosityGameTest {
     private static final BlockPos SPOT = new BlockPos(10, 4, 10), CHEST = new BlockPos(15, 4, 10);
 
+    @BeforeBatch(batch = "shepherd_curious_hologram") public static void hologramBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
+    @AfterBatch(batch = "shepherd_curious_hologram") public static void hologramAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
     @BeforeBatch(batch = "shepherd_curious_stranger") public static void strangerBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
     @AfterBatch(batch = "shepherd_curious_stranger") public static void strangerAfter(ServerLevel l) { ShepherdTestWorld.clear(l); }
     @BeforeBatch(batch = "shepherd_curious_line") public static void lineBefore(ServerLevel l) { ShepherdTestWorld.fresh(l); }
@@ -88,6 +90,18 @@ public final class ShepherdCuriosityGameTest {
                     .thenWaitUntil(() -> h.assertTrue(she.position().distanceTo(chest) <= 2.5, "A block short of it: " + she.position().distanceTo(chest)))
                     .thenExecute(() -> h.assertTrue(she.position().distanceTo(chest) >= 1, "Not in it"))
                     .thenSucceed();
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "shepherd_curious_hologram", timeoutTicks = 400)
+    public static void shepherdDoesNotWanderFromAFadingFigure(GameTestHelper h) {
+        ShepherdTestWorld.whenTicking(h, () -> {
+            var she = withAChest(h, player(h));
+            she.holdForHologram();
+            h.runAfterDelay(ShepherdHologram.LEAVE_TICKS - 2, () -> {
+                assertNotLooking(h, she);
+                h.succeed();
+            });
         });
     }
 

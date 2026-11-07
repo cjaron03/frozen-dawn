@@ -1,6 +1,110 @@
 {
   "nodes": [
     {
+      "id": "hub.greet",
+      "when": "not:greeted_cargo",
+      "else": "hub.greet.long",
+      "lines": [
+        {
+          "line": "shepherd.hub.greet.first.1",
+          "mood": "beaming"
+        },
+        {
+          "line": "shepherd.hub.greet.first.2",
+          "mood": "flustered"
+        }
+      ],
+      "set": [
+        "greeted_cargo"
+      ]
+    },
+    {
+      "id": "hub.greet.long",
+      "when": "greet_long",
+      "else": "hub.greet.1",
+      "lines": [
+        {
+          "line": "shepherd.hub.greet.long",
+          "mood": "beaming"
+        }
+      ]
+    },
+    {
+      "id": "hub.greet.1",
+      "when": "greet_day:0",
+      "else": "hub.greet.2",
+      "lines": [
+        {
+          "line": "shepherd.hub.greet.1",
+          "mood": "beaming"
+        }
+      ]
+    },
+    {
+      "id": "hub.greet.2",
+      "when": "greet_day:1",
+      "else": "hub.greet.3",
+      "lines": [
+        {
+          "line": "shepherd.hub.greet.2",
+          "mood": "neutral"
+        }
+      ]
+    },
+    {
+      "id": "hub.greet.3",
+      "when": "greet_day:2",
+      "else": "hub.greet.4",
+      "lines": [
+        {
+          "line": "shepherd.hub.greet.3",
+          "mood": "amused"
+        }
+      ]
+    },
+    {
+      "id": "hub.greet.4",
+      "when": "greet_day:3",
+      "else": "hub.greet.5",
+      "lines": [
+        {
+          "line": "shepherd.hub.greet.4",
+          "mood": "beaming"
+        }
+      ]
+    },
+    {
+      "id": "hub.greet.5",
+      "when": "greet_day:4",
+      "else": "hub.greet.6",
+      "lines": [
+        {
+          "line": "shepherd.hub.greet.5",
+          "mood": "unimpressed"
+        }
+      ]
+    },
+    {
+      "id": "hub.greet.6",
+      "when": "greet_day:5",
+      "else": "hub.greet.7",
+      "lines": [
+        {
+          "line": "shepherd.hub.greet.6",
+          "mood": "happy"
+        }
+      ]
+    },
+    {
+      "id": "hub.greet.7",
+      "lines": [
+        {
+          "line": "shepherd.hub.greet.7",
+          "mood": "thinking"
+        }
+      ]
+    },
+    {
       "id": "hub.talk.quiet",
       "when": "quiet",
       "else": "hub.talk.silent",
@@ -31,6 +135,11 @@
           "next": "orsa.menu"
         },
         {
+          "slot": "kind",
+          "label": "shepherd.talk.ask_advice",
+          "next": "advice.menu"
+        },
+        {
           "slot": "sarcastic",
           "label": "shepherd.talk.never_mind"
         }
@@ -49,6 +158,11 @@
           "slot": "ask",
           "label": "shepherd.talk.ask_orsa",
           "next": "orsa.menu"
+        },
+        {
+          "slot": "kind",
+          "label": "shepherd.talk.ask_advice",
+          "next": "advice.menu"
         },
         {
           "slot": "sarcastic",
@@ -71,6 +185,11 @@
           "next": "orsa.menu"
         },
         {
+          "slot": "kind",
+          "label": "shepherd.talk.ask_advice",
+          "next": "advice.menu"
+        },
+        {
           "slot": "sarcastic",
           "label": "shepherd.talk.never_mind"
         }
@@ -87,6 +206,11 @@
           "slot": "ask",
           "label": "shepherd.talk.ask_orsa",
           "next": "orsa.menu"
+        },
+        {
+          "slot": "kind",
+          "label": "shepherd.talk.ask_advice",
+          "next": "advice.menu"
         },
         {
           "slot": "sarcastic",
@@ -124,6 +248,28 @@
         { "line": "shepherd.log.read.1", "mood": "unimpressed" },
         { "line": "shepherd.log.read.2", "mood": "thinking" }
       ]
+    },
+    {
+      "id": "chat.need_help",
+      "when": "tier_friendly",
+      "else": "chat.need_help.plain",
+      "lines": [
+        {
+          "line": "shepherd.chat.need_help.warm",
+          "mood": "happy"
+        }
+      ],
+      "next": "orsa.after"
+    },
+    {
+      "id": "chat.need_help.plain",
+      "lines": [
+        {
+          "line": "shepherd.chat.need_help",
+          "mood": "neutral"
+        }
+      ],
+      "next": "orsa.after"
     },
     {
       "id": "chat.hello",

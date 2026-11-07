@@ -27,12 +27,10 @@ public final class ShepherdFace {
     /** A dim texel, as this frame shows it. Mouth 0 is shut, 1 open, 2 wide; the recording voice has no mouth to move. */
     public static boolean dim(Cells cells, int mouth, int x, int y) {
         if (cells.dim(x, y)) return true;
-        if (cells == Mood.RECORDING || cells == Mood.OFFLINE || y != HEIGHT - 1) return false;
+        if (cells == Mood.RECORDING || cells == Mood.OFFLINE || cells instanceof Trace || y != HEIGHT - 1) return false;
         return mouth == 1 && (x == 3 || x == 4) || mouth == 2 && x >= 2 && x <= 5;
     }
 
-    /** How long her eyes shut for when her mood changes, so the change reads as a reaction. */
-    public static final int MOOD_BEAT_TICKS = 3;
     /** Her flame's tallest frame, in layers. */
     public static final int FLAME_FRAMES = 4;
     private static final int WINDOW_TICKS = 48;
@@ -81,11 +79,19 @@ public final class ShepherdFace {
 
     /** {@code resting} is a face she has settled on, which keeps its idle life whatever the mood. */
     public static Motion motion(Mood mood, int age, int seed, boolean resting) {
-        if (mood == Mood.RECORDING || mood == Mood.OFFLINE) return new Motion(0, false);
+        if (holdsStill(mood)) return new Motion(0, false);
         int window = age / WINDOW_TICKS, tick = age % WINDOW_TICKS, h = hash(window, seed);
         var idle = resting || mood == Mood.NEUTRAL ? idle(tick, h) : null;
         if (idle != null) return new Motion(0, false, idle);
         return new Motion(eyeShift(mood, age, window, tick, h), blink(mood, tick, h));
+    }
+
+    /** The recording has no eyes, offline has nothing, Beaming and Flustered have no eyes to shut, and the worry runs on its own clock. */
+    public static boolean holdsStill(Mood mood) {
+        return switch (mood) {
+            case RECORDING, OFFLINE, BEAMING, FLUSTERED, WORRIED -> true;
+            default -> false;
+        };
     }
 
     private static Idle idle(int tick, int h) {
@@ -107,13 +113,113 @@ public final class ShepherdFace {
 
     private static int eyeShift(Mood mood, int age, int window, int tick, int h) {
         return switch (mood) {
-            case SAD, RECORDING, OFFLINE -> 0;
+            case SAD, GRIM -> 0;
             // Eyes dart while she is frightened, in bursts.
             case ALARMED -> h % 2 == 0 ? new int[] {0, -1, 0, 1}[age / 5 % 4] : 0;
             // She looks up and away, and drifts back. Her eyes already sit against the right edge.
             case THINKING -> window % 2 == 0 ? 0 : -1;
             default -> h / 8 % 3 == 0 && tick >= 8 && tick < 26 ? (h / 32 % 2 == 0 ? -1 : 1) : 0;
         };
+    }
+
+    /** Bar heights across the display, a frame each, from orsa-face-mockup.png. */
+    private static final int[][] TRACE_FRAMES = {{1, 1, 3, 1, 1, 3, 1, 1}, {1, 3, 1, 5, 1, 3, 1, 1}, {1, 1, 3, 1, 5, 1, 3, 1},
+            {1, 3, 1, 3, 1, 5, 1, 1}, {1, 1, 5, 1, 3, 1, 1, 1}, {1, 3, 1, 1, 3, 1, 3, 1}};
+    private static final int TRACE_FRAME_TICKS = 4, TRACE_Y = 3;
+
+    /** The voice trace while a recording plays: thin bars round the line, the tallest tipped lit. */
+    public static Cells trace(int age) {
+        return new Trace(TRACE_FRAMES[age / TRACE_FRAME_TICKS % TRACE_FRAMES.length]);
+    }
+
+    private record Trace(int[] heights) implements Cells {
+        @Override public boolean lit(int x, int y) {
+            return heights[x] == 5 && Math.abs(y - TRACE_Y) == 2;
+        }
+
+        @Override public boolean dim(int x, int y) {
+            return Math.abs(y - TRACE_Y) <= heights[x] / 2 && !lit(x, y);
+        }
+    }
+
+    /** Whether this is the trace, which is the recording's face whatever frame it is on. */
+    public static boolean tracing(Cells cells) {
+        return cells instanceof Trace;
+    }
+
+    /** The recording's flat line runs while it speaks. Every other face is left as it is. */
+    public static Cells voice(Cells cells, boolean speaking, int age) {
+        return cells == Mood.RECORDING && speaking ? trace(age) : cells;
+    }
+
+    /** The strip's face, {@code age} ticks into a line of {@code length} characters. */
+    public static Cells stripFace(Mood mood, int age, int length) {
+        return voice(mood, ShepherdPolicy.typedChars(age, length) < length, age);
+    }
+
+    /** How long she stops and looks at the hologram, from worry-motion-mockup.gif. */
+    public static final int WORRY_TICKS = 82;
+    private static final Cells SMALL_MOUTH = new Rows("........", ".++..++.", ".##..##.", "........", "...++...", "........");
+    private static final Cells NEUTRAL_FRAME = new Rows(Mood.NEUTRAL), LIDS_FRAME = new Rows(Idle.HEAVY_LIDS), AWAY_FRAME = new Rows(Mood.WORRIED);
+
+    /** One frame of the worry. These are plain frames, so they cut as the mockup does, and Flow takes her out of the last. */
+    public static Cells worry(int age) {
+        if (age < 14) return NEUTRAL_FRAME;
+        if (age < 24) return LIDS_FRAME;
+        if (age < 30) return SMALL_MOUTH;
+        if (age < 62) return AWAY_FRAME;
+        if (age < 70) return SMALL_MOUTH;
+        return age < WORRY_TICKS ? LIDS_FRAME : NEUTRAL_FRAME;
+    }
+
+    /** Her whole body turning away, in degrees from facing you, and what her display shows while it does. */
+    public record Spin(Cells face, int yaw) {}
+
+    /** One frame of `flustered-motion-mockup.gif`, and how many it holds, from the moment she is caught. */
+    private record Beat(Spin spin, int frames) {}
+
+    private static final int FLUSTER_FRAME_TICKS = 2;
+    private static final List<Beat> FLUSTER = List.of(beat(Mood.FLUSTERED, 0, 4), beat(Mood.FLUSTERED, 45, 1), beat(Mood.FLUSTERED, 100, 1), beat(Mood.FLUSTERED, 150, 1),
+            beat(Mood.FLUSTERED, 180, 14), beat(Mood.NEUTRAL, 150, 1), beat(Idle.WINK, 105, 1), beat(Idle.WINK, 62, 9), beat(Idle.WINK, 110, 1), beat(Mood.FLUSTERED, 180, 8),
+            beat(Mood.NEUTRAL, 120, 2), beat(Mood.NEUTRAL, 60, 2), beat(Mood.NEUTRAL, 0, 8));
+    public static final int FLUSTER_TICKS = FLUSTER.stream().mapToInt(Beat::frames).sum() * FLUSTER_FRAME_TICKS;
+
+    private static Beat beat(Cells face, int yaw, int frames) {
+        return new Beat(new Spin(face, yaw), frames);
+    }
+
+    /** Caught: she spins away, then peeks. Past the end she has carried on. */
+    public static Spin fluster(int age) {
+        int frame = age / FLUSTER_FRAME_TICKS;
+        for (var beat : FLUSTER) {
+            if (frame < beat.frames()) return beat.spin();
+            frame -= beat.frames();
+        }
+        return FLUSTER.getLast().spin();
+    }
+
+    private record Rows(String... rows) implements Cells {
+        Rows(Cells cells) {
+            this(copy(cells));
+        }
+
+        private static String[] copy(Cells cells) {
+            var rows = new String[HEIGHT];
+            for (int y = 0; y < HEIGHT; y++) {
+                var row = new StringBuilder();
+                for (int x = 0; x < WIDTH; x++) row.append(cells.lit(x, y) ? '#' : cells.dim(x, y) ? '+' : '.');
+                rows[y] = row.toString();
+            }
+            return rows;
+        }
+
+        @Override public boolean lit(int x, int y) {
+            return rows[y].charAt(x) == '#';
+        }
+
+        @Override public boolean dim(int x, int y) {
+            return rows[y].charAt(x) == '+';
+        }
     }
 
     /** One of the mouth frames while she talks and nobody is typing it out: mostly moving, shut now and then. */
@@ -233,7 +339,12 @@ public final class ShepherdFace {
         ALARMED(".##..##.", ".##..##.", ".##..##.", "........", "..++++..", "..++++.."),
         THINKING("...##.##", "...##.##", "........", "........", "....++..", "........"),
         OFFLINE("........", "........", "........", "........", "........", "........"),
-        RECORDING("........", ".++..++.", ".++..++.", "........", "........", "........");
+        RECORDING("........", "........", "........", "++++++++", "........", "........"),
+        BEAMING("........", ".#....#.", "#.#..#.#", "........", ".++++++.", "..++++.."),
+        FLUSTERED("........", ".#....#.", "..#..#..", ".#....#.", "........", "...++..."),
+        GRIM("#......#", ".##..##.", ".##..##.", "........", "..++++..", "........"),
+        /** Carries the worry's timeline: the frame she spends looking away, and no new face of its own. */
+        WORRIED("........", "++..++..", "##..##..", "........", "...++...", "........");
 
         private final String[] rows;
 
