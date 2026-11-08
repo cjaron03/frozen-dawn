@@ -1,0 +1,83 @@
+package com.frozendawn.lore;
+
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.regex.Pattern;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+/** Guards the text that must be in worlds before the payoff exists. */
+class PayoffCluesTest {
+    private static final String ENTRIES =
+            "assets/frozendawn/patchouli_books/frozen_dawn_guide/en_us/entries/";
+
+    private static final List<String> EVA_FAMILIES = List.of(
+            "hud.frozendawn.emergency_eva.",
+            "hud.frozendawn.continuity.",
+            "tooltip.frozendawn.emergency_eva.",
+            "ui.frozendawn.suit.emergency_eva",
+            "ui.frozendawn.suit.continuity",
+            "subtitle.frozendawn.ui.suit.emergency_eva");
+
+    /** Generated voice: the subtitle and toast must match the audio. */
+    private static final Map<String, String> VOICED = Map.of(
+            "ui.frozendawn.suit.emergency_eva_active",
+            "Emergency EVA active. Ten-minute oxygen reserve. Fifteen-minute service limit.",
+            "subtitle.frozendawn.ui.suit.emergency_eva_active",
+            "Emergency EVA active. Ten-minute oxygen reserve. Fifteen-minute service limit.",
+            "ui.frozendawn.suit.emergency_eva_ambient",
+            "Breathable atmosphere detected. Ambient intake enabled. Reserve oxygen isolated. Emergency thermal support remains active.",
+            "subtitle.frozendawn.ui.suit.emergency_eva_ambient",
+            "Breathable atmosphere detected. Ambient intake enabled. Reserve oxygen isolated. Emergency thermal support remains active.");
+
+    private static final Pattern DEATH_SCREEN_WORDS =
+            Pattern.compile("(?i)\\b(remaining|active)\\b");
+
+    @Test
+    void evaTextNeverSaysRemainingOrActive() {
+        List<String> clashes = new ArrayList<>();
+        for (var e : lang().entrySet()) {
+            String key = e.getKey();
+            if (VOICED.containsKey(key)
+                    || EVA_FAMILIES.stream().noneMatch(key::startsWith)) {
+                continue;
+            }
+            if (DEATH_SCREEN_WORDS.matcher(e.getValue().getAsString()).find()) {
+                clashes.add(key);
+            }
+        }
+        assertTrue(clashes.isEmpty(), "EVA text reads as the death screen: " + clashes);
+    }
+
+    @Test
+    void voicedEvaLinesMatchTheirRecordings() {
+        JsonObject lang = lang();
+        for (var e : VOICED.entrySet()) {
+            assertEquals(e.getValue(), lang.get(e.getKey()).getAsString(), e.getKey());
+        }
+    }
+
+    static JsonObject lang() {
+        return load("assets/frozendawn/lang/en_us.json");
+    }
+
+    static JsonObject entry(String path) {
+        return load(ENTRIES + path);
+    }
+
+    private static JsonObject load(String path) {
+        var stream = PayoffCluesTest.class.getClassLoader().getResourceAsStream(path);
+        assertNotNull(stream, path);
+        return JsonParser.parseReader(new InputStreamReader(
+                stream, StandardCharsets.UTF_8)).getAsJsonObject();
+    }
+}
