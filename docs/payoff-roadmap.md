@@ -20,7 +20,7 @@
 | # | Branch | Spec sections | Needs first |
 |---|---|---|---|
 | 1 | `docs/payoff-plan` | Canon IDs CH-34 to CH-39 on Notion, section 0 in `docs/aurora-shepherd.md`, this roadmap | Owner sign-off |
-| 2 | `feat/payoff-clues` | 6 (uplink moves into Phases 3-4), 6a (EVA wording, Kevin "registered enrollee" line), 6d step 1 (the forecast line), 6h (2071 page), Translator manual entry | 1 merged |
+| 2 | `feat/payoff-clues` | 6 (uplink moves into Phases 3-4), 6a (EVA wording, Kevin "registered enrollee" line), 6d step 1 (the forecast line), 6h (2071 page), Translator manual entry | 1 merged. Built 2026-11-07: tests, both gates, the owner's visual pass and the branch review passed; PR into `feat/maeve-director` awaits the owner |
 | 3 | `feat/payoff-reveal` | 1 (shared flag, Terminus migration), 2 (CH-18), 3 (CH-19), 4 (CH-20), 5 (boot cue and its toggle), 6d steps 2 and 2b (Projection Review, the replay) | 2 merged |
 | 4 | `feat/returned-respawn-echo` | 5a (detuned ring on replacement), 5b (Vel-thae transmissions), 5c (no ring once erased) | 1 merged |
 | 5 | `feat/heart-memory-node` | 6b (node 5 from the ledgers), 5d (Kevin heard) | 1 merged |
