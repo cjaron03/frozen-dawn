@@ -216,6 +216,14 @@ Her name was Sophie Miller, a very ordinary name on purpose. Anderson-Kind built
 
 Design-only, never in the game: a machine cannot move a mind, because minds do not end and Continuity keeps them. That is why Nine's memory is empty, not wiped.
 
+Design-only, never in the game: Sophie's mind was held in the archive, and the Heart falling ends it (CH-30). No line states it, and Aurora never learns it.
+
+The TITHONUS verdict is locked, word for word: "pattern transfer only, subject not recovered".
+
+Red line: Aurora does not change after the Heart falls. No new lines, mood or log entries are tied to it, and her T5 "Pattern:" fill stays as it is.
+
+What changes is what the player knows: T4 "I'm scared of being switched off.", T5 "She signed this so she could stay.", her log's "Pattern: Sophie." after T5, and the log line "Cargo came back again. Nobody else does that. Why does Cargo do that?" all read differently after the payoff. So T4, T5 and her private log should usually be reachable before the Heart; the payoff's blind playtest checks how many players reach T5 first.
+
 ## Canon guardrails
 
 - She is a fourth-floor ORSA product. She knows nothing of the seventh floor. She must not explain Continuity or call it a mind (CH-10, CH-22). No line, label or document of hers contains the word (CH-11); the motto line stops at "Stability Above."
