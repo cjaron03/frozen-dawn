@@ -1,0 +1,17 @@
+{
+  "criteria": {
+    "learned_recipe": {
+      "trigger": "minecraft:recipe_unlocked",
+      "conditions": {
+        "recipe": "frozendawn:thaeven_translator"
+      }
+    },
+    "has_translator": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [{ "items": "frozendawn:thaeven_translator" }]
+      }
+    }
+  },
+  "requirements": [["learned_recipe", "has_translator"]]
+}

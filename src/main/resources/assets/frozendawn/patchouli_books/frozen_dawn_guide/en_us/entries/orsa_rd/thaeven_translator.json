@@ -1,0 +1,18 @@
+{
+  "name": "Thaeven Translator",
+  "category": "frozendawn:orsa_rd",
+  "icon": "frozendawn:thaeven_translator",
+  "sortnum": 7,
+  "advancement": "frozendawn:knows_thaeven_translator",
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "text": "Reads Thaeven writing: the marks the Returned leave on relics, walls and objects.$(br2)Keep it in your inventory, then examine the writing. What it reads is kept as a record. Use the Translator to open your records.$(br2)$(italic)The oldest writing is kept at a Hearth.$()"
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:thaeven_translator",
+      "text": "The ORSA Multitool is a catalyst: it stays in the grid."
+    }
+  ]
+}

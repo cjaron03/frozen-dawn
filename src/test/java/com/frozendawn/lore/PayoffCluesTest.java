@@ -7,6 +7,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Pattern;
 import org.junit.jupiter.api.Test;
 
@@ -112,12 +113,47 @@ class PayoffCluesTest {
         }
     }
 
+    @Test
+    void theTranslatorEntryUnlocksWhenYouKnowIt() {
+        JsonObject entry = entry("orsa_rd/thaeven_translator.json");
+        assertEquals("frozendawn:orsa_rd", entry.get("category").getAsString());
+        assertEquals("frozendawn:knows_thaeven_translator",
+                entry.get("advancement").getAsString());
+        JsonObject crafting = page(entry, 1);
+        assertEquals("patchouli:crafting", crafting.get("type").getAsString());
+        assertEquals("frozendawn:thaeven_translator", crafting.get("recipe").getAsString());
+
+        JsonObject advancement = load(
+                "data/frozendawn/advancement/knows_thaeven_translator.json");
+        assertFalse(advancement.has("parent"), "a parentless display opens a new tab");
+        assertFalse(advancement.has("display"), "the unlock must never show");
+        JsonObject criteria = advancement.getAsJsonObject("criteria");
+        assertEquals(2, criteria.size());
+        Set<String> triggers = new java.util.HashSet<>();
+        for (var criterion : criteria.entrySet()) {
+            JsonObject c = criterion.getValue().getAsJsonObject();
+            String trigger = c.get("trigger").getAsString();
+            triggers.add(trigger);
+            String conditions = c.get("conditions").toString();
+            assertTrue(conditions.contains("\"frozendawn:thaeven_translator\""),
+                    criterion.getKey() + " must name the Translator: " + conditions);
+        }
+        assertEquals(Set.of("minecraft:recipe_unlocked", "minecraft:inventory_changed"), triggers);
+        // Without "requirements", every criterion is its own AND group; one OR group means either is enough.
+        var requirements = advancement.getAsJsonArray("requirements");
+        assertNotNull(requirements, "requirements must group the two criteria as either-or");
+        assertEquals(1, requirements.size());
+        assertEquals(2, requirements.get(0).getAsJsonArray().size());
+    }
+
     /** Every page that carries a clue string from this branch. */
     private static List<String> clueTexts() {
         return List.of(
                 pageText("orsa_intel/projected_timeline.json", 7),
                 pageText("orsa_intel/orsa_bulletin.json", 10),
-                pageText("orsa_intel/satellite_log.json", 2));
+                pageText("orsa_intel/satellite_log.json", 2),
+                pageText("orsa_rd/thaeven_translator.json", 0),
+                pageText("orsa_rd/thaeven_translator.json", 1));
     }
 
     private static String pageText(String path, int index) {
