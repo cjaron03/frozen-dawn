@@ -20,13 +20,13 @@
 | # | Branch | Spec sections | Needs first |
 |---|---|---|---|
 | 1 | `docs/payoff-plan` | Canon IDs CH-34 to CH-39 on Notion, section 0 in `docs/aurora-shepherd.md`, this roadmap | Owner sign-off |
-| 2 | `feat/payoff-clues` | 6 (uplink moves into Phases 3-4), 6a (EVA wording, Kevin "registered enrollee" line), 6d step 1 (the forecast line), 6h (2071 page), Translator manual entry | 1 merged; the owner's Lighthouse call (CH-39) |
+| 2 | `feat/payoff-clues` | 6 (uplink moves into Phases 3-4), 6a (EVA wording, Kevin "registered enrollee" line), 6d step 1 (the forecast line), 6h (2071 page), Translator manual entry | 1 merged |
 | 3 | `feat/payoff-reveal` | 1 (shared flag, Terminus migration), 2 (CH-18), 3 (CH-19), 4 (CH-20), 5 (boot cue and its toggle), 6d steps 2 and 2b (Projection Review, the replay) | 2 merged |
 | 4 | `feat/returned-respawn-echo` | 5a (detuned ring on replacement), 5b (Vel-thae transmissions), 5c (no ring once erased) | 1 merged |
 | 5 | `feat/heart-memory-node` | 6b (node 5 from the ledgers), 5d (Kevin heard) | 1 merged |
-| 6 | `feat/thaeven-loop` | 6e beats 1 to 4, the Record I page | 3 merged, since both edit `OrsaAwakeningIntro`; the owner's re-ink text, if wanted |
-| 7 | `feat/ending-b-welcome` | 6c | 1 merged; the owner's placement for "The End?" (CH-34) |
-| 8 | `feat/kevins-blanket` | 6g | 1 merged; the owner's warmth value |
+| 6 | `feat/thaeven-loop` | 6e beats 1 to 4, the Record I page | 3 merged, since both edit `OrsaAwakeningIntro` |
+| 7 | `feat/ending-b-welcome` | 6c | 1 merged |
+| 8 | `feat/kevins-blanket` | 6g | 1 merged |
 | 9 | `feat/the-descent` | 6f and chamber zero, in slices | Still a draft: its own canon IDs (with the CH-27 revision), mockups, sound sign-off, then a creative-only slice before world generation |
 
 Order: 1, then 2 and 3 in turn. 4, 5, 7 and 8 can run beside them after 1. 6 follows 3. 9 goes last.
