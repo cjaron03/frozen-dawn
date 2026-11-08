@@ -16,6 +16,10 @@
     },
     {
       "type": "patchouli:text",
+      "text": "$(bold)[FRAGMENT — TIMESTAMP INTEGRITY: VERIFIED]$()$(br)Deep-band transponder signature received.$(br)Duration: 90 minutes.$(br)Origin: surface, below shelf depth.$(br)Date: 2071.$(br)Flagged: forwarded to seventh floor."
+    },
+    {
+      "type": "patchouli:text",
       "title": "Relay Network Status",
       "text": "$(bold)ORSA RELAY SATELLITE NETWORK$()$(br)Designation: Project Lighthouse$(br2)RS-01: OFFLINE (deorbited Phase 2)$(br)RS-02: $(2)ACTIVE — LISTENING$()$(br)RS-03: OFFLINE (power failure)$(br)RS-04: OFFLINE (you're reading its corpse)$(br)RS-05: $(2)ACTIVE — LISTENING$()"
     },

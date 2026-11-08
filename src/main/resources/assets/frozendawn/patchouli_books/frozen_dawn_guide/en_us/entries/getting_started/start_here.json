@@ -22,7 +22,7 @@
     {
       "type": "patchouli:text",
       "title": "Phases 3-4",
-      "text": "$(li)$(l:orsa_equipment/heavy_insulation)Heavy Gear$(/l)$(li)$(l:getting_started/rimewood)Rimewood$(/l) and $(l:getting_started/frostcap)Frostcap$(/l)$(li)$(l:power/basics)Power Basics$(/l)$(li)$(l:advanced/frozen_heart)Frozen Heart$(/l)$(li)$(l:advanced/geothermal_core)Geothermal Core$(/l)$(br2)$(danger)Surface coal freezes in Phase 4.$()"
+      "text": "$(li)$(l:orsa_equipment/heavy_insulation)Heavy Gear$(/l)$(li)$(l:getting_started/rimewood)Rimewood$(/l) and $(l:getting_started/frostcap)Frostcap$(/l)$(li)$(l:power/basics)Power Basics$(/l)$(li)$(l:advanced/frozen_heart)Frozen Heart$(/l)$(li)$(l:advanced/geothermal_core)Geothermal Core$(/l)$(li)$(l:signals/uplink)ORSA Uplink$(/l)$(br2)$(danger)Surface coal freezes in Phase 4.$()"
     },
     {
       "type": "patchouli:text",
@@ -37,7 +37,7 @@
     {
       "type": "patchouli:text",
       "title": "The Way Out",
-      "text": "$(li)$(l:reactor/overview)CFU-7 \"Hearthstone\"$(/l)$(li)$(l:radiation/basics)Radiation$(/l)$(li)$(l:signals/uplink)ORSA Uplink$(/l)$(li)$(l:advanced/transponder)ORSA Transponder$(/l)"
+      "text": "$(li)$(l:reactor/overview)CFU-7 \"Hearthstone\"$(/l)$(li)$(l:radiation/basics)Radiation$(/l)$(li)$(l:advanced/transponder)ORSA Transponder$(/l)"
     }
   ],
   "priority": true
