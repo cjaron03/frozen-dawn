@@ -31,7 +31,7 @@
 
 Order: 1, then 2 and 3 in turn. 4, 5, 7 and 8 can run beside them after 1. 6 follows 3. 9 goes last.
 
-- Branch 2 lands before 3 so the clues are in worlds before the payoff, and so the EVA wording (6a) is in before the CH-18 line exists.
+- Branch 2 lands before 3 so the clues are in worlds before the payoff.
 - Branch 3 keeps the reveal in one piece: the flag, the death-screen line, the manual changes and the replay fire in one sequence. The boot cue and the replay share `OrsaAwakeningIntro`.
 - Parked: 6d step 3 (the vision during Maeve's erasure) waits for the owner's canon ruling on Edge §13.13. The "From Now" advancement in branch 9 waits for E11.
 
@@ -42,7 +42,6 @@ Order: 1, then 2 and 3 in turn. 4, 5, 7 and 8 can run beside them after 1. 6 fol
 - No player-facing text uses "enrollee" yet.
 - The book anchors exist: the Projected Timeline sign-off, the bulletin's "Who is Kevin?" page, the satellite log's broadcast requirement, ORSA Uplink in The Way Out, and Record III's raw lines in `thaeven_records/pattern_residue.json`.
 - The EVA HUD still reads `EMERGENCY EVA ACTIVE`, and the ending's `Welcome home.` key exists.
-- The Aurora S4 and Miller branches have merged, so section 0 does not need a rebase onto an open Aurora branch.
 
 ## Gates
 
