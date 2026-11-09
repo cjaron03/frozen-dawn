@@ -15,7 +15,10 @@ import java.io.IOException;
  * The spinning ORSA icon's sheet: the white ring frame, the planet, and a moon orbiting along the planet's ring,
  * passing behind the planet on the far side, with a short trail. 64 frames of 208 px, laid out 32 across and 2 down.
  *
- * Usage: java tools/GenerateOrsaBootSheet.java <output png>
+ * The replay's copy is the same sheet drained to grey, as its other _muted textures are: 0.755 of the luminance,
+ * a little cool.
+ *
+ * Usage: java tools/GenerateOrsaBootSheet.java <output png> <muted output png>
  */
 public final class GenerateOrsaBootSheet {
     static final int FRAME = 208;
@@ -50,6 +53,22 @@ public final class GenerateOrsaBootSheet {
         }
         g.dispose();
         ImageIO.write(sheet, "png", new File(args[0]));
+        ImageIO.write(muted(sheet), "png", new File(args[1]));
+    }
+
+    static BufferedImage muted(BufferedImage sheet) {
+        BufferedImage out = new BufferedImage(sheet.getWidth(), sheet.getHeight(), BufferedImage.TYPE_INT_ARGB);
+        for (int y = 0; y < sheet.getHeight(); y++) {
+            for (int x = 0; x < sheet.getWidth(); x++) {
+                int p = sheet.getRGB(x, y);
+                int lum = (int) Math.round(((p >> 16 & 0xFF) * 299 + (p >> 8 & 0xFF) * 587 + (p & 0xFF) * 114) / 1000.0 * 0.755);
+                int r = Math.max(0, lum - 3);
+                int g = Math.min(255, lum + 1);
+                int b = Math.min(255, lum + 6);
+                out.setRGB(x, y, p & 0xFF000000 | r << 16 | g << 8 | b);
+            }
+        }
+        return out;
     }
 
     static BufferedImage frame(int frame) {

@@ -57,15 +57,17 @@ final class OrsaLogoRenderer {
     }
 
     static void drawBoot(GuiGraphics graphics, int centerX, int centerY, int size, float orbitPhase) {
-        drawBoot(graphics, centerX, centerY, size, orbitPhase, 1.0F);
+        drawBoot(graphics, centerX, centerY, size, orbitPhase, 1.0F, false);
     }
 
-    /** The spinner at a sub-pixel centre and size, faded by alpha. */
-    static void drawBoot(GuiGraphics graphics, float centerX, float centerY, float size, float orbitPhase, float alpha) {
+    /** The spinner at a sub-pixel centre and size, faded by alpha; muted is the replay's drained sheet. */
+    static void drawBoot(GuiGraphics graphics, float centerX, float centerY, float size, float orbitPhase, float alpha,
+                         boolean muted) {
         if (alpha <= 0.0F) {
             return;
         }
-        drawBootQuad(graphics, centerX - size / 2.0F, centerY - size / 2.0F, size, bootFrame(orbitPhase), alpha);
+        drawBootQuad(graphics, muted ? muted(BOOT_SHEET) : BOOT_SHEET, centerX - size / 2.0F, centerY - size / 2.0F,
+                size, bootFrame(orbitPhase), alpha);
     }
 
     /** The spinner frame for an orbit phase, where one orbit is 1. */
@@ -113,15 +115,16 @@ final class OrsaLogoRenderer {
         drawTextureQuad(graphics, muted ? muted(location) : location, x, y, width, height, 1.0F, 1.0F, 1.0F, alpha);
     }
 
-    private static void drawBootQuad(GuiGraphics graphics, float x, float y, float size, int frame, float alpha) {
+    private static void drawBootQuad(GuiGraphics graphics, ResourceLocation sheet, float x, float y, float size, int frame,
+                                     float alpha) {
         graphics.flush();
-        AbstractTexture texture = Minecraft.getInstance().getTextureManager().getTexture(BOOT_SHEET);
+        AbstractTexture texture = Minecraft.getInstance().getTextureManager().getTexture(sheet);
         texture.setBlurMipmap(true, false);
         try {
             RenderSystem.enableBlend();
             RenderSystem.defaultBlendFunc();
             RenderSystem.setShader(GameRenderer::getPositionTexShader);
-            RenderSystem.setShaderTexture(0, BOOT_SHEET);
+            RenderSystem.setShaderTexture(0, sheet);
             RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, alpha);
             Matrix4f matrix = graphics.pose().last().pose();
             float x2 = x + size;
@@ -151,9 +154,20 @@ final class OrsaLogoRenderer {
 
     private static void drawTextureQuad(GuiGraphics graphics, ResourceLocation location, int x, int y, int width,
                                         int height, float red, float green, float blue, float alpha) {
+        drawTextureQuad(graphics, location, x, y, width, height, red, green, blue, alpha, true);
+    }
+
+    /** A whole texture stretched over the box, unfiltered, so its pixels stay square blocks. */
+    static void drawBlocky(GuiGraphics graphics, ResourceLocation location, int x, int y, int width, int height,
+                           float alpha) {
+        drawTextureQuad(graphics, location, x, y, width, height, 1.0F, 1.0F, 1.0F, alpha, false);
+    }
+
+    private static void drawTextureQuad(GuiGraphics graphics, ResourceLocation location, int x, int y, int width,
+                                        int height, float red, float green, float blue, float alpha, boolean blur) {
         graphics.flush();
         AbstractTexture texture = Minecraft.getInstance().getTextureManager().getTexture(location);
-        texture.setBlurMipmap(true, false);
+        texture.setBlurMipmap(blur, false);
         try {
             RenderSystem.enableBlend();
             RenderSystem.defaultBlendFunc();

@@ -16,6 +16,10 @@ No recording, generated voice, or third-party sample is used.
   harmony. `tools/GenerateOrsaSting.java` synthesizes it additively from
   harmonic series and vowel formants, with no recording or speech engine, and
   `tools/generate_orsa_sting.sh` adds the room and encodes it.
+- `src/main/resources/assets/frozendawn/sounds/ui/orsa_boot_sting_replay.ogg`
+  is the replay's broken copy of the sting: the same file pitched and slowed
+  down, wobbling, bit-crushed, catching once and dropping out twice, made by
+  the same script with FFmpeg filters only.
 
 Frozen Dawn retains rights to the original synthesis design, arrangement,
 processing, mixing, and implementation. FFmpeg is a development tool and is not

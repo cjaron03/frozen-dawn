@@ -44,6 +44,10 @@ covered by the current Piper manifest:
 - `entity/heart_successor/voice_*.ogg` (`why`, `cold`, `hello`, `kevin`, and
   `dont`).
 - `ui/orsa_awakening_voice.ogg`.
+- `ui/orsa_awakening_voice_replay.ogg`, the replay's readout with one line off
+  script, rendered in parts by `tools/generate_orsa_replay_voice.sh` (its
+  manifest profile `orsa_replay`) and worn with FFmpeg: slowed, lowered,
+  warbled, crushed and band-limited under hum and crackle.
 - `ui/master_architect/mind_scan.ogg`, `telemetry_mismatch.ogg`, and
   `telemetry_restored.ogg`.
 - `radio/voice_*.ogg` and `radio/martian_command_message.ogg`.

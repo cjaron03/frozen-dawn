@@ -418,6 +418,24 @@
       }
     ]
   },
+  "ui.orsa_awakening_voice_replay": {
+    "category": "master",
+    "sounds": [
+      {
+        "name": "frozendawn:ui/orsa_awakening_voice_replay",
+        "stream": true
+      }
+    ]
+  },
+  "ui.orsa_boot_sting_replay": {
+    "category": "master",
+    "sounds": [
+      {
+        "name": "frozendawn:ui/orsa_boot_sting_replay",
+        "stream": true
+      }
+    ]
+  },
   "terminal.blackglass_segment_01": {
     "category": "record",
     "subtitle": "subtitle.frozendawn.terminal.blackglass_audio",

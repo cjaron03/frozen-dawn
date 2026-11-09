@@ -3,11 +3,15 @@ package com.frozendawn.client;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.util.Mth;
 
+import java.util.Set;
+
 /**
  * The first boot's ORSA beat (owner mockup, 2026-11-09), between the opening's black lead-in and its masthead: a
  * point of light grows into the spinning ORSA icon as the ORSA sting starts; the icon glides into the masthead's O
  * while the rest of the logo spreads out from it, its spin easing to a stop on the masthead's pose; then the O
- * blends into the masthead, which the intro carries on from, already drawn.
+ * blends into the masthead, which the intro carries on from, already drawn. The replay runs the same beat drained to
+ * grey on a long-neglected screen: it cold-starts, the point of light sputtering before it catches, then runs on a
+ * clock that stalls twice and once skips back, with rows tearing sideways (owner mockups, 2026-11-09).
  */
 final class OrsaBootBeat {
     static final int GLINT = 4;
@@ -15,6 +19,20 @@ final class OrsaBootBeat {
     static final int EXPAND = 32;
     static final int BLEND = 8;
     static final int TICKS = GLINT + GROW + EXPAND + BLEND;
+
+    /** The replay's cold start before the beat, and the ticks of it the point of light shows on, at these alphas. */
+    static final int SPUTTER = 12;
+    private static final float[] SPUTTER_ALPHA = {0.5F, 0.9F, 0, 0, 0, 0, 0.4F, 0, 0, 0.7F, 1.0F, 0.6F};
+    /** The replay's stalls, in beat time: where each holds, and for how many ticks. */
+    private static final int[][] REPLAY_STALLS = {{13, 3}, {41, 4}};
+    /** On these ticks of the replay's clock the beat jumps back this far, then catches up. */
+    private static final int SKIP_AT = 22;
+    private static final int SKIP_BACK = 5;
+    private static final Set<Integer> REPLAY_TEARS = Set.of(30, 31, 49, 63);
+    /** The replay's beat runs as long as the opening's plus its cold start and stalls. */
+    static final int REPLAY_TICKS = SPUTTER + TICKS + 3 + 4;
+    /** Ticks of the replay's beat clock on which the old screen dims for a moment. */
+    private static final Set<Integer> REPLAY_DIMS = Set.of(18, 19, 52, 77);
 
     /** The spinner frame the masthead's O shows: the moon at the upper right. */
     static final int STOP_FRAME = 8;
@@ -32,6 +50,31 @@ final class OrsaBootBeat {
     private static final float O_RADIUS = 90.0F;
 
     private OrsaBootBeat() {
+    }
+
+    /** The cold start's point of light on this tick of the replay's clock: its alpha, or 0 while it is dark. */
+    static float sputter(int clock) {
+        return clock >= 0 && clock < SPUTTER ? SPUTTER_ALPHA[clock] : 0.0F;
+    }
+
+    /** The replay's beat time on its clock, after the cold start: held at each stall, and five ticks behind for a moment. */
+    static float replayTime(float clock) {
+        clock -= SPUTTER;
+        float t = clock;
+        for (int[] stall : REPLAY_STALLS) {
+            if (t >= stall[0]) {
+                t -= Math.min(stall[1], t - stall[0]);
+            }
+        }
+        if (clock >= SKIP_AT && clock < SKIP_AT + SKIP_BACK) {
+            t -= SKIP_BACK;
+        }
+        return t;
+    }
+
+    /** Whether rows of the replay's beat tear sideways on this tick of its clock. */
+    static boolean replayTears(int clock) {
+        return REPLAY_TEARS.contains(clock - SPUTTER);
     }
 
     /** How far the icon has grown from its point, easing out. */
@@ -74,9 +117,66 @@ final class OrsaBootBeat {
         return new int[] {width / 2 - logoWidth / 2, (int) (height * 0.37F - logoHeight / 2.0F), logoWidth, logoHeight};
     }
 
-    static void render(GuiGraphics graphics, int width, int height, float t, int scanColor) {
+    /** The beat on this tick of its clock; the replay's drained, stalling and tearing. */
+    static void render(GuiGraphics graphics, int width, int height, float clock, int scanColor, boolean replay) {
+        if (replay && clock < SPUTTER) {
+            renderSputter(graphics, width, height, (int) clock, scanColor);
+            return;
+        }
+        float t = replay ? replayTime(clock) : clock;
+        draw(graphics, width, height, t, (int) clock, scanColor, replay);
+        if (replay && replayTears((int) clock) && t >= GLINT) {
+            // A band through the icon shifts sideways: cut out, then drawn again offset.
+            float size = iconSize(width, height, t);
+            float py = iconCentre(width, height, t)[1];
+            int top = Math.round(py - size * 0.15F);
+            int bottom = Math.round(py + size * 0.05F);
+            int dx = ((int) clock & 1) == 1 ? 3 : -3;
+            graphics.enableScissor(0, top, width, bottom);
+            graphics.pose().pushPose();
+            graphics.pose().translate(dx, 0.0F, 0.0F);
+            draw(graphics, width, height, t, (int) clock, scanColor, true);
+            graphics.pose().popPose();
+            graphics.disableScissor();
+        }
+        if (replay && REPLAY_DIMS.contains((int) clock - SPUTTER)) {
+            graphics.fill(0, 0, width, height, 0x59000000);
+        }
+    }
+
+    private static void renderSputter(GuiGraphics graphics, int width, int height, int clock, int scanColor) {
         graphics.fill(0, 0, width, height, 0xFF000000);
-        for (int y = Math.floorMod((int) t, 6); y < height; y += 6) {
+        for (int y = Math.floorMod(clock, 6); y < height; y += 6) {
+            graphics.fill(0, y, width, y + 1, 18 << 24 | scanColor);
+        }
+        float alpha = sputter(clock);
+        if (alpha > 0.0F) {
+            int a = Math.round(255 * alpha);
+            int x = width / 2;
+            int y = height / 2;
+            graphics.fill(x - 1, y, x + 2, y + 1, a << 24 | 0xE9FBFF);
+            graphics.fill(x, y - 1, x + 1, y + 2, a << 24 | 0xE9FBFF);
+        }
+    }
+
+    private static float iconSize(int width, int height, float t) {
+        int[] box = mastheadBox(width, height);
+        float oSize = O_RADIUS * (box[2] / MASTHEAD_WIDTH) / RING_FRACTION;
+        float full = height * FULL_SIZE;
+        return t < GLINT + GROW ? Math.max(1.0F, full * growth(t)) : Mth.lerp(expand(t), full, oSize);
+    }
+
+    private static float[] iconCentre(int width, int height, float t) {
+        int[] box = mastheadBox(width, height);
+        float scale = box[2] / MASTHEAD_WIDTH;
+        float e = t < GLINT + GROW ? 0.0F : expand(t);
+        return new float[] {Mth.lerp(e, width / 2.0F, box[0] + O_X * scale), Mth.lerp(e, height / 2.0F, box[1] + O_Y * scale)};
+    }
+
+    private static void draw(GuiGraphics graphics, int width, int height, float t, int clock, int scanColor,
+                             boolean muted) {
+        graphics.fill(0, 0, width, height, 0xFF000000);
+        for (int y = Math.floorMod(clock, 6); y < height; y += 6) {
             graphics.fill(0, y, width, y + 1, 18 << 24 | scanColor);
         }
         float cx = width / 2.0F;
@@ -111,9 +211,14 @@ final class OrsaBootBeat {
             size = Mth.lerp(e, full, oSize);
             px = Mth.lerp(e, cx, ox);
             py = Mth.lerp(e, cy, oy);
-            renderSpreadingMasthead(graphics, box, ox, oy, oRadius, size / oSize, px, py, e, iconAlpha(t) < 1.0F);
+            renderSpreadingMasthead(graphics, box, ox, oy, oRadius, size / oSize, px, py, e, iconAlpha(t) < 1.0F, muted);
         }
-        OrsaLogoRenderer.drawBoot(graphics, px, py, size, spinPhase(t), iconAlpha(t));
+        OrsaLogoRenderer.drawBoot(graphics, px, py, size, spinPhase(t), iconAlpha(t), muted);
+        if (muted && iconAlpha(t) > 0.0F) {
+            // A faint copy one pixel over, as an old screen out of convergence, and the sheet's worn rows.
+            OrsaLogoRenderer.drawBoot(graphics, px + 1, py, size, spinPhase(t), 0.2F * iconAlpha(t), true);
+            OrsaNeglect.wear(graphics, px - size / 2.0F, py - size / 2.0F, size, size, iconAlpha(t));
+        }
     }
 
     /**
@@ -122,7 +227,8 @@ final class OrsaBootBeat {
      * through the spinning one.
      */
     private static void renderSpreadingMasthead(GuiGraphics graphics, int[] box, float ox, float oy, float oRadius,
-                                                float scale, float px, float py, float e, boolean blending) {
+                                                float scale, float px, float py, float e, boolean blending,
+                                                boolean muted) {
         int w = Math.round(box[2] * scale);
         int h = Math.round(box[3] * scale);
         int x = Math.round(px - (ox - box[0]) * scale);
@@ -134,26 +240,29 @@ final class OrsaBootBeat {
         int right = Math.round(px + reach);
         int bottom = Math.round(py + reach);
         if (blending) {
-            drawMastheadIn(graphics, x, y, w, h, left, top, right, bottom);
+            drawMastheadIn(graphics, x, y, w, h, left, top, right, bottom, muted);
             return;
         }
         int oLeft = Math.round(px - radius - 1);
         int oTop = Math.round(py - radius - 1);
         int oRight = Math.round(px + radius + 1);
         int oBottom = Math.round(py + radius + 1);
-        drawMastheadIn(graphics, x, y, w, h, left, top, oLeft, bottom);
-        drawMastheadIn(graphics, x, y, w, h, oRight, top, right, bottom);
-        drawMastheadIn(graphics, x, y, w, h, oLeft, top, oRight, oTop);
-        drawMastheadIn(graphics, x, y, w, h, oLeft, oBottom, oRight, bottom);
+        drawMastheadIn(graphics, x, y, w, h, left, top, oLeft, bottom, muted);
+        drawMastheadIn(graphics, x, y, w, h, oRight, top, right, bottom, muted);
+        drawMastheadIn(graphics, x, y, w, h, oLeft, top, oRight, oTop, muted);
+        drawMastheadIn(graphics, x, y, w, h, oLeft, oBottom, oRight, bottom, muted);
     }
 
     private static void drawMastheadIn(GuiGraphics graphics, int x, int y, int w, int h,
-                                       int left, int top, int right, int bottom) {
+                                       int left, int top, int right, int bottom, boolean muted) {
         if (right <= left || bottom <= top) {
             return;
         }
         graphics.enableScissor(left, top, right, bottom);
-        OrsaLogoRenderer.drawAwakeningBase(graphics, x, y, w, h, 1.0F, false);
+        OrsaLogoRenderer.drawAwakeningBase(graphics, x, y, w, h, 1.0F, muted);
+        if (muted) {
+            OrsaNeglect.wear(graphics, x, y, w, h, 1.0F);
+        }
         graphics.disableScissor();
     }
 
