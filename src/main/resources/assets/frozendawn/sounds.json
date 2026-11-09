@@ -397,7 +397,7 @@
   "terminal.boot_orsa": {
     "category": "master",
     "sounds": [
-      "frozendawn:terminal/orsa_boot"
+      "frozendawn:ui/orsa_boot_sting"
     ]
   },
   "ui.orsa_awakening_voice": {
