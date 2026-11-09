@@ -565,10 +565,15 @@ public class WorldTickHandler {
             return;
         }
         persistentData.putBoolean(ORSA_AWAKENING_SEEN_TAG, true);
+        freezeForAwakening(player);
+        PacketDistributor.sendToPlayer(player, new OpenOrsaAwakeningPayload());
+    }
+
+    /** Holds the player where they stand for as long as the opening runs. */
+    public static void freezeForAwakening(ServerPlayer player) {
         UUID playerId = player.getUUID();
         orsaAwakeningFreezeUntil.put(playerId, player.level().getGameTime() + ORSA_AWAKENING_FREEZE_TICKS);
         orsaAwakeningFreezeAnchor.put(playerId, player.position());
-        PacketDistributor.sendToPlayer(player, new OpenOrsaAwakeningPayload());
     }
 
     private static void tickOrsaAwakeningFreeze(MinecraftServer server) {

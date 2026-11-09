@@ -146,6 +146,41 @@ public final class PayoffGameTest {
         h.succeed();
     }
 
+    @GameTest(template = GameTestTemplates.EMPTY, batch = "payoff")
+    public static void onlyTheFiringPlayerGetsTheReplay(GameTestHelper h) {
+        var server = fresh(h);
+        var a = player(h, "payoff_replay_a");
+        var b = player(h, "payoff_replay_b");
+        erased(server, true);
+        try {
+            kill(a);
+            kill(b);
+        } finally {
+            erased(server, false);
+        }
+        h.assertTrue(PayoffState.cueFor(a) == PayoffState.RespawnCue.REPLAY, "The firing player's next respawn replays");
+        h.assertTrue(PayoffState.cueFor(b) == PayoffState.RespawnCue.BOOT, "Anyone else boots");
+        h.assertTrue(PayoffState.cueOnRespawn(a, false).orElse(null) == PayoffState.RespawnCue.REPLAY, "The respawn sends the replay");
+        h.assertTrue(PayoffState.cueFor(a) == PayoffState.RespawnCue.BOOT, "Once: every later respawn boots");
+        h.assertTrue(PayoffState.cueOnRespawn(b, false).orElse(null) == PayoffState.RespawnCue.BOOT, "Still a boot for anyone else");
+        h.succeed();
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY, batch = "payoff")
+    public static void leavingTheEndIsNotARespawn(GameTestHelper h) {
+        var server = fresh(h);
+        var a = player(h, "payoff_end");
+        erased(server, true);
+        try {
+            kill(a);
+        } finally {
+            erased(server, false);
+        }
+        h.assertTrue(PayoffState.cueOnRespawn(a, true).isEmpty(), "Leaving the End sends no cue");
+        h.assertTrue(PayoffState.cueFor(a) == PayoffState.RespawnCue.REPLAY, "And keeps the replay for the real respawn");
+        h.succeed();
+    }
+
     /** A new world before the Heart falls. */
     static MinecraftServer fresh(GameTestHelper h) {
         var server = h.getLevel().getServer();

@@ -2,8 +2,11 @@ package com.frozendawn.lore;
 
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.data.ReturnedHearthSavedData;
+import com.frozendawn.event.WorldTickHandler;
 import com.frozendawn.network.PayoffDeathLinePayload;
 import com.frozendawn.network.PayoffStatePayload;
+import com.frozendawn.network.RespawnCuePayload;
+import java.util.Optional;
 import java.util.UUID;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
@@ -74,6 +77,30 @@ public final class PayoffState extends SavedData {
     public static RespawnCue cueFor(ServerPlayer player) {
         var data = get(player.getServer());
         return data.fired && data.replayPending && player.getUUID().equals(data.firedBy) ? RespawnCue.REPLAY : RespawnCue.BOOT;
+    }
+
+    /**
+     * The cue a respawn sends, spending the replay once it is sent. Leaving the End raises the same event without a
+     * death; it sends nothing.
+     */
+    static Optional<RespawnCue> cueOnRespawn(ServerPlayer player, boolean endConquered) {
+        if (endConquered) return Optional.empty();
+        var cue = cueFor(player);
+        if (cue == RespawnCue.REPLAY) {
+            var data = get(player.getServer());
+            data.replayPending = false;
+            data.setDirty();
+        }
+        return Optional.of(cue);
+    }
+
+    @SubscribeEvent
+    public static void onRespawn(PlayerEvent.PlayerRespawnEvent event) {
+        if (!(event.getEntity() instanceof ServerPlayer player)) return;
+        cueOnRespawn(player, event.isEndConquered()).ifPresent(cue -> {
+            if (cue == RespawnCue.REPLAY) WorldTickHandler.freezeForAwakening(player);
+            PacketDistributor.sendToPlayer(player, new RespawnCuePayload(cue == RespawnCue.REPLAY));
+        });
     }
 
     /** E11 is not built. Its escape flag plugs in here (CH-21). */

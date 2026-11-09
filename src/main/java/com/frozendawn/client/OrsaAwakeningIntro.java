@@ -1,6 +1,7 @@
 package com.frozendawn.client;
 
 import com.frozendawn.FrozenDawn;
+import com.frozendawn.config.FrozenDawnClientConfig;
 import com.frozendawn.init.ModSounds;
 import com.frozendawn.mixin.GameRendererAccessor;
 import net.minecraft.client.DeltaTracker;
@@ -9,6 +10,7 @@ import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.PostChain;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
@@ -16,6 +18,8 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
+
+import java.util.List;
 
 @EventBusSubscriber(modid = FrozenDawn.MOD_ID, value = Dist.CLIENT)
 public final class OrsaAwakeningIntro {
@@ -34,12 +38,23 @@ public final class OrsaAwakeningIntro {
     private static final float[] STRIPE_HEIGHT_RATIOS = {28.0F / 362.0F, 26.0F / 362.0F, 26.0F / 362.0F};
     private static final int[] STRIPE_DELAYS = {0, 3, 6};
 
-    private static final String[] DIAGNOSTIC_LINES = {
-            "VITALS: PULSE ELEVATED / RESPIRATION IRREGULAR",
-            "TRAUMA: MINOR CRANIAL CONCUSSION",
-            "FINAL SURFACE SHUTTLE: DEPARTED 03:17 UTC",
-            "CURRENT TIME: 88:14 LOCAL / CLOCK COMPROMISED"
-    };
+    private static final String KEY = "screen.frozendawn.awakening.";
+    private static final List<String> OPENING = List.of(KEY + "opening.1", KEY + "opening.2", KEY + "opening.3", KEY + "opening.4");
+    private static final List<String> REPLAY = List.of(KEY + "opening.1", KEY + "replay.2", KEY + "replay.3", KEY + "opening.4");
+    private static final String TEMP_HUD = KEY + "temp_hud";
+    private static final String DEATH_LINE_1 = "screen.frozendawn.payoff.death_line.1";
+    private static final String DEATH_LINE_2 = "screen.frozendawn.payoff.death_line.2";
+
+    /** The CH-18 lines show on the lead-in's black for these pending-delay ticks, as with immediate respawn. */
+    private static final int FLICKER_FROM = 30;
+    private static final int FLICKER_TO = 10;
+    /**
+     * A respawn's boot cue: its length, its ring's volume, and how long it rests after playing (five minutes). The
+     * volume is 0.35 of the opening's ring, which plays at the UI default of 0.25.
+     */
+    private static final int BOOT_CUE_TICKS = 40;
+    private static final float BOOT_CUE_VOLUME = 0.35F * 0.25F;
+    private static final long BOOT_CUE_REST_TICKS = 6000L;
 
     private static int pendingDelayTicks;
     private static int ticks;
@@ -49,11 +64,51 @@ public final class OrsaAwakeningIntro {
     private static boolean ringingPlayed;
     private static boolean temperatureBlinkStarted;
     private static boolean blurManaged;
+    private static List<String> readout = OPENING;
+    private static boolean flickerDeathLine;
+
+    private static long clientTicks;
+    private static long lastBootCue = Long.MIN_VALUE;
+    private static int bootCueTicks;
 
     private OrsaAwakeningIntro() {
     }
 
+    /** The four readout lines' lang keys, in order: the opening's, or the replay's (CH-35). */
+    public static List<String> readout(boolean replay) {
+        return replay ? REPLAY : OPENING;
+    }
+
+    /** Whether a boot cue may play now, given when the last one played ({@link Long#MIN_VALUE} for never). */
+    public static boolean bootCueDue(long now, long lastPlayed) {
+        return lastPlayed == Long.MIN_VALUE || now - lastPlayed >= BOOT_CUE_REST_TICKS;
+    }
+
     public static void start() {
+        begin(OPENING, false);
+    }
+
+    /** The opening again after the payoff, changed; the CH-18 lines flicker first if no death screen showed them. */
+    public static void startReplay(boolean flickerDeathLine) {
+        begin(REPLAY, flickerDeathLine);
+    }
+
+    /** A respawn's boot: the ring and the temperature readout's return, nothing else. */
+    public static void startBootCue() {
+        if (active || !FrozenDawnClientConfig.RESPAWN_BOOT_CUE.get() || !bootCueDue(clientTicks, lastBootCue)) {
+            return;
+        }
+        lastBootCue = clientTicks;
+        bootCueTicks = BOOT_CUE_TICKS;
+        Minecraft.getInstance().getSoundManager().play(
+                SimpleSoundInstance.forUI(ModSounds.ORSA_AWAKENING_RING.get(), 1.0F, BOOT_CUE_VOLUME));
+        TemperatureHud.startIntroBlink();
+    }
+
+    private static void begin(List<String> lines, boolean flicker) {
+        readout = lines;
+        flickerDeathLine = flicker;
+        bootCueTicks = 0;
         pendingDelayTicks = START_DELAY_TICKS;
         ticks = 0;
         active = true;
@@ -91,7 +146,13 @@ public final class OrsaAwakeningIntro {
 
     public static void render(GuiGraphics graphics, DeltaTracker deltaTracker) {
         Minecraft mc = Minecraft.getInstance();
-        if (!active || mc.player == null || mc.options.hideGui) {
+        if (mc.player == null || mc.options.hideGui) {
+            return;
+        }
+        if (!active) {
+            if (bootCueTicks > 0) {
+                drawTempHudOnline(graphics, mc.font, BOOT_CUE_TICKS - bootCueTicks, 1.0F);
+            }
             return;
         }
 
@@ -99,6 +160,9 @@ public final class OrsaAwakeningIntro {
         int height = graphics.guiHeight();
         if (pendingDelayTicks > 0) {
             graphics.fill(0, 0, width, height, 0xFF000000);
+            if (flickerDeathLine) {
+                renderDeathLineFlicker(graphics, mc.font, width, height);
+            }
             return;
         }
 
@@ -114,6 +178,10 @@ public final class OrsaAwakeningIntro {
 
     @SubscribeEvent
     public static void onClientTick(ClientTickEvent.Post event) {
+        clientTicks++;
+        if (bootCueTicks > 0) {
+            bootCueTicks--;
+        }
         if (!active) {
             return;
         }
@@ -305,15 +373,16 @@ public final class OrsaAwakeningIntro {
         graphics.fill(x, y + panelHeight - 2, x + panelWidth, y + panelHeight, withAlpha(0xFFFFCE00, 0.65F * alpha));
         graphics.fill(x + 10, y + 22, x + panelWidth - 10, y + 23, withAlpha(0xFF8BEAF5, 0.22F * alpha));
 
-        graphics.drawString(font, "FIRST AWAKENING TRIAGE", x + 12, y + 9, withAlpha(0xFFE9FBFF, alpha), false);
-        graphics.drawString(font, "SUBJECT READOUT", x + panelWidth - 12 - font.width("SUBJECT READOUT"), y + 9,
+        Component subject = Component.translatable(KEY + "readout");
+        graphics.drawString(font, Component.translatable(KEY + "header"), x + 12, y + 9, withAlpha(0xFFE9FBFF, alpha), false);
+        graphics.drawString(font, subject, x + panelWidth - 12 - font.width(subject), y + 9,
                 withAlpha(0xFFFFD83D, alpha), false);
 
-        int visible = Mth.clamp((ticks - DIAGNOSTIC_START - 8) / 10 + 1, 0, DIAGNOSTIC_LINES.length);
+        int visible = Mth.clamp((ticks - DIAGNOSTIC_START - 8) / 10 + 1, 0, readout.size());
         int lineY = y + 32;
         for (int i = 0; i < visible; i++) {
             int lineAlpha = withAlpha(i == visible - 1 && ((ticks / 4) & 1) == 0 ? 0xFFFFD83D : 0xFFBDEFF4, alpha);
-            graphics.drawString(font, DIAGNOSTIC_LINES[i], x + 13, lineY + i * 13, lineAlpha, false);
+            graphics.drawString(font, Component.translatable(readout.get(i)), x + 13, lineY + i * 13, lineAlpha, false);
         }
 
         int barX = x + 13;
@@ -330,10 +399,25 @@ public final class OrsaAwakeningIntro {
             return;
         }
 
-        float blink = ((ticks / 4) & 1) == 0 ? 0.35F : 1.0F;
+        drawTempHudOnline(graphics, font, ticks, cue);
+    }
+
+    private static void drawTempHudOnline(GuiGraphics graphics, Font font, int tick, float cue) {
+        float blink = ((tick / 4) & 1) == 0 ? 0.35F : 1.0F;
         int x = TemperatureHud.HUD_X;
         int y = TemperatureHud.HUD_Y + 20;
-        graphics.drawString(font, "TEMP HUD ONLINE", x, y, withAlpha(0xFF9FEAF2, cue * blink), false);
+        graphics.drawString(font, Component.translatable(TEMP_HUD), x, y, withAlpha(0xFF9FEAF2, cue * blink), false);
+    }
+
+    /** About a second of the CH-18 lines on the black, dropping out for a frame near each end. */
+    private static void renderDeathLineFlicker(GuiGraphics graphics, Font font, int width, int height) {
+        int shown = FLICKER_FROM - pendingDelayTicks;
+        if (pendingDelayTicks > FLICKER_FROM || pendingDelayTicks <= FLICKER_TO || shown == 2 || shown == 4 || shown == 17) {
+            return;
+        }
+        int y = height / 2 - font.lineHeight;
+        graphics.drawCenteredString(font, Component.translatable(DEATH_LINE_1), width / 2, y, 0xFFFFFF);
+        graphics.drawCenteredString(font, Component.translatable(DEATH_LINE_2), width / 2, y + font.lineHeight + 1, 0xFFFFFF);
     }
 
     private static float smooth(float value) {

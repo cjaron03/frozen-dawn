@@ -1,5 +1,6 @@
 package com.frozendawn.lore;
 
+import com.frozendawn.client.OrsaAwakeningIntro;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import java.io.InputStreamReader;
@@ -105,6 +106,33 @@ class PayoffStateTest {
         String review = json(ENTRIES + "projected_timeline.json").getAsJsonArray("pages").get(8).getAsJsonObject().get("text").getAsString();
         assertFalse(footnote.toLowerCase().contains("continuity"));
         assertFalse(review.toLowerCase().contains("continuity"));
+    }
+
+    @Test
+    void theReplayReadsAsProjected() {
+        JsonObject lang = json("assets/frozendawn/lang/en_us.json");
+        var replay = OrsaAwakeningIntro.readout(true).stream().map(k -> lang.get(k).getAsString()).toList();
+        assertEquals(java.util.List.of(
+                "VITALS: PULSE ELEVATED / RESPIRATION IRREGULAR",
+                "TRAUMA: NONE RECORDED",
+                "ENROLLEES REMAINING: 1 / AS PROJECTED",
+                "CURRENT TIME: 88:14 LOCAL / CLOCK COMPROMISED"), replay);
+        var opening = OrsaAwakeningIntro.readout(false).stream().map(k -> lang.get(k).getAsString()).toList();
+        assertEquals(java.util.List.of(
+                "VITALS: PULSE ELEVATED / RESPIRATION IRREGULAR",
+                "TRAUMA: MINOR CRANIAL CONCUSSION",
+                "FINAL SURFACE SHUTTLE: DEPARTED 03:17 UTC",
+                "CURRENT TIME: 88:14 LOCAL / CLOCK COMPROMISED"), opening);
+        assertEquals("FIRST AWAKENING TRIAGE", lang.get("screen.frozendawn.awakening.header").getAsString());
+        for (String line : replay) assertFalse(line.toLowerCase().contains("continuity"), line);
+    }
+
+    @Test
+    void theBootCueRestsFiveMinutes() {
+        assertTrue(OrsaAwakeningIntro.bootCueDue(0, Long.MIN_VALUE), "Nothing has played yet");
+        assertTrue(OrsaAwakeningIntro.bootCueDue(Long.MAX_VALUE, Long.MIN_VALUE));
+        assertFalse(OrsaAwakeningIntro.bootCueDue(10_000 + 5999, 10_000));
+        assertTrue(OrsaAwakeningIntro.bootCueDue(10_000 + 6000, 10_000));
     }
 
     /** Patchouli formatting removed: line breaks become newlines, every other code goes. */
