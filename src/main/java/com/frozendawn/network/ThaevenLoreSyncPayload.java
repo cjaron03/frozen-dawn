@@ -19,8 +19,6 @@ public record ThaevenLoreSyncPayload(
             StreamCodec.of((buffer, payload) -> {
                 buffer.writeLong(payload.discoveredMask());
                 ByteBufCodecs.BOOL.encode(buffer, payload.recipeDiscovered());
-                ByteBufCodecs.VAR_INT.encode(
-                        buffer, payload.seenRevisions().length);
                 writeRevisions(buffer, payload.seenRevisions());
                 writeRevisions(buffer, payload.currentRevisions());
             }, buffer -> {
