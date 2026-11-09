@@ -2,7 +2,7 @@
 """Fresh Manual Search Check: the field manual's search bar finds entries by item name.
 
 A flat Creative lab, with the world clock paused. One button gives the manual; another unlocks Rocket Assembly,
-which is locked behind the transponder broadcast and so hidden from search until then.
+which is locked behind the transponder broadcast: search lists it as Locked and it cannot be opened until then.
 Advancements are filtered as in every generated playtest world, and the difficulty is locked. Never overwrites a save.
 Usage (lab client, run-lab/ directory):
   python3 tools/prepare_manual_search_playtest.py --source <any closed level.dat> --destination "run-lab/saves/Manual Search Check"
