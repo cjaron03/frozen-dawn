@@ -10,7 +10,7 @@
 
 **Spec:** [payoff-roadmap.md](payoff-roadmap.md), branch 3. Notion: the payoff branch spec, sections 1 to 5 and 6d steps 2 and 2b. Canon Hierarchy CH-11, CH-18 to CH-21, CH-28, CH-33 and CH-35.
 
-**Status:** drafted 2026-11-09 for the owner's approval. Nothing is built.
+**Status:** approved by the owner as written, 2026-11-09, Rulings 1 to 10 included. Nothing is built.
 
 **Branch:** `feat/payoff-reveal` in `/Volumes/SSD/Work/frozen-dawn-payoff-reveal`, cut from `feat/maeve-director` once this plan has merged. The build session starts in that worktree and works there. PR into `feat/maeve-director`. The branch changes a save format and client/server sync, and it merges into a long-lived branch, so the branch review runs on Opus.
 
