@@ -40,10 +40,10 @@ final class OrsaLogoRenderer {
     private static final int FULL_MASTHEAD_WIDTH = 817;
     private static final int FULL_MASTHEAD_HEIGHT = 362;
     private static final int BOOT_DRAW_SIZE = 52;
-    private static final int BOOT_FRAME_SIZE = 208;
-    private static final int BOOT_FRAME_COUNT = 32;
-    private static final int BOOT_SHEET_WIDTH = BOOT_FRAME_SIZE * BOOT_FRAME_COUNT;
-    private static final int BOOT_SHEET_HEIGHT = BOOT_FRAME_SIZE;
+    /** The spinner's sheet (tools/GenerateOrsaBootSheet.java): 64 frames, 32 across and 2 down. */
+    private static final int BOOT_FRAME_COUNT = 64;
+    private static final int BOOT_COLUMNS = 32;
+    private static final int BOOT_ROWS = BOOT_FRAME_COUNT / BOOT_COLUMNS;
 
     private OrsaLogoRenderer() {
     }
@@ -57,9 +57,21 @@ final class OrsaLogoRenderer {
     }
 
     static void drawBoot(GuiGraphics graphics, int centerX, int centerY, int size, float orbitPhase) {
+        drawBootQuad(graphics, centerX - size / 2.0F, centerY - size / 2.0F, size, bootFrame(orbitPhase));
+    }
+
+    /** The spinner frame for an orbit phase, where one orbit is 1. */
+    static int bootFrame(float orbitPhase) {
         float normalizedPhase = orbitPhase - (float) Math.floor(orbitPhase);
-        int frame = Math.floorMod((int) Math.floor(normalizedPhase * BOOT_FRAME_COUNT), BOOT_FRAME_COUNT);
-        drawBootQuad(graphics, centerX - size / 2.0F, centerY - size / 2.0F, size, frame);
+        return Math.floorMod((int) Math.floor(normalizedPhase * BOOT_FRAME_COUNT), BOOT_FRAME_COUNT);
+    }
+
+    /** A spinner frame's texture box on the sheet: min u, min v, max u, max v. */
+    static float[] bootFrameUv(int frame) {
+        int column = frame % BOOT_COLUMNS;
+        int row = frame / BOOT_COLUMNS;
+        return new float[] {column / (float) BOOT_COLUMNS, row / (float) BOOT_ROWS,
+                (column + 1) / (float) BOOT_COLUMNS, (row + 1) / (float) BOOT_ROWS};
     }
 
     static int bootDrawSize() {
@@ -105,10 +117,11 @@ final class OrsaLogoRenderer {
             Matrix4f matrix = graphics.pose().last().pose();
             float x2 = x + size;
             float y2 = y + size;
-            float minU = (float) (frame * BOOT_FRAME_SIZE) / BOOT_SHEET_WIDTH;
-            float maxU = (float) ((frame + 1) * BOOT_FRAME_SIZE) / BOOT_SHEET_WIDTH;
-            float minV = 0.0F;
-            float maxV = (float) BOOT_FRAME_SIZE / BOOT_SHEET_HEIGHT;
+            float[] uv = bootFrameUv(frame);
+            float minU = uv[0];
+            float minV = uv[1];
+            float maxU = uv[2];
+            float maxV = uv[3];
             BufferBuilder buffer = Tesselator.getInstance().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
             buffer.addVertex(matrix, x, y, 0.0F).setUv(minU, minV);
             buffer.addVertex(matrix, x, y2, 0.0F).setUv(minU, maxV);
