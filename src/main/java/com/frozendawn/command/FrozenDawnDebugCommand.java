@@ -55,7 +55,7 @@ final class FrozenDawnDebugCommand {
                 .then(requiredChild(legacyHearth, "lore"));
         // Development builds only: force natural Cold Flora spawn tries and report why they fail.
         if (!net.neoforged.fml.loading.FMLEnvironment.production) debug.then(FloraDebugCommand.commands());
-        // Development builds only: read the payoff flag, or clear it so a playtest can fire it again.
+        // Development builds only: read the payoff flag, clear it so a playtest can fire it again, or replay the opening.
         if (!net.neoforged.fml.loading.FMLEnvironment.production) debug.then(payoffCommands());
         return debug;
     }
@@ -70,6 +70,13 @@ final class FrozenDawnDebugCommand {
                 .then(Commands.literal("reset").executes(context -> {
                     PayoffState.setForTest(context.getSource().getServer(), false);
                     context.getSource().sendSuccess(() -> Component.literal("Payoff cleared: not fired, Terminus unturned"), true);
+                    return 1;
+                }))
+                // Plays the first-join opening again, so a playtest can compare it with the replay.
+                .then(Commands.literal("opening").executes(context -> {
+                    var player = context.getSource().getPlayerOrException();
+                    com.frozendawn.event.WorldTickHandler.freezeForAwakening(player);
+                    net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(player, new com.frozendawn.network.OpenOrsaAwakeningPayload());
                     return 1;
                 }));
     }

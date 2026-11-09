@@ -52,6 +52,7 @@ def scripts():
                 tell('[Immediate respawn on]', '/gamerule doImmediateRespawn true', 'gold'),
                 tell('[Immediate respawn off]', '/gamerule doImmediateRespawn false', 'gold'),
                 tell('[Reset payoff]', '/fd payoff reset', 'light_purple'),
+                tell('[Play the opening]', '/fd payoff opening', 'aqua'),
                 tell('[Status]', '/fd payoff status', 'gray'),
                 tell('[Controls]', '/function '+NS+':controls', 'gray'), 'return 1']
     return {
@@ -86,7 +87,7 @@ def prepare_world(source, destination):
     report = destination/'preparation.json'
     info = json.loads(report.read_text())
     info.update({'mode': 'Survival', 'phase': '0, paused', 'payoff': 'eligible (new world)',
-                 'fixtures': 'buttons for the manual, the Heart, a death, immediate respawn, a payoff reset and status'})
+                 'fixtures': 'buttons for the manual, the Heart, a death, immediate respawn, a payoff reset, the opening and status'})
     report.write_text(json.dumps(info, indent=2)+'\n')
     print(destination.resolve())
 
