@@ -127,6 +127,25 @@ public final class PayoffGameTest {
         h.succeed();
     }
 
+    @GameTest(template = GameTestTemplates.EMPTY, batch = "payoff")
+    public static void theLineComesBackAfterARelog(GameTestHelper h) {
+        var server = fresh(h);
+        var a = player(h, "payoff_relog_a");
+        var b = player(h, "payoff_relog_b");
+        erased(server, true);
+        try {
+            kill(a);
+            kill(b);
+        } finally {
+            erased(server, false);
+        }
+        h.assertTrue(PayoffState.deathLineOwed(a), "Still on the death screen, the firing player is owed the line");
+        h.assertFalse(PayoffState.deathLineOwed(b), "Another player never is");
+        a.setHealth(a.getMaxHealth());
+        h.assertFalse(PayoffState.deathLineOwed(a), "Once alive again, nothing is owed");
+        h.succeed();
+    }
+
     /** A new world before the Heart falls. */
     static MinecraftServer fresh(GameTestHelper h) {
         var server = h.getLevel().getServer();

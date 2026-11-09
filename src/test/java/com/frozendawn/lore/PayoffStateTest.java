@@ -49,6 +49,13 @@ class PayoffStateTest {
         assertEquals("minecraft:impossible", only.get("trigger").getAsString());
     }
 
+    @Test
+    void theDeathLineIsCanon() {
+        JsonObject lang = json("assets/frozendawn/lang/en_us.json");
+        assertEquals("Continuity protocol: active.", lang.get("screen.frozendawn.payoff.death_line.1").getAsString());
+        assertEquals("1 enrollee remaining.", lang.get("screen.frozendawn.payoff.death_line.2").getAsString());
+    }
+
     static JsonObject json(String path) {
         var stream = PayoffStateTest.class.getClassLoader().getResourceAsStream(path);
         assertNotNull(stream, path);

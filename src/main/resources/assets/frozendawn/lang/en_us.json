@@ -171,6 +171,8 @@
   "command.frozendawn.preset.locked": "World difficulty is locked. Use operator access to override it.",
   "message.frozendawn.difficulty.locked": "This world's difficulty is already locked.",
   "message.frozendawn.difficulty.brutal_good_luck": "Good luck...",
+  "screen.frozendawn.payoff.death_line.1": "Continuity protocol: active.",
+  "screen.frozendawn.payoff.death_line.2": "1 enrollee remaining.",
   "screen.frozendawn.difficulty.title": "FROZEN DAWN DIFFICULTY",
   "screen.frozendawn.difficulty.subtitle": "Choose the world preset.",
   "screen.frozendawn.difficulty.default_notice": "DEFAULT is preselected when this prompt opens.",
