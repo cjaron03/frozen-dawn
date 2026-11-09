@@ -69,7 +69,14 @@ final class ThaevenLoreCommand {
                                 .executes(ThaevenLoreCommand::loopStatus))
                         .then(Commands.literal("reset")
                                 .then(Commands.literal("confirm")
-                                        .executes(ThaevenLoreCommand::loopReset))))
+                                        .executes(ThaevenLoreCommand::loopReset)))
+                        .then(Commands.literal("play")
+                                .then(Commands.argument("beat", StringArgumentType.word())
+                                        .suggests(FrozenDawnCommandSuggestions.enums(
+                                                ThaevenLoopBeat.class))
+                                        .executes(ThaevenLoreCommand::loopPlay)))
+                        .then(Commands.literal("owe-broken")
+                                .executes(ThaevenLoreCommand::loopOweBroken)))
                 .then(Commands.literal("explain")
                         .then(Commands.argument("record", StringArgumentType.word())
                                 .suggests(FrozenDawnCommandSuggestions.enums(
@@ -224,6 +231,41 @@ final class ThaevenLoreCommand {
             ServerPlayer online = server.getPlayerList().getPlayer(id);
             return online == null ? id.toString() : online.getGameProfile().getName();
         }).orElse("nobody");
+    }
+
+    /** Plays a beat on the caller's overlay to judge its look; it marks nothing shown. */
+    private static int loopPlay(CommandContext<CommandSourceStack> context)
+            throws CommandSyntaxException {
+        ServerPlayer player = context.getSource().getPlayerOrException();
+        String name = StringArgumentType.getString(context, "beat");
+        ThaevenLoopBeat beat;
+        try {
+            beat = ThaevenLoopBeat.valueOf(name.toUpperCase(java.util.Locale.ROOT));
+        } catch (IllegalArgumentException exception) {
+            context.getSource().sendFailure(Component.literal("Unknown loop beat: " + name));
+            return 0;
+        }
+        net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(player,
+                new com.frozendawn.network.ThaevenLoopPayload(beat.ordinal()));
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Played " + beat.name().toLowerCase(java.util.Locale.ROOT) + " (preview, nothing marked shown)"), false);
+        return 1;
+    }
+
+    /** Owes the caller the broken lines, as an arena death would, so their next respawn plays them for real. */
+    private static int loopOweBroken(CommandContext<CommandSourceStack> context)
+            throws CommandSyntaxException {
+        ServerPlayer player = context.getSource().getPlayerOrException();
+        ThaevenLoreSavedData data = ThaevenLoreSavedData.get(context.getSource().getServer());
+        if ((data.loopShown() & ThaevenLoopBeat.BODY_BROKE.bit()) != 0) {
+            context.getSource().sendFailure(Component.literal(
+                    "The broken lines already showed in this world; reset the loop first"));
+            return 0;
+        }
+        data.setLoopBrokenOwed(player.getUUID());
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Owed the broken lines: they play on your next respawn"), true);
+        return 1;
     }
 
     private static int loopReset(CommandContext<CommandSourceStack> context) {

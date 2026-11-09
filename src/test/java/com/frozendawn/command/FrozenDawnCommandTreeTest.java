@@ -85,6 +85,8 @@ class FrozenDawnCommandTreeTest {
                 .getChild("status"));
         assertVerbose(debug.getChild("lore").getChild("status"));
         assertNotNull(debug.getChild("lore").getChild("loop").getChild("status").getCommand());
+        assertNotNull(debug.getChild("lore").getChild("loop").getChild("play").getChild("beat").getCommand());
+        assertNotNull(debug.getChild("lore").getChild("loop").getChild("owe-broken").getCommand());
     }
 
     @Test
