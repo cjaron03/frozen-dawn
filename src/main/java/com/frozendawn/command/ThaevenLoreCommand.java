@@ -7,6 +7,7 @@ import com.frozendawn.init.ModBlocks;
 import com.frozendawn.init.ModItems;
 import com.frozendawn.lore.ThaevenLoreManager;
 import com.frozendawn.lore.ThaevenRecordId;
+import com.frozendawn.lore.ThaevenLoopBeat;
 import com.frozendawn.lore.ThaevenSemanticKey;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
@@ -63,6 +64,12 @@ final class ThaevenLoreCommand {
                 .then(Commands.literal("reset-world-semantic")
                         .then(Commands.literal("confirm")
                                 .executes(ThaevenLoreCommand::resetWorldSemantics)))
+                .then(Commands.literal("loop")
+                        .then(Commands.literal("status")
+                                .executes(ThaevenLoreCommand::loopStatus))
+                        .then(Commands.literal("reset")
+                                .then(Commands.literal("confirm")
+                                        .executes(ThaevenLoreCommand::loopReset))))
                 .then(Commands.literal("explain")
                         .then(Commands.argument("record", StringArgumentType.word())
                                 .suggests(FrozenDawnCommandSuggestions.enums(
@@ -191,6 +198,38 @@ final class ThaevenLoreCommand {
         context.getSource().sendSuccess(() -> Component.literal(
                 "Reset lore archive for "
                         + player.getGameProfile().getName()), true);
+        return 1;
+    }
+
+    /** CH-37's loop: which beats this world has shown, and who is owed the broken and returning lines. */
+    private static int loopStatus(CommandContext<CommandSourceStack> context) {
+        var server = context.getSource().getServer();
+        ThaevenLoreSavedData data = ThaevenLoreSavedData.get(server);
+        FrozenDawnCommandOutput.heading(context.getSource(), "Lore / loop");
+        for (ThaevenLoopBeat beat : ThaevenLoopBeat.values()) {
+            FrozenDawnCommandOutput.line(context.getSource(),
+                    beat.name().toLowerCase(java.util.Locale.ROOT),
+                    (data.loopShown() & beat.bit()) != 0 ? "shown" : "not shown");
+        }
+        FrozenDawnCommandOutput.line(context.getSource(), "Broken owed",
+                ownerName(server, data.loopBrokenOwed()));
+        FrozenDawnCommandOutput.line(context.getSource(), "Returning owed",
+                ownerName(server, data.loopReturningOwed()));
+        return 1;
+    }
+
+    private static String ownerName(net.minecraft.server.MinecraftServer server,
+                                    java.util.Optional<java.util.UUID> owner) {
+        return owner.map(id -> {
+            ServerPlayer online = server.getPlayerList().getPlayer(id);
+            return online == null ? id.toString() : online.getGameProfile().getName();
+        }).orElse("nobody");
+    }
+
+    private static int loopReset(CommandContext<CommandSourceStack> context) {
+        ThaevenLoreSavedData.get(context.getSource().getServer()).resetLoop();
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Reset the loop: no beat shown, nothing owed"), true);
         return 1;
     }
 

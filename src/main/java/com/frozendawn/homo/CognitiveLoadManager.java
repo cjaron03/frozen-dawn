@@ -8,6 +8,7 @@ import com.frozendawn.init.ModAttachments;
 import com.frozendawn.init.ModDataComponents;
 import com.frozendawn.init.ModDamageTypes;
 import com.frozendawn.init.ModItems;
+import com.frozendawn.lore.ThaevenLoopManager;
 import com.frozendawn.network.CognitiveLoadPayload;
 import com.frozendawn.world.TemperatureManager;
 import net.minecraft.core.BlockPos;
@@ -62,6 +63,12 @@ public final class CognitiveLoadManager {
             HeartEchoManager.tick(level, player,
                     player.getData(ModAttachments.COGNITIVE_LOAD), heart, anchor);
             tickPlayer(level, player, apocalypse, anchor, fieldStrength, heartLive);
+            if (heartLive) {
+                ThaevenLoopManager.tick(player, anchor);
+            }
+        }
+        if (!heartLive) {
+            ThaevenLoopManager.heartDown(level.getServer());
         }
     }
 
@@ -214,6 +221,7 @@ public final class CognitiveLoadManager {
             state.setBreakoutTicks(0.0F);
             state.setResistanceInput(0.0F, 0);
             eventId = CognitiveLoadPayload.EVENT_TAKEOVER_START;
+            ThaevenLoopManager.onTakeoverStart(player);
         }
         sync(player, state.load(), anchor, heartLive, eventId, eventId != 0);
     }

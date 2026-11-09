@@ -212,6 +212,11 @@ public final class OrsaAwakeningIntro {
         blackoutApplied = true;
     }
 
+    /** Whether the opening, the replay or a boot cue is running: overlays that must not cut across it wait. */
+    public static boolean busy() {
+        return active || bootCueTicks > 0;
+    }
+
     public static boolean shouldSuppressSurvivalHud() {
         return FirstBootEpigraph.active() || active && ticks < TEMPERATURE_RETURN_START;
     }

@@ -231,6 +231,11 @@ public class ClientEvents {
         );
         event.registerAboveAll(
                 ResourceLocation.fromNamespaceAndPath(
+                        FrozenDawn.MOD_ID, "thaeven_loop"),
+                ThaevenLoopOverlay::render
+        );
+        event.registerAboveAll(
+                ResourceLocation.fromNamespaceAndPath(
                         FrozenDawn.MOD_ID, "master_architect_flood"),
                 MasterArchitectFloodClient::render
         );

@@ -2,6 +2,7 @@ package com.frozendawn.data;
 
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.homo.HearthSelectionPolicy;
+import com.frozendawn.lore.ThaevenLoopBeat;
 import com.frozendawn.lore.ThaevenRecordId;
 import com.frozendawn.lore.ThaevenSemanticKey;
 import java.util.EnumMap;
@@ -40,6 +41,10 @@ public final class ThaevenLoreSavedData extends SavedData {
     private BlockPos humanCarrierCratePos;
     private boolean humanCarrierReconciled;
     private boolean legacyAuthorityReconciled;
+    /** CH-37's loop: the beats shown in this world, and who is owed the broken and the returning lines. */
+    private int loopShown;
+    private UUID loopBrokenOwed;
+    private UUID loopReturningOwed;
 
     public ThaevenLoreSavedData() {
         for (ThaevenSemanticKey key : ThaevenSemanticKey.values()) {
@@ -74,6 +79,11 @@ public final class ThaevenLoreSavedData extends SavedData {
             data.semanticRevisions.put(key,
                     Math.max(0, semantics.getInt(key.name())));
         }
+        data.loopShown = tag.getInt("loopShown");
+        data.loopBrokenOwed = tag.hasUUID("loopBrokenOwed")
+                ? tag.getUUID("loopBrokenOwed") : null;
+        data.loopReturningOwed = tag.hasUUID("loopReturningOwed")
+                ? tag.getUUID("loopReturningOwed") : null;
         ListTag relics = tag.getList("velAnRelics", Tag.TAG_COMPOUND);
         for (Tag entry : relics) {
             if (entry instanceof CompoundTag relic && relic.hasUUID("hearth")
@@ -129,6 +139,13 @@ public final class ThaevenLoreSavedData extends SavedData {
             semantics.putInt(entry.getKey().name(), entry.getValue());
         }
         tag.put("semanticRevisions", semantics);
+        tag.putInt("loopShown", loopShown);
+        if (loopBrokenOwed != null) {
+            tag.putUUID("loopBrokenOwed", loopBrokenOwed);
+        }
+        if (loopReturningOwed != null) {
+            tag.putUUID("loopReturningOwed", loopReturningOwed);
+        }
         ListTag relics = new ListTag();
         for (Map.Entry<UUID, BlockPos> entry : velAnRelics.entrySet()) {
             CompoundTag relic = new CompoundTag();
@@ -236,6 +253,52 @@ public final class ThaevenLoreSavedData extends SavedData {
 
     public int semanticRevision(ThaevenSemanticKey key) {
         return semanticRevisions.getOrDefault(key, 0);
+    }
+
+    public int loopShown() {
+        return loopShown;
+    }
+
+    /** Marks a loop beat shown in this world; false if it already was. */
+    public boolean markLoopShown(ThaevenLoopBeat beat) {
+        if ((loopShown & beat.bit()) != 0) {
+            return false;
+        }
+        loopShown |= beat.bit();
+        setDirty();
+        return true;
+    }
+
+    public Optional<UUID> loopBrokenOwed() {
+        return Optional.ofNullable(loopBrokenOwed);
+    }
+
+    public void setLoopBrokenOwed(UUID playerId) {
+        loopBrokenOwed = playerId;
+        setDirty();
+    }
+
+    public Optional<UUID> loopReturningOwed() {
+        return Optional.ofNullable(loopReturningOwed);
+    }
+
+    public void setLoopReturningOwed(UUID playerId) {
+        loopReturningOwed = playerId;
+        setDirty();
+    }
+
+    /** Puts the shown beats back to a recorded mask; GameTests only. */
+    public void setLoopShownForTest(int shown) {
+        loopShown = shown;
+        setDirty();
+    }
+
+    /** Forgets every shown beat and every owed line. */
+    public void resetLoop() {
+        loopShown = 0;
+        loopBrokenOwed = null;
+        loopReturningOwed = null;
+        setDirty();
     }
 
     /** Puts one world semantic back to a recorded revision; GameTests only. */

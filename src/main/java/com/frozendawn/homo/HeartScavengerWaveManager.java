@@ -45,7 +45,7 @@ import org.joml.Vector3f;
 /** Server-owned scavenger waves and the node-bound Orsathae-vaen focal point. */
 public final class HeartScavengerWaveManager {
     private static final String SCAVENGER_TAG_PREFIX = "frozendawn_heart_scavenger_";
-    private static final double ARENA_RADIUS = 112.0D;
+    public static final double ARENA_RADIUS = 112.0D;
     private static final double SPAWN_MIN_RADIUS = 46.0D;
     private static final double SPAWN_MAX_RADIUS = 58.0D;
     private static final int TARGET_REFRESH_TICKS = 10;

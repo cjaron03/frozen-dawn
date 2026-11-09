@@ -14,6 +14,7 @@ import com.frozendawn.client.MasterArchitectAuraClient;
 import com.frozendawn.client.MasterArchitectFightMusic;
 import com.frozendawn.client.HeartBattleMusic;
 import com.frozendawn.client.MasterArchitectFourthWallMoment;
+import com.frozendawn.client.ThaevenLoopOverlay;
 import com.frozendawn.client.MasterArchitectFloodClient;
 import com.frozendawn.client.MasterArchitectSeverTelegraph;
 import com.frozendawn.client.MonitoringTerminalScreen;
@@ -279,6 +280,10 @@ public final class ClientHandlers {
     public static void handleMasterArchitectFourthWallState(
             MasterArchitectFourthWallStatePayload payload) {
         MasterArchitectFourthWallMoment.handleState(payload);
+    }
+
+    public static void handleThaevenLoop(ThaevenLoopPayload payload) {
+        ThaevenLoopOverlay.receive(payload);
     }
 
     public static void handleMasterArchitectFloodState(

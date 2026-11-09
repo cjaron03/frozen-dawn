@@ -1,5 +1,6 @@
 package com.frozendawn.data;
 
+import com.frozendawn.lore.ThaevenLoopBeat;
 import com.frozendawn.lore.ThaevenRecordId;
 import com.frozendawn.lore.ThaevenSemanticKey;
 import java.util.UUID;
@@ -61,6 +62,33 @@ class ThaevenLoreSavedDataTest {
                 data.save(new CompoundTag(), null), null);
         assertEquals(1, loaded.currentRevision(ThaevenRecordId.VEL_AN));
         assertEquals(0, loaded.currentRevision(ThaevenRecordId.THE_PASSAGE));
+    }
+
+    @Test
+    void loopStateSurvivesSerializationAndStartsEmpty() {
+        ThaevenLoreSavedData fresh = ThaevenLoreSavedData.load(new CompoundTag(), null);
+        assertEquals(0, fresh.loopShown(), "An older save has shown nothing");
+        assertTrue(fresh.loopBrokenOwed().isEmpty());
+        assertTrue(fresh.loopReturningOwed().isEmpty());
+
+        ThaevenLoreSavedData data = new ThaevenLoreSavedData();
+        UUID broken = UUID.randomUUID();
+        UUID returning = UUID.randomUUID();
+        assertTrue(data.markLoopShown(ThaevenLoopBeat.CROSSED));
+        assertFalse(data.markLoopShown(ThaevenLoopBeat.CROSSED), "Once");
+        data.setLoopBrokenOwed(broken);
+        data.setLoopReturningOwed(returning);
+
+        ThaevenLoreSavedData loaded = ThaevenLoreSavedData.load(
+                data.save(new CompoundTag(), null), null);
+        assertEquals(ThaevenLoopBeat.CROSSED.bit(), loaded.loopShown());
+        assertEquals(broken, loaded.loopBrokenOwed().orElseThrow());
+        assertEquals(returning, loaded.loopReturningOwed().orElseThrow());
+
+        loaded.resetLoop();
+        assertEquals(0, loaded.loopShown());
+        assertTrue(loaded.loopBrokenOwed().isEmpty());
+        assertTrue(loaded.loopReturningOwed().isEmpty());
     }
 
     @Test

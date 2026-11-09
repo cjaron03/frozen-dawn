@@ -52,6 +52,9 @@ class FrozenDawnCommandTreeTest {
         assertNotNull(debug.getChild("aggregate").getChild("reset").getChild("confirm"));
         assertNotNull(debug.getChild("lore").getChild("reset-world-semantic")
                 .getChild("confirm"));
+        assertNotNull(debug.getChild("lore").getChild("loop").getChild("reset")
+                .getChild("confirm").getCommand());
+        assertNull(debug.getChild("lore").getChild("loop").getChild("reset").getCommand());
         assertNull(debug.getChild("world").getChild("reset").getCommand());
         assertNull(debug.getChild("aggregate").getChild("resolve").getCommand());
     }
@@ -81,6 +84,7 @@ class FrozenDawnCommandTreeTest {
         assertVerbose(debug.getChild("suit").getChild("hearthrot")
                 .getChild("status"));
         assertVerbose(debug.getChild("lore").getChild("status"));
+        assertNotNull(debug.getChild("lore").getChild("loop").getChild("status").getCommand());
     }
 
     @Test
