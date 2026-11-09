@@ -3,9 +3,9 @@ package com.frozendawn.client;
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.defense.Terminus;
 import com.frozendawn.defense.TerminusCone;
-import com.frozendawn.defense.TerminusLedger;
 import com.frozendawn.init.ModParticles;
 import com.frozendawn.item.TerminusItem;
+import com.frozendawn.lore.PayoffState;
 import com.frozendawn.mixin.GameRendererAccessor;
 import com.frozendawn.network.TerminusDischargePayload;
 import net.minecraft.client.Minecraft;
@@ -143,7 +143,7 @@ public final class TerminusClient {
     }
 
     @SubscribeEvent public static void forget(ClientPlayerNetworkEvent.LoggingOut event) {
-        TerminusLedger.forgetClient();
+        PayoffState.forgetClient();
         greyFrames = 0;
         wasWinding = mustRelease = false;
     }
