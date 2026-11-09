@@ -56,6 +56,62 @@ class PayoffStateTest {
         assertEquals("1 enrollee remaining.", lang.get("screen.frozendawn.payoff.death_line.2").getAsString());
     }
 
+    private static final String ENTRIES =
+            "assets/frozendawn/patchouli_books/frozen_dawn_guide/en_us/entries/orsa_intel/";
+    private static final String UNLOCK = "frozendawn:payoff_fired";
+    private static final String REDACTED = "\u2588".repeat(10);
+
+    @Test
+    void theLandingChangesToCanon() {
+        String landing = json("assets/frozendawn/lang/en_us.json")
+                .get("book.frozendawn.frozen_dawn_guide.landing_text.fired").getAsString();
+        assertEquals("$(br2)$(br2)$(br2)$(l)Issued field survival manual.$()$(br2)Continuity protocol: active."
+                + "$(br)1 enrollee remaining.$(br)Civilian edition.", landing);
+        assertEquals("Issued field survival manual. Continuity protocol: active. 1 enrollee remaining. Civilian edition.",
+                strip(landing).replace('\n', ' ').replaceAll(" +", " ").trim());
+    }
+
+    @Test
+    void theThirdFileFootnoteFollowsTheThirdFile() {
+        var pages = json(ENTRIES + "what_is_orsa.json").getAsJsonArray("pages");
+        assertEquals(22, pages.size());
+        var footnote = pages.get(12).getAsJsonObject();
+        String text = footnote.get("text").getAsString();
+        assertEquals("A third file exists. It does not belong to a director. The name is " + REDACTED
+                + ". The role listed is " + REDACTED + ". The file has a termination date.", text);
+        var runs = java.util.regex.Pattern.compile("\u2588+").matcher(text).results().map(r -> r.group().length()).toList();
+        assertEquals(java.util.List.of(10, 10), runs, "Two redactions of exactly ten");
+        assertEquals(UNLOCK, footnote.get("advancement").getAsString());
+        assertEquals("2074 \u2014 Denial", pages.get(13).getAsJsonObject().get("title").getAsString());
+    }
+
+    @Test
+    void theProjectionReviewClosesTheTimeline() {
+        var pages = json(ENTRIES + "projected_timeline.json").getAsJsonArray("pages");
+        assertEquals(9, pages.size());
+        assertEquals("Projected enrollees remaining at terminus: 1.$(br2)You are the unluckiest person alive, and the luckiest,"
+                + " because you are alive.$(br2)$(italic)ORSA Science Division. Rooting for you, quietly, from Mars.$()",
+                pages.get(7).getAsJsonObject().get("text").getAsString(), "The sign-off is unchanged");
+        var review = pages.get(8).getAsJsonObject();
+        assertEquals(String.join("\n", "PROJECTION REVIEW", "All phases observed as forecast.",
+                "Enrollees remaining at terminus: 1.", "Variance: 0.", "Projection source: enrollee record."),
+                strip(review.get("text").getAsString()));
+        assertEquals(UNLOCK, review.get("advancement").getAsString());
+    }
+
+    @Test
+    void noRevealPageSaysTheWord() {
+        String footnote = json(ENTRIES + "what_is_orsa.json").getAsJsonArray("pages").get(12).getAsJsonObject().get("text").getAsString();
+        String review = json(ENTRIES + "projected_timeline.json").getAsJsonArray("pages").get(8).getAsJsonObject().get("text").getAsString();
+        assertFalse(footnote.toLowerCase().contains("continuity"));
+        assertFalse(review.toLowerCase().contains("continuity"));
+    }
+
+    /** Patchouli formatting removed: line breaks become newlines, every other code goes. */
+    static String strip(String text) {
+        return text.replace("$(br2)", "\n").replace("$(br)", "\n").replaceAll("\\$\\([^)]*\\)", "").replaceAll("^\n+", "");
+    }
+
     static JsonObject json(String path) {
         var stream = PayoffStateTest.class.getClassLoader().getResourceAsStream(path);
         assertNotNull(stream, path);

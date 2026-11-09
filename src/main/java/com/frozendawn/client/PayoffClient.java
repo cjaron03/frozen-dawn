@@ -4,14 +4,21 @@ import com.frozendawn.FrozenDawn;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.screens.DeathScreen;
+import java.util.List;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.neoforge.client.event.ScreenEvent;
+import vazkii.patchouli.client.base.PersistentData;
+import vazkii.patchouli.common.book.BookRegistry;
 
-/** The payoff as this client sees it: the CH-18 line on the death screen of the player whose death fired it. */
+/**
+ * The payoff as this client sees it: the CH-18 line on the death screen of the player whose death fired it, and the
+ * guide's two newly opened entries marked unread.
+ */
 @EventBusSubscriber(modid = FrozenDawn.MOD_ID, value = Dist.CLIENT)
 public final class PayoffClient {
     private static final String LINE_1 = "screen.frozendawn.payoff.death_line.1";
@@ -21,6 +28,11 @@ public final class PayoffClient {
     /** Between the second line's bottom and the first button's top. */
     private static final int GAP = 4;
 
+    private static final ResourceLocation GUIDE = ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "frozen_dawn_guide");
+    private static final List<ResourceLocation> OPENED_ENTRIES = List.of(
+            ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "orsa_intel/what_is_orsa"),
+            ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "orsa_intel/projected_timeline"));
+
     private static boolean lineArrived, drawLine, deathScreenSeen;
 
     private PayoffClient() { }
@@ -29,6 +41,22 @@ public final class PayoffClient {
         lineArrived = true;
         drawLine = true;
         deathScreenSeen = false;
+    }
+
+    /**
+     * Patchouli marks an entry unread only while it is missing from the viewed list, and a page unlocking does not
+     * touch that list, so the two entries that gained a page come off it.
+     */
+    public static void markPagesNew() {
+        var book = BookRegistry.INSTANCE.books.get(GUIDE);
+        if (book == null) return;
+        var viewed = PersistentData.data.getBookData(book).viewedEntries;
+        if (!viewed.removeAll(OPENED_ENTRIES)) return;
+        PersistentData.save();
+        for (var id : OPENED_ENTRIES) {
+            var entry = book.getContents().entries.get(id);
+            if (entry != null) entry.markReadStateDirty();
+        }
     }
 
     /** True once if the line arrived but no death screen drew it, as with immediate respawn. Clears the line. */

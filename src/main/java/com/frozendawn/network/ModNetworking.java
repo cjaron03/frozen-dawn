@@ -112,7 +112,7 @@ public class ModNetworking {
         registrar.playToClient(PlumbLineReturnsPayload.TYPE, PlumbLineReturnsPayload.STREAM_CODEC,
                 (payload, context) -> context.enqueueWork(() -> com.frozendawn.client.PlumbLineOverlay.receive(payload)));
         registrar.playToClient(PayoffStatePayload.TYPE, PayoffStatePayload.STREAM_CODEC,
-                (payload, context) -> context.enqueueWork(() -> com.frozendawn.lore.PayoffState.receive(payload)));
+                (payload, context) -> context.enqueueWork(() -> ClientHandlers.handlePayoffState(payload)));
         registrar.playToClient(PayoffDeathLinePayload.TYPE, PayoffDeathLinePayload.STREAM_CODEC,
                 (payload, context) -> context.enqueueWork(ClientHandlers::handlePayoffDeathLine));
         registrar.playToClient(TerminusDischargePayload.TYPE, TerminusDischargePayload.STREAM_CODEC,

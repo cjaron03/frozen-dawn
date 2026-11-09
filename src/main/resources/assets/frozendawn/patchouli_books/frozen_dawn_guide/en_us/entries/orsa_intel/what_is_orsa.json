@@ -59,6 +59,11 @@
     },
     {
       "type": "patchouli:text",
+      "advancement": "frozendawn:payoff_fired",
+      "text": "A third file exists. It does not belong to a director. The name is ██████████. The role listed is ██████████. The file has a termination date."
+    },
+    {
+      "type": "patchouli:text",
       "title": "2074 — Denial",
       "text": "A Reuters article runs under the headline \"ORSA Mars Installation: Agency Addresses Cydonia Conspiracy Claims.\""
     },
