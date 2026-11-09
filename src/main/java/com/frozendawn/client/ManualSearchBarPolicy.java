@@ -1,5 +1,7 @@
 package com.frozendawn.client;
 
+import org.lwjgl.glfw.GLFW;
+
 /**
  * Where the field manual's front-page search bar sits, in Patchouli book coordinates.
  * It follows Patchouli's lower category rule, which drops a row for every four icons.
@@ -28,6 +30,12 @@ public final class ManualSearchBarPolicy {
     public static boolean contains(int icons, double x, double y) {
         int top = top(icons);
         return shown(icons) && x >= LEFT && x < LEFT + WIDTH && y >= top && y < top + HEIGHT;
+    }
+
+    /** Letter and digit keys, so Patchouli's keyPressed cannot close the page before the character arrives. */
+    public static boolean keepsKeyForSearch(int glfwKey) {
+        return glfwKey >= GLFW.GLFW_KEY_A && glfwKey <= GLFW.GLFW_KEY_Z
+                || glfwKey >= GLFW.GLFW_KEY_0 && glfwKey <= GLFW.GLFW_KEY_9;
     }
 
     public static boolean startsSearch(char c) {

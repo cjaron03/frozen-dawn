@@ -1,6 +1,7 @@
 package com.frozendawn.client;
 
 import org.junit.jupiter.api.Test;
+import org.lwjgl.glfw.GLFW;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -50,6 +51,17 @@ class ManualSearchBarPolicyTest {
         assertFalse(ManualSearchBarPolicy.contains(7, 150, top - 1));
         assertFalse(ManualSearchBarPolicy.contains(7, 150 + ManualSearchBarPolicy.WIDTH, top + 5));
         assertFalse(ManualSearchBarPolicy.contains(ManualSearchBarPolicy.MAX_ICONS + 1, 150, top + 5));
+    }
+
+    @Test
+    void letterKeysAreKeptForTheSearch() {
+        // Patchouli closes the front page on the inventory key (E) before the letter arrives.
+        assertTrue(ManualSearchBarPolicy.keepsKeyForSearch(GLFW.GLFW_KEY_E));
+        assertTrue(ManualSearchBarPolicy.keepsKeyForSearch(GLFW.GLFW_KEY_A));
+        assertTrue(ManualSearchBarPolicy.keepsKeyForSearch(GLFW.GLFW_KEY_0));
+        assertFalse(ManualSearchBarPolicy.keepsKeyForSearch(GLFW.GLFW_KEY_ESCAPE));
+        assertFalse(ManualSearchBarPolicy.keepsKeyForSearch(GLFW.GLFW_KEY_BACKSPACE));
+        assertFalse(ManualSearchBarPolicy.keepsKeyForSearch(GLFW.GLFW_KEY_F3));
     }
 
     @Test

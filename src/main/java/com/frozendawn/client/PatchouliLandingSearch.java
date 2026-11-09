@@ -77,6 +77,16 @@ public final class PatchouliLandingSearch {
         }
     }
 
+    /** Patchouli closes the front page on the inventory key; keep letters for the search instead. */
+    @SubscribeEvent
+    public static void onKeyPressed(ScreenEvent.KeyPressed.Pre event) {
+        GuiBookLanding landing = ours(event.getScreen());
+        if (landing != null && ManualSearchBarPolicy.shown(icons(landing))
+                && ManualSearchBarPolicy.keepsKeyForSearch(event.getKeyCode())) {
+            event.setCanceled(true);
+        }
+    }
+
     @SubscribeEvent
     public static void onCharTyped(ScreenEvent.CharacterTyped.Pre event) {
         GuiBookLanding landing = ours(event.getScreen());
