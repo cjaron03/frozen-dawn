@@ -1723,6 +1723,7 @@
   "screen.frozendawn.reactor.damage": "Damage %s%%",
   "screen.frozendawn.reactor.target": "Load-follow target: %s kW",
   "screen.frozendawn.reactor.manual": "Manual rod control",
+  "screen.frozendawn.manual.search_hint": "Search items",
   "screen.frozendawn.reactor.scram_reset": "SCRAM: press Reset to restart",
   "screen.frozendawn.reactor.scram_wait": "SCRAM: Reset below 450°C",
   "screen.frozendawn.reactor.failure": "CORE FAILURE IN %s s",

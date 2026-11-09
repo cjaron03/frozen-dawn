@@ -7,7 +7,7 @@
     {
       "type": "patchouli:text",
       "title": "Start Here",
-      "text": "A reading order for the whole manual. Skip what you know.$(br2)Timing varies; the $(l:getting_started/phase_timeline)Phase Timeline$(/l) shows what's coming. Key numbers: $(l:getting_started/quick_reference)Quick Reference$(/l).$(br2)Search an item's name on the front page to find every entry about it."
+      "text": "A reading order for the whole manual. Skip what you know.$(br2)Timing varies; the $(l:getting_started/phase_timeline)Phase Timeline$(/l) shows what's coming. Key numbers: $(l:getting_started/quick_reference)Quick Reference$(/l).$(br2)Type an item's name on the front page to find every entry about it."
     },
     {
       "type": "patchouli:text",

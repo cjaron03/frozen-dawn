@@ -118,7 +118,7 @@ class ManualSearchTest {
         String page0 = entries().get("getting_started/start_here")
                 .getAsJsonArray("pages").get(0).getAsJsonObject().get("text").getAsString();
         assertTrue(page0.endsWith(
-                        "$(br2)Search an item's name on the front page to find every entry about it."),
+                        "$(br2)Type an item's name on the front page to find every entry about it."),
                 page0);
     }
 
