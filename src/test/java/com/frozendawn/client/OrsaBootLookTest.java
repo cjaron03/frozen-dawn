@@ -26,6 +26,51 @@ class OrsaBootLookTest {
         assertArrayEquals(new float[] {31.0F / 32, 0.5F, 1.0F, 1.0F}, OrsaLogoRenderer.bootFrameUv(63), 1e-6F);
     }
 
+    @Test
+    void theBeatRunsOnlyInTheOpening() {
+        assertEquals(OrsaBootBeat.TICKS, OrsaAwakeningIntro.bootBeatLength(false));
+        assertEquals(0, OrsaAwakeningIntro.bootBeatLength(true), "The replay keeps its own draw-in");
+        assertEquals(OrsaBootBeat.GLINT + OrsaBootBeat.GROW + OrsaBootBeat.EXPAND + OrsaBootBeat.BLEND,
+                OrsaBootBeat.TICKS);
+    }
+
+    @Test
+    void theIconGrowsFromAPointThenSettlesIntoTheO() {
+        assertEquals(0.0F, OrsaBootBeat.growth(OrsaBootBeat.GLINT), 1e-6F, "A point first");
+        assertEquals(1.0F, OrsaBootBeat.growth(OrsaBootBeat.GLINT + OrsaBootBeat.GROW), 1e-6F);
+        float last = -1.0F;
+        for (float t = 0; t <= OrsaBootBeat.TICKS; t += 0.25F) {
+            float g = OrsaBootBeat.growth(t);
+            assertTrue(g >= last, "Never shrinks back while growing: " + t);
+            last = g;
+        }
+        int expandStart = OrsaBootBeat.GLINT + OrsaBootBeat.GROW;
+        assertEquals(0.0F, OrsaBootBeat.expand(expandStart), 1e-6F);
+        assertEquals(1.0F, OrsaBootBeat.expand(expandStart + OrsaBootBeat.EXPAND), 1e-6F);
+        assertEquals(1.0F, OrsaBootBeat.iconAlpha(expandStart + OrsaBootBeat.EXPAND), 1e-6F, "Whole until the blend");
+        assertEquals(0.0F, OrsaBootBeat.iconAlpha(OrsaBootBeat.TICKS), 1e-6F, "Gone into the masthead");
+    }
+
+    @Test
+    void theSpinEasesToAStopOnTheMastheadPose() {
+        int stop = OrsaBootBeat.GLINT + OrsaBootBeat.GROW + OrsaBootBeat.EXPAND;
+        assertEquals(8, OrsaLogoRenderer.bootFrame(OrsaBootBeat.spinPhase(stop)));
+        assertEquals(OrsaBootBeat.spinPhase(stop), OrsaBootBeat.spinPhase(OrsaBootBeat.TICKS), 1e-6F, "Still after");
+        int decel = OrsaBootBeat.GLINT + OrsaBootBeat.GROW;
+        float orbitPerTick = 1.0F / 22.0F;
+        for (int t = 0; t < decel; t++) {
+            assertEquals(orbitPerTick, OrsaBootBeat.spinPhase(t + 1) - OrsaBootBeat.spinPhase(t), 1e-4F,
+                    "The terminals' speed while growing: " + t);
+        }
+        float lastStep = orbitPerTick;
+        for (int t = decel; t < stop; t++) {
+            float step = OrsaBootBeat.spinPhase(t + 1) - OrsaBootBeat.spinPhase(t);
+            assertTrue(step > 0 && step <= lastStep + 1e-5F, "Slows smoothly, never backwards: " + t);
+            lastStep = step;
+        }
+        assertTrue(lastStep < orbitPerTick * 0.01F, "And comes to rest");
+    }
+
     /** The terminals, Aurora's first boot and the opening all play the one ORSA boot sound: the sting. */
     @Test
     void theBootSoundIsTheSting() throws Exception {

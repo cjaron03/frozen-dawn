@@ -64,13 +64,14 @@ class PayoffLookTest {
     }
 
     @Test
-    void theLogoDrawsInRowByRowAndStallsInTheReplay() {
-        assertEquals(0.0F, OrsaAwakeningIntro.logoReveal(9, false));
-        assertEquals(1.0F, OrsaAwakeningIntro.logoReveal(32, false), "Drawn by tick 32");
+    void theReplayDrawsTheLogoInRowByRowAndStalls() {
+        // The opening's ORSA beat hands the masthead over already drawn (owner mockup, 2026-11-09).
+        for (int t = 0; t <= 40; t++) assertEquals(1.0F, OrsaAwakeningIntro.logoReveal(t, false), "Opening, tick " + t);
+        assertEquals(0.0F, OrsaAwakeningIntro.logoReveal(9, true));
         float last = 0.0F;
-        for (int t = 10; t <= 32; t++) {
-            float reveal = OrsaAwakeningIntro.logoReveal(t, false);
-            assertTrue(reveal >= last, "The opening never draws backwards");
+        for (int t = 10; t <= 40; t++) {
+            float reveal = OrsaAwakeningIntro.logoReveal(t, true);
+            assertTrue(reveal >= last, "The replay never draws backwards");
             last = reveal;
         }
         float stall = OrsaAwakeningIntro.logoReveal(20, true);

@@ -84,6 +84,8 @@ public final class OrsaAwakeningIntro {
     private static boolean replay;
     private static Palette palette = Palette.OPENING;
     private static boolean flickerDeathLine;
+    private static int bootBeatTicks;
+    private static boolean bootBeatSung;
 
     private static long clientTicks;
     private static long lastBootCue = Long.MIN_VALUE;
@@ -129,9 +131,15 @@ public final class OrsaAwakeningIntro {
         return Math.min(length, (ticks - start) * 3 / thirds + 1);
     }
 
-    /** How much of the logo has drawn in, top down. The replay's draw stalls for four ticks. */
+    /**
+     * How much of the logo has drawn in, top down. The opening's ORSA beat hands it over already drawn; the replay
+     * draws it in, stalling for four ticks.
+     */
     static float logoReveal(int ticks, boolean replay) {
-        int t = replay && ticks >= 20 && ticks < 24 ? 20 : ticks;
+        if (!replay) {
+            return 1.0F;
+        }
+        int t = ticks >= 20 && ticks < 24 ? 20 : ticks;
         return Mth.clamp((t - LOGO_IN_START) / (float) LOGO_DRAW_TICKS, 0.0F, 1.0F);
     }
 
@@ -194,6 +202,8 @@ public final class OrsaAwakeningIntro {
         replay = lines == REPLAY;
         palette = replay ? Palette.MUTED : Palette.OPENING;
         flickerDeathLine = flicker;
+        bootBeatTicks = bootBeatLength(replay);
+        bootBeatSung = false;
         bootCueTicks = 0;
         pendingDelayTicks = START_DELAY_TICKS;
         ticks = 0;
@@ -210,6 +220,11 @@ public final class OrsaAwakeningIntro {
     public static void startImmediately() {
         start();
         blackoutApplied = true;
+    }
+
+    /** The ORSA beat's length after the lead-in: the opening's only. */
+    static int bootBeatLength(boolean replay) {
+        return replay ? 0 : OrsaBootBeat.TICKS;
     }
 
     /** Whether the opening, the replay or a boot cue is running: overlays that must not cut across it wait. */
@@ -232,7 +247,8 @@ public final class OrsaAwakeningIntro {
             return true;
         }
         String path = soundLocation.getPath();
-        return !path.equals("ui.orsa_awakening_voice") && !path.equals("ui.orsa_awakening_ring");
+        return !path.equals("ui.orsa_awakening_voice") && !path.equals("ui.orsa_awakening_ring")
+                && !path.equals("terminal.boot_orsa");
     }
 
     public static void render(GuiGraphics graphics, DeltaTracker deltaTracker) {
@@ -255,6 +271,11 @@ public final class OrsaAwakeningIntro {
                 renderDeathLineFlicker(graphics, mc.font, width, height);
             }
             renderRawLines(graphics, mc.font, width, height);
+            return;
+        }
+        if (bootBeatTicks > 0) {
+            float beat = OrsaBootBeat.TICKS - bootBeatTicks + deltaTracker.getGameTimeDeltaPartialTick(true);
+            OrsaBootBeat.render(graphics, width, height, beat, palette.scan);
             return;
         }
 
@@ -304,6 +325,15 @@ public final class OrsaAwakeningIntro {
 
         if (pendingDelayTicks > 0) {
             pendingDelayTicks--;
+            return;
+        }
+
+        if (bootBeatTicks > 0) {
+            if (!bootBeatSung) {
+                mc.getSoundManager().play(SimpleSoundInstance.forUI(ModSounds.TERMINAL_BOOT_ORSA.get(), 1.0F));
+                bootBeatSung = true;
+            }
+            bootBeatTicks--;
             return;
         }
 
@@ -435,15 +465,15 @@ public final class OrsaAwakeningIntro {
         }
 
         float lift = smooth((ticks - LIFT_START) / 34.0F);
-        int largeWidth = Math.min((int) (width * 0.56F), 480);
+        int largeWidth = OrsaBootBeat.mastheadBox(width, height)[2];
         int compactWidth = Math.min((int) (width * 0.34F), 230);
         int logoWidth = (int) Mth.lerp(lift, largeWidth, compactWidth);
         int logoHeight = Math.max(1, (int) (logoWidth / OrsaLogoRenderer.mastheadAspectRatio()));
         int startY = (int) (height * 0.37F - logoHeight / 2.0F);
         int endY = Math.max(18, (int) (height * 0.10F));
         int logoY = (int) Mth.lerp(lift, startY, endY);
-        // One sideways jolt as the draw-in settles.
-        int logoX = width / 2 - logoWidth / 2 + (ticks == 34 ? 3 : ticks == 35 ? -1 : 0);
+        // One sideways jolt as the replay's draw-in settles.
+        int logoX = width / 2 - logoWidth / 2 + (replay && ticks == 34 ? 3 : replay && ticks == 35 ? -1 : 0);
 
         if (!replay) {
             int glowColor = withAlpha(0xFF3DE1F6, 0.08F * fadeOut);

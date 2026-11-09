@@ -57,7 +57,15 @@ final class OrsaLogoRenderer {
     }
 
     static void drawBoot(GuiGraphics graphics, int centerX, int centerY, int size, float orbitPhase) {
-        drawBootQuad(graphics, centerX - size / 2.0F, centerY - size / 2.0F, size, bootFrame(orbitPhase));
+        drawBoot(graphics, centerX, centerY, size, orbitPhase, 1.0F);
+    }
+
+    /** The spinner at a sub-pixel centre and size, faded by alpha. */
+    static void drawBoot(GuiGraphics graphics, float centerX, float centerY, float size, float orbitPhase, float alpha) {
+        if (alpha <= 0.0F) {
+            return;
+        }
+        drawBootQuad(graphics, centerX - size / 2.0F, centerY - size / 2.0F, size, bootFrame(orbitPhase), alpha);
     }
 
     /** The spinner frame for an orbit phase, where one orbit is 1. */
@@ -105,7 +113,7 @@ final class OrsaLogoRenderer {
         drawTextureQuad(graphics, muted ? muted(location) : location, x, y, width, height, 1.0F, 1.0F, 1.0F, alpha);
     }
 
-    private static void drawBootQuad(GuiGraphics graphics, float x, float y, int size, int frame) {
+    private static void drawBootQuad(GuiGraphics graphics, float x, float y, float size, int frame, float alpha) {
         graphics.flush();
         AbstractTexture texture = Minecraft.getInstance().getTextureManager().getTexture(BOOT_SHEET);
         texture.setBlurMipmap(true, false);
@@ -114,6 +122,7 @@ final class OrsaLogoRenderer {
             RenderSystem.defaultBlendFunc();
             RenderSystem.setShader(GameRenderer::getPositionTexShader);
             RenderSystem.setShaderTexture(0, BOOT_SHEET);
+            RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, alpha);
             Matrix4f matrix = graphics.pose().last().pose();
             float x2 = x + size;
             float y2 = y + size;
@@ -129,6 +138,7 @@ final class OrsaLogoRenderer {
             buffer.addVertex(matrix, x2, y, 0.0F).setUv(maxU, minV);
             BufferUploader.drawWithShader(buffer.buildOrThrow());
         } finally {
+            RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
             texture.restoreLastBlurMipmap();
             RenderSystem.disableBlend();
         }
