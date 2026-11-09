@@ -14,7 +14,7 @@
 
 **Spec:** [payoff-roadmap.md](payoff-roadmap.md), branch 6. Notion: the payoff branch spec, section 6e, beats 1 to 4. Canon: Canon Hierarchy CH-37, with CH-11, CH-14, CH-28 and CH-35.
 
-**Status:** draft for the owner's approval, 2026-11-09. Nothing is built.
+**Status:** approved by the owner as written, 2026-11-09, Rulings 1 to 7 included. Nothing is built.
 
 **Branch:** `feat/thaeven-loop` in `/Volumes/SSD/Work/frozen-dawn-thaeven-loop`, cut from `feat/maeve-director` once this plan has merged. The build session starts in that worktree and works there. PR into `feat/maeve-director`. The branch review runs on Opus, because the branch changes a save format (`ThaevenLoreSavedData`) and client/server sync (`ThaevenLoreSyncPayload`), and it merges into a long-lived branch.
 
