@@ -8,7 +8,7 @@
 
 **Tech Stack:** Patchouli 1.21.1-92 (NeoForge), JUnit in `src/test`.
 
-**Status:** draft for the owner's review. Nothing is built.
+**Status:** approved: the owner merged it as PR 170.
 
 **Branch:** `feat/manual-search` in `/Volumes/SSD/Work/frozen-dawn-manual-search`, cut from `feat/maeve-director` once this plan has merged. PR into `feat/maeve-director`. It merges into a long-lived branch, so the branch review runs on Opus. Branch 3 (`feat/payoff-reveal`) is planned in parallel; this branch touches no file it plans to touch except possibly Start Here, and only page 0 here.
 
@@ -105,3 +105,12 @@ A reading order for the whole manual. Skip what you know.$(br2)Timing varies; th
 - [ ] **Step 4: Run** `./gradlew architectVerify` in the background, then `./gradlew architectMonkey`. Expected: BUILD SUCCESSFUL for both.
 - [ ] **Step 5: Launch** with `python3 tools/prepare_manual_search_playtest.py`, then `./gradlew runClientLab -PfdLabWorld='Manual Search Check' --console=plain` in the background. The owner reads Start Here page 0 and searches "injector", "deuterium", "lithium", "rocket", "honey", "fabricator", "heater" and "corium", and checks a few inventory lookups (hover an Icarus part, press the lookup key) land on the right entry. Fix what the pass finds.
 - [ ] **Step 6: Dispatch the branch review** (Opus, see **Branch**), fix real findings, then offer the PR.
+
+## As built
+
+The owner's visual pass changed three things; the rulings above are kept as the record of the plan.
+
+- **Front-page search bar.** Patchouli searches only inside the Entry Index, behind the last category icon, so "the front page" in Ruling 8 had no search. The owner approved a visible bar, in the nameplate style of the approved mockup, under the category icons: `client/PatchouliLandingSearch.java` draws it and opens the Entry Index search on a click or on the first letter typed, and `client/ManualSearchBarPolicy.java` places it under Patchouli's lower category rule (it hides past 12 icons). This lifts the "no Java outside `src/test`" constraint for this feature. Letter keys are held on the front page, so the inventory key no longer closes the manual there; Escape does.
+- **Start Here.** Page 0 was already full (ManualLint: 14 of 14 lines), so its flavor line moved to the end of the reading list, and the new line reads "Type an item's name on the front page to find every entry about it."
+- **`molten_corium`** is dropped from Ruling 2: it is a block with no item, and Patchouli rejects the mapping. `mappingsResolve` now requires an item model.
+- Locked entries that are not secret, such as Rocket Assembly, still appear in search as Locked rows (Ruling 6 overstated this). The playtest world has an unlock button for it.

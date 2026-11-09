@@ -20,5 +20,8 @@
       "type": "patchouli:text",
       "text": "Entries marked (Locked) are documents you have not found yet. One file arrives on its own later in the event.$(br2)$(italic)Archived material remains ORSA property. So do you.$()"
     }
-  ]
+  ],
+  "extra_recipe_mappings": {
+    "frozendawn:orsa_document": 0
+  }
 }

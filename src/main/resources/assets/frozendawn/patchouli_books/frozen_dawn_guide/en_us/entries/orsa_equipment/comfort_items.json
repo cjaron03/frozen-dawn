@@ -39,7 +39,8 @@
       "type": "patchouli:spotlight",
       "item": "frozendawn:miel_honey",
       "title": "Jar of Miel",
-      "text": "Found, never issued. Eight spoonfuls. Each one feeds a little and keeps you warm for half a minute.$(br2)$(flavor)Honey recovered from ancient tombs was still edible. ORSA declined to test this one.$()"
+      "text": "Found, never issued. Eight spoonfuls. Each one feeds a little and keeps you warm for half a minute.$(br2)$(flavor)Honey recovered from ancient tombs was still edible. ORSA declined to test this one.$()",
+      "link_recipe": true
     },
     {
       "type": "patchouli:text",

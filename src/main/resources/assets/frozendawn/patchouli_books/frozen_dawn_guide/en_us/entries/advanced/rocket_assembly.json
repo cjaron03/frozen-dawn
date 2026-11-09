@@ -9,7 +9,8 @@
       "type": "patchouli:spotlight",
       "item": "frozendawn:rocket_engine",
       "title": "Rocket Assembly",
-      "text": "Mars sent the component plan, not a finished vehicle. Build it on the $(bold)ORSA blast pit$(); nowhere else works."
+      "text": "Mars sent the component plan, not a finished vehicle. Build it on the $(bold)ORSA blast pit$(); nowhere else works.",
+      "link_recipe": true
     },
     {
       "type": "patchouli:multiblock",
@@ -83,7 +84,8 @@
       "type": "patchouli:spotlight",
       "item": "frozendawn:rocket_engine",
       "title": "Rocket Engine",
-      "text": "Printed on an $(bold)ORSA Fabricator$() at 15 kW: 2 Obsidian, an igniter, 2 Refined Acheronite, a Thermal Core, 2 Copper and a Blast Furnace.$(br2)The base of the rocket, on the centerline. Place it first."
+      "text": "Printed on an $(bold)ORSA Fabricator$() at 15 kW: 2 Obsidian, an igniter, 2 Refined Acheronite, a Thermal Core, 2 Copper and a Blast Furnace.$(br2)The base of the rocket, on the centerline. Place it first.",
+      "link_recipe": true
     },
     {
       "type": "patchouli:crafting",
@@ -95,7 +97,8 @@
       "type": "patchouli:spotlight",
       "item": "frozendawn:rocket_hull",
       "title": "Rocket Hull",
-      "text": "Printed on an $(bold)ORSA Fabricator$() at 10 kW: 6 Iron, 2 Copper and a Refined Acheronite.$(br2)Print 4."
+      "text": "Printed on an $(bold)ORSA Fabricator$() at 10 kW: 6 Iron, 2 Copper and a Refined Acheronite.$(br2)Print 4.",
+      "link_recipe": true
     },
     {
       "type": "patchouli:crafting",

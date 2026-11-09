@@ -8,7 +8,8 @@
       "type": "patchouli:spotlight",
       "item": "frozendawn:sfr_controller",
       "title": "SFR-1 \"Solstice\"",
-      "text": "ORSA's fusion reactor: 400 kW of heat from a deuterium and tritium plasma."
+      "text": "ORSA's fusion reactor: 400 kW of heat from a deuterium and tritium plasma.",
+      "link_recipe": true
     },
     {
       "type": "patchouli:text",

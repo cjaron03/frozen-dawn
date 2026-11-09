@@ -23,5 +23,16 @@
       "title": "Helium",
       "text": "Each Deuterium Canister burned leaves a Helium Canister in the Controller's helium slot while the Vacuum Port pumps. One used from there halves the next cooldown."
     }
-  ]
+  ],
+  "extra_recipe_mappings": {
+    "frozendawn:deuterium_canister": 0,
+    "frozendawn:isotope_column": 0,
+    "frozendawn:lithium_target_rod": 1,
+    "frozendawn:raw_spodumene": 2,
+    "frozendawn:deepslate_spodumene_ore": 2,
+    "frozendawn:pegmatite": 2,
+    "frozendawn:lithium_carbonate": 2,
+    "frozendawn:lithium": 2,
+    "frozendawn:helium_canister": 3
+  }
 }

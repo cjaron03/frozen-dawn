@@ -196,5 +196,18 @@
       },
       "text": "The Controller faces out from the south side."
     }
-  ]
+  ],
+  "extra_recipe_mappings": {
+    "frozendawn:icarus_frame": 0,
+    "frozendawn:icarus_matter_port": 0,
+    "frozendawn:icarus_power_port": 0,
+    "frozendawn:icarus_capsule_dock": 0,
+    "frozendawn:icarus_reserve_bank": 0,
+    "frozendawn:icarus_injector_casing": 0,
+    "frozendawn:icarus_stabilizer_housing": 0,
+    "frozendawn:halsey_core": 0,
+    "frozendawn:icarus_stabilizer": 0,
+    "frozendawn:icarus_injector": 0,
+    "frozendawn:antiparticle_foundry": 0
+  }
 }
