@@ -57,6 +57,8 @@ public final class OrsaAwakeningIntro {
     private static final String TEMP_HUD = KEY + "temp_hud";
     private static final String DEATH_LINE_1 = "screen.frozendawn.payoff.death_line.1";
     private static final String DEATH_LINE_2 = "screen.frozendawn.payoff.death_line.2";
+    /** CH-37: Record III's raw lines, flickering once in the opening's black. */
+    private static final String RAW_LINE = "screen.frozendawn.awakening.raw";
 
     /** The CH-18 lines show on the lead-in's black for these pending-delay ticks, as with immediate respawn. */
     private static final int FLICKER_FROM = 30;
@@ -247,6 +249,7 @@ public final class OrsaAwakeningIntro {
             if (flickerDeathLine) {
                 renderDeathLineFlicker(graphics, mc.font, width, height);
             }
+            renderRawLines(graphics, mc.font, width, height);
             return;
         }
 
@@ -665,6 +668,41 @@ public final class OrsaAwakeningIntro {
         int x = TemperatureHud.HUD_X;
         int y = TemperatureHud.HUD_Y + 20;
         graphics.drawString(font, Component.translatable(TEMP_HUD), x, y, withAlpha(0xFF9FEAF2, cue * blink), false);
+    }
+
+    /** Whether Record III's raw lines read on this lead-in tick: the opening only, in the CH-18 flicker's window. */
+    static boolean rawLinesShown(boolean replay, int pendingDelayTicks) {
+        return inFlickerWindow(replay, pendingDelayTicks) && !dropout(pendingDelayTicks);
+    }
+
+    /** On the flicker's dropout frames the raw lines fracture into ink glyphs instead (owner mockup, 2026-11-09). */
+    static boolean rawLinesFracture(boolean replay, int pendingDelayTicks) {
+        return inFlickerWindow(replay, pendingDelayTicks) && dropout(pendingDelayTicks);
+    }
+
+    private static boolean inFlickerWindow(boolean replay, int pendingDelayTicks) {
+        return !replay && pendingDelayTicks <= FLICKER_FROM && pendingDelayTicks > FLICKER_TO;
+    }
+
+    private static boolean dropout(int pendingDelayTicks) {
+        int shown = FLICKER_FROM - pendingDelayTicks;
+        return shown == 2 || shown == 4 || shown == 17;
+    }
+
+    /** The raw lines on the opening's black, in the archive's ghosting ink, with no label or band. */
+    private static void renderRawLines(GuiGraphics graphics, Font font, int width, int height) {
+        boolean fracture = rawLinesFracture(replay, pendingDelayTicks);
+        if (!fracture && !rawLinesShown(replay, pendingDelayTicks)) {
+            return;
+        }
+        int shown = FLICKER_FROM - pendingDelayTicks;
+        String raw = Component.translatable(RAW_LINE).getString();
+        int y = height / 2 - font.lineHeight;
+        for (int line = 0; line < 2; line++) {
+            String text = fracture ? ThaevenInk.fracture(raw, line + shown) : raw;
+            ThaevenInk.drawInked(graphics, font, text, width / 2, y + line * (font.lineHeight + 1),
+                    shown + START_DELAY_TICKS, line, 1.0F, 1.0F);
+        }
     }
 
     /** About a second of the CH-18 lines on the black, dropping out for a frame near each end. */
