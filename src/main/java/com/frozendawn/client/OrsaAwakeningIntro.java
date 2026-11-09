@@ -21,18 +21,30 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 
 import java.util.List;
+import java.util.Set;
 
 @EventBusSubscriber(modid = FrozenDawn.MOD_ID, value = Dist.CLIENT)
 public final class OrsaAwakeningIntro {
 
     private static final int START_DELAY_TICKS = 40;
     private static final int TOTAL_TICKS = 360;
+    /** The replay runs on until its stuttering eyes are open. */
+    private static final int REPLAY_TOTAL_TICKS = 390;
     private static final int LOGO_IN_START = 10;
     private static final int STRIPE_IN_START = 24;
     private static final int LIFT_START = 70;
     private static final int DIAGNOSTIC_START = 96;
     private static final int FADE_START = 310;
     private static final int TEMPERATURE_RETURN_START = 338;
+    private static final int LOGO_DRAW_TICKS = 22;
+    private static final int PANEL_OPEN_START = DIAGNOSTIC_START + 5;
+    private static final int PANEL_SHRINK_START = FADE_START - 20;
+    /** The replay's glitches, on fixed ticks so every replay is the same (owner mockup, 2026-11-09). */
+    private static final Set<Integer> TEAR_TICKS = Set.of(18, 19, 26, 41, 42, 58, 97, 143, 144, 188, 233, 234, 271);
+    private static final Set<Integer> JUMP_TICKS = Set.of(77, 190, 252);
+    private static final Set<Integer> GHOST_TICKS = Set.of(34, 35, 120, 121, 205);
+    private static final Set<Integer> CORRUPT_TICKS = Set.of(118, 119, 137, 170, 171, 199, 240, 241, 262);
+    private static final Set<Integer> BAR_DROP_TICKS = Set.of(150, 151, 215);
     private static final ResourceLocation AWAKENING_BLUR_EFFECT =
             ResourceLocation.withDefaultNamespace("shaders/post/blur.json");
     private static final float[] STRIPE_Y_RATIOS = {214.0F / 362.0F, 241.0F / 362.0F, 266.0F / 362.0F};
@@ -98,20 +110,51 @@ public final class OrsaAwakeningIntro {
         return elapsed >= 5 && elapsed < BOOT_POWER_ON_TICKS;
     }
 
-    private static final int[] REPLAY_LINE_START = {8, 20, 54, 118};
-    private static final float[] REPLAY_TICKS_PER_CHAR = {0.0F, 1.0F, 1.6F, 0.0F};
+    private static final int[] OPENING_LINE_START = {16, 32, 48, 64};
+    private static final int[] REPLAY_LINE_START = {16, 34, 64, 130};
+    /** Ticks per letter, as a numerator over three: the opening types three letters a tick. */
+    private static final int[] REPLAY_THIRDS_PER_CHAR = {1, 3, 5, 1};
 
     /**
      * How much of a readout line shows this many ticks into the diagnostics: -1 before it starts, else its letters.
-     * The opening shows each line whole, ten ticks apart. The replay types its two changed lines, the enrollee line
-     * slowest (owner mockup, 2026-11-09).
+     * The opening types each line quickly. The replay types its two changed lines slowly, the enrollee line slowest
+     * (owner mockups, 2026-11-09).
      */
     static int readoutChars(boolean replay, int line, int ticks, int length) {
-        if (!replay) return ticks < 8 + line * 10 ? -1 : length;
-        int start = REPLAY_LINE_START[line];
+        int start = (replay ? REPLAY_LINE_START : OPENING_LINE_START)[line];
         if (ticks < start) return -1;
-        float rate = REPLAY_TICKS_PER_CHAR[line];
-        return rate == 0.0F ? length : Math.min(length, (int) ((ticks - start) / rate) + 1);
+        int thirds = replay ? REPLAY_THIRDS_PER_CHAR[line] : 1;
+        return Math.min(length, (ticks - start) * 3 / thirds + 1);
+    }
+
+    /** How much of the logo has drawn in, top down. The replay's draw stalls for four ticks. */
+    static float logoReveal(int ticks, boolean replay) {
+        int t = replay && ticks >= 20 && ticks < 24 ? 20 : ticks;
+        return Mth.clamp((t - LOGO_IN_START) / (float) LOGO_DRAW_TICKS, 0.0F, 1.0F);
+    }
+
+    /**
+     * How much of the view the eyelids still cover: all of it until the fade, then they open. The replay's open a
+     * third, sag nearly shut, then open slowly.
+     */
+    static float lidCover(int ticks, boolean replay) {
+        if (ticks < FADE_START) return 1.0F;
+        int u = ticks - FADE_START;
+        if (!replay) return 1.0F - smooth(u / 36.0F);
+        float open;
+        if (u < 12) open = smooth(u / 12.0F) * 0.35F;
+        else if (u < 20) open = Mth.lerp(smooth((u - 12) / 8.0F), 0.35F, 0.12F);
+        else open = Mth.lerp(smooth((u - 20) / 50.0F), 0.12F, 1.0F);
+        return 1.0F - open;
+    }
+
+    static int totalTicks(boolean replay) {
+        return replay ? REPLAY_TOTAL_TICKS : TOTAL_TICKS;
+    }
+
+    /** Whether a readout line shows corrupted letters on this tick. Only the replay glitches, never its enrollee line. */
+    static boolean corrupts(boolean replay, int line, int ticks) {
+        return replay && line != 2 && CORRUPT_TICKS.contains(ticks);
     }
 
     /** In the drained replay, the enrollee line keeps its yellow once typed: the only warm color left. */
@@ -209,11 +252,18 @@ public final class OrsaAwakeningIntro {
 
         float fadeOut = 1.0F - smooth((ticks - FADE_START) / 24.0F);
         float coldWake = smooth(ticks / 24.0F) * fadeOut;
-        float jitter = (float) Math.sin(ticks * 1.73F) * 1.5F;
 
+        boolean jump = replay && JUMP_TICKS.contains(ticks);
+        if (jump) {
+            graphics.pose().pushPose();
+            graphics.pose().translate(0.0F, 3.0F, 0.0F);
+        }
         renderWakeWash(graphics, width, height, coldWake, fadeOut);
-        renderMasthead(graphics, width, height, fadeOut, jitter);
-        renderDiagnostics(graphics, mc.font, width, height, fadeOut);
+        renderMasthead(graphics, width, height, fadeOut);
+        renderDiagnostics(graphics, mc.font, width, height);
+        if (jump) {
+            graphics.pose().popPose();
+        }
         renderTemperatureReturn(graphics, mc.font);
     }
 
@@ -270,7 +320,7 @@ public final class OrsaAwakeningIntro {
             temperatureBlinkStarted = true;
         }
 
-        if (ticks >= TOTAL_TICKS) {
+        if (ticks >= totalTicks(replay)) {
             disableBlur(mc);
             active = false;
         }
@@ -340,9 +390,16 @@ public final class OrsaAwakeningIntro {
     }
 
     private static void renderWakeWash(GuiGraphics graphics, int width, int height, float coldWake, float fadeOut) {
-        float blackAlpha = 1.0F - smooth((ticks - FADE_START) / 36.0F);
-        graphics.fill(0, 0, width, height, withAlpha(0xFF000000, blackAlpha));
-        graphics.fill(0, 0, width, height, withAlpha(palette.coldWash, 0.06F * coldWake * blackAlpha));
+        // The eyes open: the black parts from the middle, top and bottom, with a soft edge.
+        float cover = lidCover(ticks, replay);
+        int half = Math.round(height / 2.0F * cover);
+        graphics.fill(0, 0, width, half, 0xFF000000);
+        graphics.fill(0, height - half, width, height, 0xFF000000);
+        if (half > 0 && half * 2 < height) {
+            graphics.fill(0, half, width, half + 6, 0x80000000);
+            graphics.fill(0, height - half - 6, width, height - half, 0x80000000);
+        }
+        graphics.fill(0, 0, width, height, withAlpha(palette.coldWash, 0.06F * coldWake * cover));
 
         int edge = Math.max(26, height / 7);
         graphics.fillGradient(0, 0, width, edge, withAlpha(palette.topEdge, 0.12F * fadeOut), 0x00000000);
@@ -356,11 +413,15 @@ public final class OrsaAwakeningIntro {
         for (int y = Math.floorMod(ticks, 6); y < height; y += 6) {
             graphics.fill(0, y, width, y + 1, (scanAlpha << 24) | palette.scan);
         }
+        if (replay && fadeOut > 0.0F) {
+            int bar = Math.floorMod(ticks * 3, height + 40) - 20;
+            graphics.fill(0, bar, width, bar + 14, withAlpha(0xFFAAB4BA, 0.05F * fadeOut));
+        }
     }
 
-    private static void renderMasthead(GuiGraphics graphics, int width, int height, float fadeOut, float jitter) {
-        float logoIn = smooth((ticks - LOGO_IN_START) / 24.0F);
-        if (logoIn <= 0.0F || fadeOut <= 0.0F) {
+    private static void renderMasthead(GuiGraphics graphics, int width, int height, float fadeOut) {
+        float reveal = logoReveal(ticks, replay);
+        if (reveal <= 0.0F || fadeOut <= 0.0F) {
             return;
         }
 
@@ -372,16 +433,42 @@ public final class OrsaAwakeningIntro {
         int startY = (int) (height * 0.37F - logoHeight / 2.0F);
         int endY = Math.max(18, (int) (height * 0.10F));
         int logoY = (int) Mth.lerp(lift, startY, endY);
-        int logoX = width / 2 - logoWidth / 2 + (int) (jitter * (1.0F - lift) * 0.6F);
+        // One sideways jolt as the draw-in settles.
+        int logoX = width / 2 - logoWidth / 2 + (ticks == 34 ? 3 : ticks == 35 ? -1 : 0);
 
-        float alpha = logoIn * fadeOut;
         if (!replay) {
-            int glowColor = withAlpha(0xFF3DE1F6, 0.08F * alpha);
+            int glowColor = withAlpha(0xFF3DE1F6, 0.08F * fadeOut);
             graphics.fill(logoX + 8, logoY + 8, logoX + logoWidth - 8, logoY + logoHeight - 8, glowColor);
         }
 
-        OrsaLogoRenderer.drawAwakeningBase(graphics, logoX, logoY, logoWidth, logoHeight, alpha, replay);
-        renderAwakeningStripes(graphics, logoX, logoY, logoWidth, logoHeight, alpha);
+        // Drawn in row by row, four pixels at a time, with a bright scan line at the leading edge.
+        int rows = reveal >= 1.0F ? logoHeight : (int) (logoHeight * reveal) / 4 * 4;
+        if (rows <= 0) {
+            return;
+        }
+        graphics.enableScissor(0, logoY, width, logoY + rows);
+        OrsaLogoRenderer.drawAwakeningBase(graphics, logoX, logoY, logoWidth, logoHeight, fadeOut, replay);
+        renderAwakeningStripes(graphics, logoX, logoY, logoWidth, logoHeight, fadeOut);
+        graphics.disableScissor();
+        if (rows < logoHeight) {
+            graphics.fill(logoX, logoY + rows, logoX + logoWidth, logoY + rows + 1, withAlpha(palette.scan, 0.9F * fadeOut));
+        }
+
+        if (replay && TEAR_TICKS.contains(ticks)) {
+            RandomSource random = RandomSource.create(ticks);
+            for (int k = 0; k < 3; k++) {
+                int sliceY = logoY + random.nextInt(Math.max(1, rows / 4)) * 4;
+                int sliceHeight = 2 + random.nextInt(5);
+                int dx = random.nextInt(19) - 9;
+                graphics.fill(logoX, sliceY, logoX + logoWidth, sliceY + sliceHeight, 0xFF000000);
+                graphics.enableScissor(logoX + dx, sliceY, logoX + dx + logoWidth, sliceY + sliceHeight);
+                OrsaLogoRenderer.drawAwakeningBase(graphics, logoX + dx, logoY, logoWidth, logoHeight, fadeOut, true);
+                graphics.disableScissor();
+            }
+        }
+        if (replay && GHOST_TICKS.contains(ticks)) {
+            OrsaLogoRenderer.drawAwakeningBase(graphics, logoX + 4, logoY - 1, logoWidth, logoHeight, 0.28F * fadeOut, true);
+        }
     }
 
     private static void renderAwakeningStripes(GuiGraphics graphics, int logoX, int logoY, int logoWidth,
@@ -405,10 +492,8 @@ public final class OrsaAwakeningIntro {
         }
     }
 
-    private static void renderDiagnostics(GuiGraphics graphics, Font font, int width, int height, float fadeOut) {
-        float panelIn = smooth((ticks - DIAGNOSTIC_START) / 28.0F);
-        float alpha = panelIn * fadeOut;
-        if (alpha <= 0.0F) {
+    private static void renderDiagnostics(GuiGraphics graphics, Font font, int width, int height) {
+        if (ticks < DIAGNOSTIC_START || ticks >= FADE_START) {
             return;
         }
 
@@ -417,48 +502,111 @@ public final class OrsaAwakeningIntro {
         int x = width / 2 - panelWidth / 2;
         int y = Math.min(height - panelHeight - 22, Math.max(96, height / 2 - 6));
 
-        graphics.fill(x, y, x + panelWidth, y + panelHeight, withAlpha(palette.panel, 0.72F * alpha));
-        graphics.fill(x, y, x + panelWidth, y + 2, withAlpha(palette.top, 0.75F * alpha));
-        graphics.fill(x, y + panelHeight - 2, x + panelWidth, y + panelHeight, withAlpha(palette.bottom, 0.65F * alpha));
-        graphics.fill(x + 10, y + 22, x + panelWidth - 10, y + 23, withAlpha(palette.top, 0.22F * alpha));
+        // On the way out, the panel shrinks into the corner the temperature readout returns to.
+        boolean shrinking = ticks >= PANEL_SHRINK_START;
+        if (shrinking) {
+            float k = smooth((ticks - PANEL_SHRINK_START) / 20.0F);
+            x = (int) Mth.lerp(k, x, TemperatureHud.HUD_X);
+            y = (int) Mth.lerp(k, y, TemperatureHud.HUD_Y);
+            panelWidth = (int) Mth.lerp(k, panelWidth, 54);
+            panelHeight = (int) Mth.lerp(k, panelHeight, TemperatureHud.TOTAL_HEIGHT);
+        }
 
+        // It builds itself: the top edge draws across, then the box drops open in steps. The replay stutters.
+        float edge = Mth.clamp((ticks - DIAGNOSTIC_START) / 5.0F, 0.0F, 1.0F);
+        if (replay && ticks == DIAGNOSTIC_START + 3) edge = 0.3F;
+        float open = ticks < PANEL_OPEN_START ? 0.0F : (float) Math.floor(Mth.clamp((ticks - PANEL_OPEN_START) / 7.0F, 0.0F, 1.0F) * 8.0F) / 8.0F;
+        if (replay && (ticks == PANEL_OPEN_START + 3 || ticks == PANEL_OPEN_START + 4)) open = 0.25F;
+        graphics.fill(x, y, x + Math.round(panelWidth * edge), y + 2, withAlpha(palette.top, 0.75F));
+        if (open <= 0.0F) {
+            return;
+        }
+        int shownHeight = Math.max(3, Math.round(panelHeight * open));
+        graphics.fill(x, y, x + panelWidth, y + shownHeight, withAlpha(palette.panel, 0.72F));
+        graphics.fill(x, y, x + panelWidth, y + 2, withAlpha(palette.top, 0.75F));
+        graphics.fill(x, y + shownHeight - 2, x + panelWidth, y + shownHeight, withAlpha(palette.bottom, 0.65F));
+        if (open < 1.0F || shrinking) {
+            return;
+        }
+        graphics.fill(x + 10, y + 22, x + panelWidth - 10, y + 23, withAlpha(palette.top, 0.22F));
+
+        Component header = Component.translatable(KEY + "header");
         Component subject = Component.translatable(KEY + "readout");
-        graphics.drawString(font, Component.translatable(KEY + "header"), x + 12, y + 9, withAlpha(palette.header, alpha), false);
-        graphics.drawString(font, subject, x + panelWidth - 12 - font.width(subject), y + 9,
-                withAlpha(palette.subject, alpha), false);
+        graphics.drawString(font, header, x + 12, y + 9, withAlpha(palette.header, 1.0F), false);
+        int subjectX = x + panelWidth - 12 - font.width(subject);
+        graphics.drawString(font, subject, subjectX, y + 9, withAlpha(palette.subject, 1.0F), false);
+        int traceX = x + 12 + font.width(header) + 12;
+        renderHeartbeat(graphics, traceX, y + 12, Math.min(64, subjectX - 12 - traceX));
 
         int into = ticks - DIAGNOSTIC_START;
-        int visible = 0;
-        for (int i = 0; i < readout.size(); i++) {
-            if (readoutChars(replay, i, into, 1) >= 0) visible = i + 1;
-        }
         int lineY = y + 32;
-        for (int i = 0; i < visible; i++) {
+        for (int i = 0; i < readout.size(); i++) {
             String line = Component.translatable(readout.get(i)).getString();
             int shown = readoutChars(replay, i, into, line.length());
+            if (shown < 0) {
+                break;
+            }
             boolean typing = shown < line.length();
             int color;
-            if (!replay) {
-                color = i == visible - 1 && ((ticks / 4) & 1) == 0 ? palette.highlight : palette.line;
-            } else if (typing) {
+            if (typing) {
                 color = ((ticks / 2) & 1) == 0 ? palette.highlight : palette.line;
             } else {
-                color = holdsYellow(true, i) ? 0xFFD83D : palette.line;
+                color = holdsYellow(replay, i) ? 0xFFD83D : palette.line;
             }
             String part = line.substring(0, shown);
-            graphics.drawString(font, part, x + 13, lineY + i * 13, withAlpha(color, alpha), false);
+            int dx = 0;
+            if (corrupts(replay, i, ticks)) {
+                part = corrupt(part, ticks * 7 + i);
+                dx = (ticks & 1) == 1 ? 2 : -1;
+            }
+            graphics.drawString(font, part, x + 13 + dx, lineY + i * 13, withAlpha(color, 1.0F), false);
             if (typing && ((ticks / 4) & 1) == 0) {
-                graphics.drawString(font, "_", x + 13 + font.width(part), lineY + i * 13, withAlpha(color, alpha), false);
+                graphics.drawString(font, "_", x + 13 + font.width(part), lineY + i * 13, withAlpha(color, 1.0F), false);
             }
         }
 
         int barX = x + 13;
         int barY = y + panelHeight - 17;
         int barWidth = panelWidth - 26;
-        // The replay has nothing left to project: its bar is full from the start.
-        int progress = replay ? barWidth : (int) (barWidth * Mth.clamp((ticks - DIAGNOSTIC_START) / 96.0F, 0.0F, 1.0F));
-        graphics.fill(barX, barY, barX + barWidth, barY + 5, withAlpha(palette.barTrack, alpha));
-        graphics.fill(barX, barY, barX + progress, barY + 5, withAlpha(palette.bar, alpha));
+        // The replay has nothing left to project: its bar is full from the start, and drops out now and then.
+        int progress = replay ? barWidth : (int) (barWidth * Mth.clamp((ticks - DIAGNOSTIC_START - 16) / 120.0F, 0.0F, 1.0F));
+        graphics.fill(barX, barY, barX + barWidth, barY + 5, withAlpha(palette.barTrack, 1.0F));
+        if (!(replay && BAR_DROP_TICKS.contains(ticks))) {
+            graphics.fill(barX, barY, barX + progress, barY + 5, withAlpha(palette.bar, 1.0F));
+        }
+    }
+
+    /** A small pulse trace for "PULSE ELEVATED". In the replay it flatlines for a moment, and once drops out. */
+    private static void renderHeartbeat(GuiGraphics graphics, int x, int y, int width) {
+        if (width < 24 || replay && (ticks == 208 || ticks == 209)) {
+            return;
+        }
+        int color = withAlpha(palette.bar, 0.9F);
+        if (replay && ticks >= 176 && ticks < 190) {
+            graphics.fill(x, y, x + width, y + 1, color);
+            return;
+        }
+        int previous = 0;
+        for (int i = 0; i < width; i++) {
+            int phase = Math.floorMod(i + ticks * 2, 28);
+            int v = phase == 10 ? -2 : phase == 12 ? -7 : phase == 13 ? 4 : phase == 15 ? -1 : 0;
+            int top = Math.min(previous, v);
+            int bottom = Math.max(previous, v);
+            graphics.fill(x + i, y + top, x + i + 1, y + Math.max(bottom, top + 1), color);
+            previous = v;
+        }
+    }
+
+    /** A few letters swapped for symbols, the same way for the same seed. */
+    private static String corrupt(String text, int seed) {
+        if (text.isEmpty()) return text;
+        RandomSource random = RandomSource.create(seed);
+        char[] letters = text.toCharArray();
+        for (int k = 1 + random.nextInt(3); k > 0; k--) {
+            int at = random.nextInt(letters.length);
+            if (letters[at] != ' ') letters[at] = "#%&@".charAt(random.nextInt(4));
+        }
+        return new String(letters);
     }
 
     private static void renderTemperatureReturn(GuiGraphics graphics, Font font) {

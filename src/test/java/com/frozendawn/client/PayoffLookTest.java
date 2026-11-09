@@ -44,23 +44,82 @@ class PayoffLookTest {
     }
 
     @Test
-    void theOpeningShowsWholeLinesAndTheReplayTypesTheChangedOnes() {
+    void theOpeningTypesQuicklyAndTheReplayTypesTheChangedLinesSlowly() {
         for (int line = 0; line < 4; line++) {
-            int at = 8 + line * 10;
-            assertEquals(-1, OrsaAwakeningIntro.readoutChars(false, line, at - 1, 50));
-            assertEquals(50, OrsaAwakeningIntro.readoutChars(false, line, at, 50), "The opening's line " + line + " is whole");
+            int at = 16 + line * 16;
+            assertEquals(-1, OrsaAwakeningIntro.readoutChars(false, line, at - 1, 45));
+            assertEquals(1, OrsaAwakeningIntro.readoutChars(false, line, at, 45));
+            assertEquals(45, OrsaAwakeningIntro.readoutChars(false, line, at + 15, 45), "Three letters a tick");
         }
-        assertEquals(50, OrsaAwakeningIntro.readoutChars(true, 0, 8, 50), "Unchanged line, whole");
-        int partial2 = OrsaAwakeningIntro.readoutChars(true, 1, 25, 50);
-        int partial3 = OrsaAwakeningIntro.readoutChars(true, 2, 70, 50);
-        assertTrue(partial2 > 0 && partial2 < 50, "The trauma line types");
-        assertTrue(partial3 > 0 && partial3 < 50, "The enrollee line types");
-        assertTrue(OrsaAwakeningIntro.readoutChars(true, 2, 70, 50) < OrsaAwakeningIntro.readoutChars(true, 1, 70 - 54 + 20, 50),
-                "The enrollee line types slower than the trauma line");
+        assertEquals(45, OrsaAwakeningIntro.readoutChars(true, 0, 16 + 15, 45), "The unchanged first line types quickly");
+        int trauma = OrsaAwakeningIntro.readoutChars(true, 1, 34 + 10, 45);
+        int enrollee = OrsaAwakeningIntro.readoutChars(true, 2, 64 + 10, 45);
+        assertTrue(trauma > 0 && trauma < 45, "The trauma line types slowly");
+        assertTrue(enrollee > 0 && enrollee < trauma, "The enrollee line types slowest");
         int fade = 214;
         for (int line = 0; line < 4; line++) {
             int len = "ENROLLEES REMAINING: 1 / AS PROJECTED".length();
             assertEquals(len, OrsaAwakeningIntro.readoutChars(true, line, fade - 30, len), "Line " + line + " done before the fade");
+        }
+    }
+
+    @Test
+    void theLogoDrawsInRowByRowAndStallsInTheReplay() {
+        assertEquals(0.0F, OrsaAwakeningIntro.logoReveal(9, false));
+        assertEquals(1.0F, OrsaAwakeningIntro.logoReveal(32, false), "Drawn by tick 32");
+        float last = 0.0F;
+        for (int t = 10; t <= 32; t++) {
+            float reveal = OrsaAwakeningIntro.logoReveal(t, false);
+            assertTrue(reveal >= last, "The opening never draws backwards");
+            last = reveal;
+        }
+        float stall = OrsaAwakeningIntro.logoReveal(20, true);
+        for (int t = 21; t <= 23; t++) assertEquals(stall, OrsaAwakeningIntro.logoReveal(t, true), "The replay stalls at " + t);
+        assertTrue(OrsaAwakeningIntro.logoReveal(23, true) < OrsaAwakeningIntro.logoReveal(23, false));
+        assertEquals(1.0F, OrsaAwakeningIntro.logoReveal(40, true), "Then finishes");
+    }
+
+    @Test
+    void theEyesOpenAndInTheReplayTheyStutter() {
+        assertEquals(1.0F, OrsaAwakeningIntro.lidCover(309, false), "Shut until the fade");
+        float last = 1.0F;
+        for (int t = 310; t <= 346; t++) {
+            float cover = OrsaAwakeningIntro.lidCover(t, false);
+            assertTrue(cover <= last, "The opening's eyes only open");
+            last = cover;
+        }
+        assertEquals(0.0F, OrsaAwakeningIntro.lidCover(346, false), "Open by 346");
+        float partly = OrsaAwakeningIntro.lidCover(322, true);
+        assertTrue(partly < 1.0F && partly > 0.5F, "The replay's eyes open a little");
+        assertTrue(OrsaAwakeningIntro.lidCover(330, true) > partly, "Then sag");
+        assertEquals(0.0F, OrsaAwakeningIntro.lidCover(380, true), "Then open slowly");
+        assertEquals(360, OrsaAwakeningIntro.totalTicks(false));
+        assertTrue(OrsaAwakeningIntro.totalTicks(true) >= 380, "The replay runs until its eyes are open");
+    }
+
+    @Test
+    void theEnrolleeLineNeverGlitches() {
+        boolean others = false;
+        for (int t = 0; t < 400; t++) {
+            assertFalse(OrsaAwakeningIntro.corrupts(true, 2, t), "The enrollee line, tick " + t);
+            for (int line = 0; line < 4; line++) assertFalse(OrsaAwakeningIntro.corrupts(false, line, t), "The opening never glitches");
+            others |= OrsaAwakeningIntro.corrupts(true, 0, t) || OrsaAwakeningIntro.corrupts(true, 1, t) || OrsaAwakeningIntro.corrupts(true, 3, t);
+        }
+        assertTrue(others, "The replay's other lines do");
+    }
+
+    @Test
+    void theReplaysLogoHasNoRocket() throws IOException {
+        var stream = getClass().getClassLoader().getResourceAsStream("assets/frozendawn/textures/gui/orsa_awakening_base_muted.png");
+        assertNotNull(stream);
+        var image = ImageIO.read(stream);
+        // The rocket stands between the stripes, at the logo's center (817 x 362 texture).
+        for (int y = 198; y < 285; y++) {
+            for (int x = 398; x < 432; x++) {
+                int argb = image.getRGB(x, y);
+                int bright = Math.max(argb >> 16 & 255, Math.max(argb >> 8 & 255, argb & 255));
+                assertTrue((argb >>> 24) < 32 || bright < 90, "Rocket pixel at " + x + "," + y);
+            }
         }
     }
 
