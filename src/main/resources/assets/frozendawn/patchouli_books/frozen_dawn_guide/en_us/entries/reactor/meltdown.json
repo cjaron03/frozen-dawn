@@ -30,7 +30,6 @@
     }
   ],
   "extra_recipe_mappings": {
-    "frozendawn:corium": 2,
-    "frozendawn:molten_corium": 2
+    "frozendawn:corium": 2
   }
 }

@@ -55,7 +55,6 @@ class ManualSearchTest {
                     "deuterium_canister", "isotope_column", "lithium_target_rod",
                     "raw_spodumene", "deepslate_spodumene_ore", "pegmatite",
                     "lithium_carbonate", "lithium", "helium_canister")),
-            Map.entry("reactor/meltdown", List.of("molten_corium")),
             Map.entry("orsa_intel/field_documents", List.of("orsa_document")));
 
     @Test
@@ -85,7 +84,7 @@ class ManualSearchTest {
             for (var m : entry.getAsJsonObject("extra_recipe_mappings").entrySet()) {
                 String key = m.getKey();
                 int page = m.getValue().getAsInt();
-                if (!key.startsWith("minecraft:") && !named(lang, key)) {
+                if (!key.startsWith("minecraft:") && !(named(lang, key) && hasItem(key))) {
                     broken.add(id + ": no item " + key);
                 }
                 if (page < 0 || page >= pages) {
@@ -121,6 +120,13 @@ class ManualSearchTest {
         assertTrue(page0.endsWith(
                         "$(br2)Search an item's name on the front page to find every entry about it."),
                 page0);
+    }
+
+    /** A block without an item has a lang name but no item model; Patchouli rejects it. */
+    private static boolean hasItem(String id) {
+        String[] parts = id.split(":", 2);
+        return Files.exists(RESOURCES.resolve("assets").resolve(parts[0])
+                .resolve("models/item").resolve(parts[1] + ".json"));
     }
 
     private static boolean named(JsonObject lang, String id) {
