@@ -8,7 +8,8 @@
       "type": "patchouli:spotlight",
       "item": "frozendawn:fabricator",
       "title": "ORSA Fabricator",
-      "text": "Six inputs, one output. It prints parts from blueprints this world has archived."
+      "text": "Six inputs, one output. It prints parts from blueprints this world has archived.",
+      "link_recipe": true
     },
     {
       "type": "patchouli:text",

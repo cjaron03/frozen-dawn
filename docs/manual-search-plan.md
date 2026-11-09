@@ -8,7 +8,7 @@
 
 **Tech Stack:** Patchouli 1.21.1-92 (NeoForge), JUnit in `src/test`.
 
-**Status:** draft for the owner's review. Nothing is built.
+**Status:** approved: the owner merged it as PR 170.
 
 **Branch:** `feat/manual-search` in `/Volumes/SSD/Work/frozen-dawn-manual-search`, cut from `feat/maeve-director` once this plan has merged. PR into `feat/maeve-director`. It merges into a long-lived branch, so the branch review runs on Opus. Branch 3 (`feat/payoff-reveal`) is planned in parallel; this branch touches no file it plans to touch except possibly Start Here, and only page 0 here.
 

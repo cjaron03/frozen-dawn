@@ -8,7 +8,8 @@
       "type": "patchouli:spotlight",
       "item": "frozendawn:antimatter_capsule",
       "title": "Antimatter",
-      "text": "The spark. Sealed capsules go in the Capsule Dock. Startup needs at least $(bold)2$(); the core holds up to 64."
+      "text": "The spark. Sealed capsules go in the Capsule Dock. Startup needs at least $(bold)2$(); the core holds up to 64.",
+      "link_recipe": true
     },
     {
       "type": "patchouli:text",
@@ -25,5 +26,8 @@
       "title": "Core Charge",
       "text": "Capsules only count once they are injected into the core. Sealed capsules in the dock are inert and safe to carry.$(br2)The Controller shows the blast radius for the charge in the core."
     }
-  ]
+  ],
+  "extra_recipe_mappings": {
+    "frozendawn:empty_antimatter_capsule": 1
+  }
 }

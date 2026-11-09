@@ -29,7 +29,8 @@
     {
       "type": "patchouli:spotlight",
       "item": "frozendawn:seafood_boil_bowl",
-      "text": "Eaten while Steaming: $(bold)Warm Meal$(), +15°C body temperature for 3 minutes.$(br2)Cold, it is still a full meal.$(br2)Breaking a started pot spills the rest."
+      "text": "Eaten while Steaming: $(bold)Warm Meal$(), +15°C body temperature for 3 minutes.$(br2)Cold, it is still a full meal.$(br2)Breaking a started pot spills the rest.",
+      "link_recipe": true
     }
   ]
 }

@@ -28,17 +28,20 @@
     {
       "type": "patchouli:spotlight",
       "item": "frozendawn:glassblood",
-      "text": "Clear blood, no red cells, antifreeze in its veins. The everyday catch.$(br2)Late fish are slow to freeze raw. Cooked, they freeze like anything else.$(br2)Three go into a $(l:getting_started/seafood_boil)Seafood Boil$(/l)."
+      "text": "Clear blood, no red cells, antifreeze in its veins. The everyday catch.$(br2)Late fish are slow to freeze raw. Cooked, they freeze like anything else.$(br2)Three go into a $(l:getting_started/seafood_boil)Seafood Boil$(/l).",
+      "link_recipe": true
     },
     {
       "type": "patchouli:spotlight",
       "item": "frozendawn:rime_hagfish",
-      "text": "Eyeless scavenger that eats the dead. Plentiful. Sometimes comes up with slime. Cook it."
+      "text": "Eyeless scavenger that eats the dead. Plentiful. Sometimes comes up with slime. Cook it.",
+      "link_recipe": true
     },
     {
       "type": "patchouli:spotlight",
       "item": "frozendawn:longsleeper",
-      "text": "Rare. Old. $(bold)Toxic raw$(), and cooking does not fix it.$(br2)$(flavor)ORSA Nutritional Services asks that you stop trying.$()"
+      "text": "Rare. Old. $(bold)Toxic raw$(), and cooking does not fix it.$(br2)$(flavor)ORSA Nutritional Services asks that you stop trying.$()",
+      "link_recipe": true
     },
     {
       "type": "patchouli:text",

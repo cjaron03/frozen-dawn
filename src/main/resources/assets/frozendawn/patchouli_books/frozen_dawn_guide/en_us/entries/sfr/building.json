@@ -96,5 +96,16 @@
       "title": "Radiators",
       "text": "Link the Coolant Ports to High-Temperature Radiators with an outdoor face. Each sheds 30 kW against deep vacuum; about 14 carry a full burn.$(br2)CFU-7 radiators do not count."
     }
-  ]
+  ],
+  "extra_recipe_mappings": {
+    "frozendawn:magnet_coil": 0,
+    "frozendawn:confinement_core": 0,
+    "frozendawn:first_wall": 0,
+    "frozendawn:lithium_blanket": 0,
+    "frozendawn:sfr_fuel_port": 2,
+    "frozendawn:sfr_power_port": 2,
+    "frozendawn:sfr_vacuum_port": 2,
+    "frozendawn:sfr_maintenance_hatch": 2,
+    "frozendawn:high_temperature_radiator": 3
+  }
 }
