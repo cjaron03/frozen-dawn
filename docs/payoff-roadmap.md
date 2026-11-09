@@ -20,11 +20,11 @@
 | # | Branch | Spec sections | Needs first |
 |---|---|---|---|
 | 1 | `docs/payoff-plan` | Canon IDs CH-34 to CH-39 on Notion, section 0 in `docs/aurora-shepherd.md`, this roadmap | Owner sign-off |
-| 2 | `feat/payoff-clues` | 6 (uplink moves into Phases 3-4), 6a (EVA wording, Kevin "registered enrollee" line), 6d step 1 (the forecast line), 6h (2071 page), Translator manual entry | 1 merged. Built 2026-11-07: tests, both gates, the owner's visual pass and the branch review passed; PR into `feat/maeve-director` awaits the owner |
-| 3 | `feat/payoff-reveal` | 1 (shared flag, Terminus migration), 2 (CH-18), 3 (CH-19), 4 (CH-20), 5 (boot cue and its toggle), 6d steps 2 and 2b (Projection Review, the replay) | 2 merged. Built 2026-11-09: tests, both gates, the owner's visual pass and the branch review passed. The pass also approved a power-on boot cue, a typed death line, an overhauled first-join opening and a muted, glitching replay; branch 6 builds on that `OrsaAwakeningIntro`. PR into `feat/maeve-director` awaits the owner |
+| 2 | `feat/payoff-clues` | 6 (uplink moves into Phases 3-4), 6a (EVA wording, Kevin "registered enrollee" line), 6d step 1 (the forecast line), 6h (2071 page), Translator manual entry | 1 merged. Merged into `feat/maeve-director` as PR 169 |
+| 3 | `feat/payoff-reveal` | 1 (shared flag, Terminus migration), 2 (CH-18), 3 (CH-19), 4 (CH-20), 5 (boot cue and its toggle), 6d steps 2 and 2b (Projection Review, the replay) | 2 merged. Built 2026-11-09: tests, both gates, the owner's visual pass and the branch review passed. The pass also approved a power-on boot cue, a typed death line, an overhauled first-join opening and a muted, glitching replay; branch 6 builds on that `OrsaAwakeningIntro`. Merged into `feat/maeve-director` as PR 173 (748c5ddf) |
 | 4 | `feat/returned-respawn-echo` | 5a (detuned ring on replacement), 5b (Vel-thae transmissions), 5c (no ring once erased) | 1 merged |
 | 5 | `feat/heart-memory-node` | 6b (node 5 from the ledgers), 5d (Kevin heard) | 1 merged |
-| 6 | `feat/thaeven-loop` | 6e beats 1 to 4, the Record I page | 3 merged, since both edit `OrsaAwakeningIntro` |
+| 6 | `feat/thaeven-loop` | 6e beats 1 to 4, the Record I page | 3 merged, since both edit `OrsaAwakeningIntro`. Plan: [thaeven-loop-plan.md](thaeven-loop-plan.md), approved 2026-11-09 |
 | 7 | `feat/ending-b-welcome` | 6c | 1 merged |
 | 8 | `feat/kevins-blanket` | 6g | 1 merged |
 | 9 | `feat/the-descent` | 6f and chamber zero, in slices | Still a draft: its own canon IDs (with the CH-27 revision), mockups, sound sign-off, then a creative-only slice before world generation |
