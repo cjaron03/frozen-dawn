@@ -11,6 +11,7 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
+import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.ScreenEvent;
 import vazkii.patchouli.client.base.PersistentData;
 import vazkii.patchouli.common.book.BookRegistry;
@@ -33,7 +34,12 @@ public final class PayoffClient {
             ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "orsa_intel/what_is_orsa"),
             ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "orsa_intel/projected_timeline"));
 
+    /** The second line starts typing this long after the death screen opens, then drops out once and holds. */
+    private static final int TYPE_START = 20;
+    private static final int DROP_AFTER = 6, DROP_TICKS = 2;
+
     private static boolean lineArrived, drawLine, deathScreenSeen;
+    private static int screenTicks;
 
     private PayoffClient() { }
 
@@ -41,6 +47,19 @@ public final class PayoffClient {
         lineArrived = true;
         drawLine = true;
         deathScreenSeen = false;
+        screenTicks = 0;
+    }
+
+    /**
+     * How much of the second line shows this many ticks after the death screen opened: 0 before it starts, one
+     * letter a tick, then -1 for its one dropout, then all of it (owner mockup, 2026-11-09).
+     */
+    static int typedChars(int ticks, int length) {
+        if (ticks < TYPE_START) return 0;
+        int done = TYPE_START + length;
+        if (ticks < done) return ticks - TYPE_START + 1;
+        if (ticks >= done + DROP_AFTER && ticks < done + DROP_AFTER + DROP_TICKS) return -1;
+        return length;
     }
 
     /**
@@ -78,7 +97,21 @@ public final class PayoffClient {
         int first = second - font.lineHeight - 1;
         var graphics = event.getGuiGraphics();
         graphics.drawCenteredString(font, Component.translatable(LINE_1), screen.width / 2, first, TEXT_COLOR);
-        graphics.drawCenteredString(font, Component.translatable(LINE_2), screen.width / 2, second, TEXT_COLOR);
+        String line = Component.translatable(LINE_2).getString();
+        int shown = typedChars(screenTicks, line.length());
+        if (shown <= 0) return;
+        // Typed from the finished line's left edge, so it doesn't slide as it grows.
+        int left = screen.width / 2 - font.width(line) / 2;
+        String part = line.substring(0, shown);
+        graphics.drawString(font, part, left, second, TEXT_COLOR);
+        if (shown < line.length() && ((screenTicks >> 1) & 1) == 0) {
+            graphics.drawString(font, "_", left + font.width(part), second, TEXT_COLOR);
+        }
+    }
+
+    @SubscribeEvent
+    public static void tick(ClientTickEvent.Post event) {
+        if (drawLine && Minecraft.getInstance().screen instanceof DeathScreen) screenTicks++;
     }
 
     @SubscribeEvent

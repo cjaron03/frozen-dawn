@@ -74,18 +74,23 @@ final class OrsaLogoRenderer {
         drawTextureQuad(graphics, FULL_MASTHEAD, x, y, width, height, 1.0F, 1.0F, 1.0F, alpha);
     }
 
-    static void drawAwakeningBase(GuiGraphics graphics, int x, int y, int width, int height, float alpha) {
-        drawTextureQuad(graphics, AWAKENING_BASE, x, y, width, height, 1.0F, 1.0F, 1.0F, alpha);
+    /** The masthead; muted is the replay's drained copy. */
+    static void drawAwakeningBase(GuiGraphics graphics, int x, int y, int width, int height, float alpha, boolean muted) {
+        drawTextureQuad(graphics, muted ? muted(AWAKENING_BASE) : AWAKENING_BASE, x, y, width, height, 1.0F, 1.0F, 1.0F, alpha);
+    }
+
+    private static ResourceLocation muted(ResourceLocation texture) {
+        return texture.withPath(path -> path.replace(".png", "_muted.png"));
     }
 
     static void drawAwakeningStripe(GuiGraphics graphics, int row, boolean rightSide, int x, int y, int width,
-                                    int height, float alpha) {
+                                    int height, float alpha, boolean muted) {
         ResourceLocation location = switch (row) {
             case 0 -> rightSide ? AWAKENING_STRIPE_TOP_RIGHT : AWAKENING_STRIPE_TOP_LEFT;
             case 1 -> rightSide ? AWAKENING_STRIPE_MID_RIGHT : AWAKENING_STRIPE_MID_LEFT;
             default -> rightSide ? AWAKENING_STRIPE_BOT_RIGHT : AWAKENING_STRIPE_BOT_LEFT;
         };
-        drawTextureQuad(graphics, location, x, y, width, height, 1.0F, 1.0F, 1.0F, alpha);
+        drawTextureQuad(graphics, muted ? muted(location) : location, x, y, width, height, 1.0F, 1.0F, 1.0F, alpha);
     }
 
     private static void drawBootQuad(GuiGraphics graphics, float x, float y, int size, int frame) {
