@@ -2,28 +2,28 @@ package com.frozendawn.defense;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import com.frozendawn.lore.PayoffState;
 import org.junit.jupiter.api.Test;
 
 /** The wand's log turns from transfers to terminations once, on the CH-18 trigger, and never in an E11 world. */
 class TerminusLedgerTest {
     @Test
     void aDeathWhileMaeveStandsChangesNothing() {
-        assertFalse(TerminusLedger.turnsOnPlayerDeath(false, false, false));
+        assertFalse(PayoffState.firesOnDeath(false, false, false));
     }
 
     @Test
     void theFirstDeathAfterTheHeartFallsTurnsIt() {
-        assertTrue(TerminusLedger.turnsOnPlayerDeath(true, false, false));
+        assertTrue(PayoffState.firesOnDeath(true, false, false));
     }
 
     @Test
     void anE11WorldNeverTurns() {
-        assertFalse(TerminusLedger.turnsOnPlayerDeath(true, true, false));
+        assertFalse(PayoffState.firesOnDeath(true, true, false));
     }
 
     @Test
-    void onceTurnedItNeverReverts() {
-        assertTrue(TerminusLedger.turnsOnPlayerDeath(false, false, true));
-        assertTrue(TerminusLedger.turnsOnPlayerDeath(false, true, true));
+    void itTurnsOnlyOnce() {
+        assertFalse(PayoffState.firesOnDeath(true, false, true));
     }
 }

@@ -101,6 +101,7 @@ import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.living.FinalizeSpawnEvent;
+import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.level.BlockEvent;
 import net.neoforged.neoforge.event.level.block.CropGrowEvent;
@@ -130,6 +131,8 @@ public class WorldTickHandler {
     private static final String ORSA_AWAKENING_SEEN_TAG = "frozendawn:orsa_awakening_seen";
     private static final String SKIP_ORSA_AWAKENING_PROPERTY = "frozendawn.dev.skipOrsaAwakening";
     private static final long ORSA_AWAKENING_FREEZE_TICKS = 340L;
+    /** The payoff replay's lead-in and its longer run, which ends when its stuttering eyes are open. */
+    private static final long ORSA_REPLAY_FREEZE_TICKS = 40L + 390L;
     private static final Map<UUID, Long> orsaAwakeningFreezeUntil = new HashMap<>();
     private static final Map<UUID, Vec3> orsaAwakeningFreezeAnchor = new HashMap<>();
 
@@ -565,10 +568,38 @@ public class WorldTickHandler {
             return;
         }
         persistentData.putBoolean(ORSA_AWAKENING_SEEN_TAG, true);
-        UUID playerId = player.getUUID();
-        orsaAwakeningFreezeUntil.put(playerId, player.level().getGameTime() + ORSA_AWAKENING_FREEZE_TICKS);
-        orsaAwakeningFreezeAnchor.put(playerId, player.position());
+        freezeForAwakening(player);
         PacketDistributor.sendToPlayer(player, new OpenOrsaAwakeningPayload());
+    }
+
+    /** Holds the player where they stand for as long as the opening runs. */
+    public static void freezeForAwakening(ServerPlayer player) {
+        freezeFor(player, ORSA_AWAKENING_FREEZE_TICKS);
+    }
+
+    /** As the opening, for the payoff replay's longer run. */
+    public static void freezeForReplay(ServerPlayer player) {
+        freezeFor(player, ORSA_REPLAY_FREEZE_TICKS);
+    }
+
+    private static void freezeFor(ServerPlayer player, long ticks) {
+        UUID playerId = player.getUUID();
+        orsaAwakeningFreezeUntil.put(playerId, player.level().getGameTime() + ticks);
+        orsaAwakeningFreezeAnchor.put(playerId, player.position());
+    }
+
+    /**
+     * A player held still for the opening can't move or see their temperature, so nothing hurts them meanwhile,
+     * except damage that ignores invulnerability, such as the void or a kill command.
+     */
+    @SubscribeEvent
+    public static void shieldWhileAwakening(LivingIncomingDamageEvent event) {
+        if (!(event.getEntity() instanceof ServerPlayer player)) return;
+        Long until = orsaAwakeningFreezeUntil.get(player.getUUID());
+        if (until != null && player.level().getGameTime() < until
+                && !event.getSource().is(net.minecraft.tags.DamageTypeTags.BYPASSES_INVULNERABILITY)) {
+            event.setCanceled(true);
+        }
     }
 
     private static void tickOrsaAwakeningFreeze(MinecraftServer server) {

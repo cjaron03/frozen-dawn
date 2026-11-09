@@ -41,6 +41,11 @@
     {
       "type": "patchouli:text",
       "text": "Projected enrollees remaining at terminus: 1.$(br2)You are the unluckiest person alive, and the luckiest, because you are alive.$(br2)$(italic)ORSA Science Division. Rooting for you, quietly, from Mars.$()"
+    },
+    {
+      "type": "patchouli:text",
+      "advancement": "frozendawn:payoff_fired",
+      "text": "$(bold)PROJECTION REVIEW$()$(br)All phases observed as forecast.$(br)Enrollees remaining at terminus: 1.$(br)Variance: 0.$(br)Projection source: enrollee record."
     }
   ]
 }

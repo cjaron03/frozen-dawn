@@ -23,6 +23,7 @@
   ],
   "client": [
     "GuiAccessor",
+    "GuiBookLandingAccessor",
     "AtmosphericActionBarMixin",
     "DisplayWindowMixin",
     "GenericMessageScreenMixin",
