@@ -173,7 +173,7 @@ public final class ThaevenLoreSavedData extends SavedData {
                 archive == null ? 0L : archive.discoveredMask,
                 archive != null && archive.recipeDiscovered,
                 seen,
-                semanticRevision(ThaevenSemanticKey.ARCHITECT_LID_REVEAL));
+                currentRevisions());
     }
 
     public boolean discoverRecipe(UUID playerId) {
@@ -202,9 +202,21 @@ public final class ThaevenLoreSavedData extends SavedData {
     }
 
     public int currentRevision(ThaevenRecordId record) {
-        return record == ThaevenRecordId.THE_PASSAGE
-                ? semanticRevision(ThaevenSemanticKey.ARCHITECT_LID_REVEAL)
-                : 0;
+        return switch (record) {
+            case THE_PASSAGE -> semanticRevision(
+                    ThaevenSemanticKey.ARCHITECT_LID_REVEAL);
+            case VEL_AN -> semanticRevision(ThaevenSemanticKey.PAYOFF_SOURCE);
+            default -> 0;
+        };
+    }
+
+    /** Every record's current revision, indexed by record ordinal. */
+    public int[] currentRevisions() {
+        int[] current = new int[ThaevenRecordId.values().length];
+        for (ThaevenRecordId record : ThaevenRecordId.values()) {
+            current[record.ordinal()] = currentRevision(record);
+        }
+        return current;
     }
 
     public boolean markViewed(
@@ -224,6 +236,12 @@ public final class ThaevenLoreSavedData extends SavedData {
 
     public int semanticRevision(ThaevenSemanticKey key) {
         return semanticRevisions.getOrDefault(key, 0);
+    }
+
+    /** Puts one world semantic back to a recorded revision; GameTests only. */
+    public void setSemanticForTest(ThaevenSemanticKey key, int revision) {
+        semanticRevisions.put(key, Math.max(0, revision));
+        setDirty();
     }
 
     public boolean unlockSemantic(ThaevenSemanticKey key) {
@@ -384,7 +402,7 @@ public final class ThaevenLoreSavedData extends SavedData {
             long discoveredMask,
             boolean recipeDiscovered,
             int[] seenRevisions,
-            int architectLidRevision) {
+            int[] currentRevisions) {
     }
 
     public record HeartScarAnchor(

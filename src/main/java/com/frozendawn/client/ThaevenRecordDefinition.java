@@ -24,21 +24,7 @@ public record ThaevenRecordDefinition(
                         + record.serializedName() + ".json");
         try (Reader reader = Minecraft.getInstance().getResourceManager()
                 .getResourceOrThrow(location).openAsReader()) {
-            JsonObject root = JsonParser.parseReader(reader).getAsJsonObject();
-            String title = root.get("title").getAsString();
-            List<String> rawPages = GSON.fromJson(root.get("rawPages"),
-                    new com.google.gson.reflect.TypeToken<List<String>>() { }
-                            .getType());
-            List<List<Segment>> pages = new ArrayList<>();
-            for (var page : root.getAsJsonArray("translatedPages")) {
-                List<Segment> segments = GSON.fromJson(
-                        page.getAsJsonObject().get("segments"),
-                        new com.google.gson.reflect.TypeToken<List<Segment>>() { }
-                                .getType());
-                pages.add(List.copyOf(segments));
-            }
-            return new ThaevenRecordDefinition(title, List.copyOf(rawPages),
-                    List.copyOf(pages));
+            return parse(reader);
         } catch (Exception exception) {
             FrozenDawn.LOGGER.error("Unable to load Thaeven record {}",
                     record.serializedName(), exception);
@@ -47,6 +33,40 @@ public record ThaevenRecordDefinition(
                     List.of(List.of(new Segment("error", "[record unavailable]",
                             Map.of(), 0, true))));
         }
+    }
+
+    /** Reads a record from its resource JSON. */
+    public static ThaevenRecordDefinition parse(Reader reader) {
+        JsonObject root = JsonParser.parseReader(reader).getAsJsonObject();
+        String title = root.get("title").getAsString();
+        List<String> rawPages = GSON.fromJson(root.get("rawPages"),
+                new com.google.gson.reflect.TypeToken<List<String>>() { }
+                        .getType());
+        List<List<Segment>> pages = new ArrayList<>();
+        for (var page : root.getAsJsonArray("translatedPages")) {
+            List<Segment> segments = GSON.fromJson(
+                    page.getAsJsonObject().get("segments"),
+                    new com.google.gson.reflect.TypeToken<List<Segment>>() { }
+                            .getType());
+            pages.add(List.copyOf(segments));
+        }
+        return new ThaevenRecordDefinition(title, List.copyOf(rawPages),
+                List.copyOf(pages));
+    }
+
+    /**
+     * The logical pages whose text differs between the seen and the current revision. A first view ({@code seen}
+     * of -1) reveals every page.
+     */
+    public List<Integer> changedPages(int seen, int current) {
+        List<Integer> changed = new ArrayList<>();
+        for (int page = 0; page < translatedPages.size(); page++) {
+            if (seen < 0 || !translatedPage(page, seen)
+                    .equals(translatedPage(page, current))) {
+                changed.add(page);
+            }
+        }
+        return List.copyOf(changed);
     }
 
     public String translatedPage(int page, int semanticRevision) {

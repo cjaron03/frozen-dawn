@@ -90,7 +90,9 @@ final class ThaevenLoreCommand {
                 snapshot.recipeDiscovered() ? "discovered" : "locked");
         if (verbose) {
             FrozenDawnCommandOutput.detail(context.getSource(), "Architect revision",
-                    snapshot.architectLidRevision());
+                    snapshot.currentRevisions()[ThaevenRecordId.THE_PASSAGE.ordinal()]);
+            FrozenDawnCommandOutput.detail(context.getSource(), "Payoff source revision",
+                    snapshot.currentRevisions()[ThaevenRecordId.VEL_AN.ordinal()]);
             FrozenDawnCommandOutput.detail(context.getSource(), "Heart Scar",
                     data.heartScarAnchor()
                             .map(anchor -> anchor.dimension().location() + " "
@@ -217,7 +219,7 @@ final class ThaevenLoreCommand {
         ThaevenLoreSavedData.ArchiveSnapshot snapshot =
                 data.snapshot(player.getUUID());
         int seen = snapshot.seenRevisions()[record.ordinal()];
-        int current = data.currentRevision(record);
+        int current = snapshot.currentRevisions()[record.ordinal()];
         FrozenDawnCommandOutput.heading(context.getSource(),
                 "Lore / " + record.serializedName());
         FrozenDawnCommandOutput.line(context.getSource(), "Discovered",

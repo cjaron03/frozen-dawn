@@ -137,7 +137,7 @@ public final class ThaevenLoreManager {
                         .snapshot(player.getUUID());
         PacketDistributor.sendToPlayer(player, new ThaevenLoreSyncPayload(
                 snapshot.discoveredMask(), snapshot.recipeDiscovered(),
-                snapshot.seenRevisions(), snapshot.architectLidRevision()));
+                snapshot.seenRevisions(), snapshot.currentRevisions()));
     }
 
     @SubscribeEvent

@@ -43,6 +43,27 @@ class ThaevenLoreSavedDataTest {
     }
 
     @Test
+    void payoffSourceReInksRecordOneOnly() {
+        ThaevenLoreSavedData data = new ThaevenLoreSavedData();
+        UUID player = UUID.randomUUID();
+        data.grantRecord(player, ThaevenRecordId.VEL_AN);
+
+        assertEquals(0, data.currentRevision(ThaevenRecordId.VEL_AN));
+        assertTrue(data.unlockSemantic(ThaevenSemanticKey.PAYOFF_SOURCE));
+        assertEquals(1, data.currentRevision(ThaevenRecordId.VEL_AN));
+        assertEquals(0, data.currentRevision(ThaevenRecordId.THE_PASSAGE));
+        assertEquals(1, data.snapshot(player).currentRevisions()[
+                ThaevenRecordId.VEL_AN.ordinal()]);
+        assertEquals(0, data.snapshot(player).currentRevisions()[
+                ThaevenRecordId.THE_PASSAGE.ordinal()]);
+
+        ThaevenLoreSavedData loaded = ThaevenLoreSavedData.load(
+                data.save(new CompoundTag(), null), null);
+        assertEquals(1, loaded.currentRevision(ThaevenRecordId.VEL_AN));
+        assertEquals(0, loaded.currentRevision(ThaevenRecordId.THE_PASSAGE));
+    }
+
+    @Test
     void canonicalHeartScarCanReplaceACompatibilityFallback() {
         ThaevenLoreSavedData data = new ThaevenLoreSavedData();
         BlockPos fallback = new BlockPos(10, 80, 10);

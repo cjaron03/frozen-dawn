@@ -10,7 +10,7 @@ import net.minecraft.resources.ResourceLocation;
 /** Per-player archive cache plus the currently relevant world semantics. */
 public record ThaevenLoreSyncPayload(
         long discoveredMask, boolean recipeDiscovered,
-        int[] seenRevisions, int architectLidRevision)
+        int[] seenRevisions, int[] currentRevisions)
         implements CustomPacketPayload {
     public static final Type<ThaevenLoreSyncPayload> TYPE = new Type<>(
             ResourceLocation.fromNamespaceAndPath(
@@ -21,26 +21,34 @@ public record ThaevenLoreSyncPayload(
                 ByteBufCodecs.BOOL.encode(buffer, payload.recipeDiscovered());
                 ByteBufCodecs.VAR_INT.encode(
                         buffer, payload.seenRevisions().length);
-                for (int revision : payload.seenRevisions()) {
-                    ByteBufCodecs.VAR_INT.encode(buffer, revision);
-                }
-                ByteBufCodecs.VAR_INT.encode(
-                        buffer, payload.architectLidRevision());
+                writeRevisions(buffer, payload.seenRevisions());
+                writeRevisions(buffer, payload.currentRevisions());
             }, buffer -> {
                 long discovered = buffer.readLong();
                 boolean recipe = ByteBufCodecs.BOOL.decode(buffer);
-                int encodedLength = Math.max(0,
-                        ByteBufCodecs.VAR_INT.decode(buffer));
-                int[] seen = new int[Math.min(64, encodedLength)];
-                for (int index = 0; index < encodedLength; index++) {
-                    int revision = ByteBufCodecs.VAR_INT.decode(buffer);
-                    if (index < seen.length) {
-                        seen[index] = revision;
-                    }
-                }
+                int[] seen = readRevisions(buffer);
                 return new ThaevenLoreSyncPayload(discovered, recipe, seen,
-                        ByteBufCodecs.VAR_INT.decode(buffer));
+                        readRevisions(buffer));
             });
+
+    private static void writeRevisions(ByteBuf buffer, int[] revisions) {
+        ByteBufCodecs.VAR_INT.encode(buffer, revisions.length);
+        for (int revision : revisions) {
+            ByteBufCodecs.VAR_INT.encode(buffer, revision);
+        }
+    }
+
+    private static int[] readRevisions(ByteBuf buffer) {
+        int encodedLength = Math.max(0, ByteBufCodecs.VAR_INT.decode(buffer));
+        int[] revisions = new int[Math.min(64, encodedLength)];
+        for (int index = 0; index < encodedLength; index++) {
+            int revision = ByteBufCodecs.VAR_INT.decode(buffer);
+            if (index < revisions.length) {
+                revisions[index] = revision;
+            }
+        }
+        return revisions;
+    }
 
     @Override
     public Type<? extends CustomPacketPayload> type() {
