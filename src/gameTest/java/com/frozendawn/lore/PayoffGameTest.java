@@ -181,6 +181,31 @@ public final class PayoffGameTest {
         h.succeed();
     }
 
+    /** The replay holds its player still for all of it, so nothing may hurt them meanwhile (branch review). */
+    @GameTest(template = GameTestTemplates.EMPTY, batch = "payoff", timeoutTicks = 520)
+    public static void theReplayShieldsItsPlayerUntilItEnds(GameTestHelper h) {
+        var server = fresh(h);
+        erased(server, true);
+        var a = player(h, "payoff_shielded");
+        try {
+            kill(a);
+        } finally {
+            erased(server, false);
+        }
+        // The respawned player is a new entity with the same profile.
+        var reborn = player(h, a.getGameProfile());
+        PayoffState.onRespawn(new net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerRespawnEvent(reborn, false));
+        h.runAfterDelay(400, () -> {
+            reborn.hurt(h.getLevel().damageSources().freeze(), 4.0F);
+            h.assertTrue(reborn.getHealth() == reborn.getMaxHealth(), "Unhurt near the end of the replay");
+        });
+        h.runAfterDelay(460, () -> {
+            reborn.hurt(h.getLevel().damageSources().freeze(), 4.0F);
+            h.assertTrue(reborn.getHealth() < reborn.getMaxHealth(), "Hurt again once it ends");
+            h.succeed();
+        });
+    }
+
     /** A new world before the Heart falls. */
     static MinecraftServer fresh(GameTestHelper h) {
         var server = h.getLevel().getServer();
@@ -204,8 +229,11 @@ public final class PayoffGameTest {
 
     /** A real survival player without spawn protection: FakePlayer ignores advancements. */
     static ServerPlayer player(GameTestHelper h, String name) {
+        return player(h, new GameProfile(UUID.randomUUID(), name));
+    }
+
+    static ServerPlayer player(GameTestHelper h, GameProfile profile) {
         var level = h.getLevel();
-        var profile = new GameProfile(UUID.randomUUID(), name);
         var player = new ServerPlayer(level.getServer(), level, profile, ClientInformation.createDefault());
         player.connection = new net.neoforged.neoforge.common.util.FakePlayer(level, profile).connection;
         player.setPos(h.absoluteVec(new Vec3(4.5, 2, 4.5)));

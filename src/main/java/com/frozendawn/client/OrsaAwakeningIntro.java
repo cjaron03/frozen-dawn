@@ -281,7 +281,8 @@ public final class OrsaAwakeningIntro {
         }
 
         Minecraft mc = Minecraft.getInstance();
-        if (mc.player == null || mc.level == null) {
+        // A death that ignores the shield (the void, a kill command) ends it: the death screen takes over.
+        if (mc.player == null || mc.level == null || mc.player.isDeadOrDying()) {
             disableBlur(mc);
             active = false;
             return;

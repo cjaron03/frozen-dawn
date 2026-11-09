@@ -98,7 +98,7 @@ public final class PayoffState extends SavedData {
     public static void onRespawn(PlayerEvent.PlayerRespawnEvent event) {
         if (!(event.getEntity() instanceof ServerPlayer player)) return;
         cueOnRespawn(player, event.isEndConquered()).ifPresent(cue -> {
-            if (cue == RespawnCue.REPLAY) WorldTickHandler.freezeForAwakening(player);
+            if (cue == RespawnCue.REPLAY) WorldTickHandler.freezeForReplay(player);
             PacketDistributor.sendToPlayer(player, new RespawnCuePayload(cue == RespawnCue.REPLAY));
         });
     }
