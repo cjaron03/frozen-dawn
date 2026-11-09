@@ -53,7 +53,7 @@
     },
     {
       "type": "patchouli:text",
-      "text": "If you encounter Kevin, please tell him the shuttle already left.$(br2)$(italic)We would very much like Kevin to stop.$()"
+      "text": "Kevin remains a registered enrollee. His seat is being held.$(br2)If you encounter Kevin, please tell him the shuttle already left.$(br2)$(italic)We would very much like Kevin to stop.$()"
     }
   ]
 }

@@ -40,7 +40,7 @@
     },
     {
       "type": "patchouli:text",
-      "text": "You are the unluckiest person alive, and the luckiest, because you are alive.$(br2)$(italic)ORSA Science Division. Rooting for you, quietly, from Mars.$()"
+      "text": "Projected enrollees remaining at terminus: 1.$(br2)You are the unluckiest person alive, and the luckiest, because you are alive.$(br2)$(italic)ORSA Science Division. Rooting for you, quietly, from Mars.$()"
     }
   ]
 }
