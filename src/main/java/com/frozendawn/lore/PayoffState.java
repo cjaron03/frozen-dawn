@@ -142,6 +142,14 @@ public final class PayoffState extends SavedData {
 
     static boolean eligible(MinecraftServer server) { return get(server).eligible; }
 
+    /** The dev status line. */
+    public static String describe(MinecraftServer server) {
+        var data = get(server);
+        return "Payoff: " + (data.eligible ? "eligible" : "not eligible (an older world)") + ", fired " + data.fired
+                + (data.firedBy == null ? "" : " by " + data.firedBy) + ", replay pending " + data.replayPending
+                + ", Terminus turned " + data.terminusTurned + ", saved erased " + ReturnedHearthSavedData.get(server).maeveErased();
+    }
+
     @SubscribeEvent
     public static void onServerStarted(ServerStartedEvent event) { get(event.getServer()); }
 
