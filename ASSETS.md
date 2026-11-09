@@ -54,7 +54,7 @@ item texture designation below until the owner replaces or approves it.
 ## Original Audio Design
 
 - `BLACKGLASS Recovered Audio` - segmented terminal transcript reconstruction (`blackglass_segment_01.ogg` through `blackglass_segment_08.ogg`)
-- ORSA boot ident (`orsa_boot.ogg`)
+- ORSA boot ident (`orsa_boot.ogg`), retired 2026-11-09 for the ORSA boot sting; the owner's original is kept in the SSD evidence archive and in git history
 - Surveyor Lens tick (`surveyor_lens_tick.ogg`)
 - All Undone entity audio in `src/main/resources/assets/frozendawn/sounds/entity/undone/`
 - Radio static, signal, and cutoff audio in `src/main/resources/assets/frozendawn/sounds/radio/`; the voice bank and Martian command performance use the separately licensed generated-voice pipeline
