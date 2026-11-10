@@ -28,7 +28,7 @@ import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 @EventBusSubscriber(modid = FrozenDawn.MOD_ID)
 public final class ReturnNoticeState extends SavedData {
     public static final int MAX_NOTICES = 2;
-    static final double WATCH_DISTANCE = 28.0D;
+    static final double WATCH_DISTANCE = HearthPopulationPolicy.WATCH_DISTANCE;
     private static final String NAME = FrozenDawn.MOD_ID + "_return_notice";
 
     private int shown;

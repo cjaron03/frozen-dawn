@@ -15,6 +15,44 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class ReturnedEchoTest {
 
     @Test
+    void onlyAReplacedReturnedRings() {
+        assertTrue(HearthPopulationPolicy.ringsOnSpawn(HearthPopulationRole.RETURNED, true));
+        assertTrue(HearthPopulationPolicy.ringsOnSpawn(HearthPopulationRole.HUNTER, true));
+        for (HearthPopulationRole role : HearthPopulationRole.values()) {
+            assertFalse(HearthPopulationPolicy.ringsOnSpawn(role, false), role + " first population is silent");
+        }
+        assertFalse(HearthPopulationPolicy.ringsOnSpawn(HearthPopulationRole.MIMIC, true), "The Mimic comes back silent");
+        assertFalse(HearthPopulationPolicy.ringsOnSpawn(HearthPopulationRole.ARCHITECT, true),
+                "The Architect comes back silent");
+    }
+
+    /** Owner, 2026-11-09: killing Returned over and over rings at most once every ten minutes. */
+    @Test
+    void theRingRestsTenMinutes() {
+        assertEquals(12_000L, HearthPopulationPolicy.RING_COOLDOWN_TICKS);
+        assertTrue(HearthPopulationPolicy.ringCooldownElapsed(-1L, 0L), "The first ring is free");
+        assertFalse(HearthPopulationPolicy.ringCooldownElapsed(1_000L, 1_000L));
+        assertFalse(HearthPopulationPolicy.ringCooldownElapsed(1_000L, 12_999L));
+        assertTrue(HearthPopulationPolicy.ringCooldownElapsed(1_000L, 13_000L));
+        assertTrue(HearthPopulationPolicy.ringCooldownElapsed(50_000L, 10L), "A clock behind the last ring frees it");
+    }
+
+    /** The owner's pick from the Task 0 previews, 2026-11-09: pitch 0.71 at volume 0.2. */
+    @Test
+    void theRingIsTheRespawnRing() throws Exception {
+        JsonObject event = json("assets/frozendawn/sounds.json").getAsJsonObject("entity.returned.replacement_ring");
+        assertEquals("hostile", event.get("category").getAsString());
+        assertFalse(event.has("subtitle"), "No text with the ring");
+        assertEquals(1, event.getAsJsonArray("sounds").size());
+        JsonObject sound = event.getAsJsonArray("sounds").get(0).getAsJsonObject();
+        assertEquals("frozendawn:ui/orsa_awakening_ring", sound.get("name").getAsString());
+        assertFalse(sound.has("stream") && sound.get("stream").getAsBoolean(), "Not streamed");
+        assertEquals(0.71F, sound.get("pitch").getAsFloat(), 1e-6F);
+        assertEquals(0.2F, sound.get("volume").getAsFloat(), 1e-6F);
+        assertEquals(12, sound.get("attenuation_distance").getAsInt());
+    }
+
+    @Test
     void aNoticeNeedsEveryGate() {
         assertTrue(ReturnNoticeState.owes(false, false, true, true, 0));
         assertTrue(ReturnNoticeState.owes(false, false, true, true, 1));

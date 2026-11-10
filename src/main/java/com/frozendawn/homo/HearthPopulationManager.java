@@ -7,9 +7,11 @@ import com.frozendawn.entity.ArchitectEntity;
 import com.frozendawn.entity.MimicEntity;
 import com.frozendawn.entity.ReturnedEntity;
 import com.frozendawn.init.ModEntities;
+import com.frozendawn.init.ModSounds;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.MobSpawnType;
@@ -31,6 +33,8 @@ public final class HearthPopulationManager {
     private static long residentsSpawned;
     private static long residentsAdopted;
     private static long residentsLost;
+    private static long replacementRings;
+    private static long lastRingGameTime = -1L;
     private static String lastFailure = "none";
 
     private HearthPopulationManager() {
@@ -42,6 +46,11 @@ public final class HearthPopulationManager {
             return;
         }
         reconcile(level);
+    }
+
+    /** Replacement rings played since the last {@link #reset}. */
+    public static long replacementRings() {
+        return replacementRings;
     }
 
     public static int reconcileNow(ServerLevel level) {
@@ -110,6 +119,7 @@ public final class HearthPopulationManager {
         return "spawned=" + residentsSpawned
                 + " adopted=" + residentsAdopted
                 + " lost=" + residentsLost
+                + " rings=" + replacementRings
                 + " lastFailure=" + lastFailure;
     }
 
@@ -117,6 +127,8 @@ public final class HearthPopulationManager {
         residentsSpawned = 0L;
         residentsAdopted = 0L;
         residentsLost = 0L;
+        replacementRings = 0L;
+        lastRingGameTime = -1L;
         lastFailure = "none";
     }
 
@@ -192,6 +204,13 @@ public final class HearthPopulationManager {
             created++;
             residentsSpawned++;
             lastFailure = "none";
+            if (HearthPopulationPolicy.ringsOnSpawn(role, binding != null)
+                    && HearthPopulationPolicy.ringCooldownElapsed(lastRingGameTime, level.getGameTime())) {
+                level.playSound(null, resident.getX(), resident.getY(), resident.getZ(),
+                        ModSounds.RETURNED_REPLACEMENT_RING.get(), SoundSource.HOSTILE, 1.0F, 1.0F);
+                lastRingGameTime = level.getGameTime();
+                replacementRings++;
+            }
             FrozenDawn.LOGGER.info(
                     "Spawned {} Hearth resident {} for Major Hearth {} at ({}, {}, {})",
                     role.serializedName(), shortId(resident.getUUID()), shortId(hearth.id()),

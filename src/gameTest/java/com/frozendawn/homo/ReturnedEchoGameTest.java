@@ -41,6 +41,31 @@ public final class ReturnedEchoGameTest {
     }
 
     @GameTest(template = GameTestTemplates.EMPTY, batch = "returnedecho")
+    public static void noRingInAnErasedWorld(GameTestHelper h) {
+        MinecraftServer server = fresh(h);
+        long rings = HearthPopulationManager.replacementRings();
+        erased(server, true);
+        try {
+            h.assertTrue(HearthPopulationManager.reconcileNow(server.overworld()) == 0,
+                    "No resident comes back once the Heart has fallen");
+            h.assertTrue(HearthPopulationManager.replacementRings() == rings, "And nothing rings");
+        } finally {
+            erased(server, false);
+        }
+        h.succeed();
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY, batch = "returnedecho")
+    public static void aDebugRespawnDoesNotRing(GameTestHelper h) {
+        MinecraftServer server = fresh(h);
+        long rings = HearthPopulationManager.replacementRings();
+        HearthPopulationManager.respawnForDebug(server.overworld());
+        h.assertTrue(HearthPopulationManager.replacementRings() == rings,
+                "A debug respawn clears the bindings first, so nothing it spawns is a replacement");
+        h.succeed();
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY, batch = "returnedecho")
     public static void aWitnessedDeathOwesTheNotice(GameTestHelper h) {
         MinecraftServer server = fresh(h);
         ServerPlayer a = heard(h, "echo_a");
