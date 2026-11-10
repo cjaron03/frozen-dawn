@@ -58,7 +58,7 @@ public final class ThaevenLoopOverlay {
 
     @SubscribeEvent
     public static void onClientTick(ClientTickEvent.Post event) {
-        if (Minecraft.getInstance().player == null) {
+        if (Minecraft.getInstance().player == null || Minecraft.getInstance().isPaused()) {
             return;
         }
         if (current != null) {

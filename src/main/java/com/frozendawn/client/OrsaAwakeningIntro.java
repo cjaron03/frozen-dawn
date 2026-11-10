@@ -355,6 +355,10 @@ public final class OrsaAwakeningIntro {
             stopAllSounds(mc);
             blackoutApplied = true;
         }
+        // The pause menu pauses the voice, so the clock that keeps the readout on it holds too.
+        if (mc.isPaused()) {
+            return;
+        }
 
         if (pendingDelayTicks > 0) {
             pendingDelayTicks--;
