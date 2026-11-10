@@ -14,7 +14,7 @@
 
 **Spec:** [payoff-roadmap.md](payoff-roadmap.md), branch 4. Notion: the payoff branch spec, sections 5a, 5b (the revised version) and 5c. Canon: Canon Hierarchy CH-8 and CH-11, with The Edge §13.2 and §13.13.
 
-**Status:** drafted 2026-11-09 for the owner's approval. Nothing is built.
+**Status:** approved by the owner as written, 2026-11-09, Rulings 0 to 9 included. Nothing is built.
 
 **Branch:** `feat/returned-respawn-echo` in `/Volumes/SSD/Work/frozen-dawn-returned-respawn-echo`, cut from `feat/maeve-director` once this plan has merged. The build session starts in that worktree and works there. PR into `feat/maeve-director`. The branch review runs on Opus: the branch adds a save format (`ReturnNoticeState`) and a client/server transmission type, and it merges into a long-lived branch.
 
