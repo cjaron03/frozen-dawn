@@ -805,6 +805,8 @@
   "overlay.frozendawn.thaeven.neutral.warmth": "[warmth - wrong place - wrong time - something remembered]",
   "overlay.frozendawn.thaeven.neutral.question": "...thae.",
   "overlay.frozendawn.thaeven.neutral.openness": "[a question that has no word for question]",
+  "overlay.frozendawn.thaeven.notice.died": "Vel-thae ethven.",
+  "overlay.frozendawn.thaeven.notice.word": "...Vel-thae.",
   "overlay.frozendawn.thaeven.orsa.presence": "[heat - recognition - grief arriving before the name]",
   "overlay.frozendawn.thaeven.orsa.word": "Orsha.",
   "overlay.frozendawn.thaeven.orsa.warmth": "[orange light - a heater at full output - hands remembering warmth]",

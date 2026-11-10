@@ -66,6 +66,8 @@ public final class HearthTransmissionManager {
         ThaevenTransmissionType type;
         if (replay || !contact.firstTransmissionComplete()) {
             type = ThaevenTransmissionType.fromAssessment(contact.orsaDetectedAtAssessment());
+        } else if (ReturnNoticeState.isOwed(level.getServer(), player.getUUID())) {
+            type = ThaevenTransmissionType.RETURN_NOTICE;
         } else if (!contact.hearthMythTransmissionComplete()
                 && hearth != null
                 && hearth.stage().ordinal()
@@ -233,7 +235,7 @@ public final class HearthTransmissionManager {
                 && mimic.isBoundToHearthPopulation(hearthId);
     }
 
-    private static boolean isPopulationSource(Mob source, UUID hearthId) {
+    static boolean isPopulationSource(Mob source, UUID hearthId) {
         if (source instanceof ArchitectEntity architect) {
             return architect.isBoundToHearthPopulation(hearthId);
         }
@@ -278,6 +280,8 @@ public final class HearthTransmissionManager {
             if (session.type() == ThaevenTransmissionType.HEARTH_MYTH) {
                 data.completeHearthMythTransmission(
                         player.getUUID(), session.hearthId(), level.getGameTime());
+            } else if (session.type() == ThaevenTransmissionType.RETURN_NOTICE) {
+                ReturnNoticeState.spend(level.getServer(), player.getUUID());
             } else {
                 data.completeFirstTransmission(
                         player.getUUID(), session.hearthId(), level.getGameTime());

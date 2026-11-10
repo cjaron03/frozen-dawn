@@ -19,7 +19,7 @@ final class FrozenDawnDebugCommand {
 
     private static final List<String> HEARTH_CHILDREN = List.of(
             "status", "list", "locate", "force-select", "reconcile", "watcher",
-            "population", "master", "architect", "transmission", "survey",
+            "population", "master", "architect", "transmission", "notice", "survey",
             "relationship", "violation", "mood", "advance");
 
     private FrozenDawnDebugCommand() {

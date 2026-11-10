@@ -21,6 +21,7 @@ import com.frozendawn.homo.HeartScavengerWaveManager;
 import com.frozendawn.homo.HearthMaturationManager;
 import com.frozendawn.homo.HearthMaturationPolicy;
 import com.frozendawn.homo.HearthMemoryManager;
+import com.frozendawn.homo.ReturnNoticeState;
 import com.frozendawn.homo.HearthPopulationManager;
 import com.frozendawn.homo.HearthReconciliationManager;
 import com.frozendawn.homo.HearthReconciliationPolicy;
@@ -430,6 +431,7 @@ final class FrozenDawnHearthCommand {
                                 .executes(FrozenDawnHearthCommand::resetTransmission))
                         .then(Commands.literal("replay")
                                 .executes(FrozenDawnHearthCommand::replayTransmission)))
+                .then(noticeCommands())
                 .then(Commands.literal("survey")
                         .executes(FrozenDawnHearthCommand::survey)
                         .then(Commands.literal("reset")
@@ -2093,6 +2095,49 @@ final class FrozenDawnHearthCommand {
                 "Reset Architect assessment for " + player.getGameProfile().getName()
                         + (changed ? "" : " (unchanged)")), true);
         return assessment(context);
+    }
+
+    /** The return notice (payoff spec 5b); owing it and resetting it are development builds only. */
+    private static LiteralArgumentBuilder<CommandSourceStack> noticeCommands() {
+        LiteralArgumentBuilder<CommandSourceStack> notice = Commands.literal("notice")
+                .executes(FrozenDawnHearthCommand::notice);
+        if (!net.neoforged.fml.loading.FMLEnvironment.production) {
+            notice.then(Commands.literal("owe").executes(FrozenDawnHearthCommand::oweNotice))
+                    .then(Commands.literal("reset")
+                            .then(Commands.literal("confirm")
+                                    .executes(FrozenDawnHearthCommand::resetNotice)));
+        }
+        return notice;
+    }
+
+    private static int notice(CommandContext<CommandSourceStack> context) {
+        MinecraftServer server = context.getSource().getServer();
+        String owed = ReturnNoticeState.owed(server).stream()
+                .map(id -> {
+                    ServerPlayer online = server.getPlayerList().getPlayer(id);
+                    return online != null ? online.getGameProfile().getName() : id.toString().substring(0, 8);
+                })
+                .sorted()
+                .collect(java.util.stream.Collectors.joining(", "));
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Return notice: shown=" + ReturnNoticeState.shown(server) + "/" + ReturnNoticeState.MAX_NOTICES
+                        + " owed=[" + owed + "]"), false);
+        return 1;
+    }
+
+    private static int oweNotice(CommandContext<CommandSourceStack> context)
+            throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+        ServerPlayer player = context.getSource().getPlayerOrException();
+        ReturnNoticeState.oweForDebug(context.getSource().getServer(), player.getUUID());
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Return notice owed to " + player.getGameProfile().getName()), true);
+        return notice(context);
+    }
+
+    private static int resetNotice(CommandContext<CommandSourceStack> context) {
+        ReturnNoticeState.resetForDebug(context.getSource().getServer());
+        context.getSource().sendSuccess(() -> Component.literal("Return notice reset"), true);
+        return notice(context);
     }
 
     private static int transmission(CommandContext<CommandSourceStack> context)

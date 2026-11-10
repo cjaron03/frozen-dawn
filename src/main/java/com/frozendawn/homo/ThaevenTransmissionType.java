@@ -6,7 +6,9 @@ package com.frozendawn.homo;
 public enum ThaevenTransmissionType {
     VEL_THAE(0, 180),
     ORSHA_RECOGNITION(1, 220),
-    HEARTH_MYTH(2, 300);
+    HEARTH_MYTH(2, 300),
+    /** A Hearth that watched the player die registers it (payoff spec 5b). */
+    RETURN_NOTICE(3, 200);
 
     private final int networkId;
     private final int durationTicks;
