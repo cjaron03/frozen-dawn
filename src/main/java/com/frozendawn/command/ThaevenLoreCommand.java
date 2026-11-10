@@ -27,6 +27,10 @@ final class ThaevenLoreCommand {
     }
 
     static LiteralArgumentBuilder<CommandSourceStack> commands() {
+        return commands(!net.neoforged.fml.loading.FMLEnvironment.production);
+    }
+
+    static LiteralArgumentBuilder<CommandSourceStack> commands(boolean development) {
         return Commands.literal("lore")
                 .executes(context -> status(context, false))
                 .then(Commands.literal("status")
@@ -64,19 +68,7 @@ final class ThaevenLoreCommand {
                 .then(Commands.literal("reset-world-semantic")
                         .then(Commands.literal("confirm")
                                 .executes(ThaevenLoreCommand::resetWorldSemantics)))
-                .then(Commands.literal("loop")
-                        .then(Commands.literal("status")
-                                .executes(ThaevenLoreCommand::loopStatus))
-                        .then(Commands.literal("reset")
-                                .then(Commands.literal("confirm")
-                                        .executes(ThaevenLoreCommand::loopReset)))
-                        .then(Commands.literal("play")
-                                .then(Commands.argument("beat", StringArgumentType.word())
-                                        .suggests(FrozenDawnCommandSuggestions.enums(
-                                                ThaevenLoopBeat.class))
-                                        .executes(ThaevenLoreCommand::loopPlay)))
-                        .then(Commands.literal("owe-broken")
-                                .executes(ThaevenLoreCommand::loopOweBroken)))
+                .then(loopCommands(development))
                 .then(Commands.literal("explain")
                         .then(Commands.argument("record", StringArgumentType.word())
                                 .suggests(FrozenDawnCommandSuggestions.enums(
@@ -206,6 +198,26 @@ final class ThaevenLoreCommand {
                 "Reset lore archive for "
                         + player.getGameProfile().getName()), true);
         return 1;
+    }
+
+    /** Development builds only: play a beat or owe the broken lines, for the loop's playtest. */
+    private static LiteralArgumentBuilder<CommandSourceStack> loopCommands(boolean development) {
+        LiteralArgumentBuilder<CommandSourceStack> loop = Commands.literal("loop")
+                .then(Commands.literal("status")
+                        .executes(ThaevenLoreCommand::loopStatus))
+                .then(Commands.literal("reset")
+                        .then(Commands.literal("confirm")
+                                .executes(ThaevenLoreCommand::loopReset)));
+        if (development) {
+            loop.then(Commands.literal("play")
+                            .then(Commands.argument("beat", StringArgumentType.word())
+                                    .suggests(FrozenDawnCommandSuggestions.enums(
+                                            ThaevenLoopBeat.class))
+                                    .executes(ThaevenLoreCommand::loopPlay)))
+                    .then(Commands.literal("owe-broken")
+                            .executes(ThaevenLoreCommand::loopOweBroken));
+        }
+        return loop;
     }
 
     /** CH-37's loop: which beats this world has shown, and who is owed the broken and returning lines. */

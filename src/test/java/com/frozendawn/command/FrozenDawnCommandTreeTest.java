@@ -90,6 +90,13 @@ class FrozenDawnCommandTreeTest {
     }
 
     @Test
+    void aReleaseBuildKeepsTheLoopsPlaytestCommandsOut() {
+        CommandNode<CommandSourceStack> loop = ThaevenLoreCommand.commands(false).build().getChild("loop");
+
+        assertEquals(Set.of("status", "reset"), childNames(loop));
+    }
+
+    @Test
     void architectLabHasAFullResetAndOperatorBoundary() {
         var commands = dispatcher();
         var architect = commands.getRoot().getChild("frozendawn").getChild("debug").getChild("architect");
