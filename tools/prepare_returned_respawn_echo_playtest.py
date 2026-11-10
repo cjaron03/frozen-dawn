@@ -118,6 +118,8 @@ def scripts():
                 tell('[Die]', '/function '+NS+':die', 'red'),
                 tell('[Wall in front]', '/function '+NS+':wall', 'yellow'),
                 tell('[Sword]', '/function '+NS+':sword', 'gold'),
+                tell('[Calm the Hearth]', '/function '+NS+':calm', 'light_purple'),
+                tell('[Kill a Returned resident]', '/function '+NS+':replace', 'red'),
                 tell('[Replay transmission]', '/fd hearth transmission replay', 'green'),
                 tell('[Play the opening]', '/fd payoff opening', 'green'),
                 tell('[Controls]', '/function '+NS+':controls', 'gray'), 'return 1']
@@ -133,7 +135,13 @@ def scripts():
         'die': '\n'.join([GUARD, 'kill @s', 'return 1']),
         # A stone wall a block in front, seven wide and four high, to hide behind.
         'wall': '\n'.join([GUARD, 'execute at @s run fill ^-3 ^ ^2 ^3 ^3 ^2 minecraft:stone', 'return 1']),
-        'sword': '\n'.join([GUARD, 'give @s minecraft:netherite_sword', 'return 1'])}
+        'sword': '\n'.join([GUARD, 'give @s minecraft:netherite_sword', 'return 1']),
+        # Attacking the Hearth makes the player Orsathae and opens its combat roster, which holds every replacement
+        # while the Master Architect lives. This puts both back so a replacement can be heard.
+        'calm': '\n'.join([GUARD, 'fd hearth relationship set neutral', 'fd hearth master respawn', 'return 1']),
+        # Kills one population Returned with no player attack, so the Hearth stays calm and replaces it in a minute.
+        'replace': '\n'.join([GUARD, 'kill @e[type=frozendawn:returned,nbt={HearthPopulationRole:"returned"},limit=1]',
+                               'return 1'])}
 
 
 def install_advancements(destination):
