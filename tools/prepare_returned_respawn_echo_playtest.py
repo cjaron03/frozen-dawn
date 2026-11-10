@@ -19,6 +19,7 @@ from pathlib import Path
 
 import prepare_blind_architect_playtest as nbt
 from prepare_power_network_playtest import prepare, pack_only
+from prepare_terminus_vault_playtest import ADVANCEMENTS
 
 TITLE = 'Returned Echo Check'
 NS = 'returned_echo_check'
@@ -135,10 +136,21 @@ def scripts():
         'sword': '\n'.join([GUARD, 'give @s minecraft:netherite_sword', 'return 1'])}
 
 
+def install_advancements(destination):
+    """The filter hides the mod's advancements, and the Master Architect's one-time moment awards one; without it the
+    server refuses the moment. Carried without its phase parent, so no phase toasts arrive with it."""
+    out = destination/'datapacks'/PACK/'data/frozendawn/advancement'
+    out.mkdir(parents=True, exist_ok=True)
+    advancement = json.loads((ADVANCEMENTS/'host_has_joined_the_game.json').read_text())
+    advancement.pop('parent', None)
+    (out/'host_has_joined_the_game.json').write_text(json.dumps(advancement, indent=2)+'\n')
+
+
 def prepare_world(source, destination):
     with (source.parent/'session.lock').open('rb') as lock:
         fcntl.lockf(lock, fcntl.LOCK_SH | fcntl.LOCK_NB)
         prepare(source, destination, title=TITLE, namespace=NS, pack=PACK, build_scripts=scripts, surface=128, structures=False)
+    install_advancements(destination)
     level = destination/'level.dat'
     stream = io.BytesIO(gzip.decompress(level.read_bytes()))
     assert stream.read(1) == b'\x0a'
@@ -165,9 +177,12 @@ if __name__ == '__main__':
     parser.add_argument('--destination', type=Path)
     parser.add_argument('--pack-only', type=Path)
     parser.add_argument('--center', action='store_true', help='Print the computed Major Hearth center and exit')
+    parser.add_argument('--advancements', type=Path, help='Add the carried advancement to an existing save')
     args = parser.parse_args()
     if args.center:
         print(*major_center())
+    elif args.advancements:
+        install_advancements(args.advancements)
     elif args.pack_only:
         pack_only(args.pack_only, title=TITLE, namespace=NS, build_scripts=scripts)
     elif args.source and args.destination:
