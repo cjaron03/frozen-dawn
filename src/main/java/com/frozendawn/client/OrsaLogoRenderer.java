@@ -40,10 +40,10 @@ final class OrsaLogoRenderer {
     private static final int FULL_MASTHEAD_WIDTH = 817;
     private static final int FULL_MASTHEAD_HEIGHT = 362;
     private static final int BOOT_DRAW_SIZE = 52;
-    private static final int BOOT_FRAME_SIZE = 208;
-    private static final int BOOT_FRAME_COUNT = 32;
-    private static final int BOOT_SHEET_WIDTH = BOOT_FRAME_SIZE * BOOT_FRAME_COUNT;
-    private static final int BOOT_SHEET_HEIGHT = BOOT_FRAME_SIZE;
+    /** The spinner's sheet (tools/GenerateOrsaBootSheet.java): 64 frames, 32 across and 2 down. */
+    private static final int BOOT_FRAME_COUNT = 64;
+    private static final int BOOT_COLUMNS = 32;
+    private static final int BOOT_ROWS = BOOT_FRAME_COUNT / BOOT_COLUMNS;
 
     private OrsaLogoRenderer() {
     }
@@ -57,9 +57,31 @@ final class OrsaLogoRenderer {
     }
 
     static void drawBoot(GuiGraphics graphics, int centerX, int centerY, int size, float orbitPhase) {
+        drawBoot(graphics, centerX, centerY, size, orbitPhase, 1.0F, false);
+    }
+
+    /** The spinner at a sub-pixel centre and size, faded by alpha; muted is the replay's drained sheet. */
+    static void drawBoot(GuiGraphics graphics, float centerX, float centerY, float size, float orbitPhase, float alpha,
+                         boolean muted) {
+        if (alpha <= 0.0F) {
+            return;
+        }
+        drawBootQuad(graphics, muted ? muted(BOOT_SHEET) : BOOT_SHEET, centerX - size / 2.0F, centerY - size / 2.0F,
+                size, bootFrame(orbitPhase), alpha);
+    }
+
+    /** The spinner frame for an orbit phase, where one orbit is 1. */
+    static int bootFrame(float orbitPhase) {
         float normalizedPhase = orbitPhase - (float) Math.floor(orbitPhase);
-        int frame = Math.floorMod((int) Math.floor(normalizedPhase * BOOT_FRAME_COUNT), BOOT_FRAME_COUNT);
-        drawBootQuad(graphics, centerX - size / 2.0F, centerY - size / 2.0F, size, frame);
+        return Math.floorMod((int) Math.floor(normalizedPhase * BOOT_FRAME_COUNT), BOOT_FRAME_COUNT);
+    }
+
+    /** A spinner frame's texture box on the sheet: min u, min v, max u, max v. */
+    static float[] bootFrameUv(int frame) {
+        int column = frame % BOOT_COLUMNS;
+        int row = frame / BOOT_COLUMNS;
+        return new float[] {column / (float) BOOT_COLUMNS, row / (float) BOOT_ROWS,
+                (column + 1) / (float) BOOT_COLUMNS, (row + 1) / (float) BOOT_ROWS};
     }
 
     static int bootDrawSize() {
@@ -93,22 +115,25 @@ final class OrsaLogoRenderer {
         drawTextureQuad(graphics, muted ? muted(location) : location, x, y, width, height, 1.0F, 1.0F, 1.0F, alpha);
     }
 
-    private static void drawBootQuad(GuiGraphics graphics, float x, float y, int size, int frame) {
+    private static void drawBootQuad(GuiGraphics graphics, ResourceLocation sheet, float x, float y, float size, int frame,
+                                     float alpha) {
         graphics.flush();
-        AbstractTexture texture = Minecraft.getInstance().getTextureManager().getTexture(BOOT_SHEET);
+        AbstractTexture texture = Minecraft.getInstance().getTextureManager().getTexture(sheet);
         texture.setBlurMipmap(true, false);
         try {
             RenderSystem.enableBlend();
             RenderSystem.defaultBlendFunc();
             RenderSystem.setShader(GameRenderer::getPositionTexShader);
-            RenderSystem.setShaderTexture(0, BOOT_SHEET);
+            RenderSystem.setShaderTexture(0, sheet);
+            RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, alpha);
             Matrix4f matrix = graphics.pose().last().pose();
             float x2 = x + size;
             float y2 = y + size;
-            float minU = (float) (frame * BOOT_FRAME_SIZE) / BOOT_SHEET_WIDTH;
-            float maxU = (float) ((frame + 1) * BOOT_FRAME_SIZE) / BOOT_SHEET_WIDTH;
-            float minV = 0.0F;
-            float maxV = (float) BOOT_FRAME_SIZE / BOOT_SHEET_HEIGHT;
+            float[] uv = bootFrameUv(frame);
+            float minU = uv[0];
+            float minV = uv[1];
+            float maxU = uv[2];
+            float maxV = uv[3];
             BufferBuilder buffer = Tesselator.getInstance().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
             buffer.addVertex(matrix, x, y, 0.0F).setUv(minU, minV);
             buffer.addVertex(matrix, x, y2, 0.0F).setUv(minU, maxV);
@@ -116,6 +141,7 @@ final class OrsaLogoRenderer {
             buffer.addVertex(matrix, x2, y, 0.0F).setUv(maxU, minV);
             BufferUploader.drawWithShader(buffer.buildOrThrow());
         } finally {
+            RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
             texture.restoreLastBlurMipmap();
             RenderSystem.disableBlend();
         }
@@ -128,9 +154,20 @@ final class OrsaLogoRenderer {
 
     private static void drawTextureQuad(GuiGraphics graphics, ResourceLocation location, int x, int y, int width,
                                         int height, float red, float green, float blue, float alpha) {
+        drawTextureQuad(graphics, location, x, y, width, height, red, green, blue, alpha, true);
+    }
+
+    /** A whole texture stretched over the box, unfiltered, so its pixels stay square blocks. */
+    static void drawBlocky(GuiGraphics graphics, ResourceLocation location, int x, int y, int width, int height,
+                           float alpha) {
+        drawTextureQuad(graphics, location, x, y, width, height, 1.0F, 1.0F, 1.0F, alpha, false);
+    }
+
+    private static void drawTextureQuad(GuiGraphics graphics, ResourceLocation location, int x, int y, int width,
+                                        int height, float red, float green, float blue, float alpha, boolean blur) {
         graphics.flush();
         AbstractTexture texture = Minecraft.getInstance().getTextureManager().getTexture(location);
-        texture.setBlurMipmap(true, false);
+        texture.setBlurMipmap(blur, false);
         try {
             RenderSystem.enableBlend();
             RenderSystem.defaultBlendFunc();

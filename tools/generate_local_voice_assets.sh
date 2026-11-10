@@ -56,6 +56,9 @@ render() {
     successor) filter='aresample=22050,asetrate=18400,aresample=22050,highpass=f=90,lowpass=f=2500,acompressor=threshold=-24dB:ratio=3.2:attack=5:release=120,aecho=0.7:0.10:54|111:0.12|0.08,loudnorm=I=-17:TP=-2:LRA=8,alimiter=limit=0.96' ;;
     # The Terminus Vault's recording goes over its worn tape bed, which that script owns.
     vault) VAULT_ANNOUNCEMENT_VOICE="$input" bash "$ROOT/tools/generate_terminus_sounds.sh"; return ;;
+    # The replay's ORSA voice breaks off script mid-read; its script renders and joins its own parts.
+    orsa_replay) ORSA_REPLAY_TEXT="$text" PIPER_PYTHON="$PYTHON" PIPER_VOICE="$VOICE" PIPER_DATA_DIR="$DATA_DIR" \
+      bash "$ROOT/tools/generate_orsa_replay_voice.sh"; return ;;
     *) printf 'Unknown processing profile: %s\n' "$profile" >&2; exit 1 ;;
   esac
 
@@ -74,7 +77,7 @@ while IFS=$'\t' read -r relative profile text || [[ -n "${relative:-}" ]]; do
 
   input="$TMP/${count}.wav"
   printf '%s\n' "$text" | "$PYTHON" -m piper -m "$VOICE" --data-dir "$DATA_DIR" -f "$input"
-  render "$profile" "$input" "$output"
+  text="$text" render "$profile" "$input" "$output"
 done < "$MANIFEST"
 
 printf 'Prepared %d local Piper voice assets.\n' "$count"

@@ -16,7 +16,8 @@ public final class ThaevenLoreClientState {
     private static boolean recipeDiscovered;
     private static int[] seenRevisions =
             new int[ThaevenRecordId.values().length];
-    private static int architectLidRevision;
+    private static int[] currentRevisions =
+            new int[ThaevenRecordId.values().length];
 
     private ThaevenLoreClientState() {
     }
@@ -33,7 +34,13 @@ public final class ThaevenLoreClientState {
         System.arraycopy(payload.seenRevisions(), 0, seenRevisions, 0,
                 Math.min(payload.seenRevisions().length,
                         seenRevisions.length));
-        architectLidRevision = Math.max(0, payload.architectLidRevision());
+        currentRevisions = new int[ThaevenRecordId.values().length];
+        for (int index = 0; index < Math.min(
+                payload.currentRevisions().length, currentRevisions.length);
+                index++) {
+            currentRevisions[index] = Math.max(0,
+                    payload.currentRevisions()[index]);
+        }
     }
 
     public static boolean has(ThaevenRecordId record) {
@@ -45,8 +52,7 @@ public final class ThaevenLoreClientState {
     }
 
     public static int currentRevision(ThaevenRecordId record) {
-        return record == ThaevenRecordId.THE_PASSAGE
-                ? architectLidRevision : 0;
+        return currentRevisions[record.ordinal()];
     }
 
     public static boolean recipeDiscovered() {
@@ -59,6 +65,6 @@ public final class ThaevenLoreClientState {
         recipeDiscovered = false;
         seenRevisions = new int[ThaevenRecordId.values().length];
         Arrays.fill(seenRevisions, -1);
-        architectLidRevision = 0;
+        currentRevisions = new int[ThaevenRecordId.values().length];
     }
 }

@@ -317,6 +317,12 @@ public class ModNetworking {
                         () -> ClientHandlers.handleMasterArchitectFourthWallState(payload))
         );
         registrar.playToClient(
+                ThaevenLoopPayload.TYPE,
+                ThaevenLoopPayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(
+                        () -> ClientHandlers.handleThaevenLoop(payload))
+        );
+        registrar.playToClient(
                 MasterArchitectFloodStatePayload.TYPE,
                 MasterArchitectFloodStatePayload.STREAM_CODEC,
                 (payload, context) -> context.enqueueWork(

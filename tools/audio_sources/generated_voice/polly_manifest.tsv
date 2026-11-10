@@ -21,6 +21,7 @@ ui/master_architect/telemetry_restored.ogg	orsa	Telemetry restored. Have a produ
 ui/master_architect/aura_temperature.ogg	orsa	Localized temperature anomaly detected.
 ui/master_architect/aura_fight.ogg	orsa	Local storm convergence exceeds forecast parameters.
 ui/orsa_awakening_voice.ogg	orsa	Vitals: pulse elevated. Respiration irregular. Trauma: minor cranial concussion. Final surface shuttle: departed 03:17 UTC. Current time: 88:14 local. Clock compromised.
+ui/orsa_awakening_voice_replay.ogg	orsa_replay	Vitals: pulse elevated. Respiration irregular. Trauma: none recorded. Enrollee has done this before. Enrollees remaining: one. As projected. Current time: 88:14 local. Clock compromised.
 entity/remnant/radio_room.ogg	radio	We made room for you.
 entity/remnant/radio_warm.ogg	radio	We kept you warm.
 entity/remnant/radio_alone.ogg	radio	You made us alone.

@@ -867,6 +867,8 @@ public class ModSounds {
     public static final DeferredHolder<SoundEvent, SoundEvent> TERMINAL_BOOT_ORSA = register("terminal.boot_orsa");
     public static final DeferredHolder<SoundEvent, SoundEvent> ORSA_AWAKENING_VOICE = register("ui.orsa_awakening_voice");
     public static final DeferredHolder<SoundEvent, SoundEvent> ORSA_AWAKENING_RING = register("ui.orsa_awakening_ring");
+    public static final DeferredHolder<SoundEvent, SoundEvent> ORSA_AWAKENING_VOICE_REPLAY = register("ui.orsa_awakening_voice_replay");
+    public static final DeferredHolder<SoundEvent, SoundEvent> ORSA_BOOT_STING_REPLAY = register("ui.orsa_boot_sting_replay");
     public static final DeferredHolder<SoundEvent, SoundEvent> THAEVEN_CONTACT = register("ui.thaeven_contact");
     public static final DeferredHolder<SoundEvent, SoundEvent> THAEVEN_ORSHA = register("ui.thaeven_orsha");
     public static final DeferredHolder<SoundEvent, SoundEvent> THAEVEN_RESOLVE = register("ui.thaeven_resolve");

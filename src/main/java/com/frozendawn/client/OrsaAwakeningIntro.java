@@ -28,23 +28,29 @@ public final class OrsaAwakeningIntro {
 
     private static final int START_DELAY_TICKS = 40;
     private static final int TOTAL_TICKS = 360;
-    /** The replay runs on until its stuttering eyes are open. */
-    private static final int REPLAY_TOTAL_TICKS = 390;
-    private static final int LOGO_IN_START = 10;
     private static final int STRIPE_IN_START = 24;
     private static final int LIFT_START = 70;
-    private static final int DIAGNOSTIC_START = 96;
+    static final int DIAGNOSTIC_START = 96;
     private static final int FADE_START = 310;
-    private static final int TEMPERATURE_RETURN_START = 338;
-    private static final int LOGO_DRAW_TICKS = 22;
+    /**
+     * The replay's worn voice starts with its first readout line and runs 20.2 seconds; its eyes open once it ends
+     * (owner, 2026-11-09). Its parts start 0, 5.0, 7.8, 11.2 and 15.2 seconds in; the third is off script.
+     */
+    private static final int REPLAY_VOICE_START = DIAGNOSTIC_START + 16;
+    private static final int REPLAY_VOICE_TICKS = 404;
+    private static final int[] REPLAY_VOICE_PARTS = {0, 100, 156, 224, 304};
+    private static final int REPLAY_FADE_START = REPLAY_VOICE_START + REPLAY_VOICE_TICKS + 8;
     private static final int PANEL_OPEN_START = DIAGNOSTIC_START + 5;
-    private static final int PANEL_SHRINK_START = FADE_START - 20;
     /** The replay's glitches, on fixed ticks so every replay is the same (owner mockup, 2026-11-09). */
-    private static final Set<Integer> TEAR_TICKS = Set.of(18, 19, 26, 41, 42, 58, 97, 143, 144, 188, 233, 234, 271);
-    private static final Set<Integer> JUMP_TICKS = Set.of(77, 190, 252);
-    private static final Set<Integer> GHOST_TICKS = Set.of(34, 35, 120, 121, 205);
-    private static final Set<Integer> CORRUPT_TICKS = Set.of(118, 119, 137, 170, 171, 199, 240, 241, 262);
-    private static final Set<Integer> BAR_DROP_TICKS = Set.of(150, 151, 215);
+    private static final Set<Integer> TEAR_TICKS = Set.of(18, 19, 26, 41, 42, 58, 97, 143, 144, 188, 233, 234, 271,
+            300, 301, 372, 440, 441, 488);
+    private static final Set<Integer> JUMP_TICKS = Set.of(77, 190, 252, 395);
+    private static final Set<Integer> GHOST_TICKS = Set.of(34, 35, 120, 121, 205, 310, 311, 430);
+    private static final Set<Integer> CORRUPT_TICKS = Set.of(118, 119, 137, 170, 171, 199, 240, 241, 262, 290, 291,
+            350, 410, 411, 470);
+    private static final Set<Integer> BAR_DROP_TICKS = Set.of(150, 151, 215, 320, 321, 455);
+    /** The old screen dims for a moment on these ticks. */
+    private static final Set<Integer> DIM_TICKS = Set.of(150, 151, 380, 452);
     private static final ResourceLocation AWAKENING_BLUR_EFFECT =
             ResourceLocation.withDefaultNamespace("shaders/post/blur.json");
     private static final float[] STRIPE_Y_RATIOS = {214.0F / 362.0F, 241.0F / 362.0F, 266.0F / 362.0F};
@@ -57,6 +63,8 @@ public final class OrsaAwakeningIntro {
     private static final String TEMP_HUD = KEY + "temp_hud";
     private static final String DEATH_LINE_1 = "screen.frozendawn.payoff.death_line.1";
     private static final String DEATH_LINE_2 = "screen.frozendawn.payoff.death_line.2";
+    /** CH-37: Record III's raw lines, flickering once in the opening's black. */
+    private static final String RAW_LINE = "screen.frozendawn.awakening.raw";
 
     /** The CH-18 lines show on the lead-in's black for these pending-delay ticks, as with immediate respawn. */
     private static final int FLICKER_FROM = 30;
@@ -82,6 +90,8 @@ public final class OrsaAwakeningIntro {
     private static boolean replay;
     private static Palette palette = Palette.OPENING;
     private static boolean flickerDeathLine;
+    private static int bootBeatTicks;
+    private static boolean bootBeatSung;
 
     private static long clientTicks;
     private static long lastBootCue = Long.MIN_VALUE;
@@ -111,7 +121,12 @@ public final class OrsaAwakeningIntro {
     }
 
     private static final int[] OPENING_LINE_START = {16, 32, 48, 64};
-    private static final int[] REPLAY_LINE_START = {16, 34, 64, 130};
+    /** The replay's lines start as its voice reaches each: parts 1, 2, 4 and 5, from the diagnostics' start. */
+    private static final int[] REPLAY_LINE_START = {
+            REPLAY_VOICE_START - DIAGNOSTIC_START + REPLAY_VOICE_PARTS[0],
+            REPLAY_VOICE_START - DIAGNOSTIC_START + REPLAY_VOICE_PARTS[1],
+            REPLAY_VOICE_START - DIAGNOSTIC_START + REPLAY_VOICE_PARTS[3],
+            REPLAY_VOICE_START - DIAGNOSTIC_START + REPLAY_VOICE_PARTS[4]};
     /** Ticks per letter, as a numerator over three: the opening types three letters a tick. */
     private static final int[] REPLAY_THIRDS_PER_CHAR = {1, 3, 5, 1};
 
@@ -127,19 +142,13 @@ public final class OrsaAwakeningIntro {
         return Math.min(length, (ticks - start) * 3 / thirds + 1);
     }
 
-    /** How much of the logo has drawn in, top down. The replay's draw stalls for four ticks. */
-    static float logoReveal(int ticks, boolean replay) {
-        int t = replay && ticks >= 20 && ticks < 24 ? 20 : ticks;
-        return Mth.clamp((t - LOGO_IN_START) / (float) LOGO_DRAW_TICKS, 0.0F, 1.0F);
-    }
-
     /**
      * How much of the view the eyelids still cover: all of it until the fade, then they open. The replay's open a
      * third, sag nearly shut, then open slowly.
      */
     static float lidCover(int ticks, boolean replay) {
-        if (ticks < FADE_START) return 1.0F;
-        int u = ticks - FADE_START;
+        if (ticks < fadeStart(replay)) return 1.0F;
+        int u = ticks - fadeStart(replay);
         if (!replay) return 1.0F - smooth(u / 36.0F);
         float open;
         if (u < 12) open = smooth(u / 12.0F) * 0.35F;
@@ -149,7 +158,27 @@ public final class OrsaAwakeningIntro {
     }
 
     static int totalTicks(boolean replay) {
-        return replay ? REPLAY_TOTAL_TICKS : TOTAL_TICKS;
+        return replay ? REPLAY_FADE_START + 80 : TOTAL_TICKS;
+    }
+
+    /** When the eyes start to open: the replay's wait for its voice to end. */
+    static int fadeStart(boolean replay) {
+        return replay ? REPLAY_FADE_START : FADE_START;
+    }
+
+    /** When the voice starts: the opening's with the masthead, the replay's with its first readout line. */
+    static int voiceStart(boolean replay) {
+        return replay ? REPLAY_VOICE_START : 0;
+    }
+
+    /** Whether the replay's pulse trace lies flat: all through the voice's off-script line. */
+    static boolean flatlines(boolean replay, int ticks) {
+        return replay && ticks >= REPLAY_VOICE_START + REPLAY_VOICE_PARTS[2]
+                && ticks < REPLAY_VOICE_START + REPLAY_VOICE_PARTS[3];
+    }
+
+    private static int temperatureReturnStart() {
+        return fadeStart(replay) + 28;
     }
 
     /** Whether a readout line shows corrupted letters on this tick. Only the replay glitches, never its enrollee line. */
@@ -192,6 +221,8 @@ public final class OrsaAwakeningIntro {
         replay = lines == REPLAY;
         palette = replay ? Palette.MUTED : Palette.OPENING;
         flickerDeathLine = flicker;
+        bootBeatTicks = bootBeatLength(replay);
+        bootBeatSung = false;
         bootCueTicks = 0;
         pendingDelayTicks = START_DELAY_TICKS;
         ticks = 0;
@@ -210,8 +241,18 @@ public final class OrsaAwakeningIntro {
         blackoutApplied = true;
     }
 
+    /** The ORSA beat's length after the lead-in: the replay's runs longer by its stalls. */
+    static int bootBeatLength(boolean replay) {
+        return replay ? OrsaBootBeat.REPLAY_TICKS : OrsaBootBeat.TICKS;
+    }
+
+    /** Whether the opening, the replay or a boot cue is running: overlays that must not cut across it wait. */
+    public static boolean busy() {
+        return active || bootCueTicks > 0;
+    }
+
     public static boolean shouldSuppressSurvivalHud() {
-        return FirstBootEpigraph.active() || active && ticks < TEMPERATURE_RETURN_START;
+        return FirstBootEpigraph.active() || active && ticks < temperatureReturnStart();
     }
 
     public static boolean shouldSuppressNonIntroSound(ResourceLocation soundLocation) {
@@ -224,8 +265,14 @@ public final class OrsaAwakeningIntro {
         if (!soundLocation.getNamespace().equals(FrozenDawn.MOD_ID)) {
             return true;
         }
-        String path = soundLocation.getPath();
-        return !path.equals("ui.orsa_awakening_voice") && !path.equals("ui.orsa_awakening_ring");
+        return !introSound(soundLocation.getPath());
+    }
+
+    /** The intros' own sounds, which play through the silence they make. */
+    static boolean introSound(String path) {
+        return path.equals("ui.orsa_awakening_voice") || path.equals("ui.orsa_awakening_ring")
+                || path.equals("terminal.boot_orsa") || path.equals("ui.orsa_boot_sting_replay")
+                || path.equals("ui.orsa_awakening_voice_replay");
     }
 
     public static void render(GuiGraphics graphics, DeltaTracker deltaTracker) {
@@ -247,10 +294,19 @@ public final class OrsaAwakeningIntro {
             if (flickerDeathLine) {
                 renderDeathLineFlicker(graphics, mc.font, width, height);
             }
+            renderRawLines(graphics, mc.font, width, height);
+            return;
+        }
+        if (bootBeatTicks > 0) {
+            float beat = bootBeatLength(replay) - bootBeatTicks + deltaTracker.getGameTimeDeltaPartialTick(true);
+            OrsaBootBeat.render(graphics, width, height, beat, palette.scan, replay);
+            if (replay) {
+                OrsaNeglect.render(graphics, width, height, (int) beat, 1.0F);
+            }
             return;
         }
 
-        float fadeOut = 1.0F - smooth((ticks - FADE_START) / 24.0F);
+        float fadeOut = 1.0F - smooth((ticks - fadeStart(replay)) / 24.0F);
         float coldWake = smooth(ticks / 24.0F) * fadeOut;
 
         boolean jump = replay && JUMP_TICKS.contains(ticks);
@@ -263,6 +319,12 @@ public final class OrsaAwakeningIntro {
         renderDiagnostics(graphics, mc.font, width, height);
         if (jump) {
             graphics.pose().popPose();
+        }
+        if (replay) {
+            OrsaNeglect.render(graphics, width, height, ticks + bootBeatLength(true), fadeOut);
+            if (DIM_TICKS.contains(ticks)) {
+                graphics.fill(0, 0, width, height, withAlpha(0xFF000000, 0.35F * fadeOut));
+            }
         }
         renderTemperatureReturn(graphics, mc.font);
     }
@@ -293,15 +355,29 @@ public final class OrsaAwakeningIntro {
             stopAllSounds(mc);
             blackoutApplied = true;
         }
+        // The pause menu pauses the voice, so the clock that keeps the readout on it holds too.
+        if (mc.isPaused()) {
+            return;
+        }
 
         if (pendingDelayTicks > 0) {
             pendingDelayTicks--;
             return;
         }
 
+        if (bootBeatTicks > 0) {
+            if (!bootBeatSung) {
+                mc.getSoundManager().play(SimpleSoundInstance.forUI(
+                        (replay ? ModSounds.ORSA_BOOT_STING_REPLAY : ModSounds.TERMINAL_BOOT_ORSA).get(), 1.0F));
+                bootBeatSung = true;
+            }
+            bootBeatTicks--;
+            return;
+        }
+
         syncBlur(mc);
 
-        if (!ringingPlayed && ticks >= FADE_START - 26) {
+        if (!ringingPlayed && ticks >= fadeStart(replay) - 26) {
             // The replay's ring is the same sound, lower and quieter: 0.6 of the UI default 0.25.
             mc.getSoundManager().play(replay
                     ? SimpleSoundInstance.forUI(ModSounds.ORSA_AWAKENING_RING.get(), 0.8F, 0.6F * 0.25F)
@@ -309,14 +385,16 @@ public final class OrsaAwakeningIntro {
             ringingPlayed = true;
         }
 
-        if (!soundPlayed) {
-            mc.getSoundManager().play(SimpleSoundInstance.forUI(ModSounds.ORSA_AWAKENING_VOICE.get(), 1.0F));
+        if (!soundPlayed && ticks >= voiceStart(replay)) {
+            // The replay's voice reads its own lines, and breaks off script (owner preview, 2026-11-09).
+            mc.getSoundManager().play(SimpleSoundInstance.forUI(
+                    (replay ? ModSounds.ORSA_AWAKENING_VOICE_REPLAY : ModSounds.ORSA_AWAKENING_VOICE).get(), 1.0F));
             soundPlayed = true;
         }
 
         ticks++;
 
-        if (!temperatureBlinkStarted && ticks >= TEMPERATURE_RETURN_START) {
+        if (!temperatureBlinkStarted && ticks >= temperatureReturnStart()) {
             TemperatureHud.startIntroBlink();
             temperatureBlinkStarted = true;
         }
@@ -384,10 +462,10 @@ public final class OrsaAwakeningIntro {
     }
 
     private static float blurAmount() {
-        if (pendingDelayTicks > 0 || ticks < FADE_START) {
+        if (pendingDelayTicks > 0 || ticks < fadeStart(replay)) {
             return 0.0F;
         }
-        return 1.0F - smooth((ticks - FADE_START) / 44.0F);
+        return 1.0F - smooth((ticks - fadeStart(replay)) / 44.0F);
     }
 
     private static void renderWakeWash(GuiGraphics graphics, int width, int height, float coldWake, float fadeOut) {
@@ -421,44 +499,37 @@ public final class OrsaAwakeningIntro {
     }
 
     private static void renderMasthead(GuiGraphics graphics, int width, int height, float fadeOut) {
-        float reveal = logoReveal(ticks, replay);
-        if (reveal <= 0.0F || fadeOut <= 0.0F) {
+        // The ORSA beat hands the masthead over already drawn, in both intros.
+        if (fadeOut <= 0.0F) {
             return;
         }
 
         float lift = smooth((ticks - LIFT_START) / 34.0F);
-        int largeWidth = Math.min((int) (width * 0.56F), 480);
+        int largeWidth = OrsaBootBeat.mastheadBox(width, height)[2];
         int compactWidth = Math.min((int) (width * 0.34F), 230);
         int logoWidth = (int) Mth.lerp(lift, largeWidth, compactWidth);
         int logoHeight = Math.max(1, (int) (logoWidth / OrsaLogoRenderer.mastheadAspectRatio()));
         int startY = (int) (height * 0.37F - logoHeight / 2.0F);
         int endY = Math.max(18, (int) (height * 0.10F));
         int logoY = (int) Mth.lerp(lift, startY, endY);
-        // One sideways jolt as the draw-in settles.
-        int logoX = width / 2 - logoWidth / 2 + (ticks == 34 ? 3 : ticks == 35 ? -1 : 0);
+        // One sideways jolt as the replay's draw-in settles.
+        int logoX = width / 2 - logoWidth / 2 + (replay && ticks == 34 ? 3 : replay && ticks == 35 ? -1 : 0);
 
         if (!replay) {
             int glowColor = withAlpha(0xFF3DE1F6, 0.08F * fadeOut);
             graphics.fill(logoX + 8, logoY + 8, logoX + logoWidth - 8, logoY + logoHeight - 8, glowColor);
         }
 
-        // Drawn in row by row, four pixels at a time, with a bright scan line at the leading edge.
-        int rows = reveal >= 1.0F ? logoHeight : (int) (logoHeight * reveal) / 4 * 4;
-        if (rows <= 0) {
-            return;
-        }
-        graphics.enableScissor(0, logoY, width, logoY + rows);
         OrsaLogoRenderer.drawAwakeningBase(graphics, logoX, logoY, logoWidth, logoHeight, fadeOut, replay);
         renderAwakeningStripes(graphics, logoX, logoY, logoWidth, logoHeight, fadeOut);
-        graphics.disableScissor();
-        if (rows < logoHeight) {
-            graphics.fill(logoX, logoY + rows, logoX + logoWidth, logoY + rows + 1, withAlpha(palette.scan, 0.9F * fadeOut));
+        if (replay) {
+            OrsaNeglect.wear(graphics, logoX, logoY, logoWidth, logoHeight, fadeOut);
         }
 
         if (replay && TEAR_TICKS.contains(ticks)) {
             RandomSource random = RandomSource.create(ticks);
             for (int k = 0; k < 3; k++) {
-                int sliceY = logoY + random.nextInt(Math.max(1, rows / 4)) * 4;
+                int sliceY = logoY + random.nextInt(Math.max(1, logoHeight / 4)) * 4;
                 int sliceHeight = 2 + random.nextInt(5);
                 int dx = random.nextInt(19) - 9;
                 graphics.fill(logoX, sliceY, logoX + logoWidth, sliceY + sliceHeight, 0xFF000000);
@@ -494,7 +565,7 @@ public final class OrsaAwakeningIntro {
     }
 
     private static void renderDiagnostics(GuiGraphics graphics, Font font, int width, int height) {
-        if (ticks < DIAGNOSTIC_START || ticks >= FADE_START) {
+        if (ticks < DIAGNOSTIC_START || ticks >= fadeStart(replay)) {
             return;
         }
 
@@ -504,9 +575,10 @@ public final class OrsaAwakeningIntro {
         int y = Math.min(height - panelHeight - 22, Math.max(96, height / 2 - 6));
 
         // On the way out, the panel shrinks into the corner the temperature readout returns to.
-        boolean shrinking = ticks >= PANEL_SHRINK_START;
+        int shrinkStart = fadeStart(replay) - 20;
+        boolean shrinking = ticks >= shrinkStart;
         if (shrinking) {
-            float k = smooth((ticks - PANEL_SHRINK_START) / 20.0F);
+            float k = smooth((ticks - shrinkStart) / 20.0F);
             x = (int) Mth.lerp(k, x, TemperatureHud.HUD_X);
             y = (int) Mth.lerp(k, y, TemperatureHud.HUD_Y);
             panelWidth = (int) Mth.lerp(k, panelWidth, 54);
@@ -583,7 +655,7 @@ public final class OrsaAwakeningIntro {
             return;
         }
         int color = withAlpha(palette.bar, 0.9F);
-        if (replay && ticks >= 176 && ticks < 190) {
+        if (flatlines(replay, ticks)) {
             graphics.fill(x, y, x + width, y + 1, color);
             return;
         }
@@ -611,7 +683,7 @@ public final class OrsaAwakeningIntro {
     }
 
     private static void renderTemperatureReturn(GuiGraphics graphics, Font font) {
-        float cue = smooth((ticks - TEMPERATURE_RETURN_START) / 16.0F);
+        float cue = smooth((ticks - temperatureReturnStart()) / 16.0F);
         if (cue <= 0.0F) {
             return;
         }
@@ -665,6 +737,41 @@ public final class OrsaAwakeningIntro {
         int x = TemperatureHud.HUD_X;
         int y = TemperatureHud.HUD_Y + 20;
         graphics.drawString(font, Component.translatable(TEMP_HUD), x, y, withAlpha(0xFF9FEAF2, cue * blink), false);
+    }
+
+    /** Whether Record III's raw lines read on this lead-in tick: the opening only, in the CH-18 flicker's window. */
+    static boolean rawLinesShown(boolean replay, int pendingDelayTicks) {
+        return inFlickerWindow(replay, pendingDelayTicks) && !dropout(pendingDelayTicks);
+    }
+
+    /** On the flicker's dropout frames the raw lines fracture into ink glyphs instead (owner mockup, 2026-11-09). */
+    static boolean rawLinesFracture(boolean replay, int pendingDelayTicks) {
+        return inFlickerWindow(replay, pendingDelayTicks) && dropout(pendingDelayTicks);
+    }
+
+    private static boolean inFlickerWindow(boolean replay, int pendingDelayTicks) {
+        return !replay && pendingDelayTicks <= FLICKER_FROM && pendingDelayTicks > FLICKER_TO;
+    }
+
+    private static boolean dropout(int pendingDelayTicks) {
+        int shown = FLICKER_FROM - pendingDelayTicks;
+        return shown == 2 || shown == 4 || shown == 17;
+    }
+
+    /** The raw lines on the opening's black, in the archive's ghosting ink, with no label or band. */
+    private static void renderRawLines(GuiGraphics graphics, Font font, int width, int height) {
+        boolean fracture = rawLinesFracture(replay, pendingDelayTicks);
+        if (!fracture && !rawLinesShown(replay, pendingDelayTicks)) {
+            return;
+        }
+        int shown = FLICKER_FROM - pendingDelayTicks;
+        String raw = Component.translatable(RAW_LINE).getString();
+        int y = height / 2 - font.lineHeight;
+        for (int line = 0; line < 2; line++) {
+            String text = fracture ? ThaevenInk.fracture(raw, line + shown) : raw;
+            ThaevenInk.drawInked(graphics, font, text, width / 2, y + line * (font.lineHeight + 1),
+                    shown + START_DELAY_TICKS, line, 1.0F, 1.0F);
+        }
     }
 
     /** About a second of the CH-18 lines on the black, dropping out for a frame near each end. */

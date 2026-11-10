@@ -29,6 +29,7 @@ public final class ThaevenLoreScreen extends Screen {
     private ThaevenRecordId record;
     private ThaevenRecordDefinition definition;
     private int page;
+    private boolean pageChosen;
     private Button previousRecord;
     private Button nextRecord;
 
@@ -63,6 +64,10 @@ public final class ThaevenLoreScreen extends Screen {
         nextPage.setTooltip(Tooltip.create(Component.translatable(
                 "screen.frozendawn.thaeven_archive.next_page")));
         updateRecordButtons();
+        if (!pageChosen) {
+            pageChosen = true;
+            page = firstChangedDisplayPage();
+        }
     }
 
     @Override
@@ -105,7 +110,8 @@ public final class ThaevenLoreScreen extends Screen {
                 ? "screen.frozendawn.thaeven_archive.raw"
                 : "screen.frozendawn.thaeven_archive.reconstruction");
         renderPage(graphics, margin, top, panelWidth, bottom - top,
-                displayedLines(displayPage, panelWidth), !rawOnly, heading);
+                displayedLines(displayPage, panelWidth), !rawOnly,
+                reInks(displayPage.logicalPage()), heading);
         graphics.drawCenteredString(font,
                 Component.literal(definition.title()).withStyle(
                         ChatFormatting.DARK_GRAY), width / 2, 9, 0xFFE7E1D2);
@@ -128,12 +134,12 @@ public final class ThaevenLoreScreen extends Screen {
 
     private void renderPage(GuiGraphics graphics, int x, int y, int w, int h,
                             List<net.minecraft.util.FormattedCharSequence> lines,
-                            boolean translated,
+                            boolean translated, boolean reInks,
                             Component heading) {
         graphics.fill(x, y, x + w, y + h, 0xFFF0E9D7);
         graphics.fill(x + 3, y + 3, x + w - 3, y + h - 3, 0xFFDBD0B7);
         graphics.drawString(font, heading, x + 12, y + 10, 0xFF625947, false);
-        boolean morphing = translated
+        boolean morphing = translated && reInks
                 && inkState() != ThaevenInkState.RESOLVED
                 && inkState() != ThaevenInkState.UNRESOLVED;
         float progress = revealProgress();
@@ -170,10 +176,44 @@ public final class ThaevenLoreScreen extends Screen {
                     "screen.frozendawn.thaeven_archive.undiscovered").getString();
         }
         int revision = ThaevenLoreClientState.currentRevision(record);
-        return isRewetting()
+        return isRewetting() && reInks(translatedPage)
                 ? definition.translatedPageMorphing(translatedPage, revision,
                 revealProgress())
                 : definition.translatedPage(translatedPage, revision);
+    }
+
+    /** Whether this logical page's text changes in the pending revision: only those pages re-ink. */
+    private boolean reInks(int logicalPage) {
+        if (rawOnly || !ThaevenLoreClientState.has(record)) {
+            return false;
+        }
+        return definition.changedPages(
+                ThaevenLoreClientState.seenRevision(record),
+                ThaevenLoreClientState.currentRevision(record))
+                .contains(logicalPage);
+    }
+
+    /** While a revision is pending, the first display page of the first changed page; otherwise the first page. */
+    private int firstChangedDisplayPage() {
+        if (rawOnly || !ThaevenLoreClientState.has(record)) {
+            return 0;
+        }
+        int seen = ThaevenLoreClientState.seenRevision(record);
+        int current = ThaevenLoreClientState.currentRevision(record);
+        if (seen >= current) {
+            return 0;
+        }
+        List<Integer> changed = definition.changedPages(seen, current);
+        if (changed.isEmpty()) {
+            return 0;
+        }
+        List<DisplayPage> pages = displayPages();
+        for (int index = 0; index < pages.size(); index++) {
+            if (pages.get(index).logicalPage() == changed.get(0)) {
+                return index;
+            }
+        }
+        return 0;
     }
 
     private boolean isRewetting() {
@@ -259,7 +299,7 @@ public final class ThaevenLoreScreen extends Screen {
             if (ThaevenLoreClientState.has(candidate)) {
                 record = candidate;
                 definition = ThaevenRecordDefinition.load(record);
-                page = 0;
+                page = firstChangedDisplayPage();
                 updateRecordButtons();
                 return;
             }

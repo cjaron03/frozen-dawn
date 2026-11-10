@@ -52,31 +52,37 @@ class PayoffLookTest {
             assertEquals(45, OrsaAwakeningIntro.readoutChars(false, line, at + 15, 45), "Three letters a tick");
         }
         assertEquals(45, OrsaAwakeningIntro.readoutChars(true, 0, 16 + 15, 45), "The unchanged first line types quickly");
-        int trauma = OrsaAwakeningIntro.readoutChars(true, 1, 34 + 10, 45);
-        int enrollee = OrsaAwakeningIntro.readoutChars(true, 2, 64 + 10, 45);
+        int trauma = OrsaAwakeningIntro.readoutChars(true, 1, 116 + 10, 45);
+        int enrollee = OrsaAwakeningIntro.readoutChars(true, 2, 240 + 10, 45);
         assertTrue(trauma > 0 && trauma < 45, "The trauma line types slowly");
         assertTrue(enrollee > 0 && enrollee < trauma, "The enrollee line types slowest");
-        int fade = 214;
+        int shrink = OrsaAwakeningIntro.fadeStart(true) - 20 - OrsaAwakeningIntro.DIAGNOSTIC_START;
         for (int line = 0; line < 4; line++) {
             int len = "ENROLLEES REMAINING: 1 / AS PROJECTED".length();
-            assertEquals(len, OrsaAwakeningIntro.readoutChars(true, line, fade - 30, len), "Line " + line + " done before the fade");
+            assertEquals(len, OrsaAwakeningIntro.readoutChars(true, line, shrink - 30, len), "Line " + line + " done before the panel goes");
         }
     }
 
+    /** The replay's worn voice starts with the readout, each line types as the voice reaches it, and the eyes wait. */
     @Test
-    void theLogoDrawsInRowByRowAndStallsInTheReplay() {
-        assertEquals(0.0F, OrsaAwakeningIntro.logoReveal(9, false));
-        assertEquals(1.0F, OrsaAwakeningIntro.logoReveal(32, false), "Drawn by tick 32");
-        float last = 0.0F;
-        for (int t = 10; t <= 32; t++) {
-            float reveal = OrsaAwakeningIntro.logoReveal(t, false);
-            assertTrue(reveal >= last, "The opening never draws backwards");
-            last = reveal;
+    void theReplaysReadoutFollowsItsVoice() {
+        assertEquals(0, OrsaAwakeningIntro.voiceStart(false), "The opening's voice starts with the masthead");
+        int voice = OrsaAwakeningIntro.voiceStart(true);
+        assertEquals(OrsaAwakeningIntro.DIAGNOSTIC_START + 16, voice, "With the first line");
+        // The voice's parts start 0, 5.0, 7.8, 11.2 and 15.2 s in and it runs 20.2 s; the third is off script.
+        int[] lineAt = {0, 100, 224, 304};
+        for (int line = 0; line < 4; line++) {
+            int at = voice - OrsaAwakeningIntro.DIAGNOSTIC_START + lineAt[line];
+            assertEquals(-1, OrsaAwakeningIntro.readoutChars(true, line, at - 1, 45), "Line " + line + " waits for the voice");
+            assertEquals(1, OrsaAwakeningIntro.readoutChars(true, line, at, 45), "Line " + line + " types as it is spoken");
         }
-        float stall = OrsaAwakeningIntro.logoReveal(20, true);
-        for (int t = 21; t <= 23; t++) assertEquals(stall, OrsaAwakeningIntro.logoReveal(t, true), "The replay stalls at " + t);
-        assertTrue(OrsaAwakeningIntro.logoReveal(23, true) < OrsaAwakeningIntro.logoReveal(23, false));
-        assertEquals(1.0F, OrsaAwakeningIntro.logoReveal(40, true), "Then finishes");
+        assertEquals(310, OrsaAwakeningIntro.fadeStart(false));
+        assertTrue(OrsaAwakeningIntro.fadeStart(true) >= voice + 404, "The eyes open after the voice ends");
+        assertTrue(OrsaAwakeningIntro.fadeStart(true) <= voice + 420, "And not long after");
+        for (int t = voice + 156; t < voice + 224; t += 4) {
+            assertTrue(OrsaAwakeningIntro.flatlines(true, t), "The pulse flatlines through the off-script line: " + t);
+        }
+        for (int t = 0; t < 700; t++) assertFalse(OrsaAwakeningIntro.flatlines(false, t), "Never in the opening");
     }
 
     @Test
@@ -89,18 +95,20 @@ class PayoffLookTest {
             last = cover;
         }
         assertEquals(0.0F, OrsaAwakeningIntro.lidCover(346, false), "Open by 346");
-        float partly = OrsaAwakeningIntro.lidCover(322, true);
+        int fade = OrsaAwakeningIntro.fadeStart(true);
+        assertEquals(1.0F, OrsaAwakeningIntro.lidCover(fade - 1, true), "The replay's stay shut until its own fade");
+        float partly = OrsaAwakeningIntro.lidCover(fade + 12, true);
         assertTrue(partly < 1.0F && partly > 0.5F, "The replay's eyes open a little");
-        assertTrue(OrsaAwakeningIntro.lidCover(330, true) > partly, "Then sag");
-        assertEquals(0.0F, OrsaAwakeningIntro.lidCover(380, true), "Then open slowly");
+        assertTrue(OrsaAwakeningIntro.lidCover(fade + 20, true) > partly, "Then sag");
+        assertEquals(0.0F, OrsaAwakeningIntro.lidCover(fade + 70, true), "Then open slowly");
         assertEquals(360, OrsaAwakeningIntro.totalTicks(false));
-        assertTrue(OrsaAwakeningIntro.totalTicks(true) >= 380, "The replay runs until its eyes are open");
+        assertTrue(OrsaAwakeningIntro.totalTicks(true) >= fade + 70, "The replay runs until its eyes are open");
     }
 
     @Test
     void theEnrolleeLineNeverGlitches() {
         boolean others = false;
-        for (int t = 0; t < 400; t++) {
+        for (int t = 0; t < 700; t++) {
             assertFalse(OrsaAwakeningIntro.corrupts(true, 2, t), "The enrollee line, tick " + t);
             for (int line = 0; line < 4; line++) assertFalse(OrsaAwakeningIntro.corrupts(false, line, t), "The opening never glitches");
             others |= OrsaAwakeningIntro.corrupts(true, 0, t) || OrsaAwakeningIntro.corrupts(true, 1, t) || OrsaAwakeningIntro.corrupts(true, 3, t);

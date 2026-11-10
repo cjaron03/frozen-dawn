@@ -24,7 +24,7 @@
 | 3 | `feat/payoff-reveal` | 1 (shared flag, Terminus migration), 2 (CH-18), 3 (CH-19), 4 (CH-20), 5 (boot cue and its toggle), 6d steps 2 and 2b (Projection Review, the replay) | 2 merged. Built 2026-11-09: tests, both gates, the owner's visual pass and the branch review passed. The pass also approved a power-on boot cue, a typed death line, an overhauled first-join opening and a muted, glitching replay; branch 6 builds on that `OrsaAwakeningIntro`. Merged into `feat/maeve-director` as PR 173 (748c5ddf) |
 | 4 | `feat/returned-respawn-echo` | 5a (detuned ring on replacement), 5b (Vel-thae transmissions), 5c (no ring once erased) | 1 merged |
 | 5 | `feat/heart-memory-node` | 6b (node 5 from the ledgers), 5d (Kevin heard) | 1 merged |
-| 6 | `feat/thaeven-loop` | 6e beats 1 to 4, the Record I page | 3 merged, since both edit `OrsaAwakeningIntro`. Plan: [thaeven-loop-plan.md](thaeven-loop-plan.md), approved 2026-11-09 |
+| 6 | `feat/thaeven-loop` | 6e beats 1 to 4, the Record I page | 3 merged, since both edit `OrsaAwakeningIntro`. Plan: [thaeven-loop-plan.md](thaeven-loop-plan.md), approved 2026-11-09. Built 2026-11-09: tests, the owner's visual pass and the branch review passed, and the review's three fixes are in. The pass also added a first-boot ORSA beat and sting, the sting on terminal and Aurora boots, and a worn, glitched replay beat and voice. PR into `feat/maeve-director` awaits the owner's merge approval |
 | 7 | `feat/ending-b-welcome` | 6c | 1 merged |
 | 8 | `feat/kevins-blanket` | 6g | 1 merged |
 | 9 | `feat/the-descent` | 6f and chamber zero, in slices | Still a draft: its own canon IDs (with the CH-27 revision), mockups, sound sign-off, then a creative-only slice before world generation |

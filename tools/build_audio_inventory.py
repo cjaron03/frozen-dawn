@@ -23,6 +23,8 @@ def generated_voice_paths() -> set[str]:
 VOICE_PATHS = generated_voice_paths()
 INTERFACE_PATHS = {
     "ui/orsa_awakening_ring.ogg",
+    "ui/orsa_boot_sting.ogg",
+    "ui/orsa_boot_sting_replay.ogg",
     "ui/suit/leak_hiss.ogg",
     "ui/suit/oxygen_beep.ogg",
 }

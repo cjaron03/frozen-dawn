@@ -397,7 +397,7 @@
   "terminal.boot_orsa": {
     "category": "master",
     "sounds": [
-      "frozendawn:terminal/orsa_boot"
+      "frozendawn:ui/orsa_boot_sting"
     ]
   },
   "ui.orsa_awakening_voice": {
@@ -414,6 +414,24 @@
     "sounds": [
       {
         "name": "frozendawn:ui/orsa_awakening_ring",
+        "stream": true
+      }
+    ]
+  },
+  "ui.orsa_awakening_voice_replay": {
+    "category": "master",
+    "sounds": [
+      {
+        "name": "frozendawn:ui/orsa_awakening_voice_replay",
+        "stream": true
+      }
+    ]
+  },
+  "ui.orsa_boot_sting_replay": {
+    "category": "master",
+    "sounds": [
+      {
+        "name": "frozendawn:ui/orsa_boot_sting_replay",
         "stream": true
       }
     ]

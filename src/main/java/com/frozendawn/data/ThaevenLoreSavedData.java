@@ -2,6 +2,7 @@ package com.frozendawn.data;
 
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.homo.HearthSelectionPolicy;
+import com.frozendawn.lore.ThaevenLoopBeat;
 import com.frozendawn.lore.ThaevenRecordId;
 import com.frozendawn.lore.ThaevenSemanticKey;
 import java.util.EnumMap;
@@ -40,6 +41,11 @@ public final class ThaevenLoreSavedData extends SavedData {
     private BlockPos humanCarrierCratePos;
     private boolean humanCarrierReconciled;
     private boolean legacyAuthorityReconciled;
+    /** CH-37's loop: the beats shown in this world, and who is owed the broken and the returning lines. */
+    private int loopShown;
+    private UUID loopBrokenOwed;
+    private UUID loopReturningOwed;
+    private boolean loopReturningArmed;
 
     public ThaevenLoreSavedData() {
         for (ThaevenSemanticKey key : ThaevenSemanticKey.values()) {
@@ -74,6 +80,12 @@ public final class ThaevenLoreSavedData extends SavedData {
             data.semanticRevisions.put(key,
                     Math.max(0, semantics.getInt(key.name())));
         }
+        data.loopShown = tag.getInt("loopShown");
+        data.loopBrokenOwed = tag.hasUUID("loopBrokenOwed")
+                ? tag.getUUID("loopBrokenOwed") : null;
+        data.loopReturningOwed = tag.hasUUID("loopReturningOwed")
+                ? tag.getUUID("loopReturningOwed") : null;
+        data.loopReturningArmed = tag.getBoolean("loopReturningArmed");
         ListTag relics = tag.getList("velAnRelics", Tag.TAG_COMPOUND);
         for (Tag entry : relics) {
             if (entry instanceof CompoundTag relic && relic.hasUUID("hearth")
@@ -129,6 +141,14 @@ public final class ThaevenLoreSavedData extends SavedData {
             semantics.putInt(entry.getKey().name(), entry.getValue());
         }
         tag.put("semanticRevisions", semantics);
+        tag.putInt("loopShown", loopShown);
+        if (loopBrokenOwed != null) {
+            tag.putUUID("loopBrokenOwed", loopBrokenOwed);
+        }
+        if (loopReturningOwed != null) {
+            tag.putUUID("loopReturningOwed", loopReturningOwed);
+            tag.putBoolean("loopReturningArmed", loopReturningArmed);
+        }
         ListTag relics = new ListTag();
         for (Map.Entry<UUID, BlockPos> entry : velAnRelics.entrySet()) {
             CompoundTag relic = new CompoundTag();
@@ -173,7 +193,7 @@ public final class ThaevenLoreSavedData extends SavedData {
                 archive == null ? 0L : archive.discoveredMask,
                 archive != null && archive.recipeDiscovered,
                 seen,
-                semanticRevision(ThaevenSemanticKey.ARCHITECT_LID_REVEAL));
+                currentRevisions());
     }
 
     public boolean discoverRecipe(UUID playerId) {
@@ -202,9 +222,21 @@ public final class ThaevenLoreSavedData extends SavedData {
     }
 
     public int currentRevision(ThaevenRecordId record) {
-        return record == ThaevenRecordId.THE_PASSAGE
-                ? semanticRevision(ThaevenSemanticKey.ARCHITECT_LID_REVEAL)
-                : 0;
+        return switch (record) {
+            case THE_PASSAGE -> semanticRevision(
+                    ThaevenSemanticKey.ARCHITECT_LID_REVEAL);
+            case VEL_AN -> semanticRevision(ThaevenSemanticKey.PAYOFF_SOURCE);
+            default -> 0;
+        };
+    }
+
+    /** Every record's current revision, indexed by record ordinal. */
+    public int[] currentRevisions() {
+        int[] current = new int[ThaevenRecordId.values().length];
+        for (ThaevenRecordId record : ThaevenRecordId.values()) {
+            current[record.ordinal()] = currentRevision(record);
+        }
+        return current;
     }
 
     public boolean markViewed(
@@ -224,6 +256,73 @@ public final class ThaevenLoreSavedData extends SavedData {
 
     public int semanticRevision(ThaevenSemanticKey key) {
         return semanticRevisions.getOrDefault(key, 0);
+    }
+
+    public int loopShown() {
+        return loopShown;
+    }
+
+    /** Marks a loop beat shown in this world; false if it already was. */
+    public boolean markLoopShown(ThaevenLoopBeat beat) {
+        if ((loopShown & beat.bit()) != 0) {
+            return false;
+        }
+        loopShown |= beat.bit();
+        setDirty();
+        return true;
+    }
+
+    public Optional<UUID> loopBrokenOwed() {
+        return Optional.ofNullable(loopBrokenOwed);
+    }
+
+    public void setLoopBrokenOwed(UUID playerId) {
+        loopBrokenOwed = playerId;
+        setDirty();
+    }
+
+    public Optional<UUID> loopReturningOwed() {
+        return Optional.ofNullable(loopReturningOwed);
+    }
+
+    /** Owes a player the return; it stays unarmed until they are seen outside the arena. */
+    public void setLoopReturningOwed(UUID playerId) {
+        loopReturningOwed = playerId;
+        loopReturningArmed = false;
+        setDirty();
+    }
+
+    /** Whether the owed player has left the arena since their respawn, so their next entry is a return. */
+    public boolean loopReturningArmed() {
+        return loopReturningArmed;
+    }
+
+    public void armLoopReturning() {
+        if (!loopReturningArmed) {
+            loopReturningArmed = true;
+            setDirty();
+        }
+    }
+
+    /** Puts the shown beats back to a recorded mask; GameTests only. */
+    public void setLoopShownForTest(int shown) {
+        loopShown = shown;
+        setDirty();
+    }
+
+    /** Forgets every shown beat and every owed line. */
+    public void resetLoop() {
+        loopShown = 0;
+        loopBrokenOwed = null;
+        loopReturningOwed = null;
+        loopReturningArmed = false;
+        setDirty();
+    }
+
+    /** Puts one world semantic back to a recorded revision; GameTests only. */
+    public void setSemanticForTest(ThaevenSemanticKey key, int revision) {
+        semanticRevisions.put(key, Math.max(0, revision));
+        setDirty();
     }
 
     public boolean unlockSemantic(ThaevenSemanticKey key) {
@@ -384,7 +483,7 @@ public final class ThaevenLoreSavedData extends SavedData {
             long discoveredMask,
             boolean recipeDiscovered,
             int[] seenRevisions,
-            int architectLidRevision) {
+            int[] currentRevisions) {
     }
 
     public record HeartScarAnchor(

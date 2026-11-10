@@ -7,6 +7,7 @@ import com.frozendawn.init.ModBlocks;
 import com.frozendawn.init.ModItems;
 import com.frozendawn.lore.ThaevenLoreManager;
 import com.frozendawn.lore.ThaevenRecordId;
+import com.frozendawn.lore.ThaevenLoopBeat;
 import com.frozendawn.lore.ThaevenSemanticKey;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
@@ -26,6 +27,10 @@ final class ThaevenLoreCommand {
     }
 
     static LiteralArgumentBuilder<CommandSourceStack> commands() {
+        return commands(!net.neoforged.fml.loading.FMLEnvironment.production);
+    }
+
+    static LiteralArgumentBuilder<CommandSourceStack> commands(boolean development) {
         return Commands.literal("lore")
                 .executes(context -> status(context, false))
                 .then(Commands.literal("status")
@@ -63,6 +68,7 @@ final class ThaevenLoreCommand {
                 .then(Commands.literal("reset-world-semantic")
                         .then(Commands.literal("confirm")
                                 .executes(ThaevenLoreCommand::resetWorldSemantics)))
+                .then(loopCommands(development))
                 .then(Commands.literal("explain")
                         .then(Commands.argument("record", StringArgumentType.word())
                                 .suggests(FrozenDawnCommandSuggestions.enums(
@@ -90,7 +96,9 @@ final class ThaevenLoreCommand {
                 snapshot.recipeDiscovered() ? "discovered" : "locked");
         if (verbose) {
             FrozenDawnCommandOutput.detail(context.getSource(), "Architect revision",
-                    snapshot.architectLidRevision());
+                    snapshot.currentRevisions()[ThaevenRecordId.THE_PASSAGE.ordinal()]);
+            FrozenDawnCommandOutput.detail(context.getSource(), "Payoff source revision",
+                    snapshot.currentRevisions()[ThaevenRecordId.VEL_AN.ordinal()]);
             FrozenDawnCommandOutput.detail(context.getSource(), "Heart Scar",
                     data.heartScarAnchor()
                             .map(anchor -> anchor.dimension().location() + " "
@@ -192,6 +200,93 @@ final class ThaevenLoreCommand {
         return 1;
     }
 
+    /** Development builds only: play a beat or owe the broken lines, for the loop's playtest. */
+    private static LiteralArgumentBuilder<CommandSourceStack> loopCommands(boolean development) {
+        LiteralArgumentBuilder<CommandSourceStack> loop = Commands.literal("loop")
+                .then(Commands.literal("status")
+                        .executes(ThaevenLoreCommand::loopStatus))
+                .then(Commands.literal("reset")
+                        .then(Commands.literal("confirm")
+                                .executes(ThaevenLoreCommand::loopReset)));
+        if (development) {
+            loop.then(Commands.literal("play")
+                            .then(Commands.argument("beat", StringArgumentType.word())
+                                    .suggests(FrozenDawnCommandSuggestions.enums(
+                                            ThaevenLoopBeat.class))
+                                    .executes(ThaevenLoreCommand::loopPlay)))
+                    .then(Commands.literal("owe-broken")
+                            .executes(ThaevenLoreCommand::loopOweBroken));
+        }
+        return loop;
+    }
+
+    /** CH-37's loop: which beats this world has shown, and who is owed the broken and returning lines. */
+    private static int loopStatus(CommandContext<CommandSourceStack> context) {
+        var server = context.getSource().getServer();
+        ThaevenLoreSavedData data = ThaevenLoreSavedData.get(server);
+        FrozenDawnCommandOutput.heading(context.getSource(), "Lore / loop");
+        for (ThaevenLoopBeat beat : ThaevenLoopBeat.values()) {
+            FrozenDawnCommandOutput.line(context.getSource(),
+                    beat.name().toLowerCase(java.util.Locale.ROOT),
+                    (data.loopShown() & beat.bit()) != 0 ? "shown" : "not shown");
+        }
+        FrozenDawnCommandOutput.line(context.getSource(), "Broken owed",
+                ownerName(server, data.loopBrokenOwed()));
+        FrozenDawnCommandOutput.line(context.getSource(), "Returning owed",
+                ownerName(server, data.loopReturningOwed()));
+        return 1;
+    }
+
+    private static String ownerName(net.minecraft.server.MinecraftServer server,
+                                    java.util.Optional<java.util.UUID> owner) {
+        return owner.map(id -> {
+            ServerPlayer online = server.getPlayerList().getPlayer(id);
+            return online == null ? id.toString() : online.getGameProfile().getName();
+        }).orElse("nobody");
+    }
+
+    /** Plays a beat on the caller's overlay to judge its look; it marks nothing shown. */
+    private static int loopPlay(CommandContext<CommandSourceStack> context)
+            throws CommandSyntaxException {
+        ServerPlayer player = context.getSource().getPlayerOrException();
+        String name = StringArgumentType.getString(context, "beat");
+        ThaevenLoopBeat beat;
+        try {
+            beat = ThaevenLoopBeat.valueOf(name.toUpperCase(java.util.Locale.ROOT));
+        } catch (IllegalArgumentException exception) {
+            context.getSource().sendFailure(Component.literal("Unknown loop beat: " + name));
+            return 0;
+        }
+        net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(player,
+                new com.frozendawn.network.ThaevenLoopPayload(beat.ordinal()));
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Played " + beat.name().toLowerCase(java.util.Locale.ROOT) + " (preview, nothing marked shown)"), false);
+        return 1;
+    }
+
+    /** Owes the caller the broken lines, as an arena death would, so their next respawn plays them for real. */
+    private static int loopOweBroken(CommandContext<CommandSourceStack> context)
+            throws CommandSyntaxException {
+        ServerPlayer player = context.getSource().getPlayerOrException();
+        ThaevenLoreSavedData data = ThaevenLoreSavedData.get(context.getSource().getServer());
+        if ((data.loopShown() & ThaevenLoopBeat.BODY_BROKE.bit()) != 0) {
+            context.getSource().sendFailure(Component.literal(
+                    "The broken lines already showed in this world; reset the loop first"));
+            return 0;
+        }
+        data.setLoopBrokenOwed(player.getUUID());
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Owed the broken lines: they play on your next respawn"), true);
+        return 1;
+    }
+
+    private static int loopReset(CommandContext<CommandSourceStack> context) {
+        ThaevenLoreSavedData.get(context.getSource().getServer()).resetLoop();
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Reset the loop: no beat shown, nothing owed"), true);
+        return 1;
+    }
+
     private static int resetWorldSemantics(
             CommandContext<CommandSourceStack> context) {
         ThaevenLoreSavedData.get(context.getSource().getServer())
@@ -217,7 +312,7 @@ final class ThaevenLoreCommand {
         ThaevenLoreSavedData.ArchiveSnapshot snapshot =
                 data.snapshot(player.getUUID());
         int seen = snapshot.seenRevisions()[record.ordinal()];
-        int current = data.currentRevision(record);
+        int current = snapshot.currentRevisions()[record.ordinal()];
         FrozenDawnCommandOutput.heading(context.getSource(),
                 "Lore / " + record.serializedName());
         FrozenDawnCommandOutput.line(context.getSource(), "Discovered",

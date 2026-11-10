@@ -168,6 +168,8 @@ public final class PayoffState extends SavedData {
             data.fired = true;
             data.firedBy = player.getUUID();
             data.replayPending = true;
+            // CH-37: Record I's last line names its source once the payoff has fired.
+            ThaevenLoreManager.unlockSemantic(server, ThaevenSemanticKey.PAYOFF_SOURCE);
             // Ahead of vanilla's kill packet, which opens the death screen.
             PacketDistributor.sendToPlayer(player, new PayoffDeathLinePayload());
         }
