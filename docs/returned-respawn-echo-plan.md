@@ -2,11 +2,11 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task, inline. The owner avoids subagents, except the one branch review at the end. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Tie the player's return to the Returned without a word of explanation. First, make the respawn ring audible: the shipped file is about 29 dB too quiet, so the opening, the boot cue and the replay have never been heard. Then a replaced Hearth resident comes back with a faint, slowed, detuned copy of the player's respawn ring. A Hearth that watched the player die registers the anomaly in its next transmission, at most twice per world. After the Heart falls, neither happens again.
+**Goal:** Tie the player's return to the Returned without a word of explanation. First, make the respawn ring and the Thaeven transmission sounds audible: the shipped files are 20 to 37 dB too quiet, so the opening's ring, the boot cue, the replay and every transmission have played close to silent. Then a replaced Hearth resident comes back with a faint, slowed, detuned copy of the player's respawn ring. A Hearth that watched the player die registers the anomaly in its next transmission, at most twice per world. After the Heart falls, neither happens again.
 
 **Architecture:** One asset fix, then two carriers in the existing Hearth systems:
 
-- **The level fix.** The ring is regenerated from its own script at the boot sting's level. No code changes; every place that plays it gets louder at once.
+- **The level fix.** The ring is regenerated from its own script at the boot sting's level, and the four Thaeven beds get one flat gain each to the same peak. No code changes; every place that plays them gets louder at once.
 - **The ring.** One new positional sound event that plays the shipped respawn ring file, slowed in `sounds.json`. `HearthPopulationManager` plays it inside its replacement path, so the existing erased check stops it with no new code.
 - **The notice.** A fourth `ThaevenTransmissionType`, drawn by the existing transmission overlay. A small new world SavedData records who is owed it and how many times it has played.
 
@@ -32,6 +32,7 @@
    - **The fix.** In the ring's block of the script, raise the final gain so the encoded file peaks at -8.5 dB (within 0.5 dB), matching the sting. The mix, partials, timing and length stay as they are. Regenerate only the ring: `oxygen_beep.ogg` and `leak_hiss.ogg` must come out byte for byte unchanged (restore them from git if the encoder rewrites them).
    - **The record.** Rerun `tools/build_audio_inventory.py` so `docs/audio/SHIPPED_AUDIO_INVENTORY.tsv` carries the new hash. Its provenance (interface procedural, Frozen Dawn original) does not change.
    - **The code volumes stay** (opening 0.25, replay 0.15 at pitch 0.8, boot cue 0.0875) unless the owner asks otherwise in Task 0. They were set against a silent file, so the owner hears all three there before anything is built.
+   - **The Thaeven transmission beds too (owner, 2026-11-09).** `ui/thaeven_contact.ogg` peaks at -38.0 dB, `thaeven_orsha.ogg` at -39.1, `thaeven_resolve.ogg` at -45.2 and `thaeven_interrupt.ogg` at -28.3. The notice plays inside a transmission, so it inherits them. They have no generator script (they are owner-authored, per `tools/audio_sources/master_architect/SOURCES.md`), so each file is decoded, given one flat gain to peak at -8.5 dB (within 0.5 dB), and re-encoded with `oggenc -q 5`, mono 44.1 kHz as now. Nothing else in the sound changes. Update their hashes in that `SOURCES.md` section and in the inventory. They also play from the Surveyor Lens, the Heart's Cognitive Load and the Heart memory nodes, so those get louder too; the owner hears them in the pass.
 1. **5a, which residents ring.** Only `RETURNED` and `HUNTER` (both `ReturnedEntity`). The Mimic and the Architect come back silent: the section is "The Returned share your sound". Owner can widen this.
 2. **5a, when it rings.** Only on a replacement: the spawn branch of `HearthPopulationManager.reconcile` reached with a non-null binding (the resident died and its delay ran out). A Hearth's first population, an adoption and `/fd hearth population respawn` (which clears the bindings first) never ring.
 3. **5a, the sound.** New event `entity.returned.replacement_ring` in `sounds.json` and `ModSounds`, pointing at the shipped `frozendawn:ui/orsa_awakening_ring` file (mono, so it is positional), category `hostile`, not streamed, `attenuation_distance` 12. Pitch and volume live in `sounds.json` and come from the owner's pick in Task 0; the starting candidates are pitch 0.71 (slower and about six semitones down, between two clean intervals, so it reads detuned) at volume 0.2, quieter than the opening's ring. It plays once, at the new resident's feet, via `level.playSound(null, ...)`. The respawn ring file and its `ui.orsa_awakening_ring` event are not touched.
@@ -63,15 +64,21 @@
 ### Task 0: The ring's level and the sound prototype
 
 **Files:**
-- Modify: `tools/generate_interface_sounds.sh` (the ring's final gain), `src/main/resources/assets/frozendawn/sounds/ui/orsa_awakening_ring.ogg`, `docs/audio/SHIPPED_AUDIO_INVENTORY.tsv`
+- Modify:
+  - `tools/generate_interface_sounds.sh` (the ring's final gain)
+  - `src/main/resources/assets/frozendawn/sounds/ui/orsa_awakening_ring.ogg`
+  - `src/main/resources/assets/frozendawn/sounds/ui/thaeven_{contact,orsha,resolve,interrupt}.ogg`
+  - `tools/audio_sources/master_architect/SOURCES.md` (the four Thaeven hashes)
+  - `docs/audio/SHIPPED_AUDIO_INVENTORY.tsv`
 
-- [ ] **Step 1: Fix the level** per Ruling 0, regenerating only the ring.
-- [ ] **Step 2: Verify** with `ffmpeg -i <ring> -af volumedetect -f null -`. Expected: `max_volume` between -9.0 and -8.0 dB, and `git diff --stat` shows the ring, the script and the inventory only.
-- [ ] **Step 3: Render the previews** from the fixed file into the scratchpad, at the levels the game plays them, resampled the way Minecraft's pitch does it (slower and lower together):
+- [ ] **Step 1: Fix the levels** per Ruling 0: the ring from its script, the four Thaeven beds by flat gain.
+- [ ] **Step 2: Verify** each of the five files with `ffmpeg -i <file> -af volumedetect -f null -`. Expected: `max_volume` between -9.0 and -8.0 dB, the length unchanged to 0.05 s, and `git diff --stat` showing only the files above.
+- [ ] **Step 3: Render the previews** from the fixed files into the scratchpad, at the levels the game plays them, resampled the way Minecraft's pitch does it (slower and lower together):
   - the opening at volume 0.25, the replay at pitch 0.8 and volume 0.15, and the boot cue at volume 0.0875;
-  - the Returned's ring at pitch 0.67, 0.71 and 0.79, each at volume 0.2.
-- [ ] **Step 4: Play them for the owner.** Record the echo's pick in Ruling 3, and any change to the three existing levels in Ruling 0. Task 1 waits for it; Task 2 doesn't. The transmission reuses the existing overlay as it is, so it needs no mockup.
-- [ ] **Step 5: Commit** `fix: bring the respawn ring up to the boot sting's level`.
+  - the Returned's ring at pitch 0.67, 0.71 and 0.79, each at volume 0.2;
+  - one transmission's sounds in order, at their volumes in `ThaevenTransmissionOverlay` (contact 0.88, orsha 0.82, resolve 0.72, interrupt 0.8), before and after.
+- [ ] **Step 4: Play them for the owner.** Record the echo's pick in Ruling 3, and any change to the existing levels in Ruling 0. Task 1 waits for it; Task 2 doesn't. The transmission reuses the existing overlay as it is, so it needs no mockup.
+- [ ] **Step 5: Commit** `fix: bring the respawn ring and the Thaeven beds up to the boot sting's level`.
 
 ### Task 1: The replacement ring
 
@@ -139,6 +146,7 @@
 - [ ] **Step 2: Run** `./gradlew architectVerify` in the background. Expected: BUILD SUCCESSFUL. Then run `./gradlew architectMonkey`, with the same expectation.
 - [ ] **Step 3: Launch** with `python3 tools/prepare_returned_respawn_echo_playtest.py`, then `./gradlew runClientLab -PfdLabWorld='Returned Echo Check' --console=plain` in the background. The owner checks:
   - The opening (`/fd payoff opening`) and a respawn: the ring is now heard in both, the boot cue's quietly.
+  - A first transmission (`/fd hearth transmission replay`): its contact, Orsha and resolve sounds are now heard, and breaking contact plays the interrupt.
   - Killing a Returned and waiting out its 60 seconds: the replacement comes back with the slowed ring, heard only up close.
   - Dying in sight of the Hearth, respawning and walking back: the notice plays on contact.
   - A death behind cover, which owes nothing.
