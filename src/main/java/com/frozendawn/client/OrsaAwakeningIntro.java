@@ -70,13 +70,13 @@ public final class OrsaAwakeningIntro {
     private static final int FLICKER_FROM = 30;
     private static final int FLICKER_TO = 10;
     /**
-     * A respawn's boot cue: its length, its ring's volume, and how long it rests after playing (five minutes). The
+     * A respawn's boot cue: its length, its ring's volume, and how long it rests after playing (one minute, owner 2026-11-09). The
      * volume is 0.35 of the opening's ring, which plays at the UI default of 0.25.
      */
     private static final int BOOT_POWER_ON_TICKS = 8;
     private static final int BOOT_CUE_TICKS = BOOT_POWER_ON_TICKS + 40;
     private static final float BOOT_CUE_VOLUME = 0.35F * 0.25F;
-    private static final long BOOT_CUE_REST_TICKS = 6000L;
+    private static final long BOOT_CUE_REST_TICKS = 1200L;
 
     private static int pendingDelayTicks;
     private static int ticks;

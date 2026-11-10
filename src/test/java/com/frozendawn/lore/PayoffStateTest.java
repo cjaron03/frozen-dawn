@@ -127,12 +127,13 @@ class PayoffStateTest {
         for (String line : replay) assertFalse(line.toLowerCase().contains("continuity"), line);
     }
 
+    /** Owner, 2026-11-09: once the ring is audible, a respawn's boot cue rests one minute. */
     @Test
-    void theBootCueRestsFiveMinutes() {
+    void theBootCueRestsOneMinute() {
         assertTrue(OrsaAwakeningIntro.bootCueDue(0, Long.MIN_VALUE), "Nothing has played yet");
         assertTrue(OrsaAwakeningIntro.bootCueDue(Long.MAX_VALUE, Long.MIN_VALUE));
-        assertFalse(OrsaAwakeningIntro.bootCueDue(10_000 + 5999, 10_000));
-        assertTrue(OrsaAwakeningIntro.bootCueDue(10_000 + 6000, 10_000));
+        assertFalse(OrsaAwakeningIntro.bootCueDue(10_000 + 1199, 10_000));
+        assertTrue(OrsaAwakeningIntro.bootCueDue(10_000 + 1200, 10_000));
     }
 
     /** Patchouli formatting removed: line breaks become newlines, every other code goes. */
