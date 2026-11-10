@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Fresh Returned Echo Check: the re-levelled rings and Thaeven beds, the replacement ring and the return notice.
 
-A flat Survival lab in Phase 0 with the world clock paused. On first join the setup force-selects the Hearths around
-spawn, matures the Major Hearth to INTACT and moves spawn beside it, so the scene builds and its population arrives
-while the owner watches. The first transmission is left to play naturally on the first approach. Buttons die, raise a
+A flat Survival lab in Phase 2, since a Hearth builds only on caught-up chunks, with the world clock paused. On first
+join the setup force-selects the Hearths around spawn, matures the Major Hearth to INTACT and moves spawn beside it,
+so the scene builds and its population arrives while the owner watches. The first transmission is left to play naturally on the first approach. Buttons die, raise a
 wall for a blocked death, give a sword, read and owe the notice, and replay the opening and the transmission.
 Difficulty is locked and advancement popups are off. Never overwrites a save.
 Usage (lab client, run-lab/ directory):
@@ -100,7 +100,8 @@ def scripts():
              'gamerule doMobSpawning false', 'gamerule doDaylightCycle false', 'gamerule doWeatherCycle false',
              'gamerule doFireTick false', 'gamerule keepInventory true', 'gamerule doImmediateRespawn false',
              'gamerule commandBlockOutput false', 'gamerule announceAdvancements false',
-             'time set 6000', 'weather clear', 'fd world pause',
+             # A Hearth builds only on caught-up chunks, and chunk catch-up starts in Phase 2.
+             'time set 6000', 'weather clear', 'fd world set phase 2', 'fd world pause',
              'tp @s 0.5 65 0.5 180 0',
              'execute at @s run fd hearth force-select',
              f'fd hearth advance ticks {INTACT_TICKS}',
@@ -144,12 +145,13 @@ def prepare_world(source, destination):
     nbt.string(stream)
     root = nbt.read(stream, 10)
     assert root['Data'][1]['WorldGenSettings'][1]['seed'] == (4, SEED), 'The Hearth center assumes the lab seed'
-    root['Data'][1].update({'DifficultyLocked': (1, 1), 'GameType': (3, 0)})
+    # A revised fixture goes in a new folder; its menu name follows the folder so the two stay apart.
+    root['Data'][1].update({'DifficultyLocked': (1, 1), 'GameType': (3, 0), 'LevelName': (8, destination.name)})
     level.write_bytes(gzip.compress(b'\x0a'+nbt.utf('')+nbt.write(10, root)))
     cx, cz = major_center()
     report = destination/'preparation.json'
     info = json.loads(report.read_text())
-    info.update({'mode': 'Survival', 'phase': '0, paused', 'majorHearthCenter': [cx, cz],
+    info.update({'mode': 'Survival', 'phase': '2, paused', 'majorHearthCenter': [cx, cz],
                  'spawn': [cx, SURFACE_Y, cz + SPAWN_OFFSET],
                  'fixtures': 'force-selected INTACT Major Hearth; buttons for death, a wall, a sword, the notice, '
                              'the transmission replay and the opening'})
