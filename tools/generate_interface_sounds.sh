@@ -41,7 +41,7 @@ ffmpeg -hide_banner -loglevel error -y \
 [2:a]vibrato=f=0.71:d=0.04,adelay=520|520,afade=t=in:st=0:d=0.38,afade=t=out:st=4.8:d=2.35,volume=0.12[c];\
 [3:a]adelay=920|920,afade=t=in:st=0:d=0.28,afade=t=out:st=4.2:d=2.8,volume=0.07[d];\
 [a][b][c][d]amix=inputs=4:normalize=0,aecho=0.7:0.45:93|211:0.18|0.10,\
-highpass=f=95,lowpass=f=5200,alimiter=limit=0.90,volume=0.54[out]" \
+highpass=f=95,lowpass=f=5200,alimiter=limit=0.90,volume=15.4[out]" \
   -map "[out]" -ac 1 -ar 44100 -c:a pcm_s16le "$TMP"
 encode "$TMP" "$SOUNDS/ui/orsa_awakening_ring.ogg"
 

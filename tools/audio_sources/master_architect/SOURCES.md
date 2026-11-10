@@ -70,13 +70,13 @@ The project owner's authorship declaration also covers these non-spoken
 Thaeven interface beds. They contain no generated voice performance:
 
 - `src/main/resources/assets/frozendawn/sounds/ui/thaeven_contact.ogg`
-  (`d625e4aafa3b39b84cebbba272fdd2c1cc0ec83d0c738e9e958c45c9190cd8fc`)
+  (`28065719a34b44113eaf914e7e4e5024176ef1e92ca767298922830c94d84afa`)
 - `src/main/resources/assets/frozendawn/sounds/ui/thaeven_interrupt.ogg`
-  (`7210ecc335cfbdd0533f8a81c90590fcb34c12c8c33ed1cf9eba598889529520`)
+  (`fc273a4d3d035ea5d2867367425f268584cfdbb7c141661d81fe73c2b56a71e0`)
 - `src/main/resources/assets/frozendawn/sounds/ui/thaeven_orsha.ogg`
-  (`1f708deaea2b5e8584bce5008560be87c7844d8c295580023071fbc982eaade0`)
+  (`08e6754a9da9c55037aa62d8fef08d7836389693da03e1c225ab0d7989d559c8`)
 - `src/main/resources/assets/frozendawn/sounds/ui/thaeven_resolve.ogg`
-  (`98391ad27c095646ec27c3436c32cd7d6c1203c75ba07e7ac0dfa43526acd751`)
+  (`f4b1833712c23d98bdfbd39e0ae8da130df87e7aa1a4de440217960e2c785a69`)
 
 Heart Successor voices are tracked separately in the generated-voice ledger.
 
