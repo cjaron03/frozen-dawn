@@ -92,14 +92,24 @@ public final class ThaevenLoopManager {
         }
     }
 
-    /** The owed player's first step back into the arena shows the returning line, once. */
+    /**
+     * The owed player's first step back into the arena shows the returning line, once. A respawn inside the arena is
+     * not a return: the player must be seen outside it first. Spectators and creative players are not in the fight.
+     */
     static void tick(ServerPlayer player, boolean inArena) {
         MinecraftServer server = player.getServer();
-        if (!inArena || !player.isAlive() || erased(server)) {
+        if (erased(server)) {
             return;
         }
         ThaevenLoreSavedData data = ThaevenLoreSavedData.get(server);
         if (!data.loopReturningOwed().map(player.getUUID()::equals).orElse(false)) {
+            return;
+        }
+        if (!inArena) {
+            data.armLoopReturning();
+            return;
+        }
+        if (!data.loopReturningArmed() || !player.isAlive() || player.isSpectator() || player.isCreative()) {
             return;
         }
         data.setLoopReturningOwed(null);

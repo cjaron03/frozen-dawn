@@ -45,6 +45,7 @@ public final class ThaevenLoreSavedData extends SavedData {
     private int loopShown;
     private UUID loopBrokenOwed;
     private UUID loopReturningOwed;
+    private boolean loopReturningArmed;
 
     public ThaevenLoreSavedData() {
         for (ThaevenSemanticKey key : ThaevenSemanticKey.values()) {
@@ -84,6 +85,7 @@ public final class ThaevenLoreSavedData extends SavedData {
                 ? tag.getUUID("loopBrokenOwed") : null;
         data.loopReturningOwed = tag.hasUUID("loopReturningOwed")
                 ? tag.getUUID("loopReturningOwed") : null;
+        data.loopReturningArmed = tag.getBoolean("loopReturningArmed");
         ListTag relics = tag.getList("velAnRelics", Tag.TAG_COMPOUND);
         for (Tag entry : relics) {
             if (entry instanceof CompoundTag relic && relic.hasUUID("hearth")
@@ -145,6 +147,7 @@ public final class ThaevenLoreSavedData extends SavedData {
         }
         if (loopReturningOwed != null) {
             tag.putUUID("loopReturningOwed", loopReturningOwed);
+            tag.putBoolean("loopReturningArmed", loopReturningArmed);
         }
         ListTag relics = new ListTag();
         for (Map.Entry<UUID, BlockPos> entry : velAnRelics.entrySet()) {
@@ -282,9 +285,23 @@ public final class ThaevenLoreSavedData extends SavedData {
         return Optional.ofNullable(loopReturningOwed);
     }
 
+    /** Owes a player the return; it stays unarmed until they are seen outside the arena. */
     public void setLoopReturningOwed(UUID playerId) {
         loopReturningOwed = playerId;
+        loopReturningArmed = false;
         setDirty();
+    }
+
+    /** Whether the owed player has left the arena since their respawn, so their next entry is a return. */
+    public boolean loopReturningArmed() {
+        return loopReturningArmed;
+    }
+
+    public void armLoopReturning() {
+        if (!loopReturningArmed) {
+            loopReturningArmed = true;
+            setDirty();
+        }
     }
 
     /** Puts the shown beats back to a recorded mask; GameTests only. */
@@ -298,6 +315,7 @@ public final class ThaevenLoreSavedData extends SavedData {
         loopShown = 0;
         loopBrokenOwed = null;
         loopReturningOwed = null;
+        loopReturningArmed = false;
         setDirty();
     }
 

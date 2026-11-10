@@ -11,6 +11,7 @@ import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.GameType;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
@@ -126,6 +127,41 @@ public final class ThaevenLoopGameTest {
         int all = ThaevenLoopBeat.BODY_BROKE.bit() | ThaevenLoopBeat.RETURNING.bit();
         h.assertTrue(shown(server) == all, "A entering shows the return");
         h.assertTrue(lore(server).loopReturningOwed().isEmpty(), "Once");
+        h.succeed();
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY, batch = "thaevenloop")
+    public static void aRespawnInsideTheArenaIsNotAReturn(GameTestHelper h) {
+        MinecraftServer server = freshLoop(h);
+        var a = PayoffGameTest.player(h, "loop_inside_a");
+        ThaevenLoopManager.died(a, true);
+        ThaevenLoopManager.respawned(a, true);
+        ThaevenLoopManager.tick(a, true);
+        h.assertTrue((shown(server) & ThaevenLoopBeat.RETURNING.bit()) == 0, "Waking inside the arena is no return");
+        ThaevenLoopManager.tick(a, false);
+        ThaevenLoopManager.tick(a, true);
+        h.assertTrue((shown(server) & ThaevenLoopBeat.RETURNING.bit()) != 0, "Leaving and coming back is");
+        h.succeed();
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY, batch = "thaevenloop")
+    public static void onlyAPlayingReturnCounts(GameTestHelper h) {
+        MinecraftServer server = freshLoop(h);
+        var a = PayoffGameTest.player(h, "loop_mode_a");
+        ThaevenLoopManager.died(a, true);
+        ThaevenLoopManager.respawned(a, true);
+        ThaevenLoopManager.tick(a, false);
+        try {
+            a.setGameMode(GameType.SPECTATOR);
+            ThaevenLoopManager.tick(a, true);
+            a.setGameMode(GameType.CREATIVE);
+            ThaevenLoopManager.tick(a, true);
+        } finally {
+            a.setGameMode(GameType.SURVIVAL);
+        }
+        h.assertTrue((shown(server) & ThaevenLoopBeat.RETURNING.bit()) == 0, "A spectator or creative entry shows nothing");
+        ThaevenLoopManager.tick(a, true);
+        h.assertTrue((shown(server) & ThaevenLoopBeat.RETURNING.bit()) != 0, "A survival entry does");
         h.succeed();
     }
 
