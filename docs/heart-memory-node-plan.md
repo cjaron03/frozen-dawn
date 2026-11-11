@@ -13,7 +13,7 @@
 
 **Spec:** [payoff-roadmap.md](payoff-roadmap.md), branch 5. Notion: the payoff branch spec, sections 6b and 5d. Canon: Canon Hierarchy CH-18 and CH-29, with CH-11, CH-28 and The Edge §13.2 and §13.13.
 
-**Status:** drafted 2026-11-10 for the owner's approval. Nothing is built.
+**Status:** approved by the owner as written, 2026-11-10, Rulings 1 to 7 included. Nothing is built.
 
 **Branch:** `feat/heart-memory-node` in `/Volumes/SSD/Work/frozen-dawn-heart-memory-node`, cut from `feat/maeve-director` once this plan has merged. The build session starts in that worktree and works there. PR into `feat/maeve-director`. The branch review runs on Opus, because the branch changes client/server sync (`HeartMemoryNodeEventPayload`) and merges into a long-lived branch.
 
