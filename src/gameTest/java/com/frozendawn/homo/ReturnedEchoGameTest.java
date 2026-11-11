@@ -41,27 +41,35 @@ public final class ReturnedEchoGameTest {
     }
 
     @GameTest(template = GameTestTemplates.EMPTY, batch = "returnedecho")
-    public static void noRingInAnErasedWorld(GameTestHelper h) {
-        MinecraftServer server = fresh(h);
+    public static void aKilledReturnedRingsThenRests(GameTestHelper h) {
+        ServerLevel level = h.getLevel();
+        fresh(h);
+        BlockPos at = h.absolutePos(BlockPos.ZERO);
+        HearthPopulationManager.clearRingRest();
         long rings = HearthPopulationManager.replacementRings();
-        erased(server, true);
-        try {
-            h.assertTrue(HearthPopulationManager.reconcileNow(server.overworld()) == 0,
-                    "No resident comes back once the Heart has fallen");
-            h.assertTrue(HearthPopulationManager.replacementRings() == rings, "And nothing rings");
-        } finally {
-            erased(server, false);
-        }
+        h.assertTrue(HearthPopulationManager.ringForDeath(level, HearthPopulationRole.RETURNED, at),
+                "A killed Returned rings at once");
+        h.assertFalse(HearthPopulationManager.ringForDeath(level, HearthPopulationRole.HUNTER, at),
+                "A second kill inside ten minutes is silent");
+        HearthPopulationManager.clearRingRest();
+        h.assertFalse(HearthPopulationManager.ringForDeath(level, HearthPopulationRole.MIMIC, at),
+                "A killed Mimic is silent");
+        h.assertTrue(HearthPopulationManager.replacementRings() == rings + 1, "One ring counted");
         h.succeed();
     }
 
     @GameTest(template = GameTestTemplates.EMPTY, batch = "returnedecho")
-    public static void aDebugRespawnDoesNotRing(GameTestHelper h) {
+    public static void noRingInAnErasedWorld(GameTestHelper h) {
+        ServerLevel level = h.getLevel();
         MinecraftServer server = fresh(h);
-        long rings = HearthPopulationManager.replacementRings();
-        HearthPopulationManager.respawnForDebug(server.overworld());
-        h.assertTrue(HearthPopulationManager.replacementRings() == rings,
-                "A debug respawn clears the bindings first, so nothing it spawns is a replacement");
+        HearthPopulationManager.clearRingRest();
+        erased(server, true);
+        try {
+            h.assertFalse(HearthPopulationManager.ringForDeath(level, HearthPopulationRole.RETURNED,
+                    h.absolutePos(BlockPos.ZERO)), "Nothing rings once the Heart has fallen");
+        } finally {
+            erased(server, false);
+        }
         h.succeed();
     }
 

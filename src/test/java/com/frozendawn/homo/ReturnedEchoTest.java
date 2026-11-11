@@ -14,16 +14,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /** Payoff branch 4: the replacement ring (5a) and the return notice (5b), neither after the Heart (5c). */
 class ReturnedEchoTest {
 
+    /** Owner, 2026-11-10: the ring plays at the kill, so the player cannot walk away before it; never on a respawn. */
     @Test
-    void onlyAReplacedReturnedRings() {
-        assertTrue(HearthPopulationPolicy.ringsOnSpawn(HearthPopulationRole.RETURNED, true));
-        assertTrue(HearthPopulationPolicy.ringsOnSpawn(HearthPopulationRole.HUNTER, true));
-        for (HearthPopulationRole role : HearthPopulationRole.values()) {
-            assertFalse(HearthPopulationPolicy.ringsOnSpawn(role, false), role + " first population is silent");
-        }
-        assertFalse(HearthPopulationPolicy.ringsOnSpawn(HearthPopulationRole.MIMIC, true), "The Mimic comes back silent");
-        assertFalse(HearthPopulationPolicy.ringsOnSpawn(HearthPopulationRole.ARCHITECT, true),
-                "The Architect comes back silent");
+    void onlyAKilledReturnedRings() {
+        assertTrue(HearthPopulationPolicy.ringsOnDeath(HearthPopulationRole.RETURNED));
+        assertTrue(HearthPopulationPolicy.ringsOnDeath(HearthPopulationRole.HUNTER));
+        assertFalse(HearthPopulationPolicy.ringsOnDeath(HearthPopulationRole.MIMIC), "The Mimic dies silent");
+        assertFalse(HearthPopulationPolicy.ringsOnDeath(HearthPopulationRole.ARCHITECT), "The Architect dies silent");
+        assertFalse(HearthPopulationPolicy.ringsOnDeath(null), "A Returned outside the population dies silent");
     }
 
     /** Owner, 2026-11-09: killing Returned over and over rings at most once every ten minutes. */
