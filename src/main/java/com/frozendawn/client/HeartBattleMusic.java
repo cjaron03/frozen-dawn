@@ -1,6 +1,7 @@
 package com.frozendawn.client;
 
 import com.frozendawn.FrozenDawn;
+import com.frozendawn.homo.HeartMemoryReveal;
 import com.frozendawn.init.ModSounds;
 import com.frozendawn.network.HeartMusicStatePayload;
 import net.minecraft.client.Minecraft;
@@ -18,6 +19,7 @@ import net.neoforged.neoforge.client.event.ClientTickEvent;
 public final class HeartBattleMusic {
     private static HeartTrack track;
     private static boolean active;
+    private static boolean ducked;
 
     private HeartBattleMusic() {
     }
@@ -42,6 +44,11 @@ public final class HeartBattleMusic {
         }
         active = true;
         ensureTrack();
+    }
+
+    /** Client-side only: holds the Heart's music down while the last memory node shows. */
+    public static void setDucked(boolean value) {
+        ducked = value;
     }
 
     public static boolean isActive() {
@@ -77,6 +84,7 @@ public final class HeartBattleMusic {
     }
 
     private static void hardStop() {
+        ducked = false;
         if (track != null) {
             Minecraft.getInstance().getSoundManager().stop(track);
             track = null;
@@ -92,8 +100,13 @@ public final class HeartBattleMusic {
             looping = true;
             delay = 0;
             attenuation = Attenuation.NONE;
-            volume = 0.92F;
+            volume = HeartBattleMusic.ducked ? 0.0F : HeartMemoryReveal.MUSIC_VOLUME;
             pitch = 1.0F;
+        }
+
+        @Override
+        public boolean canStartSilent() {
+            return true;
         }
 
         @Override
@@ -108,8 +121,7 @@ public final class HeartBattleMusic {
                     }
                 }
             } else {
-                volume = net.minecraft.util.Mth.approach(
-                        volume, 0.92F, 0.02F);
+                volume = HeartMemoryReveal.musicVolume(volume, HeartBattleMusic.ducked);
             }
         }
     }

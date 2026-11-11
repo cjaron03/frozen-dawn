@@ -30,6 +30,9 @@ final class FrozenDawnDebugCommand {
                 FrozenDawnHearthCommand.hearthCommands().build();
         CommandNode<CommandSourceStack> postMaeve = requiredChild(legacyHearth, "postmaeve");
         postMaeve.addChild(requiredChild(legacyHearth, "bloom"));
+        CommandNode<CommandSourceStack> heart = requiredChild(legacyHearth, "heart");
+        // Development builds only: show the caller the last memory node from their own ledger.
+        if (!net.neoforged.fml.loading.FMLEnvironment.production) heart.addChild(heartMemoryPreview().build());
 
         LiteralArgumentBuilder<CommandSourceStack> hearth = Commands.literal("hearth")
                 .executes(command(legacyHearth));
@@ -42,7 +45,7 @@ final class FrozenDawnDebugCommand {
                 .executes(context -> sendHelp(context.getSource(), "debug"))
                 .then(FrozenDawnWorldCommand.worldCommands())
                 .then(hearth)
-                .then(requiredChild(legacyHearth, "heart"))
+                .then(heart)
                 .then(postMaeve)
                 .then(AggregateCommand.commands())
                 .then(ArchitectDebugCommand.commands())
@@ -58,6 +61,32 @@ final class FrozenDawnDebugCommand {
         // Development builds only: read the payoff flag, clear it so a playtest can fire it again, or replay the opening.
         if (!net.neoforged.fml.loading.FMLEnvironment.production) debug.then(payoffCommands());
         return debug;
+    }
+
+    /** The last memory node from the caller's own ledger, or from one of the spec's three sample runs. */
+    private static LiteralArgumentBuilder<CommandSourceStack> heartMemoryPreview() {
+        LiteralArgumentBuilder<CommandSourceStack> sample = Commands.literal("sample");
+        for (var entry : java.util.Map.of(
+                "main", new com.frozendawn.homo.HeartMemoryLedger(4, 12, 31, 3, 38, 5, false),
+                "peaceful", new com.frozendawn.homo.HeartMemoryLedger(4, 12, 0, 0, 0, 7, false),
+                "massacre", new com.frozendawn.homo.HeartMemoryLedger(4, 12, 31, 9, 40, 5, true)).entrySet()) {
+            sample.then(Commands.literal(entry.getKey()).executes(context ->
+                    showMemory(context.getSource().getPlayerOrException(), entry.getValue())));
+        }
+        return Commands.literal("memory5")
+                .executes(context -> {
+                    var player = context.getSource().getPlayerOrException();
+                    return showMemory(player, com.frozendawn.homo.HeartMemoryLedger.of(player));
+                })
+                .then(sample);
+    }
+
+    private static int showMemory(net.minecraft.server.level.ServerPlayer player,
+                                  com.frozendawn.homo.HeartMemoryLedger ledger) {
+        net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(player,
+                new com.frozendawn.network.HeartMemoryNodeEventPayload(-1,
+                        com.frozendawn.homo.HeartLattice.NODE_COUNT - 1, 0, 0, ledger, true));
+        return 1;
     }
 
     private static LiteralArgumentBuilder<CommandSourceStack> payoffCommands() {

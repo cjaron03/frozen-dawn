@@ -1349,6 +1349,16 @@ public final class ReturnedHearthSavedData extends SavedData {
         return true;
     }
 
+    /** The earliest line this player crossed at any Hearth, or -1 if none. */
+    public long firstViolationGameTime(UUID playerId) {
+        return hearths.stream()
+                .map(hearth -> hearth.playerContacts.get(playerId))
+                .filter(java.util.Objects::nonNull)
+                .mapToLong(HearthContactMemory::firstViolationGameTime)
+                .filter(time -> time >= 0L)
+                .min().orElse(-1L);
+    }
+
     /** Node five removes the hive's stored account of this player, not shared world facts. */
     public boolean erasePlayerFromHive(UUID playerId) {
         if (playerId == null) {
