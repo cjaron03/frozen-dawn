@@ -13,7 +13,7 @@
 
 **Spec:** [payoff-roadmap.md](payoff-roadmap.md), branch 5. Notion: the payoff branch spec, sections 6b and 5d. Canon: Canon Hierarchy CH-18 and CH-29, with CH-11, CH-28 and The Edge §13.2 and §13.13.
 
-**Status:** approved by the owner as written, 2026-11-10, Rulings 1 to 7 included. Nothing is built.
+**Status:** approved by the owner as written, 2026-11-10, Rulings 1 to 7 included. Built 2026-11-10 in `/Volumes/SSD/Work/frozen-dawn-heart-memory-node`: the mockups (`docs/art/heart-memory-node/`, approved with the arrival line wrapped onto two rows), tests, both gates, the owner's visual pass in the save "Heart Memory Check" (`tools/prepare_heart_memory_node_playtest.py`) and an Opus branch review passed. Amendments: Ruling 7's command is `/fd debug heart memory5`, since `heart` sits under `debug`, and it gained dev-only `sample main|peaceful|massacre` previews; lines wider than 300 GUI px wrap. The review's fixes: the panel holds while the game is paused, text too faint for the font is skipped rather than drawn opaque, and the Kevin GameTest schedules every task from its body. Open: Ruling 1's `massacre` is any permanent Orsathae, and any violation makes a player permanently Orsathae, so `lost` may never show in play; the owner has not ruled. Fixture note: a debug-started Heart forms at the Hearth center's stored y, so the playtest opens a pit over it.
 
 **Branch:** `feat/heart-memory-node` in `/Volumes/SSD/Work/frozen-dawn-heart-memory-node`, cut from `feat/maeve-director` once this plan has merged. The build session starts in that worktree and works there. PR into `feat/maeve-director`. The branch review runs on Opus, because the branch changes client/server sync (`HeartMemoryNodeEventPayload`) and merges into a long-lived branch.
 
