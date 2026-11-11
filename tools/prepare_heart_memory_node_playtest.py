@@ -28,6 +28,7 @@ PACK = 'heart-memory-check'
 OBJECTIVE = 'heartmemory'
 GUARD = f'execute unless score #built {OBJECTIVE} matches 1 run return 0'
 SPAWN_OFFSET = 24        # blocks south of the Hearth center: in contact range, in sight of the Heart
+HEART_Y = 0              # the debug-started Heart forms at the Hearth center's stored y, deep in the flat lab's stone
 
 
 def tell(text, command=None, color='aqua'):
@@ -54,7 +55,8 @@ def scripts():
              f'setworldspawn {sx} {SURFACE_Y} {sz}', f'spawnpoint @s {sx} {SURFACE_Y} {sz}',
              f'tp @s {sx + 0.5} {SURFACE_Y} {sz + 0.5} 180 0',
              f'scoreboard players set #built {OBJECTIVE} 1', 'function '+NS+':controls', 'return 1']
-    controls = [GUARD, tell('HEART MEMORY CHECK: the Heart is north. Its music should be playing.'),
+    controls = [GUARD, tell('HEART MEMORY CHECK: the Heart forms in the stone under the Hearth; open it up first.'),
+                tell('[Go to the Heart]', '/function '+NS+':heart', 'aqua'),
                 tell('[Memory of you: my ledger]', '/fd heart memory5', 'aqua'),
                 tell('[Sample: main run]', '/fd heart memory5 sample main', 'aqua'),
                 tell('[Sample: peaceful run]', '/fd heart memory5 sample peaceful', 'aqua'),
@@ -77,6 +79,13 @@ def scripts():
                           f'execute if score #built {OBJECTIVE} matches 1 run forceload remove -16 -16 16 16']),
         'setup': '\n'.join(setup),
         'controls': '\n'.join(controls),
+        # The Heart, open to the sky: a pit 49 wide and 45 deep from its floor to the surface, in slabs under the
+        # fill limit, and the player on its south rim, looking down at it.
+        'heart': '\n'.join([GUARD] + [
+            f'fill {cx - 24} {y} {cz - 24} {cx + 24} {min(y + 13, SURFACE_Y - 1)} {cz + 20} minecraft:air'
+            for y in range(HEART_Y - 6, SURFACE_Y, 14)] + [
+            f'tp @s {cx + 0.5} {SURFACE_Y} {cz + 22.5} 180 35',
+            'effect give @s minecraft:night_vision infinite 0 true', 'return 1']),
         'successor': '\n'.join([GUARD, 'fd heart nodes destroy 1', 'fd heart nodes destroy 2',
                                 'fd heart nodes destroy 3', 'return 1']),
         'sword': '\n'.join([GUARD, 'give @s minecraft:netherite_sword', 'return 1']),
