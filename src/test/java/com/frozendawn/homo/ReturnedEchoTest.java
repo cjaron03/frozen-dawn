@@ -64,6 +64,18 @@ class ReturnedEchoTest {
         assertEquals(2, ReturnNoticeState.spend(2), "The count never passes the cap");
     }
 
+    /** Review, 2026-11-10: notices already playing hold their slots, and only the Major Hearth saw the death. */
+    @Test
+    void aNoticeStartsOnlyWithAFreeSlotAtTheMajorHearth() {
+        assertTrue(ReturnNoticeState.startsNotice(true, true, 0, 0));
+        assertTrue(ReturnNoticeState.startsNotice(true, true, 1, 0));
+        assertTrue(ReturnNoticeState.startsNotice(true, true, 0, 1));
+        assertFalse(ReturnNoticeState.startsNotice(true, true, 1, 1), "Two owed players at once make two, not three");
+        assertFalse(ReturnNoticeState.startsNotice(true, true, 0, 2));
+        assertFalse(ReturnNoticeState.startsNotice(true, false, 0, 0), "A Minor Hearth did not see the death");
+        assertFalse(ReturnNoticeState.startsNotice(false, true, 0, 0), "Nothing owed");
+    }
+
     @Test
     void noticeLinesAreExistingWords() throws Exception {
         JsonObject lang = json("assets/frozendawn/lang/en_us.json");

@@ -40,6 +40,14 @@ public final class ReturnNoticeState extends SavedData {
         return !erased && !permanentOrsathae && firstTransmissionDone && witnessed && shown < MAX_NOTICES;
     }
 
+    /**
+     * Whether an owed notice may start at this Hearth: only the Major Hearth saw the death, and notices already
+     * playing hold their slots, so owed players making contact together cannot pass the cap.
+     */
+    public static boolean startsNotice(boolean owed, boolean majorHearth, int shown, int playing) {
+        return owed && majorHearth && shown + playing < MAX_NOTICES;
+    }
+
     /** The world count after one notice plays. */
     public static int spend(int shown) {
         return Math.min(MAX_NOTICES, shown + 1);

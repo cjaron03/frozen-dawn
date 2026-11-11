@@ -66,7 +66,10 @@ public final class HearthTransmissionManager {
         ThaevenTransmissionType type;
         if (replay || !contact.firstTransmissionComplete()) {
             type = ThaevenTransmissionType.fromAssessment(contact.orsaDetectedAtAssessment());
-        } else if (ReturnNoticeState.isOwed(level.getServer(), player.getUUID())) {
+        } else if (ReturnNoticeState.startsNotice(
+                ReturnNoticeState.isOwed(level.getServer(), player.getUUID()),
+                hearth != null && hearth.type() == HearthSelectionPolicy.HearthType.MAJOR,
+                ReturnNoticeState.shown(level.getServer()), noticesPlaying())) {
             type = ThaevenTransmissionType.RETURN_NOTICE;
         } else if (!contact.hearthMythTransmissionComplete()
                 && hearth != null
@@ -90,6 +93,11 @@ public final class HearthTransmissionManager {
                 sessionId, player.getGameProfile().getName(), shortId(hearthId),
                 type.name().toLowerCase(), replay);
         return true;
+    }
+
+    private static int noticesPlaying() {
+        return (int) activeSessions.values().stream()
+                .filter(session -> session.type() == ThaevenTransmissionType.RETURN_NOTICE).count();
     }
 
     public static void tick(ServerLevel level) {
