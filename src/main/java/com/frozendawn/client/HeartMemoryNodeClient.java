@@ -97,9 +97,8 @@ public final class HeartMemoryNodeClient {
 
     @SubscribeEvent
     public static void onClientTick(ClientTickEvent.Post event) {
-        if (memoryTicks > 0) {
-            memoryTicks--;
-        }
+        memoryTicks = HeartMemoryReveal.countDown(
+                memoryTicks, Minecraft.getInstance().isPaused());
         HeartBattleMusic.setDucked(memoryTicks > 0 && isLastNode());
         tickMaeveChannel();
     }
@@ -167,6 +166,10 @@ public final class HeartMemoryNodeClient {
         graphics.fill(centerX - 164, startY - 13,
                 centerX + 164, startY + 18 + lines.size() * 13,
                 backingAlpha << 24 | 0x00030A11);
+        if (!HeartMemoryReveal.visible(alpha)) {
+            RenderSystem.disableBlend();
+            return;
+        }
         graphics.drawCenteredString(minecraft.font, title(), centerX, startY,
                 withAlpha(0x7DEBFF, alpha));
         for (int index = 0; index < lines.size(); index++) {
@@ -200,15 +203,20 @@ public final class HeartMemoryNodeClient {
         graphics.fill(centerX - 164, startY - 13,
                 centerX + 164, startY + 18 + rowCount * 13,
                 Math.round(panelAlpha * 122.0F) << 24 | 0x00030A11);
-        graphics.drawCenteredString(minecraft.font, title(), centerX, startY,
-                withAlpha(0x7DEBFF, panelAlpha));
+        if (HeartMemoryReveal.visible(panelAlpha)) {
+            graphics.drawCenteredString(minecraft.font, title(), centerX, startY,
+                    withAlpha(0x7DEBFF, panelAlpha));
+        }
         int row = 0;
         for (int index = 0; index < shown; index++) {
-            int color = withAlpha(index == lines.size() - 1 ? 0x9CCEDC : 0xC8EAF3,
-                    HeartMemoryReveal.lineAlpha(age, index) * panelAlpha);
+            float alpha = HeartMemoryReveal.lineAlpha(age, index) * panelAlpha;
+            int color = withAlpha(index == lines.size() - 1 ? 0x9CCEDC : 0xC8EAF3, alpha);
             for (FormattedCharSequence text : rows.get(index)) {
-                graphics.drawCenteredString(minecraft.font, text, centerX,
-                        startY + 17 + row++ * 13, color);
+                if (HeartMemoryReveal.visible(alpha)) {
+                    graphics.drawCenteredString(minecraft.font, text, centerX,
+                            startY + 17 + row * 13, color);
+                }
+                row++;
             }
         }
         RenderSystem.disableBlend();

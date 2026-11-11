@@ -43,4 +43,19 @@ class HeartMemoryRevealTest {
         volume = HeartMemoryReveal.musicVolume(volume, false);
         assertEquals(HeartMemoryReveal.MUSIC_VOLUME, volume, 1.0E-4F);
     }
+
+    @Test
+    void aNearlyClearLineIsNotDrawnSoTheFontCannotForceItOpaque() {
+        assertFalse(HeartMemoryReveal.visible(HeartMemoryReveal.lineAlpha(140.1F, 1)));
+        assertFalse(HeartMemoryReveal.visible(3.0F / 255.0F));
+        assertTrue(HeartMemoryReveal.visible(4.0F / 255.0F));
+        assertTrue(HeartMemoryReveal.visible(1.0F));
+    }
+
+    @Test
+    void thePanelWaitsWhileTheGameIsPaused() {
+        assertEquals(10, HeartMemoryReveal.countDown(10, true));
+        assertEquals(9, HeartMemoryReveal.countDown(10, false));
+        assertEquals(0, HeartMemoryReveal.countDown(0, false));
+    }
 }

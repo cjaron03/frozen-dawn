@@ -12,6 +12,8 @@ public final class HeartMemoryReveal {
     public static final int HOLD_TICKS = 100;
     public static final int FADE_OUT_TICKS = 35;
     public static final float MUSIC_VOLUME = 0.92F;
+    /** Font treats an alpha byte under 4 as unset and draws the text opaque. */
+    private static final int MIN_FONT_ALPHA = 4;
     private static final float MUSIC_OUT_STEP = MUSIC_VOLUME / 20.0F;
     private static final float MUSIC_IN_STEP = MUSIC_VOLUME / 40.0F;
 
@@ -42,5 +44,15 @@ public final class HeartMemoryReveal {
     public static float musicVolume(float volume, boolean ducked) {
         return ducked ? Mth.approach(volume, 0.0F, MUSIC_OUT_STEP)
                 : Mth.approach(volume, MUSIC_VOLUME, MUSIC_IN_STEP);
+    }
+
+    /** Whether text at this alpha can be drawn without the font forcing it opaque. */
+    public static boolean visible(float alpha) {
+        return Math.round(Mth.clamp(alpha, 0.0F, 1.0F) * 255.0F) >= MIN_FONT_ALPHA;
+    }
+
+    /** One client tick of the panel's remaining time; it holds while the game is paused. */
+    public static int countDown(int ticks, boolean paused) {
+        return paused ? ticks : Math.max(0, ticks - 1);
     }
 }

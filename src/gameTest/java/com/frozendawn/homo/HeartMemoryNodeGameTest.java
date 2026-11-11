@@ -7,6 +7,8 @@ import com.frozendawn.gametest.GameTestReporting;
 import com.frozendawn.gametest.GameTestTemplates;
 import com.frozendawn.init.ModEntities;
 import com.mojang.authlib.GameProfile;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.BeforeBatch;
@@ -66,32 +68,34 @@ public final class HeartMemoryNodeGameTest {
 
     @GameTest(template = GameTestTemplates.EMPTY, batch = "heartmemorynode", timeoutTicks = 120)
     public static void kevinOncePerSuccessor(GameTestHelper h) {
+        // Every task is scheduled here, never from inside another task, and each check leaves a few
+        // ticks past Kevin's 30.
+        List<HeartSuccessorEntity> staggered = new ArrayList<>();
         HeartSuccessorEntity spoken = successor(h, new Vec3(1.5D, 3.0D, 1.5D));
         HeartSuccessorEntity unspoken = successor(h, new Vec3(3.5D, 3.0D, 3.5D));
+        HeartSuccessorEntity[] reloaded = new HeartSuccessorEntity[2];
         stagger(spoken);
-        h.onEachTick(() -> {
-            spoken.tickStagger();
-        });
-        h.runAfterDelay(31, () -> {
+        staggered.add(spoken);
+        // The director counts a stagger down; there is none in an empty test structure.
+        h.onEachTick(() -> staggered.forEach(HeartSuccessorEntity::tickStagger));
+        h.runAfterDelay(34, () -> {
             h.assertTrue(spoken.kevinSpoken(), "Kevin is spoken 30 ticks into the first stagger");
             h.assertFalse(unspoken.kevinSpoken(), "A Successor that never staggered has not said it");
-
-            HeartSuccessorEntity reloadedSpoken = reload(h, spoken);
-            HeartSuccessorEntity reloadedUnspoken = reload(h, unspoken);
-            h.assertTrue(reloadedSpoken.kevinSpoken(), "A reload keeps Kevin spoken");
-            h.assertFalse(reloadedUnspoken.kevinSpoken(), "A reload keeps it unspoken");
-            stagger(reloadedSpoken);
-            stagger(reloadedUnspoken);
-            h.onEachTick(() -> {
-                reloadedSpoken.tickStagger();
-                reloadedUnspoken.tickStagger();
-            });
-            h.runAfterDelay(31, () -> {
-                h.assertTrue(reloadedSpoken.kevinSpoken(), "The spoken one stays spoken");
-                h.assertTrue(reloadedUnspoken.kevinSpoken(),
-                        "The reloaded one that had not spoken says it at its own stagger");
-                h.succeed();
-            });
+            staggered.clear();
+            reloaded[0] = reload(h, spoken);
+            reloaded[1] = reload(h, unspoken);
+            h.assertTrue(reloaded[0].kevinSpoken(), "A reload keeps Kevin spoken");
+            h.assertFalse(reloaded[1].kevinSpoken(), "A reload keeps it unspoken");
+            for (HeartSuccessorEntity copy : reloaded) {
+                stagger(copy);
+                staggered.add(copy);
+            }
+        });
+        h.runAfterDelay(70, () -> {
+            h.assertTrue(reloaded[0].kevinSpoken(), "The spoken one stays spoken");
+            h.assertTrue(reloaded[1].kevinSpoken(),
+                    "The reloaded one that had not spoken says it at its own stagger");
+            h.succeed();
         });
     }
 
