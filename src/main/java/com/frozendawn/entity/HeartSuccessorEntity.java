@@ -1,14 +1,18 @@
 package com.frozendawn.entity;
 
+import com.frozendawn.FrozenDawn;
 import com.frozendawn.homo.HeartSuccessorPolicy;
 import com.frozendawn.init.ModSounds;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.world.damagesource.DamageSource;
@@ -72,6 +76,7 @@ public final class HeartSuccessorEntity extends PathfinderMob {
 
     private float disruptionDamage;
     private int voiceCooldown = 160;
+    private boolean kevinSpoken;
 
     public HeartSuccessorEntity(
             EntityType<? extends PathfinderMob> type, Level level) {
@@ -307,6 +312,9 @@ public final class HeartSuccessorEntity extends PathfinderMob {
         super.tick();
         setNoGravity(true);
         noPhysics = false;
+        if (!level().isClientSide()) {
+            tickKevin();
+        }
         if (isDying()) {
             setDeltaMovement(Vec3.ZERO);
             if (!level().isClientSide() && level() instanceof ServerLevel serverLevel) {
@@ -428,6 +436,7 @@ public final class HeartSuccessorEntity extends PathfinderMob {
         entityData.set(DATA_DEATH_TICKS,
                 Math.max(0, tag.getInt("DeathTicks")));
         disruptionDamage = Math.max(0.0F, tag.getFloat("DisruptionDamage"));
+        kevinSpoken = tag.getBoolean("KevinSpoken");
     }
 
     @Override
@@ -444,6 +453,7 @@ public final class HeartSuccessorEntity extends PathfinderMob {
         tag.putInt("StaggerTicks", staggerTicks());
         tag.putInt("DeathTicks", deathTicks());
         tag.putFloat("DisruptionDamage", disruptionDamage);
+        tag.putBoolean("KevinSpoken", kevinSpoken);
     }
 
     private static HeartSuccessorPolicy.Mode readMode(String name) {
@@ -459,13 +469,28 @@ public final class HeartSuccessorEntity extends PathfinderMob {
             return;
         }
         voiceCooldown = 220 + random.nextInt(260);
-        var sound = switch (random.nextInt(5)) {
-            case 0 -> ModSounds.HEART_SUCCESSOR_VOICE_WHY.get();
-            case 1 -> ModSounds.HEART_SUCCESSOR_VOICE_COLD.get();
-            case 2 -> ModSounds.HEART_SUCCESSOR_VOICE_HELLO.get();
-            case 3 -> ModSounds.HEART_SUCCESSOR_VOICE_KEVIN.get();
-            default -> ModSounds.HEART_SUCCESSOR_VOICE_DONT.get();
-        };
+        String bark = HeartSuccessorPolicy.BARKS.get(
+                random.nextInt(HeartSuccessorPolicy.BARKS.size()));
+        SoundEvent sound = BuiltInRegistries.SOUND_EVENT.get(
+                ResourceLocation.fromNamespaceAndPath(
+                        FrozenDawn.MOD_ID, "entity.heart_successor." + bark));
+        if (sound == null) {
+            return;
+        }
         playSound(sound, 2.4F, 0.86F + random.nextFloat() * 0.08F);
+    }
+
+    public boolean kevinSpoken() {
+        return kevinSpoken;
+    }
+
+    private void tickKevin() {
+        int staggerElapsed = staggerTicks() > 0 && !isDying()
+                ? HeartSuccessorPolicy.STAGGER_TICKS - staggerTicks() : -1;
+        int deathElapsed = isDying() ? deathTicks() - 1 : -1;
+        if (HeartSuccessorPolicy.kevinDue(kevinSpoken, staggerElapsed, deathElapsed)) {
+            kevinSpoken = true;
+            playSound(ModSounds.HEART_SUCCESSOR_VOICE_KEVIN.get(), 2.4F, 0.86F);
+        }
     }
 }

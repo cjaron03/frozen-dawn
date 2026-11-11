@@ -42,4 +42,25 @@ class HeartSuccessorPolicyTest {
         assertEquals(0.0F,
                 HeartSuccessorPolicy.mitigateSupportedDamage(-4.0F), 0.0001F);
     }
+
+    @Test
+    void kevinWaitsForTheStagger() {
+        assertFalse(HeartSuccessorPolicy.kevinDue(false, 29, -1));
+        assertTrue(HeartSuccessorPolicy.kevinDue(false, 30, -1));
+        assertFalse(HeartSuccessorPolicy.kevinDue(true, 30, -1));
+        assertFalse(HeartSuccessorPolicy.kevinDue(false, -1, -1));
+    }
+
+    @Test
+    void kevinFallsBackToTheDeath() {
+        assertFalse(HeartSuccessorPolicy.kevinDue(false, -1, 29));
+        assertTrue(HeartSuccessorPolicy.kevinDue(false, -1, 30));
+        assertFalse(HeartSuccessorPolicy.kevinDue(true, -1, 30));
+    }
+
+    @Test
+    void kevinIsNotABark() {
+        assertEquals(4, HeartSuccessorPolicy.BARKS.size());
+        assertFalse(HeartSuccessorPolicy.BARKS.contains("voice_kevin"));
+    }
 }
