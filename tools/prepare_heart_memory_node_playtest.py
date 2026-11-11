@@ -19,8 +19,8 @@ from pathlib import Path
 
 import prepare_blind_architect_playtest as nbt
 from prepare_power_network_playtest import prepare, pack_only
-from prepare_returned_respawn_echo_playtest import SEED, ANCHOR, SURFACE_Y, INTACT_TICKS, major_center, \
-    install_advancements
+from prepare_returned_respawn_echo_playtest import SEED, ANCHOR, SURFACE_Y, INTACT_TICKS, major_center
+from prepare_terminus_vault_playtest import ADVANCEMENTS
 
 TITLE = 'Heart Memory Check'
 NS = 'heart_memory_check'
@@ -85,6 +85,16 @@ def scripts():
         'returned': '\n'.join([GUARD, 'execute at @s as @e[type=frozendawn:returned,nbt={HearthPopulationRole:"returned"},'
                                'sort=nearest,limit=1] run tp @s ^ ^ ^4', 'return 1']),
         'die': '\n'.join([GUARD, 'kill @s', 'return 1'])}
+
+
+def install_advancements(destination):
+    """The filter hides the mod's advancements, and the Master Architect's one-time moment awards one; without it the
+    server refuses the moment. Carried without its phase parent, so no phase toasts arrive with it."""
+    out = destination/'datapacks'/PACK/'data/frozendawn/advancement'
+    out.mkdir(parents=True, exist_ok=True)
+    advancement = json.loads((ADVANCEMENTS/'host_has_joined_the_game.json').read_text())
+    advancement.pop('parent', None)
+    (out/'host_has_joined_the_game.json').write_text(json.dumps(advancement, indent=2)+'\n')
 
 
 def prepare_world(source, destination):
