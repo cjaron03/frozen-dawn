@@ -14,7 +14,7 @@
 
 **Spec:** [payoff-roadmap.md](payoff-roadmap.md), branch 4. Notion: the payoff branch spec, sections 5a, 5b (the revised version) and 5c. Canon: Canon Hierarchy CH-8 and CH-11, with The Edge §13.2 and §13.13.
 
-**Status:** approved by the owner as written, 2026-11-09, Rulings 0 to 9 included. Nothing is built.
+**Status:** approved by the owner as written, 2026-11-09, Rulings 0 to 9 included. Built 2026-11-10 in `/Volumes/SSD/Work/frozen-dawn-returned-respawn-echo`: tests, the owner's visual pass in the save "Returned Echo Check 5" (`tools/prepare_returned_respawn_echo_playtest.py`) and an Opus branch review passed. The pass amended Ruling 2 (the ring plays at the kill); the review added the notice's Major-Hearth and in-play limits to Ruling 5. Deferred from the review: the GameTest's Major Hearth and fake-player contacts stay in the shared test world, as other payoff tests' do.
 
 **Branch:** `feat/returned-respawn-echo` in `/Volumes/SSD/Work/frozen-dawn-returned-respawn-echo`, cut from `feat/maeve-director` once this plan has merged. The build session starts in that worktree and works there. PR into `feat/maeve-director`. The branch review runs on Opus: the branch adds a save format (`ReturnNoticeState`) and a client/server transmission type, and it merges into a long-lived branch.
 
