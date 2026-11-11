@@ -60,6 +60,17 @@ class FrozenDawnCommandTreeTest {
     }
 
     @Test
+    void theReturnNoticeHasADevOnlyOweAndAConfirmedReset() {
+        CommandNode<CommandSourceStack> notice = dispatcher().getRoot()
+                .getChild("frozendawn").getChild("debug").getChild("hearth").getChild("notice");
+        assertNotNull(notice.getCommand());
+        // "owe" and "reset" are development-only; tests run as a development build.
+        assertNotNull(notice.getChild("owe").getCommand());
+        assertNull(notice.getChild("reset").getCommand());
+        assertNotNull(notice.getChild("reset").getChild("confirm").getCommand());
+    }
+
+    @Test
     void fdRedirectsToTheDebugGateway() {
         CommandDispatcher<CommandSourceStack> dispatcher = dispatcher();
         CommandNode<CommandSourceStack> debug = dispatcher.getRoot()

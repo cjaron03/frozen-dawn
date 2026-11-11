@@ -766,6 +766,17 @@
       }
     ]
   },
+  "entity.returned.replacement_ring": {
+    "category": "hostile",
+    "sounds": [
+      {
+        "name": "frozendawn:ui/orsa_awakening_ring",
+        "pitch": 0.71,
+        "volume": 0.2,
+        "attenuation_distance": 12
+      }
+    ]
+  },
   "entity.returned.step": {
     "category": "hostile",
     "subtitle": "subtitle.frozendawn.entity.returned.step",

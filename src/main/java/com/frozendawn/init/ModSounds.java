@@ -570,6 +570,12 @@ public class ModSounds {
             () -> SoundEvent.createVariableRangeEvent(
                     ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "entity.returned.step")));
 
+    /** A killed Returned resident rings a slowed copy of the player's respawn ring where it falls (payoff spec 5a). */
+    public static final DeferredHolder<SoundEvent, SoundEvent> RETURNED_REPLACEMENT_RING = SOUNDS.register(
+            "entity.returned.replacement_ring",
+            () -> SoundEvent.createVariableRangeEvent(
+                    ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "entity.returned.replacement_ring")));
+
     // --- The Undone ---
     public static final DeferredHolder<SoundEvent, SoundEvent> UNDONE_AMBIENT_ONE =
             register("entity.undone.ambient_one");

@@ -16,6 +16,8 @@ public final class HearthPopulationPolicy {
     public static final int ARCHITECT_HOME_RADIUS = 12;
     public static final int WATCH_DISTANCE = 28;
     public static final int RETREAT_DISTANCE = 7;
+    /** Owner, 2026-11-09: the ring rests ten minutes, so killing Returned over and over cannot spam it. */
+    public static final long RING_COOLDOWN_TICKS = 12_000L;
 
     private static final long VARIANT_SALT = 0x504F50554C415449L;
     private static final List<BlockPos> LOCAL_SPAWN_OFFSETS = List.of(
@@ -73,6 +75,20 @@ public final class HearthPopulationPolicy {
             case MIMIC -> MIMIC_HOME_RADIUS;
             case ARCHITECT -> ARCHITECT_HOME_RADIUS;
         };
+    }
+
+    /**
+     * Payoff spec 5a: a killed Returned resident rings the player's respawn ring where it falls. Owner, 2026-11-10:
+     * at the kill rather than at the replacement a minute later, so the player cannot walk away before it.
+     */
+    public static boolean ringsOnDeath(HearthPopulationRole role) {
+        return role == HearthPopulationRole.RETURNED || role == HearthPopulationRole.HUNTER;
+    }
+
+    /** Whether the ring has rested since it last played; a negative time means it never has. */
+    public static boolean ringCooldownElapsed(long lastRingGameTime, long gameTime) {
+        return lastRingGameTime < 0L || gameTime < lastRingGameTime
+                || gameTime - lastRingGameTime >= RING_COOLDOWN_TICKS;
     }
 
     public static boolean isReplacementReady(long respawnAfterGameTime, long gameTime) {

@@ -7,9 +7,11 @@ import com.frozendawn.entity.ArchitectEntity;
 import com.frozendawn.entity.MimicEntity;
 import com.frozendawn.entity.ReturnedEntity;
 import com.frozendawn.init.ModEntities;
+import com.frozendawn.init.ModSounds;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.MobSpawnType;
@@ -31,6 +33,8 @@ public final class HearthPopulationManager {
     private static long residentsSpawned;
     private static long residentsAdopted;
     private static long residentsLost;
+    private static long replacementRings;
+    private static long lastRingGameTime = -1L;
     private static String lastFailure = "none";
 
     private HearthPopulationManager() {
@@ -42,6 +46,32 @@ public final class HearthPopulationManager {
             return;
         }
         reconcile(level);
+    }
+
+    /**
+     * Rings the respawn ring where a population resident fell, if its role rings, the Heart still stands and the ring
+     * has rested. Rings whether or not a replacement will follow.
+     */
+    static boolean ringForDeath(ServerLevel level, HearthPopulationRole role, BlockPos at) {
+        if (!HearthPopulationPolicy.ringsOnDeath(role) || PostMaeveWorldState.isErased(level)
+                || !HearthPopulationPolicy.ringCooldownElapsed(lastRingGameTime, level.getGameTime())) {
+            return false;
+        }
+        level.playSound(null, at.getX() + 0.5D, at.getY() + 0.5D, at.getZ() + 0.5D,
+                ModSounds.RETURNED_REPLACEMENT_RING.get(), SoundSource.HOSTILE, 1.0F, 1.0F);
+        lastRingGameTime = level.getGameTime();
+        replacementRings++;
+        return true;
+    }
+
+    /** Tests: lets the next kill ring without waiting out the rest. */
+    static void clearRingRest() {
+        lastRingGameTime = -1L;
+    }
+
+    /** Rings played since the last {@link #reset}. */
+    public static long replacementRings() {
+        return replacementRings;
     }
 
     public static int reconcileNow(ServerLevel level) {
@@ -93,6 +123,10 @@ public final class HearthPopulationManager {
             return false;
         }
         residentsLost++;
+        Entity fallen = level.getEntity(entityId);
+        if (fallen != null) {
+            ringForDeath(level, role, fallen.blockPosition());
+        }
         if (permanentlyVacant) {
             FrozenDawn.LOGGER.info(
                     "Hearth resident {} ({}) permanently lost at Hearth {}",
@@ -110,6 +144,7 @@ public final class HearthPopulationManager {
         return "spawned=" + residentsSpawned
                 + " adopted=" + residentsAdopted
                 + " lost=" + residentsLost
+                + " rings=" + replacementRings
                 + " lastFailure=" + lastFailure;
     }
 
@@ -117,6 +152,8 @@ public final class HearthPopulationManager {
         residentsSpawned = 0L;
         residentsAdopted = 0L;
         residentsLost = 0L;
+        replacementRings = 0L;
+        lastRingGameTime = -1L;
         lastFailure = "none";
     }
 

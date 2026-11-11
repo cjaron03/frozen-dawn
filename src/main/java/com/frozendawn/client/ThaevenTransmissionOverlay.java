@@ -135,9 +135,11 @@ public final class ThaevenTransmissionOverlay {
             phraseY += drawCenteredWrapped(graphics, font, phrase, width, phraseY,
                     maxTextWidth, withAlpha(0xFFE7F7F7, fade * beatFade));
         }
-        Component sensation = Component.translatable(beat.sensation());
-        drawCenteredWrapped(graphics, font, sensation, width, phraseY + 8,
-                maxTextWidth, withAlpha(0xFF8FB7BF, fade * beatFade * 0.9F));
+        if (beat.sensation() != null) {
+            Component sensation = Component.translatable(beat.sensation());
+            drawCenteredWrapped(graphics, font, sensation, width, phraseY + 8,
+                    maxTextWidth, withAlpha(0xFF8FB7BF, fade * beatFade * 0.9F));
+        }
 
         if (resistTicks > 0) {
             float resistance = Mth.clamp(resistTicks / (float) RESIST_HOLD_TICKS, 0.0F, 1.0F);
@@ -262,6 +264,17 @@ public final class ThaevenTransmissionOverlay {
             }
             return new TransmissionBeat(null,
                     "overlay.frozendawn.thaeven.myth.silence", 246);
+        }
+        if (transmissionType == ThaevenTransmissionType.RETURN_NOTICE) {
+            if (ticks < 60) {
+                return new TransmissionBeat("overlay.frozendawn.thaeven.notice.died", null, 0);
+            }
+            if (ticks < 130) {
+                return new TransmissionBeat("overlay.frozendawn.thaeven.notice.word",
+                        "overlay.frozendawn.thaeven.neutral.warmth", 60);
+            }
+            return new TransmissionBeat(null,
+                    "overlay.frozendawn.thaeven.neutral.openness", 130);
         }
         if (transmissionType == ThaevenTransmissionType.ORSHA_RECOGNITION) {
             if (ticks < 44) {
