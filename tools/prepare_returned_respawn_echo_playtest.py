@@ -139,9 +139,12 @@ def scripts():
         # Attacking the Hearth makes the player Orsathae and opens its combat roster, which holds every replacement
         # while the Master Architect lives. This puts both back so a replacement can be heard.
         'calm': '\n'.join([GUARD, 'fd hearth relationship set neutral', 'fd hearth master respawn', 'return 1']),
-        # Kills one population Returned with no player attack, so the Hearth stays calm and replaces it in a minute.
-        'replace': '\n'.join([GUARD, 'kill @e[type=frozendawn:returned,nbt={HearthPopulationRole:"returned"},limit=1]',
-                               'return 1'])}
+        # Brings the nearest population Returned four blocks in front and kills it with no player attack, so the
+        # ring plays within earshot and the calm Hearth replaces it in a minute.
+        'replace': '\n'.join([GUARD, 'execute at @s as @e[type=frozendawn:returned,nbt={HearthPopulationRole:"returned"},'
+                               'sort=nearest,limit=1] run tp @s ^ ^ ^4',
+                               'execute at @s run kill @e[type=frozendawn:returned,nbt={HearthPopulationRole:"returned"},'
+                               'sort=nearest,limit=1]', 'return 1'])}
 
 
 def install_advancements(destination):
