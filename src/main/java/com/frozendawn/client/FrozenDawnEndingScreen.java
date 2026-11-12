@@ -323,12 +323,13 @@ public class FrozenDawnEndingScreen extends Screen {
         ensureMarsTextures();
 
         float revealPulse = smoothStep(reveal);
-        float targetFace = Mth.lerp(revealPulse, 28.0F, Math.max(48.0F, Math.min(width, height) * 0.38F));
+        MarsPlacement placement = marsPlacement(tick);
+        float targetFace = placement.face();
         float halfSize = targetFace * 0.5F;
         float yaw = MARS_YAW_OFFSET + (tick - BLACK_END_TICKS) * 0.012F;
         float marsAlpha = smoothStep(Mth.clamp((tick - BLACK_END_TICKS) / 80.0F, 0.0F, 1.0F));
-        float centerX = width / 2.0F + Mth.lerp(revealPulse, width * -0.10F, width * 0.04F);
-        float centerY = height * 0.46F + Mth.lerp(revealPulse, height * -0.05F, 0.0F);
+        float centerX = placement.centerX();
+        float centerY = placement.centerY();
         renderMarsBacklight(graphics, Math.round(centerX), Math.round(centerY), targetFace, revealPulse * marsAlpha);
 
         ProjectedFace[] faces = {
@@ -364,6 +365,15 @@ public class FrozenDawnEndingScreen extends Screen {
         }
     }
 
+    private MarsPlacement marsPlacement(float tick) {
+        float reveal = Mth.clamp((tick - BLACK_END_TICKS) / (float) (BASE_CREDITS_START_TICKS - BLACK_END_TICKS), 0.0F, 1.0F);
+        float revealPulse = smoothStep(reveal);
+        return new MarsPlacement(
+                width / 2.0F + Mth.lerp(revealPulse, width * -0.10F, width * 0.04F),
+                height * 0.46F + Mth.lerp(revealPulse, height * -0.05F, 0.0F),
+                Mth.lerp(revealPulse, 28.0F, Math.max(48.0F, Math.min(width, height) * 0.38F)));
+    }
+
     private void renderMarsBacklight(GuiGraphics graphics, int centerX, int centerY, float targetFace, float reveal) {
         float fade = Mth.clamp(reveal, 0.0F, 1.0F);
         drawMarsGlowDisk(graphics, centerX, centerY, targetFace * 1.58F, Math.round(22.0F * fade), 0x9E341C);
@@ -393,52 +403,44 @@ public class FrozenDawnEndingScreen extends Screen {
             return;
         }
 
-        int topRail = Math.max(34, height / 12);
-        int bottomRail = Math.max(58, height / 6);
-        int sideRail = Math.max(44, width / 10);
-        int viewLeft = sideRail;
-        int viewRight = width - sideRail;
-        int viewTop = topRail;
-        int viewBottom = height - bottomRail;
+        // Glass cockpit: the view runs edge to edge, darkened only at its rim, inside one thin frame.
+        int edge = 0x050A10;
+        graphics.fillGradient(0, 0, width, 26, applyAlpha(0xC0000000 | edge, alpha), edge);
+        graphics.fillGradient(0, height - 30, width, height, edge, applyAlpha(0xD0000000 | edge, alpha));
+        for (int i = 0; i < 22; i++) {
+            int column = applyAlpha(0xA0000000 | edge, alpha * (1.0F - i / 22.0F));
+            graphics.fill(i, 0, i + 1, height, column);
+            graphics.fill(width - 1 - i, 0, width - i, height, column);
+        }
 
-        graphics.fill(0, 0, width, topRail, applyAlpha(0xEA10141A, alpha));
-        graphics.fill(0, viewBottom, width, height, applyAlpha(0xF010141A, alpha));
-        graphics.fill(0, topRail, sideRail, viewBottom, applyAlpha(0xDE10141A, alpha));
-        graphics.fill(width - sideRail, topRail, width, viewBottom, applyAlpha(0xDE10141A, alpha));
+        int inset = 10;
+        int left = inset;
+        int top = inset;
+        int right = width - inset - 1;
+        int bottom = height - inset - 1;
+        int frame = applyAlpha(0x444FC7DA, alpha);
+        graphics.fill(left, top, right + 1, top + 1, frame);
+        graphics.fill(left, bottom, right + 1, bottom + 1, frame);
+        graphics.fill(left, top, left + 1, bottom + 1, frame);
+        graphics.fill(right, top, right + 1, bottom + 1, frame);
+        drawCornerTicks(graphics, left, top, right, bottom, 6, applyAlpha(0xDD8DEAFF, alpha));
 
-        graphics.fill(viewLeft - 8, viewTop - 8, viewRight + 8, viewTop + 5, applyAlpha(0xCC303844, alpha));
-        graphics.fill(viewLeft - 8, viewBottom - 5, viewRight + 8, viewBottom + 10, applyAlpha(0xCC303844, alpha));
-        graphics.fill(viewLeft - 10, viewTop - 4, viewLeft + 5, viewBottom + 6, applyAlpha(0xCC252C36, alpha));
-        graphics.fill(viewRight - 5, viewTop - 4, viewRight + 10, viewBottom + 6, applyAlpha(0xCC252C36, alpha));
-
-        graphics.fill(viewLeft, viewTop, viewRight, viewTop + 2, applyAlpha(0xCC4FC7DA, alpha));
-        graphics.fill(viewLeft, viewBottom - 2, viewRight, viewBottom, applyAlpha(0x994FC7DA, alpha));
-        graphics.fill(viewLeft, viewTop, viewLeft + 2, viewBottom, applyAlpha(0x884FC7DA, alpha));
-        graphics.fill(viewRight - 2, viewTop, viewRight, viewBottom, applyAlpha(0x884FC7DA, alpha));
-
-        int corner = Math.max(18, Math.min(width, height) / 18);
-        drawCornerBracket(graphics, viewLeft + 4, viewTop + 4, corner, true, true, alpha);
-        drawCornerBracket(graphics, viewRight - 4, viewTop + 4, corner, false, true, alpha);
-        drawCornerBracket(graphics, viewLeft + 4, viewBottom - 4, corner, true, false, alpha);
-        drawCornerBracket(graphics, viewRight - 4, viewBottom - 4, corner, false, false, alpha);
-
-        graphics.fillGradient(viewLeft + 4, viewTop + 3, viewRight - 4, viewTop + Math.max(34, height / 11),
-                applyAlpha(0x244FC7DA, alpha), 0x00000000);
-        graphics.fillGradient(viewLeft + 4, viewBottom - Math.max(24, height / 14), viewRight - 4, viewBottom - 3,
-                0x00000000, applyAlpha(0x18283440, alpha));
-        graphics.fillGradient(viewLeft + 8, viewTop + 8, viewRight - 8, viewBottom - 8,
-                applyAlpha(0x101E5968, alpha), applyAlpha(0x08070B10, alpha));
-
-        int glareY = viewTop + Math.max(14, (viewBottom - viewTop) / 5);
-        graphics.fill(viewLeft + 24, glareY, viewRight - 38, glareY + 1, applyAlpha(0x558EEAFF, alpha));
-        graphics.fill(viewLeft + 44, glareY + 16, viewRight - 92, glareY + 17, applyAlpha(0x2255C6D8, alpha));
-
-        int statusY = Math.max(6, viewTop - 25);
-        graphics.fill(viewLeft + 10, statusY - 3, viewLeft + 142, statusY + 11, applyAlpha(0x6610141A, alpha));
-        graphics.drawString(font, Component.literal("ORSA VIEWPORT"), viewLeft + 15, statusY,
+        graphics.fill(18, 18, 21, 21, applyAlpha(0xFF44E6A8, alpha));
+        graphics.drawString(font, Component.translatable(EndingCockpit.VIEWPORT), 25, 16,
                 applyAlpha(0xFF8DEAFF, alpha), false);
+        String clock = EndingCockpit.missionClock(payload.playTimeTicks() + (long) ageTicks);
+        graphics.drawString(font, clock, width - 18 - font.width(clock), 16, applyAlpha(0xAA8DEAFF, alpha), false);
 
-        renderApproachVectorTelemetry(graphics, tick, viewLeft, viewRight, viewTop, viewBottom, alpha);
+        MarsPlacement mars = marsPlacement(tick);
+        int half = Math.round(mars.face() * 0.62F);
+        int marsX = Math.round(mars.centerX());
+        int marsY = Math.round(mars.centerY());
+        drawCornerTicks(graphics, marsX - half, marsY - half, marsX + half, marsY + half, 5,
+                applyAlpha(0xCCE06D3C, alpha));
+        graphics.drawString(font, Component.translatable(EndingCockpit.MARS), marsX - half, marsY + half + 4,
+                applyAlpha(0xFFE06D3C, alpha), false);
+
+        renderApproachVectorTelemetry(graphics, tick, alpha);
     }
 
     private float getApproachViewportAlpha(float tick) {
@@ -448,75 +450,78 @@ public class FrozenDawnEndingScreen extends Screen {
         return fadeIn * fadeOut;
     }
 
-    private void drawCornerBracket(GuiGraphics graphics, int x, int y, int size, boolean left, boolean top,
-                                   float alpha) {
-        int color = applyAlpha(0xDD8DEAFF, alpha);
-        int horizontalStart = left ? x : x - size;
-        int horizontalEnd = left ? x + size : x;
-        int verticalStart = top ? y : y - size;
-        int verticalEnd = top ? y + size : y;
-        graphics.fill(horizontalStart, y, horizontalEnd, y + 2, color);
-        graphics.fill(x, verticalStart, x + 2, verticalEnd, color);
-        graphics.fill(horizontalStart, y + (top ? 2 : -2), horizontalStart + 6, y + (top ? 4 : 0),
-                applyAlpha(0xAA8DEAFF, alpha));
+    /** Small L-shaped ticks at the four corners of a box, each arm this many pixels long. */
+    private void drawCornerTicks(GuiGraphics graphics, int left, int top, int right, int bottom, int arm, int color) {
+        graphics.fill(left, top, left + arm + 1, top + 1, color);
+        graphics.fill(left, top, left + 1, top + arm + 1, color);
+        graphics.fill(right - arm, top, right + 1, top + 1, color);
+        graphics.fill(right, top, right + 1, top + arm + 1, color);
+        graphics.fill(left, bottom, left + arm + 1, bottom + 1, color);
+        graphics.fill(left, bottom - arm, left + 1, bottom + 1, color);
+        graphics.fill(right - arm, bottom, right + 1, bottom + 1, color);
+        graphics.fill(right, bottom - arm, right + 1, bottom + 1, color);
     }
 
-    private void renderApproachVectorTelemetry(GuiGraphics graphics, float tick, int viewLeft, int viewRight,
-                                               int viewTop, int viewBottom, float alpha) {
-        int panelW = Math.min(210, Math.max(142, (viewRight - viewLeft) / 4));
-        int panelH = 88;
-        int panelX = viewRight - panelW - 18;
-        int panelY = viewBottom - panelH - 18;
-        if (panelX < viewLeft + 16 || panelY < viewTop + 18) {
+    private void renderApproachVectorTelemetry(GuiGraphics graphics, float tick, float alpha) {
+        int panelW = 150;
+        int panelH = 78;
+        int panelX = 18;
+        int panelY = height - panelH - 18;
+        if (panelY < 34 || panelX + panelW > width / 2) {
             return;
         }
 
-        float flicker = 0.84F + hash01((int) tick * 17 + 31) * 0.16F;
-        float hudAlpha = alpha * flicker;
-        graphics.fill(panelX, panelY, panelX + panelW, panelY + panelH, applyAlpha(0xA0061218, hudAlpha));
-        graphics.fill(panelX + 2, panelY + 2, panelX + panelW - 2, panelY + panelH - 2,
-                applyAlpha(0x66102931, hudAlpha));
-        graphics.fill(panelX + 7, panelY + 7, panelX + 9, panelY + panelH - 7, applyAlpha(0xCC4FC7DA, hudAlpha));
-        graphics.fill(panelX + 15, panelY + 10, panelX + panelW - 12, panelY + 11, applyAlpha(0x554FC7DA, hudAlpha));
-
+        graphics.fill(panelX, panelY, panelX + panelW, panelY + panelH, applyAlpha(0x7006121A, alpha));
+        graphics.fill(panelX, panelY, panelX + panelW, panelY + 1, applyAlpha(0xCC4FC7DA, alpha));
+        graphics.fill(panelX, panelY + panelH - 1, panelX + panelW, panelY + panelH, applyAlpha(0x334FC7DA, alpha));
         graphics.drawString(font, Component.translatable("screen.frozendawn.ending.vector.title"),
-                panelX + 15, panelY + 16, applyAlpha(0xFF8DEAFF, hudAlpha), false);
-        graphics.drawString(font, Component.translatable("screen.frozendawn.ending.vector.gravity"),
-                panelX + 15, panelY + 30, applyAlpha(0xFFC9FFF8, hudAlpha), false);
-        graphics.drawString(font, Component.translatable("screen.frozendawn.ending.vector.corridor"),
-                panelX + 15, panelY + 42, applyAlpha(0xFFA7FFEA, hudAlpha), false);
+                panelX + 8, panelY + 6, applyAlpha(0xFF8DEAFF, alpha), false);
+        graphics.fill(panelX + panelW - 12, panelY + 8, panelX + panelW - 9, panelY + 11, applyAlpha(0xFF44E6A8, alpha));
 
-        int graphX = panelX + 18;
-        int graphY = panelY + 61;
-        int graphW = panelW - 42;
-        int centerY = graphY + 8;
-        int craftX = graphX + Math.round((0.22F + Mth.sin(tick * 0.025F) * 0.015F) * graphW);
-        int marsX = graphX + graphW - 8;
-        int cyan = applyAlpha(0xDD8DEAFF, hudAlpha);
-        int dimCyan = applyAlpha(0x6655C6D8, hudAlpha);
-        int orange = applyAlpha(0xFFE06D3C, hudAlpha);
+        float approach = (tick - BLACK_END_TICKS) / (float) (getCreditsStartTick() - BLACK_END_TICKS);
+        String range = EndingCockpit.groupThousands(EndingCockpit.rangeKm(approach));
+        int valueRight = panelX + panelW - 8;
+        drawReadout(graphics, panelX + 8, valueRight, panelY + 19, EndingCockpit.GRAVITY_LABEL,
+                Component.translatable(EndingCockpit.GRAVITY_VALUE), alpha);
+        drawReadout(graphics, panelX + 8, valueRight, panelY + 29, EndingCockpit.CORRIDOR_LABEL,
+                Component.translatable(EndingCockpit.CORRIDOR_VALUE), alpha);
+        drawReadout(graphics, panelX + 8, valueRight, panelY + 39, EndingCockpit.RANGE_LABEL,
+                Component.translatable(EndingCockpit.RANGE_VALUE, range), alpha);
 
-        graphics.fill(graphX, centerY, graphX + graphW, centerY + 1, dimCyan);
-        drawHudLine(graphics, craftX, centerY + 9, marsX, centerY - 5, cyan);
-        drawHudArrow(graphics, marsX - 10, centerY - 2, marsX - 1, centerY - 5, cyan);
-        drawHudReticle(graphics, marsX, centerY - 5, orange, hudAlpha);
-        graphics.fill(craftX - 1, centerY + 8, craftX + 2, centerY + 11, applyAlpha(0xFFE7F5FF, hudAlpha));
-        graphics.drawString(font, Component.translatable("screen.frozendawn.ending.vector.capture"),
-                graphX, panelY + 75, applyAlpha(0xFFB8EFFF, hudAlpha), false);
+        int graphX = panelX + 8;
+        int graphW = panelW - 17;
+        int graphY = panelY + 56;
+        for (int x = graphX; x < graphX + graphW; x += 3) {
+            graphics.fill(x, graphY, x + 1, graphY + 1, applyAlpha(0x5555C6D8, alpha));
+        }
+        int previousX = graphX;
+        int previousY = trajectoryY(graphY, 0.0F);
+        for (int i = 1; i <= 40; i++) {
+            float t = i / 40.0F;
+            int x = graphX + Math.round(t * graphW);
+            int y = trajectoryY(graphY, t);
+            drawHudLine(graphics, previousX, previousY, x, y, applyAlpha(0xDD8DEAFF, alpha));
+            previousX = x;
+            previousY = y;
+        }
+        float craft = Mth.clamp(0.22F + Mth.sin(tick * 0.025F) * 0.015F, 0.0F, 1.0F);
+        int craftX = graphX + Math.round(craft * graphW);
+        int craftY = trajectoryY(graphY, craft);
+        graphics.fill(craftX - 1, craftY - 1, craftX + 2, craftY + 2, applyAlpha(0xFFE7F5FF, alpha));
+        graphics.fill(previousX - 2, previousY - 2, previousX + 3, previousY + 3, applyAlpha(0xFFE06D3C, alpha));
+
+        drawReadout(graphics, panelX + 8, valueRight, panelY + 66, EndingCockpit.CAPTURE_LABEL,
+                Component.translatable(EndingCockpit.CAPTURE_VALUE), alpha);
     }
 
-    private void drawHudReticle(GuiGraphics graphics, int x, int y, int color, float alpha) {
-        graphics.fill(x - 2, y - 2, x + 3, y + 3, applyAlpha(0x55E06D3C, alpha));
-        graphics.fill(x - 7, y, x - 3, y + 1, color);
-        graphics.fill(x + 4, y, x + 8, y + 1, color);
-        graphics.fill(x, y - 7, x + 1, y - 3, color);
-        graphics.fill(x, y + 4, x + 1, y + 8, color);
+    private static int trajectoryY(int baseY, float t) {
+        return baseY + 4 - Math.round(Mth.sin(t * Mth.PI * 0.55F) * 7.0F);
     }
 
-    private void drawHudArrow(GuiGraphics graphics, int x0, int y0, int x1, int y1, int color) {
-        drawHudLine(graphics, x0, y0, x1, y1, color);
-        drawHudLine(graphics, x1, y1, x1 - 5, y1 - 2, color);
-        drawHudLine(graphics, x1, y1, x1 - 3, y1 + 5, color);
+    private void drawReadout(GuiGraphics graphics, int left, int right, int y, String labelKey, Component value,
+                             float alpha) {
+        graphics.drawString(font, Component.translatable(labelKey), left, y, applyAlpha(0xFF6FA3AC, alpha), false);
+        graphics.drawString(font, value, right - font.width(value), y, applyAlpha(0xFFD9FFF6, alpha), false);
     }
 
     private void drawHudLine(GuiGraphics graphics, int x0, int y0, int x1, int y1, int color) {
@@ -1146,6 +1151,9 @@ public class FrozenDawnEndingScreen extends Screen {
     private static float smoothStep(float value) {
         float t = Mth.clamp(value, 0.0F, 1.0F);
         return t * t * (3.0F - 2.0F * t);
+    }
+
+    private record MarsPlacement(float centerX, float centerY, float face) {
     }
 
     private record MarsVertex(float x, float y, float z) {
