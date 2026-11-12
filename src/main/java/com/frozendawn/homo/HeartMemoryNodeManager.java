@@ -111,7 +111,8 @@ public final class HeartMemoryNodeManager {
             int nodeIndex,
             Vec3 nodePosition,
             boolean applyPlayerConsequences) {
-        MemorySnapshot memory = snapshotMemory(data, hearth, player);
+        HeartMemoryLedger ledger = nodeIndex == HeartLattice.NODE_COUNT - 1
+                ? HeartMemoryLedger.of(player) : HeartMemoryLedger.EMPTY;
         ReturnedHearthSavedData.HeartNodeDamageResult result =
                 data.damageHeartMemoryNode(
                         hearth.id(), nodeIndex, level.getGameTime());
@@ -175,33 +176,10 @@ public final class HeartMemoryNodeManager {
                                     ? HeartLattice.HITS_PER_NODE
                                     : result.activeDamage(),
                             result.destroyedMask(),
-                            memory.variant(),
-                            memory.visits(),
-                            memory.casualties(),
+                            ledger,
                             result.destroyed()
                                     && witness.getUUID().equals(player.getUUID())));
         }
-    }
-
-    private static MemorySnapshot snapshotMemory(
-            ReturnedHearthSavedData data,
-            ReturnedHearthSavedData.HearthRecord hearth,
-            ServerPlayer player) {
-        ReturnedHearthSavedData.PlayerHiveMemory global = data
-                .playerMemory(player.getUUID()).orElse(null);
-        int visits = global == null ? 0 : global.totalVisits();
-        int casualties = global == null ? 0 : global.congregationCasualties();
-        ReturnedHearthSavedData.HiveRelationship relationship = global == null
-                ? ReturnedHearthSavedData.HiveRelationship.NEUTRAL
-                : global.relationship();
-        int violations = hearth.playerContact(player.getUUID())
-                .map(memory -> memory.violationReasons().size()).orElse(0);
-        int variant = casualties > 0 ? 3
-                : relationship == ReturnedHearthSavedData.HiveRelationship.ORSATHAE
-                || violations > 0 ? 2
-                : relationship == ReturnedHearthSavedData.HiveRelationship.SUSPICIOUS
-                ? 1 : 0;
-        return new MemorySnapshot(variant, visits, casualties);
     }
 
     private static boolean hasLineOfSight(
@@ -217,8 +195,5 @@ public final class HeartMemoryNodeManager {
         return hearth.heartLayoutSeed() != 0L
                 ? hearth.heartLayoutSeed()
                 : hearth.layoutSeed() ^ anchor.asLong() ^ 0x48454152544C4154L;
-    }
-
-    private record MemorySnapshot(int variant, int visits, int casualties) {
     }
 }

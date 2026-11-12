@@ -13,7 +13,7 @@
 
 **Spec:** [payoff-roadmap.md](payoff-roadmap.md), branch 5. Notion: the payoff branch spec, sections 6b and 5d. Canon: Canon Hierarchy CH-18 and CH-29, with CH-11, CH-28 and The Edge §13.2 and §13.13.
 
-**Status:** approved by the owner as written, 2026-11-10, Rulings 1 to 7 included. Nothing is built.
+**Status:** approved by the owner as written, 2026-11-10, Rulings 1 to 7 included. Built 2026-11-10 in `/Volumes/SSD/Work/frozen-dawn-heart-memory-node`: the mockups (`docs/art/heart-memory-node/`, approved with the arrival line wrapped onto two rows), tests, both gates, the owner's visual pass in the save "Heart Memory Check" (`tools/prepare_heart_memory_node_playtest.py`) and an Opus branch review passed. Amendments: Ruling 7's command is `/fd debug heart memory5`, since `heart` sits under `debug`, and it gained dev-only `sample main|peaceful|massacre` previews; lines wider than 300 GUI px wrap. The review's fixes: the panel holds while the game is paused, text too faint for the font is skipped rather than drawn opaque, and the Kevin GameTest schedules every task from its body. Ruling 1 amended by the owner, 2026-11-11: any violation makes a player permanently Orsathae, so the Orsathae test would have hidden `lost` from every violent run; `massacre` is now an emptied Hearth (below). The binding of a permanently vacant resident keeps the id of the resident that left it, a new optional `vacatedEntityId` in the save. Fixture note: a debug-started Heart forms at the Hearth center's stored y, so the playtest opens a pit over it.
 
 **Branch:** `feat/heart-memory-node` in `/Volumes/SSD/Work/frozen-dawn-heart-memory-node`, cut from `feat/maeve-director` once this plan has merged. The build session starts in that worktree and works there. PR into `feat/maeve-director`. The branch review runs on Opus, because the branch changes client/server sync (`HeartMemoryNodeEventPayload`) and merges into a long-lived branch.
 
@@ -33,7 +33,7 @@
    - `violationDay`: the day of the earliest `HearthContactMemory.firstViolationGameTime` across all Hearths, or 0 if none. New read-only `ReturnedHearthSavedData.firstViolationGameTime(UUID)`; no save change.
    - `casualties` and `casualtyDay`: `congregationCasualties()` and the day of `lastCongregationCasualtyGameTime`.
    - `deaths`: the vanilla `Stats.DEATHS` for the player.
-   - `massacre`: the player is permanently Orsathae (`HearthMemoryManager.isPermanentOrsathae`).
+   - `massacre`: the player emptied a Hearth: it had residents, every one is permanently vacant, and each vacancy was this player's congregation casualty (`ReturnedHearthSavedData.emptiedHearth(UUID)`). Amended 2026-11-11; it was permanent Orsathae.
    - A day is `floorDiv(gameTime, 24000) + 1`, never below 1, the same count Aurora's recalls use. Day 1 is the first day.
 2. **The lines.** Pure `HeartMemoryLedger.lines(): List<MemoryLine>`, where `MemoryLine(String key, Object... args)`. New keys under `overlay.frozendawn.heart_memory.node_5.`:
    - `arrived`: `Day %s. You came down out of the cold. They felt your warmth before they saw you.` Shown when `contactDay` > 0.

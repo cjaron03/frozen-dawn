@@ -71,6 +71,17 @@ class FrozenDawnCommandTreeTest {
     }
 
     @Test
+    void theLastMemoryNodeHasADevOnlyPreview() {
+        CommandNode<CommandSourceStack> heart = dispatcher().getRoot()
+                .getChild("frozendawn").getChild("debug").getChild("heart");
+        // Development-only; tests run as a development build.
+        assertNotNull(heart.getChild("memory5").getCommand());
+        for (String sample : Set.of("main", "peaceful", "massacre")) {
+            assertNotNull(heart.getChild("memory5").getChild("sample").getChild(sample).getCommand(), sample);
+        }
+    }
+
+    @Test
     void fdRedirectsToTheDebugGateway() {
         CommandDispatcher<CommandSourceStack> dispatcher = dispatcher();
         CommandNode<CommandSourceStack> debug = dispatcher.getRoot()

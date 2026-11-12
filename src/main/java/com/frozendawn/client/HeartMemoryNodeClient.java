@@ -3,6 +3,8 @@ package com.frozendawn.client;
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.entity.ThaeIvenHeartEntity;
 import com.frozendawn.homo.HeartFormationStage;
+import com.frozendawn.homo.HeartMemoryLedger;
+import com.frozendawn.homo.HeartMemoryReveal;
 import com.frozendawn.homo.HeartLattice;
 import com.frozendawn.init.ModSounds;
 import com.frozendawn.network.HeartMemoryNodeEventPayload;
@@ -15,6 +17,7 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
+import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
@@ -36,11 +39,11 @@ import java.util.UUID;
 @EventBusSubscriber(modid = FrozenDawn.MOD_ID, value = Dist.CLIENT)
 public final class HeartMemoryNodeClient {
     private static final int MEMORY_DURATION_TICKS = 220;
+    private static final int MEMORY_WRAP_WIDTH = 300;
     private static int memoryTicks;
+    private static int memoryDuration = MEMORY_DURATION_TICKS;
     private static int memoryNode = -1;
-    private static int memoryVariant;
-    private static int memoryVisits;
-    private static int memoryCasualties;
+    private static HeartMemoryLedger memoryLedger = HeartMemoryLedger.EMPTY;
     private static int maeveChannelTicks;
     private static UUID maeveChannelHeartId;
 
@@ -94,9 +97,9 @@ public final class HeartMemoryNodeClient {
 
     @SubscribeEvent
     public static void onClientTick(ClientTickEvent.Post event) {
-        if (memoryTicks > 0) {
-            memoryTicks--;
-        }
+        memoryTicks = HeartMemoryReveal.countDown(
+                memoryTicks, Minecraft.getInstance().isPaused());
+        HeartBattleMusic.setDucked(memoryTicks > 0 && isLastNode());
         tickMaeveChannel();
     }
 
@@ -132,10 +135,11 @@ public final class HeartMemoryNodeClient {
         }
         if (payload.showMemory()) {
             memoryNode = payload.nodeIndex();
-            memoryVariant = payload.memoryVariant();
-            memoryVisits = payload.visits();
-            memoryCasualties = payload.casualties();
-            memoryTicks = MEMORY_DURATION_TICKS;
+            memoryLedger = payload.ledger();
+            memoryDuration = isLastNode()
+                    ? HeartMemoryReveal.duration(memoryLedger.lines().size())
+                    : MEMORY_DURATION_TICKS;
+            memoryTicks = memoryDuration;
         }
     }
 
@@ -144,8 +148,12 @@ public final class HeartMemoryNodeClient {
             return;
         }
         Minecraft minecraft = Minecraft.getInstance();
-        float age = MEMORY_DURATION_TICKS - memoryTicks
+        float age = memoryDuration - memoryTicks
                 + deltaTracker.getGameTimeDeltaPartialTick(false);
+        if (isLastNode()) {
+            renderLastNode(graphics, minecraft, age);
+            return;
+        }
         float fadeIn = Mth.clamp(age / 18.0F, 0.0F, 1.0F);
         float fadeOut = Mth.clamp(memoryTicks / 35.0F, 0.0F, 1.0F);
         float alpha = fadeIn * fadeOut;
@@ -158,11 +166,12 @@ public final class HeartMemoryNodeClient {
         graphics.fill(centerX - 164, startY - 13,
                 centerX + 164, startY + 18 + lines.size() * 13,
                 backingAlpha << 24 | 0x00030A11);
-        int titleColor = withAlpha(0x7DEBFF, alpha);
-        Component title = Component.translatable(
-                "overlay.frozendawn.heart_memory.node_" + (memoryNode + 1) + ".title");
-        graphics.drawCenteredString(minecraft.font, title, centerX, startY,
-                titleColor);
+        if (!HeartMemoryReveal.visible(alpha)) {
+            RenderSystem.disableBlend();
+            return;
+        }
+        graphics.drawCenteredString(minecraft.font, title(), centerX, startY,
+                withAlpha(0x7DEBFF, alpha));
         for (int index = 0; index < lines.size(); index++) {
             graphics.drawCenteredString(
                     minecraft.font,
@@ -175,12 +184,59 @@ public final class HeartMemoryNodeClient {
         RenderSystem.disableBlend();
     }
 
+    /** Node five: the title, then the ledger one line at a time; the panel grows with the rows shown. */
+    private static void renderLastNode(GuiGraphics graphics, Minecraft minecraft, float age) {
+        List<Component> lines = memoryLines();
+        int shown = HeartMemoryReveal.linesShown(age, lines.size());
+        float panelAlpha = HeartMemoryReveal.panelAlpha(age, memoryDuration);
+        int centerX = graphics.guiWidth() / 2;
+        int startY = Math.max(44, graphics.guiHeight() / 2 - 56);
+        List<List<FormattedCharSequence>> rows = new ArrayList<>();
+        int rowCount = 0;
+        for (int index = 0; index < shown; index++) {
+            List<FormattedCharSequence> wrapped = minecraft.font.split(lines.get(index), MEMORY_WRAP_WIDTH);
+            rows.add(wrapped);
+            rowCount += wrapped.size();
+        }
+
+        RenderSystem.enableBlend();
+        graphics.fill(centerX - 164, startY - 13,
+                centerX + 164, startY + 18 + rowCount * 13,
+                Math.round(panelAlpha * 122.0F) << 24 | 0x00030A11);
+        if (HeartMemoryReveal.visible(panelAlpha)) {
+            graphics.drawCenteredString(minecraft.font, title(), centerX, startY,
+                    withAlpha(0x7DEBFF, panelAlpha));
+        }
+        int row = 0;
+        for (int index = 0; index < shown; index++) {
+            float alpha = HeartMemoryReveal.lineAlpha(age, index) * panelAlpha;
+            int color = withAlpha(index == lines.size() - 1 ? 0x9CCEDC : 0xC8EAF3, alpha);
+            for (FormattedCharSequence text : rows.get(index)) {
+                if (HeartMemoryReveal.visible(alpha)) {
+                    graphics.drawCenteredString(minecraft.font, text, centerX,
+                            startY + 17 + row * 13, color);
+                }
+                row++;
+            }
+        }
+        RenderSystem.disableBlend();
+    }
+
+    private static Component title() {
+        return Component.translatable(
+                "overlay.frozendawn.heart_memory.node_" + (memoryNode + 1) + ".title");
+    }
+
+    private static boolean isLastNode() {
+        return memoryNode == HeartLattice.NODE_COUNT - 1;
+    }
+
     public static void reset() {
         memoryTicks = 0;
+        memoryDuration = MEMORY_DURATION_TICKS;
+        HeartBattleMusic.setDucked(false);
         memoryNode = -1;
-        memoryVariant = 0;
-        memoryVisits = 0;
-        memoryCasualties = 0;
+        memoryLedger = HeartMemoryLedger.EMPTY;
         maeveChannelTicks = 0;
         maeveChannelHeartId = null;
     }
@@ -303,17 +359,18 @@ public final class HeartMemoryNodeClient {
             }
             return lines;
         }
-        lines.add(Component.translatable(
-                "overlay.frozendawn.heart_memory.node_5.variant_"
-                        + Mth.clamp(memoryVariant, 0, 3)));
-        lines.add(Component.translatable(
-                "overlay.frozendawn.heart_memory.node_5.visits", memoryVisits));
-        lines.add(Component.translatable(
-                "overlay.frozendawn.heart_memory.node_5.casualties",
-                memoryCasualties));
-        lines.add(Component.translatable(
-                "overlay.frozendawn.heart_memory.node_5.erased"));
+        for (HeartMemoryLedger.MemoryLine line : memoryLedger.lines()) {
+            lines.add(component(line));
+        }
         return lines;
+    }
+
+    private static Component component(HeartMemoryLedger.MemoryLine line) {
+        Object[] args = line.args().stream()
+                .map(arg -> arg instanceof HeartMemoryLedger.MemoryLine word
+                        ? component(word) : arg)
+                .toArray();
+        return Component.translatable(line.key(), args);
     }
 
     private static int withAlpha(int color, float alpha) {

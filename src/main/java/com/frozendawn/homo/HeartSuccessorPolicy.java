@@ -2,6 +2,8 @@ package com.frozendawn.homo;
 
 import net.minecraft.util.Mth;
 
+import java.util.List;
+
 /** Pure lifecycle and mode policy for Orsathae-vaen. */
 public final class HeartSuccessorPolicy {
     public static final int ASSEMBLY_TICKS = 100;
@@ -16,6 +18,10 @@ public final class HeartSuccessorPolicy {
     public static final double SUPPORT_SPEED_BONUS = 0.24D;
     public static final double SUPPORT_DAMAGE_BONUS = 0.30D;
     public static final float SUPPORT_DAMAGE_TAKEN_MULTIPLIER = 0.75F;
+    /** The random voice lines, as sound ids under entity.heart_successor; Kevin is not one. */
+    public static final List<String> BARKS =
+            List.of("voice_why", "voice_cold", "voice_hello", "voice_dont");
+    public static final int KEVIN_DELAY_TICKS = 30;
 
     private HeartSuccessorPolicy() {
     }
@@ -59,6 +65,15 @@ public final class HeartSuccessorPolicy {
 
     public static float mitigateSupportedDamage(float damage) {
         return Math.max(0.0F, damage) * SUPPORT_DAMAGE_TAKEN_MULTIPLIER;
+    }
+
+    /**
+     * CH-29: each Successor says Kevin once, 30 ticks into its first stagger, or into its
+     * death if it never staggers. An elapsed value of -1 means that has not started.
+     */
+    public static boolean kevinDue(boolean spoken, int staggerElapsed, int deathElapsed) {
+        return !spoken && (staggerElapsed >= KEVIN_DELAY_TICKS
+                || deathElapsed >= KEVIN_DELAY_TICKS);
     }
 
     public static Mode mode(long activeTicks) {
