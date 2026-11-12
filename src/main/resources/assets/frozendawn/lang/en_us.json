@@ -398,6 +398,7 @@
   "screen.frozendawn.ending.terminal.arrival": "ARRIVAL TELEMETRY",
   "screen.frozendawn.ending.terminal.signal": "INCOMING SIGNAL",
   "screen.frozendawn.ending.terminal.access": "ACCESS CONTROL",
+  "screen.frozendawn.ending.terminal.corrupt": "ACCESS CONTROL // SIGNAL CORRUPT",
   "screen.frozendawn.ending.welcome": "Welcome home.",
   "screen.frozendawn.ending.truth": "The End?",
   "screen.frozendawn.ending.created_by": "Created by:",

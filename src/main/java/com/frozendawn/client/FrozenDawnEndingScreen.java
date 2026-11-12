@@ -42,8 +42,8 @@ public class FrozenDawnEndingScreen extends Screen {
     private static final float EARTH_ROLL_RADIANS = (float) Math.toRadians(-8.0);
     private static final float EARTH_LIMB_GLOW_PIXELS = 3.0F;
     private static final int BASE_CREDITS_START_TICKS = 60 * 20;
-    private static final int COMPLIANCE_STATIC_TICKS = 34;
-    private static final int COMPLIANCE_TTS_DELAY_TICKS = COMPLIANCE_STATIC_TICKS + 10;
+    private static final int COMPLIANCE_GLITCH_TICKS = EndingGlitch.GLITCH_TICKS;
+    private static final int COMPLIANCE_TTS_DELAY_TICKS = COMPLIANCE_GLITCH_TICKS + 10;
     private static final int LINE_HEIGHT = 12;
     private static final int MARS_TEXTURE_SUBDIVISIONS = 16;
     private static final int MARS_FALLBACK_TEXTURE_GRID = 64;
@@ -1029,7 +1029,9 @@ public class FrozenDawnEndingScreen extends Screen {
                     beat.titleColor(),
                     beat.bodyColor(),
                     beat.accentColor(),
-                    pulseAlpha(local, 28.0F, beat.ticks() - 35.0F),
+                    EndingEpilogue.signalHolds(payload.conspiracyDiscovered())
+                            ? Mth.clamp(local / 28.0F, 0.0F, 1.0F)
+                            : pulseAlpha(local, 28.0F, beat.ticks() - 35.0F),
                     local);
             case COMPLIANCE -> renderCompliance(graphics, beat, local);
             case END_CARD -> {
@@ -1050,67 +1052,61 @@ public class FrozenDawnEndingScreen extends Screen {
         if (!payload.showComplianceLine()) {
             return;
         }
-        if (local < COMPLIANCE_STATIC_TICKS) {
-            drawComplianceStatic(graphics, local, pulseAlpha(local, 8.0F, COMPLIANCE_STATIC_TICKS - 10.0F));
+        if (local < COMPLIANCE_GLITCH_TICKS) {
+            renderGlitchedWelcome(graphics, local);
             return;
         }
-        int messageLocal = local - COMPLIANCE_STATIC_TICKS;
+        int messageLocal = local - COMPLIANCE_GLITCH_TICKS;
         drawEndingTerminalPanel(graphics,
                 Component.translatable("screen.frozendawn.ending.terminal.access"),
                 Component.translatable(beat.key()),
                 beat.titleColor(),
                 beat.bodyColor(),
                 beat.accentColor(),
-                pulseAlpha(messageLocal, 22.0F, beat.ticks() - COMPLIANCE_STATIC_TICKS - 45.0F),
+                pulseAlpha(messageLocal, 22.0F, beat.ticks() - COMPLIANCE_GLITCH_TICKS - 45.0F),
                 -1);
     }
 
-    private void drawComplianceStatic(GuiGraphics graphics, int local, float alpha) {
-        if (alpha <= 0.04F) {
+    /**
+     * Ending B's cut: the held welcome tears into sideways slices, its letters corrupt, it bleeds to red behind a red
+     * ghost and scan lines, and it blinks out just before the access-control line.
+     */
+    private void renderGlitchedWelcome(GuiGraphics graphics, int local) {
+        if (EndingGlitch.blankFrame(local)) {
             return;
         }
+        float progress = EndingGlitch.progress(local);
+        EndingEpilogue.Beat signal = epilogue().stream()
+                .filter(beat -> beat.kind() == EndingEpilogue.Kind.SIGNAL).findFirst().orElseThrow();
+        String welcome = Component.translatable(signal.key()).getString();
+        String corrupted = EndingGlitch.corrupt(welcome, progress, local);
+        Component title = EndingGlitch.titleCorrupted(local, progress)
+                ? Component.translatable("screen.frozendawn.ending.terminal.corrupt")
+                : Component.translatable("screen.frozendawn.ending.terminal.signal");
+        int titleColor = EndingGlitch.mix(signal.titleColor(), 0xFFFF8B8B, progress);
+        int bodyColor = EndingGlitch.mix(signal.bodyColor(), 0xFFFFC0C0, progress);
+        int accentColor = EndingGlitch.mix(signal.accentColor(), 0xCCFF5C5C, progress);
 
-        int panelW = Math.min(520, width - 32);
-        int panelH = 82;
-        int panelX = (width - panelW) / 2;
-        int panelY = height / 2 - panelH / 2;
-
-        graphics.fill(panelX, panelY, panelX + panelW, panelY + panelH, applyAlpha(0xA0180708, alpha));
-        graphics.fill(panelX + 2, panelY + 2, panelX + panelW - 2, panelY + panelH - 2,
-                applyAlpha(0x80100508, alpha));
-        graphics.fill(panelX + 6, panelY + 6, panelX + 8, panelY + panelH - 6, applyAlpha(0xCCFF5C5C, alpha));
-
-        int seed = local * 97;
-        for (int i = 0; i < 44; i++) {
-            float roll = hash01(seed + i * 31);
-            int y = panelY + 8 + Math.round(hash01(seed + i * 47) * (panelH - 16));
-            int x = panelX + 14 + Math.round(hash01(seed + i * 71) * (panelW - 44));
-            int len = 8 + Math.round(hash01(seed + i * 83) * 82);
-            int color = roll < 0.35F ? 0xFFFFC0C0 : roll < 0.72F ? 0xFFFF5C5C : 0xFF241014;
-            graphics.fill(x, y, Math.min(panelX + panelW - 14, x + len), y + 1, applyAlpha(color, alpha));
+        int top = height / 2 - 40;
+        for (int slice = 0; top + slice * EndingGlitch.SLICE_HEIGHT < height / 2 + 40; slice++) {
+            int y = top + slice * EndingGlitch.SLICE_HEIGHT;
+            graphics.enableScissor(0, y, width, y + EndingGlitch.SLICE_HEIGHT);
+            graphics.pose().pushPose();
+            graphics.pose().translate(EndingGlitch.sliceOffset(slice, local, progress), 0.0F, 0.0F);
+            drawTerminalPanel(graphics, title, corrupted, welcome, titleColor, bodyColor, accentColor, 1.0F, -1);
+            graphics.pose().popPose();
+            graphics.disableScissor();
         }
-
-        for (int i = 0; i < 18; i++) {
-            int y = panelY + 12 + i * 4;
-            int color = i % 2 == 0 ? 0x2220F0FF : 0x22100000;
-            graphics.fill(panelX + 12, y, panelX + panelW - 12, y + 1, applyAlpha(color, alpha));
+        if (progress > 0.2F) {
+            graphics.pose().pushPose();
+            graphics.pose().translate(2.0F, 0.0F, 0.0F);
+            drawTerminalPanel(graphics, title, corrupted, welcome, 0xFFFF5C5C, 0xFFFF5C5C, 0xCCFF5C5C,
+                    0.35F * progress, -1);
+            graphics.pose().popPose();
         }
-
-        if (local % 5 != 0) {
-            graphics.drawString(font,
-                    Component.literal("[ORSA] ACCESS CONTROL // SIGNAL CORRUPT"),
-                    panelX + 16,
-                    panelY + 8,
-                    applyAlpha(0xFFFF8B8B, alpha),
-                    false);
-        }
-        if (local % 7 < 4) {
-            graphics.drawString(font,
-                    Component.literal("//// DECRYPTING COMPLIANCE PACKET ////"),
-                    panelX + 16,
-                    panelY + 58,
-                    applyAlpha(0xFFFFC0C0, alpha * 0.82F),
-                    false);
+        for (int line = 0; line < Math.round(progress * 10.0F); line++) {
+            int y = Math.round(EndingGlitch.scanLine(local, line) * height);
+            graphics.fill(0, y, width, y + 1, line % 2 == 0 ? 0x66FFC0C0 : 0x88FF5C5C);
         }
     }
 
@@ -1126,11 +1122,17 @@ public class FrozenDawnEndingScreen extends Screen {
     private void drawEndingTerminalPanel(GuiGraphics graphics, Component title, Component body,
                                          int titleColor, int bodyColor, int accentColor, float alpha,
                                          int typingTicks) {
+        String text = body.getString();
+        drawTerminalPanel(graphics, title, text, text, titleColor, bodyColor, accentColor, alpha, typingTicks);
+    }
+
+    /** The panel sized to sizingText, so a corrupted line keeps its clean line's frame. */
+    private void drawTerminalPanel(GuiGraphics graphics, Component title, String text, String sizingText,
+                                   int titleColor, int bodyColor, int accentColor, float alpha, int typingTicks) {
         if (alpha <= 0.04F) {
             return;
         }
-        String text = body.getString();
-        int panelW = Math.min(width - 32, Math.max(200, font.width(text) + 40));
+        int panelW = Math.min(width - 32, Math.max(200, font.width(sizingText) + 40));
         List<String> lines = font.getSplitter().splitLines(text, panelW - 32, net.minecraft.network.chat.Style.EMPTY)
                 .stream().map(net.minecraft.network.chat.FormattedText::getString).toList();
         int panelH = 36 + lines.size() * 9;

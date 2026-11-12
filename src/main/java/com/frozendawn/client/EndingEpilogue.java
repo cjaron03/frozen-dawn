@@ -68,6 +68,11 @@ public final class EndingEpilogue {
         return -1;
     }
 
+    /** Whether the welcome stays up to the end of its beat: in Ending B it holds until it glitches into compliance. */
+    public static boolean signalHolds(boolean truth) {
+        return truth;
+    }
+
     /** The End? card's opacity: in over 28 ticks, then held, past its beat, until the screen closes. */
     public static float cardAlpha(int ticksIntoCard) {
         return Math.max(0.0F, Math.min(1.0F, ticksIntoCard / (float) CARD_FADE_IN_TICKS));
