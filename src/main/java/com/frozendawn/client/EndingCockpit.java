@@ -7,6 +7,9 @@ import java.util.Locale;
 public final class EndingCockpit {
     public static final int START_RANGE_KM = 96_400;
     public static final int TICKS_PER_LETTER = 2;
+    /** A terminal panel's title starts this far in, after its status dot. */
+    public static final int TITLE_INSET = 23;
+    private static final int MIN_PANEL_WIDTH = 200;
 
     public static final String VIEWPORT = "screen.frozendawn.ending.viewport";
     public static final String MARS = "screen.frozendawn.ending.mars";
@@ -38,6 +41,12 @@ public final class EndingCockpit {
 
     public static String groupThousands(int value) {
         return String.format(Locale.ROOT, "%,d", value).replace(',', ' ');
+    }
+
+    /** A terminal panel's width: its body or its title, whichever is wider, with the margins, within the screen. */
+    public static int panelWidth(int screenWidth, int bodyWidth, int titleWidth) {
+        int wanted = Math.max(MIN_PANEL_WIDTH, Math.max(bodyWidth + 40, titleWidth + TITLE_INSET + 8));
+        return Math.min(screenWidth - 32, wanted);
     }
 
     /** How many letters of a signal have typed in, this many ticks into its panel. */

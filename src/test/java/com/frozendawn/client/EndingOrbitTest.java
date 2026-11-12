@@ -54,6 +54,24 @@ class EndingOrbitTest {
     }
 
     @Test
+    void theSpaceGoesBlackForTheHold() {
+        assertEquals(0.0F, EndingOrbit.spaceAlpha(EndingOrbit.EARTH_START), "the opening black");
+        assertEquals(1.0F, EndingOrbit.spaceAlpha(EndingOrbit.BURN_TICK - 1), "stars behind the Earth");
+        for (int tick = EndingOrbit.EARTH_END; tick <= EndingOrbit.MARS_START; tick++) {
+            assertEquals(0.0F, EndingOrbit.spaceAlpha(tick), "held black at tick " + tick);
+        }
+        assertEquals(1.0F, EndingOrbit.spaceAlpha(EndingOrbit.MARS_START + 100), "stars again for Mars");
+    }
+
+    @Test
+    void marsKeepsHalfAMinuteBeforeTheCredits() {
+        assertEquals(460, EndingOrbit.BURN_TICK);
+        assertEquals(500, EndingOrbit.EARTH_END);
+        assertEquals(540, EndingOrbit.MARS_START);
+        assertTrue(EndingOrbit.MARS_START + 30 * 20 <= 60 * 20, "the credits start at tick 1200");
+    }
+
+    @Test
     void everyLifeSupportLabelHasText() throws IOException {
         try (var in = EndingOrbitTest.class.getResourceAsStream("/assets/frozendawn/lang/en_us.json")) {
             assertNotNull(in, "en_us.json on the classpath");

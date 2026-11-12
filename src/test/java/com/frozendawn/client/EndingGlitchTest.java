@@ -58,6 +58,12 @@ class EndingGlitchTest {
     }
 
     @Test
+    void theNarrationKeepsItsTiming() {
+        assertEquals(34, EndingGlitch.GLITCH_TICKS, "the glitch takes the old static's place");
+        assertEquals(44, EndingEpilogue.COMPLIANCE_NARRATION_DELAY_TICKS, "the narration starts where it always did");
+    }
+
+    @Test
     void onlyEndingBHoldsItsWelcome() {
         assertTrue(EndingEpilogue.signalHolds(true), "Ending B's welcome stays up until it glitches");
         assertFalse(EndingEpilogue.signalHolds(false), "Ending A's welcome fades out as before");

@@ -45,6 +45,18 @@ public final class EndingOrbit {
         return in * out;
     }
 
+    /**
+     * The starfield's opacity: it rises out of the opening black, goes with the Earth when the burn fires, stays
+     * black for the hold, and returns with Mars.
+     */
+    public static float spaceAlpha(float tick) {
+        if (tick >= MARS_START) {
+            return smooth((tick - MARS_START) / FADE_IN_TICKS);
+        }
+        float in = Math.max(0.0F, Math.min(1.0F, (tick - EARTH_START) / 100.0F));
+        return in * (1.0F - smooth((tick - BURN_TICK) / (float) (EARTH_END - BURN_TICK)));
+    }
+
     /** The longitude under the camera: the globe turns west to east through the prelude. */
     public static double longitude(float tick) {
         double progress = Math.max(0.0, Math.min(1.0, (tick - EARTH_START) / (double) (EARTH_END - EARTH_START)));

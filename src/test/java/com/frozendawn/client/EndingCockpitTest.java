@@ -51,6 +51,14 @@ class EndingCockpitTest {
     }
 
     @Test
+    void aPanelFitsItsTitle() {
+        assertEquals(200, EndingCockpit.panelWidth(427, 70, 100), "short lines keep the minimum width");
+        int wide = EndingCockpit.panelWidth(427, 70, 218);
+        assertTrue(wide >= EndingCockpit.TITLE_INSET + 218 + 8, "the corrupt header stays on the glass");
+        assertEquals(427 - 32, EndingCockpit.panelWidth(427, 600, 100), "never wider than the screen allows");
+    }
+
+    @Test
     void everyCockpitLabelHasText() throws IOException {
         try (var in = EndingCockpitTest.class.getResourceAsStream("/assets/frozendawn/lang/en_us.json")) {
             assertNotNull(in, "en_us.json on the classpath");

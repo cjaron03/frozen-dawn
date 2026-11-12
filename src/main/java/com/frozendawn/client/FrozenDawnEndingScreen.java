@@ -35,7 +35,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class FrozenDawnEndingScreen extends Screen {
-    private static final int BLACK_END_TICKS = 5 * 20;
     private static final int MARS_START_TICKS = EndingOrbit.MARS_START;
     private static final float EARTH_RADIUS_PER_HEIGHT = 280.0F / 240.0F;
     private static final float EARTH_CENTER_BELOW_PER_HEIGHT = 90.0F / 240.0F;
@@ -43,7 +42,7 @@ public class FrozenDawnEndingScreen extends Screen {
     private static final float EARTH_LIMB_GLOW_PIXELS = 3.0F;
     private static final int BASE_CREDITS_START_TICKS = 60 * 20;
     private static final int COMPLIANCE_GLITCH_TICKS = EndingGlitch.GLITCH_TICKS;
-    private static final int COMPLIANCE_TTS_DELAY_TICKS = COMPLIANCE_GLITCH_TICKS + 10;
+    private static final int COMPLIANCE_TTS_DELAY_TICKS = EndingEpilogue.COMPLIANCE_NARRATION_DELAY_TICKS;
     private static final int LINE_HEIGHT = 12;
     private static final int MARS_TEXTURE_SUBDIVISIONS = 16;
     private static final int MARS_FALLBACK_TEXTURE_GRID = 64;
@@ -304,7 +303,7 @@ public class FrozenDawnEndingScreen extends Screen {
 
     private void renderSpace(GuiGraphics graphics, float tick) {
         graphics.fill(0, 0, width, height, 0xFF000000);
-        float reveal = Mth.clamp((tick - BLACK_END_TICKS) / 100.0F, 0.0F, 1.0F);
+        float reveal = EndingOrbit.spaceAlpha(tick);
         if (reveal <= 0.0F) {
             return;
         }
@@ -1080,8 +1079,9 @@ public class FrozenDawnEndingScreen extends Screen {
                 .filter(beat -> beat.kind() == EndingEpilogue.Kind.SIGNAL).findFirst().orElseThrow();
         String welcome = Component.translatable(signal.key()).getString();
         String corrupted = EndingGlitch.corrupt(welcome, progress, local);
+        Component corruptTitle = Component.translatable("screen.frozendawn.ending.terminal.corrupt");
         Component title = EndingGlitch.titleCorrupted(local, progress)
-                ? Component.translatable("screen.frozendawn.ending.terminal.corrupt")
+                ? corruptTitle
                 : Component.translatable("screen.frozendawn.ending.terminal.signal");
         int titleColor = EndingGlitch.mix(signal.titleColor(), 0xFFFF8B8B, progress);
         int bodyColor = EndingGlitch.mix(signal.bodyColor(), 0xFFFFC0C0, progress);
@@ -1093,14 +1093,15 @@ public class FrozenDawnEndingScreen extends Screen {
             graphics.enableScissor(0, y, width, y + EndingGlitch.SLICE_HEIGHT);
             graphics.pose().pushPose();
             graphics.pose().translate(EndingGlitch.sliceOffset(slice, local, progress), 0.0F, 0.0F);
-            drawTerminalPanel(graphics, title, corrupted, welcome, titleColor, bodyColor, accentColor, 1.0F, -1);
+            drawTerminalPanel(graphics, title, corruptTitle, corrupted, welcome, titleColor, bodyColor, accentColor,
+                    1.0F, -1);
             graphics.pose().popPose();
             graphics.disableScissor();
         }
         if (progress > 0.2F) {
             graphics.pose().pushPose();
             graphics.pose().translate(2.0F, 0.0F, 0.0F);
-            drawTerminalPanel(graphics, title, corrupted, welcome, 0xFFFF5C5C, 0xFFFF5C5C, 0xCCFF5C5C,
+            drawTerminalPanel(graphics, title, corruptTitle, corrupted, welcome, 0xFFFF5C5C, 0xFFFF5C5C, 0xCCFF5C5C,
                     0.35F * progress, -1);
             graphics.pose().popPose();
         }
@@ -1123,16 +1124,21 @@ public class FrozenDawnEndingScreen extends Screen {
                                          int titleColor, int bodyColor, int accentColor, float alpha,
                                          int typingTicks) {
         String text = body.getString();
-        drawTerminalPanel(graphics, title, text, text, titleColor, bodyColor, accentColor, alpha, typingTicks);
+        drawTerminalPanel(graphics, title, title, text, text, titleColor, bodyColor, accentColor, alpha, typingTicks);
     }
 
-    /** The panel sized to sizingText, so a corrupted line keeps its clean line's frame. */
-    private void drawTerminalPanel(GuiGraphics graphics, Component title, String text, String sizingText,
-                                   int titleColor, int bodyColor, int accentColor, float alpha, int typingTicks) {
+    /**
+     * The panel sized to sizingTitle and sizingText, so a corrupted line and a flickering header keep one frame
+     * that holds them both.
+     */
+    private void drawTerminalPanel(GuiGraphics graphics, Component title, Component sizingTitle, String text,
+                                   String sizingText, int titleColor, int bodyColor, int accentColor, float alpha,
+                                   int typingTicks) {
         if (alpha <= 0.04F) {
             return;
         }
-        int panelW = Math.min(width - 32, Math.max(200, font.width(sizingText) + 40));
+        int panelW = EndingCockpit.panelWidth(width, font.width(sizingText),
+                font.width(Component.literal("[ORSA] ").append(sizingTitle)));
         List<String> lines = font.getSplitter().splitLines(text, panelW - 32, net.minecraft.network.chat.Style.EMPTY)
                 .stream().map(net.minecraft.network.chat.FormattedText::getString).toList();
         int panelH = 36 + lines.size() * 9;
@@ -1144,7 +1150,7 @@ public class FrozenDawnEndingScreen extends Screen {
         graphics.fill(panelX, panelY + panelH - 1, panelX + panelW, panelY + panelH, applyAlpha(accentColor, alpha * 0.3F));
         graphics.fill(panelX + 16, panelY + 9, panelX + 19, panelY + 12, applyAlpha(accentColor, alpha));
         graphics.drawString(font, Component.literal("[ORSA] ").append(title),
-                panelX + 23, panelY + 8, applyAlpha(titleColor, alpha * 0.8F), false);
+                panelX + EndingCockpit.TITLE_INSET, panelY + 8, applyAlpha(titleColor, alpha * 0.8F), false);
 
         int typed = typingTicks < 0 ? text.length() : EndingCockpit.typedLength(typingTicks, text.length());
         int lineY = panelY + 24;

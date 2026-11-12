@@ -10,6 +10,8 @@ import java.util.List;
 public final class EndingEpilogue {
     private static final int BASE_ENDING_COMPLETE_TICKS = 8 * 60 * 20 + 20 * 20;
     private static final int CARD_FADE_IN_TICKS = 28;
+    /** The compliance narration starts this far into its beat, ten ticks after the glitch hands over. */
+    public static final int COMPLIANCE_NARRATION_DELAY_TICKS = EndingGlitch.GLITCH_TICKS + 10;
 
     private static final int TEAL_TITLE = 0xFFA7FFEA;
     private static final int TEAL_BODY = 0xFFD9FFF6;
