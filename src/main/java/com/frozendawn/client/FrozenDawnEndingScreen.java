@@ -812,10 +812,10 @@ public class FrozenDawnEndingScreen extends Screen {
 
     private void renderSkipHint(GuiGraphics graphics) {
         Component hint = Component.translatable("screen.frozendawn.ending.skip_hint");
-        int x = width - font.width(hint) - 12;
-        int y = height - 18;
-        graphics.fill(x - 7, y - 5, width - 7, y + 13, 0x88061014);
-        graphics.drawString(font, hint, x, y, 0xFFB8EFFF, false);
+        int x = width - font.width(hint) - 18;
+        int y = height - 22;
+        graphics.fill(x - 5, y - 4, width - 14, y + 11, 0x66061014);
+        graphics.drawString(font, hint, x, y, 0xCCB8EFFF, false);
     }
 
     private void renderPostCredits(GuiGraphics graphics) {
@@ -845,19 +845,19 @@ public class FrozenDawnEndingScreen extends Screen {
             case COLONY -> drawEndingTerminalPanel(graphics,
                     Component.translatable("screen.frozendawn.ending.terminal.arrival"),
                     Component.translatable(beat.key()),
-                    null,
                     beat.titleColor(),
                     beat.bodyColor(),
                     beat.accentColor(),
-                    pulseAlpha(local, 28.0F, beat.ticks() - 45.0F));
+                    pulseAlpha(local, 28.0F, beat.ticks() - 45.0F),
+                    -1);
             case SIGNAL -> drawEndingTerminalPanel(graphics,
                     Component.translatable("screen.frozendawn.ending.terminal.signal"),
                     Component.translatable(beat.key()),
-                    null,
                     beat.titleColor(),
                     beat.bodyColor(),
                     beat.accentColor(),
-                    pulseAlpha(local, 28.0F, beat.ticks() - 35.0F));
+                    pulseAlpha(local, 28.0F, beat.ticks() - 35.0F),
+                    local);
             case COMPLIANCE -> renderCompliance(graphics, beat, local);
             case END_CARD -> {
                 // Alone on black: no panel, header or frame, and it stays as the last frame.
@@ -885,11 +885,11 @@ public class FrozenDawnEndingScreen extends Screen {
         drawEndingTerminalPanel(graphics,
                 Component.translatable("screen.frozendawn.ending.terminal.access"),
                 Component.translatable(beat.key()),
-                null,
                 beat.titleColor(),
                 beat.bodyColor(),
                 beat.accentColor(),
-                pulseAlpha(messageLocal, 22.0F, beat.ticks() - COMPLIANCE_STATIC_TICKS - 45.0F));
+                pulseAlpha(messageLocal, 22.0F, beat.ticks() - COMPLIANCE_STATIC_TICKS - 45.0F),
+                -1);
     }
 
     private void drawComplianceStatic(GuiGraphics graphics, int local, float alpha) {
@@ -946,31 +946,51 @@ public class FrozenDawnEndingScreen extends Screen {
         graphics.drawCenteredString(font, hint, width / 2, height - 58, 0xFFB8EFFF);
     }
 
-    private void drawEndingTerminalPanel(GuiGraphics graphics, Component title, Component body, Component secondary,
-                                         int titleColor, int bodyColor, int accentColor, float alpha) {
+    /**
+     * A glass terminal panel sized to its text. With typingTicks at 0 or more, the body types in behind a block
+     * cursor, which blinks once the line is complete; at -1 the body shows whole.
+     */
+    private void drawEndingTerminalPanel(GuiGraphics graphics, Component title, Component body,
+                                         int titleColor, int bodyColor, int accentColor, float alpha,
+                                         int typingTicks) {
         if (alpha <= 0.04F) {
             return;
         }
-        int panelW = Math.min(520, width - 32);
-        int panelH = secondary == null ? 64 : 82;
+        String text = body.getString();
+        int panelW = Math.min(width - 32, Math.max(200, font.width(text) + 40));
+        List<String> lines = font.getSplitter().splitLines(text, panelW - 32, net.minecraft.network.chat.Style.EMPTY)
+                .stream().map(net.minecraft.network.chat.FormattedText::getString).toList();
+        int panelH = 36 + lines.size() * 9;
         int panelX = (width - panelW) / 2;
         int panelY = height / 2 - panelH / 2;
 
-        graphics.fill(panelX, panelY, panelX + panelW, panelY + panelH, applyAlpha(0xA008120F, alpha));
-        graphics.fill(panelX + 2, panelY + 2, panelX + panelW - 2, panelY + panelH - 2,
-                applyAlpha(0x7A10231D, alpha));
-        graphics.fill(panelX + 6, panelY + 6, panelX + 8, panelY + panelH - 6, applyAlpha(accentColor, alpha));
-        graphics.fill(panelX + 14, panelY + 8, panelX + panelW - 10, panelY + 9, applyAlpha(0x5526F6B0, alpha));
-
-        int scanRange = Math.max(1, panelH - 18);
-        int scanY = panelY + 11 + Math.floorMod(ageTicks, scanRange);
-        graphics.fill(panelX + 14, scanY, panelX + panelW - 12, scanY + 1, applyAlpha(0x3344E6A8, alpha));
-
+        graphics.fill(panelX, panelY, panelX + panelW, panelY + panelH, applyAlpha(0x9008120F, alpha));
+        graphics.fill(panelX, panelY, panelX + panelW, panelY + 1, applyAlpha(accentColor, alpha));
+        graphics.fill(panelX, panelY + panelH - 1, panelX + panelW, panelY + panelH, applyAlpha(accentColor, alpha * 0.3F));
+        graphics.fill(panelX + 16, panelY + 9, panelX + 19, panelY + 12, applyAlpha(accentColor, alpha));
         graphics.drawString(font, Component.literal("[ORSA] ").append(title),
-                panelX + 16, panelY + 8, applyAlpha(titleColor, alpha), false);
-        graphics.drawWordWrap(font, body, panelX + 16, panelY + 28, panelW - 32, applyAlpha(bodyColor, alpha));
-        if (secondary != null) {
-            graphics.drawWordWrap(font, secondary, panelX + 16, panelY + 50, panelW - 32, applyAlpha(bodyColor, alpha));
+                panelX + 23, panelY + 8, applyAlpha(titleColor, alpha * 0.8F), false);
+
+        int typed = typingTicks < 0 ? text.length() : EndingCockpit.typedLength(typingTicks, text.length());
+        int lineY = panelY + 24;
+        int cursorX = panelX + 16;
+        int cursorY = lineY;
+        int from = 0;
+        for (String line : lines) {
+            int start = Math.max(from, text.indexOf(line, from));
+            from = start + line.length();
+            int visible = Mth.clamp(typed - start, 0, line.length());
+            if (visible > 0) {
+                String shown = line.substring(0, visible);
+                graphics.drawString(font, shown, panelX + 16, lineY, applyAlpha(bodyColor, alpha), false);
+                cursorX = panelX + 16 + font.width(shown);
+                cursorY = lineY;
+            }
+            lineY += 9;
+        }
+        boolean typing = typed < text.length();
+        if (typingTicks >= 0 && (typing || (typingTicks / 10) % 2 == 0)) {
+            graphics.fill(cursorX + 1, cursorY, cursorX + 6, cursorY + 8, applyAlpha(bodyColor, alpha * 0.85F));
         }
     }
 
