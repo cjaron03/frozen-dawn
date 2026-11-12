@@ -36,6 +36,11 @@ import java.util.List;
 
 public class FrozenDawnEndingScreen extends Screen {
     private static final int BLACK_END_TICKS = 5 * 20;
+    private static final int MARS_START_TICKS = EndingOrbit.MARS_START;
+    private static final float EARTH_RADIUS_PER_HEIGHT = 280.0F / 240.0F;
+    private static final float EARTH_CENTER_BELOW_PER_HEIGHT = 90.0F / 240.0F;
+    private static final float EARTH_ROLL_RADIANS = (float) Math.toRadians(-8.0);
+    private static final float EARTH_LIMB_GLOW_PIXELS = 3.0F;
     private static final int BASE_CREDITS_START_TICKS = 60 * 20;
     private static final int COMPLIANCE_STATIC_TICKS = 34;
     private static final int COMPLIANCE_TTS_DELAY_TICKS = COMPLIANCE_STATIC_TICKS + 10;
@@ -74,6 +79,8 @@ public class FrozenDawnEndingScreen extends Screen {
     private boolean complianceStaticPlayed;
     private boolean complianceNarrationPlayed;
     private MarsFaceTexture[] marsTextures;
+    private EarthGlobeCells earthCells;
+    private EarthMap earthMap;
 
     public FrozenDawnEndingScreen(EndingSequencePayload payload) {
         super(Component.translatable("screen.frozendawn.ending.title"));
@@ -112,6 +119,7 @@ public class FrozenDawnEndingScreen extends Screen {
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         float tick = ageTicks + partialTick;
         renderSpace(graphics, tick);
+        renderEarthOrbit(graphics, tick);
         renderMars(graphics, tick);
         renderApproachViewport(graphics, tick);
 
@@ -316,7 +324,7 @@ public class FrozenDawnEndingScreen extends Screen {
     }
 
     private void renderMars(GuiGraphics graphics, float tick) {
-        float reveal = Mth.clamp((tick - BLACK_END_TICKS) / (float) (BASE_CREDITS_START_TICKS - BLACK_END_TICKS), 0.0F, 1.0F);
+        float reveal = Mth.clamp((tick - MARS_START_TICKS) / (float) (BASE_CREDITS_START_TICKS - MARS_START_TICKS), 0.0F, 1.0F);
         if (reveal <= 0.0F) {
             return;
         }
@@ -326,8 +334,8 @@ public class FrozenDawnEndingScreen extends Screen {
         MarsPlacement placement = marsPlacement(tick);
         float targetFace = placement.face();
         float halfSize = targetFace * 0.5F;
-        float yaw = MARS_YAW_OFFSET + (tick - BLACK_END_TICKS) * 0.012F;
-        float marsAlpha = smoothStep(Mth.clamp((tick - BLACK_END_TICKS) / 80.0F, 0.0F, 1.0F));
+        float yaw = MARS_YAW_OFFSET + (tick - MARS_START_TICKS) * 0.012F;
+        float marsAlpha = smoothStep(Mth.clamp((tick - MARS_START_TICKS) / 80.0F, 0.0F, 1.0F));
         float centerX = placement.centerX();
         float centerY = placement.centerY();
         renderMarsBacklight(graphics, Math.round(centerX), Math.round(centerY), targetFace, revealPulse * marsAlpha);
@@ -365,8 +373,163 @@ public class FrozenDawnEndingScreen extends Screen {
         }
     }
 
+    /** The low orbit prelude: the frozen Earth under the window, life support, and the countdown to the burn. */
+    private void renderEarthOrbit(GuiGraphics graphics, float tick) {
+        float alpha = EndingOrbit.earthAlpha(tick);
+        if (alpha <= 0.04F) {
+            return;
+        }
+        renderEarthGlobe(graphics, tick, alpha);
+        drawViewportChrome(graphics, alpha);
+        renderLifeSupport(graphics, tick, alpha);
+    }
+
+    /**
+     * A blocky globe whose limb arcs across the window, its sub-point below the frame: each cell samples the frozen
+     * Earth map at the point under it, darkened toward the limb, with a thin airglow outside. Same-colored cells in a
+     * row are drawn as one fill.
+     */
+    private void renderEarthGlobe(GuiGraphics graphics, float tick, float alpha) {
+        EarthGlobeCells cells = earthGlobeCells();
+        EarthMap map = earthMap();
+        double subLongitude = EndingOrbit.longitude(tick);
+        int a = Mth.clamp(Math.round(alpha * 255.0F), 0, 255) << 24;
+        int block = cells.block();
+        for (int row = 0; row < cells.rows(); row++) {
+            int runStart = 0;
+            int runColor = 0;
+            for (int col = 0; col <= cells.cols(); col++) {
+                int color = 0;
+                if (col < cells.cols()) {
+                    int index = row * cells.cols() + col;
+                    float shade = cells.shade()[index];
+                    if (shade > 0.0F) {
+                        int rgb = map.sample(cells.latitude()[index], cells.longitude()[index] + subLongitude);
+                        color = a | scaleRgb(rgb, shade);
+                    } else if (cells.glow()[index] > 0.0F) {
+                        color = applyAlpha(Mth.clamp(Math.round(cells.glow()[index] * 0x99), 0, 255) << 24 | 0x44E6A8,
+                                alpha);
+                    }
+                }
+                if (col == cells.cols() || color != runColor) {
+                    if (runColor != 0) {
+                        graphics.fill(runStart * block, row * block, col * block, (row + 1) * block, runColor);
+                    }
+                    runStart = col;
+                    runColor = color;
+                }
+            }
+        }
+    }
+
+    private static int scaleRgb(int rgb, float shade) {
+        int r = Mth.clamp(Math.round(((rgb >> 16) & 0xFF) * shade), 0, 255);
+        int g = Mth.clamp(Math.round(((rgb >> 8) & 0xFF) * shade), 0, 255);
+        int b = Mth.clamp(Math.round((rgb & 0xFF) * shade), 0, 255);
+        return (r << 16) | (g << 8) | b;
+    }
+
+    private EarthGlobeCells earthGlobeCells() {
+        int block = Math.max(2, Mth.ceil(width / 214.0F));
+        if (earthCells != null && earthCells.width() == width && earthCells.height() == height
+                && earthCells.block() == block) {
+            return earthCells;
+        }
+        int cols = Mth.ceil(width / (float) block);
+        int rows = Mth.ceil(height / (float) block);
+        float radius = height * EARTH_RADIUS_PER_HEIGHT;
+        float centerX = width / 2.0F;
+        float centerY = height + height * EARTH_CENTER_BELOW_PER_HEIGHT;
+        float cos = Mth.cos(EARTH_ROLL_RADIANS);
+        float sin = Mth.sin(EARTH_ROLL_RADIANS);
+        double[] latitude = new double[cols * rows];
+        double[] longitude = new double[cols * rows];
+        float[] shade = new float[cols * rows];
+        float[] glow = new float[cols * rows];
+        for (int row = 0; row < rows; row++) {
+            for (int col = 0; col < cols; col++) {
+                int index = row * cols + col;
+                float sx = (col * block + block / 2.0F - centerX) / radius;
+                float sy = (centerY - row * block - block / 2.0F) / radius;
+                float x = sx * cos - sy * sin;
+                float y = sx * sin + sy * cos;
+                double[] point = EndingOrbit.surface(x, y, EndingOrbit.SUB_POINT_LATITUDE, 0.0);
+                if (point == null) {
+                    float beyond = (Mth.sqrt(x * x + y * y) - 1.0F) * radius / EARTH_LIMB_GLOW_PIXELS;
+                    glow[index] = beyond < 1.0F ? 1.0F - beyond : 0.0F;
+                    continue;
+                }
+                latitude[index] = point[0];
+                longitude[index] = point[1];
+                float z = Mth.sqrt(Math.max(0.0F, 1.0F - x * x - y * y));
+                shade[index] = 0.85F * (0.55F + 0.45F * (float) Math.pow(z, 0.6));
+            }
+        }
+        earthCells = new EarthGlobeCells(width, height, block, cols, rows, latitude, longitude, shade, glow);
+        return earthCells;
+    }
+
+    private EarthMap earthMap() {
+        if (earthMap != null) {
+            return earthMap;
+        }
+        ResourceLocation location = ResourceLocation.fromNamespaceAndPath(
+                FrozenDawn.MOD_ID, "textures/gui/ending/earth_surface.png");
+        if (minecraft != null) {
+            try {
+                Resource resource = minecraft.getResourceManager().getResource(location)
+                        .orElseThrow(() -> new IOException("Missing Earth map: " + location));
+                try (InputStream stream = resource.open()) {
+                    BufferedImage image = ImageIO.read(stream);
+                    if (image == null) {
+                        throw new IOException("Unreadable Earth map: " + location);
+                    }
+                    int[] pixels = new int[image.getWidth() * image.getHeight()];
+                    image.getRGB(0, 0, image.getWidth(), image.getHeight(), pixels, 0, image.getWidth());
+                    earthMap = new EarthMap(image.getWidth(), image.getHeight(), pixels);
+                    return earthMap;
+                }
+            } catch (IOException exception) {
+                FrozenDawn.LOGGER.error("Failed to load the Earth map {}", location, exception);
+            }
+        }
+        earthMap = new EarthMap(1, 1, new int[] {0xFF7A8EA4});
+        return earthMap;
+    }
+
+    private void renderLifeSupport(GuiGraphics graphics, float tick, float alpha) {
+        int panelW = 150;
+        int panelH = 78;
+        int panelX = 18;
+        int panelY = height - panelH - 18;
+        if (panelY < 34 || panelX + panelW > width / 2) {
+            return;
+        }
+        graphics.fill(panelX, panelY, panelX + panelW, panelY + panelH, applyAlpha(0x7006121A, alpha));
+        graphics.fill(panelX, panelY, panelX + panelW, panelY + 1, applyAlpha(0xCC4FC7DA, alpha));
+        graphics.fill(panelX, panelY + panelH - 1, panelX + panelW, panelY + panelH, applyAlpha(0x334FC7DA, alpha));
+        graphics.drawString(font, Component.translatable(EndingOrbit.TITLE), panelX + 8, panelY + 6,
+                applyAlpha(0xFF8DEAFF, alpha), false);
+        graphics.fill(panelX + panelW - 12, panelY + 8, panelX + panelW - 9, panelY + 11, applyAlpha(0xFF44E6A8, alpha));
+
+        int valueRight = panelX + panelW - 8;
+        drawReadout(graphics, panelX + 8, valueRight, panelY + 19, EndingOrbit.O2_LABEL,
+                Component.translatable(EndingOrbit.O2_VALUE), alpha);
+        drawReadout(graphics, panelX + 8, valueRight, panelY + 29, EndingOrbit.CABIN_LABEL,
+                Component.translatable(EndingOrbit.CABIN_VALUE), alpha);
+        drawReadout(graphics, panelX + 8, valueRight, panelY + 39, EndingOrbit.CO2_LABEL,
+                Component.translatable(EndingOrbit.CO2_VALUE), alpha);
+        drawReadout(graphics, panelX + 8, valueRight, panelY + 49, EndingOrbit.HULL_LABEL,
+                Component.translatable(EndingOrbit.HULL_VALUE), alpha);
+        for (int x = panelX + 8; x < panelX + panelW - 8; x += 3) {
+            graphics.fill(x, panelY + 61, x + 1, panelY + 62, applyAlpha(0x5555C6D8, alpha));
+        }
+        drawReadout(graphics, panelX + 8, valueRight, panelY + 66, EndingOrbit.BURN_LABEL,
+                Component.translatable(EndingOrbit.BURN_VALUE, EndingOrbit.burnClock(tick)), 0xFFFFD27A, alpha);
+    }
+
     private MarsPlacement marsPlacement(float tick) {
-        float reveal = Mth.clamp((tick - BLACK_END_TICKS) / (float) (BASE_CREDITS_START_TICKS - BLACK_END_TICKS), 0.0F, 1.0F);
+        float reveal = Mth.clamp((tick - MARS_START_TICKS) / (float) (BASE_CREDITS_START_TICKS - MARS_START_TICKS), 0.0F, 1.0F);
         float revealPulse = smoothStep(reveal);
         return new MarsPlacement(
                 width / 2.0F + Mth.lerp(revealPulse, width * -0.10F, width * 0.04F),
@@ -403,6 +566,22 @@ public class FrozenDawnEndingScreen extends Screen {
             return;
         }
 
+        drawViewportChrome(graphics, alpha);
+
+        MarsPlacement mars = marsPlacement(tick);
+        int half = Math.round(mars.face() * 0.62F);
+        int marsX = Math.round(mars.centerX());
+        int marsY = Math.round(mars.centerY());
+        drawCornerTicks(graphics, marsX - half, marsY - half, marsX + half, marsY + half, 5,
+                applyAlpha(0xCCE06D3C, alpha));
+        graphics.drawString(font, Component.translatable(EndingCockpit.MARS), marsX - half, marsY + half + 4,
+                applyAlpha(0xFFE06D3C, alpha), false);
+
+        renderApproachVectorTelemetry(graphics, tick, alpha);
+    }
+
+    /** The glass cockpit around any view: edge-to-edge, darkened at the rim, one thin frame, label and clock. */
+    private void drawViewportChrome(GuiGraphics graphics, float alpha) {
         // Glass cockpit: the view runs edge to edge, darkened only at its rim, inside one thin frame.
         int edge = 0x050A10;
         graphics.fillGradient(0, 0, width, 26, applyAlpha(0xC0000000 | edge, alpha), edge);
@@ -430,22 +609,11 @@ public class FrozenDawnEndingScreen extends Screen {
                 applyAlpha(0xFF8DEAFF, alpha), false);
         String clock = EndingCockpit.missionClock(payload.playTimeTicks() + (long) ageTicks);
         graphics.drawString(font, clock, width - 18 - font.width(clock), 16, applyAlpha(0xAA8DEAFF, alpha), false);
-
-        MarsPlacement mars = marsPlacement(tick);
-        int half = Math.round(mars.face() * 0.62F);
-        int marsX = Math.round(mars.centerX());
-        int marsY = Math.round(mars.centerY());
-        drawCornerTicks(graphics, marsX - half, marsY - half, marsX + half, marsY + half, 5,
-                applyAlpha(0xCCE06D3C, alpha));
-        graphics.drawString(font, Component.translatable(EndingCockpit.MARS), marsX - half, marsY + half + 4,
-                applyAlpha(0xFFE06D3C, alpha), false);
-
-        renderApproachVectorTelemetry(graphics, tick, alpha);
     }
 
     private float getApproachViewportAlpha(float tick) {
         int creditsStart = getCreditsStartTick();
-        float fadeIn = smoothStep(Mth.clamp((tick - BLACK_END_TICKS) / 70.0F, 0.0F, 1.0F));
+        float fadeIn = smoothStep(Mth.clamp((tick - MARS_START_TICKS) / 70.0F, 0.0F, 1.0F));
         float fadeOut = 1.0F - smoothStep(Mth.clamp((tick - (creditsStart - 120.0F)) / 120.0F, 0.0F, 1.0F));
         return fadeIn * fadeOut;
     }
@@ -478,7 +646,7 @@ public class FrozenDawnEndingScreen extends Screen {
                 panelX + 8, panelY + 6, applyAlpha(0xFF8DEAFF, alpha), false);
         graphics.fill(panelX + panelW - 12, panelY + 8, panelX + panelW - 9, panelY + 11, applyAlpha(0xFF44E6A8, alpha));
 
-        float approach = (tick - BLACK_END_TICKS) / (float) (getCreditsStartTick() - BLACK_END_TICKS);
+        float approach = (tick - MARS_START_TICKS) / (float) (getCreditsStartTick() - MARS_START_TICKS);
         String range = EndingCockpit.groupThousands(EndingCockpit.rangeKm(approach));
         int valueRight = panelX + panelW - 8;
         drawReadout(graphics, panelX + 8, valueRight, panelY + 19, EndingCockpit.GRAVITY_LABEL,
@@ -520,8 +688,13 @@ public class FrozenDawnEndingScreen extends Screen {
 
     private void drawReadout(GuiGraphics graphics, int left, int right, int y, String labelKey, Component value,
                              float alpha) {
+        drawReadout(graphics, left, right, y, labelKey, value, 0xFFD9FFF6, alpha);
+    }
+
+    private void drawReadout(GuiGraphics graphics, int left, int right, int y, String labelKey, Component value,
+                             int valueColor, float alpha) {
         graphics.drawString(font, Component.translatable(labelKey), left, y, applyAlpha(0xFF6FA3AC, alpha), false);
-        graphics.drawString(font, value, right - font.width(value), y, applyAlpha(0xFFD9FFF6, alpha), false);
+        graphics.drawString(font, value, right - font.width(value), y, applyAlpha(valueColor, alpha), false);
     }
 
     private void drawHudLine(GuiGraphics graphics, int x0, int y0, int x1, int y1, int color) {
@@ -1174,6 +1347,19 @@ public class FrozenDawnEndingScreen extends Screen {
     }
 
     private record MarsPlacement(float centerX, float centerY, float face) {
+    }
+
+    /** The globe's cells for one screen size: what each shows, minus the turn, and the airglow past the limb. */
+    private record EarthGlobeCells(int width, int height, int block, int cols, int rows, double[] latitude,
+                                   double[] longitude, float[] shade, float[] glow) {
+    }
+
+    private record EarthMap(int width, int height, int[] pixels) {
+        int sample(double latitude, double longitude) {
+            int x = Mth.floor(Mth.positiveModulo(longitude + 180.0, 360.0) / 360.0 * width);
+            int y = Mth.floor(Mth.clamp(90.0 - latitude, 0.0, 179.999) / 180.0 * height);
+            return pixels[Mth.clamp(y, 0, height - 1) * width + Mth.clamp(x, 0, width - 1)] & 0xFFFFFF;
+        }
     }
 
     private record MarsVertex(float x, float y, float z) {
