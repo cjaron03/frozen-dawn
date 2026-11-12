@@ -37,13 +37,8 @@ import java.util.List;
 public class FrozenDawnEndingScreen extends Screen {
     private static final int BLACK_END_TICKS = 5 * 20;
     private static final int BASE_CREDITS_START_TICKS = 60 * 20;
-    private static final int ENDING_COMPLETE_TICKS = 8 * 60 * 20 + 20 * 20;
-    private static final int POST_CREDITS_BLACK_FADE_TICKS = 5 * 20;
-    private static final int POST_CREDITS_COLONY_TICKS = 6 * 20;
-    private static final int POST_CREDITS_MESSAGE_TICKS = 7 * 20;
     private static final int COMPLIANCE_STATIC_TICKS = 34;
     private static final int COMPLIANCE_TTS_DELAY_TICKS = COMPLIANCE_STATIC_TICKS + 10;
-    private static final int COMPLIANCE_TICKS = 16 * 20;
     private static final int LINE_HEIGHT = 12;
     private static final int MARS_TEXTURE_SUBDIVISIONS = 16;
     private static final int MARS_FALLBACK_TEXTURE_GRID = 64;
@@ -103,10 +98,8 @@ public class FrozenDawnEndingScreen extends Screen {
                 : ageTicks + advance;
         if (!endingMusicFadeStarted && ageTicks >= getPostCreditsStartTick()) {
             endingMusicFadeStarted = true;
-            int fadeRemaining = Mth.clamp(
-                    getPostCreditsStartTick() + POST_CREDITS_BLACK_FADE_TICKS - ageTicks,
-                    1,
-                    POST_CREDITS_BLACK_FADE_TICKS);
+            int fadeTicks = epilogue().getFirst().ticks();
+            int fadeRemaining = Mth.clamp(getPostCreditsStartTick() + fadeTicks - ageTicks, 1, fadeTicks);
             EndingMusicController.fadeOutAndStop(fadeRemaining);
         }
         updateComplianceAudioCue();
@@ -196,22 +189,25 @@ public class FrozenDawnEndingScreen extends Screen {
         return BASE_CREDITS_START_TICKS;
     }
 
+    private List<EndingEpilogue.Beat> epilogue() {
+        return EndingEpilogue.beats(payload.conspiracyDiscovered());
+    }
+
+    private int getEndingCompleteTicks() {
+        return EndingEpilogue.endingCompleteTicks(payload.conspiracyDiscovered());
+    }
+
     private int getPostCreditsStartTick() {
-        return ENDING_COMPLETE_TICKS - getPostCreditsDurationTicks();
+        return getEndingCompleteTicks() - getPostCreditsDurationTicks();
     }
 
     private int getPostCreditsDurationTicks() {
-        return POST_CREDITS_BLACK_FADE_TICKS
-                + POST_CREDITS_COLONY_TICKS
-                + POST_CREDITS_MESSAGE_TICKS
-                + (payload.conspiracyDiscovered() ? COMPLIANCE_TICKS : 0);
+        return EndingEpilogue.length(payload.conspiracyDiscovered());
     }
 
     private int getComplianceStartTick() {
         return getPostCreditsStartTick()
-                + POST_CREDITS_BLACK_FADE_TICKS
-                + POST_CREDITS_COLONY_TICKS
-                + POST_CREDITS_MESSAGE_TICKS;
+                + EndingEpilogue.startOf(payload.conspiracyDiscovered(), EndingEpilogue.Kind.COMPLIANCE);
     }
 
     private void updateComplianceAudioCue() {
@@ -255,7 +251,7 @@ public class FrozenDawnEndingScreen extends Screen {
     }
 
     private boolean canReturn() {
-        return ageTicks >= ENDING_COMPLETE_TICKS;
+        return ageTicks >= getEndingCompleteTicks();
     }
 
     private int getTickAdvance() {
@@ -819,64 +815,76 @@ public class FrozenDawnEndingScreen extends Screen {
 
     private void renderPostCredits(GuiGraphics graphics) {
         int local = ageTicks - getPostCreditsStartTick();
-        if (local < POST_CREDITS_BLACK_FADE_TICKS) {
-            int alpha = Mth.clamp(Math.round(local / (float) POST_CREDITS_BLACK_FADE_TICKS * 255.0F), 0, 255);
+        EndingEpilogue.Beat beat = null;
+        for (EndingEpilogue.Beat candidate : epilogue()) {
+            if (local < candidate.ticks()) {
+                beat = candidate;
+                break;
+            }
+            local -= candidate.ticks();
+        }
+        if (beat == null) {
+            // Past the timeline: the last beat's own rule decides what stays on screen.
+            beat = epilogue().getLast();
+            local = beat.ticks();
+        }
+
+        if (beat.kind() == EndingEpilogue.Kind.FADE) {
+            int alpha = Mth.clamp(Math.round(local / (float) beat.ticks() * 255.0F), 0, 255);
             graphics.fill(0, 0, width, height, alpha << 24);
             return;
         }
-
         graphics.fill(0, 0, width, height, 0xFF000000);
-        local -= POST_CREDITS_BLACK_FADE_TICKS;
 
-        if (local < POST_CREDITS_COLONY_TICKS) {
-            float alpha = pulseAlpha(local, 28.0F, POST_CREDITS_COLONY_TICKS - 45.0F);
-            drawEndingTerminalPanel(graphics,
+        switch (beat.kind()) {
+            case COLONY -> drawEndingTerminalPanel(graphics,
                     Component.translatable("screen.frozendawn.ending.terminal.arrival"),
-                    Component.translatable("screen.frozendawn.ending.mars_colony"),
+                    Component.translatable(beat.key()),
                     null,
-                    0xFFA7FFEA,
-                    0xFFD9FFF6,
-                    0xCC44E6A8,
-                    alpha);
-            return;
-        }
-
-        int messageStart = POST_CREDITS_COLONY_TICKS;
-        int messageEnd = messageStart + POST_CREDITS_MESSAGE_TICKS;
-        if (local < messageEnd) {
-            float alpha = pulseAlpha(local - messageStart, 28.0F, POST_CREDITS_MESSAGE_TICKS - 35.0F);
-            drawEndingTerminalPanel(graphics,
+                    beat.titleColor(),
+                    beat.bodyColor(),
+                    beat.accentColor(),
+                    pulseAlpha(local, 28.0F, beat.ticks() - 45.0F));
+            case SIGNAL -> drawEndingTerminalPanel(graphics,
                     Component.translatable("screen.frozendawn.ending.terminal.signal"),
-                    payload.conspiracyDiscovered()
-                            ? Component.translatable("screen.frozendawn.ending.truth")
-                            : Component.translatable("screen.frozendawn.ending.welcome"),
+                    Component.translatable(beat.key()),
                     null,
-                    payload.conspiracyDiscovered() ? 0xFFFFF0B0 : 0xFFA7FFEA,
-                    payload.conspiracyDiscovered() ? 0xFFFFF5C2 : 0xFFD9FFF6,
-                    payload.conspiracyDiscovered() ? 0xCCFFB84A : 0xCC44E6A8,
-                    alpha);
+                    beat.titleColor(),
+                    beat.bodyColor(),
+                    beat.accentColor(),
+                    pulseAlpha(local, 28.0F, beat.ticks() - 35.0F));
+            case COMPLIANCE -> renderCompliance(graphics, beat, local);
+            case END_CARD -> {
+                // Alone on black: no panel, header or frame, and it stays as the last frame.
+                int alpha = Math.round(EndingEpilogue.cardAlpha(local) * 255.0F);
+                if (alpha > 10) {
+                    graphics.drawCenteredString(font, Component.translatable(beat.key()), width / 2, height / 2 - 4,
+                            (alpha << 24) | (beat.bodyColor() & 0xFFFFFF));
+                }
+            }
+            default -> {
+                // HOLD is plain black, with nothing drawn.
+            }
+        }
+    }
+
+    private void renderCompliance(GuiGraphics graphics, EndingEpilogue.Beat beat, int local) {
+        if (!payload.showComplianceLine()) {
             return;
         }
-
-        if (payload.conspiracyDiscovered() && payload.showComplianceLine()) {
-            int complianceLocal = local - messageEnd;
-            if (complianceLocal < COMPLIANCE_STATIC_TICKS) {
-                drawComplianceStatic(graphics, complianceLocal,
-                        pulseAlpha(complianceLocal, 8.0F, COMPLIANCE_STATIC_TICKS - 10.0F));
-                return;
-            }
-
-            int messageLocal = complianceLocal - COMPLIANCE_STATIC_TICKS;
-            float alpha = pulseAlpha(messageLocal, 22.0F, COMPLIANCE_TICKS - COMPLIANCE_STATIC_TICKS - 45.0F);
-            drawEndingTerminalPanel(graphics,
-                    Component.translatable("screen.frozendawn.ending.terminal.access"),
-                    Component.translatable("screen.frozendawn.ending.compliance"),
-                    null,
-                    0xFFFF8B8B,
-                    0xFFFFC0C0,
-                    0xCCFF5C5C,
-                    alpha);
+        if (local < COMPLIANCE_STATIC_TICKS) {
+            drawComplianceStatic(graphics, local, pulseAlpha(local, 8.0F, COMPLIANCE_STATIC_TICKS - 10.0F));
+            return;
         }
+        int messageLocal = local - COMPLIANCE_STATIC_TICKS;
+        drawEndingTerminalPanel(graphics,
+                Component.translatable("screen.frozendawn.ending.terminal.access"),
+                Component.translatable(beat.key()),
+                null,
+                beat.titleColor(),
+                beat.bodyColor(),
+                beat.accentColor(),
+                pulseAlpha(messageLocal, 22.0F, beat.ticks() - COMPLIANCE_STATIC_TICKS - 45.0F));
     }
 
     private void drawComplianceStatic(GuiGraphics graphics, int local, float alpha) {

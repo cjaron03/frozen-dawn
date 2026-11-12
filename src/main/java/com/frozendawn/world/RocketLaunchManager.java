@@ -442,6 +442,11 @@ public final class RocketLaunchManager {
     }
 
     private static void sendEndingPayload(ServerLevel level, WinConditionState state, ServerPlayer player) {
+        PacketDistributor.sendToPlayer(player, buildEndingPayload(level, player, state.isConspiracyDiscovered()));
+    }
+
+    /** The ending screen's payload for this player, with the ending given. Reads stats only; changes nothing. */
+    public static EndingSequencePayload buildEndingPayload(ServerLevel level, ServerPlayer player, boolean truthEnding) {
         ApocalypseState apocalypseState = ApocalypseState.get(level.getServer());
         PlayerEndStats.Snapshot endStats = PlayerEndStats.snapshot(player);
         int daysSurvived = apocalypseState.getCurrentDay();
@@ -463,8 +468,7 @@ public final class RocketLaunchManager {
                 + craftedCount(player, ModItems.ROCKET_FIN.get())
                 + craftedCount(player, ModItems.ROCKET_HULL.get())
                 + craftedCount(player, ModItems.ROCKET_NOSE_CONE.get());
-        boolean truthEnding = state.isConspiracyDiscovered();
-        PacketDistributor.sendToPlayer(player, new EndingSequencePayload(
+        return new EndingSequencePayload(
                 truthEnding,
                 daysSurvived,
                 terminalsHacked,
@@ -496,7 +500,7 @@ public final class RocketLaunchManager {
                 PlayerEndStats.getDaysBetweenSatelliteAndLaunch(player, daysSurvived),
                 endStats.lastTemperatureRecorded(),
                 apocalypseState.getPhase(),
-                player.getStats().getValue(Stats.CUSTOM.get(Stats.PLAY_TIME))));
+                player.getStats().getValue(Stats.CUSTOM.get(Stats.PLAY_TIME)));
     }
 
     private static int craftedCount(ServerPlayer player, net.minecraft.world.item.Item item) {
