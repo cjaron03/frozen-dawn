@@ -2,7 +2,7 @@
 """Fresh Ending Welcome Check: both endings' screens on demand, to compare their epilogues (CH-34).
 
 A flat Creative lab with the world clock paused. Buttons play Ending A (plain) or Ending B (truth) to the caller through
-/fd debug ending play, which launches nothing, moves no one and saves nothing, so either can be replayed. Hold Q to
+/fd ending play (the /frozendawn debug ending node), which launches nothing, moves no one and saves nothing, so either can be replayed. Hold Q to
 fast-forward the credits. Difficulty is locked and advancement popups are off. Never overwrites a save.
 Usage (lab client, run-lab/ directory):
   python3 tools/prepare_ending_b_welcome_playtest.py --source <any closed level.dat> --destination "run-lab/saves/Ending Welcome Check"
@@ -41,8 +41,8 @@ def scripts():
              'setworldspawn 0 65 0', 'spawnpoint @s 0 65 0', 'tp @s 0.5 65 0.5 180 0',
              f'scoreboard players set #built {OBJECTIVE} 1', 'function '+NS+':controls', 'return 1']
     controls = [GUARD, tell('ENDING WELCOME CHECK: hold Q through the credits to reach the epilogue.'),
-                tell('[Play Ending A (plain)]', '/fd debug ending play plain', 'aqua'),
-                tell('[Play Ending B (truth)]', '/fd debug ending play truth', 'gold'),
+                tell('[Play Ending A (plain)]', '/fd ending play plain', 'aqua'),
+                tell('[Play Ending B (truth)]', '/fd ending play truth', 'gold'),
                 tell('[Controls]', '/function '+NS+':controls', 'gray'), 'return 1']
     return {
         'load': f'scoreboard objectives add {OBJECTIVE} dummy\nexecute unless score #built {OBJECTIVE} matches -2..1 run scoreboard players set #built {OBJECTIVE} 0\nexecute if score #built {OBJECTIVE} matches -2..-1 run scoreboard players set #built {OBJECTIVE} 0',
@@ -69,7 +69,7 @@ def prepare_world(source, destination):
     report = destination/'preparation.json'
     info = json.loads(report.read_text())
     info.update({'mode': 'Creative', 'clock': 'paused',
-                 'fixtures': 'buttons that play Ending A or Ending B through /fd debug ending play'})
+                 'fixtures': 'buttons that play Ending A or Ending B through /fd ending play'})
     report.write_text(json.dumps(info, indent=2)+'\n')
     print(destination.resolve())
 
