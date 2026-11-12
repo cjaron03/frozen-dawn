@@ -773,6 +773,7 @@ public final class ReturnedHearthSavedData extends SavedData {
         }
         binding.entityId = null;
         binding.permanentlyVacant = permanentlyVacant;
+        binding.vacatedEntityId = permanentlyVacant ? entityId : null;
         binding.respawnAfterGameTime = permanentlyVacant
                 ? -1L
                 : Math.max(0L, gameTime) + HearthPopulationPolicy.RESPAWN_DELAY_TICKS;
@@ -892,6 +893,21 @@ public final class ReturnedHearthSavedData extends SavedData {
         }
         setDirty();
         return true;
+    }
+
+    /**
+     * Whether this player emptied a Hearth: it had residents, every one is permanently gone,
+     * and each was this player's casualty. Node five's massacre reads this.
+     */
+    public boolean emptiedHearth(UUID playerId) {
+        PlayerHiveMemory memory = playerId == null ? null : playerMemories.get(playerId);
+        if (memory == null || memory.congregationCasualtyIds.isEmpty()) {
+            return false;
+        }
+        return hearths.stream().anyMatch(hearth -> !hearth.populationResidents.isEmpty()
+                && hearth.populationResidents.values().stream().allMatch(binding ->
+                        binding.permanentlyVacant && binding.vacatedEntityId != null
+                                && memory.congregationCasualtyIds.contains(binding.vacatedEntityId)));
     }
 
     public boolean isRecordedCongregationCasualty(UUID entityId) {
@@ -3240,6 +3256,8 @@ public final class ReturnedHearthSavedData extends SavedData {
         private UUID entityId;
         private long respawnAfterGameTime = -1L;
         private boolean permanentlyVacant;
+        /** The resident whose death left this role permanently vacant. */
+        private UUID vacatedEntityId;
 
         private HearthResidentBinding(HearthPopulationRole role) {
             this.role = role;
@@ -3257,6 +3275,8 @@ public final class ReturnedHearthSavedData extends SavedData {
                     ? tag.getLong("respawnAfterGameTime")
                     : -1L;
             binding.permanentlyVacant = tag.getBoolean("permanentlyVacant");
+            binding.vacatedEntityId = tag.hasUUID("vacatedEntityId")
+                    ? tag.getUUID("vacatedEntityId") : null;
             return binding;
         }
 
@@ -3268,6 +3288,9 @@ public final class ReturnedHearthSavedData extends SavedData {
             }
             tag.putLong("respawnAfterGameTime", respawnAfterGameTime);
             tag.putBoolean("permanentlyVacant", permanentlyVacant);
+            if (vacatedEntityId != null) {
+                tag.putUUID("vacatedEntityId", vacatedEntityId);
+            }
             return tag;
         }
 

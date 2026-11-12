@@ -532,6 +532,57 @@ class ReturnedHearthSavedDataTest {
     }
 
     @Test
+    void aHearthIsEmptiedOnlyWhenOnePlayerKilledEveryResident() {
+        ReturnedHearthSavedData state = selectedState(1000L);
+        ReturnedHearthSavedData.HearthRecord major = major(state);
+        UUID player = UUID.randomUUID();
+        UUID other = UUID.randomUUID();
+        HearthPopulationRole[] roles = HearthPopulationRole.values();
+        UUID[] residents = new UUID[roles.length];
+        for (int i = 0; i < roles.length; i++) {
+            residents[i] = UUID.randomUUID();
+            assertTrue(state.bindPopulationResident(major.id(), roles[i], residents[i]));
+        }
+        assertFalse(state.emptiedHearth(player), "Nobody has died yet");
+
+        for (int i = 0; i < roles.length - 1; i++) {
+            assertTrue(state.recordCongregationCasualty(player, major.id(), residents[i], 2000L + i));
+            assertTrue(state.markPopulationResidentMissing(
+                    major.id(), roles[i], residents[i], 2000L + i, true));
+        }
+        assertFalse(state.emptiedHearth(player), "One resident is still alive");
+
+        int last = roles.length - 1;
+        assertTrue(state.recordCongregationCasualty(other, major.id(), residents[last], 3000L));
+        assertTrue(state.markPopulationResidentMissing(
+                major.id(), roles[last], residents[last], 3000L, true));
+        assertFalse(state.emptiedHearth(player), "Another player took the last one");
+        assertFalse(state.emptiedHearth(other), "That player took only one");
+
+        ReturnedHearthSavedData solo = selectedState(1000L);
+        ReturnedHearthSavedData.HearthRecord soloMajor = major(solo);
+        for (int i = 0; i < roles.length; i++) {
+            assertTrue(solo.bindPopulationResident(soloMajor.id(), roles[i], residents[i]));
+            assertTrue(solo.recordCongregationCasualty(player, soloMajor.id(), residents[i], 2000L + i));
+            assertTrue(solo.markPopulationResidentMissing(
+                    soloMajor.id(), roles[i], residents[i], 2000L + i, true));
+        }
+        assertTrue(solo.emptiedHearth(player));
+        ReturnedHearthSavedData loaded = ReturnedHearthSavedData.load(
+                solo.save(new CompoundTag(), null), null);
+        assertTrue(loaded.emptiedHearth(player), "The record of who emptied it survives a reload");
+        assertFalse(loaded.emptiedHearth(other));
+    }
+
+    @Test
+    void aHearthWithNoResidentsWasNeverEmptied() {
+        ReturnedHearthSavedData state = selectedState(1000L);
+        UUID player = UUID.randomUUID();
+        assertTrue(state.recordCongregationCasualty(player, major(state).id(), UUID.randomUUID(), 2000L));
+        assertFalse(state.emptiedHearth(player));
+    }
+
+    @Test
     void combatRosterRolesPersistAndTetherReleasePreservesSpentResidents() {
         ReturnedHearthSavedData state = selectedState(1000L);
         ReturnedHearthSavedData.HearthRecord major = major(state);

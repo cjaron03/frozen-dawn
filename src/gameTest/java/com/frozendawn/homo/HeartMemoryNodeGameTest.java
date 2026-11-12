@@ -59,6 +59,8 @@ public final class HeartMemoryNodeGameTest {
             h.assertTrue(ledger.violationDay() == 31, "The line crossed on day 31, got " + ledger.violationDay());
             h.assertTrue(ledger.casualties() == 2, "Two casualties, got " + ledger.casualties());
             h.assertTrue(ledger.casualtyDay() == 38, "Last casualty on day 38, got " + ledger.casualtyDay());
+            h.assertFalse(ledger.massacre(),
+                    "Two casualties and a crossed line leave the Hearth standing: no massacre");
         } finally {
             data.erasePlayerFromHive(id);
         }

@@ -73,8 +73,7 @@ public record HeartMemoryLedger(
                 data.playerMemory(player.getUUID()).orElse(null);
         long violation = data.firstViolationGameTime(player.getUUID());
         int deaths = player.getStats().getValue(Stats.CUSTOM.get(Stats.DEATHS));
-        boolean massacre = HearthMemoryManager.isPermanentOrsathae(
-                player.serverLevel(), player.getUUID());
+        boolean massacre = data.emptiedHearth(player.getUUID());
         if (memory == null) {
             return new HeartMemoryLedger(0, 0, violation < 0L ? 0 : day(violation),
                     0, 0, deaths, massacre);
