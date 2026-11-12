@@ -10,7 +10,7 @@
 
 **Spec:** [payoff-roadmap.md](payoff-roadmap.md), branch 7. Notion: the payoff branch spec, section 6c. Canon: Canon Hierarchy CH-34, and the Endings section.
 
-**Status:** drafted 2026-11-11 for the owner's approval. Nothing is built.
+**Status:** approved by the owner as written, 2026-11-11, Rulings 1 to 5 included. Nothing is built.
 
 **Branch:** `feat/ending-b-welcome` in `/Volumes/SSD/Work/frozen-dawn-ending-b-welcome`, cut from `feat/maeve-director` once this plan has merged. The build session starts in that worktree and works there. PR into `feat/maeve-director`. The branch review runs on Opus, because the branch merges into a long-lived branch. It changes no save format and no sync.
 
