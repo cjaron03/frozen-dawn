@@ -33,9 +33,9 @@ class FrozenDawnCommandTreeTest {
         CommandNode<CommandSourceStack> debug = dispatcher().getRoot()
                 .getChild("frozendawn").getChild("debug");
 
-        // "flora" and "payoff" are development-only; tests run as a development build.
+        // "flora", "payoff" and "ending" are development-only; tests run as a development build.
         assertEquals(Set.of("world", "hearth", "heart", "postmaeve",
-                        "aggregate", "architect", "maeve", "uplink", "shepherd", "cyclone", "suit", "terminus", "lore", "flora", "payoff"), childNames(debug));
+                        "aggregate", "architect", "maeve", "uplink", "shepherd", "cyclone", "suit", "terminus", "lore", "flora", "payoff", "ending"), childNames(debug));
         assertNotNull(debug.getChild("postmaeve").getChild("bloom"));
         assertNull(debug.getChild("hearth").getChild("postmaeve"));
         assertNull(debug.getChild("hearth").getChild("heart"));
@@ -79,6 +79,16 @@ class FrozenDawnCommandTreeTest {
         for (String sample : Set.of("main", "peaceful", "massacre")) {
             assertNotNull(heart.getChild("memory5").getChild("sample").getChild(sample).getCommand(), sample);
         }
+    }
+
+    @Test
+    void eitherEndingPlaysOnDemand() {
+        CommandNode<CommandSourceStack> play = dispatcher().getRoot()
+                .getChild("frozendawn").getChild("debug").getChild("ending").getChild("play");
+        // Development-only; tests run as a development build.
+        assertEquals(Set.of("plain", "truth"), childNames(play));
+        assertNotNull(play.getChild("plain").getCommand());
+        assertNotNull(play.getChild("truth").getCommand());
     }
 
     @Test

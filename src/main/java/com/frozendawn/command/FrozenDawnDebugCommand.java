@@ -60,6 +60,8 @@ final class FrozenDawnDebugCommand {
         if (!net.neoforged.fml.loading.FMLEnvironment.production) debug.then(FloraDebugCommand.commands());
         // Development builds only: read the payoff flag, clear it so a playtest can fire it again, or replay the opening.
         if (!net.neoforged.fml.loading.FMLEnvironment.production) debug.then(payoffCommands());
+        // Development builds only: play either ending's screen to the caller, without launching or saving anything.
+        if (!net.neoforged.fml.loading.FMLEnvironment.production) debug.then(endingCommands());
         return debug;
     }
 
@@ -108,6 +110,20 @@ final class FrozenDawnDebugCommand {
                     net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(player, new com.frozendawn.network.OpenOrsaAwakeningPayload());
                     return 1;
                 }));
+    }
+
+    private static LiteralArgumentBuilder<CommandSourceStack> endingCommands() {
+        LiteralArgumentBuilder<CommandSourceStack> play = Commands.literal("play");
+        for (var entry : java.util.Map.of("plain", false, "truth", true).entrySet()) {
+            play.then(Commands.literal(entry.getKey()).executes(context -> {
+                var player = context.getSource().getPlayerOrException();
+                net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(player,
+                        com.frozendawn.world.RocketLaunchManager.buildEndingPayload(
+                                player.serverLevel(), player, entry.getValue()));
+                return 1;
+            }));
+        }
+        return Commands.literal("ending").then(play);
     }
 
     static int sendHelp(CommandSourceStack source, String requestedCategory) {
