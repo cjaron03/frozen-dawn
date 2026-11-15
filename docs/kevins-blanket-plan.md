@@ -10,7 +10,7 @@
 
 **Spec:** [payoff-roadmap.md](payoff-roadmap.md), branch 8. Notion: the payoff branch spec, section 6g. Canon: Canon Hierarchy CH-38, with CH-29.
 
-**Status:** drafted 2026-11-14 for the owner's approval. Nothing is built.
+**Status:** approved by the owner as written, 2026-11-14, Rulings 1 to 5 included, with the Evacuation Notice joining the first-join grant in slice 2. Nothing is built.
 
 **Branch:** `feat/kevins-blanket` in `/Volumes/SSD/Work/frozen-dawn-kevins-blanket`, cut from `feat/maeve-director` once this plan has merged. The build session starts in that worktree and works there. PR into `feat/maeve-director`. The branch review runs on Opus, because the branch merges into a long-lived branch. It changes no save format and no sync.
 
