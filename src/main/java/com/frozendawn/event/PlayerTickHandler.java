@@ -292,6 +292,9 @@ public final class PlayerTickHandler {
         // Her heater port
         temp += com.frozendawn.shepherd.ShepherdWarmth.of(player);
 
+        // CH-38: the blanket he left
+        temp += com.frozendawn.item.ThermalBlanketItem.warmth(player);
+
         // Remnant Ember offhand warmth bonus
         ItemStack offhand = player.getOffhandItem();
         if (offhand.getItem() instanceof RemnantEmberItem) {

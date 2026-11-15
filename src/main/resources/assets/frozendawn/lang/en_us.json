@@ -488,6 +488,8 @@
   "tooltip.frozendawn.miel_honey": "It never spoils.",
   "tooltip.frozendawn.miel_honey.spoonfuls": "%s/%s spoonfuls",
   "tooltip.frozendawn.miel_honey.dedication": "For M.",
+  "item.frozendawn.orsa_thermal_blanket": "ORSA Thermal Blanket",
+  "tooltip.frozendawn.orsa_thermal_blanket.stitch": "K.",
   "tooltip.frozendawn.empty_miel_jar": "Empty. You kept it anyway.",
   "advancement.frozendawn.still_sweet.title": "Still Sweet",
   "advancement.frozendawn.still_sweet.description": "Finish a Jar of Miel, down to the last spoonful.",
