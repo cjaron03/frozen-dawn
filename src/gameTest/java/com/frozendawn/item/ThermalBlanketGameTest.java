@@ -12,7 +12,6 @@ import com.mojang.authlib.GameProfile;
 import java.util.UUID;
 import java.util.function.Predicate;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.component.DataComponents;
 import net.minecraft.gametest.framework.AfterBatch;
 import net.minecraft.gametest.framework.BeforeBatch;
 import net.minecraft.gametest.framework.GameTest;
@@ -135,8 +134,7 @@ public final class ThermalBlanketGameTest {
     }
 
     private static boolean notice(ItemStack stack) {
-        var content = stack.get(DataComponents.WRITTEN_BOOK_CONTENT);
-        return content != null && content.title().raw().equals("UN Emergency Evacuation Notice");
+        return stack.getItem() instanceof EvacuationNoticeItem;
     }
 
     private static boolean isBlanket(ItemStack stack) {

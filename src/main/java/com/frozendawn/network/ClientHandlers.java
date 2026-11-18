@@ -320,6 +320,10 @@ public final class ClientHandlers {
                 payload.focusRecord(), payload.rawOnly()));
     }
 
+    public static void handleOpenEvacuationNotice() {
+        Minecraft.getInstance().setScreen(new com.frozendawn.client.EvacuationNoticeScreen());
+    }
+
     public static void handleOpenScribeRecord(OpenScribeRecordPayload payload) {
         Minecraft.getInstance().setScreen(new com.frozendawn.client.ScribeRecordScreen(
                 payload.contents(), payload.translated()));
