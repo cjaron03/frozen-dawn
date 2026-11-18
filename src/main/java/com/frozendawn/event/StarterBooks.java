@@ -1,8 +1,10 @@
 package com.frozendawn.event;
 
+import com.frozendawn.init.ModItems;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.Filterable;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -17,6 +19,23 @@ import java.util.List;
 public final class StarterBooks {
 
     private StarterBooks() {}
+
+    /** The flag that marks a player's first join as handled; a player who has it never receives anything again. */
+    public static final String RECEIVED_FLAG = "frozendawn:received_books";
+
+    /**
+     * A new player's first join: the field manual, then Kevin's Evacuation Notice and the blanket he left (CH-38).
+     * What does not fit in a full inventory drops at the player's feet.
+     */
+    public static void grantFirstJoin(ServerPlayer player) {
+        var data = player.getPersistentData();
+        if (data.getBoolean(RECEIVED_FLAG)) return;
+        data.putBoolean(RECEIVED_FLAG, true);
+        ItemStack guide = createGuideBook();
+        if (guide != null) player.getInventory().add(guide);
+        player.getInventory().placeItemBackInInventory(createEvacuationNotice());
+        player.getInventory().placeItemBackInInventory(new ItemStack(ModItems.ORSA_THERMAL_BLANKET.get()));
+    }
 
     /**
      * Returns the Patchouli guide book if Patchouli is loaded, otherwise null.

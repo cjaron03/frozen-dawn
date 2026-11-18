@@ -2,6 +2,7 @@ package com.frozendawn.item;
 
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.data.ReturnedHearthSavedData;
+import com.frozendawn.event.StarterBooks;
 import com.frozendawn.gametest.GameTestReporting;
 import com.frozendawn.gametest.GameTestTemplates;
 import com.frozendawn.init.ModItems;
@@ -9,7 +10,9 @@ import com.frozendawn.lore.PayoffState;
 import com.frozendawn.shepherd.ShepherdPolicy;
 import com.mojang.authlib.GameProfile;
 import java.util.UUID;
+import java.util.function.Predicate;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.gametest.framework.AfterBatch;
 import net.minecraft.gametest.framework.BeforeBatch;
 import net.minecraft.gametest.framework.GameTest;
@@ -19,14 +22,16 @@ import net.minecraft.server.level.ClientInformation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.ChestBlockEntity;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
-/** CH-38's blanket: +5 from the player's own inventory, nowhere else, and still after the Heart. */
+/** CH-38's blanket: +5 from the player's own inventory, nowhere else, and still after the Heart; and the first join. */
 @GameTestHolder(FrozenDawn.MOD_ID)
 @PrefixGameTestTemplate(false)
 public final class ThermalBlanketGameTest {
@@ -97,6 +102,61 @@ public final class ThermalBlanketGameTest {
         player.getInventory().setItem(0, blanket());
         h.assertTrue(ThermalBlanketItem.warmth(player) == ShepherdPolicy.WARMTH_C, "Still five after the Heart and the payoff");
         h.succeed();
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY, batch = "kevinsblanket")
+    public static void theFirstJoinGrantsNoticeAndBlanket(GameTestHelper h) {
+        ServerPlayer player = connected(h);
+        StarterBooks.grantFirstJoin(player);
+        h.assertTrue(count(player, ThermalBlanketGameTest::notice) == 1, "The first join hands over Kevin's notice");
+        h.assertTrue(count(player, ThermalBlanketGameTest::isBlanket) == 1, "And one blanket");
+        StarterBooks.grantFirstJoin(player);
+        h.assertTrue(count(player, ThermalBlanketGameTest::notice) == 1, "A second login adds no notice");
+        h.assertTrue(count(player, ThermalBlanketGameTest::isBlanket) == 1, "Nor a blanket");
+
+        ServerPlayer returning = connected(h);
+        returning.getPersistentData().putBoolean("frozendawn:received_books", true);
+        StarterBooks.grantFirstJoin(returning);
+        h.assertTrue(count(returning, stack -> !stack.isEmpty()) == 0, "A player who joined before this branch gets nothing");
+        h.succeed();
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY, batch = "kevinsblanket")
+    public static void aFullBagDropsTheGrantAtTheirFeet(GameTestHelper h) {
+        ServerPlayer player = connected(h);
+        Inventory inventory = player.getInventory();
+        for (int slot = 0; slot < inventory.items.size(); slot++) inventory.items.set(slot, new ItemStack(Items.STONE, 64));
+        StarterBooks.grantFirstJoin(player);
+        var near = h.getLevel().getEntitiesOfClass(ItemEntity.class, player.getBoundingBox().inflate(3));
+        h.assertTrue(near.stream().anyMatch(item -> notice(item.getItem())), "The notice lands at their feet");
+        h.assertTrue(near.stream().anyMatch(item -> isBlanket(item.getItem())), "And the blanket");
+        near.forEach(ItemEntity::discard);
+        h.succeed();
+    }
+
+    private static boolean notice(ItemStack stack) {
+        var content = stack.get(DataComponents.WRITTEN_BOOK_CONTENT);
+        return content != null && content.title().raw().equals("UN Emergency Evacuation Notice");
+    }
+
+    private static boolean isBlanket(ItemStack stack) {
+        return stack.getItem() instanceof ThermalBlanketItem;
+    }
+
+    private static int count(ServerPlayer player, Predicate<ItemStack> test) {
+        Inventory inventory = player.getInventory();
+        int found = 0;
+        for (int slot = 0; slot < inventory.getContainerSize(); slot++) {
+            if (test.test(inventory.getItem(slot))) found += inventory.getItem(slot).getCount();
+        }
+        return found;
+    }
+
+    /** A player with a fake connection, for the grant's inventory updates. */
+    private static ServerPlayer connected(GameTestHelper h) {
+        ServerPlayer player = player(h);
+        player.connection = new net.neoforged.neoforge.common.util.FakePlayer(h.getLevel(), player.getGameProfile()).connection;
+        return player;
     }
 
     private static ItemStack blanket() {

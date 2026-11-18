@@ -4,8 +4,11 @@
 A flat Survival lab in Phase 1 cold, with the world clock paused. Buttons give the blanket, drop it a few blocks ahead
 and put it in a chest beside the player, so the temperature readout can be watched rising by 5 with it in the bag and
 falling without it. Difficulty is locked and advancement popups are off. Never overwrites a save.
+The first join is never replayed in a save, so each check of the first-join grant (the notice and the blanket after
+the field manual) takes a fresh destination, such as "Kevin's First Join Check".
 Usage (lab client, run-lab/ directory):
   python3 tools/prepare_kevins_blanket_playtest.py --source <any closed level.dat> --destination "run-lab/saves/Kevin's Blanket Check"
+  python3 tools/prepare_kevins_blanket_playtest.py --source <any closed level.dat> --destination "run-lab/saves/Kevin's First Join Check"
 """
 import argparse
 import fcntl
