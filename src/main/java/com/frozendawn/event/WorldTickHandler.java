@@ -528,12 +528,7 @@ public class WorldTickHandler {
             grantPhaseAdvancements(player, state.getPhase());
             SanityHandler.onPlayerLogin(player);
 
-            net.minecraft.nbt.CompoundTag persistentData = player.getPersistentData();
-            if (!persistentData.getBoolean("frozendawn:received_books")) {
-                persistentData.putBoolean("frozendawn:received_books", true);
-                net.minecraft.world.item.ItemStack guide = StarterBooks.createGuideBook();
-                if (guide != null) player.getInventory().add(guide);
-            }
+            StarterBooks.grantFirstJoin(player);
             if (!state.isDifficultyLocked()) {
                 PacketDistributor.sendToPlayer(player, new OpenDifficultySelectionPayload());
             } else {

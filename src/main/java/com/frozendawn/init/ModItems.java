@@ -644,6 +644,10 @@ public class ModItems {
     public static final DeferredItem<com.frozendawn.item.MielHoneyItem> MIEL_HONEY = ITEMS.register("miel_honey",
             () -> new com.frozendawn.item.MielHoneyItem(new Item.Properties().stacksTo(1)
                     .component(ModDataComponents.MIEL_SPOONFULS, com.frozendawn.item.MielHoneyItem.SPOONFULS)));
+    public static final DeferredItem<com.frozendawn.item.ThermalBlanketItem> ORSA_THERMAL_BLANKET = ITEMS.register("orsa_thermal_blanket",
+            () -> new com.frozendawn.item.ThermalBlanketItem(new Item.Properties().stacksTo(1)));
+    public static final DeferredItem<com.frozendawn.item.EvacuationNoticeItem> EVACUATION_NOTICE = ITEMS.register("evacuation_notice",
+            () -> new com.frozendawn.item.EvacuationNoticeItem(new Item.Properties().stacksTo(1)));
     public static final DeferredItem<ComfortItem> EMPTY_MIEL_JAR = ITEMS.register("empty_miel_jar",
             () -> new ComfortItem(new Item.Properties().stacksTo(1), "tooltip.frozendawn.empty_miel_jar"));
 
@@ -950,6 +954,8 @@ public class ModItems {
                         output.accept(STUFFED_HYRAX.get());
                         output.accept(WILSON.get());
                         output.accept(MIEL_HONEY.get());
+                        output.accept(ORSA_THERMAL_BLANKET.get());
+                        output.accept(EVACUATION_NOTICE.get());
                         output.accept(EMPTY_MIEL_JAR.get());
                         // Win Condition
                         output.accept(ACHERONITE_COMPASS.get());
