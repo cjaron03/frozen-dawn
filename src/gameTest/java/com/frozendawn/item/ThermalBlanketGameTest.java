@@ -34,18 +34,22 @@ import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 @GameTestHolder(FrozenDawn.MOD_ID)
 @PrefixGameTestTemplate(false)
 public final class ThermalBlanketGameTest {
-    private static boolean firedBefore, erasedBefore;
+    private static boolean firedBefore, turnedBefore, eligibleBefore, erasedBefore;
 
     @BeforeBatch(batch = "kevinsblanket") public static void record(ServerLevel level) {
         GameTestReporting.installReporter(level);
         MinecraftServer server = level.getServer();
         firedBefore = PayoffState.fired(server);
+        turnedBefore = PayoffState.terminusTurned(server);
+        eligibleBefore = PayoffState.eligible(server);
         erasedBefore = ReturnedHearthSavedData.get(server).maeveErased();
     }
 
     @AfterBatch(batch = "kevinsblanket") public static void restore(ServerLevel level) {
         MinecraftServer server = level.getServer();
         PayoffState.setForTest(server, firedBefore);
+        PayoffState.setTerminusTurnedForTest(server, turnedBefore);
+        PayoffState.setEligibleForTest(server, eligibleBefore);
         ReturnedHearthSavedData.get(server).setMaeveErasedForDebug(erasedBefore, server.overworld().getGameTime());
     }
 
@@ -121,6 +125,17 @@ public final class ThermalBlanketGameTest {
     }
 
     @GameTest(template = GameTestTemplates.EMPTY, batch = "kevinsblanket")
+    public static void aDeathKeepsTheFirstJoinSpent(GameTestHelper h) {
+        ServerPlayer before = connected(h);
+        StarterBooks.grantFirstJoin(before);
+        ServerPlayer after = connected(h, before.getGameProfile());
+        after.restoreFrom(before, false);
+        StarterBooks.grantFirstJoin(after);
+        h.assertTrue(count(after, stack -> !stack.isEmpty()) == 0, "A respawned player is not handed a second set");
+        h.succeed();
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY, batch = "kevinsblanket")
     public static void aFullBagDropsTheGrantAtTheirFeet(GameTestHelper h) {
         ServerPlayer player = connected(h);
         Inventory inventory = player.getInventory();
@@ -129,6 +144,10 @@ public final class ThermalBlanketGameTest {
         var near = h.getLevel().getEntitiesOfClass(ItemEntity.class, player.getBoundingBox().inflate(3));
         h.assertTrue(near.stream().anyMatch(item -> notice(item.getItem())), "The notice lands at their feet");
         h.assertTrue(near.stream().anyMatch(item -> isBlanket(item.getItem())), "And the blanket");
+        if (StarterBooks.createGuideBook() != null) {
+            h.assertTrue(near.stream().anyMatch(item -> ItemStack.isSameItemSameComponents(item.getItem(), StarterBooks.createGuideBook())),
+                    "And the field manual, which used to vanish");
+        }
         near.forEach(ItemEntity::discard);
         h.succeed();
     }
@@ -152,8 +171,12 @@ public final class ThermalBlanketGameTest {
 
     /** A player with a fake connection, for the grant's inventory updates. */
     private static ServerPlayer connected(GameTestHelper h) {
-        ServerPlayer player = player(h);
-        player.connection = new net.neoforged.neoforge.common.util.FakePlayer(h.getLevel(), player.getGameProfile()).connection;
+        return connected(h, new GameProfile(UUID.randomUUID(), "blanket"));
+    }
+
+    private static ServerPlayer connected(GameTestHelper h, GameProfile profile) {
+        ServerPlayer player = player(h, profile);
+        player.connection = new net.neoforged.neoforge.common.util.FakePlayer(h.getLevel(), profile).connection;
         return player;
     }
 
@@ -163,9 +186,12 @@ public final class ThermalBlanketGameTest {
 
     /** A server player standing in the test structure, never added to the level: warmth reads only the inventory. */
     private static ServerPlayer player(GameTestHelper h) {
+        return player(h, new GameProfile(UUID.randomUUID(), "blanket"));
+    }
+
+    private static ServerPlayer player(GameTestHelper h, GameProfile profile) {
         ServerLevel level = h.getLevel();
-        ServerPlayer player = new ServerPlayer(level.getServer(), level,
-                new GameProfile(UUID.randomUUID(), "blanket"), ClientInformation.createDefault());
+        ServerPlayer player = new ServerPlayer(level.getServer(), level, profile, ClientInformation.createDefault());
         player.setPos(h.absoluteVec(new Vec3(4.5, 1, 4.5)));
         return player;
     }

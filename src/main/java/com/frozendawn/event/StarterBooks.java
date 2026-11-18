@@ -3,6 +3,7 @@ package com.frozendawn.event;
 import com.frozendawn.init.ModItems;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 
 /**
@@ -17,14 +18,17 @@ public final class StarterBooks {
 
     /**
      * A new player's first join: the field manual, then Kevin's Evacuation Notice and the blanket he left (CH-38).
-     * What does not fit in a full inventory drops at the player's feet.
+     * What does not fit in a full inventory drops at the player's feet. The flag lives in the persisted tag, which
+     * survives a respawn; older saves kept it at the root, which a death cleared, so either one counts.
      */
     public static void grantFirstJoin(ServerPlayer player) {
         var data = player.getPersistentData();
-        if (data.getBoolean(RECEIVED_FLAG)) return;
-        data.putBoolean(RECEIVED_FLAG, true);
+        var persisted = data.getCompound(Player.PERSISTED_NBT_TAG);
+        if (data.getBoolean(RECEIVED_FLAG) || persisted.getBoolean(RECEIVED_FLAG)) return;
+        persisted.putBoolean(RECEIVED_FLAG, true);
+        data.put(Player.PERSISTED_NBT_TAG, persisted);
         ItemStack guide = createGuideBook();
-        if (guide != null) player.getInventory().add(guide);
+        if (guide != null) player.getInventory().placeItemBackInInventory(guide);
         player.getInventory().placeItemBackInInventory(createEvacuationNotice());
         player.getInventory().placeItemBackInInventory(new ItemStack(ModItems.ORSA_THERMAL_BLANKET.get()));
     }

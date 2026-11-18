@@ -134,13 +134,13 @@ public final class PayoffState extends SavedData {
     }
 
     /** GameTests only: stands in for a world from before the payoff. */
-    static void setEligibleForTest(MinecraftServer server, boolean eligible) {
+    public static void setEligibleForTest(MinecraftServer server, boolean eligible) {
         var data = get(server);
         data.eligible = eligible;
         data.setDirty();
     }
 
-    static boolean eligible(MinecraftServer server) { return get(server).eligible; }
+    public static boolean eligible(MinecraftServer server) { return get(server).eligible; }
 
     /** The dev status line. */
     public static String describe(MinecraftServer server) {
