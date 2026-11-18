@@ -16,12 +16,15 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /** CH-38's notice, restyled as a sheet: the words it always had, and only the new marks the owner approved. */
 class EvacuationNoticeTextTest {
-    /** The written book's text, line by line, as StarterBooks had it; its rule and stage direction are gone. */
+    /**
+     * The written book's text, line by line, as StarterBooks had it, with the owner's approved changes: its rule and
+     * stage direction are gone, and ORSA's Directorate gives the order that the council only adopts.
+     */
     private static final List<String> ORIGINAL = List.of(
-            "UNITED NATIONS", "EMERGENCY COUNCIL", "EVACUATION NOTICE",
+            "UNITED NATIONS", "EMERGENCY COUNCIL", "BY ORDER OF THE ORSA DIRECTORATE",
+            "Adopted without amendment by the United Nations Emergency Council.", "EVACUATION NOTICE",
             "Classification: PUBLIC", "Date: [SYSTEM DATE ERROR]", "THIS IS NOT A DRILL.",
-            "By order of the United Nations Emergency Council, all civilians are to report to their nearest "
-                    + "designated evacuation point IMMEDIATELY.",
+            "All civilians are to report to their nearest designated evacuation point IMMEDIATELY.",
             "SITUATION BRIEFING:",
             "The Orbital Resonance Stabilization Authority (ORSA) has confirmed that Earth's orbital trajectory has "
                     + "deviated beyond correctable parameters.",
@@ -43,6 +46,8 @@ class EvacuationNoticeTextTest {
         List<String> read = new ArrayList<>();
         read.add(text(lang, "council.1"));
         read.add(text(lang, "council.2"));
+        read.add(text(lang, "authority"));
+        read.add(text(lang, "adopted"));
         read.add(text(lang, "title"));
         read.add(text(lang, "classification.label") + ": " + text(lang, "classification"));
         read.add(text(lang, "date.label") + ": " + text(lang, "date"));

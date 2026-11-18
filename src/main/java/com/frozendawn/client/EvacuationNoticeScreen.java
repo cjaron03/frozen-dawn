@@ -18,8 +18,9 @@ import org.lwjgl.glfw.GLFW;
 
 /**
  * CH-38's notice as ORSA printed it: one sterile sheet per page, the masthead, watermark and filing strip on every
- * printed page, the council's small seal on the cover, a single red bar. Kevin's page is the back of the last sheet,
- * with nothing on it but his pen. The paper never moves; only the page turns.
+ * printed page, the council's small seal on the cover, ORSA's order above the council's adoption of it, and a single
+ * red bar. Kevin's page is the back of the last sheet, with nothing on it but his pen. The paper never moves; only
+ * the page turns.
  */
 public final class EvacuationNoticeScreen extends Screen {
     private static final ResourceLocation MASTHEAD = texture("masthead"), WATERMARK = texture("watermark"),
@@ -87,6 +88,16 @@ public final class EvacuationNoticeScreen extends Screen {
         int y = 36;
         g.fill(M, y, W - M, y + 1, INK);
         y += 6;
+        // ORSA gives the order; the council only adopts it. Then the notice itself.
+        for (FormattedCharSequence line : font.split(text("authority").copy().withStyle(ChatFormatting.BOLD), TEXT_W)) {
+            g.drawString(font, line, M, y, INK, false);
+            y += LINE;
+        }
+        for (FormattedCharSequence line : font.split(text("adopted"), TEXT_W)) {
+            g.drawString(font, line, M, y, LABEL, false);
+            y += LINE;
+        }
+        y += 4;
         g.drawString(font, text("title").copy().withStyle(ChatFormatting.BOLD), M, y, INK, false);
         y += 14;
         for (String field : List.of("classification", "date", "point")) {

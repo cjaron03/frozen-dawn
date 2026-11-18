@@ -21,8 +21,11 @@ public final class EvacuationNotice {
         public String translationKey() { return KEY + key; }
     }
 
-    /** The cover's keys, drawn in the screen's fixed layout: issuer, title, fields, the alert and the order. */
-    public static final List<String> COVER = List.of("council.1", "council.2", "title",
+    /**
+     * The cover's keys, drawn in the screen's fixed layout: the council's mark, ORSA's order and the council's
+     * adoption of it, then the title, fields, the alert and the instruction.
+     */
+    public static final List<String> COVER = List.of("council.1", "council.2", "authority", "adopted", "title",
             "classification.label", "classification", "date.label", "date", "point.label", "point", "alert", "order");
 
     /** The filing strip printed at the foot of every printed page; Kevin's page has none. */

@@ -93,6 +93,8 @@ def sheet():
     return im, d
 
 
+ORDER = 'BY ORDER OF THE ORSA DIRECTORATE'
+ADOPTED = 'Adopted without amendment by the United Nations Emergency Council.'
 CODE = 'EVN-2042-0001 // ISSUED: ORSA // CONCUR: UNEC'
 REVISION = 'REV. 9 // TEXT APPROVED 2071 // COPY 3,118,402,117'
 UN_BLUE, UN_PALE = (92, 146, 210, 255), (214, 228, 243, 255)
@@ -140,6 +142,14 @@ def printed(font):
     y = 8 + logo.height
     d.line((M, y, W - M, y), fill=INK)
     y += 6
+    # ORSA gives the order; the council only adopts it. Then the notice itself.
+    for line in wrap(font, ORDER, TEXT_W, bold=True):
+        font.draw(im, M, y, line, INK, bold=True)
+        y += 10
+    for line in wrap(font, ADOPTED, TEXT_W):
+        font.draw(im, M, y, line, LABEL)
+        y += 10
+    y += 4
     font.draw(im, M, y, 'EVACUATION NOTICE', INK, bold=True)
     y += 14
     for label, value in (('Classification', 'PUBLIC'), ('Date', '[SYSTEM DATE ERROR]'),
@@ -153,8 +163,8 @@ def printed(font):
     text = 'THIS IS NOT A DRILL.'
     font.draw(im, M + (TEXT_W - font.width(text, True)) // 2, y + 3, text, WHITE, bold=True)
     y += 22
-    for line in wrap(font, 'By order of the United Nations Emergency Council, all civilians are to report to their '
-                           'nearest designated evacuation point IMMEDIATELY.', TEXT_W):
+    for line in wrap(font, 'All civilians are to report to their nearest designated evacuation point IMMEDIATELY.',
+                     TEXT_W):
         font.draw(im, M, y, line, INK)
         y += 10
     control_strip(font, im, d)
@@ -249,8 +259,8 @@ def main():
     font = Font()
     one = scaled(font, printed(font))
     last = scaled(font, handwritten(font))
-    one = pager(font, one, 1, 4)
-    last = pager(font, last, 4, 4)
+    one = pager(font, one, 1, 5)
+    last = pager(font, last, 5, 5)
     ico = icon()
     canvas = Image.new('RGBA', (one.width * 2 + 72 + 180, one.height + 48), (32, 37, 43, 255))
     canvas.alpha_composite(one, (24, 24))
