@@ -700,6 +700,26 @@ public class ModItems {
             () -> new LinedEvaChestplateItem(ModArmorMaterials.EVA, ArmorItem.Type.CHESTPLATE,
                     new Item.Properties().durability(ArmorItem.Type.CHESTPLATE.getDurability(25))));
 
+    // The descent: creative tab and /give only.
+    public static final DeferredItem<BlockItem> DESCENT_MUSIC_BOX = ITEMS.registerSimpleBlockItem("descent_music_box", ModBlocks.DESCENT_MUSIC_BOX);
+    public static final DeferredItem<BlockItem> DESCENT_CHURCH_BELL = ITEMS.registerSimpleBlockItem("descent_church_bell", ModBlocks.DESCENT_CHURCH_BELL);
+    public static final DeferredItem<BlockItem> DESCENT_MONASTERY_BELL = ITEMS.registerSimpleBlockItem("descent_monastery_bell", ModBlocks.DESCENT_MONASTERY_BELL);
+    public static final DeferredItem<BlockItem> DESCENT_LYRE = ITEMS.registerSimpleBlockItem("descent_lyre", ModBlocks.DESCENT_LYRE);
+    public static final DeferredItem<BlockItem> DESCENT_BRONZE_LUR = ITEMS.registerSimpleBlockItem("descent_bronze_lur", ModBlocks.DESCENT_BRONZE_LUR);
+    public static final DeferredItem<BlockItem> DESCENT_BULL_LYRE = ITEMS.registerSimpleBlockItem("descent_bull_lyre", ModBlocks.DESCENT_BULL_LYRE);
+    public static final DeferredItem<BlockItem> DESCENT_DRUM_AND_WHISTLE = ITEMS.registerSimpleBlockItem("descent_drum_and_whistle", ModBlocks.DESCENT_DRUM_AND_WHISTLE);
+    public static final DeferredItem<BlockItem> DESCENT_STONE_WHISTLE = ITEMS.registerSimpleBlockItem("descent_stone_whistle", ModBlocks.DESCENT_STONE_WHISTLE);
+    public static final DeferredItem<BlockItem> DESCENT_BONE_FLUTE = ITEMS.registerSimpleBlockItem("descent_bone_flute", ModBlocks.DESCENT_BONE_FLUTE);
+    public static final DeferredItem<BlockItem> DESCENT_INK_MARK = ITEMS.registerSimpleBlockItem("descent_ink_mark", ModBlocks.DESCENT_INK_MARK);
+    public static final DeferredItem<BlockItem> DESCENT_PANEL_MARK = ITEMS.registerSimpleBlockItem("descent_panel_mark", ModBlocks.DESCENT_PANEL_MARK);
+    public static final DeferredItem<BlockItem> DESCENT_GLASS_MARK = ITEMS.registerSimpleBlockItem("descent_glass_mark", ModBlocks.DESCENT_GLASS_MARK);
+    public static final DeferredItem<BlockItem> DESCENT_MOSAIC_MARK = ITEMS.registerSimpleBlockItem("descent_mosaic_mark", ModBlocks.DESCENT_MOSAIC_MARK);
+    public static final DeferredItem<BlockItem> DESCENT_BRONZE_MARK = ITEMS.registerSimpleBlockItem("descent_bronze_mark", ModBlocks.DESCENT_BRONZE_MARK);
+    public static final DeferredItem<BlockItem> DESCENT_CLAY_MARK = ITEMS.registerSimpleBlockItem("descent_clay_mark", ModBlocks.DESCENT_CLAY_MARK);
+    public static final DeferredItem<BlockItem> DESCENT_PLASTER_MARK = ITEMS.registerSimpleBlockItem("descent_plaster_mark", ModBlocks.DESCENT_PLASTER_MARK);
+    public static final DeferredItem<BlockItem> DESCENT_CARVED_MARK = ITEMS.registerSimpleBlockItem("descent_carved_mark", ModBlocks.DESCENT_CARVED_MARK);
+    public static final DeferredItem<BlockItem> DESCENT_OCHRE_MARK = ITEMS.registerSimpleBlockItem("descent_ochre_mark", ModBlocks.DESCENT_OCHRE_MARK);
+
     // --- Creative Tab ---
     public static final DeferredRegister<CreativeModeTab> CREATIVE_TABS = DeferredRegister.create(Registries.CREATIVE_MODE_TAB, FrozenDawn.MOD_ID);
 
@@ -1019,6 +1039,25 @@ public class ModItems {
                         output.accept(UNDONE_ARCHITECT_SPAWN_EGG.get());
                         output.accept(BLOOM_SPORE_SPAWN_EGG.get());
                         output.accept(ARCHIVIST_SPAWN_EGG.get());
+                        // Descent, top to bottom: the music box, the eight instruments, the marks
+                        output.accept(DESCENT_MUSIC_BOX.get());
+                        output.accept(DESCENT_CHURCH_BELL.get());
+                        output.accept(DESCENT_MONASTERY_BELL.get());
+                        output.accept(DESCENT_LYRE.get());
+                        output.accept(DESCENT_BRONZE_LUR.get());
+                        output.accept(DESCENT_BULL_LYRE.get());
+                        output.accept(DESCENT_DRUM_AND_WHISTLE.get());
+                        output.accept(DESCENT_STONE_WHISTLE.get());
+                        output.accept(DESCENT_BONE_FLUTE.get());
+                        output.accept(DESCENT_INK_MARK.get());
+                        output.accept(DESCENT_PANEL_MARK.get());
+                        output.accept(DESCENT_GLASS_MARK.get());
+                        output.accept(DESCENT_MOSAIC_MARK.get());
+                        output.accept(DESCENT_BRONZE_MARK.get());
+                        output.accept(DESCENT_CLAY_MARK.get());
+                        output.accept(DESCENT_PLASTER_MARK.get());
+                        output.accept(DESCENT_CARVED_MARK.get());
+                        output.accept(DESCENT_OCHRE_MARK.get());
                     }).build());
 
     public static void addToVanillaCreativeTabs(BuildCreativeModeTabContentsEvent event) {

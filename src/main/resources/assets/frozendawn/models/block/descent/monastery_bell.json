@@ -1,0 +1,203 @@
+{
+  "parent": "minecraft:block/block",
+  "textures": {
+    "particle": "frozendawn:block/descent/frame_stone",
+    "frame_stone": "frozendawn:block/descent/frame_stone",
+    "rope": "frozendawn:block/descent/rope",
+    "iron": "frozendawn:block/descent/iron"
+  },
+  "elements": [
+    {
+      "from": [
+        2,
+        0,
+        6
+      ],
+      "to": [
+        5,
+        14,
+        10
+      ],
+      "faces": {
+        "north": {
+          "texture": "#frame_stone"
+        },
+        "east": {
+          "texture": "#frame_stone"
+        },
+        "south": {
+          "texture": "#frame_stone"
+        },
+        "west": {
+          "texture": "#frame_stone"
+        },
+        "up": {
+          "texture": "#frame_stone"
+        },
+        "down": {
+          "texture": "#frame_stone"
+        }
+      }
+    },
+    {
+      "from": [
+        11,
+        0,
+        6
+      ],
+      "to": [
+        14,
+        14,
+        10
+      ],
+      "faces": {
+        "north": {
+          "texture": "#frame_stone"
+        },
+        "east": {
+          "texture": "#frame_stone"
+        },
+        "south": {
+          "texture": "#frame_stone"
+        },
+        "west": {
+          "texture": "#frame_stone"
+        },
+        "up": {
+          "texture": "#frame_stone"
+        },
+        "down": {
+          "texture": "#frame_stone"
+        }
+      }
+    },
+    {
+      "from": [
+        2,
+        14,
+        6
+      ],
+      "to": [
+        14,
+        16,
+        10
+      ],
+      "faces": {
+        "north": {
+          "texture": "#frame_stone"
+        },
+        "east": {
+          "texture": "#frame_stone"
+        },
+        "south": {
+          "texture": "#frame_stone"
+        },
+        "west": {
+          "texture": "#frame_stone"
+        },
+        "up": {
+          "texture": "#frame_stone"
+        },
+        "down": {
+          "texture": "#frame_stone"
+        }
+      }
+    },
+    {
+      "from": [
+        7,
+        11,
+        7
+      ],
+      "to": [
+        9,
+        14,
+        9
+      ],
+      "faces": {
+        "north": {
+          "texture": "#rope"
+        },
+        "east": {
+          "texture": "#rope"
+        },
+        "south": {
+          "texture": "#rope"
+        },
+        "west": {
+          "texture": "#rope"
+        },
+        "up": {
+          "texture": "#rope"
+        },
+        "down": {
+          "texture": "#rope"
+        }
+      }
+    },
+    {
+      "from": [
+        6,
+        8,
+        6
+      ],
+      "to": [
+        10,
+        11,
+        10
+      ],
+      "faces": {
+        "north": {
+          "texture": "#iron"
+        },
+        "east": {
+          "texture": "#iron"
+        },
+        "south": {
+          "texture": "#iron"
+        },
+        "west": {
+          "texture": "#iron"
+        },
+        "up": {
+          "texture": "#iron"
+        },
+        "down": {
+          "texture": "#iron"
+        }
+      }
+    },
+    {
+      "from": [
+        5,
+        5,
+        5
+      ],
+      "to": [
+        11,
+        8,
+        11
+      ],
+      "faces": {
+        "north": {
+          "texture": "#iron"
+        },
+        "east": {
+          "texture": "#iron"
+        },
+        "south": {
+          "texture": "#iron"
+        },
+        "west": {
+          "texture": "#iron"
+        },
+        "up": {
+          "texture": "#iron"
+        },
+        "down": {
+          "texture": "#iron"
+        }
+      }
+    }
+  ]
+}

@@ -1031,4 +1031,57 @@ public class ModBlocks {
     public static final DeferredBlock<com.frozendawn.flora.FrostcapBlock> FROSTCAP = BLOCKS.register("frostcap",
             () -> new com.frozendawn.flora.FrostcapBlock(BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_LIGHT_BLUE).noCollission().instabreak()
                     .sound(SoundType.FUNGUS).lightLevel(s -> 3).pushReaction(PushReaction.DESTROY)));
+
+    // --- The descent (CH-44 to CH-46): creative-only, so no recipe, loot table or world generation. ---
+    public static final DeferredBlock<com.frozendawn.descent.DescentInstrumentBlock> DESCENT_MUSIC_BOX = instrument("descent_music_box",
+            com.frozendawn.descent.DescentEra.HOUSE_1816, new double[]{3, 0, 4, 15, 6, 12}, SoundType.WOOD, MapColor.WOOD);
+    public static final DeferredBlock<com.frozendawn.descent.DescentInstrumentBlock> DESCENT_CHURCH_BELL = instrument("descent_church_bell",
+            com.frozendawn.descent.DescentEra.MAUNDER, new double[]{1, 0, 4, 15, 16, 12}, SoundType.WOOD, MapColor.WOOD);
+    public static final DeferredBlock<com.frozendawn.descent.DescentInstrumentBlock> DESCENT_MONASTERY_BELL = instrument("descent_monastery_bell",
+            com.frozendawn.descent.DescentEra.FAMINE, new double[]{2, 0, 5, 14, 16, 11}, SoundType.STONE, MapColor.STONE);
+    public static final DeferredBlock<com.frozendawn.descent.DescentInstrumentBlock> DESCENT_LYRE = instrument("descent_lyre",
+            com.frozendawn.descent.DescentEra.LATE_ANTIQUE, new double[]{3, 0, 6, 13, 15, 10}, SoundType.WOOD, MapColor.WOOD);
+    public static final DeferredBlock<com.frozendawn.descent.DescentInstrumentBlock> DESCENT_BRONZE_LUR = instrument("descent_bronze_lur",
+            com.frozendawn.descent.DescentEra.BRONZE_AGE, new double[]{4, 0, 3, 12, 16, 12}, SoundType.COPPER, MapColor.COLOR_ORANGE);
+    public static final DeferredBlock<com.frozendawn.descent.DescentInstrumentBlock> DESCENT_BULL_LYRE = instrument("descent_bull_lyre",
+            com.frozendawn.descent.DescentEra.FOUR_KILOYEAR, new double[]{2, 0, 6, 15, 16, 10}, SoundType.WOOD, MapColor.WOOD);
+    public static final DeferredBlock<com.frozendawn.descent.DescentInstrumentBlock> DESCENT_DRUM_AND_WHISTLE = instrument("descent_drum_and_whistle",
+            com.frozendawn.descent.DescentEra.EIGHT_KILOYEAR, new double[]{2, 0, 3, 15, 8, 13}, SoundType.WOOD, MapColor.WOOD);
+    public static final DeferredBlock<com.frozendawn.descent.DescentInstrumentBlock> DESCENT_STONE_WHISTLE = instrument("descent_stone_whistle",
+            com.frozendawn.descent.DescentEra.YOUNGER_DRYAS, new double[]{3, 0, 3, 13, 4, 13}, SoundType.STONE, MapColor.STONE);
+    public static final DeferredBlock<com.frozendawn.descent.DescentInstrumentBlock> DESCENT_BONE_FLUTE = instrument("descent_bone_flute",
+            com.frozendawn.descent.DescentEra.GLACIAL_MAXIMUM, new double[]{2, 0, 4, 14, 3, 12}, SoundType.BONE_BLOCK, MapColor.STONE);
+
+    public static final DeferredBlock<com.frozendawn.descent.DescentMarkBlock> DESCENT_INK_MARK = mark("descent_ink_mark",
+            com.frozendawn.descent.DescentEra.HOUSE_1816, SoundType.STONE, MapColor.SAND);
+    public static final DeferredBlock<com.frozendawn.descent.DescentMarkBlock> DESCENT_PANEL_MARK = mark("descent_panel_mark",
+            com.frozendawn.descent.DescentEra.MAUNDER, SoundType.WOOD, MapColor.WOOD);
+    public static final DeferredBlock<com.frozendawn.descent.DescentMarkBlock> DESCENT_GLASS_MARK = mark("descent_glass_mark",
+            com.frozendawn.descent.DescentEra.FAMINE, SoundType.GLASS, MapColor.COLOR_BLUE);
+    public static final DeferredBlock<com.frozendawn.descent.DescentMarkBlock> DESCENT_MOSAIC_MARK = mark("descent_mosaic_mark",
+            com.frozendawn.descent.DescentEra.LATE_ANTIQUE, SoundType.STONE, MapColor.SAND);
+    public static final DeferredBlock<com.frozendawn.descent.DescentMarkBlock> DESCENT_BRONZE_MARK = mark("descent_bronze_mark",
+            com.frozendawn.descent.DescentEra.BRONZE_AGE, SoundType.WOOD, MapColor.COLOR_BROWN);
+    public static final DeferredBlock<com.frozendawn.descent.DescentMarkBlock> DESCENT_CLAY_MARK = mark("descent_clay_mark",
+            com.frozendawn.descent.DescentEra.FOUR_KILOYEAR, SoundType.MUD_BRICKS, MapColor.TERRACOTTA_ORANGE);
+    public static final DeferredBlock<com.frozendawn.descent.DescentMarkBlock> DESCENT_PLASTER_MARK = mark("descent_plaster_mark",
+            com.frozendawn.descent.DescentEra.EIGHT_KILOYEAR, SoundType.STONE, MapColor.SAND);
+    public static final DeferredBlock<com.frozendawn.descent.DescentMarkBlock> DESCENT_CARVED_MARK = mark("descent_carved_mark",
+            com.frozendawn.descent.DescentEra.YOUNGER_DRYAS, SoundType.STONE, MapColor.STONE);
+    public static final DeferredBlock<com.frozendawn.descent.DescentMarkBlock> DESCENT_OCHRE_MARK = mark("descent_ochre_mark",
+            com.frozendawn.descent.DescentEra.GLACIAL_MAXIMUM, SoundType.STONE, MapColor.STONE);
+
+    private static DeferredBlock<com.frozendawn.descent.DescentInstrumentBlock> instrument(String id, com.frozendawn.descent.DescentEra era,
+            double[] bounds, SoundType sound, MapColor color) {
+        return BLOCKS.register(id, () -> new com.frozendawn.descent.DescentInstrumentBlock(era, bounds,
+                BlockBehaviour.Properties.of().mapColor(color).strength(0.8F).sound(sound).noOcclusion()
+                        .isViewBlocking((state, level, pos) -> false).isSuffocating((state, level, pos) -> false)
+                        .pushReaction(PushReaction.BLOCK)));
+    }
+
+    private static DeferredBlock<com.frozendawn.descent.DescentMarkBlock> mark(String id, com.frozendawn.descent.DescentEra era,
+            SoundType sound, MapColor color) {
+        return BLOCKS.register(id, () -> new com.frozendawn.descent.DescentMarkBlock(era,
+                BlockBehaviour.Properties.of().mapColor(color).strength(1.5F, 6.0F).sound(sound)));
+    }
 }

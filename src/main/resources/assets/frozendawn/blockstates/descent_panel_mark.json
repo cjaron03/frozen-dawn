@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "frozendawn:block/descent/maunder_mark"
+    },
+    "facing=east": {
+      "model": "frozendawn:block/descent/maunder_mark",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "frozendawn:block/descent/maunder_mark",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "frozendawn:block/descent/maunder_mark",
+      "y": 270
+    }
+  }
+}

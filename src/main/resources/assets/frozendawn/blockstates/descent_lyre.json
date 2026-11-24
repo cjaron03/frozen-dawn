@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "frozendawn:block/descent/lyre"
+    },
+    "facing=east": {
+      "model": "frozendawn:block/descent/lyre",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "frozendawn:block/descent/lyre",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "frozendawn:block/descent/lyre",
+      "y": 270
+    }
+  }
+}

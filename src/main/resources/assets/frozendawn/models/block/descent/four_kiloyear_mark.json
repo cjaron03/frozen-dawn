@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/orientable",
+  "textures": {
+    "front": "frozendawn:block/descent/four_kiloyear_mark",
+    "side": "frozendawn:block/descent/four_kiloyear_mark_ground",
+    "top": "frozendawn:block/descent/four_kiloyear_mark_ground"
+  }
+}

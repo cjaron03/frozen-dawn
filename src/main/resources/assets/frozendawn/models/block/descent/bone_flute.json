@@ -1,0 +1,74 @@
+{
+  "parent": "minecraft:block/block",
+  "textures": {
+    "particle": "frozendawn:block/descent/ochre_stone",
+    "ochre_stone": "frozendawn:block/descent/ochre_stone",
+    "bone_holes": "frozendawn:block/descent/bone_holes"
+  },
+  "elements": [
+    {
+      "from": [
+        2,
+        0,
+        4
+      ],
+      "to": [
+        14,
+        2,
+        12
+      ],
+      "faces": {
+        "north": {
+          "texture": "#ochre_stone"
+        },
+        "east": {
+          "texture": "#ochre_stone"
+        },
+        "south": {
+          "texture": "#ochre_stone"
+        },
+        "west": {
+          "texture": "#ochre_stone"
+        },
+        "up": {
+          "texture": "#ochre_stone"
+        },
+        "down": {
+          "texture": "#ochre_stone"
+        }
+      }
+    },
+    {
+      "from": [
+        3,
+        2,
+        7
+      ],
+      "to": [
+        13,
+        3,
+        9
+      ],
+      "faces": {
+        "north": {
+          "texture": "#bone_holes"
+        },
+        "east": {
+          "texture": "#bone_holes"
+        },
+        "south": {
+          "texture": "#bone_holes"
+        },
+        "west": {
+          "texture": "#bone_holes"
+        },
+        "up": {
+          "texture": "#bone_holes"
+        },
+        "down": {
+          "texture": "#bone_holes"
+        }
+      }
+    }
+  ]
+}
