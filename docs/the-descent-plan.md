@@ -16,7 +16,7 @@ Everything sits in the creative tab. Nothing generates, drops or crafts.
 
 **Spec:** [payoff-roadmap.md](payoff-roadmap.md), branch 9. Notion: the payoff branch spec, section 6f and chamber zero. Canon: Canon Hierarchy CH-44 to CH-47 (signed off 2026-11-23), with CH-10, CH-11, CH-14, CH-18, CH-21, CH-28 and CH-32. The canon's design truth stays on Notion; this plan only says what is built.
 
-**Status:** drafted 2026-11-23 for the owner's approval. Nothing is built.
+**Status:** approved by the owner as written, 2026-11-23, Rulings 1 to 7 included. Nothing is built.
 
 **Branch:** slice 1 is `feat/the-descent` in `/Volumes/SSD/Work/frozen-dawn-the-descent`, cut from `feat/maeve-director` once this plan has merged. The build session starts in that worktree and works there. PR into `feat/maeve-director`. The branch review runs on Opus, because the branch merges into a long-lived branch. Later slices get their own branch and worktree (`feat/the-descent-chambers`, `feat/the-descent-worldgen`, `feat/the-descent-echo`).
 
