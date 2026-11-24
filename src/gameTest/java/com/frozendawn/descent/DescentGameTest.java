@@ -52,6 +52,31 @@ public final class DescentGameTest {
         });
     }
 
+    /** Breaking a playing instrument and placing another in its spot does not start a second clip over the first. */
+    @GameTest(template = GameTestTemplates.EMPTY, batch = "descent", timeoutTicks = 400)
+    public static void aReplacedInstrumentWaitsForItsClip(GameTestHelper h) {
+        DescentEra era = DescentEra.GLACIAL_MAXIMUM;
+        h.setBlock(AT, ModBlocks.DESCENT_BONE_FLUTE.get());
+        var player = h.makeMockPlayer(GameType.SURVIVAL);
+        Ear ear = listen(h);
+        h.useBlock(AT, player);
+        h.runAfterDelay(10, () -> {
+            h.setBlock(AT, Blocks.AIR);
+            h.setBlock(AT, ModBlocks.DESCENT_BONE_FLUTE.get());
+            h.useBlock(AT, player);
+        });
+        h.runAfterDelay(era.clipTicks() + 2, () -> {
+            try {
+                h.assertTrue(ear.count(era) == 1, "a replaced flute stays silent while the first clip plays: " + ear.count(era));
+                h.useBlock(AT, player);
+                h.assertTrue(ear.count(era) == 2, "once the first clip has run out it plays again: " + ear.count(era));
+            } finally {
+                ear.close();
+            }
+            h.succeed();
+        });
+    }
+
     /** No redstone plays an instrument: they are not note blocks. */
     @GameTest(template = GameTestTemplates.EMPTY, batch = "descent", timeoutTicks = 40)
     public static void instrumentsAreNotNoteBlocks(GameTestHelper h) {

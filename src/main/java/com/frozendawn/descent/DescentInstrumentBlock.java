@@ -71,6 +71,18 @@ public class DescentInstrumentBlock extends Block {
         return InteractionResult.sidedSuccess(level.isClientSide);
     }
 
+    /**
+     * An instrument placed where a playing one was broken inherits its clip: the old clip's tick is still scheduled
+     * here (ticks are kept per block and position), so the new one stays silent until that tick clears it.
+     */
+    @Override
+    protected void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean movedByPiston) {
+        if (!level.isClientSide && !oldState.is(this) && !state.getValue(PLAYING)
+                && level.getBlockTicks().hasScheduledTick(pos, this)) {
+            level.setBlock(pos, state.setValue(PLAYING, true), Block.UPDATE_CLIENTS);
+        }
+    }
+
     @Override
     protected void tick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
         if (state.getValue(PLAYING)) level.setBlock(pos, state.setValue(PLAYING, false), Block.UPDATE_CLIENTS);
