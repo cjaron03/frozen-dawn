@@ -21,7 +21,7 @@ Nothing generates in a world yet: that is slice 3.
 
 **Spec:** [the-descent-plan.md](the-descent-plan.md) (slice 1 and the slice outline), [the-descent-checkpoint.md](the-descent-checkpoint.md), [payoff-roadmap.md](payoff-roadmap.md) branch 9. Notion: the payoff branch spec, section 6f and chamber zero. Canon: Canon Hierarchy CH-44 to CH-47, with CH-10, CH-11, CH-14, CH-18, CH-21, CH-28 and CH-32. The canon's design truth stays on Notion; this plan only says what is built.
 
-**Status:** drafted 2026-11-23 for the owner's approval. Nothing is built.
+**Status:** approved by the owner as written, 2026-11-23, Rulings 1 to 10 included. Nothing is built.
 
 **Branch:** `feat/the-descent-chambers` in `/Volumes/SSD/Work/frozen-dawn-the-descent-chambers`, cut from `feat/maeve-director` once this plan has merged. The build session starts in that worktree and works there. PR into `feat/maeve-director`. The branch review runs on Opus, because the branch merges into a long-lived branch. It adds one block entity sync (the slot's) and no custom payload.
 
