@@ -2,7 +2,7 @@
 
 ## Slice 1, the pieces: 2026-11-23
 
-Owning worktree `/Volumes/SSD/Work/frozen-dawn-the-descent`, branch `feat/the-descent`, cut from `feat/maeve-director` at c4b155c0. PR into `feat/maeve-director`, not merged; the owner approves every merge.
+Owning worktree `/Volumes/SSD/Work/frozen-dawn-the-descent`, branch `feat/the-descent`, cut from `feat/maeve-director` at c4b155c0. Merged into `feat/maeve-director` as PR 185 (46d56c02).
 
 Built, creative tab and `/give` only, with no recipe, loot table or world generation:
 - `descent/DescentEra`: the house and the eight eras, top to bottom, each with its standing count, clip and clip length.
