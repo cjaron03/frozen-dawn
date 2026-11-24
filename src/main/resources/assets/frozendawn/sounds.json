@@ -5377,5 +5377,115 @@
     "sounds": [
       "frozendawn:block/cs1_dock/refuse"
     ]
+  },
+  "block.descent.music_box": {
+    "category": "block",
+    "subtitle": "subtitle.frozendawn.block.descent.music_box",
+    "sounds": [
+      {
+        "name": "frozendawn:block/descent/music_box",
+        "volume": 0.6,
+        "attenuation_distance": 8
+      }
+    ]
+  },
+  "block.descent.maunder": {
+    "category": "block",
+    "subtitle": "subtitle.frozendawn.block.descent.maunder",
+    "sounds": [
+      {
+        "name": "frozendawn:block/descent/maunder",
+        "volume": 0.6,
+        "attenuation_distance": 8
+      }
+    ]
+  },
+  "block.descent.famine": {
+    "category": "block",
+    "subtitle": "subtitle.frozendawn.block.descent.famine",
+    "sounds": [
+      {
+        "name": "frozendawn:block/descent/famine",
+        "volume": 0.6,
+        "attenuation_distance": 8
+      }
+    ]
+  },
+  "block.descent.late_antique": {
+    "category": "block",
+    "subtitle": "subtitle.frozendawn.block.descent.late_antique",
+    "sounds": [
+      {
+        "name": "frozendawn:block/descent/late_antique",
+        "volume": 0.6,
+        "attenuation_distance": 8
+      }
+    ]
+  },
+  "block.descent.bronze_age": {
+    "category": "block",
+    "subtitle": "subtitle.frozendawn.block.descent.bronze_age",
+    "sounds": [
+      {
+        "name": "frozendawn:block/descent/bronze_age",
+        "volume": 0.6,
+        "attenuation_distance": 8
+      }
+    ]
+  },
+  "block.descent.four_kiloyear": {
+    "category": "block",
+    "subtitle": "subtitle.frozendawn.block.descent.four_kiloyear",
+    "sounds": [
+      {
+        "name": "frozendawn:block/descent/four_kiloyear",
+        "volume": 0.6,
+        "attenuation_distance": 8
+      }
+    ]
+  },
+  "block.descent.eight_kiloyear": {
+    "category": "block",
+    "subtitle": "subtitle.frozendawn.block.descent.eight_kiloyear",
+    "sounds": [
+      {
+        "name": "frozendawn:block/descent/eight_kiloyear",
+        "volume": 0.6,
+        "attenuation_distance": 8
+      }
+    ]
+  },
+  "block.descent.younger_dryas": {
+    "category": "block",
+    "subtitle": "subtitle.frozendawn.block.descent.younger_dryas",
+    "sounds": [
+      {
+        "name": "frozendawn:block/descent/younger_dryas",
+        "volume": 0.6,
+        "attenuation_distance": 8
+      }
+    ]
+  },
+  "block.descent.glacial_maximum": {
+    "category": "block",
+    "subtitle": "subtitle.frozendawn.block.descent.glacial_maximum",
+    "sounds": [
+      {
+        "name": "frozendawn:block/descent/glacial_maximum",
+        "volume": 0.6,
+        "attenuation_distance": 8
+      }
+    ]
+  },
+  "ambient.descent.icicle": {
+    "category": "ambient",
+    "subtitle": "subtitle.frozendawn.ambient.descent.icicle",
+    "sounds": [
+      {
+        "name": "frozendawn:ambient/descent/icicle",
+        "volume": 0.6,
+        "attenuation_distance": 8
+      }
+    ]
   }
 }

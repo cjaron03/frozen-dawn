@@ -96,6 +96,9 @@ def classify(path: str) -> tuple[str, str, str]:
         (("blocks/vault/",), "terminus_procedural", "tools/audio_sources/terminus/SOURCES.md", "Frozen Dawn original"),
         (("blocks/icarus/",), "icarus_reactor_procedural", "tools/generate_icarus_sounds.sh", "Frozen Dawn original"),
         (("blocks/reactor/",), "hearthstone_reactor_procedural", "tools/audio_sources/hearthstone/SOURCES.md", "Frozen Dawn original"),
+        (("entity/shepherd/", "block/cs1_dock/"), "shepherd_procedural", "tools/audio_sources/shepherd/SOURCES.md", "Frozen Dawn original"),
+        (("block/descent/",), "descent_melody_procedural", "tools/audio_sources/descent/SOURCES.md", "Frozen Dawn original"),
+        (("ambient/descent/",), "descent_icicle_mixed", "tools/audio_sources/descent/SOURCES.md", "CC0-derived and original"),
     )
     for prefixes, group, evidence, license_name in prefix_groups:
         if path.startswith(prefixes):

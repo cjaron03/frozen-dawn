@@ -33,9 +33,10 @@ class FrozenDawnCommandTreeTest {
         CommandNode<CommandSourceStack> debug = dispatcher().getRoot()
                 .getChild("frozendawn").getChild("debug");
 
-        // "flora", "payoff" and "ending" are development-only; tests run as a development build.
+        // "flora", "payoff", "ending" and "descent" are development-only; tests run as a development build.
         assertEquals(Set.of("world", "hearth", "heart", "postmaeve",
-                        "aggregate", "architect", "maeve", "uplink", "shepherd", "cyclone", "suit", "terminus", "lore", "flora", "payoff", "ending"), childNames(debug));
+                        "aggregate", "architect", "maeve", "uplink", "shepherd", "cyclone", "suit", "terminus", "lore", "flora", "payoff", "ending",
+                        "descent"), childNames(debug));
         assertNotNull(debug.getChild("postmaeve").getChild("bloom"));
         assertNull(debug.getChild("hearth").getChild("postmaeve"));
         assertNull(debug.getChild("hearth").getChild("heart"));
@@ -89,6 +90,16 @@ class FrozenDawnCommandTreeTest {
         assertEquals(Set.of("plain", "truth"), childNames(play));
         assertNotNull(play.getChild("plain").getCommand());
         assertNotNull(play.getChild("truth").getCommand());
+    }
+
+    @Test
+    void eachDescentClipPlaysOnDemand() {
+        CommandNode<CommandSourceStack> play = dispatcher().getRoot()
+                .getChild("frozendawn").getChild("debug").getChild("descent").getChild("play");
+        // Development-only; tests run as a development build.
+        assertEquals(Set.of("music_box", "maunder", "famine", "late_antique", "bronze_age", "four_kiloyear",
+                "eight_kiloyear", "younger_dryas", "glacial_maximum", "icicle"), childNames(play));
+        for (CommandNode<CommandSourceStack> clip : play.getChildren()) assertNotNull(clip.getCommand(), clip.getName());
     }
 
     @Test

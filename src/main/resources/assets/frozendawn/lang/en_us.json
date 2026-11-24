@@ -2988,5 +2988,15 @@
   "shepherd.lore.lattice": "That wall isn't built. It's being held. I don't know by what, and I don't want to be here when it lets go.",
   "shepherd.prompt": "Got a minute?",
   "shepherd.prompt.hint": "Right-click her",
-  "shepherd.fm.exit": "Before we go up. There are things up there that take buildings apart. Tall. Blue eyes. Very good at their jobs. I'll tell you what I see."
+  "shepherd.fm.exit": "Before we go up. There are things up there that take buildings apart. Tall. Blue eyes. Very good at their jobs. I'll tell you what I see.",
+  "subtitle.frozendawn.block.descent.music_box": "A music box plays",
+  "subtitle.frozendawn.block.descent.maunder": "A church bell rings",
+  "subtitle.frozendawn.block.descent.famine": "A small bell rings",
+  "subtitle.frozendawn.block.descent.late_antique": "A lyre plays",
+  "subtitle.frozendawn.block.descent.bronze_age": "A bronze horn sounds",
+  "subtitle.frozendawn.block.descent.four_kiloyear": "A lyre plays",
+  "subtitle.frozendawn.block.descent.eight_kiloyear": "A drum and whistle play",
+  "subtitle.frozendawn.block.descent.younger_dryas": "A stone whistle plays",
+  "subtitle.frozendawn.block.descent.glacial_maximum": "A bone flute plays",
+  "subtitle.frozendawn.ambient.descent.icicle": "Water drips"
 }
