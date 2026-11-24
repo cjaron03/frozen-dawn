@@ -71,6 +71,15 @@ public final class DescentGameTest {
         });
     }
 
+    /** Every motif, the scratches and the portrait load as painting variants and reach the creative tab. */
+    @GameTest(template = GameTestTemplates.EMPTY, batch = "descent", timeoutTicks = 20)
+    public static void everyDescentPaintingLoads(GameTestHelper h) {
+        var stacks = DescentPaintings.creativeStacks(h.getLevel().registryAccess());
+        h.assertTrue(stacks.size() == DescentPaintings.IDS.size(),
+                "loaded " + stacks.size() + " of " + DescentPaintings.IDS.size() + " descent paintings");
+        h.succeed();
+    }
+
     /** Every sound played within two blocks of the instrument while the test listens. */
     private record Ear(List<SoundEvent> heard, Consumer<PlayLevelSoundEvent.AtPosition> listener) {
         long count(DescentEra era) {

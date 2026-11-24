@@ -1039,7 +1039,7 @@ public class ModItems {
                         output.accept(UNDONE_ARCHITECT_SPAWN_EGG.get());
                         output.accept(BLOOM_SPORE_SPAWN_EGG.get());
                         output.accept(ARCHIVIST_SPAWN_EGG.get());
-                        // Descent, top to bottom: the music box, the eight instruments, the marks
+                        // Descent, top to bottom: the music box, the eight instruments, the marks,
                         output.accept(DESCENT_MUSIC_BOX.get());
                         output.accept(DESCENT_CHURCH_BELL.get());
                         output.accept(DESCENT_MONASTERY_BELL.get());
@@ -1058,6 +1058,8 @@ public class ModItems {
                         output.accept(DESCENT_PLASTER_MARK.get());
                         output.accept(DESCENT_CARVED_MARK.get());
                         output.accept(DESCENT_OCHRE_MARK.get());
+                        // then the motifs, the scratches and the portrait
+                        com.frozendawn.descent.DescentPaintings.creativeStacks(parameters.holders()).forEach(output::accept);
                     }).build());
 
     public static void addToVanillaCreativeTabs(BuildCreativeModeTabContentsEvent event) {
