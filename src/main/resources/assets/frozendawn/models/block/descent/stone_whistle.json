@@ -1,0 +1,74 @@
+{
+  "parent": "minecraft:block/block",
+  "textures": {
+    "particle": "frozendawn:block/descent/grey_stone",
+    "grey_stone": "frozendawn:block/descent/grey_stone",
+    "stone_holed": "frozendawn:block/descent/stone_holed"
+  },
+  "elements": [
+    {
+      "from": [
+        3,
+        0,
+        3
+      ],
+      "to": [
+        13,
+        1,
+        13
+      ],
+      "faces": {
+        "north": {
+          "texture": "#grey_stone"
+        },
+        "east": {
+          "texture": "#grey_stone"
+        },
+        "south": {
+          "texture": "#grey_stone"
+        },
+        "west": {
+          "texture": "#grey_stone"
+        },
+        "up": {
+          "texture": "#grey_stone"
+        },
+        "down": {
+          "texture": "#grey_stone"
+        }
+      }
+    },
+    {
+      "from": [
+        5,
+        1,
+        6
+      ],
+      "to": [
+        11,
+        4,
+        10
+      ],
+      "faces": {
+        "north": {
+          "texture": "#stone_holed"
+        },
+        "east": {
+          "texture": "#stone_holed"
+        },
+        "south": {
+          "texture": "#stone_holed"
+        },
+        "west": {
+          "texture": "#stone_holed"
+        },
+        "up": {
+          "texture": "#stone_holed"
+        },
+        "down": {
+          "texture": "#stone_holed"
+        }
+      }
+    }
+  ]
+}

@@ -967,4 +967,21 @@ public class ModSounds {
     public static final DeferredHolder<SoundEvent, SoundEvent> PYRO_HISS = register("entity.architect.pyro_hiss");
     /** Pyro death: soul fire catches, climbs and carries it up. */
     public static final DeferredHolder<SoundEvent, SoundEvent> PYRO_ARCHITECT_DEATH = register("entity.architect.pyro_death");
+    /** The descent's instruments (CH-46): heard only up close, to 8 blocks, never over the room. */
+    public static final DeferredHolder<SoundEvent, SoundEvent> DESCENT_MUSIC_BOX = descent("block.descent.music_box");
+    public static final DeferredHolder<SoundEvent, SoundEvent> DESCENT_MAUNDER = descent("block.descent.maunder");
+    public static final DeferredHolder<SoundEvent, SoundEvent> DESCENT_FAMINE = descent("block.descent.famine");
+    public static final DeferredHolder<SoundEvent, SoundEvent> DESCENT_LATE_ANTIQUE = descent("block.descent.late_antique");
+    public static final DeferredHolder<SoundEvent, SoundEvent> DESCENT_BRONZE_AGE = descent("block.descent.bronze_age");
+    public static final DeferredHolder<SoundEvent, SoundEvent> DESCENT_FOUR_KILOYEAR = descent("block.descent.four_kiloyear");
+    public static final DeferredHolder<SoundEvent, SoundEvent> DESCENT_EIGHT_KILOYEAR = descent("block.descent.eight_kiloyear");
+    public static final DeferredHolder<SoundEvent, SoundEvent> DESCENT_YOUNGER_DRYAS = descent("block.descent.younger_dryas");
+    public static final DeferredHolder<SoundEvent, SoundEvent> DESCENT_GLACIAL_MAXIMUM = descent("block.descent.glacial_maximum");
+    /** Chamber zero's icicle (CH-45); only the dev command plays it until the chamber is built. */
+    public static final DeferredHolder<SoundEvent, SoundEvent> DESCENT_ICICLE = descent("ambient.descent.icicle");
+
+    private static DeferredHolder<SoundEvent, SoundEvent> descent(String id) {
+        return SOUNDS.register(id, () -> SoundEvent.createFixedRangeEvent(
+                ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, id), 8f));
+    }
 }

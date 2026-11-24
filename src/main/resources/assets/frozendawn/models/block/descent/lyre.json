@@ -1,0 +1,235 @@
+{
+  "parent": "minecraft:block/block",
+  "textures": {
+    "particle": "frozendawn:block/descent/oak",
+    "oak": "frozendawn:block/descent/oak",
+    "dark_oak": "frozendawn:block/descent/dark_oak",
+    "gut": "frozendawn:block/descent/gut"
+  },
+  "elements": [
+    {
+      "from": [
+        3,
+        0,
+        6
+      ],
+      "to": [
+        13,
+        4,
+        10
+      ],
+      "faces": {
+        "north": {
+          "texture": "#oak"
+        },
+        "east": {
+          "texture": "#oak"
+        },
+        "south": {
+          "texture": "#oak"
+        },
+        "west": {
+          "texture": "#oak"
+        },
+        "up": {
+          "texture": "#oak"
+        },
+        "down": {
+          "texture": "#oak"
+        }
+      }
+    },
+    {
+      "from": [
+        3,
+        4,
+        7
+      ],
+      "to": [
+        5,
+        15,
+        9
+      ],
+      "faces": {
+        "north": {
+          "texture": "#oak"
+        },
+        "east": {
+          "texture": "#oak"
+        },
+        "south": {
+          "texture": "#oak"
+        },
+        "west": {
+          "texture": "#oak"
+        },
+        "up": {
+          "texture": "#oak"
+        },
+        "down": {
+          "texture": "#oak"
+        }
+      }
+    },
+    {
+      "from": [
+        11,
+        4,
+        7
+      ],
+      "to": [
+        13,
+        15,
+        9
+      ],
+      "faces": {
+        "north": {
+          "texture": "#oak"
+        },
+        "east": {
+          "texture": "#oak"
+        },
+        "south": {
+          "texture": "#oak"
+        },
+        "west": {
+          "texture": "#oak"
+        },
+        "up": {
+          "texture": "#oak"
+        },
+        "down": {
+          "texture": "#oak"
+        }
+      }
+    },
+    {
+      "from": [
+        3,
+        13,
+        7
+      ],
+      "to": [
+        13,
+        15,
+        9
+      ],
+      "faces": {
+        "north": {
+          "texture": "#dark_oak"
+        },
+        "east": {
+          "texture": "#dark_oak"
+        },
+        "south": {
+          "texture": "#dark_oak"
+        },
+        "west": {
+          "texture": "#dark_oak"
+        },
+        "up": {
+          "texture": "#dark_oak"
+        },
+        "down": {
+          "texture": "#dark_oak"
+        }
+      }
+    },
+    {
+      "from": [
+        6,
+        4,
+        8
+      ],
+      "to": [
+        7,
+        13,
+        8.5
+      ],
+      "faces": {
+        "north": {
+          "texture": "#gut"
+        },
+        "east": {
+          "texture": "#gut"
+        },
+        "south": {
+          "texture": "#gut"
+        },
+        "west": {
+          "texture": "#gut"
+        },
+        "up": {
+          "texture": "#gut"
+        },
+        "down": {
+          "texture": "#gut"
+        }
+      }
+    },
+    {
+      "from": [
+        8,
+        4,
+        8
+      ],
+      "to": [
+        9,
+        13,
+        8.5
+      ],
+      "faces": {
+        "north": {
+          "texture": "#gut"
+        },
+        "east": {
+          "texture": "#gut"
+        },
+        "south": {
+          "texture": "#gut"
+        },
+        "west": {
+          "texture": "#gut"
+        },
+        "up": {
+          "texture": "#gut"
+        },
+        "down": {
+          "texture": "#gut"
+        }
+      }
+    },
+    {
+      "from": [
+        10,
+        4,
+        8
+      ],
+      "to": [
+        10.5,
+        13,
+        8.5
+      ],
+      "faces": {
+        "north": {
+          "texture": "#gut"
+        },
+        "east": {
+          "texture": "#gut"
+        },
+        "south": {
+          "texture": "#gut"
+        },
+        "west": {
+          "texture": "#gut"
+        },
+        "up": {
+          "texture": "#gut"
+        },
+        "down": {
+          "texture": "#gut"
+        }
+      }
+    }
+  ]
+}

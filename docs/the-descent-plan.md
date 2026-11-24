@@ -16,7 +16,12 @@ Everything sits in the creative tab. Nothing generates, drops or crafts.
 
 **Spec:** [payoff-roadmap.md](payoff-roadmap.md), branch 9. Notion: the payoff branch spec, section 6f and chamber zero. Canon: Canon Hierarchy CH-44 to CH-47 (signed off 2026-11-23), with CH-10, CH-11, CH-14, CH-18, CH-21, CH-28 and CH-32. The canon's design truth stays on Notion; this plan only says what is built.
 
-**Status:** approved by the owner as written, 2026-11-23, Rulings 1 to 7 included. Nothing is built.
+**Status:** approved by the owner as written, 2026-11-23, Rulings 1 to 7 included. Slice 1 built 2026-11-23 in `/Volumes/SSD/Work/frozen-dawn-the-descent`: the sounds, nine instruments, nine marks, the motifs, the scratches and the portrait, tests, both gates, the owner's visual pass in "Descent Pieces Check" (`tools/prepare_the_descent_playtest.py`) and an Opus branch review, whose one Important finding is fixed. Checkpoint: [the-descent-checkpoint.md](the-descent-checkpoint.md). Amendments:
+- The ten clips come from the owner's `descent-melodies.zip`, the approved versions of the artifact's clips, with one uniform -6.5 dB trim so none peaks above -6 dB.
+- The motifs and the scratches are the owner's wall art (`FrozenDawn_Descent_Walls.zip`) at its own sizes, not drawn from the mockup. The famine wall is padded from 72 to 80 px (5x3) so it maps 1:1 onto whole blocks.
+- The instruments, the marks and the portrait ship as drawn by `tools/generate_descent_assets.py`, approved by the owner for now.
+- Registry ids carry a `descent_` prefix (`frozendawn:descent_bone_flute`). Marks face the player when placed; only the front shows the bar.
+- The once-per-clip guard is a `playing` blockstate cleared by a scheduled tick. A replacement placed where a playing instrument was broken waits for that tick.
 
 **Branch:** slice 1 is `feat/the-descent` in `/Volumes/SSD/Work/frozen-dawn-the-descent`, cut from `feat/maeve-director` once this plan has merged. The build session starts in that worktree and works there. PR into `feat/maeve-director`. The branch review runs on Opus, because the branch merges into a long-lived branch. Later slices get their own branch and worktree (`feat/the-descent-chambers`, `feat/the-descent-worldgen`, `feat/the-descent-echo`).
 

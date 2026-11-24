@@ -62,6 +62,8 @@ final class FrozenDawnDebugCommand {
         if (!net.neoforged.fml.loading.FMLEnvironment.production) debug.then(payoffCommands());
         // Development builds only: play either ending's screen to the caller, without launching or saving anything.
         if (!net.neoforged.fml.loading.FMLEnvironment.production) debug.then(endingCommands());
+        // Development builds only: play a descent clip at the caller, for the sound sign-off.
+        if (!net.neoforged.fml.loading.FMLEnvironment.production) debug.then(descentCommands());
         return debug;
     }
 
@@ -124,6 +126,26 @@ final class FrozenDawnDebugCommand {
             }));
         }
         return Commands.literal("ending").then(play);
+    }
+
+    private static LiteralArgumentBuilder<CommandSourceStack> descentCommands() {
+        LiteralArgumentBuilder<CommandSourceStack> play = Commands.literal("play");
+        for (com.frozendawn.descent.DescentEra era : com.frozendawn.descent.DescentEra.values()) {
+            play.then(Commands.literal(era.clipName()).executes(context ->
+                    playAtCaller(context.getSource(), era.sound(), net.minecraft.sounds.SoundSource.BLOCKS)));
+        }
+        play.then(Commands.literal("icicle").executes(context -> playAtCaller(context.getSource(),
+                com.frozendawn.init.ModSounds.DESCENT_ICICLE, net.minecraft.sounds.SoundSource.AMBIENT)));
+        return Commands.literal("descent").then(play);
+    }
+
+    private static int playAtCaller(CommandSourceStack source,
+                                    net.minecraft.core.Holder<net.minecraft.sounds.SoundEvent> sound,
+                                    net.minecraft.sounds.SoundSource category) {
+        var at = source.getPosition();
+        source.getLevel().playSeededSound(null, at.x, at.y, at.z, sound, category, 1.0F, 1.0F,
+                source.getLevel().getRandom().nextLong());
+        return 1;
     }
 
     static int sendHelp(CommandSourceStack source, String requestedCategory) {
